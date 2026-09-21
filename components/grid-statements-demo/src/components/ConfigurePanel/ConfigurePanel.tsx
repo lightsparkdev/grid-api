@@ -9,8 +9,6 @@ import {
 import { ChoiceGrid } from '@/components/ChoiceGrid/ChoiceGrid';
 import { IconUserKey } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconUserKey';
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
-import { IconPhone } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPhone';
-import { IconLayoutWindow } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLayoutWindow';
 import { PlaygroundIntro } from '@/components/PlaygroundIntro/PlaygroundIntro';
 import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
@@ -31,18 +29,14 @@ import type {
 } from '@/statement/types';
 import styles from './ConfigurePanel.module.scss';
 
-type PreviewMode = 'mobile' | 'desktop';
-
 interface ConfigurePanelProps {
   brand: StatementBrand;
   presetId: PresetId;
-  previewMode: PreviewMode;
   uploadError: string;
   variant: StatementVariant;
   onBrandChange: (companyName: string) => void;
   onBrandColorChange: (key: keyof StatementBrandColors, value: HexColor) => void;
   onClearLogo: () => void;
-  onPreviewModeChange: (mode: PreviewMode) => void;
   onPresetSelect: (preset: StatementPreset) => void;
   onUpload: (file: File | undefined) => void;
   onVariantChange: (variant: StatementVariant) => void;
@@ -51,13 +45,11 @@ interface ConfigurePanelProps {
 export function ConfigurePanel({
   brand,
   presetId,
-  previewMode,
   uploadError,
   variant,
   onBrandChange,
   onBrandColorChange,
   onClearLogo,
-  onPreviewModeChange,
   onPresetSelect,
   onUpload,
   onVariantChange,
@@ -80,11 +72,6 @@ export function ConfigurePanel({
       passes: contrast.primaryPasses,
     },
     {
-      key: 'secondaryBackground',
-      label: 'Secondary background',
-      passes: contrast.secondaryPasses,
-    },
-    {
       key: 'secondaryText',
       label: 'Secondary text',
       passes: contrast.secondaryPasses,
@@ -99,32 +86,14 @@ export function ConfigurePanel({
 
           <section className={styles.section}>
             <SectionDivider label="Configure statement" />
-            <ChoiceGrid<StatementVariant | PreviewMode>
-              label="Statement configuration"
+            <ChoiceGrid<StatementVariant>
+              label="Account type"
               value={variant}
-              selectedValues={[variant, previewMode]}
               options={[
                 { id: 'consumer', label: 'Consumer', Icon: IconUserKey },
                 { id: 'commercial', label: 'Commercial', Icon: IconBank },
-                { id: 'mobile', label: 'Mobile', Icon: IconPhone },
-                { id: 'desktop', label: 'Desktop', Icon: IconLayoutWindow },
               ]}
-              onChange={(value) => {
-                switch (value) {
-                  case 'consumer':
-                  case 'commercial':
-                    onVariantChange(value);
-                    return;
-                  case 'mobile':
-                  case 'desktop':
-                    onPreviewModeChange(value);
-                    return;
-                  default: {
-                    const exhaustive: never = value;
-                    return exhaustive;
-                  }
-                }
-              }}
+              onChange={onVariantChange}
             />
           </section>
 
@@ -189,7 +158,7 @@ export function ConfigurePanel({
                   />
                   <ContrastWarning
                     visible={!color.passes}
-                    pair={color.key.startsWith('primary') ? 'primary' : 'secondary'}
+                    pair={color.key === 'primaryText' ? 'primary' : 'secondary'}
                   />
                 </div>
               ))}

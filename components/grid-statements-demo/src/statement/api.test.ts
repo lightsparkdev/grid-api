@@ -119,7 +119,6 @@ describe('statement API projection', () => {
         logo: { kind: 'image', src: 'data:image/png;base64,AAAA', alt: 'Logo' },
         colors: {
           primaryBackground: '#000000',
-          secondaryBackground: '#111111',
           primaryText: '#ffffff',
           secondaryText: '#eeeeee',
         },

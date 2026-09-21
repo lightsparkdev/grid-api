@@ -1,0 +1,52 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.glass {
+  position: absolute;
+  top: var(--spacing-md);
+  left: 50%;
+  z-index: 1;
+  overflow: hidden;
+  border: var(--stroke-xs) solid color-mix(in srgb, white 62%, transparent);
+  border-radius: 1000px;
+  background: color-mix(in srgb, var(--surface-primary) 72%, transparent);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(18px) saturate(1.25);
+  transform: translateX(-50%);
+}
+
+.group {
+  display: flex;
+  padding: 4px;
+}
+
+.option {
+  all: unset;
+  @include label-sm;
+  display: flex;
+  min-width: 92px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  border-radius: 1000px;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &[data-active] {
+    background: color-mix(in srgb, var(--surface-primary) 90%, transparent);
+    box-shadow: var(--shadow-sm);
+    color: var(--text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: -2px;
+  }
+}
+
+@media (max-width: 767px) {
+  .glass {
+    position: fixed;
+    top: 68px;
+  }
+}

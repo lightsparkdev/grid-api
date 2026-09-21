@@ -15,10 +15,47 @@
   background: var(--statement-primary-background);
 }
 
-.duoScroller {
+.desktopApp {
+  display: flex;
   width: 100%;
   height: 100%;
-  padding: 62px 24px 24px;
+  flex-direction: column;
+  background: #f4f4f3;
+}
+
+.desktopBar {
+  position: relative;
+  display: flex;
+  height: 48px;
+  flex: 0 0 48px;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  color: #242424;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+}
+
+.windowControls {
+  position: absolute;
+  left: 18px;
+  display: flex;
+  gap: 7px;
+
+  i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #d1d1d1;
+  }
+}
+
+.duoScroller {
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  padding: 24px;
   box-sizing: border-box;
   overflow-y: auto;
   overscroll-behavior: contain;

@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
 const cardsUrl = process.env.CARDS_URL ?? 'http://127.0.0.1:4002';
@@ -19,6 +19,12 @@ const cases = [
 ];
 
 await mkdir(output, { recursive: true });
+if (process.env.BEFORE_SCREENSHOT) {
+  await copyFile(
+    process.env.BEFORE_SCREENSHOT,
+    new URL('before-broken-export.png', output),
+  );
+}
 const browser = await chromium.launch();
 const evidence = [];
 
@@ -87,7 +93,7 @@ for (const auditCase of cases) {
         path: new URL(`${baseName}-statement.png`, output).pathname,
         fullPage: true,
       });
-      await page.getByRole('button', { name: 'Desktop' }).click();
+      await page.getByRole('radio', { name: 'Desktop' }).click();
       await page.getByText('September statement').first().waitFor();
       await page.screenshot({
         path: new URL(`${baseName}-desktop.png`, output).pathname,

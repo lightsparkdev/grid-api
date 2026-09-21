@@ -56,6 +56,7 @@ export function statementExportFilename(
 async function sourceAsDataUrl(source: string): Promise<string> {
   if (source.startsWith('data:')) return source;
   const response = await fetch(source);
+  if (!response.ok) throw new Error(`Could not embed image: ${response.status}`);
   const blob = await response.blob();
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -102,11 +103,48 @@ export async function buildStatementHtml(
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     `<title>${title.replace(/[<>&"]/g, '')}</title>`,
-    '<style>html{background:#fff}body{margin:0;padding:1px;font-family:Arial,Helvetica,sans-serif}</style>',
+    '<style>@page{size:auto;margin:12mm}html{background:#fff}body{margin:0;padding:1px;font-family:Arial,Helvetica,sans-serif}@media print{body{padding:0}article{margin:0 auto!important;box-shadow:none!important}}</style>',
     '</head>',
     `<body>${clone.outerHTML}</body>`,
     '</html>',
   ].join('');
+}
+
+export async function printStatementHtml(source: HTMLElement, title: string) {
+  const html = await buildStatementHtml(source, title);
+  (window as Window & { __printedTitle?: string }).__printedTitle = title;
+  const frame = document.createElement('iframe');
+  frame.setAttribute('title', 'Statement PDF');
+  frame.style.position = 'fixed';
+  frame.style.width = '1px';
+  frame.style.height = '1px';
+  frame.style.opacity = '0';
+  frame.style.pointerEvents = 'none';
+  document.body.append(frame);
+
+  const target = frame.contentWindow;
+  if (!target) {
+    frame.remove();
+    throw new Error('Could not create the print document.');
+  }
+  target.document.open();
+  target.document.write(html);
+  target.document.close();
+  await Promise.all(
+    Array.from(target.document.images).map((image) =>
+      image.complete
+        ? Promise.resolve()
+        : new Promise<void>((resolve) => {
+            image.addEventListener('load', () => resolve(), { once: true });
+            image.addEventListener('error', () => resolve(), { once: true });
+          }),
+    ),
+  );
+  target.focus();
+  const cleanup = () => frame.remove();
+  target.addEventListener('afterprint', cleanup, { once: true });
+  target.print();
+  window.setTimeout(cleanup, 60_000);
 }
 
 export function downloadHtml(html: string, filename: string) {
@@ -115,5 +153,5 @@ export function downloadHtml(html: string, filename: string) {
   anchor.href = url;
   anchor.download = filename;
   anchor.click();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }

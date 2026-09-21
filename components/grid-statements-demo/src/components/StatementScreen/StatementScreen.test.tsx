@@ -7,7 +7,7 @@ import { StatementScreen } from './StatementScreen';
 afterEach(cleanup);
 
 describe('StatementScreen', () => {
-  it('renders one app title with no duplicate brand or period line', () => {
+  it('renders one app title with the brand logo and no period line', () => {
     const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
     const { container } = render(<StatementScreen statement={statement} loading={false} />);
     const header = container.querySelector('header');
@@ -15,8 +15,7 @@ describe('StatementScreen', () => {
     expect(header).toBeTruthy();
     expect(screen.getAllByText('September statement')).toHaveLength(1);
     expect(within(header as HTMLElement).queryByText(STATEMENT_PERIOD.range)).toBeNull();
-    expect(within(header as HTMLElement).queryByRole('img')).toBeNull();
-    expect(within(header as HTMLElement).queryByText(DEFAULT_BRAND.companyName)).toBeNull();
+    expect(within(header as HTMLElement).getByRole('img', { name: 'Aurora logo' })).toBeTruthy();
     expect(screen.getByText('Statement period')).toBeTruthy();
     expect(screen.getByText(STATEMENT_PERIOD.range)).toBeTruthy();
     expect(screen.getByText('Issued')).toBeTruthy();

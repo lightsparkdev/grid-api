@@ -37,8 +37,18 @@ export function StatementPreview({ mode, phase, statement }: StatementPreviewPro
           {phase === 'loading' ? (
             <LoadingPreview />
           ) : (
-            <div className={styles.duoScroller}>
-              <StatementDocument statement={statement} width="full" showMasthead />
+            <div className={styles.desktopApp}>
+              <header className={styles.desktopBar}>
+                <span className={styles.windowControls} aria-hidden>
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <strong>Statements</strong>
+              </header>
+              <div className={styles.duoScroller}>
+                <StatementDocument statement={statement} width="full" showMasthead />
+              </div>
             </div>
           )}
         </div>

@@ -6,26 +6,31 @@ import { ShareSheet } from '@/components/ShareSheet/ShareSheet';
 import { StageShareButton } from '@/components/ShareSheet/StageShareButton';
 import { StatementDocument } from '@/components/StatementDocument';
 import { StatementPreview } from '@/components/StatementPreview/StatementPreview';
+import { DeviceToggle } from '@/components/DeviceToggle/DeviceToggle';
 import { brandContrast } from '@/statement/brand';
 import {
   buildStatementHtml,
   downloadHtml,
+  printStatementHtml,
   statementExportFilename,
 } from '@/statement/export';
 import type { StatementPreview as StatementPreviewState } from '@/statement/lifecycle';
+import type { PreviewMode } from '@/statement/lifecycle';
 import type { StatementModel } from '@/statement/types';
 import styles from './StatementPanel.module.scss';
 
 interface StatementPanelProps {
   statement: StatementModel;
   preview: StatementPreviewState;
-  onPrint: () => void;
+  onCopyLink: () => void;
+  onPreviewModeChange: (mode: PreviewMode) => void;
 }
 
 export function StatementPanel({
   statement,
   preview,
-  onPrint,
+  onCopyLink,
+  onPreviewModeChange,
 }: StatementPanelProps) {
   const [shareOpen, setShareOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -43,6 +48,19 @@ export function StatementPanel({
       setShareOpen(false);
     } catch {
       setExportError('HTML export failed. Try again.');
+    }
+  };
+  const exportPdf = async () => {
+    if (!exportDocumentRef.current) return;
+    try {
+      setExportError('');
+      await printStatementHtml(
+        exportDocumentRef.current,
+        statementExportFilename(statement, 'pdf').replace(/\.pdf$/i, ''),
+      );
+      setShareOpen(false);
+    } catch {
+      setExportError('PDF export failed. Try again.');
     }
   };
 
@@ -68,6 +86,7 @@ export function StatementPanel({
         title="Statement preview"
       />
       <div className={styles.stage}>
+        <DeviceToggle value={preview.mode} onChange={onPreviewModeChange} />
         {mounted ? (
           <StatementPreview
             mode={preview.mode}
@@ -79,13 +98,8 @@ export function StatementPanel({
           open={shareOpen}
           statement={statement}
           previewMode={preview.mode}
-          onCopyLink={() => {
-            void navigator.clipboard?.writeText(window.location.href);
-          }}
-          onSavePdf={() => {
-            setShareOpen(false);
-            onPrint();
-          }}
+          onCopyLink={onCopyLink}
+          onSavePdf={exportPdf}
           onSaveHtml={exportHtml}
         />
         {mounted ? (

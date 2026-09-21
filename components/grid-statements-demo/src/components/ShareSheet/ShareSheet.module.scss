@@ -1,5 +1,13 @@
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--dot-grid-bg) 92%, transparent);
+  backdrop-filter: blur(3px);
+}
+
 .panel {
   position: absolute;
   inset: auto 16px 84px;
@@ -7,7 +15,7 @@
   display: flex;
   width: calc(100% - 32px);
   height: calc(100% - 100px);
-  max-width: 440px;
+  max-width: min(760px, calc(100% - 32px));
   max-height: calc(100% - 100px);
   margin-inline: auto;
   min-height: 0;
@@ -20,6 +28,14 @@
   background: var(--panel-bg);
   box-shadow: var(--shadow-lg);
   transform-origin: 50% 100%;
+}
+
+.panel[data-preview-mode='mobile'] {
+  max-width: 440px;
+}
+
+.panel[data-preview-mode='desktop'] {
+  height: auto;
 }
 
 .ripple {
@@ -43,7 +59,11 @@
   border: var(--stroke-xs) solid var(--border-primary);
   border-radius: var(--corner-radius-md);
   background: var(--surface-primary);
+}
 
+.panel[data-preview-mode='desktop'] .preview {
+  flex: none;
+  aspect-ratio: 922 / 658;
 }
 
 .actions {
@@ -107,5 +127,9 @@
     width: auto;
     height: auto;
     max-height: none;
+  }
+
+  .panel[data-preview-mode='desktop'] {
+    height: calc(100% - 160px);
   }
 }

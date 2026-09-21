@@ -38,7 +38,6 @@ describe('statement presets', () => {
       for (const key of [
         'primaryBackground',
         'primaryText',
-        'secondaryBackground',
         'secondaryText',
       ] as const) {
         const swatches = colorSwatchesForPreset(preset, key);

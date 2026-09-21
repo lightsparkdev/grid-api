@@ -4,7 +4,6 @@ export type HexColor = `#${string}`;
 
 export interface StatementBrandColors {
   primaryBackground: HexColor;
-  secondaryBackground: HexColor;
   primaryText: HexColor;
   secondaryText: HexColor;
 }

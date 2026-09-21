@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { PHONE_SHELL_GLASS } from './presets';
+import { PHONE_SHELL_GLASS, TEXT_GLASS } from './presets';
 import { squirclePath } from './squircle';
 
 export interface GlassConfig {
@@ -45,4 +45,4 @@ export function Glass({
   );
 }
 
-export { PHONE_SHELL_GLASS, squirclePath };
+export { PHONE_SHELL_GLASS, TEXT_GLASS, squirclePath };

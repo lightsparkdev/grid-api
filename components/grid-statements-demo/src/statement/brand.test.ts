@@ -23,10 +23,9 @@ describe('statement brand colors', () => {
     expect(normalizeHexColor('transparent')).toBeNull();
   });
 
-  it('maps only the four public tokens to print CSS properties', () => {
+  it('maps only the three public tokens to print CSS properties', () => {
     expect(statementColorProperties(DEFAULT_BRAND_COLORS)).toEqual({
       '--statement-primary-background': '#ffffff',
-      '--statement-secondary-background': '#f7f7f6',
       '--statement-primary-text': '#1a1a1a',
       '--statement-secondary-text': '#656565',
     });

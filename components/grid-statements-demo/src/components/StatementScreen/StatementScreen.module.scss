@@ -7,7 +7,7 @@
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
-  background: var(--statement-secondary-background);
+  background: var(--statement-primary-background);
 }
 
 .hero {
@@ -18,7 +18,8 @@
   padding: 70px 24px 8px;
   box-sizing: border-box;
   border: 0;
-  background: var(--statement-secondary-background);
+  gap: 12px;
+  background: var(--statement-primary-background);
   color: var(--statement-secondary-text);
 
   h1 {
@@ -28,6 +29,26 @@
     font-weight: 590;
     font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
     white-space: nowrap;
+  }
+}
+
+.logo {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 7px;
+  color: var(--statement-primary-text);
+  font-size: 9px;
+  font-weight: 600;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 }
 

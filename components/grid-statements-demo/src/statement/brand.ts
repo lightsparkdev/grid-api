@@ -3,7 +3,6 @@ import type { HexColor, StatementBrandColors } from './types';
 
 export const DEFAULT_BRAND_COLORS: StatementBrandColors = {
   primaryBackground: '#ffffff',
-  secondaryBackground: '#f7f7f6',
   primaryText: '#1a1a1a',
   secondaryText: '#656565',
 };
@@ -52,7 +51,7 @@ export function contrastRatio(foreground: HexColor, background: HexColor): numbe
 
 export function brandContrast(colors: StatementBrandColors) {
   const primary = contrastRatio(colors.primaryText, colors.primaryBackground);
-  const secondary = contrastRatio(colors.secondaryText, colors.secondaryBackground);
+  const secondary = contrastRatio(colors.secondaryText, colors.primaryBackground);
   return {
     primary,
     secondary,
@@ -64,7 +63,6 @@ export function brandContrast(colors: StatementBrandColors) {
 export function statementColorProperties(colors: StatementBrandColors) {
   return {
     '--statement-primary-background': colors.primaryBackground,
-    '--statement-secondary-background': colors.secondaryBackground,
     '--statement-primary-text': colors.primaryText,
     '--statement-secondary-text': colors.secondaryText,
   } as CSSProperties;

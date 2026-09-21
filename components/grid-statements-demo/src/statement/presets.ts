@@ -32,7 +32,6 @@ export const PRESETS: readonly StatementPreset[] = [
     colors: {
       primaryBackground: '#ffffff',
       primaryText: '#1a1a1a',
-      secondaryBackground: '#f2f8fb',
       secondaryText: '#4f5960',
     },
   },
@@ -44,7 +43,6 @@ export const PRESETS: readonly StatementPreset[] = [
     colors: {
       primaryBackground: '#ffffff',
       primaryText: '#1a1a1a',
-      secondaryBackground: '#f5f0ff',
       secondaryText: '#5b426f',
     },
   },
@@ -56,7 +54,6 @@ export const PRESETS: readonly StatementPreset[] = [
     colors: {
       primaryBackground: '#ffffff',
       primaryText: '#0f1419',
-      secondaryBackground: '#eff3f4',
       secondaryText: '#536471',
     },
   },
@@ -68,7 +65,6 @@ export const PRESETS: readonly StatementPreset[] = [
     colors: {
       primaryBackground: '#ffffff',
       primaryText: '#222222',
-      secondaryBackground: '#fff1f4',
       secondaryText: '#6a4a50',
     },
   },
@@ -80,7 +76,6 @@ export const PRESETS: readonly StatementPreset[] = [
     colors: {
       primaryBackground: '#ffffff',
       primaryText: '#000000',
-      secondaryBackground: '#f3f3f3',
       secondaryText: '#4b4b4b',
     },
   },
@@ -92,7 +87,6 @@ export const PRESETS: readonly StatementPreset[] = [
     colors: {
       primaryBackground: '#ffffff',
       primaryText: '#111b21',
-      secondaryBackground: '#e9f8ef',
       secondaryText: '#496157',
     },
   },
@@ -105,7 +99,6 @@ export function presetIconSrc(preset: StatementPreset): string {
 const NEUTRAL_COLORS: StatementBrandColors = {
   primaryBackground: '#f7f7f6',
   primaryText: '#656565',
-  secondaryBackground: '#ffffff',
   secondaryText: '#1a1a1a',
 };
 

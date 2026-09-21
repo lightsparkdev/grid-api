@@ -16,7 +16,6 @@ interface Choice<Value extends string> {
 interface ChoiceGridProps<Value extends string> {
   label: string;
   value: Value;
-  selectedValues?: readonly Value[];
   options: readonly Choice<Value>[];
   onChange: (value: Value) => void;
 }
@@ -24,7 +23,6 @@ interface ChoiceGridProps<Value extends string> {
 export function ChoiceGrid<Value extends string>({
   label,
   value,
-  selectedValues,
   options,
   onChange,
 }: ChoiceGridProps<Value>) {
@@ -44,7 +42,7 @@ export function ChoiceGrid<Value extends string>({
   return (
     <div
       className={styles.group}
-      role={selectedValues ? 'group' : 'radiogroup'}
+      role="radiogroup"
       aria-label={label}
       onKeyDown={onKeyDown}
     >
@@ -52,16 +50,12 @@ export function ChoiceGrid<Value extends string>({
         <button
           key={id}
           type="button"
-          role={selectedValues ? undefined : 'radio'}
-          aria-checked={selectedValues ? undefined : value === id}
-          aria-pressed={selectedValues ? selectedValues.includes(id) : undefined}
-          tabIndex={selectedValues ? 0 : value === id ? 0 : -1}
+          role="radio"
+          aria-checked={value === id}
+          disabled={value === id}
+          tabIndex={value === id ? 0 : -1}
           data-choice={id}
-          className={clsx(
-            styles.option,
-            (selectedValues ? selectedValues.includes(id) : value === id) &&
-              styles.optionSelected,
-          )}
+          className={clsx(styles.option, value !== id && styles.optionEnabled)}
           {...pressable({ onClick: () => onChange(id) })}
         >
           <span className={styles.optionIcon}>

@@ -22,6 +22,13 @@ export function StatementScreen({
       aria-label="Statement app preview"
     >
       <header className={styles.hero}>
+        <span className={styles.logo}>
+          {statement.brand.logo.kind === 'image' ? (
+            <img src={statement.brand.logo.src} alt={statement.brand.logo.alt} />
+          ) : (
+            statement.brand.companyName
+          )}
+        </span>
         <h1>{statementTitle(statement.period)}</h1>
       </header>
       {loading ? (

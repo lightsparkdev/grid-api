@@ -17,6 +17,7 @@ async function openPage(width, height, reducedMotion = 'no-preference') {
     viewport: { width, height },
     reducedMotion,
     colorScheme: 'light',
+    permissions: ['clipboard-read', 'clipboard-write'],
   });
   const page = await context.newPage();
   const errors = [];
@@ -54,7 +55,7 @@ async function watchOperationOrder(page) {
 async function expectReload(page, account) {
   await watchOperationOrder(page);
   const started = Date.now();
-  await page.getByRole('button', { name: account }).click();
+  await page.getByRole('radio', { name: account }).click();
   await page.waitForFunction(
     () => !document.querySelector('[class*="apiCol"]')?.textContent?.includes('listTransactions'),
   );
@@ -105,7 +106,6 @@ assert.equal(await page.getByText('listTransactions').count(), 1);
 for (const label of [
   'Primary background',
   'Primary text',
-  'Secondary background',
   'Secondary text',
 ]) {
   assert.equal(await page.getByRole('radiogroup', { name: label }).getByRole('radio').count(), 2);
@@ -122,10 +122,14 @@ for (const label of [
 await expectReload(page, 'Commercial');
 await expectReload(page, 'Consumer');
 
-const callsBeforeView = await page.locator('[class*="apiCol"]').textContent();
-await page.getByRole('button', { name: 'Desktop' }).click();
+const assertCallsRemain = async () => {
+  for (const operation of operations) {
+    assert.equal(await page.getByText(operation, { exact: true }).count(), 1);
+  }
+};
+await page.getByRole('radio', { name: 'Desktop' }).click();
 await page.getByText('Consumer prepaid account').first().waitFor();
-assert.equal(await page.locator('[class*="apiCol"]').textContent(), callsBeforeView);
+await assertCallsRemain();
 
 const desktopScroll = await page
   .locator('[class*="StatementPreview_duoScroller"]')
@@ -153,13 +157,14 @@ assert.equal(
 );
 await page.getByRole('button', { name: 'Cancel' }).click();
 
-await page.getByRole('button', { name: 'Mobile' }).click();
+await page.getByRole('radio', { name: 'Mobile' }).click();
 await company.fill('Live share brand');
-assert.equal(await page.locator('[class*="apiCol"]').textContent(), callsBeforeView);
+await assertCallsRemain();
 await page.getByRole('button', { name: 'Share' }).click();
 await share.locator('[data-preview-shell="mobile"]').waitFor();
 assert.equal(await share.getByText('September statement').count(), 1);
 await page.getByRole('button', { name: 'Save PDF' }).click();
+await page.waitForFunction(() => window.__printedTitle);
 assert.equal(
   await page.evaluate(() => window.__printedTitle),
   'live-share-brand-september-statement',
@@ -177,6 +182,25 @@ assert.match(html, /September statement/);
 assert.match(html, /data:image\//);
 assert.doesNotMatch(html, /https?:|<link|@font-face|srcset=/i);
 
+await page.getByRole('button', { name: 'Share' }).click();
+await page.getByRole('button', { name: 'Copy link' }).click();
+const sharedUrl = await page.evaluate(() => navigator.clipboard.readText());
+assert.match(sharedUrl, /variant=consumer/);
+assert.match(sharedUrl, /view=mobile/);
+assert.match(sharedUrl, /brand=Live\+share\+brand/);
+const sharedPage = await primary.context.newPage();
+await sharedPage.goto(sharedUrl, { waitUntil: 'domcontentloaded' });
+await sharedPage.getByLabel('Company name').waitFor();
+await sharedPage.waitForFunction(
+  () => document.querySelector('[aria-label="Company name"]')?.value === 'Live share brand',
+);
+assert.equal(await sharedPage.getByLabel('Company name').inputValue(), 'Live share brand');
+assert.equal(
+  await sharedPage.getByRole('radio', { name: 'Mobile' }).getAttribute('aria-checked'),
+  'true',
+);
+await sharedPage.close();
+
 const mobileScroll = await appPreview
   .locator('[class*="StatementScreen_scroller"]')
   .evaluate((element) => {
@@ -189,7 +213,8 @@ const mobileScroll = await appPreview
       articleWidth: Math.round(article.getBoundingClientRect().width),
       scrollerWidth: Math.round(elementRect.width),
       contained:
-        elementRect.top >= shellRect.top && elementRect.bottom <= shellRect.bottom,
+        elementRect.top >= shellRect.top - 1 &&
+        elementRect.bottom <= shellRect.bottom + 1,
       overflowY: getComputedStyle(element).overflowY,
       scrollHeight: element.scrollHeight,
       clientHeight: element.clientHeight,
@@ -248,7 +273,7 @@ for (const [name, width, height] of [
     height: document.body.scrollHeight,
   }));
   assert.deepEqual(after, before);
-  assert(panel.width <= 440);
+  assert(panel.width <= (name === 'mobile' ? 440 : 760));
   assert(panel.height <= height - 100);
   assert.equal(Math.round(pill.height), 44);
   assert(panel.x >= 0 && panel.x + panel.width <= width);

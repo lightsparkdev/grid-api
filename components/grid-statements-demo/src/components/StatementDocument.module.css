@@ -34,7 +34,7 @@
   justify-content: space-between;
   gap: 24px;
   padding: 26px var(--gutter) 20px;
-  background: var(--statement-secondary-background);
+  background: var(--statement-primary-background);
   color: var(--statement-secondary-text);
 }
 

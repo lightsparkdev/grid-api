@@ -37,4 +37,19 @@ describe('copied Cards controls', () => {
     expect(source).toContain('position: fixed');
     expect(source).toContain('bottom: 84px');
   });
+
+  it('uses the exact Cards Explore flow cell states', () => {
+    expect(
+      readFileSync(
+        resolve(process.cwd(), 'src/components/ChoiceGrid/ChoiceGrid.module.scss'),
+      ),
+    ).toEqual(
+      readFileSync(
+        resolve(
+          process.cwd(),
+          '../grid-cards-demo/src/components/FlowPicker/FlowPicker.module.scss',
+        ),
+      ),
+    );
+  });
 });

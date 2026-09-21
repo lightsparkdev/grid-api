@@ -20,7 +20,6 @@ import {
   DEFAULT_BRAND,
   STATEMENT_PERIOD,
   buildStatement,
-  statementFilename,
 } from '@/statement/fixtures';
 import {
   PRESETS,
@@ -28,6 +27,10 @@ import {
   type PresetId,
   type StatementPreset,
 } from '@/statement/presets';
+import {
+  parseStatementShareState,
+  statementShareUrl,
+} from '@/statement/shareState';
 import type {
   StatementBrand,
   StatementVariant,
@@ -158,17 +161,29 @@ export default function Page() {
     [clearUploadedUrl],
   );
 
-  const printStatement = useCallback(() => {
-    const previousTitle = document.title;
-    const restoreTitle = () => {
-      document.title = previousTitle;
-      window.removeEventListener('afterprint', restoreTitle);
-    };
-    document.title = statementFilename(statement).replace(/\.pdf$/i, '');
-    window.addEventListener('afterprint', restoreTitle);
-    window.print();
-    window.setTimeout(restoreTitle, 1000);
-  }, [statement]);
+  useEffect(() => {
+    const shared = parseStatementShareState(window.location.href, {
+      variant: 'consumer',
+      mode: 'mobile',
+      presetId: PRESETS[0].id,
+      brand: DEFAULT_BRAND,
+    });
+    setVariant(shared.variant);
+    setPresetId(shared.presetId);
+    setBrand(shared.brand);
+    updatePreview({ type: 'view-selected', mode: shared.mode });
+  }, []);
+
+  const copyShareLink = useCallback(() => {
+    const url = statementShareUrl(window.location.href, {
+      variant,
+      mode: preview.mode,
+      presetId,
+      brand,
+    });
+    window.history.replaceState(window.history.state, '', url);
+    void navigator.clipboard?.writeText(url);
+  }, [brand, presetId, preview.mode, variant]);
 
   const goPlayground = useCallback(() => {
     if (!isMobileViewport()) return;
@@ -217,7 +232,6 @@ export default function Page() {
         <ConfigurePanel
           brand={brand}
           presetId={presetId}
-          previewMode={preview.mode}
           uploadError={uploadError}
           variant={variant}
           onBrandChange={(companyName) => {
@@ -233,9 +247,6 @@ export default function Page() {
             clearUploadedUrl();
             setBrand((current) => ({ ...current, logo: { kind: 'none' } }));
           }}
-          onPreviewModeChange={(mode) => {
-            updatePreview({ type: 'view-selected', mode });
-          }}
           onPresetSelect={selectPreset}
           onUpload={uploadLogo}
           onVariantChange={(nextVariant) => {
@@ -250,7 +261,10 @@ export default function Page() {
           <StatementPanel
             statement={statement}
             preview={preview}
-            onPrint={printStatement}
+            onCopyLink={copyShareLink}
+            onPreviewModeChange={(mode) => {
+              updatePreview({ type: 'view-selected', mode });
+            }}
           />
         </div>
         <ColumnResizeHandle onMouseDown={onResizeStart} />
