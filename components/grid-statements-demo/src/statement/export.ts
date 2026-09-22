@@ -27,6 +27,7 @@ const EXPORTED_PROPERTIES = [
   'justify-content',
   'letter-spacing',
   'line-height',
+  'list-style',
   'margin',
   'margin-bottom',
   'margin-left',
@@ -44,6 +45,8 @@ const EXPORTED_PROPERTIES = [
   'padding-top',
   'position',
   'text-align',
+  'text-indent',
+  'vertical-align',
   'white-space',
   'width',
 ] as const;

@@ -19,6 +19,12 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
+const easeOutQuart = [0.165, 0.84, 0.44, 1] as const;
+const easeInQuart = [0.56, 0, 0.835, 0.16] as const;
+const PANEL_IN = { duration: 0.7, ease: easeOutQuart };
+const PANEL_OUT = { duration: 0.45, ease: easeInQuart };
+const PANEL_AWAY = { opacity: 0, scale: 0.9, y: 128, filter: 'blur(48px)' };
+
 interface ShareSheetProps {
   open: boolean;
   statement: StatementModel;
@@ -105,11 +111,9 @@ export function ShareSheet({
         <>
           <motion.div
             className={styles.backdrop}
+            data-share-backdrop
             aria-hidden
             onClick={onClose}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
           />
           <motion.section
             ref={panelRef}
@@ -119,10 +123,23 @@ export function ShareSheet({
             aria-modal="true"
             aria-label="Export statement"
             tabIndex={-1}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.96, filter: 'blur(12px)' }}
-            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98, filter: 'blur(8px)' }}
-            transition={reduceMotion ? { duration: 0.01 } : { duration: 0.44, ease: [0.19, 1, 0.22, 1] }}
+            initial={reduceMotion ? { opacity: 0 } : PANEL_AWAY}
+            animate={
+              reduceMotion
+                ? { opacity: 1 }
+                : {
+                    opacity: 1,
+                    scale: 1,
+                    y: 0,
+                    filter: 'blur(0px)',
+                    transition: PANEL_IN,
+                  }
+            }
+            exit={
+              reduceMotion
+                ? { opacity: 0 }
+                : { ...PANEL_AWAY, transition: PANEL_OUT }
+            }
           >
             <span className={styles.ripple} data-share-ripple aria-hidden />
             <div className={styles.preview}>

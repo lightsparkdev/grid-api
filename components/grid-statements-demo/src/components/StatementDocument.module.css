@@ -44,6 +44,11 @@
   font-weight: 450;
 }
 
+.masthead > strong {
+  margin-left: auto;
+  text-align: right;
+}
+
 .brand {
   min-width: 0;
   color: inherit;
@@ -145,23 +150,21 @@
 }
 
 .terminal {
-  display: block;
-  margin-top: 2px;
+  display: inline;
   color: color-mix(in srgb, var(--statement-primary-text) 70%, transparent);
-  font-size: 10px;
 }
 
 .amount {
-  position: relative;
   white-space: nowrap;
 }
 
 .flag {
-  position: absolute;
-  left: 100%;
-  padding-left: 4px;
+  margin-left: 2px;
   color: color-mix(in srgb, var(--statement-primary-text) 56%, transparent);
-  font-size: 10px;
+  font-size: 0.72em;
+  font-variant-numeric: tabular-nums;
+  line-height: 0;
+  vertical-align: super;
 }
 
 .feeTotal {
@@ -189,13 +192,13 @@
 .footer {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   margin: 0;
-  padding: 16px var(--gutter) 28px;
+  padding: 14px var(--gutter) 24px;
   border-top: 0.5px solid var(--statement-hairline);
   background: var(--statement-primary-background);
-  color: var(--statement-primary-text);
-  line-height: 1.5;
+  color: var(--statement-secondary-text);
+  line-height: 1.35;
 }
 
 .footer p {
@@ -205,21 +208,43 @@
 .notice {
   display: flex;
   flex-direction: column;
+  gap: 4px;
 }
 
 .label {
-  margin-bottom: 6px;
+  margin-bottom: 2px;
   color: inherit;
+  font-weight: 450;
 }
 
-.label span,
-.window {
-  color: inherit;
-  opacity: 0.8;
+.legalFlag {
+  margin-left: 2px;
+  font-size: 0.72em;
+  line-height: 0;
+  vertical-align: super;
+}
+
+.notice ol {
+  display: flex;
+  margin: 2px 0;
+  padding: 0;
+  flex-direction: column;
+  gap: 2px;
+  list-style: none;
+}
+
+.notice li {
+  padding-left: 14px;
+  text-indent: -14px;
 }
 
 .window {
-  margin-top: 8px !important;
+  margin-top: 2px !important;
+}
+
+.provider {
+  padding-top: 8px;
+  border-top: 0.5px solid var(--statement-hairline);
 }
 
 .document[data-preview-width='narrow'] .description {

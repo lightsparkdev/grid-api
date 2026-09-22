@@ -28,12 +28,20 @@ describe('StatementDocument', () => {
 
     expect(screen.getByText('$3,373.95')).toBeTruthy();
     expect(
-      screen.getByText(/In Case of Errors or Questions About Your Electronic Transfers/),
+      screen.getByText(/In case of errors or questions about your electronic transfers/),
     ).toBeTruthy();
     expect(container.querySelectorAll('[data-flag="disputable"]')).toHaveLength(3);
+    expect(
+      Array.from(container.querySelectorAll('[data-flag="disputable"]')).every(
+        (flag) => flag.tagName === 'SUP' && flag.parentElement?.className.includes('amount'),
+      ),
+    ).toBe(true);
+    expect(screen.getByText('Blue Bottle Coffee').parentElement?.textContent).toContain(
+      'Blue Bottle Coffee · Los Angeles, CA',
+    );
     expect(screen.getByText(/Lightspark is the program manager and is not a bank/)).toBeTruthy();
     const notice = screen
-      .getByText(/In Case of Errors or Questions About Your Electronic Transfers/)
+      .getByText(/In case of errors or questions about your electronic transfers/)
       .closest('section');
     expect(notice).toBeTruthy();
     expect(within(notice as HTMLElement).getByText(/\(855\) 516-0103/)).toBeTruthy();
@@ -42,6 +50,7 @@ describe('StatementDocument', () => {
         /8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069/,
       ),
     ).toBeTruthy();
+    expect(within(notice as HTMLElement).getAllByRole('listitem')).toHaveLength(3);
     expect(container.textContent).not.toContain('www.lightspark.com');
   });
 
@@ -52,7 +61,7 @@ describe('StatementDocument', () => {
     );
 
     expect(screen.getByText('$14,459.75')).toBeTruthy();
-    expect(container.textContent).not.toMatch(/In Case of Errors|60 days|disputable/i);
+    expect(container.textContent).not.toMatch(/In case of errors|60 days|disputable/i);
     expect(container.querySelectorAll('[data-flag="disputable"]')).toHaveLength(0);
   });
 

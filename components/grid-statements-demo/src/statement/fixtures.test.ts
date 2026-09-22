@@ -19,6 +19,10 @@ describe('statement fixtures', () => {
       totalFeesCents: 1500,
     });
     expect(statementRows(statement).filter((transaction) => transaction.disputable)).toHaveLength(3);
+    expect(statementRows(statement)[1]).toMatchObject({
+      party: 'Blue Bottle Coffee',
+      terminal: 'Los Angeles, CA',
+    });
   });
 
   it('reconciles the commercial statement without a Reg E overlay', () => {
@@ -35,15 +39,17 @@ describe('statement fixtures', () => {
     expect(LEGAL.provider).toBe(
       'This account is held at Lead Bank, the account-holding institution. Lightspark is the program manager and is not a bank.',
     );
-    expect(LEGAL.notice.join('\n')).toBe(
-      [
+    expect(LEGAL.notice).toEqual({
+      intro:
         'Telephone us at (855) 516-0103 or Write us at 8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069 as soon as you can, if you think your statement or receipt is wrong or if you need more information about a transfer on the statement or receipt. We must hear from you no later than 60 days after we sent you the FIRST statement on which the error or problem appeared.',
+      steps: [
         '(1) Tell us your name and account number (if any).',
         '(2) Describe the error or the transfer you are unsure about, and explain as clearly as you can why you believe it is an error or why you need more information.',
         '(3) Tell us the dollar amount of the suspected error.',
+      ],
+      closing:
         'We will investigate your complaint and will correct any error promptly. If we take more than 10 business days to do this, we will credit your account for the amount you think is in error, so that you will have the use of the money during the time it takes us to complete our investigation.',
-      ].join('\n'),
-    );
+    });
   });
 
   it.each(['consumer', 'commercial'] as const)(

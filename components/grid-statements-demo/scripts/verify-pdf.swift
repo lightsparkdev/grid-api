@@ -1,8 +1,9 @@
 import Foundation
+import AppKit
 import PDFKit
 
-guard CommandLine.arguments.count == 2 else {
-  fputs("usage: verify-pdf.swift <pdf>\n", stderr)
+guard CommandLine.arguments.count == 2 || CommandLine.arguments.count == 3 else {
+  fputs("usage: verify-pdf.swift <pdf> [screenshot.png]\n", stderr)
   exit(2)
 }
 
@@ -23,7 +24,8 @@ let text = (0..<document.pageCount)
 for required in [
   "September statement",
   "Total fees for period",
-  "In Case of Errors or Questions About Your Electronic Transfers",
+  "Blue Bottle Coffee · Los Angeles, CA",
+  "In case of errors or questions about your electronic transfers",
   "This account is held at Lead Bank",
 ] {
   guard text.contains(required) else {
@@ -37,6 +39,8 @@ for forbidden in [
   "grid-statements-demo.vercel.app",
   "127.0.0.1:4003",
   "1/1",
+  "456 S Spring St",
+  "In Case of Errors or Questions About Your Electronic Transfers",
 ] {
   guard !text.contains(forbidden) else {
     fputs("browser chrome found in PDF: \(forbidden)\n", stderr)
@@ -57,6 +61,25 @@ let range = NSRange(text.startIndex..<text.endIndex, in: text)
 guard browserDate.firstMatch(in: text, range: range) == nil else {
   fputs("browser date header found in PDF\n", stderr)
   exit(1)
+}
+
+if CommandLine.arguments.count == 3 {
+  guard
+    let page = document.page(at: 0),
+    let tiff = page.thumbnail(of: NSSize(width: 1224, height: 1584), for: .mediaBox)
+      .tiffRepresentation,
+    let bitmap = NSBitmapImageRep(data: tiff),
+    let png = bitmap.representation(using: .png, properties: [:])
+  else {
+    fputs("could not render PDF screenshot\n", stderr)
+    exit(1)
+  }
+  do {
+    try png.write(to: URL(fileURLWithPath: CommandLine.arguments[2]))
+  } catch {
+    fputs("could not write PDF screenshot\n", stderr)
+    exit(1)
+  }
 }
 
 print("pages=1")

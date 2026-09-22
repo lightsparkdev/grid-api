@@ -174,6 +174,13 @@ await page.getByRole('button', { name: 'Export' }).click();
 const exportSheet = page.getByRole('dialog', { name: 'Export statement' });
 await exportSheet.locator('[data-preview-shell="desktop"]').waitFor();
 assert.equal(
+  await page.locator('[data-share-backdrop]').evaluate((element) =>
+    getComputedStyle(element).backgroundColor,
+  ),
+  'rgba(0, 0, 0, 0)',
+  'the export hit target must leave the shared stage backdrop visible',
+);
+assert.equal(
   await page.evaluate(() => document.activeElement?.textContent),
   'Copy link',
 );
@@ -397,6 +404,18 @@ for (const [width, height] of [
   await short.page.getByText('September statement').first().waitFor();
   await short.page.getByRole('button', { name: 'Export' }).click();
   await short.page.getByRole('dialog', { name: 'Export statement' }).waitFor();
+  await short.page.waitForFunction(() => {
+    const panel = document.querySelector('[aria-label="Export statement"]');
+    if (!panel) return false;
+    const style = getComputedStyle(panel);
+    const transform = new DOMMatrixReadOnly(style.transform);
+    return (
+      Math.abs(transform.a - 1) < 0.001 &&
+      Math.abs(transform.d - 1) < 0.001 &&
+      Math.abs(transform.m42) < 0.5 &&
+      style.filter === 'blur(0px)'
+    );
+  });
   const reach = await short.page.evaluate(() => {
     const panel = document
       .querySelector('[aria-label="Export statement"]')

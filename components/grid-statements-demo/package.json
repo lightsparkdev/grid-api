@@ -11,7 +11,7 @@
     "audit:visual": "node scripts/visual-audit.mjs",
     "audit:behavior": "node scripts/behavior-audit.mjs",
     "audit:rails": "node scripts/rail-audit.mjs",
-    "audit:pdf": "node scripts/pdf-audit.mjs && xcrun swift scripts/verify-pdf.swift .artifacts/visual-audit/${AUDIT_LABEL:-pdf-audit}/actual-export.pdf",
+    "audit:pdf": "node scripts/pdf-audit.mjs && xcrun swift scripts/verify-pdf.swift .artifacts/visual-audit/${AUDIT_LABEL:-pdf-audit}/actual-export.pdf .artifacts/visual-audit/${AUDIT_LABEL:-pdf-audit}/actual-export.png",
     "check:chrome": "node scripts/check-chrome-parity.mjs"
   },
   "dependencies": {

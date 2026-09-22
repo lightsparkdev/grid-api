@@ -55,13 +55,93 @@ const framePresentBeforeAfterprint =
   (await page.locator('iframe[title="Statement PDF"]').count()) === 1;
 assert.equal(framePresentBeforeAfterprint, true);
 await writeFile(new URL('print-document.html', output), artifact.html);
+await writeFile(new URL('actual-export.html', output), artifact.html);
 
 const pdfPage = await context.newPage();
 await pdfPage.setContent(artifact.html, { waitUntil: 'load' });
+await pdfPage.emulateMedia({ media: 'print' });
+await pdfPage.evaluate(() => document.fonts.ready);
+const printMetrics = await pdfPage.evaluate(() => {
+  const article = document.querySelector('article');
+  const masthead = article?.querySelector('header');
+  const title = masthead?.querySelector('strong');
+  const footer = article?.querySelector('footer');
+  const values = Array.from(document.querySelectorAll('[data-amount-value]'));
+  if (!article || !masthead || !title || !footer) {
+    throw new Error('Missing printable statement structure');
+  }
+  const titleBox = title.getBoundingClientRect();
+  const amountColumnBox = values[0]?.parentElement?.getBoundingClientRect();
+  if (!amountColumnBox) throw new Error('Missing printable amount column');
+  const parseRgb = (value) =>
+    value
+      .match(/[\d.]+/g)
+      ?.slice(0, 3)
+      .map(Number) ?? [];
+  const luminance = (value) => {
+    const channels = parseRgb(value).map((channel) => {
+      const normalized = channel / 255;
+      return normalized <= 0.04045
+        ? normalized / 12.92
+        : ((normalized + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  };
+  const contrast = (foreground, background) => {
+    const first = luminance(foreground);
+    const second = luminance(background);
+    return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+  };
+  return {
+    titleRightDelta:
+      Math.round((amountColumnBox.right - titleBox.right) * 100) / 100,
+    legalContrast: contrast(
+      getComputedStyle(footer).color,
+      getComputedStyle(article).backgroundColor,
+    ),
+    flags: values
+      .map((value) => {
+        const flag = value.nextElementSibling;
+        if (!(flag instanceof HTMLElement)) return null;
+        const valueBox = value.getBoundingClientRect();
+        const flagBox = flag.getBoundingClientRect();
+        const style = getComputedStyle(flag);
+        return {
+          gap: Math.round((flagBox.left - valueBox.right) * 100) / 100,
+          raisedBy: Math.round((valueBox.top - flagBox.top) * 100) / 100,
+          position: style.position,
+          verticalAlign: style.verticalAlign,
+          fontVariantNumeric: style.fontVariantNumeric,
+        };
+      })
+      .filter(Boolean),
+  };
+});
+assert.equal(printMetrics.titleRightDelta, 0);
+assert(printMetrics.legalContrast >= 4.5);
+assert.deepEqual(
+  printMetrics.flags,
+  printMetrics.flags.map((flag) => ({
+    gap: 2,
+    raisedBy: flag.raisedBy,
+    position: 'static',
+    verticalAlign: 'super',
+    fontVariantNumeric: 'tabular-nums',
+  })),
+);
+assert(printMetrics.flags.every((flag) => flag.raisedBy > 0));
+await pdfPage.screenshot({
+  path: new URL('print-document.png', output).pathname,
+  fullPage: true,
+});
+await pdfPage.screenshot({
+  path: new URL('actual-export-html.png', output).pathname,
+  fullPage: true,
+});
 await pdfPage.pdf({
   path: new URL('actual-export.pdf', output).pathname,
   format: 'Letter',
-  displayHeaderFooter: true,
+  displayHeaderFooter: false,
   preferCSSPageSize: true,
   printBackground: true,
 });
@@ -123,6 +203,7 @@ await writeFile(
     framePresentBeforeAfterprint,
     frameRemovedAfterAfterprint,
     webkitFrameRemovedAfterAfterprint,
+    printMetrics,
     errors,
     webkitErrors,
   }, null, 2)}\n`,

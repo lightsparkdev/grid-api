@@ -73,7 +73,13 @@ describe('statement API projection', () => {
         });
         if (transaction.type === 'CARD') {
           expect(transaction).toMatchObject({
-            merchant: { descriptor: expect.any(String) },
+            description: 'BLUE BOTTLE COFFEE',
+            merchant: {
+              descriptor: 'BLUE BOTTLE COFFEE',
+              city: 'Los Angeles',
+              state: 'CA',
+              country: 'US',
+            },
             authorizedAmount: { amount: expect.any(Number) },
             settledAmount: { amount: expect.any(Number) },
             accountId: statement.account.id,

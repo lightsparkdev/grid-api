@@ -113,7 +113,7 @@ describe('ShareSheet', () => {
     await waitFor(() => expect(document.activeElement).toBe(trigger));
 
     fireEvent.click(trigger);
-    fireEvent.click(container.querySelector('div[aria-hidden]') as HTMLElement);
+    fireEvent.click(container.querySelector('[data-share-backdrop]') as HTMLElement);
     await waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 

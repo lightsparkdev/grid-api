@@ -4,8 +4,7 @@
   position: absolute;
   inset: 0;
   z-index: 2;
-  background: color-mix(in srgb, var(--dot-grid-bg) 92%, transparent);
-  backdrop-filter: blur(3px);
+  background: transparent;
 }
 
 .panel {
@@ -27,7 +26,7 @@
   border-radius: calc(var(--corner-radius-md) + var(--spacing-sm));
   background: var(--panel-bg);
   box-shadow: var(--shadow-lg);
-  transform-origin: 50% 100%;
+  transform-origin: 50% 0;
 }
 
 .panel[data-preview-mode='mobile'] {

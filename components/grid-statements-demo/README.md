@@ -103,3 +103,6 @@ CLI preview URLs are hash-based (`grid-statements-demo-<hash>-lightspark-team.ve
 `src/statement/types.ts` defines the statement model. `src/statement/fixtures.ts` derives rendered
 rows and balances. `src/statement/api.ts` derives the API request and response samples from the
 same activities.
+
+`docs/reg-e-coverage.md` maps the consumer sample to the covered Reg E fields.
+`docs/prd-checklist.md` records the product and export checks.
