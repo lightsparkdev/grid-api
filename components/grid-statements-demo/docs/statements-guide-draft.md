@@ -1,3 +1,16 @@
+# Periodic statements guide (draft)
+
+DRAFT, NOT PUBLISHED. Held 2026-09-22 pending:
+
+- (a) Settled ownership of statement generation and delivery. The PRD says Grid generates. MSA §2.6(c) says Lightspark provides required notices. This draft said the partner produces.
+- (b) Legal review of §1005.18 prepaid applicability and of commercial error language.
+- (c) Accuracy fixes: `paymentRail` is not a top-level transaction field; the amount rule must key on `type`, not `direction`; `balance` is current-only; card transactions carry no `fees`; RTP Reg E coverage is unverified; the 60-day window runs from the send date.
+
+Source: `mintlify/cards/statements-guide.mdx` as of PR #1032 commit `b45defc2`. Open items live in [prd-checklist.md](./prd-checklist.md).
+
+The original MDX frontmatter follows, then the page body unchanged.
+
+```yaml
 ---
 title: "Periodic statements"
 description: "What a periodic statement contains, who receives one, and how to build one from Grid account and transaction data"
@@ -5,6 +18,7 @@ icon: "/images/icons/IconNewspaper2.svg"
 "og:title": "Grid periodic statements guide"
 "og:image": "/images/og/og-cards-playground.webp"
 ---
+```
 
 To see a consumer or commercial statement built from sample API data, open the [Statements playground](/cards/statements).
 

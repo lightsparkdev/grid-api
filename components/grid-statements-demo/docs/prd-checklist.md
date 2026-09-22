@@ -21,3 +21,4 @@ The following items are planned or open. None of them exist in the API today.
 - Delivery confirmation for a statement. The product requirements plan to reuse the receipt confirmation endpoint. It accepts a transaction ID, not a statement, so it cannot confirm a statement today.
 - The availability window after cycle close, in business days.
 - Legal review of two items: whether the prepaid-account disclosures in 12 CFR 1005.18 apply, including fee totals for the prior month and year to date, and whether commercial statements need any error-reporting language.
+- The periodic statements guide is held. The unpublished draft and its hold reasons are in [statements-guide-draft.md](./statements-guide-draft.md).
