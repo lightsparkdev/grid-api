@@ -1,36 +1,32 @@
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 
-.glass {
-  position: absolute;
-  top: var(--spacing-md);
-  left: 50%;
-  z-index: 1;
-  overflow: hidden;
-  border-radius: 1000px;
-  transform: translateX(-50%);
-}
-
-.group {
+.audienceToggle {
   display: flex;
-  padding: 4px;
+  align-items: center;
+  gap: var(--spacing-4xs);
+  padding: var(--spacing-3xs);
+  background: var(--surface-elevated);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
 }
 
-.option {
+.audienceTab {
   all: unset;
+  corner-shape: squircle;
+  box-sizing: border-box;
   @include label-sm;
   display: flex;
-  min-width: 92px;
-  height: 36px;
   align-items: center;
-  justify-content: center;
-  gap: var(--spacing-xs);
-  border-radius: 1000px;
-  color: var(--text-secondary);
+  height: 24px;
+  padding: 0 var(--spacing-xs);
+  border-radius: var(--corner-radius-xs);
   cursor: pointer;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-feature-settings: 'salt' 1;
+  transition: background 150ms ease, color 150ms ease;
 
-  &[data-active] {
-    background: color-mix(in srgb, var(--surface-primary) 90%, transparent);
-    box-shadow: var(--shadow-sm);
+  &:hover {
     color: var(--text-primary);
   }
 
@@ -40,9 +36,8 @@
   }
 }
 
-@media (max-width: 767px) {
-  .glass {
-    position: fixed;
-    top: 68px;
-  }
+.audienceTabActive {
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  color: var(--text-primary);
 }

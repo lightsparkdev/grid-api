@@ -84,9 +84,14 @@ export function StatementPanel({
           </svg>
         }
         title="Statement preview"
+        actions={
+          <DeviceToggle
+            value={preview.mode}
+            onChange={onPreviewModeChange}
+          />
+        }
       />
       <div className={styles.stage}>
-        <DeviceToggle value={preview.mode} onChange={onPreviewModeChange} />
         {mounted ? (
           <StatementPreview
             mode={preview.mode}

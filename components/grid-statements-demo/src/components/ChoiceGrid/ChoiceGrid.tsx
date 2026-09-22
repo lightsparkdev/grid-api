@@ -1,7 +1,9 @@
 'use client';
 
-import React, { type ElementType, type KeyboardEvent } from 'react';
+import React, { type ElementType, type KeyboardEvent, useId } from 'react';
 import clsx from 'clsx';
+import { motion } from 'motion/react';
+import { motionTransition } from '@/lib/easing';
 import { pressable } from '@/lib/sounds';
 import styles from './ChoiceGrid.module.scss';
 
@@ -26,6 +28,7 @@ export function ChoiceGrid<Value extends string>({
   options,
   onChange,
 }: ChoiceGridProps<Value>) {
+  const layoutGroupId = useId();
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
     event.preventDefault();
@@ -46,23 +49,37 @@ export function ChoiceGrid<Value extends string>({
       aria-label={label}
       onKeyDown={onKeyDown}
     >
-      {options.map(({ id, label: optionLabel, Icon }) => (
-        <button
-          key={id}
-          type="button"
-          role="radio"
-          aria-checked={value === id}
-          tabIndex={value === id ? 0 : -1}
-          data-choice={id}
-          className={clsx(styles.option, value !== id && styles.optionEnabled)}
-          {...pressable({ onClick: () => onChange(id) })}
-        >
-          <span className={styles.optionIcon}>
-            <Icon size={24} />
-          </span>
-          <span className={styles.optionLabel}>{optionLabel}</span>
-        </button>
-      ))}
+      {options.map(({ id, label: optionLabel, Icon }) => {
+        const selected = value === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            tabIndex={selected ? 0 : -1}
+            data-choice={id}
+            className={clsx(styles.option, selected && styles.optionSelected)}
+            {...pressable({ onClick: () => onChange(id) })}
+          >
+            {selected ? (
+              <motion.span
+                layoutId={`${layoutGroupId}-active-ring`}
+                className={styles.activeRing}
+                data-active-ring
+                transition={motionTransition(undefined, 0.22)}
+                aria-hidden
+              />
+            ) : null}
+            <span className={styles.content}>
+              <span className={styles.optionIcon}>
+                <Icon size={22} />
+              </span>
+              <span className={styles.optionLabel}>{optionLabel}</span>
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

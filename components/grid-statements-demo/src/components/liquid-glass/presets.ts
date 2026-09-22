@@ -25,27 +25,3 @@ export const PHONE_SHELL_GLASS: GlassConfig = {
   edgeShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
   mapSize: 512,
 };
-
-export const TEXT_GLASS: GlassConfig = {
-  radius: 1000,
-  depth: 0.5,
-  scale: 12,
-  chromaticAberration: 0.3,
-  blur: 0,
-  domeDepth: 18,
-  splay: 0.6,
-  specularRotation: 45,
-  specularStrength: 1,
-  glowStrength: 0.06,
-  glowSpread: 0.5,
-  glowExponent: 1.5,
-  edgeStrength: 1,
-  edgeWidth: 2,
-  edgeExponent: 1.5,
-  brightness: 0.05,
-  cornerSmoothing: 0,
-  mapSize: 128,
-};
-
-export const TEXT_GLASS_BACKDROP =
-  'linear-gradient(180deg, #ffffff 0%, #ebebef 100%)';

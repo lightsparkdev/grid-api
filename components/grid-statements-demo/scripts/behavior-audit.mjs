@@ -90,6 +90,13 @@ const { page } = primary;
 await page.getByRole('status', { name: 'Loading statement' }).waitFor();
 await page.getByText('listTransactions').waitFor();
 await page.getByRole('button', { name: 'Export' }).waitFor();
+assert.equal(
+  await page.getByRole('radiogroup', { name: 'Preview device' }).evaluate((element) =>
+    element.closest('header')?.textContent?.includes('Statement preview'),
+  ),
+  true,
+  'the device toggle must be in the statement preview header',
+);
 const appPreview = page.locator(
   '[class*="StatementPanel_stage"] > [data-preview-shell="mobile"]',
 );
@@ -206,6 +213,14 @@ assert.equal(printed.fromFrame, true, 'the PDF must print an isolated document')
 assert.match(printed.text, /September statement/);
 assert.match(printed.text, /Total fees for period/);
 assert.doesNotMatch(printed.text, /Explore playground|listTransactions|Configure statement/);
+const printFrame = page.locator('iframe[title="Statement PDF"]');
+assert.equal(await printFrame.count(), 1, 'the print iframe must remain before afterprint');
+await printFrame.evaluate((element) => {
+  const frame = element;
+  const target = frame.contentWindow;
+  if (target) target.dispatchEvent(new target.Event('afterprint'));
+});
+await printFrame.waitFor({ state: 'detached' });
 
 await page.getByRole('button', { name: 'Export' }).click();
 const downloadPromise = page.waitForEvent('download');

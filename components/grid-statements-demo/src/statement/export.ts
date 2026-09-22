@@ -1,6 +1,8 @@
 import type { StatementModel } from './types';
 import { statementFileStem } from './presentation';
 
+export const PRINT_FALLBACK_MS = 5 * 60_000;
+
 const EXPORTED_PROPERTIES = [
   'align-items',
   'background',
@@ -93,7 +95,7 @@ export async function buildStatementHtml(
   );
 
   clone.style.maxWidth = '600px';
-  clone.style.margin = '32px auto';
+  clone.style.margin = '0 auto';
   clone.style.fontFamily = 'Arial, Helvetica, sans-serif';
 
   return [
@@ -103,7 +105,7 @@ export async function buildStatementHtml(
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     `<title>${title.replace(/[<>&"]/g, '')}</title>`,
-    '<style>@page{size:auto;margin:12mm}html{background:#fff}body{margin:0;padding:1px;font-family:Arial,Helvetica,sans-serif}@media print{body{padding:0}article{margin:0 auto!important;box-shadow:none!important}}</style>',
+    '<style>@page{size:auto;margin:0}html{background:#fff}body{box-sizing:border-box;margin:0;padding:12mm;font-family:Arial,Helvetica,sans-serif}@media print{article{margin:0 auto!important;box-shadow:none!important}}</style>',
     '</head>',
     `<body>${clone.outerHTML}</body>`,
     '</html>',
@@ -121,29 +123,35 @@ export async function printStatementHtml(source: HTMLElement, title: string) {
   frame.style.pointerEvents = 'none';
   document.body.append(frame);
 
-  const target = frame.contentWindow;
-  if (!target) {
+  try {
+    const target = frame.contentWindow;
+    if (!target) throw new Error('Could not create the print document.');
+    target.document.open();
+    target.document.write(html);
+    target.document.close();
+    await Promise.all(
+      Array.from(target.document.images).map((image) =>
+        image.complete
+          ? Promise.resolve()
+          : new Promise<void>((resolve) => {
+              image.addEventListener('load', () => resolve(), { once: true });
+              image.addEventListener('error', () => resolve(), { once: true });
+            }),
+      ),
+    );
+    target.focus();
+    let fallback = 0;
+    const cleanup = () => {
+      window.clearTimeout(fallback);
+      frame.remove();
+    };
+    target.addEventListener('afterprint', cleanup, { once: true });
+    fallback = window.setTimeout(cleanup, PRINT_FALLBACK_MS);
+    target.print();
+  } catch (error) {
     frame.remove();
-    throw new Error('Could not create the print document.');
+    throw error;
   }
-  target.document.open();
-  target.document.write(html);
-  target.document.close();
-  await Promise.all(
-    Array.from(target.document.images).map((image) =>
-      image.complete
-        ? Promise.resolve()
-        : new Promise<void>((resolve) => {
-            image.addEventListener('load', () => resolve(), { once: true });
-            image.addEventListener('error', () => resolve(), { once: true });
-          }),
-    ),
-  );
-  target.focus();
-  const cleanup = () => frame.remove();
-  target.addEventListener('afterprint', cleanup, { once: true });
-  target.print();
-  window.setTimeout(cleanup, 60_000);
 }
 
 export function downloadHtml(html: string, filename: string) {

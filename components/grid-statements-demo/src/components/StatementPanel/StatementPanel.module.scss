@@ -39,7 +39,7 @@
   flex: 1;
   justify-content: center;
   overflow: hidden;
-  padding: 76px var(--spacing-xl) 64px;
+  padding: var(--spacing-xl) var(--spacing-xl) 64px;
   background:
     radial-gradient(
       circle,
@@ -56,7 +56,7 @@
   }
 
   .stage {
-    padding: 76px var(--spacing-sm) 56px;
+    padding: var(--spacing-xl) var(--spacing-sm) 56px;
   }
 }
 

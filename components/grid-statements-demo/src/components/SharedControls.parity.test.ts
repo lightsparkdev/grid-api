@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { TEXT_GLASS } from './liquid-glass/presets';
 
 const copiedControls = [
   'PanelHeader/PanelHeader.tsx',
@@ -29,39 +28,56 @@ describe('copied Cards controls', () => {
     expect(source).toContain('bottom: 84px');
   });
 
-  it('uses the exact Cards Explore flow cell states', () => {
-    expect(
-      readFileSync(
-        resolve(process.cwd(), 'src/components/ChoiceGrid/ChoiceGrid.module.scss'),
-      ),
-    ).toEqual(
-      readFileSync(
-        resolve(
-          process.cwd(),
-          '../grid-cards-demo/src/components/FlowPicker/FlowPicker.module.scss',
-        ),
-      ),
+  it('uses the complete Wallet Select platform cell states', () => {
+    const local = readFileSync(
+      resolve(process.cwd(), 'src/components/ChoiceGrid/ChoiceGrid.module.scss'),
+      'utf8',
     );
-  });
+    const wallet = readFileSync(
+      resolve(
+        process.cwd(),
+        '../grid-wallet-demo/src/components/UseCasePicker/UseCasePicker.module.scss',
+      ),
+      'utf8',
+    );
+    const rename = (source: string) =>
+      source
+        .replaceAll('.cardSelected', '.optionSelected')
+        .replaceAll('.card', '.option')
+        .replaceAll('.icon', '.optionIcon')
+        .replaceAll('.label', '.optionLabel');
 
-  it('tunes the device toggle with the Wallet pill glass preset', () => {
-    expect(TEXT_GLASS).toEqual(walletPreset('TEXT_GLASS'));
+    for (const selector of [
+      '.group',
+      '.card',
+      '.cardSelected',
+      '.activeRing',
+      '.content',
+      '.icon',
+      '.label',
+    ]) {
+      expect(normalizeScss(scssBlock(local, rename(selector)))).toBe(
+        normalizeScss(rename(scssBlock(wallet, selector))),
+      );
+    }
+    expect(local).toContain('var(--color-sky-500) 17%');
+    expect(local).toContain('var(--color-blue-500) 41%');
+    expect(local).toContain('var(--color-green-600) 100%');
   });
 });
 
-/** Reads one named `GlassConfig` literal out of the Wallet source of truth. */
-function walletPreset(name: string): Record<string, number> {
-  const source = readFileSync(
-    resolve(process.cwd(), '../grid-wallet-demo/src/apps/shared/glass/presets.ts'),
-    'utf8',
-  );
-  const block = new RegExp(
-    `export const ${name}: GlassConfig = \\{([\\s\\S]*?)\\n\\};`,
-  ).exec(source);
-  if (!block) throw new Error(`${name} is no longer declared in the Wallet presets`);
-  const values: Record<string, number> = {};
-  for (const [, key, value] of block[1].matchAll(/^\s*([a-zA-Z]+): (-?[\d.]+),$/gm)) {
-    values[key] = Number(value);
+function scssBlock(source: string, selector: string): string {
+  const start = source.indexOf(`${selector} {`);
+  if (start < 0) throw new Error(`${selector} is no longer declared`);
+  let depth = 0;
+  for (let index = source.indexOf('{', start); index < source.length; index += 1) {
+    if (source[index] === '{') depth += 1;
+    if (source[index] === '}') depth -= 1;
+    if (depth === 0) return source.slice(start, index + 1);
   }
-  return values;
+  throw new Error(`${selector} is not closed`);
+}
+
+function normalizeScss(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '').replace(/\s+/g, '');
 }

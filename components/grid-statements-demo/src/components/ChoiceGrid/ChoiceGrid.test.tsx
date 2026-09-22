@@ -51,5 +51,7 @@ describe('ChoiceGrid', () => {
     expect(commercial.tabIndex).toBe(0);
     expect(consumer.tabIndex).toBe(-1);
     expect(document.activeElement).toBe(commercial);
+    expect(consumer.querySelector('[data-active-ring]')).toBeNull();
+    expect(commercial.querySelector('[data-active-ring]')).not.toBeNull();
   });
 });

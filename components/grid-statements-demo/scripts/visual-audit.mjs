@@ -4,12 +4,15 @@ import { chromium } from 'playwright';
 const cardsUrl = process.env.CARDS_URL ?? 'http://127.0.0.1:4002';
 const statementsUrl = process.env.STATEMENTS_URL ?? 'http://127.0.0.1:4003';
 const label = process.env.AUDIT_LABEL ?? 'current';
+const phase = process.env.AUDIT_PHASE ?? 'after';
 const output = new URL(`../.artifacts/visual-audit/${label}/`, import.meta.url);
 const cases = [
   { name: '1280-light', width: 1280, height: 1000, theme: 'light' },
   { name: '1280-dark', width: 1280, height: 1000, theme: 'dark' },
   { name: '1680-light', width: 1680, height: 1050, theme: 'light' },
   { name: '1680-dark', width: 1680, height: 1050, theme: 'dark' },
+  { name: '1920-light', width: 1920, height: 1080, theme: 'light' },
+  { name: '1920-dark', width: 1920, height: 1080, theme: 'dark' },
   { name: '2560-light', width: 2560, height: 1200, theme: 'light' },
   { name: '2560-dark', width: 2560, height: 1200, theme: 'dark' },
   { name: 'stacked-light', width: 1440, height: 1100, theme: 'light' },
@@ -53,7 +56,7 @@ for (const auditCase of cases) {
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(500);
 
-    const baseName = `${app.name}-${auditCase.name}`;
+    const baseName = `${phase}-${app.name}-${auditCase.name}`;
     await page.screenshot({ path: new URL(`${baseName}.png`, output).pathname, fullPage: true });
     const metrics = await page.evaluate(() => {
       const rect = (selector) => {
@@ -81,9 +84,6 @@ for (const auditCase of cases) {
         shell: rect('[class*="AppShell_frame"]'),
         deviceToggle: rect('[role="radiogroup"][aria-label="Preview device"]'),
         stage: rect('[class*="StatementPanel_stage"]'),
-        liquidGlassFilters: document.querySelectorAll(
-          '[class*="DeviceToggle_glass"] filter',
-        ).length,
         secondaryBackgroundControl: Array.from(
           document.querySelectorAll('span'),
         ).some((element) => element.textContent === 'Secondary background'),
@@ -93,7 +93,7 @@ for (const auditCase of cases) {
         },
       };
     });
-    const entry = { app: app.name, case: auditCase.name, metrics, errors };
+    const entry = { phase, app: app.name, case: auditCase.name, metrics, errors };
     evidence.push(entry);
 
     if (app.name === 'statements' && !auditCase.mobile) {
