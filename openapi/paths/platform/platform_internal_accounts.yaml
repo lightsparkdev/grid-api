@@ -4,6 +4,8 @@ get:
     Retrieve a list of all internal accounts that belong to the platform, as opposed to an individual customer.
 
     These accounts are created automatically when the platform is configured for each supported currency. They can be used for things like distributing bitcoin rewards to customers, or for other platform-wide purposes.
+
+    A `BULK_SETTLEMENT` account is the exception. Lightspark provisions it on request, and it is listed here alongside the platform's other accounts.
   operationId: listPlatformInternalAccounts
   tags:
     - Internal Accounts
@@ -21,9 +23,10 @@ get:
       description: >-
         Filter by internal account type. Use `EMBEDDED_WALLET` to find the
         self-custodial wallet provisioned for a customer, `INTERNAL_FIAT` /
-        `INTERNAL_CRYPTO` for the platform-managed holding accounts, or
+        `INTERNAL_CRYPTO` for the platform-managed holding accounts,
         `RULE_BASED` for the additional account numbers issued with a sweep
-        rule.
+        rule, or `BULK_SETTLEMENT` for the account that receives bulk
+        settlements.
       required: false
       schema:
         $ref: ../../components/schemas/customers/InternalAccountType.yaml
