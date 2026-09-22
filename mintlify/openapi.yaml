@@ -905,22 +905,12 @@ paths:
 
         The hosted link is one of two ways to verify a customer. To collect the data yourself instead, submit it through `POST /customers`, `POST /beneficial-owners` (business customers), and `POST /documents`, then call `POST /verifications`. Both paths produce the same status transitions and the same `CUSTOMER.KYC_*` / `CUSTOMER.KYB_*` webhooks.
 
-        Each call returns a fresh link. Previously-issued links are not invalidated, but they remain single-use and will expire on their own. For request-level retry safety, include an `Idempotency-Key` header.
+        Each call returns a fresh link. Previously-issued links are not invalidated, but they remain single-use and will expire on their own.
       operationId: createCustomerKycLink
       tags:
         - KYC/KYB Verifications
       security:
         - BasicAuth: []
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          required: false
-          description: |
-            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
-          schema:
-            type: string
-            maxLength: 255
-            example: <uuid>
       requestBody:
         required: false
         content:
