@@ -129,6 +129,18 @@ for (const auditCase of cases) {
       await page.getByRole('button', { name: 'Export' }).click();
       const sheet = page.getByRole('dialog', { name: 'Export statement' });
       await sheet.waitFor();
+      await page.waitForFunction(() => {
+        const panel = document.querySelector('[aria-label="Export statement"]');
+        if (!panel) return false;
+        const style = getComputedStyle(panel);
+        const transform = new DOMMatrixReadOnly(style.transform);
+        return (
+          Math.abs(transform.a - 1) < 0.001 &&
+          Math.abs(transform.d - 1) < 0.001 &&
+          Math.abs(transform.m42) < 0.5 &&
+          style.filter === 'blur(0px)'
+        );
+      });
       entry.metrics.shareSheet = await sheet.evaluate((element) => {
         const box = element.getBoundingClientRect();
         return {
