@@ -68,7 +68,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 </Info>
 
 <Tip>
-  The `paymentRail` field is optional. If omitted, Grid selects a default rail for the destination. Specify a rail (e.g., `ACH`, `ACH_SAME_DAY`, `WIRE`, `RTP`, `FEDNOW`) when you need to control which payment network processes the transfer. `ACH_SAME_DAY` is never selected for you: it requests same-business-day settlement and is priced separately. Above the NACHA per-entry same-day limit it settles on the standard schedule and is priced accordingly.
+  The `paymentRail` field is optional. If omitted, Grid selects a default rail for the destination. Specify a rail (e.g., `ACH`, `ACH_SAME_DAY`, `WIRE`, `RTP`, `FEDNOW`) when you need to control which payment network processes the transfer. `ACH_SAME_DAY` is never selected for you: it requests same-business-day settlement and is priced separately. It is capped at $1,000,000 per entry by the NACHA same-day limit (rising to $10,000,000 on 2027-09-17); a payout above that is rejected, so send it over `ACH` instead.
 </Tip>
 
 <Info>
