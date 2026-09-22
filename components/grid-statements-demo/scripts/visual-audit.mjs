@@ -401,9 +401,7 @@ const desktopFailures = evidence
     if (!(fit.scale > 0 && fit.scale <= 1)) failures.push('fit scale');
     if (!sunken?.token) failures.push('sunken token');
     if (sunken?.matchesToken !== true) failures.push('sunken token resolution');
-    if (sunken?.chromeSurfacesMatchPrimary !== true) {
-      failures.push('primary chrome surfaces');
-    }
+    if (sunken?.frameSurfacesMatch !== true) failures.push('sunken frame surfaces');
     if (sunken?.documentMatchesPrimary !== true) failures.push('document primary surface');
     if (sunken?.documentLifted !== true) failures.push('document surface contrast');
     if (entry.metrics.directExportFrameSignatureMatch !== true) {
