@@ -92,13 +92,49 @@ describe('StatementPreview', () => {
       <StatementPreview mode="desktop" phase="ready" statement={statement} />,
     );
     const mark = container.querySelector('[data-statement-brand-mark]');
-    const sidebar = container.querySelector('[data-statement-sidebar]');
+    const content = container.querySelector('[data-statement-rail-content]');
 
     expect(mark?.textContent).toBe('N');
     expect(mark?.getAttribute('aria-hidden')).toBe('true');
-    expect(sidebar?.getAttribute('aria-hidden')).toBe('true');
-    expect(sidebar?.querySelectorAll('[data-statement-placeholder]')).toHaveLength(3);
-    expect(sidebar?.textContent).toBe('');
+    expect(content?.getAttribute('aria-hidden')).toBe('true');
+    expect(content?.querySelectorAll('[data-statement-placeholder]')).toHaveLength(3);
+    expect(content?.textContent).toBe('');
+    expect(content?.querySelectorAll('img, svg')).toHaveLength(0);
+  });
+
+  it('lays the desktop frame out as a rail beside a main column', () => {
+    const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
+    const { container } = render(
+      <StatementPreview mode="desktop" phase="ready" statement={statement} />,
+    );
+    const frame = container.querySelector('[data-statement-frame]') as HTMLElement;
+    const sidebar = container.querySelector('[data-statement-sidebar]') as HTMLElement;
+    const main = container.querySelector('[data-statement-main]') as HTMLElement;
+    const header = container.querySelector('[data-statement-header]') as HTMLElement;
+    const footer = container.querySelector('[data-statement-rail-footer]') as HTMLElement;
+    const scroll = container.querySelector('[data-statement-scroll]') as HTMLElement;
+    const tagsOf = (element: Element) => Array.from(element.children, (child) => child.tagName);
+    const railZones = Array.from(sidebar.children, (child) =>
+      ['rail-header', 'rail-content', 'rail-footer'].find((zone) =>
+        child.hasAttribute(`data-statement-${zone}`),
+      ),
+    );
+
+    expect(tagsOf(frame)).toEqual(['ASIDE', 'DIV']);
+    expect(frame.children[0]).toBe(sidebar);
+    expect(frame.children[1]).toBe(main);
+    expect(railZones).toEqual(['rail-header', 'rail-content', 'rail-footer']);
+    expect(sidebar.lastElementChild).toBe(footer);
+    expect(tagsOf(main)).toEqual(['DIV', 'DIV']);
+    expect(main.children[0]).toBe(header);
+    expect(main.children[1]).toBe(scroll);
+    expect(header.children).toHaveLength(0);
+    expect(header.textContent).toBe('');
+    expect(footer.children).toHaveLength(0);
+    expect(footer.textContent).toBe('');
+    expect(scroll.hasAttribute('data-statement-main')).toBe(false);
+    expect(main.hasAttribute('data-statement-scroll')).toBe(false);
+    expect(scroll.querySelector('article')).toBeTruthy();
   });
 
   it('keeps the desktop loading branch on the themed screen', () => {

@@ -16,11 +16,13 @@ assert.match(
   /--statement-hairline:\s*color-mix\(\s*in srgb,\s*var\(--statement-primary-text\) 10%,\s*transparent\s*\);/,
   'the desktop frame must use the statement hairline source declaration',
 );
-assert.match(
-  previewStyles,
-  /border-(?:bottom|right):\s*0\.5px solid var\(--statement-hairline\)/,
-  'the desktop frame must use the statement hairline for its dividers',
-);
+for (const divider of ['right', 'top', 'bottom']) {
+  assert.match(
+    previewStyles,
+    new RegExp(`border-${divider}:\\s*0\\.5px solid var\\(--statement-hairline\\)`),
+    `the desktop frame must use the statement hairline for its ${divider} divider`,
+  );
+}
 
 async function openPage(width, height, reducedMotion = 'no-preference') {
   const context = await browser.newContext({
@@ -104,34 +106,58 @@ async function expectReload(page, account) {
 
 async function statementFrameSignature(frame) {
   return frame.evaluate((element) => {
-    const header = element.querySelector('[data-statement-header]');
-    const layout = element.querySelector('[data-statement-layout]');
     const sidebar = element.querySelector('[data-statement-sidebar]');
+    const railHeader = element.querySelector('[data-statement-rail-header]');
+    const railContent = element.querySelector('[data-statement-rail-content]');
+    const railFooter = element.querySelector('[data-statement-rail-footer]');
     const main = element.querySelector('[data-statement-main]');
+    const header = element.querySelector('[data-statement-header]');
+    const scroll = element.querySelector('[data-statement-scroll]');
     const mark = element.querySelector('[data-statement-brand-mark]');
     const name = element.querySelector('[data-statement-brand-name]');
-    const surfaces = [element, header, sidebar, main];
+    const surfaces = [element, sidebar, railHeader, railContent, railFooter, main, header, scroll];
+    const box = (node) => node.getBoundingClientRect();
+    const frameBox = box(element);
+    const railBox = box(sidebar);
+    const zoneHeights = [railHeader, railContent, railFooter].reduce(
+      (total, zone) => total + box(zone).height,
+      0,
+    );
     return {
+      frameDirection: getComputedStyle(element).flexDirection,
       frameChildren: Array.from(element.children, (child) => child.tagName),
-      layoutChildren: Array.from(layout?.children ?? [], (child) => child.tagName),
-      headerChildren: Array.from(header?.children ?? [], (child) => child.tagName),
-      headerControls: header?.querySelectorAll('button, i, [class*="windowControl"]').length,
-      headerHeadings: header?.querySelectorAll('h1, h2, h3, h4, h5, h6').length,
-      headerHasStatementsTitle: header?.textContent?.trim() === 'Statements',
+      railZones: Array.from(
+        sidebar.children,
+        (child) =>
+          ['rail-header', 'rail-content', 'rail-footer'].find((zone) =>
+            child.hasAttribute(`data-statement-${zone}`),
+          ) ?? child.tagName,
+      ),
+      railHeaderChildren: Array.from(railHeader.children, (child) => child.tagName),
+      mainChildren: Array.from(main.children, (child) => child.tagName),
+      headerChildren: Array.from(header.children, (child) => child.tagName),
+      headerText: header.textContent,
+      footerChildren: Array.from(railFooter.children, (child) => child.tagName),
+      footerText: railFooter.textContent,
       companyName: name?.textContent,
       imageAlt: mark?.querySelector('img')?.getAttribute('alt') ?? null,
-      sidebarHidden: sidebar?.getAttribute('aria-hidden'),
-      placeholderCount: sidebar?.querySelectorAll('[data-statement-placeholder]').length,
-      placeholderText: sidebar?.textContent,
-      placeholderGraphics: sidebar?.querySelectorAll('img, svg').length,
+      railContentHidden: railContent.getAttribute('aria-hidden'),
+      placeholderCount: railContent.querySelectorAll('[data-statement-placeholder]').length,
+      placeholderText: railContent.textContent,
+      placeholderGraphics: railContent.querySelectorAll('img, svg').length,
       desktopTitleCount: Array.from(element.querySelectorAll('article header > strong')).filter(
         (node) => node.textContent?.trim() === 'September statement',
       ).length,
       surfaces: surfaces.map((surface) => getComputedStyle(surface).backgroundColor),
       headerBorderWidth: getComputedStyle(header).borderBottomWidth,
+      footerBorderWidth: getComputedStyle(railFooter).borderTopWidth,
       sidebarBorderWidth: getComputedStyle(sidebar).borderRightWidth,
       sidebarWidth: getComputedStyle(sidebar).width,
-      scrollAttribute: main?.hasAttribute('data-statement-scroll'),
+      railFillsFrame: Math.abs(railBox.height - frameBox.height) < 1,
+      zonesFillRail: Math.abs(zoneHeights - railBox.height) < 1,
+      footerAtRailBottom: Math.abs(box(railFooter).bottom - railBox.bottom) < 1,
+      mainRightOfRail: Math.abs(box(main).x - railBox.right) < 1,
+      scrollInsideMain: main.contains(scroll) && scroll !== main,
     };
   });
 }
@@ -203,43 +229,52 @@ await assertCallsRemain();
 const directFrame = page.locator('[data-statement-frame]');
 const directFrameSignature = await statementFrameSignature(directFrame);
 assert.deepEqual(directFrameSignature, {
-  frameChildren: ['HEADER', 'DIV'],
-  layoutChildren: ['ASIDE', 'DIV'],
-  headerChildren: ['SPAN', 'SPAN'],
-  headerControls: 0,
-  headerHeadings: 0,
-  headerHasStatementsTitle: false,
+  frameDirection: 'row',
+  frameChildren: ['ASIDE', 'DIV'],
+  railZones: ['rail-header', 'rail-content', 'rail-footer'],
+  railHeaderChildren: ['SPAN', 'SPAN'],
+  mainChildren: ['DIV', 'DIV'],
+  headerChildren: [],
+  headerText: '',
+  footerChildren: [],
+  footerText: '',
   companyName: 'Aurora live',
   imageAlt: '',
-  sidebarHidden: 'true',
+  railContentHidden: 'true',
   placeholderCount: 3,
   placeholderText: '',
   placeholderGraphics: 0,
   desktopTitleCount: 1,
-  surfaces: [
-    'rgb(250, 250, 250)',
-    'rgb(250, 250, 250)',
-    'rgb(250, 250, 250)',
-    'rgb(250, 250, 250)',
-  ],
+  surfaces: Array.from({ length: 8 }, () => 'rgb(250, 250, 250)'),
   headerBorderWidth: '1px',
+  footerBorderWidth: '1px',
   sidebarBorderWidth: '1px',
   sidebarWidth: '176px',
-  scrollAttribute: true,
+  railFillsFrame: true,
+  zonesFillRail: true,
+  footerAtRailBottom: true,
+  mainRightOfRail: true,
+  scrollInsideMain: true,
 });
 
 const desktopScroll = await page.locator('[data-statement-scroll]').evaluate((element) => {
+  const main = element.closest('[data-statement-main]');
+  const frame = element.closest('[data-statement-frame]');
   element.scrollTop = element.scrollHeight;
   return {
     overflowY: getComputedStyle(element).overflowY,
     scrollHeight: element.scrollHeight,
     clientHeight: element.clientHeight,
     scrollTop: element.scrollTop,
+    mainOverflow: main.scrollHeight - main.clientHeight,
+    frameOverflow: frame.scrollHeight - frame.clientHeight,
   };
 });
 assert.equal(desktopScroll.overflowY, 'auto');
 assert(desktopScroll.scrollHeight > desktopScroll.clientHeight);
 assert(desktopScroll.scrollTop > 0);
+assert.equal(desktopScroll.mainOverflow, 0, 'the main column must not scroll itself');
+assert.equal(desktopScroll.frameOverflow, 0, 'the desktop frame must not scroll itself');
 
 await page.getByRole('button', { name: 'Export' }).click();
 const exportSheet = page.getByRole('dialog', { name: 'Export statement' });

@@ -22,12 +22,13 @@
   height: 100%;
   min-width: 0;
   min-height: 0;
-  flex-direction: column;
+  flex-direction: row;
+  overflow: hidden;
   background: var(--statement-primary-background);
   color: var(--statement-primary-text);
 }
 
-.desktopHeader {
+.railHeader {
   display: flex;
   height: 52px;
   min-width: 0;
@@ -36,7 +37,6 @@
   gap: var(--spacing-sm);
   box-sizing: border-box;
   padding: 0 var(--spacing-xl);
-  border-bottom: 0.5px solid var(--statement-hairline);
   background: var(--statement-primary-background);
   color: var(--statement-primary-text);
   font-size: 13px;
@@ -71,29 +71,59 @@
   white-space: nowrap;
 }
 
-.desktopBody {
-  display: flex;
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-  flex: 1;
-  overflow: hidden;
-  background: var(--statement-primary-background);
-}
-
 .sidebar {
   --placeholder-base: color-mix(in srgb, var(--statement-primary-text) 6%, transparent);
   --placeholder-glint: color-mix(in srgb, var(--statement-primary-text) 14%, transparent);
   display: flex;
   width: 176px;
+  height: 100%;
   min-width: 176px;
   min-height: 0;
   flex: 0 0 176px;
   flex-direction: column;
+  box-sizing: border-box;
+  border-right: 0.5px solid var(--statement-hairline);
+  background: var(--statement-primary-background);
+}
+
+.railContent {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
   gap: var(--spacing-md);
   box-sizing: border-box;
   padding: var(--spacing-xl);
-  border-right: 0.5px solid var(--statement-hairline);
+  background: var(--statement-primary-background);
+}
+
+.railFooter {
+  height: 52px;
+  min-width: 0;
+  flex: 0 0 52px;
+  box-sizing: border-box;
+  border-top: 0.5px solid var(--statement-hairline);
+  background: var(--statement-primary-background);
+}
+
+.desktopMain {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--statement-primary-background);
+}
+
+.desktopHeader {
+  height: 52px;
+  min-width: 0;
+  flex: 0 0 52px;
+  box-sizing: border-box;
+  border-bottom: 0.5px solid var(--statement-hairline);
   background: var(--statement-primary-background);
 }
 

@@ -37,25 +37,29 @@ export function StatementPreview({ mode, phase, statement }: StatementPreviewPro
             <LoadingPreview />
           ) : (
             <div className={styles.desktopApp} data-statement-frame>
-              <header className={styles.desktopHeader} data-statement-header>
-                <span className={styles.brandMark} data-statement-brand-mark aria-hidden>
-                  {statement.brand.logo.kind === 'image' ? (
-                    <img src={statement.brand.logo.src} alt="" />
-                  ) : (
-                    brandMark
-                  )}
-                </span>
-                <span className={styles.companyName} data-statement-brand-name>
-                  {statement.brand.companyName}
-                </span>
-              </header>
-              <div className={styles.desktopBody} data-statement-layout>
-                <aside className={styles.sidebar} data-statement-sidebar aria-hidden>
+              <aside className={styles.sidebar} data-statement-sidebar>
+                <div className={styles.railHeader} data-statement-rail-header>
+                  <span className={styles.brandMark} data-statement-brand-mark aria-hidden>
+                    {statement.brand.logo.kind === 'image' ? (
+                      <img src={statement.brand.logo.src} alt="" />
+                    ) : (
+                      brandMark
+                    )}
+                  </span>
+                  <span className={styles.companyName} data-statement-brand-name>
+                    {statement.brand.companyName}
+                  </span>
+                </div>
+                <div className={styles.railContent} data-statement-rail-content aria-hidden>
                   <span className={styles.placeholder} data-statement-placeholder />
                   <span className={styles.placeholder} data-statement-placeholder />
                   <span className={styles.placeholder} data-statement-placeholder />
-                </aside>
-                <div className={styles.duoScroller} data-statement-main data-statement-scroll>
+                </div>
+                <div className={styles.railFooter} data-statement-rail-footer />
+              </aside>
+              <div className={styles.desktopMain} data-statement-main>
+                <div className={styles.desktopHeader} data-statement-header />
+                <div className={styles.duoScroller} data-statement-scroll>
                   <StatementDocument statement={statement} width="full" showMasthead />
                 </div>
               </div>

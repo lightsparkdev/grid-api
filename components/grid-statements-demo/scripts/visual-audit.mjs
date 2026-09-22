@@ -52,39 +52,74 @@ async function desktopFrameMetrics(frame) {
         widthRatio: Number((box.width / frameBox.width).toFixed(4)),
         heightRatio: Number((box.height / frameBox.height).toFixed(4)),
         background: style.backgroundColor,
+        borderTopWidth: style.borderTopWidth,
         borderBottomWidth: style.borderBottomWidth,
         borderRightWidth: style.borderRightWidth,
       };
     };
     const header = element.querySelector('[data-statement-header]');
-    const layout = element.querySelector('[data-statement-layout]');
     const sidebar = element.querySelector('[data-statement-sidebar]');
+    const railHeader = element.querySelector('[data-statement-rail-header]');
+    const railContent = element.querySelector('[data-statement-rail-content]');
+    const railFooter = element.querySelector('[data-statement-rail-footer]');
     const main = element.querySelector('[data-statement-main]');
-    const document = main?.querySelector('article');
+    const scroll = element.querySelector('[data-statement-scroll]');
+    const document = scroll?.querySelector('article');
+    const railBox = sidebar.getBoundingClientRect();
+    const zoneHeights = [railHeader, railContent, railFooter].reduce(
+      (total, zone) => total + zone.getBoundingClientRect().height,
+      0,
+    );
     return {
       signature: {
+        frameDirection: getComputedStyle(element).flexDirection,
         frameChildren: Array.from(element.children, (child) => child.tagName),
-        layoutChildren: Array.from(layout?.children ?? [], (child) => child.tagName),
-        headerChildren: Array.from(header?.children ?? [], (child) => child.tagName),
-        placeholderCount: sidebar?.querySelectorAll('[data-statement-placeholder]').length,
-        sidebarHidden: sidebar?.getAttribute('aria-hidden'),
+        railZones: Array.from(
+          sidebar.children,
+          (child) =>
+            ['rail-header', 'rail-content', 'rail-footer'].find((zone) =>
+              child.hasAttribute(`data-statement-${zone}`),
+            ) ?? child.tagName,
+        ),
+        railHeaderChildren: Array.from(railHeader.children, (child) => child.tagName),
+        mainChildren: Array.from(main.children, (child) => child.tagName),
+        headerChildren: Array.from(header.children, (child) => child.tagName),
+        headerText: header.textContent,
+        footerChildren: Array.from(railFooter.children, (child) => child.tagName),
+        footerText: railFooter.textContent,
+        placeholderCount: railContent.querySelectorAll('[data-statement-placeholder]').length,
+        placeholderGraphics: railContent.querySelectorAll('img, svg').length,
+        railContentHidden: railContent.getAttribute('aria-hidden'),
         titleCount: Array.from(element.querySelectorAll('article header > strong')).filter(
           (node) => node.textContent?.trim() === 'September statement',
         ).length,
         companyName: element.querySelector('[data-statement-brand-name]')?.textContent,
         imageAlt:
           element.querySelector('[data-statement-brand-mark] img')?.getAttribute('alt') ?? null,
-        hasStableScrollTarget: main?.hasAttribute('data-statement-scroll'),
+        hasStableScrollTarget: scroll !== null && main.contains(scroll) && scroll !== main,
       },
       frame: {
         width: Math.round(frameBox.width),
         height: Math.round(frameBox.height),
         background: getComputedStyle(element).backgroundColor,
       },
+      fit: {
+        scale: Number.parseFloat(getComputedStyle(element).getPropertyValue('--fit-scale')),
+        railFillsFrame: Math.abs(railBox.height - frameBox.height) < 1,
+        zonesFillRail: Math.abs(zoneHeights - railBox.height) < 1,
+        footerAtRailBottom: Math.abs(railFooter.getBoundingClientRect().bottom - railBox.bottom) < 1,
+        scrollOverflows: scroll.scrollHeight > scroll.clientHeight,
+        mainDoesNotScroll: main.scrollHeight - main.clientHeight === 0,
+        frameDoesNotScroll: element.scrollHeight - element.clientHeight === 0,
+      },
       header: metric('[data-statement-header]'),
       sidebar: metric('[data-statement-sidebar]'),
+      railHeader: metric('[data-statement-rail-header]'),
+      railContent: metric('[data-statement-rail-content]'),
+      railFooter: metric('[data-statement-rail-footer]'),
       main: metric('[data-statement-main]'),
-      document: document ? metric('[data-statement-main] > article') : null,
+      scroll: metric('[data-statement-scroll]'),
+      document: document ? metric('[data-statement-scroll] > article') : null,
     };
   });
 }
@@ -279,10 +314,32 @@ const desktopFailures = evidence
   .filter((entry) => entry.app === 'statements' && entry.metrics.desktopFrame)
   .flatMap((entry) => {
     const failures = [];
-    const signature = entry.metrics.desktopFrame.signature;
+    const { signature, fit } = entry.metrics.desktopFrame;
+    if (signature.frameDirection !== 'row') failures.push('frame direction');
+    if (signature.frameChildren.join() !== 'ASIDE,DIV') failures.push('frame children');
+    if (signature.railZones.join() !== 'rail-header,rail-content,rail-footer') {
+      failures.push('rail zones');
+    }
+    if (signature.railHeaderChildren.join() !== 'SPAN,SPAN') failures.push('rail header children');
+    if (signature.mainChildren.join() !== 'DIV,DIV') failures.push('main children');
+    if (signature.headerChildren.length > 0 || signature.headerText !== '') {
+      failures.push('main header must be empty');
+    }
+    if (signature.footerChildren.length > 0 || signature.footerText !== '') {
+      failures.push('rail footer must be empty');
+    }
     if (signature.placeholderCount !== 3) failures.push('sidebar placeholders');
+    if (signature.placeholderGraphics !== 0) failures.push('sidebar placeholder graphics');
+    if (signature.railContentHidden !== 'true') failures.push('sidebar placeholders not inert');
     if (signature.titleCount !== 1) failures.push('desktop title count');
     if (signature.hasStableScrollTarget !== true) failures.push('scroll target');
+    if (fit.railFillsFrame !== true) failures.push('rail full height');
+    if (fit.zonesFillRail !== true) failures.push('rail zone coverage');
+    if (fit.footerAtRailBottom !== true) failures.push('footer at rail bottom');
+    if (fit.scrollOverflows !== true) failures.push('internal scrolling');
+    if (fit.mainDoesNotScroll !== true) failures.push('main column scrolls');
+    if (fit.frameDoesNotScroll !== true) failures.push('frame scrolls');
+    if (!(fit.scale > 0 && fit.scale <= 1)) failures.push('fit scale');
     if (entry.metrics.directExportFrameSignatureMatch !== true) {
       failures.push('direct/export frame mismatch');
     }
@@ -291,5 +348,17 @@ const desktopFailures = evidence
   });
 if (desktopFailures.length > 0) {
   throw new Error(`Statements desktop audit failures: ${desktopFailures.join('\n')}`);
+}
+const fitScaleCases = new Set(
+  evidence
+    .filter((entry) => entry.app === 'statements' && entry.metrics.desktopFrame)
+    .map((entry) => entry.case.replace(/-(?:light|dark)$/, '')),
+);
+const requiredFitScaleCases = new Set(
+  cases.filter((auditCase) => !auditCase.mobile).map((auditCase) => auditCase.name.split('-')[0]),
+);
+const missingFitScaleCases = [...requiredFitScaleCases].filter((name) => !fitScaleCases.has(name));
+if (missingFitScaleCases.length > 0) {
+  throw new Error(`Missing desktop fit-scale coverage: ${missingFitScaleCases.join(', ')}`);
 }
 console.log(output.pathname);
