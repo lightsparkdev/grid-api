@@ -27,27 +27,37 @@ export function StatementPreview({ mode, phase, statement }: StatementPreviewPro
     );
   }
 
+  const brandMark = Array.from(statement.brand.companyName.trim())[0] ?? '';
+
   return (
     <div className={styles.duoStage} data-preview-shell="desktop">
       <AppShell device="duo-landscape" externalGlass>
-        <div
-          className={styles.duoScreen}
-          style={statementColorProperties(statement.brand.colors)}
-        >
+        <div className={styles.duoScreen} style={statementColorProperties(statement.brand.colors)}>
           {phase === 'loading' ? (
             <LoadingPreview />
           ) : (
-            <div className={styles.desktopApp}>
-              <header className={styles.desktopBar}>
-                <span className={styles.windowControls} aria-hidden>
-                  <i />
-                  <i />
-                  <i />
+            <div className={styles.desktopApp} data-statement-frame>
+              <header className={styles.desktopHeader} data-statement-header>
+                <span className={styles.brandMark} data-statement-brand-mark aria-hidden>
+                  {statement.brand.logo.kind === 'image' ? (
+                    <img src={statement.brand.logo.src} alt="" />
+                  ) : (
+                    brandMark
+                  )}
                 </span>
-                <strong>Statements</strong>
+                <span className={styles.companyName} data-statement-brand-name>
+                  {statement.brand.companyName}
+                </span>
               </header>
-              <div className={styles.duoScroller}>
-                <StatementDocument statement={statement} width="full" showMasthead />
+              <div className={styles.desktopBody} data-statement-layout>
+                <aside className={styles.sidebar} data-statement-sidebar aria-hidden>
+                  <span className={styles.placeholder} data-statement-placeholder />
+                  <span className={styles.placeholder} data-statement-placeholder />
+                  <span className={styles.placeholder} data-statement-placeholder />
+                </aside>
+                <div className={styles.duoScroller} data-statement-main data-statement-scroll>
+                  <StatementDocument statement={statement} width="full" showMasthead />
+                </div>
               </div>
             </div>
           )}

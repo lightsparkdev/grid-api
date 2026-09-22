@@ -17,19 +17,77 @@ const cases = [
   { name: '2560-dark', width: 2560, height: 1200, theme: 'dark' },
   { name: 'stacked-light', width: 1440, height: 1100, theme: 'light' },
   { name: 'stacked-dark', width: 1440, height: 1100, theme: 'dark' },
-  { name: 'mobile-light', width: 390, height: 844, theme: 'light', mobile: true },
+  {
+    name: 'mobile-light',
+    width: 390,
+    height: 844,
+    theme: 'light',
+    mobile: true,
+  },
   { name: 'mobile-dark', width: 390, height: 844, theme: 'dark', mobile: true },
 ];
 
 await mkdir(output, { recursive: true });
 if (process.env.BEFORE_SCREENSHOT) {
-  await copyFile(
-    process.env.BEFORE_SCREENSHOT,
-    new URL('before-broken-export.png', output),
-  );
+  await copyFile(process.env.BEFORE_SCREENSHOT, new URL('before-broken-export.png', output));
 }
 const browser = await chromium.launch();
 const evidence = [];
+
+async function desktopFrameMetrics(frame) {
+  return frame.evaluate((element) => {
+    const frameBox = element.getBoundingClientRect();
+    const metric = (selector) => {
+      const target = element.querySelector(selector);
+      if (!target) return null;
+      const box = target.getBoundingClientRect();
+      const style = getComputedStyle(target);
+      return {
+        x: Math.round(box.x),
+        y: Math.round(box.y),
+        width: Math.round(box.width),
+        height: Math.round(box.height),
+        xRatio: Number(((box.x - frameBox.x) / frameBox.width).toFixed(4)),
+        yRatio: Number(((box.y - frameBox.y) / frameBox.height).toFixed(4)),
+        widthRatio: Number((box.width / frameBox.width).toFixed(4)),
+        heightRatio: Number((box.height / frameBox.height).toFixed(4)),
+        background: style.backgroundColor,
+        borderBottomWidth: style.borderBottomWidth,
+        borderRightWidth: style.borderRightWidth,
+      };
+    };
+    const header = element.querySelector('[data-statement-header]');
+    const layout = element.querySelector('[data-statement-layout]');
+    const sidebar = element.querySelector('[data-statement-sidebar]');
+    const main = element.querySelector('[data-statement-main]');
+    const document = main?.querySelector('article');
+    return {
+      signature: {
+        frameChildren: Array.from(element.children, (child) => child.tagName),
+        layoutChildren: Array.from(layout?.children ?? [], (child) => child.tagName),
+        headerChildren: Array.from(header?.children ?? [], (child) => child.tagName),
+        placeholderCount: sidebar?.querySelectorAll('[data-statement-placeholder]').length,
+        sidebarHidden: sidebar?.getAttribute('aria-hidden'),
+        titleCount: Array.from(element.querySelectorAll('article header > strong')).filter(
+          (node) => node.textContent?.trim() === 'September statement',
+        ).length,
+        companyName: element.querySelector('[data-statement-brand-name]')?.textContent,
+        imageAlt:
+          element.querySelector('[data-statement-brand-mark] img')?.getAttribute('alt') ?? null,
+        hasStableScrollTarget: main?.hasAttribute('data-statement-scroll'),
+      },
+      frame: {
+        width: Math.round(frameBox.width),
+        height: Math.round(frameBox.height),
+        background: getComputedStyle(element).backgroundColor,
+      },
+      header: metric('[data-statement-header]'),
+      sidebar: metric('[data-statement-sidebar]'),
+      main: metric('[data-statement-main]'),
+      document: document ? metric('[data-statement-main] > article') : null,
+    };
+  });
+}
 
 for (const auditCase of cases) {
   for (const app of [
@@ -52,12 +110,17 @@ for (const auditCase of cases) {
     page.on('console', (message) => {
       if (message.type() === 'error') errors.push(message.text());
     });
-    await page.goto(`${app.url}/?theme=${auditCase.theme}`, { waitUntil: 'networkidle' });
+    await page.goto(`${app.url}/?theme=${auditCase.theme}`, {
+      waitUntil: 'networkidle',
+    });
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(500);
 
     const baseName = `${phase}-${app.name}-${auditCase.name}`;
-    await page.screenshot({ path: new URL(`${baseName}.png`, output).pathname, fullPage: true });
+    await page.screenshot({
+      path: new URL(`${baseName}.png`, output).pathname,
+      fullPage: true,
+    });
     const metrics = await page.evaluate(() => {
       const rect = (selector) => {
         const element = document.querySelector(selector);
@@ -84,16 +147,22 @@ for (const auditCase of cases) {
         shell: rect('[class*="AppShell_frame"]'),
         deviceToggle: rect('[role="radiogroup"][aria-label="Preview device"]'),
         stage: rect('[class*="StatementPanel_stage"]'),
-        secondaryBackgroundControl: Array.from(
-          document.querySelectorAll('span'),
-        ).some((element) => element.textContent === 'Secondary background'),
+        secondaryBackgroundControl: Array.from(document.querySelectorAll('span')).some(
+          (element) => element.textContent === 'Secondary background',
+        ),
         body: {
           width: document.body.scrollWidth,
           height: document.body.scrollHeight,
         },
       };
     });
-    const entry = { phase, app: app.name, case: auditCase.name, metrics, errors };
+    const entry = {
+      phase,
+      app: app.name,
+      case: auditCase.name,
+      metrics,
+      errors,
+    };
     evidence.push(entry);
 
     if (app.name === 'statements' && !auditCase.mobile) {
@@ -113,15 +182,9 @@ for (const auditCase of cases) {
       });
       await page.getByRole('radio', { name: 'Desktop' }).click();
       await page.getByText('September statement').first().waitFor();
-      entry.metrics.desktopFrame = await page
-        .locator('[class*="StatementPreview_desktopApp"]')
-        .evaluate((element) => {
-          const box = element.getBoundingClientRect();
-          return {
-            width: Math.round(box.width),
-            height: Math.round(box.height),
-          };
-        });
+      entry.metrics.desktopFrame = await desktopFrameMetrics(
+        page.locator('[data-statement-frame]'),
+      );
       await page.screenshot({
         path: new URL(`${baseName}-desktop.png`, output).pathname,
         fullPage: true,
@@ -154,6 +217,12 @@ for (const auditCase of cases) {
             box.bottom <= window.innerHeight,
         };
       });
+      entry.metrics.exportDesktopFrame = await desktopFrameMetrics(
+        sheet.locator('[data-statement-frame]'),
+      );
+      entry.metrics.directExportFrameSignatureMatch =
+        JSON.stringify(entry.metrics.desktopFrame.signature) ===
+        JSON.stringify(entry.metrics.exportDesktopFrame.signature);
       await page.screenshot({
         path: new URL(`${baseName}-share.png`, output).pathname,
         fullPage: true,
@@ -205,5 +274,22 @@ const statementErrors = evidence
   .flatMap((entry) => entry.errors);
 if (statementErrors.length > 0) {
   throw new Error(`Statements console errors: ${statementErrors.join('\n')}`);
+}
+const desktopFailures = evidence
+  .filter((entry) => entry.app === 'statements' && entry.metrics.desktopFrame)
+  .flatMap((entry) => {
+    const failures = [];
+    const signature = entry.metrics.desktopFrame.signature;
+    if (signature.placeholderCount !== 3) failures.push('sidebar placeholders');
+    if (signature.titleCount !== 1) failures.push('desktop title count');
+    if (signature.hasStableScrollTarget !== true) failures.push('scroll target');
+    if (entry.metrics.directExportFrameSignatureMatch !== true) {
+      failures.push('direct/export frame mismatch');
+    }
+    if (entry.metrics.shareSheet?.fitsViewport !== true) failures.push('export viewport fit');
+    return failures.map((failure) => `${entry.case}: ${failure}`);
+  });
+if (desktopFailures.length > 0) {
+  throw new Error(`Statements desktop audit failures: ${desktopFailures.join('\n')}`);
 }
 console.log(output.pathname);

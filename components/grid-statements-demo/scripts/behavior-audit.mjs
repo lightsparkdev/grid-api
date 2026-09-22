@@ -5,12 +5,22 @@ import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
 const baseUrl = process.env.STATEMENTS_URL ?? 'http://127.0.0.1:4003';
-const operations = [
-  'getCustomerById',
-  'listCustomerInternalAccounts',
-  'listTransactions',
-];
+const operations = ['getCustomerById', 'listCustomerInternalAccounts', 'listTransactions'];
 const browser = await chromium.launch({ channel: 'chrome' }).catch(() => chromium.launch());
+const previewStyles = await readFile(
+  new URL('../src/components/StatementPreview/StatementPreview.module.scss', import.meta.url),
+  'utf8',
+);
+assert.match(
+  previewStyles,
+  /--statement-hairline:\s*color-mix\(\s*in srgb,\s*var\(--statement-primary-text\) 10%,\s*transparent\s*\);/,
+  'the desktop frame must use the statement hairline source declaration',
+);
+assert.match(
+  previewStyles,
+  /border-(?:bottom|right):\s*0\.5px solid var\(--statement-hairline\)/,
+  'the desktop frame must use the statement hairline for its dividers',
+);
 
 async function openPage(width, height, reducedMotion = 'no-preference') {
   const context = await browser.newContext({
@@ -30,7 +40,11 @@ async function openPage(width, height, reducedMotion = 'no-preference') {
   await page.addInitScript(() => {
     window.__prints = [];
     window.print = () => {
-      window.__prints.push({ title: document.title, text: document.body?.innerText ?? '', fromFrame: false });
+      window.__prints.push({
+        title: document.title,
+        text: document.body?.innerText ?? '',
+        fromFrame: false,
+      });
     };
     new MutationObserver((records) => {
       for (const record of records) {
@@ -65,7 +79,10 @@ async function watchOperationOrder(page) {
         }
       }
     });
-    window.__operationObserver.observe(panel, { childList: true, subtree: true });
+    window.__operationObserver.observe(panel, {
+      childList: true,
+      subtree: true,
+    });
   }, operations);
 }
 
@@ -85,21 +102,53 @@ async function expectReload(page, account) {
   await page.evaluate(() => window.__operationObserver?.disconnect());
 }
 
+async function statementFrameSignature(frame) {
+  return frame.evaluate((element) => {
+    const header = element.querySelector('[data-statement-header]');
+    const layout = element.querySelector('[data-statement-layout]');
+    const sidebar = element.querySelector('[data-statement-sidebar]');
+    const main = element.querySelector('[data-statement-main]');
+    const mark = element.querySelector('[data-statement-brand-mark]');
+    const name = element.querySelector('[data-statement-brand-name]');
+    const surfaces = [element, header, sidebar, main];
+    return {
+      frameChildren: Array.from(element.children, (child) => child.tagName),
+      layoutChildren: Array.from(layout?.children ?? [], (child) => child.tagName),
+      headerChildren: Array.from(header?.children ?? [], (child) => child.tagName),
+      headerControls: header?.querySelectorAll('button, i, [class*="windowControl"]').length,
+      headerHeadings: header?.querySelectorAll('h1, h2, h3, h4, h5, h6').length,
+      headerHasStatementsTitle: header?.textContent?.trim() === 'Statements',
+      companyName: name?.textContent,
+      imageAlt: mark?.querySelector('img')?.getAttribute('alt') ?? null,
+      sidebarHidden: sidebar?.getAttribute('aria-hidden'),
+      placeholderCount: sidebar?.querySelectorAll('[data-statement-placeholder]').length,
+      placeholderText: sidebar?.textContent,
+      placeholderGraphics: sidebar?.querySelectorAll('img, svg').length,
+      desktopTitleCount: Array.from(element.querySelectorAll('article header > strong')).filter(
+        (node) => node.textContent?.trim() === 'September statement',
+      ).length,
+      surfaces: surfaces.map((surface) => getComputedStyle(surface).backgroundColor),
+      headerBorderWidth: getComputedStyle(header).borderBottomWidth,
+      sidebarBorderWidth: getComputedStyle(sidebar).borderRightWidth,
+      sidebarWidth: getComputedStyle(sidebar).width,
+      scrollAttribute: main?.hasAttribute('data-statement-scroll'),
+    };
+  });
+}
+
 const primary = await openPage(1800, 1100);
 const { page } = primary;
 await page.getByRole('status', { name: 'Loading statement' }).waitFor();
 await page.getByText('listTransactions').waitFor();
 await page.getByRole('button', { name: 'Export' }).waitFor();
 assert.equal(
-  await page.getByRole('radiogroup', { name: 'Preview device' }).evaluate((element) =>
-    element.closest('header')?.textContent?.includes('Statement preview'),
-  ),
+  await page
+    .getByRole('radiogroup', { name: 'Preview device' })
+    .evaluate((element) => element.closest('header')?.textContent?.includes('Statement preview')),
   true,
   'the device toggle must be in the statement preview header',
 );
-const appPreview = page.locator(
-  '[class*="StatementPanel_stage"] > [data-preview-shell="mobile"]',
-);
+const appPreview = page.locator('[class*="StatementPanel_stage"] > [data-preview-shell="mobile"]');
 assert.equal(await appPreview.getByText('September statement').count(), 1);
 
 const header = appPreview.locator('[class*="StatementScreen_hero"]');
@@ -127,11 +176,7 @@ const company = page.getByLabel('Company name');
 await company.fill('Aurora live');
 assert.equal(await page.getByText('listTransactions').count(), 1);
 
-for (const label of [
-  'Primary background',
-  'Primary text',
-  'Secondary text',
-]) {
+for (const label of ['Primary background', 'Primary text', 'Secondary text']) {
   assert.equal(await page.getByRole('radiogroup', { name: label }).getByRole('radio').count(), 2);
   await page.getByRole('button', { name: label }).click();
   await page.getByRole('dialog', { name: 'Custom color' }).waitFor();
@@ -155,17 +200,43 @@ await page.getByRole('radio', { name: 'Desktop' }).click();
 await page.getByText('Consumer prepaid account').first().waitFor();
 await assertCallsRemain();
 
-const desktopScroll = await page
-  .locator('[class*="StatementPreview_duoScroller"]')
-  .evaluate((element) => {
-    element.scrollTop = element.scrollHeight;
-    return {
-      overflowY: getComputedStyle(element).overflowY,
-      scrollHeight: element.scrollHeight,
-      clientHeight: element.clientHeight,
-      scrollTop: element.scrollTop,
-    };
-  });
+const directFrame = page.locator('[data-statement-frame]');
+const directFrameSignature = await statementFrameSignature(directFrame);
+assert.deepEqual(directFrameSignature, {
+  frameChildren: ['HEADER', 'DIV'],
+  layoutChildren: ['ASIDE', 'DIV'],
+  headerChildren: ['SPAN', 'SPAN'],
+  headerControls: 0,
+  headerHeadings: 0,
+  headerHasStatementsTitle: false,
+  companyName: 'Aurora live',
+  imageAlt: '',
+  sidebarHidden: 'true',
+  placeholderCount: 3,
+  placeholderText: '',
+  placeholderGraphics: 0,
+  desktopTitleCount: 1,
+  surfaces: [
+    'rgb(250, 250, 250)',
+    'rgb(250, 250, 250)',
+    'rgb(250, 250, 250)',
+    'rgb(250, 250, 250)',
+  ],
+  headerBorderWidth: '1px',
+  sidebarBorderWidth: '1px',
+  sidebarWidth: '176px',
+  scrollAttribute: true,
+});
+
+const desktopScroll = await page.locator('[data-statement-scroll]').evaluate((element) => {
+  element.scrollTop = element.scrollHeight;
+  return {
+    overflowY: getComputedStyle(element).overflowY,
+    scrollHeight: element.scrollHeight,
+    clientHeight: element.clientHeight,
+    scrollTop: element.scrollTop,
+  };
+});
 assert.equal(desktopScroll.overflowY, 'auto');
 assert(desktopScroll.scrollHeight > desktopScroll.clientHeight);
 assert(desktopScroll.scrollTop > 0);
@@ -173,31 +244,30 @@ assert(desktopScroll.scrollTop > 0);
 await page.getByRole('button', { name: 'Export' }).click();
 const exportSheet = page.getByRole('dialog', { name: 'Export statement' });
 await exportSheet.locator('[data-preview-shell="desktop"]').waitFor();
+const exportFrameSignature = await statementFrameSignature(
+  exportSheet.locator('[data-statement-frame]'),
+);
+assert.deepEqual(
+  exportFrameSignature,
+  directFrameSignature,
+  'Export must reuse the direct desktop statement frame',
+);
 assert.equal(
-  await page.locator('[data-share-backdrop]').evaluate((element) =>
-    getComputedStyle(element).backgroundColor,
-  ),
+  await page
+    .locator('[data-share-backdrop]')
+    .evaluate((element) => getComputedStyle(element).backgroundColor),
   'rgba(0, 0, 0, 0)',
   'the export hit target must leave the shared stage backdrop visible',
 );
-assert.equal(
-  await page.evaluate(() => document.activeElement?.textContent),
-  'Copy link',
-);
+assert.equal(await page.evaluate(() => document.activeElement?.textContent), 'Copy link');
 await page.keyboard.press('Shift+Tab');
-assert.equal(
-  await page.evaluate(() => document.activeElement?.textContent),
-  'Save HTML',
-);
+assert.equal(await page.evaluate(() => document.activeElement?.textContent), 'Save HTML');
 await page.keyboard.press('Tab');
+assert.equal(await page.evaluate(() => document.activeElement?.textContent), 'Copy link');
 assert.equal(
-  await page.evaluate(() => document.activeElement?.textContent),
-  'Copy link',
-);
-assert.equal(
-  await exportSheet.locator('article').evaluate((element) =>
-    element.style.getPropertyValue('--statement-primary-background'),
-  ),
+  await exportSheet
+    .locator('article')
+    .evaluate((element) => element.style.getPropertyValue('--statement-primary-background')),
   '#fafafa',
 );
 await page.getByRole('button', { name: 'Cancel' }).click();
@@ -323,9 +393,7 @@ const mobileScroll = await appPreview
     return {
       articleWidth: Math.round(article.getBoundingClientRect().width),
       scrollerWidth: Math.round(elementRect.width),
-      contained:
-        elementRect.top >= shellRect.top - 1 &&
-        elementRect.bottom <= shellRect.bottom + 1,
+      contained: elementRect.top >= shellRect.top - 1 && elementRect.bottom <= shellRect.bottom + 1,
       overflowY: getComputedStyle(element).overflowY,
       scrollHeight: element.scrollHeight,
       clientHeight: element.clientHeight,
@@ -375,9 +443,7 @@ for (const [name, width, height] of [
     height: document.body.scrollHeight,
   }));
   await audit.page.getByRole('button', { name: 'Export' }).click();
-  const panel = await audit.page
-    .getByRole('dialog', { name: 'Export statement' })
-    .boundingBox();
+  const panel = await audit.page.getByRole('dialog', { name: 'Export statement' }).boundingBox();
   const pill = await audit.page.getByRole('button', { name: 'Cancel' }).boundingBox();
   const after = await audit.page.evaluate(() => ({
     width: document.body.scrollWidth,
@@ -418,9 +484,7 @@ for (const [width, height] of [
     );
   });
   const reach = await short.page.evaluate(() => {
-    const panel = document
-      .querySelector('[aria-label="Export statement"]')
-      .getBoundingClientRect();
+    const panel = document.querySelector('[aria-label="Export statement"]').getBoundingClientRect();
     return Array.from(document.querySelectorAll('button'))
       .filter((button) =>
         ['Copy link', 'Save PDF', 'Save HTML'].includes(button.textContent.trim()),

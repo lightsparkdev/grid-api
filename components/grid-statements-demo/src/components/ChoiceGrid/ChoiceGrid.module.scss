@@ -1,13 +1,5 @@
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 
-$active-border-gradient: linear-gradient(
-  to top right,
-  color-mix(in srgb, var(--color-sky-500) 60%, transparent) 0%,
-  var(--color-sky-500) 17%,
-  var(--color-blue-500) 41%,
-  var(--color-green-600) 100%
-);
-
 $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
 
 .group {
@@ -89,7 +81,6 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
       background: var(--color-alpha-white-04);
     }
   }
-
 }
 
 .option:focus-visible {
@@ -105,18 +96,10 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   position: absolute;
   inset: calc(var(--stroke-xs) - var(--stroke-md));
   z-index: 2;
+  box-sizing: border-box;
   corner-shape: var(--corner-shape);
   border-radius: var(--corner-radius-md);
-  padding: var(--stroke-md);
-  background: $active-border-gradient;
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
+  border: 2px solid var(--text-primary);
   pointer-events: none;
 }
 
@@ -139,8 +122,7 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   object-fit: contain;
   transform-origin: center;
   transition: transform 250ms $ease-out-swift;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.04))
-    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.06))
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.04)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.06))
     drop-shadow(0 8px 16px rgba(0, 0, 0, 0.04));
 
   :global([data-theme='dark']) & {

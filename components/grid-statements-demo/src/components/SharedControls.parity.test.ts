@@ -47,22 +47,53 @@ describe('copied Cards controls', () => {
         .replaceAll('.icon', '.optionIcon')
         .replaceAll('.label', '.optionLabel');
 
-    for (const selector of [
-      '.group',
-      '.card',
-      '.cardSelected',
-      '.activeRing',
-      '.content',
-      '.icon',
-      '.label',
-    ]) {
+    for (const selector of ['.group', '.card', '.cardSelected', '.content', '.icon', '.label']) {
       expect(normalizeScss(scssBlock(local, rename(selector)))).toBe(
         normalizeScss(rename(scssBlock(wallet, selector))),
       );
     }
-    expect(local).toContain('var(--color-sky-500) 17%');
-    expect(local).toContain('var(--color-blue-500) 41%');
-    expect(local).toContain('var(--color-green-600) 100%');
+
+    const localRing = scssBlock(local, '.activeRing');
+    const walletRing = scssBlock(wallet, '.activeRing');
+    for (const property of [
+      'position',
+      'inset',
+      'z-index',
+      'corner-shape',
+      'border-radius',
+      'pointer-events',
+    ]) {
+      expect(scssDeclaration(localRing, property)).toBe(scssDeclaration(walletRing, property));
+    }
+  });
+
+  it('uses the Cards neutral selected ring and swatch radius', () => {
+    const choiceGrid = readFileSync(
+      resolve(process.cwd(), 'src/components/ChoiceGrid/ChoiceGrid.module.scss'),
+      'utf8',
+    );
+    const statementsControls = readFileSync(
+      resolve(process.cwd(), 'src/components/DesignControls/DesignControls.module.scss'),
+      'utf8',
+    );
+    const cards = readFileSync(
+      resolve(
+        process.cwd(),
+        '../grid-cards-demo/src/components/DesignPicker/DesignPicker.module.scss',
+      ),
+      'utf8',
+    );
+    const choiceRing = scssBlock(choiceGrid, '.activeRing');
+    const statementsRing = scssBlock(statementsControls, '.ring');
+    const cardsRing = scssBlock(cards, '.ring');
+
+    expect(scssDeclaration(choiceRing, 'border')).toBe(scssDeclaration(cardsRing, 'border'));
+    expect(scssDeclaration(statementsRing, 'border')).toBe(scssDeclaration(cardsRing, 'border'));
+    expect(scssDeclaration(statementsRing, 'border-radius')).toBe(
+      scssDeclaration(cardsRing, 'border-radius'),
+    );
+    expect(choiceRing).not.toMatch(/\b(?:padding|background|-webkit-mask|mask)\s*:/);
+    expect(choiceGrid).not.toContain('$active-border-gradient');
   });
 });
 
@@ -79,5 +110,14 @@ function scssBlock(source: string, selector: string): string {
 }
 
 function normalizeScss(source: string): string {
-  return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '').replace(/\s+/g, '');
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '')
+    .replace(/\s+/g, '');
+}
+
+function scssDeclaration(source: string, property: string): string {
+  const match = new RegExp(`(?:^|\\n)\\s*${property}:\\s*([^;]+);`).exec(source);
+  if (!match) throw new Error(`${property} is no longer declared`);
+  return match[1].replace(/\s+/g, ' ').trim();
 }
