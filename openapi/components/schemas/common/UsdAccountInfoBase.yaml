@@ -28,15 +28,6 @@ properties:
     minLength: 1
     maxLength: 140
     example: Chase Bank
-  bankAccountType:
-    type: string
-    description: Whether the account is a checking or a savings account. Grid uses
-      this to set the ACH transaction code, so a value that does not match the account
-      causes the receiving bank to return a notification of change.
-    enum:
-    - CHECKING
-    - SAVINGS
-    example: CHECKING
   intermediaryBankName:
     type: string
     description: The name of the intermediary financial institution, for accounts
@@ -64,7 +55,6 @@ example:
   accountNumber: '1234567890'
   routingNumber: '021000021'
   bankName: Chase Bank
-  bankAccountType: CHECKING
   intermediaryBankName: JPMorgan Chase Bank
   intermediaryRoutingNumber: '021000021'
   fiToFiInformation: /BNF/Invoice 4471
