@@ -138,7 +138,7 @@ for (const auditCase of cases) {
           Math.abs(transform.a - 1) < 0.001 &&
           Math.abs(transform.d - 1) < 0.001 &&
           Math.abs(transform.m42) < 0.5 &&
-          style.filter === 'blur(0px)'
+          (style.filter === 'none' || style.filter === 'blur(0px)')
         );
       });
       entry.metrics.shareSheet = await sheet.evaluate((element) => {
