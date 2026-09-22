@@ -56,6 +56,41 @@ URL (`https://grid-statements-demo.vercel.app`). Mintlify preview branches ifram
 Vercel limits a host label to 63 characters, so branch names for this project must be 22
 characters or fewer (`grid-statements-demo-git-` and `-lightspark-team` use 41).
 
+### Until this PR merges: deploy by CLI
+
+The Vercel project is not linked to GitHub until this PR merges to `main`. Its Root Directory,
+`components/grid-statements-demo`, exists only on this branch, so every Git deploy from `main` or
+another branch failed at "Root Directory does not exist" and posted a red
+`Vercel – grid-statements-demo` status on unrelated PRs.
+
+Deploy from the repository root. The link lives in `.vercel/` at the repository root and is
+git-ignored. Link once:
+
+```bash
+npx vercel link --yes --project grid-statements-demo --scope lightspark-team
+```
+
+Then deploy:
+
+```bash
+npx vercel deploy --prod --scope lightspark-team   # production
+npx vercel deploy --scope lightspark-team          # preview
+```
+
+Warning: `vercel deploy` from an unlinked root creates a stray project named after the directory.
+Before you deploy, confirm that `.vercel/project.json` names `grid-statements-demo`.
+
+CLI preview URLs are hash-based (`grid-statements-demo-<hash>-lightspark-team.vercel.app`). The
+`-git-<branch>-` alias pattern only exists with the Git link.
+
+### After merge: reconnect GitHub
+
+1. In the Vercel project, open Git and connect the GitHub repository.
+2. Set the production branch to `main`.
+3. Confirm `enableAffectedProjectsDeployments` is off. Cards and Wallet have it off.
+4. Verify that a `main` commit that does not touch this directory shows
+   "Canceled by Ignored Build Step" in green.
+
 ## Embed contract
 
 - `?embed=true` sets `data-embed`.
