@@ -46,6 +46,7 @@ const EXPORTED_PROPERTIES = [
   'position',
   'text-align',
   'text-indent',
+  'text-wrap',
   'vertical-align',
   'white-space',
   'width',
