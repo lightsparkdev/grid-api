@@ -127,7 +127,9 @@ async function desktopFrameMetrics(frame) {
         token: sunkenToken,
         background: scrollStyle.backgroundColor,
         matchesToken: scrollStyle.backgroundColor === resolvedSunken,
-        frameSurfacesMatch: frameColors.every((color) => color === resolvedSunken),
+        chromeSurfacesMatchPrimary: frameColors.every(
+          (color) => color === resolvedPrimary,
+        ),
         documentMatchesPrimary:
           getComputedStyle(article).backgroundColor === resolvedPrimary,
         documentLifted:
@@ -401,7 +403,9 @@ const desktopFailures = evidence
     if (!(fit.scale > 0 && fit.scale <= 1)) failures.push('fit scale');
     if (!sunken?.token) failures.push('sunken token');
     if (sunken?.matchesToken !== true) failures.push('sunken token resolution');
-    if (sunken?.frameSurfacesMatch !== true) failures.push('sunken frame surfaces');
+    if (sunken?.chromeSurfacesMatchPrimary !== true) {
+      failures.push('primary chrome surfaces');
+    }
     if (sunken?.documentMatchesPrimary !== true) failures.push('document primary surface');
     if (sunken?.documentLifted !== true) failures.push('document surface contrast');
     if (entry.metrics.directExportFrameSignatureMatch !== true) {
