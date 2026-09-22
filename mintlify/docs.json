@@ -352,8 +352,6 @@
             "group": "Overview",
             "pages": [
               "cards/demo",
-              "cards/statements",
-              "cards/statements-guide",
               "cards/index",
               "cards/terminology",
               "cards/onboarding/implementation-overview",
@@ -380,6 +378,13 @@
             "group": "Transactions",
             "pages": [
               "cards/transactions/reconciliation"
+            ]
+          },
+          {
+            "group": "Statements",
+            "pages": [
+              "cards/statements-guide",
+              "cards/statements"
             ]
           },
           {
