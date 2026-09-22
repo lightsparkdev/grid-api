@@ -17,7 +17,7 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: var(--statement-primary-background);
+  background: var(--statement-sunken);
 }
 
 .desktopApp {
@@ -29,7 +29,7 @@
   min-height: 0;
   flex-direction: row;
   overflow: hidden;
-  background: var(--statement-primary-background);
+  background: var(--statement-sunken);
   color: var(--statement-primary-text);
 }
 
@@ -43,7 +43,7 @@
   flex-direction: column;
   box-sizing: border-box;
   border-right: 0.5px solid var(--statement-hairline);
-  background: var(--statement-primary-background);
+  background: var(--statement-sunken);
 }
 
 .railContent {
@@ -51,7 +51,7 @@
   min-height: 0;
   flex: 1;
   box-sizing: border-box;
-  background: var(--statement-primary-background);
+  background: var(--statement-sunken);
 }
 
 .railFooter {
@@ -60,7 +60,7 @@
   flex: 0 0 52px;
   box-sizing: border-box;
   border-top: 0.5px solid var(--statement-hairline);
-  background: var(--statement-primary-background);
+  background: var(--statement-sunken);
 }
 
 .desktopMain {
@@ -71,7 +71,7 @@
   flex: 1;
   flex-direction: column;
   overflow: hidden;
-  background: var(--statement-primary-background);
+  background: var(--statement-sunken);
 }
 
 .desktopHeader {
@@ -80,7 +80,7 @@
   flex: 0 0 52px;
   box-sizing: border-box;
   border-bottom: 0.5px solid var(--statement-hairline);
-  background: var(--statement-primary-background);
+  background: var(--statement-sunken);
 }
 
 .duoScroller {
