@@ -10,7 +10,7 @@ describe('StatementScreen', () => {
   it('renders one app title with the brand logo and no period line', () => {
     const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
     const { container } = render(<StatementScreen statement={statement} loading={false} />);
-    const header = container.querySelector('header');
+    const header = container.querySelector('[data-statement-header]');
 
     expect(header).toBeTruthy();
     expect(screen.getAllByText('September statement')).toHaveLength(1);
@@ -20,6 +20,7 @@ describe('StatementScreen', () => {
     expect(screen.getByText(STATEMENT_PERIOD.range)).toBeTruthy();
     expect(screen.getByText('Issued')).toBeTruthy();
     expect(container.querySelector('[class*="masthead"]')).toBeNull();
+    expect(container.querySelector('article')?.getAttribute('data-surface')).toBe('bleed');
   });
 
   it('shows the Wallet loading state before the document', () => {
@@ -32,20 +33,24 @@ describe('StatementScreen', () => {
     expect(within(view.container).getByText('Statement period')).toBeTruthy();
   });
 
-  it('marks the header only after the document scrolls', () => {
+  it('marks the header only after the document scrolls and clears it while loading', () => {
     const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
-    const { container } = render(
-      <StatementScreen statement={statement} loading={false} />,
-    );
-    const header = container.querySelector('header');
-    const scroller = container.querySelector('[class*="scroller"]') as HTMLElement;
+    const view = render(<StatementScreen statement={statement} loading={false} />);
+    const header = () => view.container.querySelector('[data-statement-header]');
+    const scroller = view.container.querySelector('[data-statement-scroll]') as HTMLElement;
 
-    expect(header?.hasAttribute('data-scrolled')).toBe(false);
+    expect(header()?.hasAttribute('data-scrolled')).toBe(false);
     Object.defineProperty(scroller, 'scrollTop', { configurable: true, value: 1 });
     fireEvent.scroll(scroller);
-    expect(header?.getAttribute('data-scrolled')).toBe('true');
+    expect(header()?.getAttribute('data-scrolled')).toBe('true');
     Object.defineProperty(scroller, 'scrollTop', { configurable: true, value: 0 });
     fireEvent.scroll(scroller);
-    expect(header?.hasAttribute('data-scrolled')).toBe(false);
+    expect(header()?.hasAttribute('data-scrolled')).toBe(false);
+
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, value: 12 });
+    fireEvent.scroll(scroller);
+    expect(header()?.getAttribute('data-scrolled')).toBe('true');
+    view.rerender(<StatementScreen statement={statement} loading />);
+    expect(header()?.hasAttribute('data-scrolled')).toBe(false);
   });
 });

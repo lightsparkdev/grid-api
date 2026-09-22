@@ -76,32 +76,16 @@ const exceptions = new Map([
         ),
   ],
   [
-    'src/components/ApiPanel/ApiPanel.tsx',
-    (source) =>
-      source.replace(
-        'title="API calls"',
-        'title="Calls the app makes to render this screen."',
-      ),
-  ],
-  [
-    'src/components/ApiPanel/ApiPanelEmpty.tsx',
+    'src/data/flowIcons.tsx',
     (source) =>
       source
         .replace(
-          'const [coverVisible, setCoverVisible] = useState(reduceMotion === true);\n  const [contentVisible, setContentVisible] = useState(reduceMotion === true);',
-          'const [coverVisible, setCoverVisible] = useState(false);\n  const [contentVisible, setContentVisible] = useState(false);',
+          "import { IconCircleX } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCircleX';\n",
+          "import { IconCircleX } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCircleX';\nimport { IconBlankPagePortrait } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBlankPagePortrait';\n",
         )
         .replace(
-          'if (reduceMotion) return;',
-          'if (reduceMotion) {\n      setCoverVisible(true);\n      setContentVisible(true);\n      return;\n    }',
-        )
-        .replace(
-          'initial={reduceMotion ? false : hiddenMessage}',
-          'initial={hiddenMessage}',
-        )
-        .replace(
-          '<p className={styles.title}>No API calls yet</p>\n            <p className={styles.description}>\n              Run a flow in the app and each request will appear here.\n            </p>',
-          '<p className={styles.title}>Calls appear after the statement loads.</p>',
+          'export function flowIconForLabel(label: string): { Icon: FlowIconCmp } | null {\n  const id = actionIdForLabel(label);\n',
+          "export function flowIconForLabel(label: string): { Icon: FlowIconCmp } | null {\n  if (label === 'Load statement') return { Icon: IconBlankPagePortrait };\n  const id = actionIdForLabel(label);\n",
         ),
   ],
   [

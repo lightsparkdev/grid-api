@@ -94,6 +94,12 @@ describe('statement API projection', () => {
         }
       }
 
+      expect(entries.map((entry) => entry.groupLabel)).toEqual([
+        'Load statement',
+        'Load statement',
+        'Load statement',
+      ]);
+      expect(new Set(entries.map((entry) => entry.groupId)).size).toBe(1);
       expect(JSON.stringify(entries.map((entry) => entry.resBody))).not.toMatch(
         /disputable|terminal|openingBalance|closingBalance/,
       );

@@ -1,6 +1,7 @@
 @use '../../apps/shared/typography/ios-type-mixins' as ios;
 
 .screen {
+  position: relative;
   display: flex;
   width: 100%;
   height: 100%;
@@ -11,24 +12,26 @@
 }
 
 .hero {
-  --header-hairline: color-mix(
+  --statement-hairline: color-mix(
     in srgb,
     var(--statement-primary-text) 10%,
     transparent
   );
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
   display: flex;
   align-items: center;
-  flex: 0 0 auto;
+  width: 100%;
   min-height: 118px;
   padding: 70px 24px 8px;
   box-sizing: border-box;
-  border-bottom: 0.5px solid var(--header-hairline);
+  border-bottom: 0.5px solid var(--statement-hairline);
   gap: 12px;
   background: var(--statement-primary-background);
   box-shadow: 0 0 0 transparent;
   color: var(--statement-primary-text);
   transition: box-shadow 150ms ease;
-  z-index: 1;
 
   &[data-scrolled] {
     box-shadow: 0 4px 12px
@@ -68,6 +71,8 @@
 .scroller {
   min-height: 0;
   flex: 1;
+  box-sizing: border-box;
+  padding-top: 118px;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
@@ -81,8 +86,6 @@
     width: 100%;
     min-width: 0;
     max-width: none;
-    border: 0;
-    border-radius: 0;
     box-shadow: none;
   }
 }
@@ -91,6 +94,8 @@
   display: grid;
   min-height: 0;
   flex: 1;
+  box-sizing: border-box;
+  padding-top: 118px;
   place-items: center;
   color: var(--statement-primary-text);
 

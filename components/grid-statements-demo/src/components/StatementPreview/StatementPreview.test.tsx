@@ -73,7 +73,7 @@ describe('StatementPreview', () => {
     );
   });
 
-  it('keeps every sidebar zone empty', () => {
+  it('keeps exactly two empty sidebar zones', () => {
     const statement = buildStatement(
       'consumer',
       {
@@ -86,12 +86,17 @@ describe('StatementPreview', () => {
     const { container } = render(
       <StatementPreview mode="desktop" phase="ready" statement={statement} />,
     );
-    const header = container.querySelector('[data-statement-rail-header]');
+    const sidebar = container.querySelector('[data-statement-sidebar]');
     const content = container.querySelector('[data-statement-rail-content]');
     const footer = container.querySelector('[data-statement-rail-footer]');
+    const zones = Array.from(sidebar?.children ?? [], (child) =>
+      ['rail-content', 'rail-footer'].find((zone) =>
+        child.hasAttribute(`data-statement-${zone}`),
+      ),
+    );
 
-    expect(header?.children).toHaveLength(0);
-    expect(header?.textContent).toBe('');
+    expect(container.querySelector('[data-statement-rail-header]')).toBeNull();
+    expect(zones).toEqual(['rail-content', 'rail-footer']);
     expect(content?.children).toHaveLength(0);
     expect(content?.textContent).toBe('');
     expect(footer?.children).toHaveLength(0);
@@ -111,7 +116,7 @@ describe('StatementPreview', () => {
     const scroll = container.querySelector('[data-statement-scroll]') as HTMLElement;
     const tagsOf = (element: Element) => Array.from(element.children, (child) => child.tagName);
     const railZones = Array.from(sidebar.children, (child) =>
-      ['rail-header', 'rail-content', 'rail-footer'].find((zone) =>
+      ['rail-content', 'rail-footer'].find((zone) =>
         child.hasAttribute(`data-statement-${zone}`),
       ),
     );
@@ -119,7 +124,7 @@ describe('StatementPreview', () => {
     expect(tagsOf(frame)).toEqual(['ASIDE', 'DIV']);
     expect(frame.children[0]).toBe(sidebar);
     expect(frame.children[1]).toBe(main);
-    expect(railZones).toEqual(['rail-header', 'rail-content', 'rail-footer']);
+    expect(railZones).toEqual(['rail-content', 'rail-footer']);
     expect(sidebar.lastElementChild).toBe(footer);
     expect(tagsOf(main)).toEqual(['DIV', 'DIV']);
     expect(main.children[0]).toBe(header);
@@ -130,7 +135,7 @@ describe('StatementPreview', () => {
     expect(footer.textContent).toBe('');
     expect(scroll.hasAttribute('data-statement-main')).toBe(false);
     expect(main.hasAttribute('data-statement-scroll')).toBe(false);
-    expect(scroll.querySelector('article')).toBeTruthy();
+    expect(scroll.querySelector('article')?.getAttribute('data-surface')).toBe('card');
   });
 
   it('keeps the desktop loading branch on the themed screen', () => {
@@ -154,5 +159,6 @@ describe('StatementPreview', () => {
     expect(container.querySelector('[data-app-shell="phone"]')).toBeTruthy();
     expect(screen.getByText('September statement')).toBeTruthy();
     expect(container.querySelector('[data-statement-frame]')).toBeNull();
+    expect(container.querySelector('article')?.getAttribute('data-surface')).toBe('bleed');
   });
 });

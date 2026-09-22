@@ -6,6 +6,14 @@ import { chromium } from 'playwright';
 
 const baseUrl = process.env.STATEMENTS_URL ?? 'http://127.0.0.1:4003';
 const operations = ['getCustomerById', 'listCustomerInternalAccounts', 'listTransactions'];
+const presetLabels = [
+  'Financial app (Aurora)',
+  'Creator platform (Glitch)',
+  'Social app (Z)',
+  'Travel marketplace (Waterbnb)',
+  'On-demand platform (Super)',
+  'Messaging platform (ChatsApp)',
+];
 const browser = await chromium.launch({ channel: 'chrome' }).catch(() => chromium.launch());
 const previewStyles = await readFile(
   new URL('../src/components/StatementPreview/StatementPreview.module.scss', import.meta.url),
@@ -22,6 +30,23 @@ for (const divider of ['right', 'top', 'bottom']) {
     new RegExp(`border-${divider}:\\s*0\\.5px solid var\\(--statement-hairline\\)`),
     `the desktop frame must use the statement hairline for its ${divider} divider`,
   );
+}
+
+function shadowHasVisibleDepth(boxShadow) {
+  if (!boxShadow || boxShadow === 'none') return false;
+  const colors = [...boxShadow.matchAll(/(?:rgba?|color|oklab)\(([^)]+)\)/g)].map(
+    (match) => match[1],
+  );
+  const hasAlpha = colors.some((value) => {
+    const slashAlpha = value.match(/\/\s*([\d.]+)\s*$/);
+    if (slashAlpha) return Number.parseFloat(slashAlpha[1]) > 0;
+    const parts = value.split(',').map((part) => Number.parseFloat(part.trim()));
+    return parts.length === 4 ? parts[3] > 0 : parts.length === 3;
+  });
+  const blur = [...boxShadow.matchAll(/(-?\d+(?:\.\d+)?)px/g)]
+    .map((match) => Number.parseFloat(match[1]))
+    .find((value, index, all) => index >= 2 && all.length >= 3);
+  return hasAlpha && typeof blur === 'number' && blur > 0;
 }
 
 async function openPage(width, height, reducedMotion = 'no-preference') {
@@ -107,18 +132,27 @@ async function expectReload(page, account) {
 async function statementFrameSignature(frame) {
   return frame.evaluate((element) => {
     const sidebar = element.querySelector('[data-statement-sidebar]');
-    const railHeader = element.querySelector('[data-statement-rail-header]');
     const railContent = element.querySelector('[data-statement-rail-content]');
     const railFooter = element.querySelector('[data-statement-rail-footer]');
     const main = element.querySelector('[data-statement-main]');
     const header = element.querySelector('[data-statement-header]');
     const scroll = element.querySelector('[data-statement-scroll]');
-    const surfaces = [element, sidebar, railHeader, railContent, railFooter, main, header, scroll];
-    const surfaceColors = surfaces.map((surface) => getComputedStyle(surface).backgroundColor);
+    const article = scroll.querySelector('article');
+    const primarySurfaces = [element, sidebar, railContent, railFooter, main, header];
+    const primaryColors = primarySurfaces.map((surface) => getComputedStyle(surface).backgroundColor);
+    const scrollStyle = getComputedStyle(scroll);
+    const expectedSunken = scrollStyle.getPropertyValue('--statement-sunken').trim();
+    const primaryProbe = document.createElement('div');
+    primaryProbe.style.background = scrollStyle
+      .getPropertyValue('--statement-primary-background')
+      .trim();
+    element.appendChild(primaryProbe);
+    const resolvedPrimary = getComputedStyle(primaryProbe).backgroundColor;
+    primaryProbe.remove();
     const box = (node) => node.getBoundingClientRect();
     const frameBox = box(element);
     const railBox = box(sidebar);
-    const zoneHeights = [railHeader, railContent, railFooter].reduce(
+    const zoneHeights = [railContent, railFooter].reduce(
       (total, zone) => total + box(zone).height,
       0,
     );
@@ -128,12 +162,10 @@ async function statementFrameSignature(frame) {
       railZones: Array.from(
         sidebar.children,
         (child) =>
-          ['rail-header', 'rail-content', 'rail-footer'].find((zone) =>
+          ['rail-content', 'rail-footer'].find((zone) =>
             child.hasAttribute(`data-statement-${zone}`),
           ) ?? child.tagName,
       ),
-      railHeaderChildren: Array.from(railHeader.children, (child) => child.tagName),
-      railHeaderText: railHeader.textContent,
       railContentChildren: Array.from(railContent.children, (child) => child.tagName),
       railContentText: railContent.textContent,
       mainChildren: Array.from(main.children, (child) => child.tagName),
@@ -144,10 +176,22 @@ async function statementFrameSignature(frame) {
       desktopTitleCount: Array.from(element.querySelectorAll('article header > strong')).filter(
         (node) => node.textContent?.trim() === 'September statement',
       ).length,
-      primarySurfacesMatch: surfaceColors
-        .slice(1, -1)
-        .every((color) => color === surfaceColors[0]),
-      recessedSurfaceDiffers: surfaceColors.at(-1) !== surfaceColors[0],
+      primarySurfacesMatch: primaryColors.every((color) => color === primaryColors[0]),
+      sunkenToken: expectedSunken,
+      sunkenBackground: scrollStyle.backgroundColor,
+      sunkenDiffersFromPrimary: scrollStyle.backgroundColor !== resolvedPrimary,
+      sunkenMatchesToken: scrollStyle.backgroundColor === expectedSunken || (() => {
+        const probe = document.createElement('div');
+        probe.style.background = expectedSunken;
+        element.appendChild(probe);
+        const resolved = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return scrollStyle.backgroundColor === resolved;
+      })(),
+      documentMatchesPrimary:
+        getComputedStyle(article).backgroundColor === resolvedPrimary,
+      documentLifted:
+        getComputedStyle(article).backgroundColor !== scrollStyle.backgroundColor,
       headerBorderWidth: getComputedStyle(header).borderBottomWidth,
       footerBorderWidth: getComputedStyle(railFooter).borderTopWidth,
       sidebarBorderWidth: getComputedStyle(sidebar).borderRightWidth,
@@ -157,13 +201,13 @@ async function statementFrameSignature(frame) {
       footerAtRailBottom: Math.abs(box(railFooter).bottom - railBox.bottom) < 1,
       mainRightOfRail: Math.abs(box(main).x - railBox.right) < 1,
       scrollInsideMain: main.contains(scroll) && scroll !== main,
+      documentSurface: scroll.querySelector('article')?.getAttribute('data-surface') ?? null,
     };
   });
 }
 
 const primary = await openPage(1800, 1100);
 const { page } = primary;
-await page.getByRole('status', { name: 'Loading statement' }).waitFor();
 await page.getByText('listTransactions').waitFor();
 await page.getByRole('button', { name: 'Export' }).waitFor();
 assert.equal(
@@ -197,6 +241,17 @@ assert.deepEqual(headerStyle, {
   titleLineHeight: '25px',
 });
 
+await page.getByRole('radio', { name: 'Desktop' }).click();
+for (const presetLabel of presetLabels) {
+  await page.getByRole('radio', { name: presetLabel }).click();
+  const presetFrame = await statementFrameSignature(page.locator('[data-statement-frame]'));
+  assert.equal(presetFrame.sunkenMatchesToken, true, `${presetLabel} sunken token`);
+  assert.equal(presetFrame.sunkenDiffersFromPrimary, true, `${presetLabel} sunken contrast`);
+  assert.equal(presetFrame.primarySurfacesMatch, true, `${presetLabel} primary chrome`);
+}
+await page.getByRole('radio', { name: 'Financial app (Aurora)' }).click();
+await page.getByRole('radio', { name: 'Mobile' }).click();
+
 const company = page.getByLabel('Company name');
 await company.fill('Aurora live');
 assert.equal(await page.getByText('listTransactions').count(), 1);
@@ -227,12 +282,25 @@ await assertCallsRemain();
 
 const directFrame = page.locator('[data-statement-frame]');
 const directFrameSignature = await statementFrameSignature(directFrame);
-assert.deepEqual(directFrameSignature, {
+assert.equal(directFrameSignature.sunkenMatchesToken, true);
+assert.notEqual(directFrameSignature.sunkenToken, '');
+assert.equal(directFrameSignature.documentMatchesPrimary, true);
+assert.equal(directFrameSignature.documentLifted, true);
+assert.equal(directFrameSignature.documentSurface, 'card');
+const {
+  sunkenToken: _sunkenToken,
+  sunkenBackground: _sunkenBackground,
+  sunkenDiffersFromPrimary: _sunkenDiffersFromPrimary,
+  sunkenMatchesToken: _sunkenMatchesToken,
+  documentMatchesPrimary: _documentMatchesPrimary,
+  documentLifted: _documentLifted,
+  documentSurface: _documentSurface,
+  ...directFrameShape
+} = directFrameSignature;
+assert.deepEqual(directFrameShape, {
   frameDirection: 'row',
   frameChildren: ['ASIDE', 'DIV'],
-  railZones: ['rail-header', 'rail-content', 'rail-footer'],
-  railHeaderChildren: [],
-  railHeaderText: '',
+  railZones: ['rail-content', 'rail-footer'],
   railContentChildren: [],
   railContentText: '',
   mainChildren: ['DIV', 'DIV'],
@@ -242,7 +310,6 @@ assert.deepEqual(directFrameSignature, {
   footerText: '',
   desktopTitleCount: 1,
   primarySurfacesMatch: true,
-  recessedSurfaceDiffers: true,
   headerBorderWidth: '1px',
   footerBorderWidth: '1px',
   sidebarBorderWidth: '1px',
@@ -414,29 +481,125 @@ assert.equal(
 );
 await expectReload(page, 'Consumer');
 
-const mobileScroll = await appPreview
-  .locator('[class*="StatementScreen_scroller"]')
-  .evaluate((element) => {
-    const article = element.querySelector('article');
-    const shell = element.closest('[data-screen-body]');
-    const elementRect = element.getBoundingClientRect();
-    const shellRect = shell.getBoundingClientRect();
-    element.scrollTop = 120;
-    return {
-      articleWidth: Math.round(article.getBoundingClientRect().width),
-      scrollerWidth: Math.round(elementRect.width),
-      contained: elementRect.top >= shellRect.top - 1 && elementRect.bottom <= shellRect.bottom + 1,
-      overflowY: getComputedStyle(element).overflowY,
-      scrollHeight: element.scrollHeight,
-      clientHeight: element.clientHeight,
-      scrollTop: element.scrollTop,
-    };
-  });
-assert.equal(mobileScroll.articleWidth, mobileScroll.scrollerWidth);
-assert.equal(mobileScroll.contained, true);
-assert.equal(mobileScroll.overflowY, 'auto');
-assert(mobileScroll.scrollHeight > mobileScroll.clientHeight);
-assert(mobileScroll.scrollTop > 0);
+const mobileChromeRest = await appPreview.evaluate((root) => {
+  const header = root.querySelector('[data-statement-header]');
+  const scroll = root.querySelector('[data-statement-scroll]');
+  const article = scroll?.querySelector('article');
+  const shell = scroll?.closest('[data-screen-body]');
+  const elementRect = scroll.getBoundingClientRect();
+  const shellRect = shell.getBoundingClientRect();
+  const headerStyle = getComputedStyle(header);
+  const articleStyle = getComputedStyle(article);
+  return {
+    articleWidth: Math.round(article.getBoundingClientRect().width),
+    scrollerWidth: Math.round(elementRect.width),
+    contained: elementRect.top >= shellRect.top - 1 && elementRect.bottom <= shellRect.bottom + 1,
+    overflowY: getComputedStyle(scroll).overflowY,
+    scrollHeight: scroll.scrollHeight,
+    clientHeight: scroll.clientHeight,
+    documentSurface: article.getAttribute('data-surface'),
+    borderWidth: articleStyle.borderTopWidth,
+    borderRadius: articleStyle.borderRadius,
+    hairlineWidth: headerStyle.borderBottomWidth,
+    restScrolled: header.hasAttribute('data-scrolled'),
+    restShadow: headerStyle.boxShadow,
+    restTransition: headerStyle.transition,
+  };
+});
+assert.equal(mobileChromeRest.articleWidth, mobileChromeRest.scrollerWidth);
+assert.equal(mobileChromeRest.contained, true);
+assert.equal(mobileChromeRest.overflowY, 'auto');
+assert(mobileChromeRest.scrollHeight > mobileChromeRest.clientHeight);
+assert.equal(mobileChromeRest.documentSurface, 'bleed');
+assert.equal(mobileChromeRest.borderWidth, '0px');
+assert.equal(mobileChromeRest.borderRadius, '0px');
+assert.notEqual(mobileChromeRest.hairlineWidth, '0px');
+assert.equal(mobileChromeRest.restScrolled, false);
+assert.match(mobileChromeRest.restTransition, /box-shadow/);
+assert.match(mobileChromeRest.restTransition, /0\.15s|150ms/);
+
+await appPreview.locator('[data-statement-scroll]').evaluate((element) => {
+  element.scrollTop = 120;
+  element.dispatchEvent(new Event('scroll', { bubbles: true }));
+});
+await appPreview.locator('[data-statement-header][data-scrolled]').waitFor();
+await page.waitForTimeout(180);
+const mobileChromeScrolled = await appPreview.locator('[data-statement-header]').evaluate((header) => {
+  const style = getComputedStyle(header);
+  return {
+    scrolled: header.hasAttribute('data-scrolled'),
+    shadow: style.boxShadow,
+    scrollTop: header.parentElement?.querySelector('[data-statement-scroll]')?.scrollTop ?? 0,
+  };
+});
+assert.equal(mobileChromeScrolled.scrolled, true);
+assert(mobileChromeScrolled.scrollTop > 0);
+assert.notEqual(mobileChromeScrolled.shadow, mobileChromeRest.restShadow);
+assert.equal(shadowHasVisibleDepth(mobileChromeScrolled.shadow), true);
+
+await appPreview.locator('[data-statement-scroll]').evaluate((element) => {
+  element.scrollTop = 0;
+  element.dispatchEvent(new Event('scroll', { bubbles: true }));
+});
+await appPreview.locator('[data-statement-header]:not([data-scrolled])').waitFor();
+assert.equal(
+  await appPreview.locator('[data-statement-header]').evaluate((element) =>
+    element.hasAttribute('data-scrolled'),
+  ),
+  false,
+);
+
+const mobileScroll = {
+  ...mobileChromeRest,
+  scrollTop: mobileChromeScrolled.scrollTop,
+  scrolledShadow: mobileChromeScrolled.shadow,
+};
+
+const exportSourceCard = await page.locator('[class*="exportSource"] article').evaluate((element) => {
+  const style = getComputedStyle(element);
+  return {
+    surface: element.getAttribute('data-surface'),
+    borderWidth: Number.parseFloat(style.borderTopWidth),
+    borderRadius: Number.parseFloat(style.borderTopLeftRadius),
+  };
+});
+assert.equal(exportSourceCard.surface, 'card');
+assert(exportSourceCard.borderWidth > 0);
+assert(exportSourceCard.borderRadius > 0);
+
+await page.getByRole('button', { name: 'Export' }).click();
+await exportSheet.locator('[data-preview-shell="mobile"]').waitFor();
+const shareMobileShell = exportSheet.locator('[data-preview-shell="mobile"]');
+const shareMobile = await shareMobileShell.evaluate((shell) => {
+  const header = shell.querySelector('[data-statement-header]');
+  const document = shell.querySelector('[data-statement-scroll] article');
+  const style = getComputedStyle(document);
+  return {
+    surface: document?.getAttribute('data-surface') ?? null,
+    borderWidth: style.borderTopWidth,
+    borderRadius: style.borderRadius,
+    hairline: getComputedStyle(header).borderBottomWidth,
+  };
+});
+assert.deepEqual(shareMobile, {
+  surface: 'bleed',
+  borderWidth: '0px',
+  borderRadius: '0px',
+  hairline: mobileChromeRest.hairlineWidth,
+});
+await shareMobileShell.locator('[data-statement-scroll]').evaluate((element) => {
+  element.scrollTop = 120;
+  element.dispatchEvent(new Event('scroll', { bubbles: true }));
+});
+await shareMobileShell.locator('[data-statement-header][data-scrolled]').waitFor();
+await page.waitForTimeout(180);
+const shareMobileShadow = await shareMobileShell
+  .locator('[data-statement-header]')
+  .evaluate((element) => getComputedStyle(element).boxShadow);
+assert.equal(shadowHasVisibleDepth(shareMobileShadow), true);
+assert.equal(shareMobileShadow, mobileChromeScrolled.shadow);
+await page.keyboard.press('Escape');
+await exportSheet.waitFor({ state: 'detached' });
 
 const rail = await openPage(2560, 1200);
 await rail.page.getByText('listTransactions').waitFor();
@@ -549,6 +712,10 @@ for (const [width, height] of [
 
 const reduced = await openPage(1280, 1000, 'reduce');
 await reduced.page.getByText('listTransactions').waitFor();
+const reducedMotion = await reduced.page
+  .locator('[data-preview-shell="mobile"] [data-statement-header]')
+  .evaluate((element) => getComputedStyle(element).transitionDuration);
+assert.equal(reducedMotion, '0s');
 await reduced.page.getByRole('button', { name: 'Export' }).click();
 await reduced.page.getByRole('dialog', { name: 'Export statement' }).waitFor();
 assert.deepEqual(reduced.errors, []);

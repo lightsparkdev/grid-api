@@ -28,6 +28,11 @@
   max-width: none;
 }
 
+.document[data-surface='bleed'] {
+  border: 0;
+  border-radius: 0;
+}
+
 .masthead {
   display: flex;
   align-items: baseline;

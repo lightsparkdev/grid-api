@@ -59,17 +59,32 @@ async function desktopFrameMetrics(frame) {
     };
     const header = element.querySelector('[data-statement-header]');
     const sidebar = element.querySelector('[data-statement-sidebar]');
-    const railHeader = element.querySelector('[data-statement-rail-header]');
     const railContent = element.querySelector('[data-statement-rail-content]');
     const railFooter = element.querySelector('[data-statement-rail-footer]');
     const main = element.querySelector('[data-statement-main]');
     const scroll = element.querySelector('[data-statement-scroll]');
-    const document = scroll?.querySelector('article');
+    const article = scroll?.querySelector('article');
+    const frameSurfaces = [element, sidebar, railContent, railFooter, main, header, scroll];
+    const frameColors = frameSurfaces.map((surface) => getComputedStyle(surface).backgroundColor);
     const railBox = sidebar.getBoundingClientRect();
-    const zoneHeights = [railHeader, railContent, railFooter].reduce(
+    const zoneHeights = [railContent, railFooter].reduce(
       (total, zone) => total + zone.getBoundingClientRect().height,
       0,
     );
+    const scrollStyle = getComputedStyle(scroll);
+    const sunkenToken = scrollStyle.getPropertyValue('--statement-sunken').trim();
+    const probe = window.document.createElement('div');
+    probe.style.background = sunkenToken;
+    element.appendChild(probe);
+    const resolvedSunken = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    const primaryProbe = window.document.createElement('div');
+    primaryProbe.style.background = scrollStyle
+      .getPropertyValue('--statement-primary-background')
+      .trim();
+    element.appendChild(primaryProbe);
+    const resolvedPrimary = getComputedStyle(primaryProbe).backgroundColor;
+    primaryProbe.remove();
     return {
       signature: {
         frameDirection: getComputedStyle(element).flexDirection,
@@ -77,12 +92,10 @@ async function desktopFrameMetrics(frame) {
         railZones: Array.from(
           sidebar.children,
           (child) =>
-            ['rail-header', 'rail-content', 'rail-footer'].find((zone) =>
+            ['rail-content', 'rail-footer'].find((zone) =>
               child.hasAttribute(`data-statement-${zone}`),
             ) ?? child.tagName,
         ),
-        railHeaderChildren: Array.from(railHeader.children, (child) => child.tagName),
-        railHeaderText: railHeader.textContent,
         mainChildren: Array.from(main.children, (child) => child.tagName),
         headerChildren: Array.from(header.children, (child) => child.tagName),
         headerText: header.textContent,
@@ -94,6 +107,7 @@ async function desktopFrameMetrics(frame) {
           (node) => node.textContent?.trim() === 'September statement',
         ).length,
         hasStableScrollTarget: scroll !== null && main.contains(scroll) && scroll !== main,
+        documentSurface: article?.getAttribute('data-surface') ?? null,
       },
       frame: {
         width: Math.round(frameBox.width),
@@ -109,14 +123,25 @@ async function desktopFrameMetrics(frame) {
         mainDoesNotScroll: main.scrollHeight - main.clientHeight === 0,
         frameDoesNotScroll: element.scrollHeight - element.clientHeight === 0,
       },
+      sunken: {
+        token: sunkenToken,
+        background: scrollStyle.backgroundColor,
+        matchesToken: scrollStyle.backgroundColor === resolvedSunken,
+        frameSurfacesMatch: frameColors.every(
+          (color) => color === scrollStyle.backgroundColor,
+        ),
+        documentMatchesPrimary:
+          getComputedStyle(article).backgroundColor === resolvedPrimary,
+        documentLifted:
+          getComputedStyle(article).backgroundColor !== scrollStyle.backgroundColor,
+      },
       header: metric('[data-statement-header]'),
       sidebar: metric('[data-statement-sidebar]'),
-      railHeader: metric('[data-statement-rail-header]'),
       railContent: metric('[data-statement-rail-content]'),
       railFooter: metric('[data-statement-rail-footer]'),
       main: metric('[data-statement-main]'),
       scroll: metric('[data-statement-scroll]'),
-      document: document ? metric('[data-statement-scroll] > article') : null,
+      document: article ? metric('[data-statement-scroll] > article') : null,
     };
   });
 }
@@ -292,8 +317,8 @@ for (const auditCase of cases) {
             path: new URL(`${baseName}-playground-statement.png`, output).pathname,
             fullPage: true,
           });
-          const mobileScroller = page.locator('[class*="StatementScreen_scroller"]');
-          const mobileHeader = page.locator('[class*="StatementScreen_hero"]');
+          const mobileScroller = page.locator('[data-statement-scroll]');
+          const mobileHeader = page.locator('[data-statement-header]');
           const mobileDocument = mobileScroller.locator('article');
           entry.metrics.mobileUnscrolled = await mobileHeader.evaluate((element) => {
             const style = getComputedStyle(element);
@@ -301,13 +326,15 @@ for (const auditCase of cases) {
               scrolled: element.hasAttribute('data-scrolled'),
               borderBottomWidth: style.borderBottomWidth,
               boxShadow: style.boxShadow,
+              transitionDuration: style.transitionDuration,
             };
           });
           entry.metrics.mobileDocument = await mobileDocument.evaluate((element) => {
             const style = getComputedStyle(element);
             return {
-              borderWidth: style.borderWidth,
-              borderRadius: style.borderRadius,
+              surface: element.getAttribute('data-surface'),
+              borderWidth: style.borderTopWidth,
+              borderRadius: style.borderTopLeftRadius,
             };
           });
           await mobileScroller.evaluate((element) => {
@@ -315,7 +342,7 @@ for (const auditCase of cases) {
             element.dispatchEvent(new Event('scroll', { bubbles: true }));
           });
           await page.waitForFunction(() =>
-            document.querySelector('[class*="StatementScreen_hero"]')?.hasAttribute('data-scrolled'),
+            document.querySelector('[data-statement-header]')?.hasAttribute('data-scrolled'),
           );
           entry.metrics.mobileScrolled = await mobileHeader.evaluate((element) => {
             const style = getComputedStyle(element);
@@ -348,14 +375,11 @@ const desktopFailures = evidence
   .filter((entry) => entry.app === 'statements' && entry.metrics.desktopFrame)
   .flatMap((entry) => {
     const failures = [];
-    const { signature, fit } = entry.metrics.desktopFrame;
+    const { signature, fit, sunken } = entry.metrics.desktopFrame;
     if (signature.frameDirection !== 'row') failures.push('frame direction');
     if (signature.frameChildren.join() !== 'ASIDE,DIV') failures.push('frame children');
-    if (signature.railZones.join() !== 'rail-header,rail-content,rail-footer') {
+    if (signature.railZones.join() !== 'rail-content,rail-footer') {
       failures.push('rail zones');
-    }
-    if (signature.railHeaderChildren.length > 0 || signature.railHeaderText !== '') {
-      failures.push('rail header must be empty');
     }
     if (signature.mainChildren.join() !== 'DIV,DIV') failures.push('main children');
     if (signature.headerChildren.length > 0 || signature.headerText !== '') {
@@ -369,6 +393,7 @@ const desktopFailures = evidence
     }
     if (signature.titleCount !== 1) failures.push('desktop title count');
     if (signature.hasStableScrollTarget !== true) failures.push('scroll target');
+    if (signature.documentSurface !== 'card') failures.push('desktop document surface');
     if (fit.railFillsFrame !== true) failures.push('rail full height');
     if (fit.zonesFillRail !== true) failures.push('rail zone coverage');
     if (fit.footerAtRailBottom !== true) failures.push('footer at rail bottom');
@@ -376,6 +401,11 @@ const desktopFailures = evidence
     if (fit.mainDoesNotScroll !== true) failures.push('main column scrolls');
     if (fit.frameDoesNotScroll !== true) failures.push('frame scrolls');
     if (!(fit.scale > 0 && fit.scale <= 1)) failures.push('fit scale');
+    if (!sunken?.token) failures.push('sunken token');
+    if (sunken?.matchesToken !== true) failures.push('sunken token resolution');
+    if (sunken?.frameSurfacesMatch !== true) failures.push('sunken frame surfaces');
+    if (sunken?.documentMatchesPrimary !== true) failures.push('document primary surface');
+    if (sunken?.documentLifted !== true) failures.push('document surface contrast');
     if (entry.metrics.directExportFrameSignatureMatch !== true) {
       failures.push('direct/export frame mismatch');
     }
@@ -385,17 +415,40 @@ const desktopFailures = evidence
 if (desktopFailures.length > 0) {
   throw new Error(`Statements desktop audit failures: ${desktopFailures.join('\n')}`);
 }
+function shadowHasVisibleDepth(boxShadow) {
+  if (!boxShadow || boxShadow === 'none') return false;
+  const colors = [...boxShadow.matchAll(/(?:rgba?|color)\(([^)]+)\)/g)].map(
+    (match) => match[1],
+  );
+  const hasAlpha = colors.some((value) => {
+    const slashAlpha = value.match(/\/\s*([\d.]+)\s*$/);
+    if (slashAlpha) return Number.parseFloat(slashAlpha[1]) > 0;
+    const parts = value.split(',').map((part) => Number.parseFloat(part.trim()));
+    return parts.length === 4 ? parts[3] > 0 : parts.length === 3;
+  });
+  const blur = [...boxShadow.matchAll(/(-?\d+(?:\.\d+)?)px/g)]
+    .map((match) => Number.parseFloat(match[1]))
+    .find((value, index, all) => index >= 2 && all.length >= 3);
+  return hasAlpha && typeof blur === 'number' && blur > 0;
+}
 const mobileFailures = evidence
   .filter((entry) => entry.app === 'statements' && entry.metrics.mobileDocument)
   .flatMap((entry) => {
     const failures = [];
     const { mobileDocument, mobileScrolled, mobileUnscrolled } = entry.metrics;
+    if (mobileDocument.surface !== 'bleed') failures.push('document surface');
     if (mobileDocument.borderWidth !== '0px') failures.push('document border');
     if (mobileDocument.borderRadius !== '0px') failures.push('document radius');
     if (mobileUnscrolled.borderBottomWidth === '0px') failures.push('header hairline');
     if (mobileUnscrolled.scrolled !== false) failures.push('initial scroll state');
+    if (mobileUnscrolled.transitionDuration !== '0s') failures.push('reduced motion transition');
     if (mobileScrolled.scrolled !== true) failures.push('scrolled state');
-    if (mobileScrolled.boxShadow === 'none') failures.push('scrolled shadow');
+    if (mobileScrolled.boxShadow === mobileUnscrolled.boxShadow) {
+      failures.push('scrolled shadow unchanged');
+    }
+    if (!shadowHasVisibleDepth(mobileScrolled.boxShadow)) {
+      failures.push('scrolled shadow depth');
+    }
     return failures.map((failure) => `${entry.case}: ${failure}`);
   });
 if (mobileFailures.length > 0) {

@@ -15,7 +15,8 @@ export function StatementScreen({
   statement: StatementModel;
   loading: boolean;
 }) {
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const elevated = !loading && scrolled;
 
   return (
     <main
@@ -23,7 +24,11 @@ export function StatementScreen({
       style={statementColorProperties(statement.brand.colors)}
       aria-label="Statement app preview"
     >
-      <header className={styles.hero} data-scrolled={isScrolled || undefined}>
+      <header
+        className={styles.hero}
+        data-statement-header
+        data-scrolled={elevated || undefined}
+      >
         <span className={styles.logo}>
           {statement.brand.logo.kind === 'image' ? (
             <img src={statement.brand.logo.src} alt={statement.brand.logo.alt} />
@@ -40,9 +45,15 @@ export function StatementScreen({
       ) : (
         <div
           className={styles.scroller}
-          onScroll={(event) => setIsScrolled(event.currentTarget.scrollTop > 0)}
+          data-statement-scroll
+          onScroll={(event) => setScrolled(event.currentTarget.scrollTop > 0)}
         >
-          <StatementDocument statement={statement} width="narrow" showMasthead={false} />
+          <StatementDocument
+            statement={statement}
+            width="narrow"
+            showMasthead={false}
+            surface="bleed"
+          />
         </div>
       )}
     </main>

@@ -7,6 +7,7 @@ import { IconUnlocked } from '@central-icons-react/round-outlined-radius-3-strok
 import { IconLimit } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLimit';
 import { IconArrowUndoUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUndoUp';
 import { IconCircleX } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCircleX';
+import { IconBlankPagePortrait } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBlankPagePortrait';
 import { ACTIONS, type ActionId } from './actions';
 
 export type FlowIconCmp = typeof IconCreditCardAdd;
@@ -32,6 +33,7 @@ export function actionIdForLabel(label: string): ActionId | undefined {
 }
 
 export function flowIconForLabel(label: string): { Icon: FlowIconCmp } | null {
+  if (label === 'Load statement') return { Icon: IconBlankPagePortrait };
   const id = actionIdForLabel(label);
   if (!id) return null;
   return { Icon: FLOW_ICONS[id] };

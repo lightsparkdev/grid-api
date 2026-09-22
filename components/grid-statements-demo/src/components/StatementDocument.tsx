@@ -5,14 +5,20 @@ import { statementTitle } from '@/statement/presentation';
 import type { PreviewWidth, StatementModel } from '@/statement/types';
 import styles from './StatementDocument.module.css';
 
+export type DocumentSurface = 'card' | 'bleed';
+
 interface StatementDocumentProps {
   statement: StatementModel;
   width: PreviewWidth;
   showMasthead: boolean;
+  surface?: DocumentSurface;
 }
 
 export const StatementDocument = forwardRef<HTMLElement, StatementDocumentProps>(
-  function StatementDocument({ statement, width, showMasthead }, ref) {
+  function StatementDocument(
+    { statement, width, showMasthead, surface = 'card' },
+    ref,
+  ) {
     const totals = calculateTotals(statement);
     const rows = statementRows(statement);
     const hasDisputableRows = rows.some((row) => row.disputable);
@@ -29,6 +35,7 @@ export const StatementDocument = forwardRef<HTMLElement, StatementDocumentProps>
         ref={ref}
         className={styles.document}
         data-preview-width={width}
+        data-surface={surface}
         style={statementColorProperties(statement.brand.colors)}
       >
       {showMasthead ? (

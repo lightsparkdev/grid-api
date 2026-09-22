@@ -65,6 +65,35 @@ describe('StatementDocument', () => {
     expect(container.querySelectorAll('[data-flag="disputable"]')).toHaveLength(0);
   });
 
+  it('defaults to card and bleeds only when surface is bleed', () => {
+    const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
+    const view = render(
+      <StatementDocument statement={statement} width="full" showMasthead />,
+    );
+    const document = view.container.querySelector('article');
+
+    expect(document?.getAttribute('data-surface')).toBe('card');
+    view.rerender(
+      <StatementDocument
+        statement={statement}
+        width="narrow"
+        showMasthead={false}
+        surface="bleed"
+      />,
+    );
+    expect(view.container.querySelector('article')?.getAttribute('data-surface')).toBe('bleed');
+  });
+
+  it('keeps standalone export callers on the default card surface', () => {
+    const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
+    const { container } = render(
+      <StatementDocument statement={statement} width="full" showMasthead />,
+    );
+
+    expect(container.querySelector('article')?.getAttribute('data-surface')).toBe('card');
+    expect(container.querySelector('article')?.getAttribute('data-preview-width')).toBe('full');
+  });
+
   it('renders one commercial footer hairline and two consumer footer hairlines', () => {
     const commercial = buildStatement('commercial', DEFAULT_BRAND, STATEMENT_PERIOD);
     const consumer = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);

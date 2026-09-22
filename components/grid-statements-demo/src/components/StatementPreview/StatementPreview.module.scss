@@ -9,6 +9,11 @@
 }
 
 .duoScreen {
+  --statement-sunken: color-mix(
+    in srgb,
+    var(--statement-primary-text) 4%,
+    var(--statement-primary-background)
+  );
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -26,14 +31,6 @@
   overflow: hidden;
   background: var(--statement-primary-background);
   color: var(--statement-primary-text);
-}
-
-.railHeader {
-  height: 52px;
-  min-width: 0;
-  flex: 0 0 52px;
-  box-sizing: border-box;
-  background: var(--statement-primary-background);
 }
 
 .sidebar {
@@ -95,11 +92,7 @@
   padding: var(--spacing-xl);
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: color-mix(
-    in srgb,
-    var(--statement-primary-text) 4%,
-    var(--statement-primary-background)
-  );
+  background: var(--statement-sunken);
   scrollbar-width: none;
 
   &::-webkit-scrollbar {
@@ -116,7 +109,7 @@
   width: 100%;
   height: 100%;
   place-items: center;
-  background: var(--statement-primary-background);
+  background: var(--statement-sunken);
   color: var(--statement-secondary-text);
 
   svg {

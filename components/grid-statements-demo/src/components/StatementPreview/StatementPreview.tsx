@@ -36,7 +36,6 @@ export function StatementPreview({ mode, phase, statement }: StatementPreviewPro
           ) : (
             <div className={styles.desktopApp} data-statement-frame>
               <aside className={styles.sidebar} data-statement-sidebar>
-                <div className={styles.railHeader} data-statement-rail-header />
                 <div className={styles.railContent} data-statement-rail-content />
                 <div className={styles.railFooter} data-statement-rail-footer />
               </aside>
