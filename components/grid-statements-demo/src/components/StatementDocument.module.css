@@ -244,6 +244,10 @@
 }
 
 .provider {
+  padding-top: 0;
+}
+
+.providerDivider {
   padding-top: 8px;
   border-top: 0.5px solid var(--statement-hairline);
 }

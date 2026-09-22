@@ -65,6 +65,20 @@ describe('StatementDocument', () => {
     expect(container.querySelectorAll('[data-flag="disputable"]')).toHaveLength(0);
   });
 
+  it('renders one commercial footer hairline and two consumer footer hairlines', () => {
+    const commercial = buildStatement('commercial', DEFAULT_BRAND, STATEMENT_PERIOD);
+    const consumer = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
+    const view = render(
+      <StatementDocument statement={commercial} width="full" showMasthead />,
+    );
+
+    expect(view.container.querySelectorAll('[data-footer-hairline]')).toHaveLength(1);
+    view.rerender(
+      <StatementDocument statement={consumer} width="full" showMasthead />,
+    );
+    expect(view.container.querySelectorAll('[data-footer-hairline]')).toHaveLength(2);
+  });
+
   it('uses company name when no logo is present', () => {
     const statement = buildStatement(
       'consumer',

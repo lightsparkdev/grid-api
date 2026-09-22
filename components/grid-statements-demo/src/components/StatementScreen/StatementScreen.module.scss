@@ -11,16 +11,29 @@
 }
 
 .hero {
+  --header-hairline: color-mix(
+    in srgb,
+    var(--statement-primary-text) 10%,
+    transparent
+  );
   display: flex;
   align-items: center;
   flex: 0 0 auto;
   min-height: 118px;
   padding: 70px 24px 8px;
   box-sizing: border-box;
-  border: 0;
+  border-bottom: 0.5px solid var(--header-hairline);
   gap: 12px;
   background: var(--statement-primary-background);
+  box-shadow: 0 0 0 transparent;
   color: var(--statement-primary-text);
+  transition: box-shadow 150ms ease;
+  z-index: 1;
+
+  &[data-scrolled] {
+    box-shadow: 0 4px 12px
+      color-mix(in srgb, var(--statement-primary-text) 12%, transparent);
+  }
 
   h1 {
     min-width: 0;
@@ -68,6 +81,8 @@
     width: 100%;
     min-width: 0;
     max-width: none;
+    border: 0;
+    border-radius: 0;
     box-shadow: none;
   }
 }
@@ -91,6 +106,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .hero {
+    transition: none;
+  }
+
   .loading svg {
     animation: none;
   }

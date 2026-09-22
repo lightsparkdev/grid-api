@@ -21,29 +21,41 @@ let text = (0..<document.pageCount)
   .compactMap { document.page(at: $0)?.string }
   .joined(separator: "\n")
 
-for required in [
+let variant = ProcessInfo.processInfo.environment["VERIFY_VARIANT"] ?? "consumer"
+var required = [
   "September statement",
   "Total fees for period",
-  "Blue Bottle Coffee · Los Angeles, CA",
-  "In case of errors or questions about your electronic transfers",
   "This account is held at Lead Bank",
-] {
-  guard text.contains(required) else {
-    fputs("missing PDF text: \(required)\n", stderr)
+]
+if variant == "commercial" {
+  required.append("Commercial account")
+} else {
+  required.append("Blue Bottle Coffee · Los Angeles, CA")
+  required.append("In case of errors or questions about your electronic transfers")
+}
+
+for requiredText in required {
+  guard text.contains(requiredText) else {
+    fputs("missing PDF text: \(requiredText)\n", stderr)
     exit(1)
   }
 }
 
-for forbidden in [
+var forbidden = [
   "aurora-september-statement",
   "grid-statements-demo.vercel.app",
   "127.0.0.1:4003",
   "1/1",
   "456 S Spring St",
   "In Case of Errors or Questions About Your Electronic Transfers",
-] {
-  guard !text.contains(forbidden) else {
-    fputs("browser chrome found in PDF: \(forbidden)\n", stderr)
+]
+if variant == "commercial" {
+  forbidden.append("In case of errors or questions about your electronic transfers")
+}
+
+for forbiddenText in forbidden {
+  guard !text.contains(forbiddenText) else {
+    fputs("forbidden PDF text found: \(forbiddenText)\n", stderr)
     exit(1)
   }
 }

@@ -82,20 +82,17 @@ async function desktopFrameMetrics(frame) {
             ) ?? child.tagName,
         ),
         railHeaderChildren: Array.from(railHeader.children, (child) => child.tagName),
+        railHeaderText: railHeader.textContent,
         mainChildren: Array.from(main.children, (child) => child.tagName),
         headerChildren: Array.from(header.children, (child) => child.tagName),
         headerText: header.textContent,
         footerChildren: Array.from(railFooter.children, (child) => child.tagName),
         footerText: railFooter.textContent,
-        placeholderCount: railContent.querySelectorAll('[data-statement-placeholder]').length,
-        placeholderGraphics: railContent.querySelectorAll('img, svg').length,
-        railContentHidden: railContent.getAttribute('aria-hidden'),
+        railContentChildren: Array.from(railContent.children, (child) => child.tagName),
+        railContentText: railContent.textContent,
         titleCount: Array.from(element.querySelectorAll('article header > strong')).filter(
           (node) => node.textContent?.trim() === 'September statement',
         ).length,
-        companyName: element.querySelector('[data-statement-brand-name]')?.textContent,
-        imageAlt:
-          element.querySelector('[data-statement-brand-mark] img')?.getAttribute('alt') ?? null,
         hasStableScrollTarget: scroll !== null && main.contains(scroll) && scroll !== main,
       },
       frame: {
@@ -295,6 +292,43 @@ for (const auditCase of cases) {
             path: new URL(`${baseName}-playground-statement.png`, output).pathname,
             fullPage: true,
           });
+          const mobileScroller = page.locator('[class*="StatementScreen_scroller"]');
+          const mobileHeader = page.locator('[class*="StatementScreen_hero"]');
+          const mobileDocument = mobileScroller.locator('article');
+          entry.metrics.mobileUnscrolled = await mobileHeader.evaluate((element) => {
+            const style = getComputedStyle(element);
+            return {
+              scrolled: element.hasAttribute('data-scrolled'),
+              borderBottomWidth: style.borderBottomWidth,
+              boxShadow: style.boxShadow,
+            };
+          });
+          entry.metrics.mobileDocument = await mobileDocument.evaluate((element) => {
+            const style = getComputedStyle(element);
+            return {
+              borderWidth: style.borderWidth,
+              borderRadius: style.borderRadius,
+            };
+          });
+          await mobileScroller.evaluate((element) => {
+            element.scrollTop = 80;
+            element.dispatchEvent(new Event('scroll', { bubbles: true }));
+          });
+          await page.waitForFunction(() =>
+            document.querySelector('[class*="StatementScreen_hero"]')?.hasAttribute('data-scrolled'),
+          );
+          entry.metrics.mobileScrolled = await mobileHeader.evaluate((element) => {
+            const style = getComputedStyle(element);
+            return {
+              scrolled: element.hasAttribute('data-scrolled'),
+              borderBottomWidth: style.borderBottomWidth,
+              boxShadow: style.boxShadow,
+            };
+          });
+          await page.screenshot({
+            path: new URL(`${baseName}-playground-statement-scrolled.png`, output).pathname,
+            fullPage: true,
+          });
         }
       }
     }
@@ -320,7 +354,9 @@ const desktopFailures = evidence
     if (signature.railZones.join() !== 'rail-header,rail-content,rail-footer') {
       failures.push('rail zones');
     }
-    if (signature.railHeaderChildren.join() !== 'SPAN,SPAN') failures.push('rail header children');
+    if (signature.railHeaderChildren.length > 0 || signature.railHeaderText !== '') {
+      failures.push('rail header must be empty');
+    }
     if (signature.mainChildren.join() !== 'DIV,DIV') failures.push('main children');
     if (signature.headerChildren.length > 0 || signature.headerText !== '') {
       failures.push('main header must be empty');
@@ -328,9 +364,9 @@ const desktopFailures = evidence
     if (signature.footerChildren.length > 0 || signature.footerText !== '') {
       failures.push('rail footer must be empty');
     }
-    if (signature.placeholderCount !== 3) failures.push('sidebar placeholders');
-    if (signature.placeholderGraphics !== 0) failures.push('sidebar placeholder graphics');
-    if (signature.railContentHidden !== 'true') failures.push('sidebar placeholders not inert');
+    if (signature.railContentChildren.length > 0 || signature.railContentText !== '') {
+      failures.push('rail content must be empty');
+    }
     if (signature.titleCount !== 1) failures.push('desktop title count');
     if (signature.hasStableScrollTarget !== true) failures.push('scroll target');
     if (fit.railFillsFrame !== true) failures.push('rail full height');
@@ -348,6 +384,22 @@ const desktopFailures = evidence
   });
 if (desktopFailures.length > 0) {
   throw new Error(`Statements desktop audit failures: ${desktopFailures.join('\n')}`);
+}
+const mobileFailures = evidence
+  .filter((entry) => entry.app === 'statements' && entry.metrics.mobileDocument)
+  .flatMap((entry) => {
+    const failures = [];
+    const { mobileDocument, mobileScrolled, mobileUnscrolled } = entry.metrics;
+    if (mobileDocument.borderWidth !== '0px') failures.push('document border');
+    if (mobileDocument.borderRadius !== '0px') failures.push('document radius');
+    if (mobileUnscrolled.borderBottomWidth === '0px') failures.push('header hairline');
+    if (mobileUnscrolled.scrolled !== false) failures.push('initial scroll state');
+    if (mobileScrolled.scrolled !== true) failures.push('scrolled state');
+    if (mobileScrolled.boxShadow === 'none') failures.push('scrolled shadow');
+    return failures.map((failure) => `${entry.case}: ${failure}`);
+  });
+if (mobileFailures.length > 0) {
+  throw new Error(`Statements mobile audit failures: ${mobileFailures.join('\n')}`);
 }
 const fitScaleCases = new Set(
   evidence

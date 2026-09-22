@@ -113,9 +113,8 @@ async function statementFrameSignature(frame) {
     const main = element.querySelector('[data-statement-main]');
     const header = element.querySelector('[data-statement-header]');
     const scroll = element.querySelector('[data-statement-scroll]');
-    const mark = element.querySelector('[data-statement-brand-mark]');
-    const name = element.querySelector('[data-statement-brand-name]');
     const surfaces = [element, sidebar, railHeader, railContent, railFooter, main, header, scroll];
+    const surfaceColors = surfaces.map((surface) => getComputedStyle(surface).backgroundColor);
     const box = (node) => node.getBoundingClientRect();
     const frameBox = box(element);
     const railBox = box(sidebar);
@@ -134,21 +133,21 @@ async function statementFrameSignature(frame) {
           ) ?? child.tagName,
       ),
       railHeaderChildren: Array.from(railHeader.children, (child) => child.tagName),
+      railHeaderText: railHeader.textContent,
+      railContentChildren: Array.from(railContent.children, (child) => child.tagName),
+      railContentText: railContent.textContent,
       mainChildren: Array.from(main.children, (child) => child.tagName),
       headerChildren: Array.from(header.children, (child) => child.tagName),
       headerText: header.textContent,
       footerChildren: Array.from(railFooter.children, (child) => child.tagName),
       footerText: railFooter.textContent,
-      companyName: name?.textContent,
-      imageAlt: mark?.querySelector('img')?.getAttribute('alt') ?? null,
-      railContentHidden: railContent.getAttribute('aria-hidden'),
-      placeholderCount: railContent.querySelectorAll('[data-statement-placeholder]').length,
-      placeholderText: railContent.textContent,
-      placeholderGraphics: railContent.querySelectorAll('img, svg').length,
       desktopTitleCount: Array.from(element.querySelectorAll('article header > strong')).filter(
         (node) => node.textContent?.trim() === 'September statement',
       ).length,
-      surfaces: surfaces.map((surface) => getComputedStyle(surface).backgroundColor),
+      primarySurfacesMatch: surfaceColors
+        .slice(1, -1)
+        .every((color) => color === surfaceColors[0]),
+      recessedSurfaceDiffers: surfaceColors.at(-1) !== surfaceColors[0],
       headerBorderWidth: getComputedStyle(header).borderBottomWidth,
       footerBorderWidth: getComputedStyle(railFooter).borderTopWidth,
       sidebarBorderWidth: getComputedStyle(sidebar).borderRightWidth,
@@ -193,7 +192,7 @@ const headerStyle = await header.evaluate((element) => {
 assert.deepEqual(headerStyle, {
   paddingLeft: '24px',
   paddingRight: '24px',
-  borderBottomWidth: '0px',
+  borderBottomWidth: '1px',
   titleSize: '20px',
   titleLineHeight: '25px',
 });
@@ -232,20 +231,18 @@ assert.deepEqual(directFrameSignature, {
   frameDirection: 'row',
   frameChildren: ['ASIDE', 'DIV'],
   railZones: ['rail-header', 'rail-content', 'rail-footer'],
-  railHeaderChildren: ['SPAN', 'SPAN'],
+  railHeaderChildren: [],
+  railHeaderText: '',
+  railContentChildren: [],
+  railContentText: '',
   mainChildren: ['DIV', 'DIV'],
   headerChildren: [],
   headerText: '',
   footerChildren: [],
   footerText: '',
-  companyName: 'Aurora live',
-  imageAlt: '',
-  railContentHidden: 'true',
-  placeholderCount: 3,
-  placeholderText: '',
-  placeholderGraphics: 0,
   desktopTitleCount: 1,
-  surfaces: Array.from({ length: 8 }, () => 'rgb(250, 250, 250)'),
+  primarySurfacesMatch: true,
+  recessedSurfaceDiffers: true,
   headerBorderWidth: '1px',
   footerBorderWidth: '1px',
   sidebarBorderWidth: '1px',

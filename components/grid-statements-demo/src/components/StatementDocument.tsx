@@ -97,7 +97,7 @@ export const StatementDocument = forwardRef<HTMLElement, StatementDocumentProps>
         ) : null}
       </section>
 
-      <footer className={styles.footer}>
+      <footer className={styles.footer} data-footer-hairline>
         {statement.variant === 'consumer' ? (
           <section className={styles.notice}>
             <div className={styles.label}>
@@ -117,7 +117,18 @@ export const StatementDocument = forwardRef<HTMLElement, StatementDocumentProps>
           </section>
         ) : null}
 
-        <p className={styles.provider}>{LEGAL.provider}</p>
+        <p
+          className={
+            statement.variant === 'consumer'
+              ? `${styles.provider} ${styles.providerDivider}`
+              : styles.provider
+          }
+          data-footer-hairline={
+            statement.variant === 'consumer' ? true : undefined
+          }
+        >
+          {LEGAL.provider}
+        </p>
       </footer>
       </article>
     );

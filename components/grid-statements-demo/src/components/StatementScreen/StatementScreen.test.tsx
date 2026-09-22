@@ -1,5 +1,5 @@
 import React from 'react';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DEFAULT_BRAND, STATEMENT_PERIOD, buildStatement } from '@/statement/fixtures';
 import { StatementScreen } from './StatementScreen';
@@ -30,5 +30,22 @@ describe('StatementScreen', () => {
     expect(within(view.container).queryByText('Statement period')).toBeNull();
     view.rerender(<StatementScreen statement={statement} loading={false} />);
     expect(within(view.container).getByText('Statement period')).toBeTruthy();
+  });
+
+  it('marks the header only after the document scrolls', () => {
+    const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
+    const { container } = render(
+      <StatementScreen statement={statement} loading={false} />,
+    );
+    const header = container.querySelector('header');
+    const scroller = container.querySelector('[class*="scroller"]') as HTMLElement;
+
+    expect(header?.hasAttribute('data-scrolled')).toBe(false);
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, value: 1 });
+    fireEvent.scroll(scroller);
+    expect(header?.getAttribute('data-scrolled')).toBe('true');
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, value: 0 });
+    fireEvent.scroll(scroller);
+    expect(header?.hasAttribute('data-scrolled')).toBe(false);
   });
 });

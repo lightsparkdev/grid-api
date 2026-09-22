@@ -27,8 +27,6 @@ export function StatementPreview({ mode, phase, statement }: StatementPreviewPro
     );
   }
 
-  const brandMark = Array.from(statement.brand.companyName.trim())[0] ?? '';
-
   return (
     <div className={styles.duoStage} data-preview-shell="desktop">
       <AppShell device="duo-landscape" externalGlass>
@@ -38,23 +36,8 @@ export function StatementPreview({ mode, phase, statement }: StatementPreviewPro
           ) : (
             <div className={styles.desktopApp} data-statement-frame>
               <aside className={styles.sidebar} data-statement-sidebar>
-                <div className={styles.railHeader} data-statement-rail-header>
-                  <span className={styles.brandMark} data-statement-brand-mark aria-hidden>
-                    {statement.brand.logo.kind === 'image' ? (
-                      <img src={statement.brand.logo.src} alt="" />
-                    ) : (
-                      brandMark
-                    )}
-                  </span>
-                  <span className={styles.companyName} data-statement-brand-name>
-                    {statement.brand.companyName}
-                  </span>
-                </div>
-                <div className={styles.railContent} data-statement-rail-content aria-hidden>
-                  <span className={styles.placeholder} data-statement-placeholder />
-                  <span className={styles.placeholder} data-statement-placeholder />
-                  <span className={styles.placeholder} data-statement-placeholder />
-                </div>
+                <div className={styles.railHeader} data-statement-rail-header />
+                <div className={styles.railContent} data-statement-rail-content />
                 <div className={styles.railFooter} data-statement-rail-footer />
               </aside>
               <div className={styles.desktopMain} data-statement-main>

@@ -93,6 +93,7 @@ const printMetrics = await pdfPage.evaluate(() => {
     return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
   };
   return {
+    footerHairlines: document.querySelectorAll('[data-footer-hairline]').length,
     titleRightDelta:
       Math.round((amountColumnBox.right - titleBox.right) * 100) / 100,
     legalContrast: contrast(
@@ -117,6 +118,7 @@ const printMetrics = await pdfPage.evaluate(() => {
       .filter(Boolean),
   };
 });
+assert.equal(printMetrics.footerHairlines, 2);
 assert.equal(printMetrics.titleRightDelta, 0);
 assert(printMetrics.legalContrast >= 4.5);
 assert.deepEqual(
@@ -155,6 +157,55 @@ await page.locator('iframe[title="Statement PDF"]').waitFor({ state: 'detached' 
 const frameRemovedAfterAfterprint =
   (await page.locator('iframe[title="Statement PDF"]').count()) === 0;
 assert.equal(frameRemovedAfterAfterprint, true);
+
+await page.keyboard.press('Escape');
+await page.getByRole('dialog', { name: 'Export statement' }).waitFor({ state: 'detached' });
+await page.getByRole('radio', { name: 'Commercial' }).click();
+await page.getByText('In case of errors or questions').waitFor({ state: 'detached' });
+await page.screenshot({
+  path: new URL('commercial-screen.png', output).pathname,
+  fullPage: true,
+});
+await page.evaluate(() => {
+  window.__printArtifact = null;
+});
+await page.getByRole('button', { name: 'Export' }).click();
+await page.getByRole('button', { name: 'Save PDF' }).click();
+await page.waitForFunction(() => window.__printArtifact !== null);
+const commercialArtifact = await page.evaluate(() => window.__printArtifact);
+assert.equal(commercialArtifact.framePresent, true);
+await writeFile(new URL('commercial-export.html', output), commercialArtifact.html);
+
+const commercialPdfPage = await context.newPage();
+await commercialPdfPage.setContent(commercialArtifact.html, { waitUntil: 'load' });
+await commercialPdfPage.emulateMedia({ media: 'print' });
+await commercialPdfPage.evaluate(() => document.fonts.ready);
+const commercialMetrics = await commercialPdfPage.evaluate(() => ({
+  footerHairlines: document.querySelectorAll('[data-footer-hairline]').length,
+  hasRegENotice: document.body.textContent?.includes(
+    'In case of errors or questions about your electronic transfers',
+  ),
+}));
+assert.equal(commercialMetrics.footerHairlines, 1);
+assert.equal(commercialMetrics.hasRegENotice, false);
+await commercialPdfPage.screenshot({
+  path: new URL('commercial-export-html.png', output).pathname,
+  fullPage: true,
+});
+await commercialPdfPage.pdf({
+  path: new URL('commercial-export.pdf', output).pathname,
+  format: 'Letter',
+  displayHeaderFooter: false,
+  preferCSSPageSize: true,
+  printBackground: true,
+});
+await commercialPdfPage.close();
+await page.locator('iframe[title="Statement PDF"]').evaluate((element) => {
+  const target = element.contentWindow;
+  if (target) target.dispatchEvent(new target.Event('afterprint'));
+});
+await page.locator('iframe[title="Statement PDF"]').waitFor({ state: 'detached' });
+
 assert.deepEqual(errors, []);
 const webkitBrowser = await webkit.launch();
 const webkitContext = await webkitBrowser.newContext({
@@ -204,6 +255,7 @@ await writeFile(
     frameRemovedAfterAfterprint,
     webkitFrameRemovedAfterAfterprint,
     printMetrics,
+    commercialMetrics,
     errors,
     webkitErrors,
   }, null, 2)}\n`,
