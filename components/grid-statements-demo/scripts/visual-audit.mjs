@@ -64,8 +64,8 @@ async function desktopFrameMetrics(frame) {
     const main = element.querySelector('[data-statement-main]');
     const scroll = element.querySelector('[data-statement-scroll]');
     const article = scroll?.querySelector('article');
-    const frameSurfaces = [element, sidebar, railContent, railFooter, main, header];
-    const frameColors = frameSurfaces.map((surface) => getComputedStyle(surface).backgroundColor);
+    const chromeSurfaces = [element, sidebar, railContent, railFooter, main, header, scroll];
+    const chromeColors = chromeSurfaces.map((surface) => getComputedStyle(surface).backgroundColor);
     const railBox = sidebar.getBoundingClientRect();
     const zoneHeights = [railContent, railFooter].reduce(
       (total, zone) => total + zone.getBoundingClientRect().height,
@@ -127,9 +127,7 @@ async function desktopFrameMetrics(frame) {
         token: sunkenToken,
         background: scrollStyle.backgroundColor,
         matchesToken: scrollStyle.backgroundColor === resolvedSunken,
-        chromeSurfacesMatchPrimary: frameColors.every(
-          (color) => color === resolvedPrimary,
-        ),
+        chromeSurfacesMatch: chromeColors.every((color) => color === resolvedSunken),
         documentMatchesPrimary:
           getComputedStyle(article).backgroundColor === resolvedPrimary,
         documentLifted:
@@ -403,8 +401,8 @@ const desktopFailures = evidence
     if (!(fit.scale > 0 && fit.scale <= 1)) failures.push('fit scale');
     if (!sunken?.token) failures.push('sunken token');
     if (sunken?.matchesToken !== true) failures.push('sunken token resolution');
-    if (sunken?.chromeSurfacesMatchPrimary !== true) {
-      failures.push('primary chrome surfaces');
+    if (sunken?.chromeSurfacesMatch !== true) {
+      failures.push('sunken chrome surfaces');
     }
     if (sunken?.documentMatchesPrimary !== true) failures.push('document primary surface');
     if (sunken?.documentLifted !== true) failures.push('document surface contrast');

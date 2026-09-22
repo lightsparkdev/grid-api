@@ -9,6 +9,8 @@ const copiedControls = [
   'SectionDivider/SectionDivider.module.scss',
   'Tooltip/Tooltip.tsx',
   'Tooltip/Tooltip.module.scss',
+  'ApiPanel/ApiPanelEmpty.tsx',
+  'ApiPanel/ApiPanel.tsx',
 ] as const;
 
 describe('copied Cards controls', () => {

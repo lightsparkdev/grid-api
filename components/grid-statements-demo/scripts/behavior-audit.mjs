@@ -21,6 +21,11 @@ const previewStyles = await readFile(
 );
 assert.match(
   previewStyles,
+  /--statement-sunken:\s*color-mix\(\s*in srgb,\s*var\(--statement-primary-text\) 4%,\s*var\(--statement-primary-background\)\s*\);/,
+  'the desktop frame must use the 4% primary-text sunken mix',
+);
+assert.match(
+  previewStyles,
   /--statement-hairline:\s*color-mix\(\s*in srgb,\s*var\(--statement-primary-text\) 10%,\s*transparent\s*\);/,
   'the desktop frame must use the statement hairline source declaration',
 );
@@ -138,8 +143,8 @@ async function statementFrameSignature(frame) {
     const header = element.querySelector('[data-statement-header]');
     const scroll = element.querySelector('[data-statement-scroll]');
     const article = scroll.querySelector('article');
-    const primarySurfaces = [element, sidebar, railContent, railFooter, main, header];
-    const primaryColors = primarySurfaces.map((surface) => getComputedStyle(surface).backgroundColor);
+    const chromeSurfaces = [element, sidebar, railContent, railFooter, main, header, scroll];
+    const chromeColors = chromeSurfaces.map((surface) => getComputedStyle(surface).backgroundColor);
     const scrollStyle = getComputedStyle(scroll);
     const expectedSunken = scrollStyle.getPropertyValue('--statement-sunken').trim();
     const primaryProbe = document.createElement('div');
@@ -176,7 +181,7 @@ async function statementFrameSignature(frame) {
       desktopTitleCount: Array.from(element.querySelectorAll('article header > strong')).filter(
         (node) => node.textContent?.trim() === 'September statement',
       ).length,
-      primarySurfacesMatch: primaryColors.every((color) => color === primaryColors[0]),
+      chromeSurfacesMatch: chromeColors.every((color) => color === chromeColors[0]),
       sunkenToken: expectedSunken,
       sunkenBackground: scrollStyle.backgroundColor,
       sunkenDiffersFromPrimary: scrollStyle.backgroundColor !== resolvedPrimary,
@@ -209,6 +214,14 @@ async function statementFrameSignature(frame) {
 const primary = await openPage(1800, 1100);
 const { page } = primary;
 await page.getByText('listTransactions').waitFor();
+assert.equal(await page.getByText('Load statement', { exact: true }).count(), 1);
+assert.equal(await page.getByText('API calls', { exact: true }).count(), 1);
+assert.equal(await page.getByText('No API calls yet', { exact: true }).count(), 0);
+assert.equal(
+  await page.getByText('The app derives Reg E transfer details and merchant location from transaction data.').count(),
+  0,
+);
+assert.equal(await page.getByText(/Calls the app makes/).count(), 0);
 await page.getByRole('button', { name: 'Export' }).waitFor();
 assert.equal(
   await page
@@ -247,7 +260,7 @@ for (const presetLabel of presetLabels) {
   const presetFrame = await statementFrameSignature(page.locator('[data-statement-frame]'));
   assert.equal(presetFrame.sunkenMatchesToken, true, `${presetLabel} sunken token`);
   assert.equal(presetFrame.sunkenDiffersFromPrimary, true, `${presetLabel} sunken contrast`);
-  assert.equal(presetFrame.primarySurfacesMatch, true, `${presetLabel} primary chrome`);
+  assert.equal(presetFrame.chromeSurfacesMatch, true, `${presetLabel} sunken chrome`);
 }
 await page.getByRole('radio', { name: 'Financial app (Aurora)' }).click();
 await page.getByRole('radio', { name: 'Mobile' }).click();
@@ -309,7 +322,7 @@ assert.deepEqual(directFrameShape, {
   footerChildren: [],
   footerText: '',
   desktopTitleCount: 1,
-  primarySurfacesMatch: true,
+  chromeSurfacesMatch: true,
   headerBorderWidth: '1px',
   footerBorderWidth: '1px',
   sidebarBorderWidth: '1px',
@@ -709,6 +722,28 @@ for (const [width, height] of [
   assert.deepEqual(short.errors, []);
   await short.context.close();
 }
+
+const stacked = await openPage(1440, 1100);
+await stacked.page.getByText('listTransactions').waitFor();
+const stackedRail = await stacked.page.locator('[class*="apiCol"]').evaluate((panel) => {
+  const header = panel.querySelector('header');
+  return {
+    headerText: header?.textContent?.trim() ?? '',
+    headerDisplay: header ? getComputedStyle(header).display : 'none',
+  };
+});
+assert.match(stackedRail.headerText, /^API calls/);
+assert.notEqual(stackedRail.headerDisplay, 'none');
+assert.equal(await stacked.page.getByText('Load statement', { exact: true }).count(), 1);
+assert.equal(await stacked.page.getByText(/Calls the app makes/).count(), 0);
+assert.equal(
+  await stacked.page.getByText(
+    'The app derives Reg E transfer details and merchant location from transaction data.',
+  ).count(),
+  0,
+);
+assert.deepEqual(stacked.errors, []);
+await stacked.context.close();
 
 const reduced = await openPage(1280, 1000, 'reduce');
 await reduced.page.getByText('listTransactions').waitFor();

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { groupApiEntries } from '../lib/groupApiEntries';
+import { flowIconForLabel } from '../data/flowIcons';
 import { buildApiEntries, reconcileApiEntries } from './api';
 import {
   DEFAULT_BRAND,
@@ -100,6 +102,11 @@ describe('statement API projection', () => {
         'Load statement',
       ]);
       expect(new Set(entries.map((entry) => entry.groupId)).size).toBe(1);
+      const groups = groupApiEntries(entries);
+      expect(groups).toHaveLength(1);
+      expect(groups[0].groupLabel).toBe('Load statement');
+      expect(groups[0].entries).toHaveLength(3);
+      expect(flowIconForLabel('Load statement')?.Icon).toBeTruthy();
       expect(JSON.stringify(entries.map((entry) => entry.resBody))).not.toMatch(
         /disputable|terminal|openingBalance|closingBalance/,
       );
