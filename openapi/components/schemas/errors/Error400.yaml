@@ -23,7 +23,7 @@ properties:
       | CERT_CHAIN_EXPIRED | Counterparty certificate chain has expired |
       | INVALID_PUBKEY_FORMAT | Counterparty Public key format is invalid |
       | MISSING_REQUIRED_UMA_PARAMETERS | Counterparty required UMA parameters are missing |
-      | SENDER_NOT_ACCEPTED | Sender is not accepted |
+      | SENDER_NOT_ACCEPTED | The receiving institution declined the sender or the payment details, for example a `purposeOfPayment` the destination does not allow |
       | AMOUNT_OUT_OF_RANGE | Amount is out of range |
       | INVALID_CURRENCY | Currency is invalid |
       | INVALID_TIMESTAMP | Timestamp is invalid |

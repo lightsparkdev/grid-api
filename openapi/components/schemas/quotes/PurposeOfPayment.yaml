@@ -6,7 +6,9 @@ description: >-
   requires its own supporting documents. Those purposes are
   `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `SERVICE_CHARGES`,
   `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`. The
-  six China-only values are rejected on other corridors.
+  six China-only values are rejected on other corridors. Read
+  `purposeOfPaymentRestrictions` on the recipient's currency in the receiver
+  lookup response to learn which values that recipient accepts.
 enum:
   - GIFT
   - SELF
