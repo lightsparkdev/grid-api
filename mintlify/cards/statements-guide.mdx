@@ -1,29 +1,26 @@
 ---
 title: "Periodic statements"
-description: "What a periodic statement contains, who receives one, and how to build an in-app statement view from Grid transaction data"
+description: "What a periodic statement contains, who receives one, and how to build one from Grid account and transaction data"
 icon: "/images/icons/file-text.svg"
 "og:title": "Grid periodic statements guide"
 "og:image": "/images/og/og-cards-playground.webp"
 ---
 
-To see a consumer or commercial statement rendered from sample API data, open the [Statements playground](/cards/statements).
+To see a consumer or commercial statement built from sample API data, open the [Statements playground](/cards/statements).
 
 ## What a periodic statement is
 
-A periodic statement is the account holder's record of one statement cycle. It shows the opening and closing balance, every transaction in the period, and the fees charged. Cardholder accounts in the Grid card program are prepaid accounts held at Lead Bank. Lead Bank is the account-holding institution. Lightspark is the program manager and is not a bank. Every statement names both.
+A periodic statement is the account holder's record of one statement cycle. It shows the opening and closing balance, every transaction in the period, and the fees charged.
+
+Cardholder accounts in the Grid card program are prepaid accounts held at Lead Bank. Lead Bank is the account-holding institution. Lightspark is the program manager and is not a bank. Every statement names both.
 
 Consumer accounts that can send or receive electronic fund transfers are covered by Regulation E. Their statement content follows 12 CFR 1005.9(b). Commercial accounts are not covered by Regulation E. A commercial statement uses the same layout with the consumer-only notices removed.
 
-Responsibilities split as follows:
-
-- Lightspark and Lead Bank define the statement content. Lightspark, as program manager, generates the statement for each account and cycle. You do not call an endpoint to create one.
-- You deliver the statement to your customer through your own channel, and you keep records of delivery. Your platform agreement sets this obligation.
-
-Statement generation and retrieval are not yet available through the API. For the current gaps, see [Not yet available](#not-yet-available). To build a statement view from data the API returns today, see [Build an in-app statement view](#build-an-in-app-statement-view).
+You produce and deliver the statement. Grid supplies the account holder, the account, and the period's transactions through `getCustomerById`, `listCustomerInternalAccounts`, and `listTransactions`. Lightspark and Lead Bank fix the legal content: the provider block, the "Direct inquiries to" contact, and the consumer error-resolution notice. For the calls and the line derivation, see [Build the statement from Grid data](#build-the-statement-from-grid-data).
 
 ## When statements are issued
 
-Regulation E requires a statement for each monthly cycle in which an electronic fund transfer occurred, and at least quarterly when none occurred (12 CFR 1005.9(b)). The Grid program issues a statement every month for every active account, with or without activity. A monthly statement satisfies the quarterly minimum, so there is no quarterly variant.
+Regulation E requires a statement for each monthly cycle in which an electronic fund transfer occurred, and at least quarterly when none occurred (12 CFR 1005.9(b)). Issue a statement every month for every active account, with or without activity. A monthly statement satisfies the quarterly minimum, so you need no quarterly variant.
 
 The statement period is one monthly cycle. The issue date follows the period close and is the statement date. In the playground, the period is a calendar month and the issue date is the first day of the next month.
 
@@ -39,7 +36,7 @@ Every statement is a complete account statement. All activity that moves the bal
 | Account holder | Name of the consumer or business | `fullName` (`INDIVIDUAL`) or `businessInfo.legalName` (`BUSINESS`) from `getCustomerById` |
 | Account number | 12 CFR 1005.9(b)(2) | Internal account `id` from `listCustomerInternalAccounts`. The playground shows a masked number. |
 | Statement period | Monthly cycle, 12 CFR 1005.9(b) | The `startDate` and `endDate` you pass to `listTransactions` |
-| Opening and closing balance | 12 CFR 1005.9(b)(4) | Closing: `balance` on the internal account at period close. Opening: not exposed. The playground derives it as the closing balance minus net activity. |
+| Opening and closing balance | 12 CFR 1005.9(b)(4) | Closing: `balance` on the internal account, read at period close and recorded by you. Opening: the previous period's closing balance, or the closing balance minus the period's net activity. |
 | Transfer amount | 12 CFR 1005.9(b)(1)(i) | `receivedAmount` on a `CREDIT`, `sentAmount` on a `DEBIT`, `settledAmount` on a `CARD` row |
 | Transfer date | 12 CFR 1005.9(b)(1)(ii) | `settledAt` on payment transactions, `authorizedAt` on card transactions |
 | Transfer type and account type | 12 CFR 1005.9(b)(1)(iii) | `type`, `direction`, and `paymentRail` on the transaction; `type` on the internal account |
@@ -65,11 +62,11 @@ The consumer statement adds three items:
 
 The commercial statement omits all three. It carries no dispute language.
 
-Both variants show the total fees for the period. On consumer statements this satisfies 12 CFR 1005.9(b)(3). The product requirements do not set a different fee disclosure for commercial statements.
+Both variants show the total fees for the period. On consumer statements this satisfies 12 CFR 1005.9(b)(3).
 
-## Build an in-app statement view
+## Build the statement from Grid data
 
-The playground assembles a statement from three API calls. You can use the same calls to build a statement view in your app.
+The playground assembles a statement from three API calls. Use the same calls to build the statement in your system.
 
 Prerequisites:
 
@@ -119,25 +116,10 @@ Turn each transaction into a line as follows:
 - List a card refund as its own dated line. A refund is a `CARD` row with `direction: CREDIT`. When it returns against a known purchase, `originalTransactionId` names that purchase. Do not net it against the purchase line.
 - Exclude `CARD` rows with `status: DECLINED`. No money moved. A `VOIDED` row moved no money either and has no `settledAmount`.
 - Build the merchant location from `merchant.descriptor`, `merchant.city`, and `merchant.state`.
-- Take the closing balance from `balance` on the internal account. Derive the opening balance by subtracting the signed activity and fees from it.
+- Read `balance` on the internal account at period close and record it as the closing balance. Carry the previous period's closing balance forward as the opening balance, or derive it by subtracting the period's signed activity and fees from the closing balance.
 
 For the card status model and the refund rules behind these lines, see [Reconciliation](/cards/transactions/reconciliation). This page does not restate them.
 
 ## Delivery
 
-The product requirements call for a rendered artifact, a PDF or equivalent, that you can download and forward without modification. You deliver it to your customer through your own channel, such as email or an in-app view. The channel is set in your platform agreement, not in the product. Keep records of delivery so you can furnish them on request.
-
-The layout is fixed except for the masthead. In the playground, the masthead carries your company name and logo. The provider block, the "Direct inquiries to" contact, the error-resolution notice, and the footer text do not change.
-
-## Not yet available
-
-<Note>
-The following items are planned or open. None of them exist in the API today.
-
-- A statement endpoint. There is no API to list, fetch, or download a rendered statement.
-- A webhook when a statement is issued.
-- Opening and closing balance snapshots at period boundaries. `balance` on the internal account is the current balance only.
-- Delivery confirmation for a statement. The product requirements plan to reuse the receipt confirmation endpoint. It accepts a transaction ID, not a statement, so it cannot confirm a statement today.
-- The availability window after cycle close, in business days.
-- Legal review of two items: whether the prepaid-account disclosures in 12 CFR 1005.18 apply, including fee totals for the prior month and year to date, and whether commercial statements need any error-reporting language.
-</Note>
+You produce the statement artifact, such as a PDF, from the data above. You deliver it to your customer through your own channel, such as email or an in-app view. Keep a record of each delivery.
