@@ -22,9 +22,9 @@ properties:
     allOf:
       - $ref: ./InternalAccountType.yaml
     description: >-
-      Must be `RULE_BASED`. `INTERNAL_FIAT`, `INTERNAL_CRYPTO`, and
-      `EMBEDDED_WALLET` accounts are provisioned automatically when a customer
-      is created or approved, so they cannot be created through this endpoint.
+      Must be `RULE_BASED`. `INTERNAL_FIAT`, `INTERNAL_CRYPTO`,
+      `BULK_SETTLEMENT`, and `EMBEDDED_WALLET` accounts are provisioned when a
+      customer is created or approved.
     example: RULE_BASED
   currency:
     type: string
