@@ -413,6 +413,7 @@ for (const [width, height] of [
       Math.abs(transform.a - 1) < 0.001 &&
       Math.abs(transform.d - 1) < 0.001 &&
       Math.abs(transform.m42) < 0.5 &&
+      Number.parseFloat(style.opacity) > 0.999 &&
       style.filter === 'blur(0px)'
     );
   });
