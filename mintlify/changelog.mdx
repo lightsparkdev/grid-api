@@ -11,6 +11,14 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
+## `customerId` is required when creating a customer external account
+
+`POST /customers/external-accounts` has always rejected a request that omits
+`customerId`, and the spec now says so. Its request body is its own schema,
+`CustomerExternalAccountCreateRequest`, in which `customerId` is required. Use
+`POST /platform/external-accounts` to create an external account owned by the
+platform itself.
+
 ## Add cards to Apple Pay, Google Pay, and Samsung Pay from your app
 
 New `POST /cards/{id}/tokenize` exchanges the values a wallet SDK produces
