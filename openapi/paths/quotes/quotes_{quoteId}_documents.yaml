@@ -1,0 +1,157 @@
+post:
+  summary: Upload a document for a quote
+  description: |
+    Upload one supporting document for a quote. Some corridors will not clear a
+    payment without evidence of what it is for — a business payout to China, for
+    example, needs documents that vary by `purposeOfPayment`. A quote that needs
+    them comes back with `documentStatus: PENDING` and a `documentRequirements`
+    array; this endpoint fills those requirements in.
+
+    One call uploads one file and satisfies one requirement. Send a separate
+    request per requirement, and only one at a time for a given quote — Grid
+    serializes uploads per quote and returns `409` on a second concurrent call.
+    The response is the updated quote, so `documentRequirements[].satisfied`
+    shows the progress and `documentStatus` flips to `COMPLETE` on the upload
+    that satisfies the last one.
+
+    **Choosing the fields.** `requirementId` names the requirement being
+    satisfied and must come from this quote's `documentRequirements`.
+    `documentType` says what the file is and must be one of that requirement's
+    `acceptedDocumentTypes` — where a requirement accepts alternatives, this is
+    how you declare which one you sent.
+
+    **The file.** Grid accepts `application/pdf`, `image/jpeg`, and `image/png`,
+    matched on the `Content-Type` of the multipart part rather than the file
+    extension, and validates the bytes against the declared type. An empty file,
+    a file over 8 MB, a format not on that list, and a file whose bytes
+    contradict its `Content-Type` all return `400 INVALID_INPUT`.
+
+    **Uploads are final.** The first file accepted for a requirement satisfies
+    it, and a satisfied requirement cannot be replaced or deleted. To correct a
+    wrong file, create a new quote and upload against that.
+
+    Grid forwards the bytes to the payment provider while handling the request
+    and does not retain them; it keeps the metadata and the provider's reference
+    for the attachment. A `200` means the provider accepted the file, not that
+    it approved its contents — a document the provider later finds
+    unsatisfactory surfaces on the transaction, not here.
+
+    Requires a token with the `TRANSACT` permission, the same permission that
+    created the quote.
+  operationId: uploadQuoteDocument
+  tags:
+    - Cross-Currency Transfers
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: quoteId
+      in: path
+      required: true
+      description: The unique identifier of the quote the document belongs to
+      schema:
+        type: string
+      example: Quote:019542f5-b3e7-1d02-0000-000000000001
+  requestBody:
+    $ref: ../../components/schemas/quotes/QuoteDocumentUploadRequestBody.yaml
+  responses:
+    '200':
+      description: >-
+        Document accepted. The updated quote is returned: the requirement just
+        filled has `satisfied: true`, and `documentStatus` is `COMPLETE` if that
+        was the last outstanding one.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/quotes/Quote.yaml
+          example:
+            id: Quote:019542f5-b3e7-1d02-0000-000000000006
+            status: PENDING
+            documentStatus: PENDING
+            documentRequirements:
+              - requirementId: LOGISTICS_BILL
+                acceptedDocumentTypes:
+                  - LOGISTICS_BILL
+                satisfied: true
+              - requirementId: CUSTOMS_DECLARATION
+                acceptedDocumentTypes:
+                  - CUSTOMS_DECLARATION
+                satisfied: false
+              - requirementId: COMMERCIAL_AGREEMENT
+                acceptedDocumentTypes:
+                  - PURCHASE_ORDER
+                  - INVOICE
+                  - CONTRACT
+                satisfied: false
+            createdAt: '2025-10-03T12:00:00Z'
+            expiresAt: '2025-10-03T12:30:00Z'
+            source:
+              sourceType: ACCOUNT
+              accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+            destination:
+              destinationType: ACCOUNT
+              accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+            sendingCurrency:
+              code: USD
+              name: United States Dollar
+              symbol: $
+              decimals: 2
+            receivingCurrency:
+              code: CNY
+              name: Chinese Yuan
+              symbol: ¥
+              decimals: 2
+            totalSendingAmount: 1000000
+            totalReceivingAmount: 7120000
+            exchangeRate: 0.1404
+            feesIncluded: 1500
+            transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000005
+    '400':
+      description: >-
+        Bad request, returned with `INVALID_INPUT`. The multipart body is
+        malformed or missing a required field; the file is empty, over 8 MB, of
+        an unsupported format, or its bytes contradict its declared
+        `Content-Type`; `requirementId` is not one of this quote's
+        requirements; or `documentType` is not in that requirement's
+        `acceptedDocumentTypes`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Quote not found, or not visible to the calling platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. `DOCUMENT_REQUIREMENT_ALREADY_SATISFIED` when a file has
+        already been accepted for this requirement,
+        `DOCUMENT_UPLOAD_IN_PROGRESS` when another upload for this quote is
+        still in flight, and `QUOTE_NOT_ACCEPTING_DOCUMENTS` when the quote has
+        moved past the state where it takes documents — it has been executed,
+        or has already failed.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '410':
+      description: >-
+        `QUOTE_EXPIRED` — the quote has expired and no longer accepts
+        documents. Create a new quote and upload against that one.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error410.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

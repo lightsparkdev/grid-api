@@ -50,6 +50,13 @@ properties:
       first with `immediatelyExecute: false` and then call
       `POST /quotes/{quoteId}/execute` with the `Grid-Wallet-Signature` stamp
       header.
+
+      Not supported either when the quote requires supporting documents, since
+      those can only be uploaded against a quote that already exists. Setting
+      it on such a request returns `400 INVALID_INPUT`. Create the quote with
+      `immediatelyExecute: false`, upload every document in
+      `documentRequirements` via `POST /quotes/{quoteId}/documents`, then call
+      `POST /quotes/{quoteId}/execute`.
     example: false
   description:
     type: string
@@ -68,6 +75,15 @@ properties:
     example: '12345'
   purposeOfPayment:
     $ref: ./PurposeOfPayment.yaml
+  serviceCategory:
+    $ref: ./ChinaB2BServiceCategory.yaml
+    description: >-
+      What kind of service the payment pays for. Required on a business payout
+      in CNY to China whose `purposeOfPayment` is `SERVICE_CHARGES`, where the
+      receiving bank needs the breakdown to clear the payment; omitting it on
+      such a request returns `400 INVALID_INPUT`. The rule is specific to that
+      route, so the field is optional in the schema and enforced at runtime.
+      Ignored elsewhere.
   platformFeeOverride:
     $ref: ./PlatformFeeOverride.yaml
   scaFactor:

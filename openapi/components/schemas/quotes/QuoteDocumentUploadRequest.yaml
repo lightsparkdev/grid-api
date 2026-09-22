@@ -1,0 +1,28 @@
+title: Quote Document Upload Request
+type: object
+required:
+  - file
+  - requirementId
+  - documentType
+properties:
+  file:
+    type: string
+    format: binary
+    description: |
+      The document file. Grid accepts three formats, matched on the
+      `Content-Type` of the multipart part rather than the file extension:
+      `application/pdf`, `image/jpeg`, and `image/png`. Grid also reads the
+      file's leading bytes and rejects one whose real format contradicts the
+      declared `Content-Type`. An empty file, a file over 8 MB, and any other
+      format return `400 INVALID_INPUT`.
+  requirementId:
+    $ref: ./QuoteDocumentRequirementId.yaml
+    description: >-
+      Which of the quote's `documentRequirements` this file satisfies. Must be
+      the `requirementId` of an entry on this quote whose `satisfied` is still
+      `false`.
+  documentType:
+    $ref: ./PaymentDocumentType.yaml
+    description: >-
+      What the file is. Must be one of the `acceptedDocumentTypes` of the
+      requirement named by `requirementId`.

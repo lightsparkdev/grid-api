@@ -9,8 +9,10 @@ properties:
       | Error Code | Description |
       |------------|-------------|
       | CUSTOMER_DELETED | Customer has been permanently deleted |
+      | QUOTE_EXPIRED | The quote has expired and can no longer be acted on; request a new quote |
     enum:
       - CUSTOMER_DELETED
+      - QUOTE_EXPIRED
   reason:
     type: string
     description: Error message

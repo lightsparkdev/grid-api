@@ -1,0 +1,21 @@
+type: string
+description: >-
+  The kind of evidence a file provides. These are logical evidence types, not
+  file formats: `INVOICE` means the file is an invoice, whatever the corridor
+  or provider behind the payment calls it.
+
+
+  Each entry in a quote's `documentRequirements` lists the types it accepts in
+  `acceptedDocumentTypes`, and an upload declares which of them the file is.
+enum:
+  - PURCHASE_ORDER
+  - LOGISTICS_BILL
+  - CUSTOMS_DECLARATION
+  - INVOICE
+  - CONTRACT
+  - DELIVERY_SLIP
+  - BILL_OF_LADING
+  - FLIGHT_TICKET
+  - TRAVEL_DOCUMENT
+  - HOTEL_BOOKING_CONFIRMATION
+example: INVOICE

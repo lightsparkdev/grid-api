@@ -237,6 +237,8 @@ paths:
     $ref: paths/quotes/quotes.yaml
   /quotes/{quoteId}/execute:
     $ref: paths/quotes/quotes_{quoteId}_execute.yaml
+  /quotes/{quoteId}/documents:
+    $ref: paths/quotes/quotes_{quoteId}_documents.yaml
   /quotes/{quoteId}/authorize:
     $ref: paths/quotes/quotes_{quoteId}_authorize.yaml
   /quotes/{quoteId}/authorize/resend:

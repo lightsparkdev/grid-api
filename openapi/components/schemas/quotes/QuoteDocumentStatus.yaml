@@ -1,0 +1,10 @@
+type: string
+description: >-
+  Whether the supporting documents this quote requires have all been uploaded.
+  `PENDING` means at least one entry in `documentRequirements` is still
+  unsatisfied; `COMPLETE` means every one of them is satisfied and the quote can
+  be executed. Omitted entirely on quotes that require no supporting documents.
+enum:
+  - PENDING
+  - COMPLETE
+example: PENDING

@@ -1,0 +1,8 @@
+required: true
+content:
+  multipart/form-data:
+    schema:
+      $ref: ./QuoteDocumentUploadRequest.yaml
+    encoding:
+      file:
+        contentType: application/pdf, image/jpeg, image/png

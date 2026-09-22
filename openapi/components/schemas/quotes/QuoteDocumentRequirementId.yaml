@@ -1,0 +1,25 @@
+type: string
+description: >-
+  Identifies one requirement within a quote, stable across quotes for the same
+  policy. It is a separate concept from `PaymentDocumentType`: the ID names the
+  slot to fill, the document type names what the file is. Where a requirement
+  accepts alternatives, the two differ — a `SUPPORTING_PROOF` requirement is
+  satisfied by a file declared as either `PURCHASE_ORDER` or `DELIVERY_SLIP`.
+
+
+  New values may be added as policies change, so treat an unrecognized value as
+  a requirement you cannot yet render rather than an error.
+enum:
+  - PURCHASE_ORDER
+  - LOGISTICS_BILL
+  - CUSTOMS_DECLARATION
+  - COMMERCIAL_AGREEMENT
+  - CONTRACT
+  - INVOICE
+  - SUPPORTING_PROOF
+  - BILL_OF_LADING
+  - CONTRACT_OR_INVOICE
+  - FLIGHT_TICKET
+  - TRAVEL_DOCUMENT
+  - HOTEL_BOOKING_CONFIRMATION
+example: COMMERCIAL_AGREEMENT

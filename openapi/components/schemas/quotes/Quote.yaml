@@ -110,7 +110,13 @@ properties:
     example: 5
   paymentInstructions:
     type: array
-    description: Payment instructions for executing the payment. This is not required when using an internal account source.
+    description: >-
+      Payment instructions for executing the payment. This is not required when
+      using an internal account source. Absent while `documentStatus` is
+      `PENDING`: a quote whose supporting documents are outstanding has no
+      instructions to give yet, and they are issued once every requirement is
+      satisfied, subject to the same source and Strong Customer Authentication
+      rules that otherwise apply.
     items:
       $ref: ../common/PaymentInstructions.yaml
     example:
@@ -148,3 +154,46 @@ properties:
       Customer Authentication challenge to satisfy before this quote can be
       executed (or, for realtime-funding sources, before `paymentInstructions`
       are issued). Omitted for customers outside SCA-regulated regions (non-EU).
+  documentStatus:
+    $ref: ./QuoteDocumentStatus.yaml
+    description: >-
+      Whether this quote's supporting documents are all in. Present only
+      alongside `documentRequirements`; both are omitted on a quote that needs
+      no documents.
+  documentRequirements:
+    type: array
+    description: >-
+      The supporting documents this quote needs before it can be executed, one
+      entry per file. Every entry must be satisfied — there is no optional
+      requirement in this array — and each is satisfied by exactly one file
+      uploaded via `POST /quotes/{quoteId}/documents`. A requirement listing
+      several `acceptedDocumentTypes` still takes one file; the types are
+      alternatives for it.
+
+
+      Which documents a corridor asks for depends on the payment. A business
+      payout to China, for instance, derives them from `purposeOfPayment`: an
+      `EXPORTED_GOODS_POSTPAYMENT` quote needs a logistics bill, a customs
+      declaration, and one of a purchase order, invoice, or contract — three
+      files, three requirements. Read the array rather than deriving it, since
+      policies change.
+
+
+      Omitted, along with `documentStatus`, when the quote needs no documents.
+    items:
+      $ref: ./QuoteDocumentRequirement.yaml
+    example:
+      - requirementId: LOGISTICS_BILL
+        acceptedDocumentTypes:
+          - LOGISTICS_BILL
+        satisfied: false
+      - requirementId: CUSTOMS_DECLARATION
+        acceptedDocumentTypes:
+          - CUSTOMS_DECLARATION
+        satisfied: false
+      - requirementId: COMMERCIAL_AGREEMENT
+        acceptedDocumentTypes:
+          - PURCHASE_ORDER
+          - INVOICE
+          - CONTRACT
+        satisfied: false

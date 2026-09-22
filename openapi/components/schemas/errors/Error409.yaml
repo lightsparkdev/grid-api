@@ -31,6 +31,10 @@ properties:
       | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
       | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
       | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
+      | DOCUMENT_REQUIREMENT_ALREADY_SATISFIED | A file has already been accepted for this quote document requirement. A satisfied requirement cannot be replaced; create a new quote to send a different file |
+      | DOCUMENT_UPLOAD_IN_PROGRESS | Another document upload for this quote is still being handled. Uploads for one quote are serialized, so retry once the in-flight one returns |
+      | QUOTE_NOT_ACCEPTING_DOCUMENTS | The quote has moved past the state where it accepts supporting documents |
+      | DOCUMENTS_REQUIRED | The quote has unsatisfied `documentRequirements`. Upload the outstanding documents via `POST /quotes/{quoteId}/documents`, then retry execution |
     enum:
       - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
       - TRANSACTION_NOT_CANCELLABLE
@@ -55,6 +59,10 @@ properties:
       - STABLECOIN_SYMBOL_ALREADY_EXISTS
       - STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS
       - WALLET_NOT_PROVISIONED
+      - DOCUMENT_REQUIREMENT_ALREADY_SATISFIED
+      - DOCUMENT_UPLOAD_IN_PROGRESS
+      - QUOTE_NOT_ACCEPTING_DOCUMENTS
+      - DOCUMENTS_REQUIRED
   reason:
     type: string
     description: Error message

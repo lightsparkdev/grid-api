@@ -115,7 +115,12 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
-      description: Conflict - Quote already confirmed, expired, or in invalid state
+      description: >-
+        Conflict - Quote already confirmed, expired, or in invalid state. Also
+        returned with `DOCUMENTS_REQUIRED` when the quote has unsatisfied
+        entries in `documentRequirements`: upload each outstanding document via
+        `POST /quotes/{quoteId}/documents` until `documentStatus` is `COMPLETE`,
+        then retry execution.
       content:
         application/json:
           schema:

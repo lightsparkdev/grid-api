@@ -86,6 +86,23 @@ post:
               lockedCurrencySide: SENDING
               lockedCurrencyAmount: 1000
               description: 'Payment for invoice #1234'
+          chinaB2BServiceCharges:
+            summary: >-
+              China B2B payout requiring supporting documents. Created without
+              immediate execution so the documents can be uploaded.
+            value:
+              source:
+                sourceType: ACCOUNT
+                accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+              destination:
+                destinationType: ACCOUNT
+                accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+              lockedCurrencySide: SENDING
+              lockedCurrencyAmount: 1000000
+              immediatelyExecute: false
+              purposeOfPayment: SERVICE_CHARGES
+              serviceCategory: COMMISSION_ON_SERVICES
+              description: 'Q3 sales commission'
           realTimeFundingToSparkWallet:
             summary: Real-time funding to Spark Wallet as an on-ramp flow. Immediate execution.
             value:
@@ -106,6 +123,13 @@ post:
         Transfer quote created successfully. The response includes exchange rates,
         fees, and transfer details. For transfers involving UMA addresses, payment
         instructions are also included for execution through banking systems.
+
+        A corridor that requires supporting documents returns the quote with
+        `documentStatus: PENDING` and a `documentRequirements` array, and
+        without `paymentInstructions`. Upload one file per requirement via
+        `POST /quotes/{quoteId}/documents`; the upload that satisfies the last
+        one flips `documentStatus` to `COMPLETE`, after which the quote can be
+        executed.
       content:
         application/json:
           schema:
@@ -150,7 +174,13 @@ post:
           schema:
             $ref: ../../components/schemas/quotes/Quote.yaml
     '400':
-      description: Bad request - Missing or invalid parameters
+      description: >-
+        Bad request - Missing or invalid parameters. Returned with
+        `INVALID_INPUT` when `immediatelyExecute` is set on a quote that
+        requires supporting documents (they can only be uploaded against an
+        existing quote, so create it with `immediatelyExecute: false`), and
+        when a China B2B CNY request with `purposeOfPayment: SERVICE_CHARGES`
+        omits `serviceCategory`.
       content:
         application/json:
           schema:

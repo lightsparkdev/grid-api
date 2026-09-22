@@ -333,10 +333,14 @@ resources:
       quote_source_one_of: "#/components/schemas/QuoteSourceOneOf"
       base_destination: "#/components/schemas/BaseDestination"
       quote_request: "#/components/schemas/QuoteRequest"
+      quote_document_requirement: "#/components/schemas/QuoteDocumentRequirement"
     methods:
       retrieve: get /quotes/{quoteId}
       create: post /quotes
       execute: post /quotes/{quoteId}/execute
+      upload_document:
+        endpoint: post /quotes/{quoteId}/documents
+        body_param_name: QuoteDocumentUploadRequest
 
   transactions:
     models:

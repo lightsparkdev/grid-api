@@ -4347,6 +4347,21 @@ paths:
                   lockedCurrencySide: SENDING
                   lockedCurrencyAmount: 1000
                   description: 'Payment for invoice #1234'
+              chinaB2BServiceCharges:
+                summary: China B2B payout requiring supporting documents. Created without immediate execution so the documents can be uploaded.
+                value:
+                  source:
+                    sourceType: ACCOUNT
+                    accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                  destination:
+                    destinationType: ACCOUNT
+                    accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  lockedCurrencySide: SENDING
+                  lockedCurrencyAmount: 1000000
+                  immediatelyExecute: false
+                  purposeOfPayment: SERVICE_CHARGES
+                  serviceCategory: COMMISSION_ON_SERVICES
+                  description: Q3 sales commission
               realTimeFundingToSparkWallet:
                 summary: Real-time funding to Spark Wallet as an on-ramp flow. Immediate execution.
                 value:
@@ -4367,6 +4382,13 @@ paths:
             Transfer quote created successfully. The response includes exchange rates,
             fees, and transfer details. For transfers involving UMA addresses, payment
             instructions are also included for execution through banking systems.
+
+            A corridor that requires supporting documents returns the quote with
+            `documentStatus: PENDING` and a `documentRequirements` array, and
+            without `paymentInstructions`. Upload one file per requirement via
+            `POST /quotes/{quoteId}/documents`; the upload that satisfies the last
+            one flips `documentStatus` to `COMPLETE`, after which the quote can be
+            executed.
           content:
             application/json:
               schema:
@@ -4406,7 +4428,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Quote'
         '400':
-          description: Bad request - Missing or invalid parameters
+          description: 'Bad request - Missing or invalid parameters. Returned with `INVALID_INPUT` when `immediatelyExecute` is set on a quote that requires supporting documents (they can only be uploaded against an existing quote, so create it with `immediatelyExecute: false`), and when a China B2B CNY request with `purposeOfPayment: SERVICE_CHARGES` omits `serviceCategory`.'
           content:
             application/json:
               schema:
@@ -4561,7 +4583,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict - Quote already confirmed, expired, or in invalid state
+          description: 'Conflict - Quote already confirmed, expired, or in invalid state. Also returned with `DOCUMENTS_REQUIRED` when the quote has unsatisfied entries in `documentRequirements`: upload each outstanding document via `POST /quotes/{quoteId}/documents` until `documentStatus` is `COMPLETE`, then retry execution.'
           content:
             application/json:
               schema:
@@ -4572,6 +4594,147 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /quotes/{quoteId}/documents:
+    post:
+      summary: Upload a document for a quote
+      description: |
+        Upload one supporting document for a quote. Some corridors will not clear a
+        payment without evidence of what it is for — a business payout to China, for
+        example, needs documents that vary by `purposeOfPayment`. A quote that needs
+        them comes back with `documentStatus: PENDING` and a `documentRequirements`
+        array; this endpoint fills those requirements in.
+
+        One call uploads one file and satisfies one requirement. Send a separate
+        request per requirement, and only one at a time for a given quote — Grid
+        serializes uploads per quote and returns `409` on a second concurrent call.
+        The response is the updated quote, so `documentRequirements[].satisfied`
+        shows the progress and `documentStatus` flips to `COMPLETE` on the upload
+        that satisfies the last one.
+
+        **Choosing the fields.** `requirementId` names the requirement being
+        satisfied and must come from this quote's `documentRequirements`.
+        `documentType` says what the file is and must be one of that requirement's
+        `acceptedDocumentTypes` — where a requirement accepts alternatives, this is
+        how you declare which one you sent.
+
+        **The file.** Grid accepts `application/pdf`, `image/jpeg`, and `image/png`,
+        matched on the `Content-Type` of the multipart part rather than the file
+        extension, and validates the bytes against the declared type. An empty file,
+        a file over 8 MB, a format not on that list, and a file whose bytes
+        contradict its `Content-Type` all return `400 INVALID_INPUT`.
+
+        **Uploads are final.** The first file accepted for a requirement satisfies
+        it, and a satisfied requirement cannot be replaced or deleted. To correct a
+        wrong file, create a new quote and upload against that.
+
+        Grid forwards the bytes to the payment provider while handling the request
+        and does not retain them; it keeps the metadata and the provider's reference
+        for the attachment. A `200` means the provider accepted the file, not that
+        it approved its contents — a document the provider later finds
+        unsatisfactory surfaces on the transaction, not here.
+
+        Requires a token with the `TRANSACT` permission, the same permission that
+        created the quote.
+      operationId: uploadQuoteDocument
+      tags:
+        - Cross-Currency Transfers
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: quoteId
+          in: path
+          required: true
+          description: The unique identifier of the quote the document belongs to
+          schema:
+            type: string
+          example: Quote:019542f5-b3e7-1d02-0000-000000000001
+      requestBody:
+        $ref: '#/components/requestBodies/QuoteDocumentUploadRequestBody'
+      responses:
+        '200':
+          description: 'Document accepted. The updated quote is returned: the requirement just filled has `satisfied: true`, and `documentStatus` is `COMPLETE` if that was the last outstanding one.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+              example:
+                id: Quote:019542f5-b3e7-1d02-0000-000000000006
+                status: PENDING
+                documentStatus: PENDING
+                documentRequirements:
+                  - requirementId: LOGISTICS_BILL
+                    acceptedDocumentTypes:
+                      - LOGISTICS_BILL
+                    satisfied: true
+                  - requirementId: CUSTOMS_DECLARATION
+                    acceptedDocumentTypes:
+                      - CUSTOMS_DECLARATION
+                    satisfied: false
+                  - requirementId: COMMERCIAL_AGREEMENT
+                    acceptedDocumentTypes:
+                      - PURCHASE_ORDER
+                      - INVOICE
+                      - CONTRACT
+                    satisfied: false
+                createdAt: '2025-10-03T12:00:00Z'
+                expiresAt: '2025-10-03T12:30:00Z'
+                source:
+                  sourceType: ACCOUNT
+                  accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                destination:
+                  destinationType: ACCOUNT
+                  accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                sendingCurrency:
+                  code: USD
+                  name: United States Dollar
+                  symbol: $
+                  decimals: 2
+                receivingCurrency:
+                  code: CNY
+                  name: Chinese Yuan
+                  symbol: ¥
+                  decimals: 2
+                totalSendingAmount: 1000000
+                totalReceivingAmount: 7120000
+                exchangeRate: 0.1404
+                feesIncluded: 1500
+                transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000005
+        '400':
+          description: Bad request, returned with `INVALID_INPUT`. The multipart body is malformed or missing a required field; the file is empty, over 8 MB, of an unsupported format, or its bytes contradict its declared `Content-Type`; `requirementId` is not one of this quote's requirements; or `documentType` is not in that requirement's `acceptedDocumentTypes`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Quote not found, or not visible to the calling platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. `DOCUMENT_REQUIREMENT_ALREADY_SATISFIED` when a file has already been accepted for this requirement, `DOCUMENT_UPLOAD_IN_PROGRESS` when another upload for this quote is still in flight, and `QUOTE_NOT_ACCEPTING_DOCUMENTS` when the quote has moved past the state where it takes documents — it has been executed, or has already failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '410':
+          description: '`QUOTE_EXPIRED` — the quote has expired and no longer accepts documents. Create a new quote and upload against that one.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error410'
         '500':
           description: Internal service error
           content:
@@ -14838,6 +15001,10 @@ components:
             | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
             | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
             | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
+            | DOCUMENT_REQUIREMENT_ALREADY_SATISFIED | A file has already been accepted for this quote document requirement. A satisfied requirement cannot be replaced; create a new quote to send a different file |
+            | DOCUMENT_UPLOAD_IN_PROGRESS | Another document upload for this quote is still being handled. Uploads for one quote are serialized, so retry once the in-flight one returns |
+            | QUOTE_NOT_ACCEPTING_DOCUMENTS | The quote has moved past the state where it accepts supporting documents |
+            | DOCUMENTS_REQUIRED | The quote has unsatisfied `documentRequirements`. Upload the outstanding documents via `POST /quotes/{quoteId}/documents`, then retry execution |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
             - TRANSACTION_NOT_CANCELLABLE
@@ -14862,6 +15029,10 @@ components:
             - STABLECOIN_SYMBOL_ALREADY_EXISTS
             - STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS
             - WALLET_NOT_PROVISIONED
+            - DOCUMENT_REQUIREMENT_ALREADY_SATISFIED
+            - DOCUMENT_UPLOAD_IN_PROGRESS
+            - QUOTE_NOT_ACCEPTING_DOCUMENTS
+            - DOCUMENTS_REQUIRED
         reason:
           type: string
           description: Error message
@@ -14946,8 +15117,10 @@ components:
             | Error Code | Description |
             |------------|-------------|
             | CUSTOMER_DELETED | Customer has been permanently deleted |
+            | QUOTE_EXPIRED | The quote has expired and can no longer be acted on; request a new quote |
           enum:
             - CUSTOMER_DELETED
+            - QUOTE_EXPIRED
         reason:
           type: string
           description: Error message
@@ -25528,6 +25701,76 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressDestination'
+    QuoteDocumentStatus:
+      type: string
+      description: Whether the supporting documents this quote requires have all been uploaded. `PENDING` means at least one entry in `documentRequirements` is still unsatisfied; `COMPLETE` means every one of them is satisfied and the quote can be executed. Omitted entirely on quotes that require no supporting documents.
+      enum:
+        - PENDING
+        - COMPLETE
+      example: PENDING
+    QuoteDocumentRequirementId:
+      type: string
+      description: |-
+        Identifies one requirement within a quote, stable across quotes for the same policy. It is a separate concept from `PaymentDocumentType`: the ID names the slot to fill, the document type names what the file is. Where a requirement accepts alternatives, the two differ — a `SUPPORTING_PROOF` requirement is satisfied by a file declared as either `PURCHASE_ORDER` or `DELIVERY_SLIP`.
+
+        New values may be added as policies change, so treat an unrecognized value as a requirement you cannot yet render rather than an error.
+      enum:
+        - PURCHASE_ORDER
+        - LOGISTICS_BILL
+        - CUSTOMS_DECLARATION
+        - COMMERCIAL_AGREEMENT
+        - CONTRACT
+        - INVOICE
+        - SUPPORTING_PROOF
+        - BILL_OF_LADING
+        - CONTRACT_OR_INVOICE
+        - FLIGHT_TICKET
+        - TRAVEL_DOCUMENT
+        - HOTEL_BOOKING_CONFIRMATION
+      example: COMMERCIAL_AGREEMENT
+    PaymentDocumentType:
+      type: string
+      description: |-
+        The kind of evidence a file provides. These are logical evidence types, not file formats: `INVOICE` means the file is an invoice, whatever the corridor or provider behind the payment calls it.
+
+        Each entry in a quote's `documentRequirements` lists the types it accepts in `acceptedDocumentTypes`, and an upload declares which of them the file is.
+      enum:
+        - PURCHASE_ORDER
+        - LOGISTICS_BILL
+        - CUSTOMS_DECLARATION
+        - INVOICE
+        - CONTRACT
+        - DELIVERY_SLIP
+        - BILL_OF_LADING
+        - FLIGHT_TICKET
+        - TRAVEL_DOCUMENT
+        - HOTEL_BOOKING_CONFIRMATION
+      example: INVOICE
+    QuoteDocumentRequirement:
+      type: object
+      description: 'One supporting document the quote needs before it can be executed. Exactly one file satisfies it: the values in `acceptedDocumentTypes` are alternatives for that single file, not a list of files to send.'
+      required:
+        - requirementId
+        - acceptedDocumentTypes
+        - satisfied
+      properties:
+        requirementId:
+          $ref: '#/components/schemas/QuoteDocumentRequirementId'
+          description: Identifies this requirement. Pass it back as the `requirementId` form field when uploading the file that satisfies it.
+        acceptedDocumentTypes:
+          type: array
+          minItems: 1
+          description: The document types that satisfy this requirement. Any one of them is enough; the upload declares which one the file is. A single-value array means the requirement accepts only that type.
+          items:
+            $ref: '#/components/schemas/PaymentDocumentType'
+          example:
+            - PURCHASE_ORDER
+            - INVOICE
+            - CONTRACT
+        satisfied:
+          type: boolean
+          description: Whether a file has been accepted for this requirement. Once `true` it stays `true` — a satisfied requirement cannot be replaced.
+          example: false
     Quote:
       type: object
       required:
@@ -25610,7 +25853,7 @@ components:
           example: 5
         paymentInstructions:
           type: array
-          description: Payment instructions for executing the payment. This is not required when using an internal account source.
+          description: 'Payment instructions for executing the payment. This is not required when using an internal account source. Absent while `documentStatus` is `PENDING`: a quote whose supporting documents are outstanding has no instructions to give yet, and they are issued once every requirement is satisfied, subject to the same source and Strong Customer Authentication rules that otherwise apply.'
           items:
             $ref: '#/components/schemas/PaymentInstructions'
           example:
@@ -25642,12 +25885,49 @@ components:
         scaChallenge:
           $ref: '#/components/schemas/ScaChallenge'
           description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this quote can be executed (or, for realtime-funding sources, before `paymentInstructions` are issued). Omitted for customers outside SCA-regulated regions (non-EU).'
+        documentStatus:
+          $ref: '#/components/schemas/QuoteDocumentStatus'
+          description: Whether this quote's supporting documents are all in. Present only alongside `documentRequirements`; both are omitted on a quote that needs no documents.
+        documentRequirements:
+          type: array
+          description: |-
+            The supporting documents this quote needs before it can be executed, one entry per file. Every entry must be satisfied — there is no optional requirement in this array — and each is satisfied by exactly one file uploaded via `POST /quotes/{quoteId}/documents`. A requirement listing several `acceptedDocumentTypes` still takes one file; the types are alternatives for it.
+
+            Which documents a corridor asks for depends on the payment. A business payout to China, for instance, derives them from `purposeOfPayment`: an `EXPORTED_GOODS_POSTPAYMENT` quote needs a logistics bill, a customs declaration, and one of a purchase order, invoice, or contract — three files, three requirements. Read the array rather than deriving it, since policies change.
+
+            Omitted, along with `documentStatus`, when the quote needs no documents.
+          items:
+            $ref: '#/components/schemas/QuoteDocumentRequirement'
+          example:
+            - requirementId: LOGISTICS_BILL
+              acceptedDocumentTypes:
+                - LOGISTICS_BILL
+              satisfied: false
+            - requirementId: CUSTOMS_DECLARATION
+              acceptedDocumentTypes:
+                - CUSTOMS_DECLARATION
+              satisfied: false
+            - requirementId: COMMERCIAL_AGREEMENT
+              acceptedDocumentTypes:
+                - PURCHASE_ORDER
+                - INVOICE
+                - CONTRACT
+              satisfied: false
     QuoteLockSide:
       type: string
       enum:
         - SENDING
         - RECEIVING
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
+    ChinaB2BServiceCategory:
+      type: string
+      description: Which kind of service a China B2B `SERVICE_CHARGES` payment pays for. The receiving bank requires this breakdown; `SERVICE_CHARGES` alone is not specific enough to clear.
+      enum:
+        - COMMISSION_ON_GOODS
+        - COMMISSION_ON_SERVICES
+        - ACCOUNTING_SERVICES
+        - EXHIBITION_SERVICES
+      example: COMMISSION_ON_SERVICES
     QuoteRequest:
       type: object
       required:
@@ -25681,6 +25961,7 @@ components:
             Whether to immediately execute the quote after creation. If true, the quote will be executed and the transaction will be created at the current exchange rate. It should only be used if you don't want to lock and view rate details before executing the quote. If you are executing a pre-existing quote, use the `/quotes/{quoteId}/execute` endpoint instead. This is false by default.
             This can only be used for quotes with a `source` which is either an internal account, or has direct pull functionality (e.g. ACH pull with an external account).
             Not supported when the `source` is an internal account of type `EMBEDDED_WALLET`: those transfers require a `Grid-Wallet-Signature` over the `payloadToSign` returned in the quote response, which is not available in a combined create-and-execute call. Create the quote first with `immediatelyExecute: false` and then call `POST /quotes/{quoteId}/execute` with the `Grid-Wallet-Signature` stamp header.
+            Not supported either when the quote requires supporting documents, since those can only be uploaded against a quote that already exists. Setting it on such a request returns `400 INVALID_INPUT`. Create the quote with `immediatelyExecute: false`, upload every document in `documentRequirements` via `POST /quotes/{quoteId}/documents`, then call `POST /quotes/{quoteId}/execute`.
           example: false
         description:
           type: string
@@ -25694,6 +25975,9 @@ components:
           example: '12345'
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
+        serviceCategory:
+          $ref: '#/components/schemas/ChinaB2BServiceCategory'
+          description: What kind of service the payment pays for. Required on a business payout in CNY to China whose `purposeOfPayment` is `SERVICE_CHARGES`, where the receiving bank needs the breakdown to clear the payment; omitting it on such a request returns `400 INVALID_INPUT`. The rule is specific to that route, so the field is optional in the schema and enforced at runtime. Ignored elsewhere.
         platformFeeOverride:
           $ref: '#/components/schemas/PlatformFeeOverride'
         scaFactor:
@@ -25735,6 +26019,30 @@ components:
         scaFactor:
           $ref: '#/components/schemas/ScaFactor'
           description: Optional preferred factor for the Strong Customer Authentication challenge this call issues. Only relevant for customers in a region where SCA is required (e.g. EU); ignored otherwise. Valid values for a per-transaction challenge are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected here. Omit to default to `SMS_OTP`.
+    QuoteDocumentUploadRequest:
+      title: Quote Document Upload Request
+      type: object
+      required:
+        - file
+        - requirementId
+        - documentType
+      properties:
+        file:
+          type: string
+          format: binary
+          description: |
+            The document file. Grid accepts three formats, matched on the
+            `Content-Type` of the multipart part rather than the file extension:
+            `application/pdf`, `image/jpeg`, and `image/png`. Grid also reads the
+            file's leading bytes and rejects one whose real format contradicts the
+            declared `Content-Type`. An empty file, a file over 8 MB, and any other
+            format return `400 INVALID_INPUT`.
+        requirementId:
+          $ref: '#/components/schemas/QuoteDocumentRequirementId'
+          description: Which of the quote's `documentRequirements` this file satisfies. Must be the `requirementId` of an entry on this quote whose `satisfied` is still `false`.
+        documentType:
+          $ref: '#/components/schemas/PaymentDocumentType'
+          description: What the file is. Must be one of the `acceptedDocumentTypes` of the requirement named by `requirementId`.
     ScaAuthorization:
       type: object
       description: Proof that satisfies an `ScaChallenge`. Provide exactly one of `code` (for `SMS_OTP` / `TOTP`) or `passkeyAssertion` (for `PASSKEY`). When supplying a `passkeyAssertion`, `origin` is **required** — the WebAuthn assertion is bound to the origin it was produced against, and a passkey confirmation is rejected without it.
@@ -29332,3 +29640,12 @@ components:
         multipart/form-data:
           schema:
             $ref: '#/components/schemas/DocumentReplaceRequest'
+    QuoteDocumentUploadRequestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/QuoteDocumentUploadRequest'
+          encoding:
+            file:
+              contentType: application/pdf, image/jpeg, image/png
