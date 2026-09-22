@@ -30,8 +30,9 @@ description: >-
 
 
   `ACH_SAME_DAY` requests same-business-day settlement for a USD payout and is priced
-  separately. It is subject to the NACHA per-entry same-day limit; a request above that
-  limit settles on the standard schedule and is priced accordingly.
+  separately. It is subject to the NACHA per-entry same-day limit, which the network
+  applies to every originator. A payout above that limit is rejected rather than slowed:
+  send it over `ACH` instead, which settles on the standard schedule.
 
 
   `ACH` will settle on the standard next-business-day schedule. Until a date we announce
