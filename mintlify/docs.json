@@ -353,6 +353,7 @@
             "pages": [
               "cards/demo",
               "cards/statements",
+              "cards/statements-guide",
               "cards/index",
               "cards/terminology",
               "cards/onboarding/implementation-overview",
