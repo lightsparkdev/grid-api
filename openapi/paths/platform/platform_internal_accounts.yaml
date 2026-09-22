@@ -4,8 +4,6 @@ get:
     Retrieve a list of all internal accounts that belong to the platform, as opposed to an individual customer.
 
     These accounts are created automatically when the platform is configured for each supported currency. They can be used for things like distributing bitcoin rewards to customers, or for other platform-wide purposes.
-
-    A `BULK_SETTLEMENT` account is the exception. Lightspark provisions it on request, and it is listed here alongside the platform's other accounts.
   operationId: listPlatformInternalAccounts
   tags:
     - Internal Accounts

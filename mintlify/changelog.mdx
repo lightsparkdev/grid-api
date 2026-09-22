@@ -11,16 +11,6 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
-## `BULK_SETTLEMENT` internal accounts for platforms
-
-`InternalAccountType` gains `BULK_SETTLEMENT`. A bulk settlement account is a
-platform-owned USD account with its own account number, for receiving a bulk
-payment that the platform then pays out to its customers. Only a platform can
-hold one, so it has no `customerId`. Funds in it can move only to the
-platform's customers, so a quote from it to another platform-owned account is
-rejected. Lightspark provisions it on request, and
-`GET /platform/internal-accounts?type=BULK_SETTLEMENT` returns it.
-
 ## `customerId` is required when creating a customer external account
 
 `POST /customers/external-accounts` has always rejected a request that omits

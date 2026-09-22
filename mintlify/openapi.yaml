@@ -2150,8 +2150,7 @@ paths:
 
         Only `RULE_BASED` accounts can be created here. `INTERNAL_FIAT`,
         `INTERNAL_CRYPTO`, and `EMBEDDED_WALLET` accounts are provisioned
-        automatically when an account holder is created or approved. Lightspark
-        provisions `BULK_SETTLEMENT` accounts for a platform on request.
+        automatically when an account holder is created or approved.
 
         The response carries the account's own `fundingPaymentInstructions` — the
         routable number payers send to. Rule-based accounts are currently available
@@ -2293,7 +2292,7 @@ paths:
             type: string
         - name: type
           in: query
-          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts, or `RULE_BASED` for the additional account numbers issued for a customer. `BULK_SETTLEMENT` accounts belong to the platform, so filtering by that type here returns no results. To find them, use `GET /platform/internal-accounts`.
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts, or `RULE_BASED` for the additional account numbers issued for a customer.
           required: false
           schema:
             $ref: '#/components/schemas/InternalAccountType'
@@ -2344,8 +2343,6 @@ paths:
         Retrieve a list of all internal accounts that belong to the platform, as opposed to an individual customer.
 
         These accounts are created automatically when the platform is configured for each supported currency. They can be used for things like distributing bitcoin rewards to customers, or for other platform-wide purposes.
-
-        A `BULK_SETTLEMENT` account is the exception. Lightspark provisions it on request, and it is listed here alongside the platform's other accounts.
       operationId: listPlatformInternalAccounts
       tags:
         - Internal Accounts
@@ -8361,7 +8358,7 @@ paths:
             type: string
         - name: type
           in: query
-          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for the customer, `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for platform-managed holding accounts, or `RULE_BASED` for the additional account numbers issued with a sweep rule. `BULK_SETTLEMENT` accounts belong to the platform, so filtering by that type here returns no results. To find them, use `GET /platform/internal-accounts`.
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for the customer, `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for platform-managed holding accounts, or `RULE_BASED` for the additional account numbers issued with a sweep rule.
           required: false
           schema:
             $ref: '#/components/schemas/InternalAccountType'
@@ -15848,7 +15845,7 @@ components:
         - `INTERNAL_CRYPTO`: A Grid-managed crypto holding account denominated in a stablecoin such as USDC.
         - `EMBEDDED_WALLET`: A self-custodial Embedded Wallet provisioned for the customer. Outbound transfers require a session signature produced by the customer's device — see the Embedded Wallets guide.
         - `RULE_BASED`: An additional account number for an existing account holder, with a routing rule attached, so incoming payments can be attributed to a specific payer and swept automatically. Created with `POST /internal-accounts`.
-        - `BULK_SETTLEMENT`: A platform-owned USD account with its own account number, for receiving bulk payments (for example, a single settlement from a payment processor) that the platform then pays out to its customers. Only a platform can hold one, so it never has a `customerId` and never appears in customer listings. Funds in it can move only to the platform's customers. A quote from it to another platform-owned account is rejected. Lightspark provisions it for the platform on request. It cannot be created with `POST /internal-accounts`.
+        - `BULK_SETTLEMENT`: An account for receiving bulk payments (for example, a single settlement from a payment processor) that the platform then pays out to its customers. Only a platform can hold one, and funds in it can move only to the platform's customers.
     SweepRuleDestinationRequest:
       title: Sweep Rule Destination Request
       type: object
@@ -15932,7 +15929,7 @@ components:
         type:
           allOf:
             - $ref: '#/components/schemas/InternalAccountType'
-          description: Must be `RULE_BASED`. `INTERNAL_FIAT`, `INTERNAL_CRYPTO`, and `EMBEDDED_WALLET` accounts are provisioned automatically when a customer is created or approved, and Lightspark provisions `BULK_SETTLEMENT` accounts for a platform on request, so none of them can be created through this endpoint.
+          description: Must be `RULE_BASED`. `INTERNAL_FIAT`, `INTERNAL_CRYPTO`, `BULK_SETTLEMENT`, and `EMBEDDED_WALLET` accounts are provisioned when a customer is created or approved.
           example: RULE_BASED
         currency:
           type: string
@@ -18916,7 +18913,7 @@ components:
           example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
         customerId:
           type: string
-          description: The ID of the customer associated with the internal account. If this field is empty, the internal account belongs to the platform. Always empty for `BULK_SETTLEMENT` accounts, which only a platform can hold.
+          description: The ID of the customer associated with the internal account. If this field is empty, the internal account belongs to the platform.
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         type:
           $ref: '#/components/schemas/InternalAccountType'

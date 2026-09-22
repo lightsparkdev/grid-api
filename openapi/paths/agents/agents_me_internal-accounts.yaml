@@ -24,9 +24,6 @@ get:
         `INTERNAL_CRYPTO` for platform-managed holding accounts, or
         `RULE_BASED` for the additional account numbers issued with a sweep
         rule.
-        `BULK_SETTLEMENT` accounts belong to the platform, so filtering by
-        that type here returns no results. To find them, use
-        `GET /platform/internal-accounts`.
       required: false
       schema:
         $ref: ../../components/schemas/customers/InternalAccountType.yaml

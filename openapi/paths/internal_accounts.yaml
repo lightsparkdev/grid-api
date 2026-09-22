@@ -12,8 +12,7 @@ post:
 
     Only `RULE_BASED` accounts can be created here. `INTERNAL_FIAT`,
     `INTERNAL_CRYPTO`, and `EMBEDDED_WALLET` accounts are provisioned
-    automatically when an account holder is created or approved. Lightspark
-    provisions `BULK_SETTLEMENT` accounts for a platform on request.
+    automatically when an account holder is created or approved.
 
     The response carries the account's own `fundingPaymentInstructions` — the
     routable number payers send to. Rule-based accounts are currently available
