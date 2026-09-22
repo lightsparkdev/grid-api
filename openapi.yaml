@@ -18971,7 +18971,7 @@ components:
             | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
             | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
             | CUSTOMER_NOT_VERIFIED | The customer is not verified and cannot perform this action |
-            | SANCTION_BLOCKED | Blocked by sanction screening |
+            | SANCTION_BLOCKED | Blocked by sanction screening. The reason names the id of the withheld record where one is available |
           enum:
             - FORBIDDEN
             - USER_NOT_READY
