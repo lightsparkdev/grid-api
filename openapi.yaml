@@ -15840,7 +15840,6 @@ components:
       title: Sweep Rule Destination Request
       type: object
       description: The account a rule-based account sweeps its incoming payments to.
-      additionalProperties: false
       required:
         - accountId
       properties:
@@ -15901,7 +15900,6 @@ components:
       title: Sweep Rule Request
       type: object
       description: The routing rule attached to a rule-based account. Every payment that settles into the account is swept to the rule's destination, carrying the payment metadata configured here.
-      additionalProperties: false
       required:
         - destination
       properties:
@@ -15932,7 +15930,6 @@ components:
       title: Internal Account Create Request
       type: object
       description: Request body for `POST /internal-accounts`. Only `RULE_BASED` accounts can be created today, and they are rejected without a `sweepRule` — the type and its rule are created together or not at all.
-      additionalProperties: false
       required:
         - type
         - currency

@@ -4,7 +4,6 @@ description: >-
   The routing rule attached to a rule-based account. Every payment that settles
   into the account is swept to the rule's destination, carrying the payment
   metadata configured here.
-additionalProperties: false
 required:
   - destination
 properties:
