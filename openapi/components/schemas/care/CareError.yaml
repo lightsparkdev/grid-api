@@ -26,7 +26,7 @@ properties:
       | `CARE_MESSAGE_REJECTED` | 400 | The cardholder's message was refused, for example because it is too long, and no turn ran. `reason` carries the sentence to show them. |
       | `UNAUTHORIZED` | 401 | The platform's Grid credential is missing or wrong. On this surface a `401` never means the cardholder is unverified; that is signalled in a `200` body. |
       | `CARE_SESSION_EXPIRED` | 401 | The `X-Ls-Care-Session` token presented is malformed, or not a care session token at all; or a replay under an `Idempotency-Key` lacks the valid session token its original request required, in which case nothing from the record is returned. For a new message, a missing or expired token is never this error: the message verifies the cardholder again inside a `200` instead. Rarely, also returned when a verification lands on the chat at the same moment a message without a live token takes it away; send the message again. |
-      | `FORBIDDEN` | 403 | Embedded care is not enabled for this platform. |
+      | `FORBIDDEN` | 403 | The token lacks a permission the endpoint requires, or embedded care is not enabled for this platform. |
       | `CARE_SESSION_PLATFORM_MISMATCH` | 403 | The session token was minted for a different platform. Stop; retrying will not help. |
       | `NOT_FOUND` | 404 | No such chat for this platform. A chat belonging to another platform, a chat that never existed, a malformed chat id, and an `X-Ls-Care-Session` token minted for a different chat or a different cardholder are one answer. |
       | `CUSTOMER_NOT_FOUND` | 404 | No such cardholder for this platform. |

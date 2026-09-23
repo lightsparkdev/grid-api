@@ -23,6 +23,8 @@ delete:
 
     Closing a chat that is already closed is not an error: that is the state
     the caller asked for.
+
+    Requires a token with the `VIEW` permission.
   operationId: endCareChat
   tags:
     - Embedded Care
@@ -38,7 +40,9 @@ delete:
           schema:
             $ref: ../../components/schemas/care/CareError.yaml
     '403':
-      description: '`FORBIDDEN`: embedded care is not enabled for this platform.'
+      description: >-
+        `FORBIDDEN`: the token lacks the `VIEW` permission, or embedded care is
+        not enabled for this platform.
       content:
         application/json:
           schema:

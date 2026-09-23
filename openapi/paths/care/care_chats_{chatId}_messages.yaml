@@ -131,6 +131,10 @@ post:
     turn, so a chat that this very call verified still reads
     `verificationRequired: true` here; decide that you hold a session by the
     presence of `sessionToken`.
+
+    Requires a token with the `VIEW` and `MANAGE` permissions; `VIEW` alone
+    is not sufficient, because the agent can freeze, unfreeze and replace the
+    cardholder's cards.
   operationId: sendCareChatMessage
   tags:
     - Embedded Care
@@ -238,7 +242,8 @@ post:
             $ref: ../../components/schemas/care/CareError.yaml
     '403':
       description: >-
-        `FORBIDDEN` when embedded care is not enabled for this platform, or
+        `FORBIDDEN` when the token lacks the `VIEW` or `MANAGE` permission, or
+        embedded care is not enabled for this platform.
         `CARE_SESSION_PLATFORM_MISMATCH` when the session token was minted for
         another platform.
       content:
