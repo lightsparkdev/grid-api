@@ -13725,7 +13725,7 @@ components:
           $ref: '#/components/schemas/AgreementAcceptanceMethod'
     AgreementType:
       type: string
-      description: 'Identifies which Grid agreement a consent record or document refers to. Values are stable identifiers: a document''s hosted URL or version may change, but its type does not. Accepting one agreement never implies acceptance of another, even when two agreements share a hosted page. A consumer and a commercial customer accept different cardholder and accountholder documents, so each is its own type.'
+      description: 'Identifies which Grid agreement a consent record or document refers to. Values are stable identifiers: a document''s hosted URL or version may change, but its type does not. Accepting one agreement never implies acceptance of another, even when two agreements share a hosted page. The cardholder and accountholder agreements differ by customer kind: an `INDIVIDUAL` customer accepts the `_CONSUMER_` variant, and a `BUSINESS` customer accepts the `_COMMERCIAL_` one.'
       enum:
         - LIGHTSPARK_END_USER_TERMS
         - LIGHTSPARK_E_SIGN_CONSENT
