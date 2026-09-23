@@ -24643,7 +24643,7 @@ components:
           $ref: '#/components/schemas/TransactionDestinationOneOf'
         ruleBasedAccountId:
           type: string
-          description: The `RULE_BASED` internal account whose deposit this transaction sweeps. Present only on sweep transactions; for these, `source` describes the party that made the deposit.
+          description: The `RULE_BASED` internal account whose deposit this transaction sweeps. Present only on sweep transactions. For these, `source` describes the party that made the deposit when it is known, and is this account otherwise.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000011
         customerId:
           type: string
