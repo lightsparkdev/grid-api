@@ -13725,15 +13725,17 @@ components:
           $ref: '#/components/schemas/AgreementAcceptanceMethod'
     AgreementType:
       type: string
-      description: 'Identifies which Grid agreement a consent record or document refers to. Values are stable identifiers: a document''s hosted URL or version may change, but its type does not. Accepting one agreement never implies acceptance of another, even when two agreements share a hosted page.'
+      description: 'Identifies which Grid agreement a consent record or document refers to. Values are stable identifiers: a document''s hosted URL or version may change, but its type does not. Accepting one agreement never implies acceptance of another, even when two agreements share a hosted page. A consumer and a commercial customer accept different cardholder and accountholder documents, so each is its own type.'
       enum:
         - LIGHTSPARK_END_USER_TERMS
         - LIGHTSPARK_E_SIGN_CONSENT
         - LIGHTSPARK_PRIVACY_POLICY
         - LEAD_E_SIGN_CONSENT
-        - LEAD_ACCOUNTHOLDER_AGREEMENT
+        - LEAD_ACCOUNTHOLDER_CONSUMER_AGREEMENT
+        - LEAD_ACCOUNTHOLDER_COMMERCIAL_AGREEMENT
         - LEAD_PRIVACY_POLICY
-        - LEAD_CARDHOLDER_AGREEMENT
+        - LEAD_CARDHOLDER_CONSUMER_AGREEMENT
+        - LEAD_CARDHOLDER_COMMERCIAL_AGREEMENT
       example: LIGHTSPARK_END_USER_TERMS
     AgreementConsentRequest:
       type: object
@@ -14641,7 +14643,6 @@ components:
           description: Deprecated; send `agreementConsents` instead. Supplying this records acceptance of the Lightspark End User Terms, equivalent to a single `agreementConsents` entry of type `LIGHTSPARK_END_USER_TERMS`. Supplying both fields in one request is rejected.
         agreementConsents:
           type: array
-          maxItems: 7
           description: Evidence that the customer accepted Grid agreements, at most one entry per type. Unregulated platforms must record acceptance of the Lightspark End User Terms before initiating customer-scoped transactions; those transactions fail until that consent is recorded. Consents can be supplied during customer creation or in a later customer update.
           items:
             $ref: '#/components/schemas/AgreementConsentRequest'
@@ -14985,7 +14986,6 @@ components:
           description: Deprecated; send `agreementConsents` instead. Supplying this records acceptance of the Lightspark End User Terms, equivalent to a single `agreementConsents` entry of type `LIGHTSPARK_END_USER_TERMS`. Supplying both fields in one request is rejected.
         agreementConsents:
           type: array
-          maxItems: 7
           description: Evidence that the customer accepted Grid agreements, at most one entry per type. Supplying this records additional acceptances; it never withdraws or replaces evidence already recorded for other types. Omitting the field leaves recorded consents unchanged.
           items:
             $ref: '#/components/schemas/AgreementConsentRequest'

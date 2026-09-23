@@ -61,7 +61,6 @@ properties:
       both fields in one request is rejected.
   agreementConsents:
     type: array
-    maxItems: 7
     description: >-
       Evidence that the customer accepted Grid agreements, at most
       one entry per type. Supplying this records additional acceptances; it
