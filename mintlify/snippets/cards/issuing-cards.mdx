@@ -93,6 +93,67 @@ immediately before rendering the iframe. Never store, cache, or log the
 URL. Every reveal is audit-logged.
 </Note>
 
+### Styling the reveal
+
+By default the iframe renders with Grid's own styling. To carry your
+branding instead, host a stylesheet and point your platform config at it:
+
+```bash
+curl -X PATCH "$GRID_BASE_URL/config" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"cardConfigs": {"panRevealCssUrl": "https://acme.com/card-reveal.css"}}'
+```
+
+Every reveal minted afterwards links your stylesheet. Send `null` to go
+back to the default.
+
+To style one reveal differently — to match the cardholder's light or dark
+theme, say — send `cssUrl` in the reveal request instead. It overrides the
+platform setting for that call only:
+
+```bash
+curl -X POST "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010/reveal" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"cssUrl": "https://acme.com/card-reveal-dark.css"}'
+```
+
+Style these ids and classes; the rest of the page structure is not a
+contract and can change:
+
+| Selector | What it is |
+|----------|------------|
+| `#card` | The wrapper around the whole card |
+| `#pan` | The full card number |
+| `.pan-separator` | The gap between PAN digit groups |
+| `#expiry` | The expiry date |
+| `#cvv` | The security code |
+
+```css
+#card {
+  background: #1a1a1a;
+  border-radius: 16px;
+  padding: 24px;
+  font-family: "Acme Sans", sans-serif;
+}
+
+#pan {
+  font-size: 21px;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+}
+```
+
+<Warning>
+Both settings load a stylesheet into the page that renders the live PAN,
+expiry, and CVV, so host it somewhere you would trust with card details. It
+must be reachable over HTTPS and must not carry credentials in the URL. Grid
+never fetches it — the cardholder's browser does — so a stylesheet that fails
+to load produces an unstyled card rather than a server error. Reveal a
+sandbox card to check yours before you ship it.
+</Warning>
+
 ## Errors to handle
 
 | Status | Code | What it means |
