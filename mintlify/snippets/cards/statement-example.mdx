@@ -1,0 +1,115 @@
+export const StatementExample = () => {
+  const font = "'Suisse Intl', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+  const primary = '#1a1a1a';
+  const secondary = '#4f5960';
+  const hairline = '0.5px solid rgba(26,26,26,0.1)';
+  const muted70 = 'rgba(26,26,26,0.7)';
+  const muted78 = 'rgba(26,26,26,0.78)';
+  const muted56 = 'rgba(26,26,26,0.56)';
+  const ledgerColumns = '48px minmax(0, 1fr) 96px';
+  const definitionRow = { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '24px', padding: '7px 0' };
+  const definitionLabel = { color: muted70 };
+  const definitionValue = { textAlign: 'right' };
+  const currency = { marginLeft: '6px', color: muted70, fontSize: '10px' };
+  const ledgerGrid = { display: 'grid', gridTemplateColumns: ledgerColumns, columnGap: '12px' };
+  const flag = { marginLeft: '2px', color: muted56, fontSize: '0.72em', fontVariantNumeric: 'tabular-nums', lineHeight: 0, verticalAlign: 'super' };
+  const legalFlag = { marginLeft: '2px', fontSize: '0.72em', lineHeight: 0, verticalAlign: 'super' };
+  const footerP = { margin: 0 };
+  const details = [
+    ['Statement period', '09/01/2026 – 09/30/2026'],
+    ['Issued', '10/01/2026'],
+    ['Account holder', 'Marcus Chen'],
+    ['Account type', 'Consumer prepaid account'],
+    ['Account number', '****4821'],
+  ];
+  const rows = [
+    { id: 'c1', day: '03', type: 'ACH deposit', party: 'Acme Corp Payroll', amount: '+$1,850.00', disputable: true },
+    { id: 'c2', day: '08', type: 'Debit card purchase', party: 'Blue Bottle Coffee', terminal: 'Los Angeles, CA', amount: '-$18.75', disputable: true },
+    { id: 'c3', day: '12', type: 'ACH debit', party: 'Pacific Gas & Electric', amount: '-$142.30', disputable: true },
+    { id: 'c4', day: '18', type: 'Wire transfer out', party: 'First National Escrow', amount: '-$1,000.00', disputable: false },
+    { id: 'c4-fee', day: '18', type: 'Wire transfer fee', party: 'Lead Bank', amount: '-$15.00', disputable: false },
+    { id: 'c5', day: '24', type: 'RTP received', party: 'Sofía Herrera', amount: '+$250.00', disputable: false },
+  ];
+  const noticeSteps = [
+    '(1) Tell us your name and account number (if any).',
+    '(2) Describe the error or the transfer you are unsure about, and explain as clearly as you can why you believe it is an error or why you need more information.',
+    '(3) Tell us the dollar amount of the suspected error.',
+  ];
+  return (
+    <div className="not-prose" style={{ background: '#f0f0ee', padding: '28px 16px', borderRadius: '12px', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: '600px', overflow: 'hidden', border: hairline, borderRadius: '4px', background: '#ffffff', color: primary, fontFamily: font, fontSize: '13px', fontWeight: 400, fontVariantNumeric: 'tabular-nums', lineHeight: 1.3 }}>
+
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '24px', padding: '26px 32px 20px', background: '#ffffff', color: primary }}>
+          <div style={{ minWidth: 0, color: secondary, display: 'flex', alignItems: 'center' }}>
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true" style={{ display: 'block' }}>
+              <rect width="22" height="22" rx="5" fill={secondary} />
+              <circle cx="11" cy="11" r="4.5" stroke="#ffffff" strokeWidth="2" />
+            </svg>
+          </div>
+          <span style={{ marginLeft: 'auto', textAlign: 'right', fontWeight: 450 }}>September statement</span>
+        </div>
+
+        <div style={{ margin: '0 32px', padding: '14px 0 22px' }}>
+          {details.map((row) => (
+            <div key={row[0]} style={definitionRow}>
+              <span style={definitionLabel}>{row[0]}</span>
+              <span style={definitionValue}>{row[1]}</span>
+            </div>
+          ))}
+          <div style={definitionRow}>
+            <span style={definitionLabel}>Opening balance</span>
+            <span style={definitionValue}>$2,450.00<span style={currency}>USD</span></span>
+          </div>
+          <div style={definitionRow}>
+            <span style={definitionLabel}>Closing balance</span>
+            <span style={definitionValue}>$3,373.95<span style={currency}>USD</span></span>
+          </div>
+        </div>
+
+        <div style={{ margin: '0 32px', borderTop: hairline, padding: '14px 0 22px' }}>
+          <div style={{ ...ledgerGrid, paddingBottom: '4px', color: muted70, fontSize: '10px' }}>
+            <span style={{ gridColumn: '1 / 3' }}>Transactions</span>
+            <span style={{ textAlign: 'right' }}>Amount</span>
+          </div>
+          {rows.map((row) => (
+            <div key={row.id} style={{ ...ledgerGrid, alignItems: 'baseline', padding: '9px 0' }}>
+              <span style={{ color: muted78 }}>09/{row.day}</span>
+              <span style={{ minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                <span style={{ color: primary }}>{row.type}</span>
+                <span style={{ marginLeft: '10px', color: muted70 }}>{row.party}</span>
+                {row.terminal ? <span style={{ display: 'inline', color: muted70 }}> · {row.terminal}</span> : null}
+              </span>
+              <span style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                <span>{row.amount}</span>
+                {row.disputable ? <sup style={flag}>*</sup> : null}
+              </span>
+            </div>
+          ))}
+          <div style={{ ...ledgerGrid, alignItems: 'baseline', marginTop: '4px', padding: '12px 0 10px', borderTop: hairline }}>
+            <span style={{ gridColumn: '1 / 3', fontWeight: 450 }}>Total fees for period</span>
+            <span style={{ textAlign: 'right' }}>$15.00</span>
+          </div>
+          <div style={{ paddingTop: '2px', color: muted56, fontSize: '10px' }}>* See below in case of errors or questions</div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: 0, padding: '14px 32px 24px', borderTop: hairline, background: '#ffffff', color: secondary, fontSize: '10px', lineHeight: 1.35, textWrap: 'pretty' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ marginBottom: '2px', fontWeight: 450 }}>
+              In case of errors or questions about your electronic transfers<sup style={legalFlag}>*</sup>
+            </div>
+            <p style={footerP}>Telephone us at (855) 516-0103 or Write us at 8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069 as soon as you can, if you think your statement or receipt is wrong or if you need more information about a transfer on the statement or receipt. We must hear from you no later than 60 days after we sent you the FIRST statement on which the error or problem appeared.</p>
+            <ol style={{ display: 'flex', flexDirection: 'column', gap: '2px', margin: '2px 0', padding: 0, listStyle: 'none' }}>
+              {noticeSteps.map((step) => (
+                <li key={step} style={{ paddingLeft: '14px', textIndent: '-14px' }}>{step}</li>
+              ))}
+            </ol>
+            <p style={footerP}>We will investigate your complaint and will correct any error promptly. If we take more than 10 business days to do this, we will credit your account for the amount you think is in error, so that you will have the use of the money during the time it takes us to complete our investigation.</p>
+            <p style={{ margin: '2px 0 0' }}>Report errors within 60 days after we send this statement.</p>
+          </div>
+          <p style={{ margin: 0, paddingTop: '8px', borderTop: hairline }}>This account is held at Lead Bank, the account-holding institution. Lightspark is the program manager and is not a bank.</p>
+        </div>
+
+      </div>
+    </div>
+  );
+};

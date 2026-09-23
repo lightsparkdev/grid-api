@@ -329,6 +329,12 @@
             ]
           },
           {
+            "group": "Statements",
+            "pages": [
+              "cards/statements"
+            ]
+          },
+          {
             "group": "Card design",
             "pages": [
               "cards/card-design/guidelines"
