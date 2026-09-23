@@ -14,10 +14,9 @@ properties:
   maxDocuments:
     type: integer
     description: >-
-      The most documents a single quote accepts. Never more than 3, the
-      `documentIds` limit on `POST /quotes`.
+      The most documents a single quote accepts. It never exceeds the number
+      of `documentIds` that `POST /quotes` accepts, which is 3 today.
     minimum: 1
-    maximum: 3
     example: 3
   maxDocumentSizeBytes:
     type: integer
