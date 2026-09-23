@@ -337,7 +337,7 @@ Grid returns `payloadToSign` strings from several endpoints:
 
 - `POST /quotes` (when the source is a Global Account) — the quote's `paymentInstructions[].accountOrWalletInfo.payloadToSign`.
 - `POST /auth/credentials` (adding an additional credential) — 202 response body.
-- `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /auth/sessions/{id}/refresh`, `POST /internal-accounts/{id}/export`, `PATCH /internal-accounts/{id}`, `PATCH /customers/{id}` for tied `EMAIL_OTP` email updates — all 202 response bodies.
+- `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /auth/sessions/{id}/refresh`, `POST /internal-accounts/{id}/export`, `PATCH /internal-accounts/{id}`, `PATCH /customers/{id}` for email or phone number changes on customers with tied OTP credentials — all 202 response bodies.
 
 Stamp the payload **byte-for-byte as returned** (do not re-parse, re-serialize, or trim whitespace). The session signing key produces a Grid wallet signature: derive its compressed P-256 public key, sign the payload with the private scalar, then base64url-encode the signature envelope:
 

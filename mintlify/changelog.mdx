@@ -11,6 +11,42 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
+## Verify a new email or phone number before changing it on an Embedded Wallet customer
+
+A customer with tied Embedded Wallet OTP credentials signs in with their email or phone
+number, so Grid now proves the new contact before applying it.
+
+<Warning>
+  Breaking change. `PATCH /customers/{customerId}` no longer changes `email` or
+  `phoneNumber` for a customer with tied `EMAIL_OTP` or `SMS_OTP` credentials until the
+  new contact is verified. Without a verified credential it returns
+  `400 AUTH_CREDENTIAL_VERIFICATION_REQUIRED`. Customers without tied OTP credentials
+  are unaffected.
+</Warning>
+
+- `POST /auth/credentials` takes an optional `email` (`EMAIL_OTP`) or `phoneNumber`
+  (`SMS_OTP`). When the account already has an `ACTIVE` credential of that type, this
+  creates a `PENDING` credential and sends a code to the new contact, with no signed
+  retry. Without an `ACTIVE` credential of that type, a new value returns
+  `400 INVALID_INPUT`.
+- `POST /auth/credentials/{id}/verify` on a `PENDING` credential returns the credential
+  with `status: VERIFIED` instead of a session. The verification lasts 15 minutes.
+- `PATCH /customers/{customerId}` then runs its signed retry as before. Its `200` can now
+  be `{ "status": "PROCESSING" }`. When the change finishes, Grid sends a
+  `WALLET_OPERATION.COMPLETED` or `WALLET_OPERATION.FAILED` webhook with the new
+  `operationType: customer.contact_update` (`resourceType: CUSTOMER`). You can also
+  re-send the identical signed request until it returns the customer.
+- `AuthMethod` gains a required `status`: `PENDING`, `VERIFIED`, or `ACTIVE`.
+  `GET /auth/credentials` lists unfinished changes. Deleting one cancels it in a single
+  call with no signed step.
+- New error codes: `AUTH_CREDENTIAL_VERIFICATION_REQUIRED` and
+  `AUTH_CREDENTIAL_VERIFICATION_EXPIRED` (400), and `CONTACT_UPDATE_IN_PROGRESS` (409).
+- `PATCH /customers/{customerId}` no longer returns `409 EMAIL_OTP_EMAIL_ALREADY_EXISTS`
+  or `SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS`. A contact that another credential uses is
+  accepted.
+
+See [Authentication](/global-accounts/authentication#changing-the-email-or-phone-number).
+
 ## `customerId` is required when creating a customer external account
 
 `POST /customers/external-accounts` has always rejected a request that omits

@@ -3,7 +3,7 @@ post:
   description: |
     Webhook that is called when an asynchronous embedded-wallet operation reaches a terminal state. Fires `WALLET_OPERATION.COMPLETED` on terminal success and `WALLET_OPERATION.FAILED` on terminal failure. The payload is self-contained — handle it from the fields below with no follow-up API call needed.
 
-    The specific operation is carried in `data.operationType` (`auth_credential.create`, `auth_credential.delete`, `session.revoke`, or `wallet.export`), and the business resource it affected is carried in `data.resourceType` / `data.resourceId`:
+    The specific operation is carried in `data.operationType` (`auth_credential.create`, `auth_credential.delete`, `session.revoke`, `wallet.export`, or `customer.contact_update`), and the business resource it affected is carried in `data.resourceType` / `data.resourceId`:
 
     | `operationType` | `resourceType` | `resourceId` identifies |
     | --- | --- | --- |
@@ -11,6 +11,7 @@ post:
     | `auth_credential.delete` | `AUTH_METHOD` | the deleted credential |
     | `session.revoke` | `SESSION` | the revoked session |
     | `wallet.export` | `INTERNAL_ACCOUNT` | the account whose wallet was exported |
+    | `customer.contact_update` | `CUSTOMER` | the customer whose email or phone number changed through `PATCH /customers/{customerId}` |
 
     The webhook carries no sensitive result material — for `wallet.export`, the export bundle itself is never delivered here; retrieve it by resubmitting the original signed export request until it returns the result.
 

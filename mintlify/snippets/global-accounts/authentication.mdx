@@ -7,7 +7,7 @@ Every Global Account action beyond receiving funds must be authorized by a sessi
 | **`EMAIL_OTP`** | Lowest-friction option. Works on any device with email access — no biometric hardware, identity provider, or client SDK required beyond the code entry field. |
 | **`SMS_OTP`** | Same flow as `EMAIL_OTP`, but delivered to the user's phone number instead of email. Useful when phone is the primary contact channel. |
 
-A single internal account can hold one `EMAIL_OTP` credential, one `SMS_OTP` credential, and multiple distinct `PASSKEY` credentials concurrently. `OAUTH` credentials can be added for each supported provider identity.
+A single internal account can hold one `ACTIVE` `EMAIL_OTP` credential, one `ACTIVE` `SMS_OTP` credential, and multiple distinct `PASSKEY` credentials concurrently. `OAUTH` credentials can be added for each supported provider identity.
 
 ## Registration vs. verification
 
@@ -520,6 +520,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
   "id": "AuthMethod:019542f5-b3e7-1d02-0000-000000000004",
   "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
   "type": "EMAIL_OTP",
+  "status": "ACTIVE",
   "nickname": "jane@example.com",
   "otpEncryptionTargetBundle": "{\"version\":\"v1.0.0\",\"data\":\"7b22...\",\"dataSignature\":\"3045...\",\"enclaveQuorumPublic\":\"04a1...\"}",
   "createdAt": "2026-04-19T12:00:00Z",
@@ -573,6 +574,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
   "id": "Session:019542f5-b3e7-1d02-0000-000000000003",
   "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
   "type": "EMAIL_OTP",
+  "status": "ACTIVE",
   "nickname": "jane@example.com",
   "createdAt": "2026-04-19T12:00:01Z",
   "updatedAt": "2026-04-19T12:00:01Z",
@@ -605,9 +607,89 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
 
 Same pattern as the first activation: call `/challenge` to send a new OTP and receive a fresh `otpEncryptionTargetBundle`, generate a new TEK key pair, build the `encryptedOtpBundle`, and complete the two-step verify flow.
 
-### Changing the email OTP address
+### Changing the email or phone number
 
-The `EMAIL_OTP` address comes from the customer email on file. To change it, update the customer with `PATCH /customers/{customerId}`. If the customer has tied Embedded Wallet `EMAIL_OTP` credentials, Grid returns a signed-retry challenge; stamp the returned `payloadToSign` with an active session signing key, then retry the same customer update with `Grid-Wallet-Signature` and `Request-Id`. Grid syncs the customer email and tied `EMAIL_OTP` credential email together.
+The `EMAIL_OTP` address comes from the customer email on file, and the `SMS_OTP` number from the customer phone number. Changing either one changes how the customer signs in, so Grid applies the change only after the customer proves they control the new contact. The change then needs a signature from their wallet session.
+
+<Warning>
+  Breaking change. `PATCH /customers/{customerId}` no longer changes the email or phone number of a customer with tied Embedded Wallet OTP credentials until the new contact is verified. Without a verified credential it returns `400` `AUTH_CREDENTIAL_VERIFICATION_REQUIRED`. A customer without tied OTP credentials is unaffected.
+</Warning>
+
+<Steps>
+  <Step title="Register the new contact">
+    Create an OTP credential carrying the new contact: `email` for `EMAIL_OTP`, `phoneNumber` for `SMS_OTP`. Any of the customer's Global Account ids works as `accountId`. There is no signed retry. Grid sends a one-time password to the new contact and returns a `PENDING` credential.
+
+    ```bash
+    curl -X POST "$GRID_BASE_URL/auth/credentials" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "type": "EMAIL_OTP",
+        "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+        "email": "jane.new@example.com"
+      }'
+    ```
+
+    **Response (201):**
+
+    ```json
+    {
+      "id": "AuthMethod:019542f5-b3e7-1d02-0000-000000000005",
+      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+      "type": "EMAIL_OTP",
+      "status": "PENDING",
+      "nickname": "jane.new@example.com",
+      "otpEncryptionTargetBundle": "{\"version\":\"v1.0.0\",\"data\":\"7b227461...\",\"dataSignature\":\"30450221...\",\"enclaveQuorumPublic\":\"04a1b2c3...\"}",
+      "createdAt": "2026-04-10T09:00:00Z",
+      "updatedAt": "2026-04-10T09:00:00Z"
+    }
+    ```
+
+    A `PENDING` credential cannot be used to sign in. To resend the code, call `POST /auth/credentials/{id}/challenge`.
+
+    This path needs an existing `ACTIVE` credential of the same type. If the customer has none, a new `email` or `phoneNumber` is rejected with `400` `INVALID_INPUT`; change the contact with `PATCH /customers/{customerId}` alone.
+  </Step>
+  <Step title="Verify the new contact">
+    Build the `encryptedOtpBundle` from the code the customer received, exactly as for a login, and call `verify`. On a `PENDING` credential, verify completes in one call. It returns `200` with the credential in `status: VERIFIED`. There is no `202` signed step and no session.
+
+    ```bash
+    curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000005/verify" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "type": "EMAIL_OTP",
+        "encryptedOtpBundle": "{\"encappedPublic\":\"044f631a...\",\"ciphertext\":\"1fa1023390...\"}"
+      }'
+    ```
+
+    Grid keeps the proof server-side. It expires 15 minutes after verification. After that, call `challenge` and `verify` again.
+  </Step>
+  <Step title="Update the customer">
+    Call `PATCH /customers/{customerId}` with the new value. Grid finds the newest `VERIFIED` credential for that value and returns `202` with `payloadToSign` and `requestId`. The client stamps `payloadToSign` with the session signing key of an `ACTIVE` credential, and you retry the same request with `Grid-Wallet-Signature` and `Request-Id`. This is the usual <a href="#the-signed-retry-pattern">signed-retry pattern</a>.
+
+    ```bash
+    curl -X PATCH "$GRID_BASE_URL/customers/Customer:019542f5-b3e7-1d02-0000-000000000001" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "customerType": "INDIVIDUAL",
+        "email": "jane.new@example.com"
+      }'
+    ```
+
+    The signed retry returns `200` with the updated customer. It can also return a <a href="#handling-a-still-processing-response">still-processing `200`</a>. When the change finishes, Grid sends a `WALLET_OPERATION.COMPLETED` or `WALLET_OPERATION.FAILED` webhook with `operationType: customer.contact_update`, the customer id as `resourceId`, and your `Request-Id` as `requestId`. You can also re-send the identical signed retry until you get the customer.
+  </Step>
+</Steps>
+
+When the change completes, the new credential becomes `ACTIVE` and replaces the customer's previous `ACTIVE` credential of that type, and the customer's `email` or `phoneNumber` changes with it. All of the customer's Global Accounts share one wallet, so the change covers every one of them. Sessions issued from the old credential keep working until they expire. Grid updates the customer's records with the card issuer and banking partner shortly afterwards.
+
+| Error | Meaning |
+|---|---|
+| `400` `AUTH_CREDENTIAL_VERIFICATION_REQUIRED` | No `VERIFIED` credential exists for the new contact. Register and verify it first. |
+| `400` `AUTH_CREDENTIAL_VERIFICATION_EXPIRED` | The verification expired. Call `challenge`, then `verify` again. |
+| `409` `CONTACT_UPDATE_IN_PROGRESS` | Another update to this contact hasn't finished. Retry later. |
+
+To cancel a change, delete the `PENDING` or `VERIFIED` credential with `DELETE /auth/credentials/{id}`. It is a single call with no signed step and returns `204`. The sign-in contact stays as it was. `GET /auth/credentials` lists unfinished changes alongside `ACTIVE` credentials; check each credential's `status`.
 
 ## Managing credentials
 
@@ -629,6 +711,7 @@ curl -X GET "$GRID_BASE_URL/auth/credentials?accountId=InternalAccount:019542f5-
       "id": "AuthMethod:019542f5-b3e7-1d02-0000-000000000001",
       "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
       "type": "PASSKEY",
+      "status": "ACTIVE",
       "credentialId": "KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew",
       "nickname": "iPhone Face-ID",
       "createdAt": "2026-04-08T15:30:01Z",
@@ -638,6 +721,7 @@ curl -X GET "$GRID_BASE_URL/auth/credentials?accountId=InternalAccount:019542f5-
       "id": "AuthMethod:019542f5-b3e7-1d02-0000-000000000004",
       "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
       "type": "EMAIL_OTP",
+      "status": "ACTIVE",
       "nickname": "jane@example.com",
       "createdAt": "2026-04-09T10:15:00Z",
       "updatedAt": "2026-04-09T10:15:00Z"
@@ -650,7 +734,7 @@ The response is not paginated — each account holds a small, bounded number of 
 
 ### The signed-retry pattern
 
-Adding an additional credential, revoking a credential, refreshing or revoking a session, exporting a wallet, updating wallet privacy, and updating a customer email tied to `EMAIL_OTP` all share the same shape:
+Adding an additional credential, revoking a credential, refreshing or revoking a session, exporting a wallet, updating wallet privacy, and changing the email or phone number of a customer with tied OTP credentials all share the same shape:
 
 ```mermaid
 sequenceDiagram
@@ -703,6 +787,7 @@ Every signed-retry endpoint can return it on the retry step:
 | `DELETE /auth/credentials/{id}` | Revoke a credential |
 | `DELETE /auth/sessions/{id}` | Revoke a session |
 | `POST /internal-accounts/{id}/export` | Export wallet credentials |
+| `PATCH /customers/{id}` | Change a customer's email or phone number |
 
 To handle it:
 
@@ -711,7 +796,7 @@ To handle it:
 3. **Keep retrying with backoff** until you get a terminal response — the success code above, or an error. Grid also reconciles the operation to its terminal state on its own, so even a client that stops retrying and checks back later (for example via `GET /auth/credentials` or `GET /auth/sessions`) will see the settled result. **Wallet export is the exception**: Grid never stores the encrypted credentials, so re-sending the signed retry is the only way to receive them. Grid's own reconciliation settles the operation but has nothing to hand back, and the export challenge expires like any other (typically 5 minutes) — if it lapses, start a fresh export.
 
 <Note>
-  `verify`, `challenge`, and `export` already use `200` for their terminal success body (`AuthSession`, the challenge response, or the encrypted credentials). For those three, `200` alone doesn't tell you which case you're in — check the response body's `status` field for `"PROCESSING"` to distinguish it from a settled success. The other four endpoints (`add credential`, `session refresh`, `revoke credential`, `revoke session`) use `201` or `204` on success, so a `200` by itself already means still-processing.
+  `verify`, `challenge`, `export`, and `PATCH /customers/{id}` already use `200` for their terminal success body (`AuthSession`, the challenge response, the encrypted credentials, or the customer). For those four, `200` alone doesn't tell you which case you're in — check the response body's `status` field for `"PROCESSING"` to distinguish it from a settled success. The other four endpoints (`add credential`, `session refresh`, `revoke credential`, `revoke session`) use `201` or `204` on success, so a `200` by itself already means still-processing.
 </Note>
 
 ### Add an additional credential

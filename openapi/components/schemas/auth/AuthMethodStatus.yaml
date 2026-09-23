@@ -1,0 +1,23 @@
+type: string
+enum:
+  - PENDING
+  - VERIFIED
+  - ACTIVE
+description: >-
+  Status of an authentication credential. Only `ACTIVE` credentials can be
+  used to sign in. `PENDING` and `VERIFIED` apply only to `EMAIL_OTP` and
+  `SMS_OTP` credentials registered to change an Embedded Wallet customer's
+  email or phone number; their `nickname` is the new contact.
+
+
+  - `PENDING`: A one-time password was sent to the new contact, and the
+  contact is not yet proven. Complete it with
+  `POST /auth/credentials/{id}/verify`.
+
+  - `VERIFIED`: The new contact is proven and is waiting to be applied by
+  `PATCH /customers/{customerId}`. The verification expires 15 minutes after
+  it completes. After that, call `POST /auth/credentials/{id}/challenge` and
+  `POST /auth/credentials/{id}/verify` again.
+
+  - `ACTIVE`: The credential can be used to sign in.
+example: ACTIVE

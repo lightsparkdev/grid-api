@@ -3,6 +3,7 @@ required:
   - id
   - accountId
   - type
+  - status
   - nickname
   - createdAt
   - updatedAt
@@ -17,6 +18,8 @@ properties:
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   type:
     $ref: ./AuthMethodType.yaml
+  status:
+    $ref: ./AuthMethodStatus.yaml
   credentialId:
     type: string
     description: >-
@@ -32,7 +35,8 @@ properties:
       this is the email address; for SMS_OTP credentials this is the E.164
       phone number; for OAUTH credentials it is typically the email claim from
       the OIDC token; for PASSKEY credentials it is the validated nickname
-      provided at registration time.
+      provided at registration time. For a `PENDING` or `VERIFIED` OTP
+      credential it is the new contact being verified.
     example: example@lightspark.com
   createdAt:
     type: string

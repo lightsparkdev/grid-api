@@ -13,6 +13,7 @@ interface AuthMethod {
   id: string;
   accountId: string;
   type: string;
+  status: "PENDING" | "VERIFIED" | "ACTIVE";
   nickname?: string;
   createdAt: string;
   updatedAt: string;
@@ -70,6 +71,8 @@ export function registerAuthCommand(
       .description("Create an authentication credential")
       .requiredOption("--type <type>", "Credential type: EMAIL_OTP, SMS_OTP, OAUTH, PASSKEY")
       .requiredOption("--account-id <id>", "Internal account ID")
+      .option("--email <email>", "New email to verify for a customer email change (EMAIL_OTP)")
+      .option("--phone-number <phone>", "New E.164 phone number to verify for a customer phone change (SMS_OTP)")
       .option("--oidc-token <token>", "OIDC ID token (OAUTH)")
       .option("--nickname <name>", "Credential nickname (PASSKEY)")
       .option("--challenge <challenge>", "Registration challenge (PASSKEY)")
@@ -84,6 +87,8 @@ export function registerAuthCommand(
       type: options.type,
       accountId: options.accountId,
     };
+    if (options.email) body.email = options.email;
+    if (options.phoneNumber) body.phoneNumber = options.phoneNumber;
     if (options.oidcToken) body.oidcToken = options.oidcToken;
     if (options.nickname) body.nickname = options.nickname;
     if (options.challenge) body.challenge = options.challenge;

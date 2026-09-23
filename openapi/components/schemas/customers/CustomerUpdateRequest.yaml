@@ -1,12 +1,12 @@
 title: Customer Update Request
 description: >-
   Request body for `PATCH /customers/{customerId}`. When `email` changes for a
-  customer with tied Embedded Wallet internal accounts, Grid updates the
-  customer email and every tied `EMAIL_OTP` credential through the endpoint's
-  signed-retry flow. When `phoneNumber` changes for a customer with tied
-  Embedded Wallet internal accounts, Grid updates the customer phone number and
-  every tied `SMS_OTP` credential through the same signed-retry flow. Update
-  `email` and `phoneNumber` in separate PATCH calls.
+  customer with tied Embedded Wallet `EMAIL_OTP` credentials, or `phoneNumber`
+  changes for a customer with tied `SMS_OTP` credentials, the new contact must
+  first be registered and verified with `POST /auth/credentials` and
+  `POST /auth/credentials/{id}/verify`. The update then runs through the
+  endpoint's signed-retry flow. Update `email` and `phoneNumber` in separate
+  PATCH calls.
 type: object
 required:
   - customerType
@@ -32,17 +32,19 @@ properties:
     maxLength: 255
     description: >-
       Email address for the customer. For customers with tied Embedded Wallet
-      internal accounts, changing this value also updates every tied
-      `EMAIL_OTP` credential across all tied Embedded Wallets.
+      `EMAIL_OTP` credentials, the new address must first be verified on a
+      new `EMAIL_OTP` credential, and changing this value replaces the
+      sign-in email.
     example: john.doe@example.com
   phoneNumber:
     type: string
     pattern: '^\+[1-9]\d{1,14}$'
     description: >-
       Phone number for the customer in strict E.164 format. For customers with
-      tied Embedded Wallet internal accounts, changing this value also updates
-      every tied `SMS_OTP` credential across all tied Embedded Wallets. Send
-      phone number and email updates as separate PATCH calls.
+      tied Embedded Wallet `SMS_OTP` credentials, the new number must first be
+      verified on a new `SMS_OTP` credential, and changing this value replaces
+      the sign-in phone number. Send phone number and email updates as
+      separate PATCH calls.
     example: '+14155551234'
   umaAddress:
     type: string

@@ -655,15 +655,23 @@ paths:
       description: |
         Update a customer's metadata by their system-generated ID.
 
-        Most customer updates complete synchronously and return `200` with the updated customer. If the request changes `email` for a customer that has one or more tied Embedded Wallet internal accounts with `EMAIL_OTP` credentials, or changes `phoneNumber` for a customer that has one or more tied Embedded Wallet internal accounts with `SMS_OTP` credentials, the contact update uses the two-step signed-retry flow so the customer's wallet session authorizes the authentication credential update. On the signed retry, Grid updates the customer contact field and every tied matching OTP credential across all tied Embedded Wallets as one logical operation. If any tied credential cannot be updated, the customer contact field is not changed.
+        Most customer updates complete synchronously and return `200` with the updated customer. A customer without tied Embedded Wallet OTP credentials updates `email` and `phoneNumber` the same way, in a single call.
+
+        If the request changes `email` for a customer that has tied Embedded Wallet `EMAIL_OTP` credentials, or changes `phoneNumber` for a customer that has tied `SMS_OTP` credentials, the new contact changes how the customer signs in. Grid applies it only after the customer has proven they control the new contact, and only with a signature from the customer's wallet session.
 
         Update `email` and `phoneNumber` in separate PATCH calls. A request that includes both fields is rejected.
 
-        For an Embedded Wallet email or SMS auth phone update:
+        For an Embedded Wallet email or phone number change:
 
-        1. Call `PATCH /customers/{customerId}` with the full update body and no signature headers. Grid returns `202` with `payloadToSign`, `requestId`, and `expiresAt`. The pending challenge binds the submitted update fields and the set of tied Embedded Wallet OTP credentials that must be updated.
+        1. Register the new contact with `POST /auth/credentials`, sending `email` on an `EMAIL_OTP` request or `phoneNumber` on an `SMS_OTP` request. Grid returns a `PENDING` credential and sends a one-time password to the new contact.
 
-        2. Use the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The retry body must carry the same update fields submitted in step 1. The signed retry returns `200` with the updated customer.
+        2. Verify it with `POST /auth/credentials/{id}/verify`. The credential becomes `VERIFIED`. The verification expires 15 minutes later.
+
+        3. Call `PATCH /customers/{customerId}` with the update body and no signature headers. Grid uses the newest `VERIFIED` credential whose contact equals the new value and returns `202` with `payloadToSign`, `requestId`, and `expiresAt`. If there is no such credential, the call fails with `400` `AUTH_CREDENTIAL_VERIFICATION_REQUIRED`. If its verification has expired, it fails with `400` `AUTH_CREDENTIAL_VERIFICATION_EXPIRED`.
+
+        4. Use the session API keypair of an `ACTIVE` authentication credential on the customer's Embedded Wallet to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The retry body must carry the same update fields submitted in step 3. The signed retry returns `200` with the updated customer. It can instead return `200` with `status: "PROCESSING"` while the change is still settling at the wallet provider. When the change finishes, Grid sends a `WALLET_OPERATION.COMPLETED` or `WALLET_OPERATION.FAILED` webhook with `operationType: customer.contact_update` and the same `requestId`. You can also re-send the byte-identical signed request until it returns the customer.
+
+        When the change completes, the `VERIFIED` credential becomes `ACTIVE` and replaces the customer's previous `ACTIVE` credential of that type. All of the customer's Embedded Wallet internal accounts share one wallet, so the change applies to every one of them. The customer contact field changes in the same step. Sessions issued from the replaced credential keep working until they expire. The customer's records with the card issuer and banking partner are updated asynchronously after the change.
       operationId: updateCustomerById
       tags:
         - Customers
@@ -673,14 +681,14 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets. Required on the signed retry for Embedded Wallet email or SMS auth phone updates; ignored on the initial call and on customer updates that complete synchronously.
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of an `ACTIVE` authentication credential on the customer's Embedded Wallet. Required on the signed retry for Embedded Wallet email or phone number changes; ignored on the initial call and on customer updates that complete synchronously.
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry for Embedded Wallet email or SMS auth phone updates; must be paired with `Grid-Wallet-Signature`.
+          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry for Embedded Wallet email or phone number changes; must be paired with `Grid-Wallet-Signature`.
           schema:
             type: string
           example: Request:019542f5-b3e7-1d02-0000-000000000010
@@ -725,12 +733,12 @@ paths:
                     postalCode: '98004'
                     country: US
               embeddedWalletEmailUpdate:
-                summary: Embedded Wallet email update request (both steps)
+                summary: Embedded Wallet email change after the new address is verified (both steps)
                 value:
                   customerType: INDIVIDUAL
                   email: john.smith@example.com
               embeddedWalletPhoneUpdate:
-                summary: Embedded Wallet SMS auth phone update request (both steps)
+                summary: Embedded Wallet phone number change after the new number is verified (both steps)
                 value:
                   customerType: INDIVIDUAL
                   phoneNumber: '+14155559876'
@@ -742,38 +750,38 @@ paths:
                   phoneNumber: '+14155559876'
       responses:
         '200':
-          description: Customer updated successfully. For Embedded Wallet email or SMS auth phone updates, this is returned only on the signed retry after the customer contact field and all tied matching OTP credentials have been updated.
+          description: 'Customer updated successfully. For Embedded Wallet email or phone number changes, this is returned only on the signed retry. The body is the updated customer once the change has been applied. While the change is still in flight at the wallet provider, the body is instead a `WalletOperationProcessing` with `status: "PROCESSING"`. The backend completes the change on its own and then sends a `WALLET_OPERATION.COMPLETED` or `WALLET_OPERATION.FAILED` webhook with `operationType: customer.contact_update`. You can also re-send the byte-identical signed request until it returns the customer.'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerOneOf'
+                $ref: '#/components/schemas/CustomerUpdateResponse'
         '202':
-          description: Challenge issued for an Embedded Wallet email or SMS auth phone update. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair from a verified authentication credential on one of the customer's tied Embedded Wallets, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
+          description: Challenge issued for an Embedded Wallet email or phone number change. Returned only when a `VERIFIED` credential exists for the new contact. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair from an `ACTIVE` authentication credential on the customer's Embedded Wallet, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SignedRequestChallenge'
               examples:
                 embeddedWalletEmailUpdate:
-                  summary: Embedded Wallet customer email update challenge
+                  summary: Embedded Wallet customer email change challenge
                   value:
-                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userEmail":"john.smith@example.com","userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_EMAIL"}'
+                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userEmail":"john.smith@example.com","userId":"user_2m9F...","verificationToken":"eyJhbGciOiJFUzI1NiIsImtpZCI6..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_EMAIL"}'
                     requestId: Request:019542f5-b3e7-1d02-0000-000000000010
                     expiresAt: '2026-04-08T15:35:00Z'
                 embeddedWalletPhoneUpdate:
-                  summary: Embedded Wallet customer SMS auth phone update challenge
+                  summary: Embedded Wallet customer phone number change challenge
                   value:
-                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155559876"},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
+                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155559876","verificationToken":"eyJhbGciOiJFUzI1NiIsImtpZCI6..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
                     requestId: Request:019542f5-b3e7-1d02-0000-000000000011
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
-          description: Bad request
+          description: Bad request. For an Embedded Wallet email or phone number change, returned with `AUTH_CREDENTIAL_VERIFICATION_REQUIRED` when no `VERIFIED` credential exists for the new contact, or `AUTH_CREDENTIAL_VERIFICATION_EXPIRED` when the newest one has expired.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Also returned for Embedded Wallet email or SMS auth phone update retries when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match the pending customer update challenge, when the `Request-Id` does not match an unexpired pending challenge, or when the retry body does not match the update fields bound into `payloadToSign` on the initial call.
+          description: Unauthorized. Also returned for Embedded Wallet email or phone number change retries when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match the pending customer update challenge, when the `Request-Id` does not match an unexpired pending challenge, or when the retry body does not match the update fields bound into `payloadToSign` on the initial call.
           content:
             application/json:
               schema:
@@ -785,13 +793,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict. Returned when the supplied email address is already associated with an `EMAIL_OTP` credential, or the supplied phone number is already associated with an `SMS_OTP` credential, on this or another internal account, or when the tied Embedded Wallet OTP credential set changed between the initial `202` challenge and the signed retry.
+          description: Conflict. Returned with `EMAIL_OTP_CREDENTIAL_SET_CHANGED` or `SMS_OTP_CREDENTIAL_SET_CHANGED` when the tied Embedded Wallet OTP credential set changed between the initial `202` challenge and the signed retry, or with `CONTACT_UPDATE_IN_PROGRESS` when another update to this email or phone number has not finished yet; retry it later.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
         '424':
-          description: Failed dependency. Returned when Grid cannot update one or more tied Embedded Wallet OTP credentials. The customer contact field is not changed unless all tied credentials are updated successfully.
+          description: Failed dependency. Returned when Grid cannot update the customer's Embedded Wallet OTP credential. The customer contact field is not changed.
           content:
             application/json:
               schema:
@@ -6171,9 +6179,11 @@ paths:
       description: |
         Register an authentication credential for an Embedded Wallet customer.
 
-        Embedded Wallet internal accounts are initialized with an `EMAIL_OTP` credential tied to the customer email on the account. Use this endpoint to add another credential (`SMS_OTP`, `OAUTH`, or `PASSKEY`), or to add `EMAIL_OTP` / `SMS_OTP` back after it has been removed. Only one `EMAIL_OTP` and one `SMS_OTP` credential are supported per internal account; multiple distinct `PASSKEY` credentials may be registered.
+        Embedded Wallet internal accounts are initialized with an `EMAIL_OTP` credential tied to the customer email on the account. Use this endpoint to add another credential (`SMS_OTP`, `OAUTH`, or `PASSKEY`), or to add `EMAIL_OTP` / `SMS_OTP` back after it has been removed. Only one `ACTIVE` `EMAIL_OTP` and one `ACTIVE` `SMS_OTP` credential are supported per internal account; multiple distinct `PASSKEY` credentials may be registered.
 
         Adding a credential requires a signature from an existing verified credential on the same account. Call this endpoint with the new credential's details to receive `202` with `payloadToSign` and `requestId`. Use the session API keypair of an existing verified credential (the session signing key the client holds for it) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For OTP credentials, the one-time password is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
+
+        To change an Embedded Wallet customer's email or phone number, register the new contact first. Send `email` on an `EMAIL_OTP` request, or `phoneNumber` on an `SMS_OTP` request, with any of the customer's Embedded Wallet `accountId`s. When the customer already has an `ACTIVE` credential of that type and the value differs from the customer's current contact, Grid creates a `PENDING` credential in a single call, with no signed retry. It sends a one-time password to the new contact and returns `201` with `status: PENDING` and `otpEncryptionTargetBundle`. Verify the credential with `POST /auth/credentials/{id}/verify`, which moves it to `VERIFIED`, then apply the change with `PATCH /customers/{customerId}`. A `PENDING` or `VERIFIED` credential cannot be used to sign in. More than one may exist at a time; the customer update uses the newest `VERIFIED` credential for the new contact. A new contact sent while the customer has no `ACTIVE` credential of that type is rejected with `400` `INVALID_INPUT`, because there is no sign-in contact to change. Change the customer's contact with `PATCH /customers/{customerId}` instead. A value equal to the current contact is treated as if it were omitted.
       operationId: createAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -6211,6 +6221,18 @@ paths:
                 value:
                   type: SMS_OTP
                   accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+              emailOtpContactChange:
+                summary: Register a new email address for a customer email change
+                value:
+                  type: EMAIL_OTP
+                  accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  email: jane.new@example.com
+              smsOtpContactChange:
+                summary: Register a new phone number for a customer phone number change
+                value:
+                  type: SMS_OTP
+                  accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  phoneNumber: '+14155559876'
               oauth:
                 summary: Add an OAuth credential
                 value:
@@ -6239,7 +6261,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/WalletOperationProcessing'
         '201':
-          description: Authentication credential created successfully. The body is the created `AuthMethod`. For `EMAIL_OTP`, the nickname is the customer email tied to the internal account; for `SMS_OTP`, it is the customer phone number. OTP responses that trigger a secure OTP challenge carry `otpEncryptionTargetBundle` — the HPKE target bundle the client uses to encrypt the OTP attempt on the subsequent `POST /auth/credentials/{id}/verify`. First-time EMAIL_OTP wallet bootstrap responses may omit that bundle; if it is absent, call `POST /auth/credentials/{id}/challenge` for the new credential to issue a fresh OTP and receive `otpEncryptionTargetBundle` before verifying. For `PASSKEY`, the credential must be authenticated for the first time via `POST /auth/credentials/{id}/challenge` followed by `POST /auth/credentials/{id}/verify` to produce a session — there is no inline authentication challenge on the registration response.
+          description: Authentication credential created successfully. The body is the created `AuthMethod`. For `EMAIL_OTP`, the nickname is the customer email tied to the internal account; for `SMS_OTP`, it is the customer phone number. OTP responses that trigger a secure OTP challenge carry `otpEncryptionTargetBundle` — the HPKE target bundle the client uses to encrypt the OTP attempt on the subsequent `POST /auth/credentials/{id}/verify`. First-time EMAIL_OTP wallet bootstrap responses may omit that bundle; if it is absent, call `POST /auth/credentials/{id}/challenge` for the new credential to issue a fresh OTP and receive `otpEncryptionTargetBundle` before verifying. When the request carries a new `email` or `phoneNumber` for a contact change, the body is a `PENDING` credential whose `nickname` is the new contact, with `otpEncryptionTargetBundle` for the code sent to it. For `PASSKEY`, the credential must be authenticated for the first time via `POST /auth/credentials/{id}/challenge` followed by `POST /auth/credentials/{id}/verify` to produce a session — there is no inline authentication challenge on the registration response.
           content:
             application/json:
               schema:
@@ -6251,7 +6273,19 @@ paths:
                     id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
+                    status: ACTIVE
                     nickname: example@lightspark.com
+                    otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:30:01Z'
+                emailOtpContactChange:
+                  summary: Pending email OTP credential for a customer email change
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000005
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: EMAIL_OTP
+                    status: PENDING
+                    nickname: jane.new@example.com
                     otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
@@ -6261,6 +6295,7 @@ paths:
                     id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: SMS_OTP
+                    status: ACTIVE
                     nickname: '+14155550123'
                     otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
                     createdAt: '2026-04-08T15:30:01Z'
@@ -6271,6 +6306,7 @@ paths:
                     id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: OAUTH
+                    status: ACTIVE
                     nickname: example@lightspark.com
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
@@ -6280,6 +6316,7 @@ paths:
                     id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: PASSKEY
+                    status: ACTIVE
                     nickname: iPhone Face-ID
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
@@ -6319,7 +6356,7 @@ paths:
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
-          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while one already exists, `SMS_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an SMS OTP credential while one already exists, `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account, or `INVALID_INPUT` when an OAuth `oidcToken` is malformed or has an unsupported issuer.
+          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while an `ACTIVE` one already exists and no new `email` is supplied, `SMS_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an SMS OTP credential while an `ACTIVE` one already exists and no new `phoneNumber` is supplied, `INVALID_INPUT` when `email` or `phoneNumber` differs from the customer's current contact and the customer has no `ACTIVE` credential of that type, `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account, or `INVALID_INPUT` when an OAuth `oidcToken` is malformed or has an unsupported issuer.
           content:
             application/json:
               schema:
@@ -6345,7 +6382,7 @@ paths:
     get:
       summary: List authentication credentials
       description: |-
-        Retrieve all authentication credentials registered on an Embedded Wallet internal account.
+        Retrieve all authentication credentials registered on an Embedded Wallet internal account. The results include `PENDING` and `VERIFIED` credentials for an unfinished email or phone number change; check `status` to tell them apart from `ACTIVE` sign-in credentials.
 
         The response is not paginated: an internal account is expected to have a small, bounded number of credentials (typically 1–5), so all results are returned inline. Additional per-credential detail (such as active session expiry) is available on `GET /auth/sessions`.
       operationId: listAuthCredentials
@@ -6376,22 +6413,43 @@ paths:
                       - id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
                         accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                         type: EMAIL_OTP
+                        status: ACTIVE
                         nickname: example@lightspark.com
                         createdAt: '2026-04-08T15:30:01Z'
                         updatedAt: '2026-04-08T15:30:01Z'
                       - id: AuthMethod:019542f5-b3e7-1d02-0000-000000000004
                         accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                         type: OAUTH
+                        status: ACTIVE
                         nickname: example@lightspark.com
                         createdAt: '2026-04-08T15:35:00Z'
                         updatedAt: '2026-04-08T15:35:00Z'
                       - id: AuthMethod:019542f5-b3e7-1d02-0000-000000000003
                         accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                         type: PASSKEY
+                        status: ACTIVE
                         credentialId: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
                         nickname: iPhone Face-ID
                         createdAt: '2026-04-09T10:15:00Z'
                         updatedAt: '2026-04-09T10:15:00Z'
+                pendingContactChange:
+                  summary: Internal account with a verified email change waiting to be applied
+                  value:
+                    data:
+                      - id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                        accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                        type: EMAIL_OTP
+                        status: ACTIVE
+                        nickname: example@lightspark.com
+                        createdAt: '2026-04-08T15:30:01Z'
+                        updatedAt: '2026-04-08T15:30:01Z'
+                      - id: AuthMethod:019542f5-b3e7-1d02-0000-000000000005
+                        accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                        type: EMAIL_OTP
+                        status: VERIFIED
+                        nickname: jane.new@example.com
+                        createdAt: '2026-04-10T09:00:00Z'
+                        updatedAt: '2026-04-10T09:02:00Z'
                 empty:
                   summary: No credentials registered on the account
                   value:
@@ -6427,6 +6485,8 @@ paths:
         2. Use the session API keypair of an existing verified credential on the same internal account — other than the one being revoked — to build an API-key stamp over `payloadToSign`, then retry the same `DELETE` request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `204`.
 
         The account must retain at least one authentication credential; an account with only a single credential cannot use this endpoint to revoke it.
+
+        Deleting a `PENDING` or `VERIFIED` OTP credential cancels that email or phone number change. It completes in a single call with no signed step: call `DELETE /auth/credentials/{id}` with no headers and it returns `204`. The customer contact and the sign-in contact on the `ACTIVE` credential do not change. Only `ACTIVE` credentials count toward the one credential the account must retain.
       operationId: revokeAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -6461,13 +6521,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/WalletOperationProcessing'
         '202':
-          description: Challenge issued. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account (other than the one being revoked), then echo `requestId` on the retry.
+          description: Challenge issued. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account (other than the one being revoked), then echo `requestId` on the retry. Not returned for a `PENDING` or `VERIFIED` credential.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthSignedRequestChallenge'
         '204':
-          description: Authentication credential revoked successfully.
+          description: Authentication credential revoked successfully, or the contact change of a `PENDING` or `VERIFIED` credential cancelled.
         '400':
           description: Bad request. Also returned when the target internal account has only a single authentication credential, which cannot be revoked via this endpoint.
           content:
@@ -6500,6 +6560,8 @@ paths:
 
         For `EMAIL_OTP` and `SMS_OTP` credentials, submit the `encryptedOtpBundle` produced by HPKE-encrypting `{otp_code, public_key}` under the `otpEncryptionTargetBundle` returned from registration when present, or from `POST /auth/credentials/{id}/challenge` when registration omitted it or the OTP must be reissued. The server is a pass-through and never sees the plaintext OTP code. On success the response is `202` with a `payloadToSign` carrying the `verificationToken` bound to the client's TEK public key — sign that token with the matching TEK private key, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`. The signed retry returns `200` with the issued `AuthSession`. The TEK public key becomes the session API key on successful completion.
         In sandbox mode, the OTP flow runs real HPKE end-to-end against a sandbox enclave keypair — clients build a real `encryptedOtpBundle` against the sandbox `otpEncryptionTargetBundle` and sign a real `verificationToken` with their TEK keypair. The only sandbox shortcut is the magic OTP code (`"000000"`) the user "receives" instead of a real email or SMS delivery.
+
+        On a `PENDING` OTP credential registered for a customer email or phone number change, verification proves the new contact instead of signing in. Submit the `encryptedOtpBundle` built under that credential's `otpEncryptionTargetBundle`. The response is `200` with the `AuthMethod` in `status: VERIFIED`. There is no `202` signed step and no session is issued. Grid holds the proof server-side and applies it when `PATCH /customers/{customerId}` changes the customer contact to this value. The proof expires 15 minutes after verification. After that, call `POST /auth/credentials/{id}/challenge` and verify again.
 
         For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired. The token identity (`iss`, `aud`, and `sub`) must match the OAuth credential being verified. In sandbox, the token's `nonce` must equal `sha256(clientPublicKey)`. For `PASSKEY` credentials, the client completes a WebAuthn assertion (`navigator.credentials.get()`) against the Grid-issued `challenge` returned from `POST /auth/credentials/{id}/challenge`, and submits the resulting `assertion` with the `Request-Id` header. The `clientPublicKey` for `PASSKEY` credentials is supplied on the challenge call, where it is bound into the pending session-creation request.
 
@@ -6547,6 +6609,11 @@ paths:
                 value:
                   type: SMS_OTP
                   encryptedOtpBundle: '{"encappedPublic":"044f631a2d890bc6668d997ee184e190650d06adf970987568ec641214a00403b73effe1ef406c60a5cde8508a4484567ddb8056fbd493bee614cd727aef02a838","ciphertext":"1fa1023390a56539aa48cbb380aa28f544ed5cc04861566bb806e25ba026f14660eaf4140a05b388dd012eaa899759a6a92576cdca8c1b7d12e147bd96cc26ed9f74886794155d8ac5cf0fdc"}'
+              emailOtpContactChange:
+                summary: Verify the new address on a pending email change credential
+                value:
+                  type: EMAIL_OTP
+                  encryptedOtpBundle: '{"encappedPublic":"044f631a2d890bc6668d997ee184e190650d06adf970987568ec641214a00403b73effe1ef406c60a5cde8508a4484567ddb8056fbd493bee614cd727aef02a838","ciphertext":"1fa1023390a56539aa48cbb380aa28f544ed5cc04861566bb806e25ba026f14660eaf4140a05b388dd012eaa899759a6a92576cdca8c1b7d12e147bd96cc26ed9f74886794155d8ac5cf0fdc"}'
               emailOtpSignedRetry:
                 summary: Signed retry completing an email OTP verification
                 description: Same request body as the first leg, plus the `Grid-Wallet-Signature` and `Request-Id` headers carrying the stamp over the `verificationToken` and the `requestId` from the prior `202` response.
@@ -6570,11 +6637,38 @@ paths:
                     signature: MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900
       responses:
         '200':
-          description: 'Authentication credential verified and session issued (`AuthSession`); or, when the underlying wallet-provider activity is still in flight, a `WalletOperationProcessing` body with `status: "PROCESSING"` — the client re-sends the byte-identical request until it gets the session, and the backend also reconciles the activity to terminal on its own.'
+          description: 'Authentication credential verified and session issued (`AuthSession`); or, when the underlying wallet-provider activity is still in flight, a `WalletOperationProcessing` body with `status: "PROCESSING"` — the client re-sends the byte-identical request until it gets the session, and the backend also reconciles the activity to terminal on its own. For a `PENDING` OTP credential registered for a contact change, the body is the `AuthMethod` with `status: VERIFIED` and no session is issued.'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthCredentialVerifyResponse'
+              examples:
+                session:
+                  summary: Session issued
+                  value:
+                    id: Session:019542f5-b3e7-1d02-0000-000000000003
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: EMAIL_OTP
+                    status: ACTIVE
+                    nickname: example@lightspark.com
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:30:01Z'
+                    expiresAt: '2026-04-08T15:45:01Z'
+                contactVerified:
+                  summary: New contact verified for a pending email change
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000005
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: EMAIL_OTP
+                    status: VERIFIED
+                    nickname: jane.new@example.com
+                    createdAt: '2026-04-10T09:00:00Z'
+                    updatedAt: '2026-04-10T09:02:00Z'
+                processing:
+                  summary: Wallet-provider activity still in flight
+                  value:
+                    status: PROCESSING
+                    message: This login is still being processed. Retry the same request in a moment.
         '202':
           description: Verification challenge issued. Returned only for OTP credentials, on the first leg of the secure OTP login flow. Build an API-key stamp over `payloadToSign` (the `verificationToken`) with the TEK keypair the client generated for this login, then resubmit the same request with that full stamp as `Grid-Wallet-Signature` and `requestId` echoed as `Request-Id` to receive the issued session on the signed retry.
           content:
@@ -6632,6 +6726,8 @@ paths:
 
         For `EMAIL_OTP` and `SMS_OTP` credentials, this triggers a new one-time password to the contact on file and returns a fresh `otpEncryptionTargetBundle` for the client to HPKE-encrypt the OTP attempt against. After the user receives the new OTP, build the `encryptedOtpBundle` under the new target bundle and call `POST /auth/credentials/{id}/verify` to begin the secure OTP login flow.
 
+        On a `PENDING` or `VERIFIED` OTP credential registered for a customer email or phone number change, this resends the one-time password to the new contact (the credential's `nickname`). The response carries a fresh `otpEncryptionTargetBundle`. Verify the credential again to prove the new contact, for example after an earlier verification expired.
+
         `OAUTH` credentials do not have a challenge step. To authenticate or reauthenticate an OAuth credential, call `POST /auth/credentials/{id}/verify` with a fresh OIDC token and a `clientPublicKey`.
 
         For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from — send a compressed key for the recommended client-held-key model, where the client retains the matching private key as the resulting session signing key, or an uncompressed key for the deprecated legacy flow. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation body, not a base64url string. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
@@ -6679,16 +6775,29 @@ paths:
                     id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
+                    status: ACTIVE
                     nickname: example@lightspark.com
                     otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:35:00Z'
+                emailOtpContactChange:
+                  summary: Email OTP code resent to the new address of a pending email change
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000005
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: EMAIL_OTP
+                    status: PENDING
+                    nickname: jane.new@example.com
+                    otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
+                    createdAt: '2026-04-10T09:00:00Z'
+                    updatedAt: '2026-04-10T09:05:00Z'
                 passkey:
                   summary: Passkey reauthentication challenge issued
                   value:
                     id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: PASSKEY
+                    status: ACTIVE
                     credentialId: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
                     nickname: iPhone Face-ID
                     createdAt: '2026-04-08T15:30:01Z'
@@ -6921,6 +7030,7 @@ paths:
                     id: Session:019542f5-b3e7-1d02-0000-000000000011
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
+                    status: ACTIVE
                     nickname: example@lightspark.com
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:35:00Z'
@@ -12659,7 +12769,7 @@ webhooks:
       description: |
         Webhook that is called when an asynchronous embedded-wallet operation reaches a terminal state. Fires `WALLET_OPERATION.COMPLETED` on terminal success and `WALLET_OPERATION.FAILED` on terminal failure. The payload is self-contained — handle it from the fields below with no follow-up API call needed.
 
-        The specific operation is carried in `data.operationType` (`auth_credential.create`, `auth_credential.delete`, `session.revoke`, or `wallet.export`), and the business resource it affected is carried in `data.resourceType` / `data.resourceId`:
+        The specific operation is carried in `data.operationType` (`auth_credential.create`, `auth_credential.delete`, `session.revoke`, `wallet.export`, or `customer.contact_update`), and the business resource it affected is carried in `data.resourceType` / `data.resourceId`:
 
         | `operationType` | `resourceType` | `resourceId` identifies |
         | --- | --- | --- |
@@ -12667,6 +12777,7 @@ webhooks:
         | `auth_credential.delete` | `AUTH_METHOD` | the deleted credential |
         | `session.revoke` | `SESSION` | the revoked session |
         | `wallet.export` | `INTERNAL_ACCOUNT` | the account whose wallet was exported |
+        | `customer.contact_update` | `CUSTOMER` | the customer whose email or phone number changed through `PATCH /customers/{customerId}` |
 
         The webhook carries no sensitive result material — for `wallet.export`, the export bundle itself is never delivered here; retrieve it by resubmitting the original signed export request until it returns the result.
 
@@ -13452,6 +13563,8 @@ components:
             | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
             | SMS_OTP_CREDENTIAL_ALREADY_EXISTS | An SMS_OTP credential is already registered on the target internal account; only one SMS OTP credential is supported per internal account at this time |
             | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential with the same WebAuthn credentialId is already registered on the target internal account |
+            | AUTH_CREDENTIAL_VERIFICATION_REQUIRED | No verified authentication credential exists for the new email or phone number. Register it with `POST /auth/credentials` and verify it with `POST /auth/credentials/{id}/verify` first |
+            | AUTH_CREDENTIAL_VERIFICATION_EXPIRED | The verified authentication credential for the new email or phone number has expired. Call `POST /auth/credentials/{id}/challenge`, then `POST /auth/credentials/{id}/verify` again |
             | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
@@ -13513,6 +13626,8 @@ components:
             - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
             - SMS_OTP_CREDENTIAL_ALREADY_EXISTS
             - PASSKEY_CREDENTIAL_ALREADY_EXISTS
+            - AUTH_CREDENTIAL_VERIFICATION_REQUIRED
+            - AUTH_CREDENTIAL_VERIFICATION_EXPIRED
             - STABLECOIN_PROVIDER_ACCOUNT_INVALID
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
@@ -14834,6 +14949,7 @@ components:
             | UMA_ADDRESS_EXISTS | UMA address already exists |
             | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
             | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
+            | CONTACT_UPDATE_IN_PROGRESS | Another update to this email or phone number has not finished yet. Retry later |
             | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
             | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
             | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
@@ -14858,6 +14974,7 @@ components:
             - UMA_ADDRESS_EXISTS
             - EMAIL_OTP_EMAIL_ALREADY_EXISTS
             - EMAIL_OTP_CREDENTIAL_SET_CHANGED
+            - CONTACT_UPDATE_IN_PROGRESS
             - PASSKEY_ALREADY_ENROLLED
             - SCA_SESSION_REQUIRED
             - BENEFICIARY_TRUSTED
@@ -14971,7 +15088,7 @@ components:
           additionalProperties: true
     CustomerUpdateRequest:
       title: Customer Update Request
-      description: Request body for `PATCH /customers/{customerId}`. When `email` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer email and every tied `EMAIL_OTP` credential through the endpoint's signed-retry flow. When `phoneNumber` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer phone number and every tied `SMS_OTP` credential through the same signed-retry flow. Update `email` and `phoneNumber` in separate PATCH calls.
+      description: Request body for `PATCH /customers/{customerId}`. When `email` changes for a customer with tied Embedded Wallet `EMAIL_OTP` credentials, or `phoneNumber` changes for a customer with tied `SMS_OTP` credentials, the new contact must first be registered and verified with `POST /auth/credentials` and `POST /auth/credentials/{id}/verify`. The update then runs through the endpoint's signed-retry flow. Update `email` and `phoneNumber` in separate PATCH calls.
       type: object
       required:
         - customerType
@@ -14991,12 +15108,12 @@ components:
           type: string
           format: email
           maxLength: 255
-          description: Email address for the customer. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `EMAIL_OTP` credential across all tied Embedded Wallets.
+          description: Email address for the customer. For customers with tied Embedded Wallet `EMAIL_OTP` credentials, the new address must first be verified on a new `EMAIL_OTP` credential, and changing this value replaces the sign-in email.
           example: john.doe@example.com
         phoneNumber:
           type: string
           pattern: ^\+[1-9]\d{1,14}$
-          description: Phone number for the customer in strict E.164 format. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `SMS_OTP` credential across all tied Embedded Wallets. Send phone number and email updates as separate PATCH calls.
+          description: Phone number for the customer in strict E.164 format. For customers with tied Embedded Wallet `SMS_OTP` credentials, the new number must first be verified on a new `SMS_OTP` credential, and changing this value replaces the sign-in phone number. Send phone number and email updates as separate PATCH calls.
           example: '+14155551234'
         umaAddress:
           type: string
@@ -15031,6 +15148,32 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdateRequest'
           BUSINESS: '#/components/schemas/BusinessCustomerUpdateRequest'
+    WalletOperationProcessing:
+      title: Wallet Operation Processing
+      description: '`200` response returned by an Embedded Wallet operation that the wallet provider has accepted but not yet settled — a consensus- or approval-gated activity that is still in flight. It is not an error and needs no client action beyond patience: the backend reconciles the operation to its terminal state on its own. The client MAY re-send the byte-identical request to converge sooner; the request is idempotent and returns the settled success response once the operation completes.'
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - PROCESSING
+          description: Always `PROCESSING`. Marks a still-in-flight operation whose terminal result is not yet available.
+          example: PROCESSING
+        message:
+          type: string
+          description: Human-readable explanation that the operation is still being processed and the same request may be retried.
+          example: This login is still being processed. Retry the same request in a moment.
+      example:
+        status: PROCESSING
+        message: This login is still being processed. Retry the same request in a moment.
+    CustomerUpdateResponse:
+      title: Customer Update Response
+      description: 'Response body for `PATCH /customers/{customerId}`. Normally the updated customer. On the signed retry of an Embedded Wallet email or phone number change, when the underlying wallet-provider activity is still in flight, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"`. The client re-sends the byte-identical signed request until it gets the updated customer; the backend also completes the change on its own.'
+      anyOf:
+        - $ref: '#/components/schemas/CustomerOneOf'
+        - $ref: '#/components/schemas/WalletOperationProcessing'
     SignedRequestChallenge:
       title: Signed Request Challenge
       type: object
@@ -15068,8 +15211,8 @@ components:
             | COUNTERPARTY_PUBKEY_FETCH_ERROR | Error fetching counterparty public key |
             | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
             | LNURLP_REQUEST_FAILED | LNURLP request failed |
-            | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
-            | SMS_OTP_CREDENTIAL_SYNC_FAILED | One or more tied SMS_OTP credentials could not be updated |
+            | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | The customer's tied EMAIL_OTP credential could not be updated |
+            | SMS_OTP_CREDENTIAL_SYNC_FAILED | The customer's tied SMS_OTP credential could not be updated |
           enum:
             - PAYREQ_REQUEST_FAILED
             - COUNTERPARTY_PUBKEY_FETCH_ERROR
@@ -26283,26 +26426,6 @@ components:
             The value is a JSON string of the form `{"version": "v1.0.0", "data": "<hex>", "dataSignature": "<hex>", "enclaveQuorumPublic": "<hex>"}`. `data` hex-decodes to JSON `{"encappedPublic": "<hex>", "ciphertext": "<hex>", "organizationId": "<id>"}`, where `encappedPublic` is the uncompressed SEC1 ephemeral public key. `dataSignature` is an ECDSA-P256-SHA256 signature over the `data` bytes produced by the issuer key in `enclaveQuorumPublic`; verify before decrypting.
             In sandbox, `dataSignature` and `enclaveQuorumPublic` are empty strings. Clients should bypass attestation verification when calling against sandbox.
           example: '{"version":"v1.0.0","data":"7b22656e6361707065645075626c6963223a22303433...","dataSignature":"3045022100c9...","enclaveQuorumPublic":"04a1b2c3..."}'
-    WalletOperationProcessing:
-      title: Wallet Operation Processing
-      description: '`200` response returned by an Embedded Wallet operation that the wallet provider has accepted but not yet settled — a consensus- or approval-gated activity that is still in flight. It is not an error and needs no client action beyond patience: the backend reconciles the operation to its terminal state on its own. The client MAY re-send the byte-identical request to converge sooner; the request is idempotent and returns the settled success response once the operation completes.'
-      type: object
-      required:
-        - status
-      properties:
-        status:
-          type: string
-          enum:
-            - PROCESSING
-          description: Always `PROCESSING`. Marks a still-in-flight operation whose terminal result is not yet available.
-          example: PROCESSING
-        message:
-          type: string
-          description: Human-readable explanation that the operation is still being processed and the same request may be retried.
-          example: This login is still being processed. Retry the same request in a moment.
-      example:
-        status: PROCESSING
-        message: This login is still being processed. Retry the same request in a moment.
     InternalAccountExportResult:
       title: Internal Account Export Result
       description: 'Response body for the signed retry of `POST /internal-accounts/{internalAccountId}/export`. Normally an `InternalAccountExportResponse` — the encrypted wallet credentials. When the underlying wallet-provider activity is still in flight, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"`. The credentials are never stored server-side, so re-sending the byte-identical signed retry is how they are collected: the re-send returns them as soon as the activity has settled, and the challenge is consumed only by the attempt that delivers them.'
@@ -26322,12 +26445,26 @@ components:
         - `EMAIL_OTP`: A one-time password delivered to the user's email address.
         - `SMS_OTP`: A one-time password delivered to the user's phone number.
         - `PASSKEY`: A WebAuthn passkey bound to the user's device.
+    AuthMethodStatus:
+      type: string
+      enum:
+        - PENDING
+        - VERIFIED
+        - ACTIVE
+      description: |-
+        Status of an authentication credential. Only `ACTIVE` credentials can be used to sign in. `PENDING` and `VERIFIED` apply only to `EMAIL_OTP` and `SMS_OTP` credentials registered to change an Embedded Wallet customer's email or phone number; their `nickname` is the new contact.
+
+        - `PENDING`: A one-time password was sent to the new contact, and the contact is not yet proven. Complete it with `POST /auth/credentials/{id}/verify`.
+        - `VERIFIED`: The new contact is proven and is waiting to be applied by `PATCH /customers/{customerId}`. The verification expires 15 minutes after it completes. After that, call `POST /auth/credentials/{id}/challenge` and `POST /auth/credentials/{id}/verify` again.
+        - `ACTIVE`: The credential can be used to sign in.
+      example: ACTIVE
     AuthMethod:
       type: object
       required:
         - id
         - accountId
         - type
+        - status
         - nickname
         - createdAt
         - updatedAt
@@ -26342,13 +26479,15 @@ components:
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         type:
           $ref: '#/components/schemas/AuthMethodType'
+        status:
+          $ref: '#/components/schemas/AuthMethodStatus'
         credentialId:
           type: string
           description: Base64url-encoded WebAuthn credential identifier for this passkey. Present only for `PASSKEY` authentication credentials. Corresponds to `PublicKeyCredential.rawId`; pass this value as `allowCredentials[].id` when requesting a passkey assertion for this auth method.
           example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
         nickname:
           type: string
-          description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for SMS_OTP credentials this is the E.164 phone number; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the validated nickname provided at registration time.
+          description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for SMS_OTP credentials this is the E.164 phone number; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the validated nickname provided at registration time. For a `PENDING` or `VERIFIED` OTP credential it is the new contact being verified.
           example: example@lightspark.com
         createdAt:
           type: string
@@ -26392,6 +26531,12 @@ components:
           enum:
             - EMAIL_OTP
           description: Discriminator value identifying this as an email OTP credential.
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: 'New email address to verify for a customer email change. This is how an Embedded Wallet customer starts an email change. When this value differs from the customer''s current email and the customer already has an `ACTIVE` `EMAIL_OTP` credential, Grid creates a `PENDING` credential for this address and sends the one-time password to it. Verify the credential, then apply the change with `PATCH /customers/{customerId}`. Any of the customer''s Embedded Wallet `accountId`s can be used. A different address with no `ACTIVE` `EMAIL_OTP` credential is rejected with `400` `INVALID_INPUT`; change the customer email with `PATCH /customers/{customerId}` instead. A value equal to the current email behaves as if the field were omitted: the credential is tied to the customer email on file.'
+          example: jane.new@example.com
     EmailOtpCredentialCreateRequest:
       title: Email OTP Credential Create Request
       allOf:
@@ -26407,6 +26552,11 @@ components:
           enum:
             - SMS_OTP
           description: Discriminator value identifying this as an SMS OTP credential.
+        phoneNumber:
+          type: string
+          pattern: ^\+[1-9]\d{1,14}$
+          description: 'New phone number, in strict E.164 format, to verify for a customer phone number change. This is how an Embedded Wallet customer starts a phone number change. When this value differs from the customer''s current phone number and the customer already has an `ACTIVE` `SMS_OTP` credential, Grid creates a `PENDING` credential for this number and sends the one-time password to it. Verify the credential, then apply the change with `PATCH /customers/{customerId}`. Any of the customer''s Embedded Wallet `accountId`s can be used. A different number with no `ACTIVE` `SMS_OTP` credential is rejected with `400` `INVALID_INPUT`; change the customer phone number with `PATCH /customers/{customerId}` instead. A value equal to the current phone number behaves as if the field were omitted: the credential is tied to the customer phone number on file.'
+          example: '+14155559876'
     SmsOtpCredentialCreateRequest:
       title: SMS OTP Credential Create Request
       allOf:
@@ -26704,10 +26854,11 @@ components:
               example: '2026-04-09T15:30:01Z'
     AuthCredentialVerifyResponse:
       title: Auth Credential Verify Response
-      description: 'Response body for `POST /auth/credentials/{id}/verify`. Normally an `AuthSession` — the issued session on successful verification. When the underlying wallet-provider activity is still in flight, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"` — the client re-sends the byte-identical request until it gets the session; the backend also reconciles the activity to terminal on its own.'
+      description: 'Response body for `POST /auth/credentials/{id}/verify`. Normally an `AuthSession` — the issued session on successful verification. When the underlying wallet-provider activity is still in flight, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"` — the client re-sends the byte-identical request until it gets the session; the backend also reconciles the activity to terminal on its own. When the credential is a `PENDING` OTP credential registered for a customer email or phone number change, this is the `AuthMethod` with `status: VERIFIED`, and no session is issued.'
       anyOf:
         - $ref: '#/components/schemas/AuthSession'
         - $ref: '#/components/schemas/WalletOperationProcessing'
+        - $ref: '#/components/schemas/AuthMethod'
     AuthCredentialChallengeRequest:
       title: Auth Credential Challenge Request
       description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`, where the credential type alone is sufficient because the OTP is delivered out-of-band. OAuth credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.
@@ -29255,18 +29406,20 @@ components:
             - auth_credential.delete
             - session.revoke
             - wallet.export
+            - customer.contact_update
           example: wallet.export
         resourceType:
           type: string
-          description: 'The kind of business resource `resourceId` identifies. Determined by `operationType`: `auth_credential.create` and `auth_credential.delete` → `AUTH_METHOD`, `session.revoke` → `SESSION`, `wallet.export` → `INTERNAL_ACCOUNT`.'
+          description: 'The kind of business resource `resourceId` identifies. Determined by `operationType`: `auth_credential.create` and `auth_credential.delete` → `AUTH_METHOD`, `session.revoke` → `SESSION`, `wallet.export` → `INTERNAL_ACCOUNT`, `customer.contact_update` → `CUSTOMER`.'
           enum:
             - AUTH_METHOD
             - SESSION
             - INTERNAL_ACCOUNT
+            - CUSTOMER
           example: INTERNAL_ACCOUNT
         resourceId:
           type: string
-          description: LSID of the business resource this operation affected. For `auth_credential.create`, this is the **primary way to learn the new credential's id** — the request that created it can't have supplied one in advance. For `auth_credential.delete` and `session.revoke` it echoes the `AuthMethod:<uuid>` / `Session:<uuid>` you already knew and referenced in the request; for `wallet.export` it's the `InternalAccount:<uuid>` whose wallet was exported.
+          description: LSID of the business resource this operation affected. For `auth_credential.create`, this is the **primary way to learn the new credential's id** — the request that created it can't have supplied one in advance. For `auth_credential.delete` and `session.revoke` it echoes the `AuthMethod:<uuid>` / `Session:<uuid>` you already knew and referenced in the request; for `wallet.export` it's the `InternalAccount:<uuid>` whose wallet was exported; for `customer.contact_update` it's the `Customer:<uuid>` whose email or phone number changed.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
         status:
           type: string
@@ -29315,18 +29468,20 @@ components:
             - auth_credential.delete
             - session.revoke
             - wallet.export
+            - customer.contact_update
           example: wallet.export
         resourceType:
           type: string
-          description: 'The kind of business resource `resourceId` identifies. Determined by `operationType`: `auth_credential.create` and `auth_credential.delete` → `AUTH_METHOD`, `session.revoke` → `SESSION`, `wallet.export` → `INTERNAL_ACCOUNT`.'
+          description: 'The kind of business resource `resourceId` identifies. Determined by `operationType`: `auth_credential.create` and `auth_credential.delete` → `AUTH_METHOD`, `session.revoke` → `SESSION`, `wallet.export` → `INTERNAL_ACCOUNT`, `customer.contact_update` → `CUSTOMER`.'
           enum:
             - AUTH_METHOD
             - SESSION
             - INTERNAL_ACCOUNT
+            - CUSTOMER
           example: SESSION
         resourceId:
           type: string
-          description: LSID of the business resource this operation affected. For `auth_credential.create`, this is the **primary way to learn the new credential's id** — the request that created it can't have supplied one in advance. For `auth_credential.delete` and `session.revoke` it echoes the `AuthMethod:<uuid>` / `Session:<uuid>` you already knew and referenced in the request; for `wallet.export` it's the `InternalAccount:<uuid>` whose wallet was exported.
+          description: LSID of the business resource this operation affected. For `auth_credential.create`, this is the **primary way to learn the new credential's id** — the request that created it can't have supplied one in advance. For `auth_credential.delete` and `session.revoke` it echoes the `AuthMethod:<uuid>` / `Session:<uuid>` you already knew and referenced in the request; for `wallet.export` it's the `InternalAccount:<uuid>` whose wallet was exported; for `customer.contact_update` it's the `Customer:<uuid>` whose email or phone number changed.
           example: Session:019542f5-b3e7-1d02-0000-00000000009a
         status:
           type: string

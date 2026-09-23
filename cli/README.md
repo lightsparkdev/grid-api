@@ -118,8 +118,10 @@ grid customers kyc-link \
 # Update customer (--type is the required discriminator)
 grid customers update <customerId> --type INDIVIDUAL --full-name "Jane Doe"
 
-# Changing --email or --phone-number for an Embedded Wallet customer is a
-# signed-retry operation: the first call returns a 202 challenge; re-run with
+# Changing --email or --phone-number for an Embedded Wallet customer with tied
+# OTP credentials needs the new contact verified first (see "Verify a new
+# email or phone number" under Auth). The update itself is then a signed-retry
+# operation: the first call returns a 202 challenge; re-run with
 # --wallet-signature <stamp> --request-id <id> to complete (see the signing
 # note under Auth). Update email and phone in separate calls.
 
@@ -353,6 +355,12 @@ grid auth credentials verify <credentialId> --type EMAIL_OTP \
   --encrypted-otp-bundle '<hpke-bundle>' \
   --wallet-signature <stamp> --request-id <id>
 grid auth credentials revoke <credentialId> --wallet-signature <stamp> --request-id <id>
+
+# Verify a new email or phone number before changing it on the customer
+# (returns a PENDING credential, then VERIFIED; no signature needed)
+grid auth credentials create --type EMAIL_OTP --account-id <id> --email <new-email>
+grid auth credentials verify <credentialId> --type EMAIL_OTP \
+  --encrypted-otp-bundle '<hpke-bundle>'
 
 # Delegated signing keys
 grid auth delegated-keys list --account-id <id>
