@@ -31,17 +31,17 @@ properties:
     example: invoice-2025-0142.pdf
   sizeBytes:
     type: integer
-    description: Size of the uploaded file in bytes
+    description: >-
+      Size of the uploaded file in bytes. It never exceeds the lookup's
+      `maxDocumentSizeBytes`.
     minimum: 1
-    maximum: 8000000
     example: 482133
   contentType:
     type: string
-    enum:
-      - application/pdf
-      - image/jpeg
-      - image/png
-    description: File format, as Grid detected it from the file contents
+    description: >-
+      File format as a MIME type, as Grid detected it from the file contents.
+      Today one of `application/pdf`, `image/jpeg`, or `image/png`. Treat it as
+      an open value, because Grid may accept more formats later.
     example: application/pdf
   status:
     $ref: ./PaymentDocumentStatus.yaml
