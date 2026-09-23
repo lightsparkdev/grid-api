@@ -38,3 +38,9 @@ properties:
       printable ASCII characters are accepted, because the underlying rails
       carry nothing else.
     example: Unit 4B March
+  platformFeeOverride:
+    allOf:
+      - $ref: ../quotes/PlatformFeeOverride.yaml
+    description: >-
+      Fee terms applied to every sweep this rule drives. Omit it to use the
+      platform's configured fees.

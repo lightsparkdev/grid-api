@@ -15876,6 +15876,27 @@ components:
         - DELIVERY_FEES
         - HOTEL_ACCOMMODATION
         - OTHER
+    PlatformFeeOverride:
+      type: object
+      description: Overrides the platform-collected fee for this transaction. When present, it replaces any configured platform-collected fees that would otherwise apply to the transaction. Currently only supported when the quote's source currency is USD; the fixed fee must be denominated in the source currency.
+      required:
+        - platformFixedFee
+        - platformVariableFeeBps
+      properties:
+        platformFixedFee:
+          $ref: '#/components/schemas/FixedFee'
+          description: Fixed fee charged for this transaction. Must be denominated in the quote's source currency (USD today).
+        platformVariableFeeBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Variable fee in basis points (1 bps = 0.01%) to apply to the transaction's source-currency amount.
+          example: 30
+      example:
+        platformFixedFee:
+          amount: 50
+          currency: USD
+        platformVariableFeeBps: 30
     SweepRuleRequest:
       title: Sweep Rule Request
       type: object
@@ -15903,6 +15924,10 @@ components:
           maxLength: 1024
           description: 'Free-form information that travels with each sweep to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information. Only printable ASCII characters are accepted, because the underlying rails carry nothing else.'
           example: Unit 4B March
+        platformFeeOverride:
+          allOf:
+            - $ref: '#/components/schemas/PlatformFeeOverride'
+          description: Fee terms applied to every sweep this rule drives. Omit it to use the platform's configured fees.
     InternalAccountCreateRequest:
       title: Internal Account Create Request
       type: object
@@ -18792,27 +18817,6 @@ components:
             - $ref: '#/components/schemas/PaymentRail'
           description: The rail each sweep is sent over. Null when a rail is selected automatically per sweep, in which case none is resolved ahead of time.
           example: ACH
-    PlatformFeeOverride:
-      type: object
-      description: Overrides the platform-collected fee for this transaction. When present, it replaces any configured platform-collected fees that would otherwise apply to the transaction. Currently only supported when the quote's source currency is USD; the fixed fee must be denominated in the source currency.
-      required:
-        - platformFixedFee
-        - platformVariableFeeBps
-      properties:
-        platformFixedFee:
-          $ref: '#/components/schemas/FixedFee'
-          description: Fixed fee charged for this transaction. Must be denominated in the quote's source currency (USD today).
-        platformVariableFeeBps:
-          type: integer
-          minimum: 0
-          maximum: 10000
-          description: Variable fee in basis points (1 bps = 0.01%) to apply to the transaction's source-currency amount.
-          example: 30
-      example:
-        platformFixedFee:
-          amount: 50
-          currency: USD
-        platformVariableFeeBps: 30
     SweepRule:
       title: Sweep Rule
       type: object
