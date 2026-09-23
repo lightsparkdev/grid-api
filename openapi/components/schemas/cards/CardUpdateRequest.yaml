@@ -114,3 +114,10 @@ properties:
       `cardCapabilities.supportsTransactionCountLimit` is true. Cannot be
       supplied alongside `status: CLOSED`.
     example: 20
+  threeDSecurePassword:
+    type: string
+    description: >-
+      Sets a new static 3-D Secure password on the card. Send it on its own,
+      and only when the card's `cardCapabilities.supports3dSecurePassword` is
+      true.
+    example: AbCd1234EfGh5678
