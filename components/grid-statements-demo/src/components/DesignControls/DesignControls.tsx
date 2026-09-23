@@ -23,6 +23,7 @@ import {
 } from '@lightsparkdev/origin/popover';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
 import { pressable } from '@/lib/sounds';
+import { normalizeHexColor } from '@/statement/brand';
 import type { HexColor } from '@/statement/types';
 import styles from './DesignControls.module.scss';
 
@@ -122,10 +123,11 @@ export function SwatchRow({
         '[role="radio"]:not(:disabled)',
       ),
     );
-    const current = options.findIndex(
-      (option) => option.getAttribute('aria-checked') === 'true',
+    if (options.length === 0) return;
+    const current = Math.max(
+      0,
+      options.findIndex((option) => option.getAttribute('aria-checked') === 'true'),
     );
-    if (current < 0) return;
     event.preventDefault();
     const direction =
       event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
@@ -202,8 +204,9 @@ export function ColorPicker({
   const [hex, setHex] = useState(value);
   useEffect(() => setHex(value), [value]);
   const applyHex = () => {
-    if (/^#[0-9a-f]{6}$/i.test(hex)) {
-      onChange(hex.toLowerCase() as HexColor);
+    const normalized = normalizeHexColor(hex);
+    if (normalized) {
+      onChange(normalized);
       return;
     }
     setHex(value);
@@ -278,7 +281,7 @@ export function ColorSwatches({
   const stock = colors.includes(value);
   return (
     <SwatchRow label={label} active={stock ? value : 'custom'}>
-      {colors.map((color) => (
+      {colors.map((color, index) => (
         <Tooltip key={color} text={color.toUpperCase()}>
           {(tip) => (
             <button
@@ -286,7 +289,7 @@ export function ColorSwatches({
               role="radio"
               aria-checked={value === color}
               aria-label={`${label} ${color}`}
-              tabIndex={value === color ? 0 : -1}
+              tabIndex={value === color || (!stock && index === 0) ? 0 : -1}
               className={styles.swatch}
               style={{ background: color }}
               {...tip}

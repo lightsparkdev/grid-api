@@ -99,6 +99,7 @@ const exceptions = new Map([
         )
         .replace('https://grid-cards-demo.vercel.app', 'https://grid-statements-demo.vercel.app')
         .replace("    images: [{ url: '/og-cards-playground.webp', width: 2400, height: 1260 }],\n", '')
+        .replace("    card: 'summary_large_image',\n", "    card: 'summary',\n")
         .replace("    images: ['/og-cards-playground.webp'],\n", ''),
   ],
 ]);

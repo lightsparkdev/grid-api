@@ -6,7 +6,6 @@ import type {
   StatementTotals,
   StatementVariant,
 } from './types';
-import { statementExportFilename } from './export';
 import { PRESETS, presetIconSrc } from './presets';
 
 export const LEGAL = {

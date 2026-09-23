@@ -1,17 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_BRAND_COLORS,
   brandContrast,
   contrastRatio,
   normalizeHexColor,
   statementColorProperties,
 } from './brand';
+import type { StatementBrandColors } from './types';
+
+const COLORS: StatementBrandColors = {
+  primaryBackground: '#ffffff',
+  primaryText: '#1a1a1a',
+  secondaryText: '#656565',
+};
 
 describe('statement brand colors', () => {
   it('calculates WCAG contrast for readable and unreadable pairs', () => {
     expect(contrastRatio('#000000', '#ffffff')).toBeCloseTo(21, 5);
     expect(contrastRatio('#777777', '#ffffff')).toBeCloseTo(4.478, 3);
-    expect(brandContrast(DEFAULT_BRAND_COLORS)).toMatchObject({
+    expect(brandContrast(COLORS)).toMatchObject({
       primaryPasses: true,
       secondaryPasses: true,
     });
@@ -24,7 +30,7 @@ describe('statement brand colors', () => {
   });
 
   it('maps only the three public tokens to print CSS properties', () => {
-    expect(statementColorProperties(DEFAULT_BRAND_COLORS)).toEqual({
+    expect(statementColorProperties(COLORS)).toEqual({
       '--statement-primary-background': '#ffffff',
       '--statement-primary-text': '#1a1a1a',
       '--statement-secondary-text': '#656565',

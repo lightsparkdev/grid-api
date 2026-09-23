@@ -19,7 +19,7 @@ export function StatementScreen({
   const elevated = !loading && scrolled;
 
   return (
-    <main
+    <section
       className={styles.screen}
       style={statementColorProperties(statement.brand.colors)}
       aria-label="Statement app preview"
@@ -36,7 +36,7 @@ export function StatementScreen({
             statement.brand.companyName
           )}
         </span>
-        <h1>{statementTitle(statement.period)}</h1>
+        <h2>{statementTitle(statement.period)}</h2>
       </header>
       {loading ? (
         <div className={styles.loading} role="status" aria-label="Loading statement">
@@ -56,6 +56,6 @@ export function StatementScreen({
           />
         </div>
       )}
-    </main>
+    </section>
   );
 }

@@ -51,6 +51,11 @@ describe('StatementDocument', () => {
       ),
     ).toBeTruthy();
     expect(within(notice as HTMLElement).getAllByRole('listitem')).toHaveLength(3);
+    expect(
+      within(notice as HTMLElement).getByText(
+        'Report errors within 60 days after we send this statement.',
+      ),
+    ).toBeTruthy();
     expect(container.textContent).not.toContain('www.lightspark.com');
   });
 

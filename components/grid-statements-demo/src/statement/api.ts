@@ -195,39 +195,3 @@ export function buildApiEntries(
     },
   ];
 }
-
-export function reconcileApiEntries(statement: StatementModel, entries: StatementApiEntry[]) {
-  const accountResponse = entries.find((entry) => entry.operationId === 'listCustomerInternalAccounts')
-    ?.resBody as { data?: Array<{ balance?: { amount?: number } }> } | undefined;
-  const transactionResponse = entries.find((entry) => entry.operationId === 'listTransactions')
-    ?.resBody as {
-      data?: Array<{
-        type?: string;
-        direction?: string;
-        receivedAmount?: { amount?: number };
-        sentAmount?: { amount?: number };
-        settledAmount?: { amount?: number };
-        fees?: number;
-      }>;
-    } | undefined;
-
-  const closingBalanceCents = accountResponse?.data?.[0]?.balance?.amount ?? 0;
-  const transactions = transactionResponse?.data ?? [];
-  const movementCents = transactions.reduce((sum, transaction) => {
-    const amount =
-      transaction.type === 'CARD'
-        ? transaction.settledAmount?.amount ?? 0
-        : transaction.direction === 'CREDIT'
-          ? transaction.receivedAmount?.amount ?? 0
-          : transaction.sentAmount?.amount ?? 0;
-    const signedAmount = transaction.direction === 'CREDIT' ? amount : -amount;
-    return sum + signedAmount - (transaction.fees ?? 0);
-  }, 0);
-  const totalFeesCents = transactions.reduce((sum, transaction) => sum + (transaction.fees ?? 0), 0);
-
-  return {
-    openingBalanceCents: closingBalanceCents - movementCents,
-    closingBalanceCents,
-    totalFeesCents,
-  };
-}

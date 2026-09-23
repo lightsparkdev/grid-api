@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { groupApiEntries } from '../lib/groupApiEntries';
 import { flowIconForLabel } from '../data/flowIcons';
-import { buildApiEntries, reconcileApiEntries } from './api';
+import { buildApiEntries, type StatementApiEntry } from './api';
 import {
   DEFAULT_BRAND,
   STATEMENT_PERIOD,
@@ -9,6 +9,42 @@ import {
   calculateTotals,
   statementRows,
 } from './fixtures';
+
+function reconcileApiEntries(entries: StatementApiEntry[]) {
+  const accountResponse = entries.find((entry) => entry.operationId === 'listCustomerInternalAccounts')
+    ?.resBody as { data?: Array<{ balance?: { amount?: number } }> } | undefined;
+  const transactionResponse = entries.find((entry) => entry.operationId === 'listTransactions')
+    ?.resBody as {
+      data?: Array<{
+        type?: string;
+        direction?: string;
+        receivedAmount?: { amount?: number };
+        sentAmount?: { amount?: number };
+        settledAmount?: { amount?: number };
+        fees?: number;
+      }>;
+    } | undefined;
+
+  const closingBalanceCents = accountResponse?.data?.[0]?.balance?.amount ?? 0;
+  const transactions = transactionResponse?.data ?? [];
+  const movementCents = transactions.reduce((sum, transaction) => {
+    const amount =
+      transaction.type === 'CARD'
+        ? transaction.settledAmount?.amount ?? 0
+        : transaction.direction === 'CREDIT'
+          ? transaction.receivedAmount?.amount ?? 0
+          : transaction.sentAmount?.amount ?? 0;
+    const signedAmount = transaction.direction === 'CREDIT' ? amount : -amount;
+    return sum + signedAmount - (transaction.fees ?? 0);
+  }, 0);
+  const totalFeesCents = transactions.reduce((sum, transaction) => sum + (transaction.fees ?? 0), 0);
+
+  return {
+    openingBalanceCents: closingBalanceCents - movementCents,
+    closingBalanceCents,
+    totalFeesCents,
+  };
+}
 
 describe('statement API projection', () => {
   it('reconciles every consumer statement row to the API response', () => {
@@ -27,12 +63,30 @@ describe('statement API projection', () => {
     });
 
     expect(amounts).toEqual(statementRows(statement).map((row) => row.amountCents));
-    expect(reconcileApiEntries(statement, entries)).toEqual({
+    expect(reconcileApiEntries(entries)).toEqual({
       openingBalanceCents: 245000,
       closingBalanceCents: 337395,
       totalFeesCents: 1500,
     });
   });
+
+  it.each(['consumer', 'commercial'] as const)(
+    'reconciles the %s statement to the real API response chain',
+    (variant) => {
+      const statement = buildStatement(variant, DEFAULT_BRAND, STATEMENT_PERIOD);
+      const entries = buildApiEntries(statement, 1_700_000_000_000);
+
+      expect(entries.map((entry) => entry.operationId)).toEqual([
+        'getCustomerById',
+        'listCustomerInternalAccounts',
+        'listTransactions',
+      ]);
+      expect(reconcileApiEntries(entries)).toEqual({
+        openingBalanceCents: statement.openingBalanceCents,
+        ...calculateTotals(statement),
+      });
+    },
+  );
 
   it.each(['consumer', 'commercial'] as const)(
     'returns the required schema fields for the %s chain',

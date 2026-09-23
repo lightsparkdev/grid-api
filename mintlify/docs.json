@@ -544,7 +544,6 @@
     { "source": "/global-p2p/embedded-wallets/client-keys", "destination": "/global-p2p/global-accounts/client-keys" },
     { "source": "/global-p2p/embedded-wallets/authentication", "destination": "/global-p2p/global-accounts/authentication" },
     { "source": "/global-p2p/embedded-wallets/managing-sessions", "destination": "/global-p2p/global-accounts/managing-sessions" },
-    { "source": "/global-p2p/embedded-wallets/exporting-wallet", "destination": "/global-p2p/global-accounts/exporting-wallet" },
-    { "source": "/global-accounts/periodic-statements-playground", "destination": "/cards/statements" }
+    { "source": "/global-p2p/embedded-wallets/exporting-wallet", "destination": "/global-p2p/global-accounts/exporting-wallet" }
   ]
 }

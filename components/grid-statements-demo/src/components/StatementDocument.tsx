@@ -119,7 +119,7 @@ export const StatementDocument = forwardRef<HTMLElement, StatementDocumentProps>
             </ol>
             <p>{LEGAL.notice.closing}</p>
             <p className={styles.window}>
-              Report errors within 60 days of the statement date ({statement.period.issued}).
+              Report errors within 60 days after we send this statement.
             </p>
           </section>
         ) : null}

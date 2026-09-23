@@ -117,46 +117,6 @@
   }
 }
 
-.textSwatch {
-  all: unset;
-  @include label-sm;
-  box-sizing: border-box;
-  min-width: 34px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: var(--swatch-radius);
-  background: var(--surface-secondary);
-  color: var(--text-secondary);
-  text-align: center;
-  cursor: pointer;
-  box-shadow: inset 0 0 0 var(--stroke-xs) var(--border-primary);
-
-  &:focus-visible {
-    outline: 2px solid var(--text-primary);
-    outline-offset: 4px;
-  }
-}
-
-.sample-consumer {
-  background:
-    linear-gradient(#8e8e93, #8e8e93) 50% 35% / 10px 2px no-repeat,
-    linear-gradient(#8e8e93, #8e8e93) 50% 65% / 10px 2px no-repeat,
-    #f1f1ef;
-}
-
-.sample-commercial {
-  background:
-    linear-gradient(#f1f1ef, #f1f1ef) 50% 35% / 10px 2px no-repeat,
-    linear-gradient(#f1f1ef, #f1f1ef) 50% 65% / 10px 2px no-repeat,
-    #5f5f64;
-}
-
-.sample-iphone {
-  background:
-    linear-gradient(#0083c3, #0083c3) 50% 50% / 12px 8px no-repeat,
-    #f1f1ef;
-}
-
 .colorPicker {
   display: grid;
   place-items: center;

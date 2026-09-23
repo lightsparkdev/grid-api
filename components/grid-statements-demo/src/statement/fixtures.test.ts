@@ -7,7 +7,6 @@ import {
   STATEMENT_PERIOD,
   statementRows,
 } from './fixtures';
-import { buildApiEntries, reconcileApiEntries } from './api';
 import { statementExportFilename } from './export';
 
 describe('statement fixtures', () => {
@@ -51,24 +50,6 @@ describe('statement fixtures', () => {
         'We will investigate your complaint and will correct any error promptly. If we take more than 10 business days to do this, we will credit your account for the amount you think is in error, so that you will have the use of the money during the time it takes us to complete our investigation.',
     });
   });
-
-  it.each(['consumer', 'commercial'] as const)(
-    'reconciles the %s statement to the real API response chain',
-    (variant) => {
-      const statement = buildStatement(variant, DEFAULT_BRAND, STATEMENT_PERIOD);
-      const entries = buildApiEntries(statement, 1_700_000_000_000);
-
-      expect(entries.map((entry) => entry.operationId)).toEqual([
-        'getCustomerById',
-        'listCustomerInternalAccounts',
-        'listTransactions',
-      ]);
-      expect(reconcileApiEntries(statement, entries)).toEqual({
-        openingBalanceCents: statement.openingBalanceCents,
-        ...calculateTotals(statement),
-      });
-    },
-  );
 
   it('projects one wire transaction into principal and fee rows', () => {
     const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);

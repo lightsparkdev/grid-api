@@ -103,7 +103,10 @@ export default function Page() {
       stageApiEntries(apiStatement);
     }, 500);
     apiTimers.current = [timer];
-    return () => window.clearTimeout(timer);
+    return () => {
+      apiTimers.current.forEach((pending) => window.clearTimeout(pending));
+      apiTimers.current = [];
+    };
   }, [apiStatement, preview.loadId, stageApiEntries]);
 
   useEffect(
@@ -182,7 +185,7 @@ export default function Page() {
       brand,
     });
     window.history.replaceState(window.history.state, '', url);
-    void navigator.clipboard?.writeText(url);
+    navigator.clipboard?.writeText(url).catch(() => {});
   }, [brand, presetId, preview.mode, variant]);
 
   const goPlayground = useCallback(() => {

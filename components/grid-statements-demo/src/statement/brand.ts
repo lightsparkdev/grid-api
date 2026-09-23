@@ -1,23 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { HexColor, StatementBrandColors } from './types';
 
-export const DEFAULT_BRAND_COLORS: StatementBrandColors = {
-  primaryBackground: '#ffffff',
-  primaryText: '#1a1a1a',
-  secondaryText: '#656565',
-};
-
-export const BRAND_COLOR_SWATCHES: readonly HexColor[] = [
-  '#ffffff',
-  '#f7f7f6',
-  '#1a1a1a',
-  '#656565',
-  '#0196c9',
-  '#9147ff',
-  '#ff385c',
-  '#1daa61',
-];
-
 function rgbChannel(value: number): number {
   const channel = value / 255;
   return channel <= 0.04045

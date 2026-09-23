@@ -16,6 +16,7 @@ import {
 } from '@/statement/export';
 import type { StatementPreview as StatementPreviewState } from '@/statement/lifecycle';
 import type { PreviewMode } from '@/statement/lifecycle';
+import { statementFileStem } from '@/statement/presentation';
 import type { StatementModel } from '@/statement/types';
 import styles from './StatementPanel.module.scss';
 
@@ -54,10 +55,7 @@ export function StatementPanel({
     if (!exportDocumentRef.current) return;
     try {
       setExportError('');
-      await printStatementHtml(
-        exportDocumentRef.current,
-        statementExportFilename(statement, 'pdf').replace(/\.pdf$/i, ''),
-      );
+      await printStatementHtml(exportDocumentRef.current, statementFileStem(statement));
       setShareOpen(false);
     } catch {
       setExportError('PDF export failed. Try again.');

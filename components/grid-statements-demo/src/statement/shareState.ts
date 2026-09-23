@@ -10,14 +10,7 @@ export interface StatementShareState {
   brand: StatementBrand;
 }
 
-const PRESET_IDS = new Set<PresetId>([
-  'finance',
-  'creator',
-  'social',
-  'marketplace',
-  'ondemand',
-  'messaging',
-]);
+const PRESET_IDS = new Set<PresetId>(PRESETS.map((preset) => preset.id));
 
 /**
  * Uploaded logos are `blob:` object URLs scoped to the uploader's document.
