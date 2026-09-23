@@ -13693,22 +13693,11 @@ components:
     PaymentDocumentRequirementId:
       type: string
       description: |-
-        Identifies one required document within a purpose's requirements. It is separate from `PaymentDocumentType`. The requirement ID names the document to supply, and the document type names what a file is. The two differ where a requirement accepts alternatives. For example, a file declared as either `PURCHASE_ORDER` or `DELIVERY_SLIP` fills the `SUPPORTING_PROOF` requirement.
+        A stable identifier for one required document within a purpose's requirements. The same ID means the same requirement across quotes. It is separate from `PaymentDocumentType`. The requirement ID names the document to supply, and the document type names what a file is. The two differ where a requirement accepts alternatives. For example, a file declared as either `PURCHASE_ORDER` or `DELIVERY_SLIP` fills the `SUPPORTING_PROOF` requirement.
 
-        Grid may add values as requirements change. Treat an unrecognized value as a requirement you cannot display yet, not as an error.
-      enum:
-        - PURCHASE_ORDER
-        - LOGISTICS_BILL
-        - CUSTOMS_DECLARATION
-        - COMMERCIAL_AGREEMENT
-        - CONTRACT
-        - INVOICE
-        - SUPPORTING_PROOF
-        - BILL_OF_LADING
-        - CONTRACT_OR_INVOICE
-        - FLIGHT_TICKET
-        - TRAVEL_DOCUMENT
-        - HOTEL_BOOKING_CONFIRMATION
+        China B2B CNY payouts use these IDs: `PURCHASE_ORDER`, `LOGISTICS_BILL`, `CUSTOMS_DECLARATION`, `COMMERCIAL_AGREEMENT`, `CONTRACT`, `INVOICE`, `SUPPORTING_PROOF`, `BILL_OF_LADING`, `CONTRACT_OR_INVOICE`, `FLIGHT_TICKET`, `TRAVEL_DOCUMENT`, and `HOTEL_BOOKING_CONFIRMATION`.
+
+        Treat the ID as an opaque value, not a member of a fixed list. Grid may add new IDs as requirements change.
       example: SUPPORTING_PROOF
     Error400:
       type: object
