@@ -18,6 +18,24 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 `CustomerExternalAccountCreateRequest`, in which `customerId` is required. Use
 `POST /platform/external-accounts` to create an external account owned by the
 platform itself.
+## Same-day ACH is its own payment rail
+
+`ACH_SAME_DAY` joins `ACH` in `PaymentRail`. Pin it on a quote's destination to request
+same-business-day settlement for a USD payout.
+
+- Grid never selects `ACH_SAME_DAY` for you. It is only used when you name it, so
+  existing integrations that omit `paymentRail` are unaffected.
+- The two rails are priced separately. A `RailFeeConfig` with `rail: ACH_SAME_DAY`
+  prices same-day sends; your existing `ACH` config keeps pricing standard sends.
+- `ACH_SAME_DAY` is capped at $1,000,000 per entry by the NACHA same-day limit, rising
+  to $10,000,000 on 2027-09-17. A payout above the limit is rejected rather than slowed;
+  send it over `ACH` instead.
+- `ACH` will settle on the standard next-business-day schedule. Until a date we
+  announce in advance, `ACH` continues to settle same-business-day on production
+  platforms; it already settles next-business-day on sandbox platforms. To guarantee
+  same-day settlement after that date, request `ACH_SAME_DAY`.
+
+See [Assessing fees](/payouts-and-b2b/payment-flow/assessing-fees).
 
 ## Add cards to Apple Pay, Google Pay, and Samsung Pay from your app
 
