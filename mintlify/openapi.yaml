@@ -2144,8 +2144,7 @@ paths:
 
         The response carries the account's own `fundingPaymentInstructions` — the
         routable number payers send to. Rule-based accounts are currently available
-        in `USD`, for individual customers, and must be enabled for your platform
-        before this endpoint accepts requests.
+        in `USD`, for a customer or for your platform itself.
 
         Sandbox platforms can create rule-based accounts and exercise the whole
         flow. The account number is generated locally rather than issued by a
@@ -15960,7 +15959,7 @@ components:
       properties:
         customerId:
           type: string
-          description: The customer the account is created for. Omit it to create a platform-owned account. The account holder must already have a verified account in the same currency, which is where funds land when a sweep cannot be completed. Platform-owned rule-based accounts are not available yet, so omitting this is currently rejected.
+          description: The customer the account is created for. Omit it to create a platform-owned account. The account holder must already have a verified account in the same currency, which is where funds land when a sweep cannot be completed.
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         type:
           allOf:
