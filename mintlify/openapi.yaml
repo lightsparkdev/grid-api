@@ -25763,6 +25763,7 @@ components:
         requiredDocuments:
           type: array
           minItems: 1
+          maxItems: 3
           description: The documents this purpose requires. Upload exactly one file for each entry, then pass all of their IDs in `documentIds` on `POST /quotes`.
           items:
             $ref: '#/components/schemas/DocumentRequirement'
@@ -25781,8 +25782,9 @@ components:
       properties:
         maxDocuments:
           type: integer
-          description: The most documents a single quote accepts
+          description: The most documents a single quote accepts. Never more than 3, the `documentIds` limit on `POST /quotes`.
           minimum: 1
+          maximum: 3
           example: 3
         maxDocumentSizeBytes:
           type: integer

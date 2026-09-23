@@ -13,8 +13,11 @@ required:
 properties:
   maxDocuments:
     type: integer
-    description: The most documents a single quote accepts
+    description: >-
+      The most documents a single quote accepts. Never more than 3, the
+      `documentIds` limit on `POST /quotes`.
     minimum: 1
+    maximum: 3
     example: 3
   maxDocumentSizeBytes:
     type: integer
