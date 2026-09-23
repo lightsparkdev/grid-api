@@ -1,0 +1,27 @@
+title: Payment Document Upload Request
+type: object
+required:
+  - file
+  - documentType
+  - customerId
+properties:
+  file:
+    type: string
+    format: binary
+    description: |
+      The document file, from 1 to 8,000,000 bytes. Grid accepts PDF, JPEG,
+      and PNG files and detects the format from the file contents, not the
+      file name. An empty file, a larger file, and any other format return
+      `400 INVALID_INPUT`.
+  documentType:
+    $ref: ./PaymentDocumentType.yaml
+    description: >-
+      What the file is. To fill a requirement from the lookup's
+      `paymentRequirements`, use one of that requirement's
+      `acceptedDocumentTypes`.
+  customerId:
+    type: string
+    description: >-
+      ID of the sending customer whose payment this document supports. The
+      document can only be used on this customer's quotes.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001

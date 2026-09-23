@@ -31,6 +31,7 @@ properties:
       | STABLECOIN_NOT_FOUND | Stablecoin not found |
       | STABLECOIN_OPERATION_NOT_FOUND | Stablecoin operation not found |
       | VERIFICATION_NOT_FOUND | Verification not found |
+      | PAYMENT_DOCUMENT_NOT_FOUND | Payment document not found |
     enum:
       - TRANSACTION_NOT_FOUND
       - INVITATION_NOT_FOUND
@@ -55,6 +56,7 @@ properties:
       - STABLECOIN_NOT_FOUND
       - STABLECOIN_OPERATION_NOT_FOUND
       - VERIFICATION_NOT_FOUND
+      - PAYMENT_DOCUMENT_NOT_FOUND
   reason:
     type: string
     description: Error message

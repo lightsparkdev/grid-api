@@ -1,0 +1,11 @@
+type: string
+description: >-
+  The kind of service a `SERVICE_CHARGES` payment pays for on a China B2B CNY
+  payout. The receiving bank requires this breakdown, because
+  `SERVICE_CHARGES` alone is not specific enough for the payment to clear.
+enum:
+  - COMMISSION_ON_GOODS
+  - COMMISSION_ON_SERVICES
+  - ACCOUNTING_SERVICES
+  - EXHIBITION_SERVICES
+example: COMMISSION_ON_SERVICES

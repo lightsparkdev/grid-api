@@ -318,9 +318,21 @@ resources:
       # Concrete responses returned by the two lookup endpoints
       uma_lookup_response: '#/components/schemas/ReceiverUmaLookupResponse'
       external_account_lookup_response: '#/components/schemas/ReceiverExternalAccountLookupResponse'
+      payment_requirements: '#/components/schemas/PaymentRequirements'
     methods:
       lookup_uma: get /receiver/uma/{receiverUmaAddress}
       lookup_external_account: get /receiver/external-account/{accountId}
+
+  payment_documents:
+    models:
+      payment_document: '#/components/schemas/PaymentDocument'
+      payment_document_type: '#/components/schemas/PaymentDocumentType'
+      payment_document_status: '#/components/schemas/PaymentDocumentStatus'
+    methods:
+      upload:
+        endpoint: post /payment-documents
+        body_param_name: PaymentDocumentUploadRequest
+      retrieve: get /payment-documents/{paymentDocumentId}
 
   quotes:
     models:

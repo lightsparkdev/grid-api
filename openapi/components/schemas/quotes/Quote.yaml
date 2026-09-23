@@ -141,6 +141,14 @@ properties:
   rateDetails:
     $ref: ../transactions/OutgoingRateDetails.yaml
     description: Details about the rate and fees for the transaction.
+  documents:
+    type: array
+    description: >-
+      Supporting documents attached to the payment behind this quote. Present
+      only when the quote was created with `documentIds`. Grid returns such a
+      quote only after it has attached every document.
+    items:
+      $ref: ./QuoteDocument.yaml
   scaChallenge:
     $ref: ../sca/ScaChallenge.yaml
     description: >-

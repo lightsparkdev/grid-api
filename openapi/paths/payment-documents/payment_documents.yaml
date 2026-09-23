@@ -1,0 +1,95 @@
+post:
+  summary: Upload a payment document
+  description: |
+    Upload a supporting document for a payout that requires one. For corridors
+    that require supporting documents, which today means China B2B CNY
+    payouts, `GET /receiver/external-account/{accountId}` returns
+    `paymentRequirements`. That field lists the documents each
+    `purposeOfPayment` needs. Upload each file here, then pass the returned
+    `id` values in `documentIds` on `POST /quotes`. Grid attaches the files to
+    the payment before it returns the quote.
+
+    The request must use multipart/form-data with the file in the `file`
+    field and metadata in the remaining fields. Each request uploads one file.
+    To upload several files, send one request per file. You can send them in
+    parallel. A quote accepts up to 3 documents.
+
+    Supported formats are PDF, JPEG, and PNG. Grid detects the format from the
+    file contents, not the file name. The file must be from 1 to 8,000,000
+    bytes. An empty file, a larger file, and any other format return
+    `400 INVALID_INPUT`.
+
+    A payment document:
+
+    - can be used until its `expiresAt`, 24 hours after upload
+    - can be used on one quote only, and only on a quote for the customer in
+      `customerId`
+    - has its file deleted by Grid once it is attached to the payment
+
+    Grid does not check what a document says. The payout partner reviews each
+    document after Grid attaches it. To avoid a rejected or delayed payout:
+
+    - Every document must carry the beneficiary's stamp. A contract must be
+      stamped by both parties.
+    - The invoice amount must match the transaction amount.
+    - The invoice currency must match the payout currency.
+    - Sender and beneficiary details in the documents must match the details
+      you send through the API.
+
+    A successful attachment means the payout partner received the file, not
+    that it approved it. The partner may later request more information about
+    the payment, with a deadline of 15 calendar days.
+  operationId: uploadPaymentDocument
+  tags:
+    - Cross-Currency Transfers
+  security:
+    - BasicAuth: []
+  requestBody:
+    $ref: ../../components/schemas/payment_documents/PaymentDocumentUploadRequestBody.yaml
+  responses:
+    '201':
+      description: Payment document uploaded successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/payment_documents/PaymentDocument.yaml
+          example:
+            id: PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
+            customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+            documentType: INVOICE
+            fileName: invoice-2025-0142.pdf
+            sizeBytes: 482133
+            contentType: application/pdf
+            status: UPLOADED
+            expiresAt: '2025-10-04T12:00:00Z'
+            createdAt: '2025-10-03T12:00:00Z'
+    '400':
+      description: >-
+        Bad request. Returned with `INVALID_INPUT` when the file is empty,
+        larger than 8,000,000 bytes, or not a PDF, JPEG, or PNG, when
+        `documentType` is not a valid value, or when a required field is
+        missing.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: >-
+        Customer not found. Returned with `CUSTOMER_NOT_FOUND` when
+        `customerId` does not match a customer on your platform.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
