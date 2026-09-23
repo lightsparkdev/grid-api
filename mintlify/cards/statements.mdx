@@ -86,12 +86,12 @@ Statement data comes from three calls: [Get customer by ID](/api-reference/custo
 | Transaction type | `type` (`INCOMING` / `OUTGOING` / `CARD`) and `direction` (`CREDIT` / `DEBIT`); on `OUTGOING` transactions, `paymentRail` names the rail |
 | Payee or merchant | `counterpartyInformation` or `description` on `INCOMING` and `OUTGOING` transactions; `merchant.descriptor` on `CARD` transactions |
 | Terminal location | `merchant.city` and `merchant.state` on `CARD` transactions, when present |
-| Transaction amount | `receivedAmount` on `INCOMING`, `sentAmount` on `OUTGOING`, `settledAmount` on `CARD`. Sign the amount by `direction`: a `CREDIT` adds to the balance and a `DEBIT` subtracts from it |
-| Fee line items | `fees` on `INCOMING` and `OUTGOING` transactions, in the smallest unit of the sending currency. Card transactions carry no `fees` field |
-| Total fees for the period | Sum of `fees` across the period's transactions |
+| Transaction amount | `receivedAmount` on `INCOMING`, `sentAmount` on `OUTGOING`, `settledAmount` on `CARD`. A card row is a statement line only once `settledAmount` is present (`status` is `SETTLED` or `PARTIALLY_SETTLED`); an `AUTHORIZED` hold is not a statement line. Sign the amount by `direction`: a `CREDIT` adds to the balance and a `DEBIT` subtracts from it |
+| Fee line items | `fees` on `OUTGOING` transactions, in the smallest unit of the sending currency. `fees` is included in `sentAmount`, so show `sentAmount.amount - fees` as the transfer line and `fees` as its own line. On `INCOMING` transactions, `fees` is denominated in the sending currency and is deducted before `receivedAmount` lands, so it is not a line on this account's statement. Card transactions carry no `fees` field |
+| Total fees for the period | Sum of `fees` across the period's `OUTGOING` transactions |
 
 <Note>
-Exclude `CARD` transactions with `status: DECLINED`; no money moved. A `VOIDED` card transaction moved no money either and has no `settledAmount`. A merchant refund is its own `CARD` transaction with `direction: CREDIT`, and `originalTransactionId` names the purchase it credits back against. List it as its own dated line and don't net it against the purchase. For the card status model, see [Reconciliation](/cards/transactions/reconciliation).
+Only settled money becomes a statement line. An `AUTHORIZED` card row is a hold. No clearing has posted and `settledAmount` is absent. `DECLINED` and `VOIDED` rows moved no money either. Among `INCOMING` and `OUTGOING` transactions, only `status: COMPLETED` moved the balance; skip the rest (`FAILED`, `EXPIRED`, `REJECTED`, `REFUNDED`, and in-flight statuses). A merchant refund is its own `CARD` transaction with `direction: CREDIT`, and `originalTransactionId` names the purchase it credits back against. List it as its own dated line and don't net it against the purchase. For the card status model, see [Reconciliation](/cards/transactions/reconciliation).
 </Note>
 
 ## Example: build a statement at period close
@@ -99,11 +99,14 @@ Exclude `CARD` transactions with `status: DECLINED`; no money moved. A `VOIDED` 
 At period close, read the account holder and account, list the period's transactions, derive the lines and totals, render the statement, and hand it to your delivery channel.
 
 ```javascript
+// `grid` is your HTTP client for https://api.lightspark.com/grid/2025-10-13
+// with Basic auth. Amounts stay integers in the smallest unit until render.
+
 // Run once per account when the statement period closes
 async function buildStatement(customerId, accountId, startDate, endDate) {
   const customer = await grid.get(`/customers/${customerId}`);
   const { data: accounts } = await grid.get(
-    `/customers/internal-accounts?customerId=${customerId}&currency=USD`
+    `/customers/internal-accounts?${new URLSearchParams({ customerId, currency: 'USD' })}`
   );
   const account = accounts.find((a) => a.id === accountId);
 
@@ -111,51 +114,75 @@ async function buildStatement(customerId, accountId, startDate, endDate) {
   const transactions = [];
   let cursor;
   do {
-    const page = await grid.get(
-      `/transactions?accountIdentifier=${accountId}&startDate=${startDate}` +
-      `&endDate=${endDate}&sortOrder=asc&limit=100` +
-      (cursor ? `&cursor=${cursor}` : '')
-    );
+    const query = new URLSearchParams({
+      accountIdentifier: accountId, startDate, endDate, sortOrder: 'asc', limit: '100',
+    });
+    if (cursor) query.set('cursor', cursor);
+    const page = await grid.get(`/transactions?${query}`);
     transactions.push(...page.data);
     cursor = page.hasMore ? page.nextCursor : undefined;
   } while (cursor);
 
-  const format = (money) =>
-    (money.amount / 10 ** money.currency.decimals).toFixed(money.currency.decimals);
-
+  // One line per movement of settled money, signed by direction
   const lines = [];
-  let totalFees = 0;
   for (const tx of transactions) {
-    if (tx.type === 'CARD' && (tx.status === 'DECLINED' || tx.status === 'VOIDED')) continue;
-
-    const money =
-      tx.type === 'INCOMING' ? tx.receivedAmount :
-      tx.type === 'OUTGOING' ? tx.sentAmount :
-      tx.settledAmount;
     const sign = tx.direction === 'CREDIT' ? 1 : -1;
 
-    lines.push({
-      date: tx.type === 'CARD' ? tx.authorizedAt : tx.settledAt,
-      type: tx.type,
-      direction: tx.direction,
-      payee: tx.type === 'CARD' ? tx.merchant.descriptor : tx.description,
-      terminalLocation:
-        tx.type === 'CARD' && tx.merchant.city && tx.merchant.state
-          ? `${tx.merchant.city}, ${tx.merchant.state}`
-          : undefined,
-      amount: sign * Number(format(money)),
-    });
+    if (tx.type === 'CARD') {
+      if (!tx.settledAmount) continue; // AUTHORIZED hold, DECLINED, or VOIDED
+      lines.push({
+        date: tx.authorizedAt,
+        type: 'CARD',
+        direction: tx.direction,
+        payee: tx.merchant.descriptor,
+        terminalLocation:
+          tx.merchant.city && tx.merchant.state
+            ? `${tx.merchant.city}, ${tx.merchant.state}`
+            : undefined,
+        amount: sign * tx.settledAmount.amount,
+      });
+      continue;
+    }
 
-    if (tx.fees) {
-      // fees is an integer in the smallest unit of the sending currency
-      const fee = tx.fees / 10 ** money.currency.decimals;
-      totalFees += fee;
-      lines.push({ date: tx.settledAt, type: 'FEE', amount: -fee });
+    if (tx.status !== 'COMPLETED') continue;
+
+    if (tx.type === 'INCOMING') {
+      lines.push({
+        date: tx.settledAt,
+        type: 'INCOMING',
+        direction: tx.direction,
+        payee: tx.description,
+        amount: sign * tx.receivedAmount.amount,
+      });
+      continue;
+    }
+
+    // OUTGOING: sentAmount already includes fees, so split it into two lines
+    const fees = tx.fees ?? 0;
+    lines.push({
+      date: tx.settledAt,
+      type: 'OUTGOING',
+      direction: tx.direction,
+      payee: tx.description,
+      amount: sign * (tx.sentAmount.amount - fees),
+    });
+    if (fees > 0) {
+      lines.push({ date: tx.settledAt, type: 'FEE', direction: tx.direction, amount: sign * fees });
     }
   }
 
-  const closingBalance = Number(format(account.balance)); // read at period close
-  const openingBalance = await previousClosingBalance(accountId); // from your records
+  const closingBalance = account.balance.amount; // read at period close
+  const openingBalance = await previousClosingBalance(accountId); // from your records, same unit
+  const movement = lines.reduce((sum, line) => sum + line.amount, 0);
+  if (openingBalance + movement !== closingBalance) {
+    throw new Error('Statement does not reconcile: opening balance plus lines is not the closing balance');
+  }
+  const totalFees = -lines
+    .filter((line) => line.type === 'FEE')
+    .reduce((sum, line) => sum + line.amount, 0);
+
+  const { currency } = account.balance;
+  const format = (amount) => (amount / 10 ** currency.decimals).toFixed(currency.decimals);
 
   const statement = {
     // Fixed disclosures
@@ -169,10 +196,10 @@ async function buildStatement(customerId, accountId, startDate, endDate) {
     accountNumber: maskAccountNumber(account.fundingPaymentInstructions),
     period: { startDate, endDate },
     issueDate: new Date().toISOString(),
-    openingBalance,
-    closingBalance,
-    lines,
-    totalFees,
+    openingBalance: format(openingBalance),
+    closingBalance: format(closingBalance),
+    lines: lines.map((line) => ({ ...line, amount: format(line.amount) })),
+    totalFees: format(totalFees),
   };
 
   // Delivery and the delivery record follow your platform agreement
