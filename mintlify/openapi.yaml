@@ -8814,7 +8814,7 @@ paths:
     patch:
       summary: Update a card
       description: |
-        Update a card's `status`, bound `fundingSource`, and / or `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`. At least one field must be supplied.
+        Update a card's `status`, bound `fundingSource`, and / or `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`, or set a new `threeDSecurePassword`. At least one field must be supplied.
 
         - `status` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Any other transition returns `409 INVALID_STATE_TRANSITION`.
         - `fundingSource`, when supplied, replaces the card's bound internal account. It must belong to the customer and be denominated in the card's currency. `fundingSource` cannot be supplied alongside `status: CLOSED`. On card programs where the card issuer makes authorization decisions, `fundingSource` cannot be combined with any `status` change, so send the changes as separate requests. On card programs where Grid makes the authorization decision, the combination remains valid for `status` changes other than `CLOSED`.
@@ -27582,7 +27582,7 @@ components:
           example: 20
     CardUpdateRequest:
       type: object
-      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay` must be supplied. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
+      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, or `threeDSecurePassword` must be supplied. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
       properties:
         status:
           type: string
@@ -27644,6 +27644,10 @@ components:
             - type: 'null'
           description: 'Replacement card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values. Refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the card''s `cardCapabilities.supportsTransactionCountLimit` is true. Cannot be supplied alongside `status: CLOSED`.'
           example: 20
+        threeDSecurePassword:
+          type: string
+          description: Sets a new static 3-D Secure password on the card. Send it on its own, and only when the card's `cardCapabilities.supports3dSecurePassword` is true.
+          example: AbCd1234EfGh5678
     CardRevealResponse:
       type: object
       required:

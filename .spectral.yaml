@@ -188,5 +188,6 @@ overrides:
   # camelCase rule would break the wire contract Grid already accepts.
   - files:
       - "openapi.yaml#/components/schemas/CardCreateRequest/properties/threeDSecurePassword"
+      - "openapi.yaml#/components/schemas/CardUpdateRequest/properties/threeDSecurePassword"
     rules:
       field-names-camelCase: "off"

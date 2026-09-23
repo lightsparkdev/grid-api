@@ -55,8 +55,8 @@ patch:
   summary: Update a card
   description: >
     Update a card's `status`, bound `fundingSource`, and / or
-    `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
-    At least one field must be supplied.
+    `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`,
+    or set a new `threeDSecurePassword`. At least one field must be supplied.
 
 
     - `status` transitions are limited to `ACTIVE ⇄ FROZEN` and
