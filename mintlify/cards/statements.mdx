@@ -91,7 +91,7 @@ Statement data comes from three calls: [Get customer by ID](/api-reference/custo
 | Total fees for the period | Sum of `fees` across the period's `OUTGOING` transactions |
 
 <Note>
-Only settled money becomes a statement line. An `AUTHORIZED` card row is a hold. No clearing has posted and `settledAmount` is absent. `DECLINED` and `VOIDED` rows moved no money either. Among `INCOMING` and `OUTGOING` transactions, only `status: COMPLETED` moved the balance; skip the rest (`FAILED`, `EXPIRED`, `REJECTED`, `REFUNDED`, and in-flight statuses). A merchant refund is its own `CARD` transaction with `direction: CREDIT`, and `originalTransactionId` names the purchase it credits back against. List it as its own dated line and don't net it against the purchase. For the card status model, see [Reconciliation](/cards/transactions/reconciliation).
+Only settled money becomes a statement line. An `AUTHORIZED` card row is a hold. No clearing has posted and `settledAmount` is absent. `DECLINED` and `VOIDED` rows moved no money either. An `EXCEPTION` row settled at the card network but the pull from the account failed, so keep it off the statement until it is reconciled. Among `INCOMING` and `OUTGOING` transactions, only `status: COMPLETED` moved the balance; skip the rest (`FAILED`, `EXPIRED`, `REJECTED`, `REFUNDED`, and in-flight statuses). A merchant refund is its own `CARD` transaction with `direction: CREDIT`, and `originalTransactionId` names the purchase it credits back against. List it as its own dated line and don't net it against the purchase. For the card status model, see [Reconciliation](/cards/transactions/reconciliation).
 </Note>
 
 ## Example: build a statement at period close
@@ -102,34 +102,41 @@ At period close, read the account holder and account, list the period's transact
 // `grid` is your HTTP client for https://api.lightspark.com/grid/2025-10-13
 // with Basic auth. Amounts stay integers in the smallest unit until render.
 
+// Yield every item of a paginated list, following nextCursor while hasMore is true
+async function* listAll(path, params) {
+  let cursor;
+  do {
+    const query = new URLSearchParams({ ...params, limit: '100' });
+    if (cursor) query.set('cursor', cursor);
+    const page = await grid.get(`${path}?${query}`);
+    yield* page.data;
+    cursor = page.hasMore ? page.nextCursor : undefined;
+  } while (cursor);
+}
+
 // Run once per account when the statement period closes
 async function buildStatement(customerId, accountId, startDate, endDate) {
   const customer = await grid.get(`/customers/${customerId}`);
-  const { data: accounts } = await grid.get(
-    `/customers/internal-accounts?${new URLSearchParams({ customerId, currency: 'USD' })}`
-  );
-  const account = accounts.find((a) => a.id === accountId);
 
-  // Page through every transaction in the period, oldest first
-  const transactions = [];
-  let cursor;
-  do {
-    const query = new URLSearchParams({
-      accountIdentifier: accountId, startDate, endDate, sortOrder: 'asc', limit: '100',
-    });
-    if (cursor) query.set('cursor', cursor);
-    const page = await grid.get(`/transactions?${query}`);
-    transactions.push(...page.data);
-    cursor = page.hasMore ? page.nextCursor : undefined;
-  } while (cursor);
+  let account;
+  for await (const candidate of listAll('/customers/internal-accounts', { customerId })) {
+    if (candidate.id === accountId) {
+      account = candidate;
+      break;
+    }
+  }
+  if (!account) throw new Error(`Account ${accountId} does not belong to customer ${customerId}`);
 
-  // One line per movement of settled money, signed by direction
+  // One line per movement of settled money, signed by direction, oldest first
   const lines = [];
-  for (const tx of transactions) {
+  const period = { accountIdentifier: accountId, startDate, endDate, sortOrder: 'asc' };
+  for await (const tx of listAll('/transactions', period)) {
     const sign = tx.direction === 'CREDIT' ? 1 : -1;
 
     if (tx.type === 'CARD') {
-      if (!tx.settledAmount) continue; // AUTHORIZED hold, DECLINED, or VOIDED
+      // Only cleared rows moved money. AUTHORIZED is a hold, DECLINED and VOIDED
+      // moved nothing, and EXCEPTION needs manual reconciliation first
+      if (tx.status !== 'SETTLED' && tx.status !== 'PARTIALLY_SETTLED') continue;
       lines.push({
         date: tx.authorizedAt,
         type: 'CARD',
@@ -191,6 +198,7 @@ async function buildStatement(customerId, accountId, startDate, endDate) {
       'Lightspark is the program manager and is not a bank.',
     customerServicePhone: '(855) 516-0103',
     address: '8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069',
+    errorResolutionNotice: ERROR_RESOLUTION_NOTICE, // the full notice from the disclosures table
     // Account fields
     accountHolder: customer.fullName,
     accountNumber: maskAccountNumber(account.fundingPaymentInstructions),
