@@ -4,7 +4,6 @@ description: >-
   Request body for `POST /internal-accounts`. Only `RULE_BASED` accounts can be
   created today, and they are rejected without a `sweepRule` — the type and its
   rule are created together or not at all.
-additionalProperties: false
 required:
   - type
   - currency
