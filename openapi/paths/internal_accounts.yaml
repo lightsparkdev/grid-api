@@ -16,8 +16,7 @@ post:
 
     The response carries the account's own `fundingPaymentInstructions` — the
     routable number payers send to. Rule-based accounts are currently available
-    in `USD`, for a customer or for your platform itself, and must be enabled
-    for your platform before this endpoint accepts requests.
+    in `USD`, for a customer or for your platform itself.
 
     Sandbox platforms can create rule-based accounts and exercise the whole
     flow. The account number is generated locally rather than issued by a
