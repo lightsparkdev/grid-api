@@ -5,7 +5,12 @@ When creating a quote with an external account destination, the account number s
 | **002** | Quote execution failed |
 | **003** | Long payment — completes after approximately 6 minutes |
 | **004** | Counterparty delivery failed |
-| **005** | Receiving bank returned payment (completes then transitions to failed) |
+| **005** | Receiving bank returned the payment — completes, then fails with `failureReason: PAYOUT_RETURNED` |
 | **006** | User cancellation |
 | **007** | Payout and refund failed |
 | **Any other** | Successful payment |
+
+These suffixes apply to an external account used as a **quote destination**. An
+account that funds an incoming transfer follows the transfer pattern table
+instead, where **006** means a late inbound return rather than a user
+cancellation.

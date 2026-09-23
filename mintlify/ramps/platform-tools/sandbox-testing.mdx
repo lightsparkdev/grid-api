@@ -233,7 +233,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 ```
 
 <Note>
-In sandbox, you can use special account number patterns to test different scenarios. The **last 3 digits** determine the behavior: **002** (insufficient funds), **003** (account closed), **004** (transfer rejected), **005** (timeout/delayed failure). Any other ending succeeds normally. See "Testing transfer failures" below for details.
+In sandbox, you can use special account number patterns to test different scenarios. The **last 3 digits** determine the behavior: **002** (insufficient funds), **003** (account closed), **004** (transfer rejected), **005** (timeout/delayed failure), **006** (late return — settles, then is returned). Any other ending succeeds normally. See "Testing transfer failures" below for details.
 </Note>
 
 ### Step 3: Create and execute off-ramp quote
