@@ -1,0 +1,6 @@
+@mixin tokens {
+  &[data-app='marketplace'] {
+    --ios-font-family: var(--font-family-circular);
+    --app-tint: #ff385c;
+  }
+}

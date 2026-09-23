@@ -1,0 +1,58 @@
+.divider {
+  display: flex;
+  align-items: center;
+  padding-block: var(--spacing-xs);
+  padding-inline: var(--spacing-xs);
+}
+
+.leading {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  margin-right: var(--spacing-3xs);
+}
+
+.icon {
+  display: flex;
+  flex-shrink: 0;
+  margin-top: -1px;
+  color: var(--text-tertiary);
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+    stroke-width: 1.125;
+  }
+}
+
+.label {
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--font-leading-18);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  font-feature-settings: 'salt' 1;
+}
+
+.line {
+  flex: 1;
+  height: 0;
+  border-top: var(--stroke-xs) solid var(--border-primary);
+}
+
+/* Right-aligned control (e.g. Reset). It animates its width 0↔auto (clipped via
+   overflow), so the rule fills the space in tandem — no sequential "grow after
+   it leaves". The line-to-action gap lives inside .actionInner so it collapses
+   with the width (no leftover gap). */
+.action {
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.actionInner {
+  display: flex;
+  align-items: center;
+  padding-left: var(--spacing-3xs);
+  white-space: nowrap;
+}

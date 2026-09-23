@@ -1,0 +1,85 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.panel {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--dot-grid-bg);
+}
+
+.exportError {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 5;
+  color: var(--color-red-600);
+  font-size: 12px;
+}
+
+.exportSource {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 600px;
+  pointer-events: none;
+}
+
+:global(html[data-layout='stacked']) .panel {
+  height: calc(100vh - var(--panel-header-height, 52px) - 64px);
+  flex: none;
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  justify-content: center;
+  overflow: hidden;
+  padding: var(--spacing-xl) var(--spacing-xl) 64px;
+  background:
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--text-primary) 10%, transparent) 0 1px,
+      transparent 1px
+    )
+    0 0 / 16px 16px,
+    var(--dot-grid-bg);
+}
+
+@media (max-width: 767px) {
+  :global(html[data-layout='stacked']) .panel {
+    height: calc(100dvh - var(--panel-header-height, 52px));
+  }
+
+  .stage {
+    padding: var(--spacing-xl) var(--spacing-sm) 56px;
+  }
+}
+
+@media print {
+  .panel > :not(.exportSource) {
+    display: none !important;
+  }
+
+  .exportSource {
+    position: static;
+    display: block;
+    width: 600px;
+    margin: 0 auto;
+  }
+
+  .exportSource > article {
+    display: block;
+  }
+
+  .stage {
+    display: block;
+    overflow: visible;
+    padding: 0;
+    background: #fff;
+  }
+}

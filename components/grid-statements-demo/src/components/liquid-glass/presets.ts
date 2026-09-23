@@ -1,0 +1,27 @@
+import type { GlassConfig } from './index';
+
+export const PHONE_SHELL_GLASS: GlassConfig = {
+  radius: 89,
+  depth: 18,
+  scale: 19,
+  chromaticAberration: 1,
+  blur: 2.3,
+  domeDepth: 30,
+  splay: 0.84,
+  specularRotation: 45,
+  specularStrength: 1,
+  glowStrength: 0.03,
+  glowSpread: 0.5,
+  glowExponent: 1.5,
+  edgeStrength: 0.55,
+  edgeWidth: 2,
+  edgeExponent: 1.5,
+  brightness: 0.08,
+  cornerSmoothing: 0.12,
+  shadowOffsetY: 8,
+  shadowBlur: 24,
+  shadowSpread: 0,
+  shadowOpacity: 0.12,
+  edgeShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+  mapSize: 512,
+};

@@ -239,7 +239,9 @@
     root.classList.toggle('ls-page-flow-builder', path === '/flow-builder');
     root.classList.toggle(
       'ls-page-playground',
-      path === '/global-accounts/demo' || path === '/cards/demo',
+      path === '/global-accounts/demo' ||
+        path === '/cards/demo' ||
+        path === '/cards/statements',
     );
     // Custom-layout pages (frontmatter mode: "custom") — detected from the
     // DOM so future custom pages are covered without listing paths here.

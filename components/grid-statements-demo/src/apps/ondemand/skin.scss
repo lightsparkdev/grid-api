@@ -1,0 +1,6 @@
+@mixin tokens {
+  &[data-app='ondemand'] {
+    --ios-font-family: var(--font-family-inter);
+    --app-tint: #000000;
+  }
+}

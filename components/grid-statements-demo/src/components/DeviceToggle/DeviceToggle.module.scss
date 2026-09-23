@@ -1,0 +1,43 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.audienceToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4xs);
+  padding: var(--spacing-3xs);
+  background: var(--surface-elevated);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+}
+
+.audienceTab {
+  all: unset;
+  corner-shape: squircle;
+  box-sizing: border-box;
+  @include label-sm;
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--spacing-xs);
+  border-radius: var(--corner-radius-xs);
+  cursor: pointer;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-feature-settings: 'salt' 1;
+  transition: background 150ms ease, color 150ms ease;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: -2px;
+  }
+}
+
+.audienceTabActive {
+  background: var(--surface-base);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  color: var(--text-primary);
+}

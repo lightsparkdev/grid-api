@@ -1,0 +1,130 @@
+.mobile,
+.duoStage {
+  width: 100%;
+  height: 100%;
+}
+
+.duoStage {
+  min-height: 0;
+}
+
+.duoScreen {
+  --statement-sunken: color-mix(
+    in srgb,
+    var(--statement-primary-text) 4%,
+    var(--statement-primary-background)
+  );
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--statement-sunken);
+}
+
+.desktopApp {
+  --statement-hairline: color-mix(in srgb, var(--statement-primary-text) 10%, transparent);
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: row;
+  overflow: hidden;
+  background: var(--statement-sunken);
+  color: var(--statement-primary-text);
+}
+
+.sidebar {
+  display: flex;
+  width: 176px;
+  height: 100%;
+  min-width: 176px;
+  min-height: 0;
+  flex: 0 0 176px;
+  flex-direction: column;
+  box-sizing: border-box;
+  border-right: 0.5px solid var(--statement-hairline);
+  background: var(--statement-sunken);
+}
+
+.railContent {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  box-sizing: border-box;
+  background: var(--statement-sunken);
+}
+
+.railFooter {
+  height: 52px;
+  min-width: 0;
+  flex: 0 0 52px;
+  box-sizing: border-box;
+  border-top: 0.5px solid var(--statement-hairline);
+  background: var(--statement-sunken);
+}
+
+.desktopMain {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--statement-sunken);
+}
+
+.desktopHeader {
+  height: 52px;
+  min-width: 0;
+  flex: 0 0 52px;
+  box-sizing: border-box;
+  border-bottom: 0.5px solid var(--statement-hairline);
+  background: var(--statement-sunken);
+}
+
+.duoScroller {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  box-sizing: border-box;
+  padding: var(--spacing-xl);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--statement-sunken);
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  > article {
+    margin: 0 auto;
+  }
+}
+
+.loading {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  background: var(--statement-sunken);
+  color: var(--statement-secondary-text);
+
+  svg {
+    animation: spin 900ms linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading svg {
+    animation-duration: 1800ms;
+  }
+}
