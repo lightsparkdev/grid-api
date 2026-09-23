@@ -6,6 +6,7 @@ import { IconChainLink1 } from '@central-icons-react/round-outlined-radius-3-str
 import { IconImages1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconImages1';
 import { IconCode } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCode';
 import { pressable } from '@/lib/sounds';
+import { isUploadedLogo } from '@/statement/shareState';
 import type { StatementModel } from '@/statement/types';
 import { StatementPreview } from '@/components/StatementPreview/StatementPreview';
 import styles from './ShareSheet.module.scss';
@@ -48,6 +49,7 @@ export function ShareSheet({
   const panelRef = useRef<HTMLElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
+  const logoIsUpload = isUploadedLogo(statement.brand.logo);
   const actions = [
     { label: 'Copy link', Icon: IconChainLink1, onClick: onCopyLink },
     { label: 'Save PDF', Icon: IconImages1, onClick: onSavePdf },
@@ -153,6 +155,9 @@ export function ShareSheet({
                 </button>
               ))}
             </div>
+            {logoIsUpload ? (
+              <p className={styles.hint}>Uploaded logos are not included in the link.</p>
+            ) : null}
           </motion.section>
         </>
       ) : null}

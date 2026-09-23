@@ -117,6 +117,40 @@ describe('ShareSheet', () => {
     await waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 
+  it('shows a hint only when the logo is an upload', () => {
+    const props = {
+      open: true,
+      previewMode: 'mobile' as const,
+      onClose: vi.fn(),
+      onCopyLink: vi.fn(),
+      onSavePdf: vi.fn(),
+      onSaveHtml: vi.fn(),
+    };
+    const hint = 'Uploaded logos are not included in the link.';
+    const view = render(
+      <ShareSheet
+        {...props}
+        statement={buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD)}
+      />,
+    );
+    expect(screen.queryByText(hint)).toBeNull();
+
+    view.rerender(
+      <ShareSheet
+        {...props}
+        statement={buildStatement(
+          'consumer',
+          {
+            ...DEFAULT_BRAND,
+            logo: { kind: 'image', src: 'blob:https://example.com/logo', alt: 'Logo' },
+          },
+          STATEMENT_PERIOD,
+        )}
+      />,
+    );
+    expect(screen.getByText(hint)).toBeTruthy();
+  });
+
   it('shortens the ripple for reduced motion', () => {
     const styles = readFileSync(
       resolve(process.cwd(), 'src/components/ShareSheet/ShareSheet.module.scss'),

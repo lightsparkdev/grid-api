@@ -1,7 +1,7 @@
 import { normalizeHexColor } from './brand';
 import { PRESETS, presetIconSrc, type PresetId } from './presets';
 import type { PreviewMode } from './lifecycle';
-import type { StatementBrand, StatementVariant } from './types';
+import type { StatementBrand, StatementLogo, StatementVariant } from './types';
 
 export interface StatementShareState {
   variant: StatementVariant;
@@ -19,6 +19,14 @@ const PRESET_IDS = new Set<PresetId>([
   'messaging',
 ]);
 
+/**
+ * Uploaded logos are `blob:` object URLs scoped to the uploader's document.
+ * They cannot travel in a share link, so the link drops them.
+ */
+export function isUploadedLogo(logo: StatementLogo) {
+  return logo.kind === 'image' && logo.src.startsWith('blob:');
+}
+
 export function statementShareUrl(currentUrl: string, state: StatementShareState) {
   const url = new URL(currentUrl);
   url.searchParams.set('variant', state.variant);
@@ -28,7 +36,9 @@ export function statementShareUrl(currentUrl: string, state: StatementShareState
   url.searchParams.set('background', state.brand.colors.primaryBackground);
   url.searchParams.set('text', state.brand.colors.primaryText);
   url.searchParams.set('muted', state.brand.colors.secondaryText);
-  url.searchParams.set('logo', state.brand.logo.kind === 'none' ? 'none' : 'preset');
+  const shareableLogo =
+    state.brand.logo.kind === 'none' || isUploadedLogo(state.brand.logo) ? 'none' : 'preset';
+  url.searchParams.set('logo', shareableLogo);
   return url.toString();
 }
 
