@@ -1,44 +1,44 @@
 import { StatementExample } from '/snippets/cards/statement-example.mdx';
 
-If you issue cards through Grid, Lightspark is the program manager for each cardholder account, and the account is held at **Lead Bank**, the account-holding institution. Regulation E requires a periodic statement for every consumer account that can send or receive electronic fund transfers.
+If you issue consumer cards through Grid, each cardholder account gets a periodic statement. Your platform agreement sets out what the statement contains and who delivers it. Use this page as a reference for a typical consumer statement and how to build one from Grid data.
 
-This guide covers consumer cardholder accounts: when to send a statement, what it must contain, how to map Grid account and transaction data to each statement field, and how to build one at period close. A commercial statement uses the same layout without the error-resolution notice and the terminal location.
+This guide covers consumer cardholder accounts: when to send a statement, what it contains, how to map Grid account and transaction data to each statement field, and how to build one at period close.
 
 ## Sample statement layout
 
-Your statement's visual design is up to you, but the content and field set are fixed. The layout below shows a consumer statement with sample data filled in:
+Your statement's visual design is up to you. The layout below shows a consumer statement with sample data filled in. Check your platform agreement for the fields and disclosures your program requires:
 
 <StatementExample />
 
-The asterisk is optional. In the sample it marks the lines the error-resolution notice applies to.
+In the sample, an asterisk marks each line the error-resolution notice covers. A commercial statement omits the markers, the notice, and the terminal location. Your platform agreement sets out which transaction types carry the marker.
 
 ## When to send a statement
 
-Close your statement period on the same day each month and issue a statement for every account, with or without activity in the period.
+A typical statement period closes on the same day each month, with a statement for every account, whether or not it had activity.
 
-Send the statement to the cardholder as soon as the period closes, by email, in-app notification, or any channel that lets the cardholder **retain** it, and record the issue date. Your platform agreement sets out who delivers the statement and who keeps the delivery record.
+Send the statement to the cardholder when the period closes, by email, in-app notification, or any channel that lets the cardholder **retain** it, and record the issue date. Your platform agreement sets out the cadence, who delivers the statement, and who keeps the delivery record and for how long.
 
 <Info>
-List every transaction that moved the balance in the period, including wires and RTP. Without them, your opening and closing balances do not reconcile. Once you issue a statement, **freeze its contents**. A refund that posts later appears on the next statement as its own dated line.
+List every transaction that moved the balance in the period. Without them, your opening and closing balances do not reconcile. Once you issue a statement, **freeze its contents**. A refund that posts later appears on the next statement as its own dated line.
 </Info>
 
-## What a statement must contain
+## What a statement contains
 
-A statement combines **fixed disclosures** (provider and error-resolution language) with **data-driven fields** you populate from the account and its transactions for the period.
+A statement combines **disclosures** (provider and error-resolution language) with **data-driven fields** you populate from the account and its transactions for the period.
 
-### Lightspark and Lead Bank disclosures
+### Provider disclosures
 
-Include these on every consumer statement exactly as written. Do not describe Lightspark as a bank.
+Every statement, consumer or commercial, carries the provider and contact lines. The sample uses the wording below; your platform agreement provides the disclosure text for your program. Lightspark is not a bank, so the provider line names the account-holding institution separately.
 
 | Field | Value |
 |-------|-------|
 | Provider line | “Lightspark is the program manager for this account. This account is held at Lead Bank, the account-holding institution.” |
 | Contact line | “Direct inquiries to 8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069 or (855) 516-0103.” |
-| Error-resolution notice | The notice text shown in the sample above, verbatim. |
+| Error-resolution notice | The notice text shown in the sample above. |
 
 ### Statement fields
 
-| Field | Description | Required when |
+| Field | Description | Included when |
 |-------|-------------|---------------|
 | Account holder | Name of the cardholder | Always |
 | Account type | Kind of account, for example “Consumer prepaid account” | Always |
@@ -67,8 +67,8 @@ You build a statement from three calls: [Get customer by ID](/api-reference/cust
 | Statement period | The `startDate` and `endDate` you pass to List transactions |
 | Issue date | You supply it: the date the statement is sent |
 | Closing balance | `totalBalance` on the internal account (includes pending and held funds; `balance` does not). Grid has no historical balance, so read it at period close and store it |
-| Opening balance | The previous period's closing balance from your records |
-| Transaction date | `settledAt` on `INCOMING` and `OUTGOING`; `authorizedAt` on `CARD` |
+| Opening balance | The previous period's closing balance from your records. For the first statement, read `totalBalance` at period open |
+| Transaction date | `settledAt` on `INCOMING` and `OUTGOING`. `authorizedAt` on `CARD`; Grid has no card posting date. A card row that settles after period close appears on the next statement, dated by its authorization |
 | Transaction type | `type` (`INCOMING` / `OUTGOING` / `CARD`) and `direction` (`CREDIT` / `DEBIT`); on `OUTGOING` transactions, `paymentRail` names the rail |
 | Payee or merchant | `counterpartyInformation` or `description` on `INCOMING` and `OUTGOING` transactions; `merchant.descriptor` on `CARD` transactions |
 | Terminal location | `merchant.city` and `merchant.state` on `CARD` transactions, when present |
@@ -186,7 +186,7 @@ async function buildStatement(customerId, accountId, startDate, endDate) {
   const format = (amount) => (amount / 10 ** currency.decimals).toFixed(currency.decimals);
 
   const statement = {
-    // Fixed disclosures
+    // Disclosures
     providerLine:
       'Lightspark is the program manager for this account. ' +
       'This account is held at Lead Bank, the account-holding institution.',

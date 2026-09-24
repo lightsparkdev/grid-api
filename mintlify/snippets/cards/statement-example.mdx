@@ -27,7 +27,7 @@ export const StatementExample = () => {
     { id: 'c2', day: '08', type: 'Debit card purchase', party: 'Blue Bottle Coffee', terminal: 'Los Angeles, CA', amount: '-$18.75', disputable: true },
     { id: 'c3', day: '12', type: 'ACH debit', party: 'Pacific Gas & Electric', amount: '-$142.30', disputable: true },
     { id: 'c4', day: '18', type: 'Wire transfer out', party: 'First National Escrow', amount: '-$1,000.00', disputable: false },
-    { id: 'c4-fee', day: '18', type: 'Wire transfer fee', party: 'Lead Bank', amount: '-$15.00', disputable: false },
+    { id: 'c4-fee', day: '18', type: 'Wire transfer fee', party: '', amount: '-$15.00', disputable: false },
     { id: 'c5', day: '24', type: 'RTP received', party: 'Sofía Herrera', amount: '+$250.00', disputable: false },
   ];
   const noticeSteps = [
@@ -76,7 +76,7 @@ export const StatementExample = () => {
               <span style={{ color: muted78 }}>09/{row.day}</span>
               <span style={{ minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}>
                 <span style={{ color: primary }}>{row.type}</span>
-                <span style={{ marginLeft: '10px', color: muted70 }}>{row.party}</span>
+                {row.party ? <span style={{ marginLeft: '10px', color: muted70 }}>{row.party}</span> : null}
                 {row.terminal ? <span style={{ display: 'inline', color: muted70 }}> · {row.terminal}</span> : null}
               </span>
               <span style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
