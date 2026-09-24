@@ -1,12 +1,24 @@
 type: string
 description: >-
   The purpose of the payment. This may be required when sending to certain
-  geographies (e.g. India). Business payments to China must use one of the
-  China-specific purposes rather than `GOODS_OR_SERVICES`, because each purpose
-  requires its own supporting documents. Those purposes are
-  `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `SERVICE_CHARGES`,
-  `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`. The
-  six China-only values are rejected on other corridors.
+  geographies (e.g. India).
+
+
+  Business payments to China must use one of the China-specific purposes
+  rather than `GOODS_OR_SERVICES`, because each purpose requires its own
+  supporting documents. Those purposes are `EXPORTED_GOODS_PREPAYMENT`,
+  `EXPORTED_GOODS_POSTPAYMENT`, `COMMISSION_ON_GOODS`,
+  `COMMISSION_ON_SERVICES`, `ACCOUNTING_SERVICES`, `EXHIBITION_SERVICES`,
+  `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`.
+
+
+  A payment for services uses the purpose that names the service. The
+  receiving bank needs that detail, so `SERVICE_CHARGES` is not accepted on
+  these payouts.
+
+
+  Every China-specific purpose except `TRAVEL` is rejected on other
+  corridors, and so is `SERVICE_CHARGES`.
 enum:
   - GIFT
   - SELF
@@ -27,4 +39,8 @@ enum:
   - OFFICE_EXPENSES
   - DELIVERY_FEES
   - HOTEL_ACCOMMODATION
+  - COMMISSION_ON_GOODS
+  - COMMISSION_ON_SERVICES
+  - ACCOUNTING_SERVICES
+  - EXHIBITION_SERVICES
   - OTHER

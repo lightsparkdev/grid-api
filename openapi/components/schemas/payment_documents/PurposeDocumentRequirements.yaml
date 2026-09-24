@@ -3,7 +3,6 @@ description: The supporting documents that one purpose of payment requires.
 required:
   - purposeOfPayment
   - requiredDocuments
-  - serviceCategoryRequired
 properties:
   purposeOfPayment:
     $ref: ../quotes/PurposeOfPayment.yaml
@@ -19,9 +18,3 @@ properties:
       There are never more entries than `maxDocuments`.
     items:
       $ref: ./DocumentRequirement.yaml
-  serviceCategoryRequired:
-    type: boolean
-    description: >-
-      Whether a quote request with this purpose must also include
-      `serviceCategory`.
-    example: true

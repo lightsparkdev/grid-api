@@ -68,15 +68,6 @@ properties:
     example: '12345'
   purposeOfPayment:
     $ref: ./PurposeOfPayment.yaml
-  serviceCategory:
-    $ref: ./ChinaB2BServiceCategory.yaml
-    description: >-
-      The kind of service the payment pays for. Required when the lookup's
-      `paymentRequirements` entry for your `purposeOfPayment` has
-      `serviceCategoryRequired: true`. That applies to `SERVICE_CHARGES` on a
-      China B2B CNY payout, where the receiving bank needs the breakdown to
-      clear the payment. Omitting it there returns `400 INVALID_INPUT`.
-      Sending it on any other payout also returns `400 INVALID_INPUT`.
   documentIds:
     type: array
     minItems: 1

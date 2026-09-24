@@ -108,9 +108,14 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 
   Business payments to China must use one of the purposes below instead of `GOODS_OR_SERVICES`. Each one requires its own supporting documents. These codes are rejected on other corridors.
 
+  A payment for services uses the purpose that names the service. `SERVICE_CHARGES` is not accepted on these payouts.
+
   - `EXPORTED_GOODS_PREPAYMENT` - Exported goods, paid before shipping
   - `EXPORTED_GOODS_POSTPAYMENT` - Exported goods, paid after delivery
-  - `SERVICE_CHARGES` - Service charges
+  - `COMMISSION_ON_GOODS` - Commission on goods
+  - `COMMISSION_ON_SERVICES` - Commission on services
+  - `ACCOUNTING_SERVICES` - Accounting services
+  - `EXHIBITION_SERVICES` - Exhibition services
   - `OFFICE_EXPENSES` - Office expenses
   - `DELIVERY_FEES` - Delivery fees
   - `HOTEL_ACCOMMODATION` - Hotel accommodation

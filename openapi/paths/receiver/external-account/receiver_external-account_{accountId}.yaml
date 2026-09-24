@@ -110,7 +110,6 @@ get:
                         - requirementId: PURCHASE_ORDER
                           acceptedDocumentTypes:
                             - PURCHASE_ORDER
-                      serviceCategoryRequired: false
                     - purposeOfPayment: EXPORTED_GOODS_POSTPAYMENT
                       requiredDocuments:
                         - requirementId: LOGISTICS_BILL
@@ -124,8 +123,7 @@ get:
                             - PURCHASE_ORDER
                             - INVOICE
                             - CONTRACT
-                      serviceCategoryRequired: false
-                    - purposeOfPayment: SERVICE_CHARGES
+                    - purposeOfPayment: COMMISSION_ON_GOODS
                       requiredDocuments:
                         - requirementId: CONTRACT
                           acceptedDocumentTypes:
@@ -137,7 +135,42 @@ get:
                           acceptedDocumentTypes:
                             - PURCHASE_ORDER
                             - DELIVERY_SLIP
-                      serviceCategoryRequired: true
+                    - purposeOfPayment: COMMISSION_ON_SERVICES
+                      requiredDocuments:
+                        - requirementId: CONTRACT
+                          acceptedDocumentTypes:
+                            - CONTRACT
+                        - requirementId: INVOICE
+                          acceptedDocumentTypes:
+                            - INVOICE
+                        - requirementId: SUPPORTING_PROOF
+                          acceptedDocumentTypes:
+                            - PURCHASE_ORDER
+                            - DELIVERY_SLIP
+                    - purposeOfPayment: ACCOUNTING_SERVICES
+                      requiredDocuments:
+                        - requirementId: CONTRACT
+                          acceptedDocumentTypes:
+                            - CONTRACT
+                        - requirementId: INVOICE
+                          acceptedDocumentTypes:
+                            - INVOICE
+                        - requirementId: SUPPORTING_PROOF
+                          acceptedDocumentTypes:
+                            - PURCHASE_ORDER
+                            - DELIVERY_SLIP
+                    - purposeOfPayment: EXHIBITION_SERVICES
+                      requiredDocuments:
+                        - requirementId: CONTRACT
+                          acceptedDocumentTypes:
+                            - CONTRACT
+                        - requirementId: INVOICE
+                          acceptedDocumentTypes:
+                            - INVOICE
+                        - requirementId: SUPPORTING_PROOF
+                          acceptedDocumentTypes:
+                            - PURCHASE_ORDER
+                            - DELIVERY_SLIP
                     - purposeOfPayment: OFFICE_EXPENSES
                       requiredDocuments:
                         - requirementId: CONTRACT
@@ -146,7 +179,6 @@ get:
                         - requirementId: INVOICE
                           acceptedDocumentTypes:
                             - INVOICE
-                      serviceCategoryRequired: false
                     - purposeOfPayment: DELIVERY_FEES
                       requiredDocuments:
                         - requirementId: BILL_OF_LADING
@@ -156,7 +188,6 @@ get:
                           acceptedDocumentTypes:
                             - CONTRACT
                             - INVOICE
-                      serviceCategoryRequired: false
                     - purposeOfPayment: TRAVEL
                       requiredDocuments:
                         - requirementId: FLIGHT_TICKET
@@ -168,13 +199,11 @@ get:
                         - requirementId: HOTEL_BOOKING_CONFIRMATION
                           acceptedDocumentTypes:
                             - HOTEL_BOOKING_CONFIRMATION
-                      serviceCategoryRequired: false
                     - purposeOfPayment: HOTEL_ACCOMMODATION
                       requiredDocuments:
                         - requirementId: HOTEL_BOOKING_CONFIRMATION
                           acceptedDocumentTypes:
                             - HOTEL_BOOKING_CONFIRMATION
-                      serviceCategoryRequired: false
     '400':
       description: Bad request - Missing or invalid parameters
       content:

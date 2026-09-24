@@ -4223,7 +4223,6 @@ paths:
                             - requirementId: PURCHASE_ORDER
                               acceptedDocumentTypes:
                                 - PURCHASE_ORDER
-                          serviceCategoryRequired: false
                         - purposeOfPayment: EXPORTED_GOODS_POSTPAYMENT
                           requiredDocuments:
                             - requirementId: LOGISTICS_BILL
@@ -4237,8 +4236,7 @@ paths:
                                 - PURCHASE_ORDER
                                 - INVOICE
                                 - CONTRACT
-                          serviceCategoryRequired: false
-                        - purposeOfPayment: SERVICE_CHARGES
+                        - purposeOfPayment: COMMISSION_ON_GOODS
                           requiredDocuments:
                             - requirementId: CONTRACT
                               acceptedDocumentTypes:
@@ -4250,7 +4248,42 @@ paths:
                               acceptedDocumentTypes:
                                 - PURCHASE_ORDER
                                 - DELIVERY_SLIP
-                          serviceCategoryRequired: true
+                        - purposeOfPayment: COMMISSION_ON_SERVICES
+                          requiredDocuments:
+                            - requirementId: CONTRACT
+                              acceptedDocumentTypes:
+                                - CONTRACT
+                            - requirementId: INVOICE
+                              acceptedDocumentTypes:
+                                - INVOICE
+                            - requirementId: SUPPORTING_PROOF
+                              acceptedDocumentTypes:
+                                - PURCHASE_ORDER
+                                - DELIVERY_SLIP
+                        - purposeOfPayment: ACCOUNTING_SERVICES
+                          requiredDocuments:
+                            - requirementId: CONTRACT
+                              acceptedDocumentTypes:
+                                - CONTRACT
+                            - requirementId: INVOICE
+                              acceptedDocumentTypes:
+                                - INVOICE
+                            - requirementId: SUPPORTING_PROOF
+                              acceptedDocumentTypes:
+                                - PURCHASE_ORDER
+                                - DELIVERY_SLIP
+                        - purposeOfPayment: EXHIBITION_SERVICES
+                          requiredDocuments:
+                            - requirementId: CONTRACT
+                              acceptedDocumentTypes:
+                                - CONTRACT
+                            - requirementId: INVOICE
+                              acceptedDocumentTypes:
+                                - INVOICE
+                            - requirementId: SUPPORTING_PROOF
+                              acceptedDocumentTypes:
+                                - PURCHASE_ORDER
+                                - DELIVERY_SLIP
                         - purposeOfPayment: OFFICE_EXPENSES
                           requiredDocuments:
                             - requirementId: CONTRACT
@@ -4259,7 +4292,6 @@ paths:
                             - requirementId: INVOICE
                               acceptedDocumentTypes:
                                 - INVOICE
-                          serviceCategoryRequired: false
                         - purposeOfPayment: DELIVERY_FEES
                           requiredDocuments:
                             - requirementId: BILL_OF_LADING
@@ -4269,7 +4301,6 @@ paths:
                               acceptedDocumentTypes:
                                 - CONTRACT
                                 - INVOICE
-                          serviceCategoryRequired: false
                         - purposeOfPayment: TRAVEL
                           requiredDocuments:
                             - requirementId: FLIGHT_TICKET
@@ -4281,13 +4312,11 @@ paths:
                             - requirementId: HOTEL_BOOKING_CONFIRMATION
                               acceptedDocumentTypes:
                                 - HOTEL_BOOKING_CONFIRMATION
-                          serviceCategoryRequired: false
                         - purposeOfPayment: HOTEL_ACCOMMODATION
                           requiredDocuments:
                             - requirementId: HOTEL_BOOKING_CONFIRMATION
                               acceptedDocumentTypes:
                                 - HOTEL_BOOKING_CONFIRMATION
-                          serviceCategoryRequired: false
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -4603,7 +4632,7 @@ paths:
                   lockedCurrencyAmount: 10000
                   immediatelyExecute: true
                   description: Bitcoin reward payout!
-              chinaB2BServiceChargesWithDocuments:
+              chinaB2BAccountingServicesWithDocuments:
                 summary: China B2B CNY payout with supporting documents
                 value:
                   lookupId: Lookup:019542f5-b3e7-1d02-0000-000000000009
@@ -4615,8 +4644,7 @@ paths:
                     accountId: ExternalAccount:c34dcbd6-dced-4ec4-b756-3c3a9ea3d789
                   lockedCurrencySide: RECEIVING
                   lockedCurrencyAmount: 7250000
-                  purposeOfPayment: SERVICE_CHARGES
-                  serviceCategory: ACCOUNTING_SERVICES
+                  purposeOfPayment: ACCOUNTING_SERVICES
                   documentIds:
                     - PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
                     - PaymentDocument:019542f5-b3e7-1d02-0000-000000000002
@@ -4667,7 +4695,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Quote'
         '400':
-          description: Bad request. Returned with `DOCUMENTS_REQUIRED` when the destination requires supporting documents for the `purposeOfPayment` and `documentIds` does not supply all of them. `details.missingRequirements` lists the `requirementId` of each missing document. Returned with `INVALID_INPUT` for missing or invalid parameters. These include `documentIds` without an `Idempotency-Key` header, `documentIds` sent to a destination that does not require documents, a document whose `documentType` fills no remaining requirement for the `purposeOfPayment`, a missing `serviceCategory` where the purpose requires one, and `serviceCategory` on a payout that does not use it.
+          description: Bad request. Returned with `DOCUMENTS_REQUIRED` when the destination requires supporting documents for the `purposeOfPayment` and `documentIds` does not supply all of them. `details.missingRequirements` lists the `requirementId` of each missing document. Returned with `INVALID_INPUT` for missing or invalid parameters. These include `documentIds` without an `Idempotency-Key` header, `documentIds` sent to a destination that does not require documents, a document whose `documentType` fills no remaining requirement for the `purposeOfPayment`, and a `purposeOfPayment` that the destination's `paymentRequirements` does not list.
           content:
             application/json:
               schema:
@@ -16186,7 +16214,14 @@ components:
             - $ref: '#/components/schemas/PaymentRail'
     PurposeOfPayment:
       type: string
-      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India). Business payments to China must use one of the China-specific purposes rather than `GOODS_OR_SERVICES`, because each purpose requires its own supporting documents. Those purposes are `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `SERVICE_CHARGES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`. The six China-only values are rejected on other corridors.
+      description: |-
+        The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
+
+        Business payments to China must use one of the China-specific purposes rather than `GOODS_OR_SERVICES`, because each purpose requires its own supporting documents. Those purposes are `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `COMMISSION_ON_GOODS`, `COMMISSION_ON_SERVICES`, `ACCOUNTING_SERVICES`, `EXHIBITION_SERVICES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`.
+
+        A payment for services uses the purpose that names the service. The receiving bank needs that detail, so `SERVICE_CHARGES` is not accepted on these payouts.
+
+        Every China-specific purpose except `TRAVEL` is rejected on other corridors, and so is `SERVICE_CHARGES`.
       enum:
         - GIFT
         - SELF
@@ -16207,6 +16242,10 @@ components:
         - OFFICE_EXPENSES
         - DELIVERY_FEES
         - HOTEL_ACCOMMODATION
+        - COMMISSION_ON_GOODS
+        - COMMISSION_ON_SERVICES
+        - ACCOUNTING_SERVICES
+        - EXHIBITION_SERVICES
         - OTHER
     PlatformFeeOverride:
       type: object
@@ -25755,7 +25794,6 @@ components:
       required:
         - purposeOfPayment
         - requiredDocuments
-        - serviceCategoryRequired
       properties:
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
@@ -25766,10 +25804,6 @@ components:
           description: The documents this purpose requires. Upload exactly one file for each entry, then pass all of their IDs in `documentIds` on `POST /quotes`. There are never more entries than `maxDocuments`.
           items:
             $ref: '#/components/schemas/DocumentRequirement'
-        serviceCategoryRequired:
-          type: boolean
-          description: Whether a quote request with this purpose must also include `serviceCategory`.
-          example: true
     PaymentRequirements:
       type: object
       description: Supporting documents that payouts to this account require, by purpose of payment. Present only when payouts to the account need supporting documents, which applies to China B2B CNY payouts. Upload the documents for your `purposeOfPayment` with `POST /payment-documents`, then pass their IDs in `documentIds` on `POST /quotes`.
@@ -26186,15 +26220,6 @@ components:
         - SENDING
         - RECEIVING
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
-    ChinaB2BServiceCategory:
-      type: string
-      description: The kind of service a `SERVICE_CHARGES` payment pays for on a China B2B CNY payout. The receiving bank requires this breakdown, because `SERVICE_CHARGES` alone is not specific enough for the payment to clear.
-      enum:
-        - COMMISSION_ON_GOODS
-        - COMMISSION_ON_SERVICES
-        - ACCOUNTING_SERVICES
-        - EXHIBITION_SERVICES
-      example: COMMISSION_ON_SERVICES
     QuoteRequest:
       type: object
       required:
@@ -26241,9 +26266,6 @@ components:
           example: '12345'
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
-        serviceCategory:
-          $ref: '#/components/schemas/ChinaB2BServiceCategory'
-          description: 'The kind of service the payment pays for. Required when the lookup''s `paymentRequirements` entry for your `purposeOfPayment` has `serviceCategoryRequired: true`. That applies to `SERVICE_CHARGES` on a China B2B CNY payout, where the receiving bank needs the breakdown to clear the payment. Omitting it there returns `400 INVALID_INPUT`. Sending it on any other payout also returns `400 INVALID_INPUT`.'
         documentIds:
           type: array
           minItems: 1
