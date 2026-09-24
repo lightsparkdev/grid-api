@@ -130,8 +130,10 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 ```
 
   Grid attaches every document to the payment before it returns the quote. The quote lists
-  them in its `documents` field. With `immediatelyExecute: true`, Grid attaches the
-  documents before it executes the quote. Otherwise, execute the quote as described in
+  their IDs in its `documentIds` field. For a document's details, such as its type and its
+  `ATTACHED` status, call `GET /payment-documents/{paymentDocumentId}`. With
+  `immediatelyExecute: true`, Grid attaches the documents before it executes the quote.
+  Otherwise, execute the quote as described in
   [Sending Payments](/payouts-and-b2b/payment-flow/send-payment).
 </Step>
 </Steps>

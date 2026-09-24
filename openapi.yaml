@@ -25860,19 +25860,6 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressDestination'
-    QuoteDocument:
-      type: object
-      description: A supporting document attached to the payment behind a quote.
-      required:
-        - id
-        - documentType
-      properties:
-        id:
-          type: string
-          description: ID of the payment document, as returned by `POST /payment-documents`
-          example: PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
-        documentType:
-          $ref: '#/components/schemas/PaymentDocumentType'
     Quote:
       type: object
       required:
@@ -25984,11 +25971,15 @@ components:
         rateDetails:
           $ref: '#/components/schemas/OutgoingRateDetails'
           description: Details about the rate and fees for the transaction.
-        documents:
+        documentIds:
           type: array
-          description: Supporting documents attached to the payment behind this quote. Present only when the quote was created with `documentIds`. Grid returns such a quote only after it has attached every document.
+          description: IDs of the supporting documents attached to the payment behind this quote, as passed in `documentIds` on `POST /quotes`. Present only when the quote was created with `documentIds`. Grid returns such a quote only after it has attached every document. Call `GET /payment-documents/{paymentDocumentId}` for each document's details, such as its `documentType` and its `ATTACHED` status.
           items:
-            $ref: '#/components/schemas/QuoteDocument'
+            type: string
+          example:
+            - PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
+            - PaymentDocument:019542f5-b3e7-1d02-0000-000000000002
+            - PaymentDocument:019542f5-b3e7-1d02-0000-000000000003
         scaChallenge:
           $ref: '#/components/schemas/ScaChallenge'
           description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this quote can be executed (or, for realtime-funding sources, before `paymentInstructions` are issued). Omitted for customers outside SCA-regulated regions (non-EU).'

@@ -141,14 +141,21 @@ properties:
   rateDetails:
     $ref: ../transactions/OutgoingRateDetails.yaml
     description: Details about the rate and fees for the transaction.
-  documents:
+  documentIds:
     type: array
     description: >-
-      Supporting documents attached to the payment behind this quote. Present
-      only when the quote was created with `documentIds`. Grid returns such a
-      quote only after it has attached every document.
+      IDs of the supporting documents attached to the payment behind this
+      quote, as passed in `documentIds` on `POST /quotes`. Present only when
+      the quote was created with `documentIds`. Grid returns such a quote only
+      after it has attached every document. Call
+      `GET /payment-documents/{paymentDocumentId}` for each document's details,
+      such as its `documentType` and its `ATTACHED` status.
     items:
-      $ref: ./QuoteDocument.yaml
+      type: string
+    example:
+      - PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
+      - PaymentDocument:019542f5-b3e7-1d02-0000-000000000002
+      - PaymentDocument:019542f5-b3e7-1d02-0000-000000000003
   scaChallenge:
     $ref: ../sca/ScaChallenge.yaml
     description: >-
