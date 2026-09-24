@@ -156,6 +156,7 @@
               "payouts-and-b2b/payment-flow/send-payment",
               "payouts-and-b2b/payment-flow/assessing-fees",
               "payouts-and-b2b/payment-flow/list-transactions",
+              "payouts-and-b2b/payment-flow/statements",
               "payouts-and-b2b/payment-flow/receipts",
               "payouts-and-b2b/payment-flow/reconciliation",
               "payouts-and-b2b/payment-flow/error-handling"
@@ -326,6 +327,12 @@
             "group": "Transactions",
             "pages": [
               "cards/transactions/reconciliation"
+            ]
+          },
+          {
+            "group": "Statements",
+            "pages": [
+              "cards/statements"
             ]
           },
           {
