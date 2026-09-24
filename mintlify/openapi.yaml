@@ -13431,7 +13431,7 @@ components:
             | CERT_CHAIN_EXPIRED | Counterparty certificate chain has expired |
             | INVALID_PUBKEY_FORMAT | Counterparty Public key format is invalid |
             | MISSING_REQUIRED_UMA_PARAMETERS | Counterparty required UMA parameters are missing |
-            | SENDER_NOT_ACCEPTED | Sender is not accepted |
+            | SENDER_NOT_ACCEPTED | The receiving institution declined the sender or the payment details, for example a `purposeOfPayment` the destination does not allow |
             | AMOUNT_OUT_OF_RANGE | Amount is out of range |
             | INVALID_CURRENCY | Currency is invalid |
             | INVALID_TIMESTAMP | Timestamp is invalid |
@@ -15865,7 +15865,7 @@ components:
             - $ref: '#/components/schemas/PaymentRail'
     PurposeOfPayment:
       type: string
-      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India). Business payments to China must use one of the China-specific purposes rather than `GOODS_OR_SERVICES`, because each purpose requires its own supporting documents. Those purposes are `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `SERVICE_CHARGES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`. The six China-only values are rejected on other corridors.
+      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India). Business payments to China must use one of the China-specific purposes rather than `GOODS_OR_SERVICES`, because each purpose requires its own supporting documents. Those purposes are `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `SERVICE_CHARGES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`. The six China-only values are rejected on other corridors. Read `purposeOfPaymentRestrictions` on the recipient's currency in the receiver lookup response to learn which values that recipient accepts.
       enum:
         - GIFT
         - SELF
@@ -25299,6 +25299,31 @@ components:
           example: '12345'
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
+    BeneficiaryType:
+      type: string
+      enum:
+        - INDIVIDUAL
+        - BUSINESS
+      description: Whether the beneficiary is an individual or a business entity
+      example: INDIVIDUAL
+    PurposeOfPaymentRestriction:
+      type: object
+      description: The purposes a currency accepts for one type of recipient.
+      required:
+        - recipientType
+        - allowedPurposes
+      properties:
+        recipientType:
+          $ref: '#/components/schemas/BeneficiaryType'
+        allowedPurposes:
+          type: array
+          description: The `purposeOfPayment` values accepted for this recipient type.
+          items:
+            $ref: '#/components/schemas/PurposeOfPayment'
+          example:
+            - GIFT
+            - GOODS_OR_SERVICES
+            - FAMILY_SUPPORT
     CurrencyPreference:
       type: object
       required:
@@ -25326,6 +25351,11 @@ components:
           description: The maximum amount that can be received in this currency.
           exclusiveMinimum: 0
           example: 1000000
+        purposeOfPaymentRestrictions:
+          type: array
+          description: The `purposeOfPayment` values this currency accepts, listed for each recipient type. Find the entry matching your recipient, then send one of its `allowedPurposes` when you create a quote. A value outside that list is rejected with `SENDER_NOT_ACCEPTED`. When a recipient type has no entry, no restriction is known for it. A receiving institution can still decline a payment after the quote for a reason outside this list.
+          items:
+            $ref: '#/components/schemas/PurposeOfPaymentRestriction'
         minSendingAmount:
           type: integer
           format: int64

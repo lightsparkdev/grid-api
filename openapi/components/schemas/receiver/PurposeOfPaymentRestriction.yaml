@@ -1,0 +1,17 @@
+type: object
+description: The purposes a currency accepts for one type of recipient.
+required:
+  - recipientType
+  - allowedPurposes
+properties:
+  recipientType:
+    $ref: ../external_accounts/BeneficiaryType.yaml
+  allowedPurposes:
+    type: array
+    description: The `purposeOfPayment` values accepted for this recipient type.
+    items:
+      $ref: ../quotes/PurposeOfPayment.yaml
+    example:
+      - GIFT
+      - GOODS_OR_SERVICES
+      - FAMILY_SUPPORT

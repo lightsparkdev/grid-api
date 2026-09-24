@@ -27,6 +27,17 @@ properties:
     description: The maximum amount that can be received in this currency.
     exclusiveMinimum: 0
     example: 1000000
+  purposeOfPaymentRestrictions:
+    type: array
+    description: >-
+      The `purposeOfPayment` values this currency accepts, listed for each
+      recipient type. Find the entry matching your recipient, then send one of
+      its `allowedPurposes` when you create a quote. A value outside that list
+      is rejected with `SENDER_NOT_ACCEPTED`. When a recipient type has no
+      entry, no restriction is known for it. A receiving institution can still
+      decline a payment after the quote for a reason outside this list.
+    items:
+      $ref: ./PurposeOfPaymentRestriction.yaml
   minSendingAmount:
     type: integer
     format: int64
