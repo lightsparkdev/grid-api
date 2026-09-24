@@ -1,4 +1,4 @@
-export type FlowKey = 'payout' | 'usdc-payout' | 'exchange-rates' | 'embedded-wallet' | 'kyc-onboarding'
+export type FlowKey = 'payout' | 'usdc-payout' | 'exchange-rates' | 'embedded-wallet' | 'kyc-onboarding' | 'cards'
 
 interface FlowEntry {
   key: FlowKey
@@ -31,6 +31,11 @@ const FLOWS: FlowEntry[] = [
     key: 'embedded-wallet',
     label: 'Global Account',
     description: 'Issue a self-custody dollar account and withdraw on behalf of a user',
+  },
+  {
+    key: 'cards',
+    label: 'Card Issuing',
+    description: 'Issue a virtual card, simulate purchases, and freeze or close it',
   },
 ]
 

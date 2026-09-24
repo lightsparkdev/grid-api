@@ -40,6 +40,10 @@ object SessionRegistry {
         resources[resourceId] = Tag(sessionId, Instant.now())
     }
 
+    /** True when [resourceId] was tagged by [sessionId]. */
+    fun owns(sessionId: String?, resourceId: String?): Boolean =
+        !sessionId.isNullOrBlank() && !resourceId.isNullOrBlank() && resources[resourceId]?.sessionId == sessionId
+
     /** Walks the event tree looking for any tagged resource ID. First hit wins. */
     fun sessionFor(event: JsonNode): String? {
         val seen = mutableListOf<String>()

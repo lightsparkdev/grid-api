@@ -1,0 +1,94 @@
+/* Sample stylesheet for the card-reveal iframe (POST /cards/{id}/reveal, cssUrl).
+   It loads inside the card processor's page, so it can't see this app's CSS:
+   everything it needs is inlined here. Selectors target the embed's DOM:
+   #card wrapper, #pan / #expiry / #cvv values, .pan-separator, #alert. */
+
+html,
+body {
+  margin: 0;
+  background: transparent;
+}
+
+#card {
+  box-sizing: border-box;
+  width: 340px;
+  min-height: 200px;
+  padding: 22px 24px;
+  border-radius: 16px;
+  color: #fff;
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(99, 102, 241, 0.55) 0%, transparent 55%),
+    radial-gradient(90% 80% at 0% 100%, rgba(14, 165, 233, 0.45) 0%, transparent 60%),
+    linear-gradient(135deg, #0b1020 0%, #111827 55%, #0b1020 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+#card::before {
+  content: "Grid";
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+#card::after {
+  content: none;
+}
+
+#pan {
+  margin-top: 28px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 20px;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+}
+
+#pan::before {
+  content: none;
+}
+
+.pan-separator {
+  display: inline-block;
+  width: 10px;
+}
+
+#expiry,
+#cvv {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#expiry {
+  margin-right: 28px;
+}
+
+#expiry::before {
+  content: "EXPIRES";
+}
+
+#cvv::before {
+  content: "CVV";
+}
+
+#expiry::before,
+#cvv::before {
+  font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+#alert {
+  font-size: 11px;
+  color: #6ee7b7;
+  min-height: 14px;
+}

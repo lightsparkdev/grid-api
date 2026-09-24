@@ -6,6 +6,7 @@ import KycOnboardingFlow from './flows/KycOnboardingFlow'
 import UsdcPayoutFlow from './flows/UsdcPayoutFlow'
 import ExchangeRatesFlow from './flows/ExchangeRatesFlow'
 import EmbeddedWalletFlow from './flows/EmbeddedWalletFlow'
+import CardIssuanceFlow from './flows/CardIssuanceFlow'
 
 const FLOW_META: Record<FlowKey, { title: string; subtitle: string }> = {
   payout: {
@@ -28,6 +29,10 @@ const FLOW_META: Record<FlowKey, { title: string; subtitle: string }> = {
     title: 'Global Account',
     subtitle: 'Issue a self-custody dollar account and withdraw on behalf of a user',
   },
+  cards: {
+    title: 'Card Issuing',
+    subtitle: 'Issue a virtual debit card against an internal account and run it through its lifecycle',
+  },
 }
 
 export default function App() {
@@ -49,6 +54,7 @@ export default function App() {
           {activeFlow === 'usdc-payout' && <UsdcPayoutFlow key="usdc-payout" />}
           {activeFlow === 'exchange-rates' && <ExchangeRatesFlow key="exchange-rates" />}
           {activeFlow === 'embedded-wallet' && <EmbeddedWalletFlow key="embedded-wallet" />}
+          {activeFlow === 'cards' && <CardIssuanceFlow key="cards" />}
         </main>
       </div>
       <WebhookStream />
