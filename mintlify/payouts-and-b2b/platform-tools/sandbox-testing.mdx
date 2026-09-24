@@ -211,30 +211,32 @@ Here's a complete test workflow for a USD → EUR payout:
 
 Test each failure mode systematically:
 
+The suffix means different things depending on which side of the quote the
+account sits on, so each scenario below says which it is.
+
 ```bash
-# 1. Test insufficient funds
+# 1. Pull from the account: insufficient funds
 # Create external account ending in 002
 POST /customers/external-accounts { "accountNumber": "000000002" }
 
-# Attempt to pull from it - should fail immediately
+# Fund a quote from it - the transfer fails immediately
 POST /quotes
 
-# 2. Test account closed
-# Create external account ending in 003
-POST /customers/external-accounts { "accountNumber": "000000003" }
+# 2. Push to the account: counterparty delivery fails
+# Create external account ending in 004
+POST /customers/external-accounts { "accountNumber": "000000004" }
 
-# Attempt to push to it - should fail immediately
+# Pay out to it - the payout fails at the counterparty
 POST /quotes
 
-# 3. Test timeout scenario
+# 3. Push to the account: the receiving bank returns the payment
 # Create external account ending in 005
 POST /customers/external-accounts { "accountNumber": "000000005" }
 
-# Attempt transfer - should pend then fail after ~30s
+# Pay out to it - the transaction completes, then fails with
+# failureReason: PAYOUT_RETURNED
 POST /quotes
-# Check status immediately - will show PENDING
 GET /transactions/{transactionId}
-# Wait 30s, check again - will show FAILED
 ```
 
 ## Global Account magic values
