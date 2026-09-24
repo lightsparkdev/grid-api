@@ -15463,16 +15463,10 @@ components:
           example: app.example.com
     ScaLoginCompleteRequest:
       type: object
-      description: Completes an SCA login by submitting the proof for the started factor. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `factor` being completed, the `endUserIpAddress` the login is being performed from, and, for `SMS_OTP`, the `challengeId` returned by the login start.
+      description: Completes an SCA login by submitting the proof for the started factor. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `factor` being completed, the `endUserIpAddress` the login is being performed from, and, for `SMS_OTP`, the `challengeId` returned by the login start. Provide exactly one of `code` or `passkeyAssertion`, with `origin` alongside a `passkeyAssertion`.
       required:
         - factor
         - endUserIpAddress
-      anyOf:
-        - required:
-            - code
-        - required:
-            - passkeyAssertion
-            - origin
       properties:
         factor:
           $ref: '#/components/schemas/ScaFactor'
@@ -15803,13 +15797,7 @@ components:
           description: The SCA challenge to satisfy on the confirm call. Omitted when no challenge is issued.
     BeneficiaryTrustConfirmRequest:
       type: object
-      description: Confirms trusting or untrusting a beneficiary by submitting the SCA proof. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`) and, when the start issued one, the `challengeId`. The beneficiary is identified by the `externalAccountId` in the path — no separate handle is needed.
-      anyOf:
-        - required:
-            - code
-        - required:
-            - passkeyAssertion
-            - origin
+      description: Confirms trusting or untrusting a beneficiary by submitting the SCA proof. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`) and, when the start issued one, the `challengeId`. The beneficiary is identified by the `externalAccountId` in the path — no separate handle is needed. Provide exactly one of `code` or `passkeyAssertion`, with `origin` alongside a `passkeyAssertion`.
       properties:
         challengeId:
           type:
