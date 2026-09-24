@@ -16221,7 +16221,7 @@ components:
 
         A payment for services uses the purpose that names the service. The receiving bank needs that detail, so `SERVICE_CHARGES` is not accepted on these payouts.
 
-        Every China-specific purpose except `TRAVEL` is rejected on other corridors, and so is `SERVICE_CHARGES`.
+        The China-specific purposes also work on other corridors. There, Grid sends the closest purpose the payout partner accepts, or the partner's own "other" purpose when none fits.
       enum:
         - GIFT
         - SELF

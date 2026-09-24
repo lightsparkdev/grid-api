@@ -104,9 +104,9 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
   - `SALARY_PAYMENT` - Salary or wage payment
   - `OTHER` - Other purpose (may require additional documentation)
 
-  **China business payouts only:**
+  **For China business payouts:**
 
-  Business payments to China must use one of the purposes below instead of `GOODS_OR_SERVICES`. Each one requires its own supporting documents. These codes are rejected on other corridors.
+  Business payments to China must use one of the purposes below instead of `GOODS_OR_SERVICES`. Each one requires its own supporting documents. They also work on other corridors, where Grid sends the closest purpose the payout partner accepts.
 
   A payment for services uses the purpose that names the service. `SERVICE_CHARGES` is not accepted on these payouts.
 
