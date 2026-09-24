@@ -4,19 +4,8 @@ allOf:
 - $ref: ../common/UsdAccountInfoBase.yaml
 - type: object
   required:
-  - bankAccountType
   - beneficiary
   properties:
-    bankAccountType:
-      type: string
-      description: >-
-        Whether the account is a checking or a savings account. Grid uses this to
-        set the ACH transaction code, so a value that does not match the account
-        causes the receiving bank to return a notification of change.
-      enum:
-      - CHECKING
-      - SAVINGS
-      example: CHECKING
     beneficiary:
       oneOf:
       - title: Individual Beneficiary
