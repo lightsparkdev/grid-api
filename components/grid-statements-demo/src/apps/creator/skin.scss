@@ -1,0 +1,6 @@
+@mixin tokens {
+  &[data-app='creator'] {
+    --ios-font-family: var(--font-family-inter);
+    --app-tint: #9147ff;
+  }
+}
