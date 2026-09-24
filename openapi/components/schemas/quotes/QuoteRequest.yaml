@@ -81,7 +81,8 @@ properties:
       `requiredDocuments` under your `purposeOfPayment`. Grid matches each
       document to a requirement by its `documentType`, which must be one of
       that requirement's `acceptedDocumentTypes`. Each document must belong
-      to the customer sending the payment. Any other ID returns
+      to the customer sending the payment, or to the platform when the
+      platform itself is the sender. Any other ID returns
       `404 PAYMENT_DOCUMENT_NOT_FOUND`.
 
 

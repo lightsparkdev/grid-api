@@ -4,7 +4,6 @@ description: >-
   in `documentIds` on `POST /quotes`.
 required:
   - id
-  - customerId
   - documentType
   - fileName
   - sizeBytes
@@ -21,7 +20,8 @@ properties:
     type: string
     description: >-
       ID of the sending customer whose payment this document supports. The
-      document can only be used on this customer's quotes.
+      document can only be used on this customer's quotes. Absent when the
+      platform itself is the sender.
     example: Customer:019542f5-b3e7-1d02-0000-000000000001
   documentType:
     $ref: ./PaymentDocumentType.yaml

@@ -23,7 +23,8 @@ post:
 
     - can be used until its `expiresAt`, 24 hours after upload
     - can be used on one quote only, and only on a quote for the customer in
-      `customerId`
+      `customerId`, or on the platform's own quote when `customerId` is
+      omitted
     - has its file deleted by Grid once it is attached to the payment
 
     Grid does not check what a document says. The payout partner reviews each

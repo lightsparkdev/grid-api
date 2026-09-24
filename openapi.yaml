@@ -4379,7 +4379,8 @@ paths:
 
         - can be used until its `expiresAt`, 24 hours after upload
         - can be used on one quote only, and only on a quote for the customer in
-          `customerId`
+          `customerId`, or on the platform's own quote when `customerId` is
+          omitted
         - has its file deleted by Grid once it is attached to the payment
 
         Grid does not check what a document says. The payout partner reviews each
@@ -25858,7 +25859,6 @@ components:
       required:
         - file
         - documentType
-        - customerId
       properties:
         file:
           type: string
@@ -25873,7 +25873,7 @@ components:
           description: What the file is. To fill a requirement from the lookup's `paymentRequirements`, use one of that requirement's `acceptedDocumentTypes`.
         customerId:
           type: string
-          description: ID of the sending customer whose payment this document supports. The document can only be used on this customer's quotes.
+          description: ID of the sending customer whose payment this document supports. The document can only be used on this customer's quotes. Omit it when the platform itself is the sender, as on a quote with no `customerId`. The document can then only be used on the platform's own quotes.
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
     PaymentDocumentStatus:
       type: string
@@ -25895,7 +25895,6 @@ components:
       description: A supporting document uploaded for a payout that requires one. Pass its `id` in `documentIds` on `POST /quotes`.
       required:
         - id
-        - customerId
         - documentType
         - fileName
         - sizeBytes
@@ -25910,7 +25909,7 @@ components:
           example: PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
         customerId:
           type: string
-          description: ID of the sending customer whose payment this document supports. The document can only be used on this customer's quotes.
+          description: ID of the sending customer whose payment this document supports. The document can only be used on this customer's quotes. Absent when the platform itself is the sender.
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         documentType:
           $ref: '#/components/schemas/PaymentDocumentType'
@@ -26272,7 +26271,7 @@ components:
           maxItems: 3
           uniqueItems: true
           description: |-
-            IDs of payment documents from `POST /payment-documents` that support this payment. Required when the lookup for the destination (`GET /receiver/external-account/{accountId}`) returns `paymentRequirements`. Supply one document for each entry in `requiredDocuments` under your `purposeOfPayment`. Grid matches each document to a requirement by its `documentType`, which must be one of that requirement's `acceptedDocumentTypes`. Each document must belong to the customer sending the payment. Any other ID returns `404 PAYMENT_DOCUMENT_NOT_FOUND`.
+            IDs of payment documents from `POST /payment-documents` that support this payment. Required when the lookup for the destination (`GET /receiver/external-account/{accountId}`) returns `paymentRequirements`. Supply one document for each entry in `requiredDocuments` under your `purposeOfPayment`. Grid matches each document to a requirement by its `documentType`, which must be one of that requirement's `acceptedDocumentTypes`. Each document must belong to the customer sending the payment, or to the platform when the platform itself is the sender. Any other ID returns `404 PAYMENT_DOCUMENT_NOT_FOUND`.
 
             Grid attaches every document to the payment before it returns the quote. With `immediatelyExecute: true`, Grid attaches the documents before it executes the quote. If an attachment fails, Grid creates no quote and returns `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED`. Retry the same request with the same `Idempotency-Key`.
 
