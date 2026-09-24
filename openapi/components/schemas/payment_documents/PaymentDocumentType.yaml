@@ -4,8 +4,9 @@ description: >-
   formats: `INVOICE` means the file is an invoice.
 
 
-  Each entry in a lookup's `paymentRequirements` lists the types it accepts in
-  `acceptedDocumentTypes`. When you upload a file with
+  [Supporting Documents for China Business
+  Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+  lists the types each requirement accepts. When you upload a file with
   `POST /payment-documents`, `documentType` declares which type the file is.
 enum:
   - PURCHASE_ORDER

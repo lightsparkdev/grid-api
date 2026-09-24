@@ -68,7 +68,7 @@ properties:
       | STABLECOIN_PROVIDER_ERROR | The stablecoin provider rejected the operation |
       | STABLECOIN_PROVIDER_SOURCE_NOT_LINKED | The provider source account is not linked |
       | STABLECOIN_VERIFICATION_FAILED | The stablecoin could not be verified with the provider |
-      | DOCUMENTS_REQUIRED | The destination requires supporting documents for the quote's `purposeOfPayment` that the request did not supply. `details.missingRequirements` lists the `requirementId` of each one |
+      | DOCUMENTS_REQUIRED | The destination requires supporting documents for the quote's `purposeOfPayment` that the request did not supply. `details.missingRequirements` lists the requirement ID of each one |
     enum:
       - INVALID_INPUT
       - END_USER_TERMS_VERSION_NOT_FOUND
@@ -152,7 +152,7 @@ properties:
       missingRequirements:
         type: array
         description: >-
-          The `requirementId` of each required document that the quote request
+          The requirement ID of each required document that the quote request
           did not supply. Present on `DOCUMENTS_REQUIRED`.
         items:
           $ref: ../payment_documents/PaymentDocumentRequirementId.yaml

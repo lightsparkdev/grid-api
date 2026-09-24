@@ -1,13 +1,13 @@
 post:
   summary: Upload a payment document
   description: |
-    Upload a supporting document for a payout that requires one. For corridors
-    that require supporting documents, which today means China B2B CNY
-    payouts, `GET /receiver/external-account/{accountId}` returns
-    `paymentRequirements`. That field lists the documents each
-    `purposeOfPayment` needs. Upload each file here, then pass the returned
-    `id` values in `documentIds` on `POST /quotes`. Grid attaches the files to
-    the payment before it returns the quote.
+    Upload a supporting document for a payout that requires one. Today that
+    means China B2B CNY payouts, which are CNY bank transfers to a business
+    beneficiary. [Supporting Documents for China Business
+    Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+    lists the documents each `purposeOfPayment` needs. Upload each file here,
+    then pass the returned `id` values in `documentIds` on `POST /quotes`.
+    Grid attaches the files to the payment before it returns the quote.
 
     The request must use multipart/form-data with the file in the `file`
     field and metadata in the remaining fields. Each request uploads one file.

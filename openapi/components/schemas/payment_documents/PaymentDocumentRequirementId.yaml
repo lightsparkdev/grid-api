@@ -13,6 +13,9 @@ description: >-
   `CUSTOMS_DECLARATION`, `COMMERCIAL_AGREEMENT`, `CONTRACT`, `INVOICE`,
   `SUPPORTING_PROOF`, `BILL_OF_LADING`, `CONTRACT_OR_INVOICE`,
   `FLIGHT_TICKET`, `TRAVEL_DOCUMENT`, and `HOTEL_BOOKING_CONFIRMATION`.
+  [Supporting Documents for China Business
+  Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+  lists the IDs each purpose requires.
 
 
   Treat the ID as an opaque value, not a member of a fixed list. Grid may add

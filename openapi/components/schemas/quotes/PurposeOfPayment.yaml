@@ -10,6 +10,9 @@ description: >-
   `EXPORTED_GOODS_POSTPAYMENT`, `COMMISSION_ON_GOODS`,
   `COMMISSION_ON_SERVICES`, `ACCOUNTING_SERVICES`, `EXHIBITION_SERVICES`,
   `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`.
+  [Supporting Documents for China Business
+  Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+  lists the documents each one requires.
 
 
   A payment for services uses the purpose that names the service. The

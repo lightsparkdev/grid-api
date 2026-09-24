@@ -318,7 +318,6 @@ resources:
       # Concrete responses returned by the two lookup endpoints
       uma_lookup_response: '#/components/schemas/ReceiverUmaLookupResponse'
       external_account_lookup_response: '#/components/schemas/ReceiverExternalAccountLookupResponse'
-      payment_requirements: '#/components/schemas/PaymentRequirements'
     methods:
       lookup_uma: get /receiver/uma/{receiverUmaAddress}
       lookup_external_account: get /receiver/external-account/{accountId}

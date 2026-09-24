@@ -4129,7 +4129,6 @@ paths:
       description: |
         Lookup an external account by ID to determine supported currencies and exchange rates.
         This endpoint helps platforms determine what currencies they can send to a given external account, along with the current estimated exchange rates and minimum and maximum amounts that can be sent.
-        When payouts to the account need supporting documents, which today means China B2B CNY payouts, the response also includes `paymentRequirements`. It lists the documents each purpose of payment requires. Upload them with `POST /payment-documents` before you create the quote.
       operationId: lookupExternalAccount
       tags:
         - Cross-Currency Transfers
@@ -4169,154 +4168,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReceiverExternalAccountLookupResponse'
-              examples:
-                standard:
-                  summary: Account with no supporting-document requirements
-                  value:
-                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                    lookupId: Lookup:019542f5-b3e7-1d02-0000-000000000009
-                    sendingCurrency:
-                      code: USD
-                      name: United States Dollar
-                      symbol: $
-                      decimals: 2
-                    supportedCurrencies:
-                      - currency:
-                          code: MXN
-                          name: Mexican Peso
-                          symbol: $
-                          decimals: 2
-                        estimatedExchangeRate: 18.5
-                        min: 2000
-                        max: 185000000
-                        minSendingAmount: 109
-                        maxSendingAmount: 10000000
-                chinaB2BCny:
-                  summary: China B2B CNY account that requires supporting documents
-                  value:
-                    accountId: ExternalAccount:c34dcbd6-dced-4ec4-b756-3c3a9ea3d789
-                    lookupId: Lookup:019542f5-b3e7-1d02-0000-000000000009
-                    sendingCurrency:
-                      code: USD
-                      name: United States Dollar
-                      symbol: $
-                      decimals: 2
-                    supportedCurrencies:
-                      - currency:
-                          code: CNY
-                          name: Chinese Yuan
-                          symbol: ¥
-                          decimals: 2
-                        estimatedExchangeRate: 7.1
-                        min: 100
-                        max: 50000000
-                    paymentRequirements:
-                      maxDocuments: 3
-                      maxDocumentSizeBytes: 8000000
-                      acceptedContentTypes:
-                        - application/pdf
-                        - image/jpeg
-                        - image/png
-                      purposes:
-                        - purposeOfPayment: EXPORTED_GOODS_PREPAYMENT
-                          requiredDocuments:
-                            - requirementId: PURCHASE_ORDER
-                              acceptedDocumentTypes:
-                                - PURCHASE_ORDER
-                        - purposeOfPayment: EXPORTED_GOODS_POSTPAYMENT
-                          requiredDocuments:
-                            - requirementId: LOGISTICS_BILL
-                              acceptedDocumentTypes:
-                                - LOGISTICS_BILL
-                            - requirementId: CUSTOMS_DECLARATION
-                              acceptedDocumentTypes:
-                                - CUSTOMS_DECLARATION
-                            - requirementId: COMMERCIAL_AGREEMENT
-                              acceptedDocumentTypes:
-                                - PURCHASE_ORDER
-                                - INVOICE
-                                - CONTRACT
-                        - purposeOfPayment: COMMISSION_ON_GOODS
-                          requiredDocuments:
-                            - requirementId: CONTRACT
-                              acceptedDocumentTypes:
-                                - CONTRACT
-                            - requirementId: INVOICE
-                              acceptedDocumentTypes:
-                                - INVOICE
-                            - requirementId: SUPPORTING_PROOF
-                              acceptedDocumentTypes:
-                                - PURCHASE_ORDER
-                                - DELIVERY_SLIP
-                        - purposeOfPayment: COMMISSION_ON_SERVICES
-                          requiredDocuments:
-                            - requirementId: CONTRACT
-                              acceptedDocumentTypes:
-                                - CONTRACT
-                            - requirementId: INVOICE
-                              acceptedDocumentTypes:
-                                - INVOICE
-                            - requirementId: SUPPORTING_PROOF
-                              acceptedDocumentTypes:
-                                - PURCHASE_ORDER
-                                - DELIVERY_SLIP
-                        - purposeOfPayment: ACCOUNTING_SERVICES
-                          requiredDocuments:
-                            - requirementId: CONTRACT
-                              acceptedDocumentTypes:
-                                - CONTRACT
-                            - requirementId: INVOICE
-                              acceptedDocumentTypes:
-                                - INVOICE
-                            - requirementId: SUPPORTING_PROOF
-                              acceptedDocumentTypes:
-                                - PURCHASE_ORDER
-                                - DELIVERY_SLIP
-                        - purposeOfPayment: EXHIBITION_SERVICES
-                          requiredDocuments:
-                            - requirementId: CONTRACT
-                              acceptedDocumentTypes:
-                                - CONTRACT
-                            - requirementId: INVOICE
-                              acceptedDocumentTypes:
-                                - INVOICE
-                            - requirementId: SUPPORTING_PROOF
-                              acceptedDocumentTypes:
-                                - PURCHASE_ORDER
-                                - DELIVERY_SLIP
-                        - purposeOfPayment: OFFICE_EXPENSES
-                          requiredDocuments:
-                            - requirementId: CONTRACT
-                              acceptedDocumentTypes:
-                                - CONTRACT
-                            - requirementId: INVOICE
-                              acceptedDocumentTypes:
-                                - INVOICE
-                        - purposeOfPayment: DELIVERY_FEES
-                          requiredDocuments:
-                            - requirementId: BILL_OF_LADING
-                              acceptedDocumentTypes:
-                                - BILL_OF_LADING
-                            - requirementId: CONTRACT_OR_INVOICE
-                              acceptedDocumentTypes:
-                                - CONTRACT
-                                - INVOICE
-                        - purposeOfPayment: TRAVEL
-                          requiredDocuments:
-                            - requirementId: FLIGHT_TICKET
-                              acceptedDocumentTypes:
-                                - FLIGHT_TICKET
-                            - requirementId: TRAVEL_DOCUMENT
-                              acceptedDocumentTypes:
-                                - TRAVEL_DOCUMENT
-                            - requirementId: HOTEL_BOOKING_CONFIRMATION
-                              acceptedDocumentTypes:
-                                - HOTEL_BOOKING_CONFIRMATION
-                        - purposeOfPayment: HOTEL_ACCOMMODATION
-                          requiredDocuments:
-                            - requirementId: HOTEL_BOOKING_CONFIRMATION
-                              acceptedDocumentTypes:
-                                - HOTEL_BOOKING_CONFIRMATION
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -4357,13 +4208,13 @@ paths:
     post:
       summary: Upload a payment document
       description: |
-        Upload a supporting document for a payout that requires one. For corridors
-        that require supporting documents, which today means China B2B CNY
-        payouts, `GET /receiver/external-account/{accountId}` returns
-        `paymentRequirements`. That field lists the documents each
-        `purposeOfPayment` needs. Upload each file here, then pass the returned
-        `id` values in `documentIds` on `POST /quotes`. Grid attaches the files to
-        the payment before it returns the quote.
+        Upload a supporting document for a payout that requires one. Today that
+        means China B2B CNY payouts, which are CNY bank transfers to a business
+        beneficiary. [Supporting Documents for China Business
+        Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+        lists the documents each `purposeOfPayment` needs. Upload each file here,
+        then pass the returned `id` values in `documentIds` on `POST /quotes`.
+        Grid attaches the files to the payment before it returns the quote.
 
         The request must use multipart/form-data with the file in the `file`
         field and metadata in the remaining fields. Each request uploads one file.
@@ -4696,7 +4547,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Quote'
         '400':
-          description: Bad request. Returned with `DOCUMENTS_REQUIRED` when the destination requires supporting documents for the `purposeOfPayment` and `documentIds` does not supply all of them. `details.missingRequirements` lists the `requirementId` of each missing document. Returned with `INVALID_INPUT` for missing or invalid parameters. These include `documentIds` without an `Idempotency-Key` header, `documentIds` sent to a destination that does not require documents, a document whose `documentType` fills no remaining requirement for the `purposeOfPayment`, and a `purposeOfPayment` that the destination's `paymentRequirements` does not list.
+          description: Bad request. Returned with `DOCUMENTS_REQUIRED` when the destination requires supporting documents for the `purposeOfPayment` and `documentIds` does not supply all of them. `details.missingRequirements` lists the requirement ID of each missing document. Returned with `INVALID_INPUT` for missing or invalid parameters. These include `documentIds` without an `Idempotency-Key` header, `documentIds` sent to a destination that does not require documents, a document whose `documentType` fills no remaining requirement for the `purposeOfPayment`, and a China B2B CNY payout whose `purposeOfPayment` is not one of the China business purposes listed in [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents).
           content:
             application/json:
               schema:
@@ -13724,7 +13575,7 @@ components:
       description: |-
         A stable identifier for one required document within a purpose's requirements. The same ID means the same requirement across quotes. It is separate from `PaymentDocumentType`. The requirement ID names the document to supply, and the document type names what a file is. The two differ where a requirement accepts alternatives. For example, a file declared as either `PURCHASE_ORDER` or `DELIVERY_SLIP` fills the `SUPPORTING_PROOF` requirement.
 
-        China B2B CNY payouts use these IDs: `PURCHASE_ORDER`, `LOGISTICS_BILL`, `CUSTOMS_DECLARATION`, `COMMERCIAL_AGREEMENT`, `CONTRACT`, `INVOICE`, `SUPPORTING_PROOF`, `BILL_OF_LADING`, `CONTRACT_OR_INVOICE`, `FLIGHT_TICKET`, `TRAVEL_DOCUMENT`, and `HOTEL_BOOKING_CONFIRMATION`.
+        China B2B CNY payouts use these IDs: `PURCHASE_ORDER`, `LOGISTICS_BILL`, `CUSTOMS_DECLARATION`, `COMMERCIAL_AGREEMENT`, `CONTRACT`, `INVOICE`, `SUPPORTING_PROOF`, `BILL_OF_LADING`, `CONTRACT_OR_INVOICE`, `FLIGHT_TICKET`, `TRAVEL_DOCUMENT`, and `HOTEL_BOOKING_CONFIRMATION`. [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the IDs each purpose requires.
 
         Treat the ID as an opaque value, not a member of a fixed list. Grid may add new IDs as requirements change.
       example: SUPPORTING_PROOF
@@ -13799,7 +13650,7 @@ components:
             | STABLECOIN_PROVIDER_ERROR | The stablecoin provider rejected the operation |
             | STABLECOIN_PROVIDER_SOURCE_NOT_LINKED | The provider source account is not linked |
             | STABLECOIN_VERIFICATION_FAILED | The stablecoin could not be verified with the provider |
-            | DOCUMENTS_REQUIRED | The destination requires supporting documents for the quote's `purposeOfPayment` that the request did not supply. `details.missingRequirements` lists the `requirementId` of each one |
+            | DOCUMENTS_REQUIRED | The destination requires supporting documents for the quote's `purposeOfPayment` that the request did not supply. `details.missingRequirements` lists the requirement ID of each one |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -13876,7 +13727,7 @@ components:
                 $ref: '#/components/schemas/FieldError'
             missingRequirements:
               type: array
-              description: The `requirementId` of each required document that the quote request did not supply. Present on `DOCUMENTS_REQUIRED`.
+              description: The requirement ID of each required document that the quote request did not supply. Present on `DOCUMENTS_REQUIRED`.
               items:
                 $ref: '#/components/schemas/PaymentDocumentRequirementId'
           additionalProperties: true
@@ -16218,7 +16069,7 @@ components:
       description: |-
         The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
 
-        Business payments to China must use one of the China-specific purposes rather than `GOODS_OR_SERVICES`, because each purpose requires its own supporting documents. Those purposes are `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `COMMISSION_ON_GOODS`, `COMMISSION_ON_SERVICES`, `ACCOUNTING_SERVICES`, `EXHIBITION_SERVICES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`.
+        Business payments to China must use one of the China-specific purposes rather than `GOODS_OR_SERVICES`, because each purpose requires its own supporting documents. Those purposes are `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `COMMISSION_ON_GOODS`, `COMMISSION_ON_SERVICES`, `ACCOUNTING_SERVICES`, `EXHIBITION_SERVICES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`. [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the documents each one requires.
 
         A payment for services uses the purpose that names the service. The receiving bank needs that detail, so `SERVICE_CHARGES` is not accepted on these payouts.
 
@@ -25752,12 +25603,23 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    ReceiverExternalAccountLookupResponse:
+      allOf:
+        - $ref: '#/components/schemas/ReceiverLookupResponse'
+        - type: object
+          required:
+            - accountId
+          properties:
+            accountId:
+              type: string
+              description: The external account ID that was looked up
+              example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
     PaymentDocumentType:
       type: string
       description: |-
         What a supporting document is. These are kinds of evidence, not file formats: `INVOICE` means the file is an invoice.
 
-        Each entry in a lookup's `paymentRequirements` lists the types it accepts in `acceptedDocumentTypes`. When you upload a file with `POST /payment-documents`, `documentType` declares which type the file is.
+        [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the types each requirement accepts. When you upload a file with `POST /payment-documents`, `documentType` declares which type the file is.
       enum:
         - PURCHASE_ORDER
         - LOGISTICS_BILL
@@ -25770,89 +25632,6 @@ components:
         - TRAVEL_DOCUMENT
         - HOTEL_BOOKING_CONFIRMATION
       example: INVOICE
-    DocumentRequirement:
-      type: object
-      description: One document to supply. A single file fills it. The values in `acceptedDocumentTypes` are alternatives for that one file, not a list of files.
-      required:
-        - requirementId
-        - acceptedDocumentTypes
-      properties:
-        requirementId:
-          $ref: '#/components/schemas/PaymentDocumentRequirementId'
-          description: Identifies this requirement. When a quote request supplies no document for it, `400 DOCUMENTS_REQUIRED` lists this value in `details.missingRequirements`.
-        acceptedDocumentTypes:
-          type: array
-          minItems: 1
-          description: The document types that fill this requirement. Upload one file and declare any one of these types as its `documentType`.
-          items:
-            $ref: '#/components/schemas/PaymentDocumentType'
-          example:
-            - PURCHASE_ORDER
-            - DELIVERY_SLIP
-    PurposeDocumentRequirements:
-      type: object
-      description: The supporting documents that one purpose of payment requires.
-      required:
-        - purposeOfPayment
-        - requiredDocuments
-      properties:
-        purposeOfPayment:
-          $ref: '#/components/schemas/PurposeOfPayment'
-          description: The purpose of payment these requirements apply to, as sent in `purposeOfPayment` on `POST /quotes`.
-        requiredDocuments:
-          type: array
-          minItems: 1
-          description: The documents this purpose requires. Upload exactly one file for each entry, then pass all of their IDs in `documentIds` on `POST /quotes`. There are never more entries than `maxDocuments`.
-          items:
-            $ref: '#/components/schemas/DocumentRequirement'
-    PaymentRequirements:
-      type: object
-      description: Supporting documents that payouts to this account require, by purpose of payment. Present only when payouts to the account need supporting documents, which applies to China B2B CNY payouts. Upload the documents for your `purposeOfPayment` with `POST /payment-documents`, then pass their IDs in `documentIds` on `POST /quotes`.
-      required:
-        - maxDocuments
-        - maxDocumentSizeBytes
-        - acceptedContentTypes
-        - purposes
-      properties:
-        maxDocuments:
-          type: integer
-          description: The most documents a single quote accepts. It never exceeds the number of `documentIds` that `POST /quotes` accepts, which is 3 today.
-          minimum: 1
-          example: 3
-        maxDocumentSizeBytes:
-          type: integer
-          description: The largest file `POST /payment-documents` accepts, in bytes
-          minimum: 1
-          example: 8000000
-        acceptedContentTypes:
-          type: array
-          minItems: 1
-          description: The file formats `POST /payment-documents` accepts, as MIME types. Grid detects the format from the file contents. Today these are `application/pdf`, `image/jpeg`, and `image/png`. Grid may add formats later, so read the list rather than hard-coding it.
-          items:
-            type: string
-          example:
-            - application/pdf
-            - image/jpeg
-            - image/png
-        purposes:
-          type: array
-          minItems: 1
-          description: One entry for each purpose of payment that requires supporting documents on payouts to this account.
-          items:
-            $ref: '#/components/schemas/PurposeDocumentRequirements'
-    ReceiverExternalAccountLookupResponse:
-      allOf:
-        - $ref: '#/components/schemas/ReceiverLookupResponse'
-        - type: object
-          required:
-            - accountId
-          properties:
-            accountId:
-              type: string
-              description: The external account ID that was looked up
-              example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-            paymentRequirements:
-              $ref: '#/components/schemas/PaymentRequirements'
     PaymentDocumentUploadRequest:
       title: Payment Document Upload Request
       type: object
@@ -25870,7 +25649,7 @@ components:
             `400 INVALID_INPUT`.
         documentType:
           $ref: '#/components/schemas/PaymentDocumentType'
-          description: What the file is. To fill a requirement from the lookup's `paymentRequirements`, use one of that requirement's `acceptedDocumentTypes`.
+          description: What the file is. To fill a requirement, use one of the types it accepts, as listed in [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents).
         customerId:
           type: string
           description: ID of the sending customer whose payment this document supports. The document can only be used on this customer's quotes. Omit it when the platform itself is the sender, as on a quote with no `customerId`. The document can then only be used on the platform's own quotes.
@@ -25919,7 +25698,7 @@ components:
           example: invoice-2025-0142.pdf
         sizeBytes:
           type: integer
-          description: Size of the uploaded file in bytes. It never exceeds the lookup's `maxDocumentSizeBytes`.
+          description: Size of the uploaded file in bytes. It never exceeds the largest file `POST /payment-documents` accepts, which is 8,000,000 bytes today.
           minimum: 1
           example: 482133
         contentType:
@@ -26271,7 +26050,7 @@ components:
           maxItems: 3
           uniqueItems: true
           description: |-
-            IDs of payment documents from `POST /payment-documents` that support this payment. Required when the lookup for the destination (`GET /receiver/external-account/{accountId}`) returns `paymentRequirements`. Supply one document for each entry in `requiredDocuments` under your `purposeOfPayment`. Grid matches each document to a requirement by its `documentType`, which must be one of that requirement's `acceptedDocumentTypes`. Each document must belong to the customer sending the payment, or to the platform when the platform itself is the sender. Any other ID returns `404 PAYMENT_DOCUMENT_NOT_FOUND`.
+            IDs of payment documents from `POST /payment-documents` that support this payment. Required when the destination requires supporting documents. Today that means China B2B CNY payouts, which are CNY bank transfers to a business beneficiary. Supply one document for each requirement of your `purposeOfPayment`. [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the requirements for each purpose and the document types each requirement accepts. Grid matches each document to a requirement by its `documentType`, which must be one of the types that requirement accepts. A request that leaves a requirement unfilled returns `400 DOCUMENTS_REQUIRED`. Each document must belong to the customer sending the payment, or to the platform when the platform itself is the sender. Any other ID returns `404 PAYMENT_DOCUMENT_NOT_FOUND`.
 
             Grid attaches every document to the payment before it returns the quote. With `immediatelyExecute: true`, Grid attaches the documents before it executes the quote. If an attachment fails, Grid creates no quote and returns `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED`. Retry the same request with the same `Idempotency-Key`.
 

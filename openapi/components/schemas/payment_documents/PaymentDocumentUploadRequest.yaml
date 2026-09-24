@@ -15,9 +15,9 @@ properties:
   documentType:
     $ref: ./PaymentDocumentType.yaml
     description: >-
-      What the file is. To fill a requirement from the lookup's
-      `paymentRequirements`, use one of that requirement's
-      `acceptedDocumentTypes`.
+      What the file is. To fill a requirement, use one of the types it
+      accepts, as listed in [Supporting Documents for China Business
+      Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents).
   customerId:
     type: string
     description: >-

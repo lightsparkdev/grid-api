@@ -32,8 +32,8 @@ properties:
   sizeBytes:
     type: integer
     description: >-
-      Size of the uploaded file in bytes. It never exceeds the lookup's
-      `maxDocumentSizeBytes`.
+      Size of the uploaded file in bytes. It never exceeds the largest file
+      `POST /payment-documents` accepts, which is 8,000,000 bytes today.
     minimum: 1
     example: 482133
   contentType:

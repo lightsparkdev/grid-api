@@ -177,13 +177,15 @@ post:
         Bad request. Returned with `DOCUMENTS_REQUIRED` when the destination
         requires supporting documents for the `purposeOfPayment` and
         `documentIds` does not supply all of them.
-        `details.missingRequirements` lists the `requirementId` of each missing
+        `details.missingRequirements` lists the requirement ID of each missing
         document. Returned with `INVALID_INPUT` for missing or invalid
         parameters. These include `documentIds` without an `Idempotency-Key`
         header, `documentIds` sent to a destination that does not require
         documents, a document whose `documentType` fills no remaining
-        requirement for the `purposeOfPayment`, and a `purposeOfPayment` that
-        the destination's `paymentRequirements` does not list.
+        requirement for the `purposeOfPayment`, and a China B2B CNY payout
+        whose `purposeOfPayment` is not one of the China business purposes
+        listed in [Supporting Documents for China Business
+        Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents).
       content:
         application/json:
           schema:

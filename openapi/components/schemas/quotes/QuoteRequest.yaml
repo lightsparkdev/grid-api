@@ -75,15 +75,18 @@ properties:
     uniqueItems: true
     description: >-
       IDs of payment documents from `POST /payment-documents` that support
-      this payment. Required when the lookup for the destination
-      (`GET /receiver/external-account/{accountId}`) returns
-      `paymentRequirements`. Supply one document for each entry in
-      `requiredDocuments` under your `purposeOfPayment`. Grid matches each
-      document to a requirement by its `documentType`, which must be one of
-      that requirement's `acceptedDocumentTypes`. Each document must belong
-      to the customer sending the payment, or to the platform when the
-      platform itself is the sender. Any other ID returns
-      `404 PAYMENT_DOCUMENT_NOT_FOUND`.
+      this payment. Required when the destination requires supporting
+      documents. Today that means China B2B CNY payouts, which are CNY bank
+      transfers to a business beneficiary. Supply one document for each
+      requirement of your `purposeOfPayment`. [Supporting Documents for China
+      Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+      lists the requirements for each purpose and the document types each
+      requirement accepts. Grid matches each document to a requirement by its
+      `documentType`, which must be one of the types that requirement accepts.
+      A request that leaves a requirement unfilled returns
+      `400 DOCUMENTS_REQUIRED`. Each document must belong to the customer
+      sending the payment, or to the platform when the platform itself is the
+      sender. Any other ID returns `404 PAYMENT_DOCUMENT_NOT_FOUND`.
 
 
       Grid attaches every document to the payment before it returns the
