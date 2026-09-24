@@ -196,6 +196,7 @@ async function buildStatement(customerId, accountId, startDate, endDate) {
     errorResolutionNotice: ERROR_RESOLUTION_NOTICE,
     // Account fields
     accountHolder: customer.fullName,
+    accountType: account.type, // render as a label, for example "Consumer prepaid account"
     accountNumber: maskAccountNumber(account.fundingPaymentInstructions),
     period: { startDate, endDate },
     issueDate: new Date().toISOString(),
