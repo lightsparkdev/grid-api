@@ -137,7 +137,7 @@ async function buildStatement(customerId, accountId, startDate, endDate) {
         direction: tx.direction,
         payee: tx.merchant.descriptor,
         terminalLocation:
-          tx.merchant.city && tx.merchant.state
+          !commercial && tx.merchant.city && tx.merchant.state
             ? `${tx.merchant.city}, ${tx.merchant.state}`
             : undefined,
         amount: sign * tx.settledAmount.amount,
