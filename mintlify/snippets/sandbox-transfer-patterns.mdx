@@ -12,6 +12,9 @@ suffixes mean different things there.
 | **006** | Return after settlement — the deposit settles and completes, then ~30s later the originating bank returns it. The transaction moves to `REFUNDED` and the credited balance is reversed |
 | **Any other** | Success — transfer completes normally |
 
+Quote suffix `005` looks similar but is not the same test: that one returns a
+**payout** you sent, while transfer `006` claws back a **deposit** you received.
+
 Use **006** to test how your integration handles money arriving and then being
 taken back. The deposit completes first, so any logic that treats a completed
 incoming payment as final will be exercised before the return arrives. You
