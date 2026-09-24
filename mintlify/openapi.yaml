@@ -16082,6 +16082,13 @@ components:
           minLength: 1
           maxLength: 140
           example: Chase Bank
+        bankAccountType:
+          type: string
+          description: Whether the account is a checking or a savings account. Grid uses this to set the ACH transaction code, so a value that does not match the account causes the receiving bank to return a notification of change.
+          enum:
+            - CHECKING
+            - SAVINGS
+          example: CHECKING
         intermediaryBankName:
           type: string
           description: The name of the intermediary financial institution, for accounts reachable only through a correspondent bank. Used on the WIRE rail; ignored on ACH, RTP and FEDNOW.
@@ -16105,6 +16112,7 @@ components:
         accountNumber: '1234567890'
         routingNumber: '021000021'
         bankName: Chase Bank
+        bankAccountType: CHECKING
         intermediaryBankName: JPMorgan Chase Bank
         intermediaryRoutingNumber: '021000021'
         fiToFiInformation: /BNF/Invoice 4471
@@ -16121,17 +16129,9 @@ components:
                 type: string
                 enum:
                   - ACH
-                  - ACH_SAME_DAY
                   - WIRE
                   - RTP
                   - FEDNOW
-            bankAccountType:
-              type: string
-              description: Whether the account is a checking or a savings account. Grid uses this to set the ACH transaction code, so a value that does not match the account causes the receiving bank to return a notification of change. Omitted on accounts created before the field was required.
-              enum:
-                - CHECKING
-                - SAVINGS
-              example: CHECKING
     PaymentUsdAccountInfo:
       title: USD Bank Account
       allOf:
@@ -23510,16 +23510,8 @@ components:
         - $ref: '#/components/schemas/UsdAccountInfoBase'
         - type: object
           required:
-            - bankAccountType
             - beneficiary
           properties:
-            bankAccountType:
-              type: string
-              description: Whether the account is a checking or a savings account. Grid uses this to set the ACH transaction code, so a value that does not match the account causes the receiving bank to return a notification of change.
-              enum:
-                - CHECKING
-                - SAVINGS
-              example: CHECKING
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary
