@@ -9,7 +9,7 @@ suffixes mean different things there.
 | **003** | Account closed/invalid — transfer fails immediately |
 | **004** | Transfer rejected — bank rejects the transfer |
 | **005** | Timeout/delayed failure — stays pending ~30s, then fails |
-| **006** | Late return — the deposit settles and completes, then ~30s later the originating bank returns it. The transaction moves to `REFUNDED` and the credited balance is reversed |
+| **006** | Return after settlement — the deposit settles and completes, then ~30s later the originating bank returns it. The transaction moves to `REFUNDED` and the credited balance is reversed |
 | **Any other** | Success — transfer completes normally |
 
 Use **006** to test how your integration handles money arriving and then being
