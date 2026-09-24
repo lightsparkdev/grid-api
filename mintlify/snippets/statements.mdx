@@ -1,0 +1,221 @@
+import { StatementExample } from '/snippets/cards/statement-example.mdx';
+
+If you issue cards through Grid, Lightspark is the program manager for each cardholder account, and the account is held at **Lead Bank**, the account-holding institution. Regulation E requires a periodic statement for every consumer account that can send or receive electronic fund transfers.
+
+This guide explains when a statement is sent, what it contains, how to map Grid account and transaction data to each statement field, and how to build one at period close. It covers consumer cardholder accounts. A commercial statement uses the same layout without the consumer-only items: the error-resolution notice, the asterisk markers, and the terminal location.
+
+<Info>
+Periodic statements are a regulatory requirement for consumer card accounts. Your platform agreement sets out who prepares and delivers them. Use this page as a reference for what a statement contains and how to build it from Grid transaction data.
+</Info>
+
+## Sample statement layout
+
+Your statement's visual design is up to you, but the content and field set are fixed. The layout below shows a consumer statement with sample data filled in:
+
+<StatementExample />
+
+The asterisk marks the transfers the error-resolution notice covers, and the same asterisk keys the notice heading. RTP, wire, FedNow, and crypto or stablecoin transfers are listed so the balances reconcile, but they are not marked disputable. The marker is a reading aid, not a required field.
+
+## When a statement is sent
+
+A statement period closes once a month, at the same point in each month. A statement is issued monthly for every account, with or without activity in the period.
+
+The statement goes to the cardholder as soon as the period closes, by email, in-app notification, or any channel that lets the cardholder **retain** the statement (for example, a downloadable PDF or an email they can save). Record the issue date. The cardholder must report an error within 60 days of the statement date, counted from the first statement showing the error. Your platform agreement sets out who delivers the statement and who keeps the delivery record.
+
+<Info>
+List every transaction that moved the balance in the period, including transfers that Regulation E does not cover, such as wires and RTP. Without them, the opening and closing balances would not reconcile. Once a statement is issued, **freeze its contents**. A refund that posts later appears on the next statement as its own dated line.
+</Info>
+
+## What a statement must contain
+
+A statement combines **fixed disclosures** (provider and error-resolution language) with **data-driven fields** populated from the account and its transactions for the period.
+
+### Lightspark and Lead Bank disclosures
+
+Every consumer statement carries these disclosures exactly as written. The statement names Lightspark as the program manager and never as a bank.
+
+| Field | Value |
+|-------|-------|
+| Provider line | “Lightspark is the program manager for this account. This account is held at Lead Bank, the account-holding institution.” |
+| Contact line | “Direct inquiries to 8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069 or (855) 516-0103.” |
+| Error-resolution notice | The full notice shown in the sample above, headed “In case of errors or questions about your electronic transfers”, with the address and phone number above and the closing line “Report errors within 60 days of the statement date.” |
+
+### Statement fields
+
+| Field | Description | Required when |
+|-------|-------------|---------------|
+| Account holder | Name of the cardholder | Always |
+| Account number | Number that identifies the account, masked to the last four digits | Always |
+| Statement period | Start and end date of the period | Always |
+| Issue date | Date the statement is sent | Always |
+| Opening balance | Ledger balance at the start of the period | Always |
+| Closing balance | Ledger balance at the end of the period | Always |
+| Transaction date | Date each transaction posted to the account | Always |
+| Transaction type | Kind of transfer, for example ACH deposit, debit card purchase, wire transfer out | Always |
+| Payee or merchant | Counterparty name, or the merchant descriptor for a card purchase | Always |
+| Terminal location | Merchant city and state | Card purchases at a merchant terminal, when the card network reports a location |
+| Transaction amount | Signed amount in the account currency | Always |
+| Fee line items | Each fee charged in the period, as its own line | When a fee was charged |
+| Total fees for the period | Sum of all fees charged in the period | Always |
+
+## Mapping Grid data to statement fields
+
+Statement data comes from three calls: [Get customer by ID](/api-reference/customers/get-customer-by-id) for the account holder, [List Customer internal accounts](/api-reference/internal-accounts/list-customer-internal-accounts) for the account, and [List transactions](/api-reference/transactions/list-transactions) for the period's activity. Bound the period with `startDate` and `endDate`, both inclusive, sort with `sortOrder=asc`, and page with `cursor` while `hasMore` is `true`. List payment transactions with `accountIdentifier`. List card rows with `customerId` or `cardId`, and keep the rows whose `accountId` is the statement account; do not combine `status` with `type=CARD`, because the request is rejected. All amounts are integers in the smallest unit of their currency (for example, cents), so format them using the currency's `decimals`.
+
+| Statement field | Grid source |
+|-----------------|-------------|
+| Account holder | `fullName` on the customer (`customerType: INDIVIDUAL`) |
+| Account number | `fundingPaymentInstructions[].accountOrWalletInfo.accountNumber` on the internal account, masked to the last four digits |
+| Statement period | The `startDate` and `endDate` you pass to List transactions |
+| Issue date | You supply it: the date the statement is sent |
+| Closing balance | `totalBalance` on the internal account, read at period close. This is the ledger figure and includes pending and held funds; `balance` excludes them. Grid returns the current figure only, so read it when the period closes and store it |
+| Opening balance | The previous period's closing balance from your records |
+| Transaction date | `settledAt` on `INCOMING` and `OUTGOING` transactions; `authorizedAt` on `CARD` transactions. `CardTransaction` has no settlement timestamp, so the authorization date dates the card line |
+| Transaction type | `type` (`INCOMING` / `OUTGOING` / `CARD`) and `direction` (`CREDIT` / `DEBIT`); on `OUTGOING` transactions, `paymentRail` names the rail |
+| Payee or merchant | `counterpartyInformation` or `description` on `INCOMING` and `OUTGOING` transactions; `merchant.descriptor` on `CARD` transactions |
+| Terminal location | `merchant.city` and `merchant.state` on `CARD` transactions, when present |
+| Transaction amount | `receivedAmount` on `INCOMING`, `sentAmount` on `OUTGOING`, `settledAmount` on `CARD`. A card row is a statement line only once `settledAmount` is present (`status` is `SETTLED` or `PARTIALLY_SETTLED`); an `AUTHORIZED` hold is not a statement line. Sign the amount by `direction`: a `CREDIT` adds to the balance and a `DEBIT` subtracts from it |
+| Fee line items | `fees` on `OUTGOING` transactions, in the smallest unit of the sending currency. `fees` is included in `sentAmount`, so show `sentAmount.amount - fees` as the transfer line and `fees` as its own line. On `INCOMING` transactions, `fees` is denominated in the sending currency and is deducted before `receivedAmount` lands, so it is not a line on this account's statement. Card transactions carry no `fees` field |
+| Total fees for the period | Sum of `fees` across the period's `OUTGOING` transactions. Card rows have no `fees` field, so this total covers payment transactions only |
+
+<Note>
+Only settled money becomes a statement line. The opening and closing balances are the ledger figures (`totalBalance`), so settled card rows and completed payments reconcile against them, and holds do not appear as lines. An `AUTHORIZED` card row is a hold. No clearing has posted and `settledAmount` is absent. `DECLINED` and `VOIDED` rows moved no money either. A `PARTIALLY_SETTLED` card row is listed at its `settledAmount` as of period close, and later clearings appear on the next statement as their own lines. An `EXCEPTION` row settled at the card network but the pull from the account failed, so keep it off the statement until it is reconciled. Among `INCOMING` and `OUTGOING` transactions, only `status: COMPLETED` moved the balance; skip the rest (`FAILED`, `EXPIRED`, `REJECTED`, `REFUNDED`, and in-flight statuses). A merchant refund is its own `CARD` transaction with `direction: CREDIT`, and `originalTransactionId` names the purchase it credits back against. List it as its own dated line and don't net it against the purchase. For the card status model, see [Reconciliation](/cards/transactions/reconciliation).
+</Note>
+
+## Example: build a statement at period close
+
+At period close, read the account holder and account, list the period's transactions, derive the lines and totals, render the statement, and hand it to your delivery channel.
+
+```javascript
+// `grid` is your HTTP client for https://api.lightspark.com/grid/2025-10-13
+// with Basic auth. ERROR_RESOLUTION_NOTICE holds the notice text from the
+// disclosures table above, and the delivery helpers are yours as well.
+// Amounts stay integers in the smallest unit until render.
+
+// Yield every item of a paginated list, following nextCursor while hasMore is true
+async function* listAll(path, params) {
+  let cursor;
+  do {
+    const query = new URLSearchParams({ ...params, limit: '100' });
+    if (cursor) query.set('cursor', cursor);
+    const page = await grid.get(`${path}?${query}`);
+    yield* page.data;
+    cursor = page.hasMore ? page.nextCursor : undefined;
+  } while (cursor);
+}
+
+// Run once per account when the statement period closes
+async function buildStatement(customerId, accountId, startDate, endDate) {
+  const customer = await grid.get(`/customers/${customerId}`);
+
+  let account;
+  for await (const candidate of listAll('/customers/internal-accounts', { customerId })) {
+    if (candidate.id === accountId) {
+      account = candidate;
+      break;
+    }
+  }
+  if (!account) throw new Error(`Account ${accountId} does not belong to customer ${customerId}`);
+
+  // Payment rows are listed by account. Card rows are listed by cardholder and
+  // kept when this account funded them. Do not combine status with type=CARD
+  const window = { startDate, endDate, sortOrder: 'asc' };
+  async function* periodRows() {
+    for await (const tx of listAll('/transactions', { ...window, accountIdentifier: accountId })) {
+      if (tx.type !== 'CARD') yield tx;
+    }
+    for await (const tx of listAll('/transactions', { ...window, customerId, type: 'CARD' })) {
+      if (tx.accountId === accountId) yield tx;
+    }
+  }
+
+  // One line per movement of settled money, signed by direction
+  const lines = [];
+  for await (const tx of periodRows()) {
+    const sign = tx.direction === 'CREDIT' ? 1 : -1;
+
+    if (tx.type === 'CARD') {
+      // Only cleared rows moved money. AUTHORIZED is a hold, DECLINED and VOIDED
+      // moved nothing, and EXCEPTION needs manual reconciliation first
+      if (tx.status !== 'SETTLED' && tx.status !== 'PARTIALLY_SETTLED') continue;
+      lines.push({
+        date: tx.authorizedAt,
+        type: 'CARD',
+        direction: tx.direction,
+        payee: tx.merchant.descriptor,
+        terminalLocation:
+          tx.merchant.city && tx.merchant.state
+            ? `${tx.merchant.city}, ${tx.merchant.state}`
+            : undefined,
+        amount: sign * tx.settledAmount.amount,
+      });
+      continue;
+    }
+
+    if (tx.status !== 'COMPLETED') continue;
+
+    if (tx.type === 'INCOMING') {
+      lines.push({
+        date: tx.settledAt,
+        type: 'INCOMING',
+        direction: tx.direction,
+        payee: tx.description,
+        amount: sign * tx.receivedAmount.amount,
+      });
+      continue;
+    }
+
+    // OUTGOING: sentAmount already includes fees, so split it into two lines
+    const fees = tx.fees ?? 0;
+    lines.push({
+      date: tx.settledAt,
+      type: 'OUTGOING',
+      direction: tx.direction,
+      payee: tx.description,
+      amount: sign * (tx.sentAmount.amount - fees),
+    });
+    if (fees > 0) {
+      lines.push({ date: tx.settledAt, type: 'FEE', direction: tx.direction, amount: sign * fees });
+    }
+  }
+  lines.sort((a, b) => a.date.localeCompare(b.date)); // oldest first across both lists
+
+  // The ledger balance, including pending and held funds, read at period close
+  const closingBalance = account.totalBalance.amount;
+  const openingBalance = await previousClosingBalance(accountId); // from your records, same unit
+  const movement = lines.reduce((sum, line) => sum + line.amount, 0);
+  if (openingBalance + movement !== closingBalance) {
+    throw new Error('Statement does not reconcile: opening balance plus lines is not the closing balance');
+  }
+  const totalFees = -lines
+    .filter((line) => line.type === 'FEE')
+    .reduce((sum, line) => sum + line.amount, 0);
+
+  const { currency } = account.totalBalance;
+  const format = (amount) => (amount / 10 ** currency.decimals).toFixed(currency.decimals);
+
+  const statement = {
+    // Fixed disclosures, in statement order
+    providerLine:
+      'Lightspark is the program manager for this account. ' +
+      'This account is held at Lead Bank, the account-holding institution.',
+    contactLine:
+      'Direct inquiries to 8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069 ' +
+      'or (855) 516-0103.',
+    errorResolutionNotice: ERROR_RESOLUTION_NOTICE, // the full notice from the disclosures table
+    // Account fields
+    accountHolder: customer.fullName,
+    accountNumber: maskAccountNumber(account.fundingPaymentInstructions),
+    period: { startDate, endDate },
+    issueDate: new Date().toISOString(),
+    openingBalance: format(openingBalance),
+    closingBalance: format(closingBalance),
+    lines: lines.map((line) => ({ ...line, amount: format(line.amount) })),
+    totalFees: format(totalFees),
+  };
+
+  // Delivery and the delivery record follow your platform agreement
+  await sendStatementEmail(customer.platformCustomerId, statement);
+  await recordStatementDelivery(accountId, statement.issueDate);
+}
+```
