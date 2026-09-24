@@ -100,7 +100,9 @@ At period close, read the account holder and account, list the period's transact
 
 ```javascript
 // `grid` is your HTTP client for https://api.lightspark.com/grid/2025-10-13
-// with Basic auth. Amounts stay integers in the smallest unit until render.
+// with Basic auth. ERROR_RESOLUTION_NOTICE holds the notice text from the
+// disclosures table above, and the delivery helpers are yours as well.
+// Amounts stay integers in the smallest unit until render.
 
 // Yield every item of a paginated list, following nextCursor while hasMore is true
 async function* listAll(path, params) {
