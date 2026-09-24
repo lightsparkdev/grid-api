@@ -28,13 +28,13 @@ A statement combines **disclosures** (provider and error-resolution language) wi
 
 ### Provider disclosures
 
-Every statement, consumer or commercial, carries the provider and contact lines. The sample uses the wording below; your platform agreement provides the disclosure text for your program. Lightspark is not a bank, so the provider line names the account-holding institution separately.
+Every statement, consumer or commercial, carries the provider line. A consumer statement also carries the error-resolution notice, which gives the phone number and mailing address. The sample uses the wording below; your platform agreement provides the disclosure text for your program. The provider line names the account-holding institution and the program manager.
 
 | Field | Value |
 |-------|-------|
-| Provider line | “Lightspark is the program manager for this account. This account is held at Lead Bank, the account-holding institution.” |
-| Contact line | “Direct inquiries to 8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069 or (855) 516-0103.” |
+| Provider line | “This account is held at Lead Bank, the account-holding institution. Lightspark is the program manager and is not a bank.” |
 | Error-resolution notice | The notice text shown in the sample above. |
+| Phone and address | Inside the error-resolution notice (“Telephone us at … or Write us at …”). |
 
 ### Statement fields
 
@@ -188,12 +188,9 @@ async function buildStatement(customerId, accountId, startDate, endDate) {
   const statement = {
     // Disclosures
     providerLine:
-      'Lightspark is the program manager for this account. ' +
-      'This account is held at Lead Bank, the account-holding institution.',
-    contactLine:
-      'Direct inquiries to 8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069 ' +
-      'or (855) 516-0103.',
-    errorResolutionNotice: ERROR_RESOLUTION_NOTICE,
+      'This account is held at Lead Bank, the account-holding institution. ' +
+      'Lightspark is the program manager and is not a bank.',
+    errorResolutionNotice: ERROR_RESOLUTION_NOTICE, // includes the phone number and mailing address
     // Account fields
     accountHolder: customer.fullName,
     accountType: account.type, // render as a label, for example "Consumer prepaid account"

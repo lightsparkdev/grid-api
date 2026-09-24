@@ -12,8 +12,8 @@ export const StatementExample = () => {
   const definitionValue = { textAlign: 'right' };
   const currency = { marginLeft: '6px', color: muted70, fontSize: '10px' };
   const ledgerGrid = { display: 'grid', gridTemplateColumns: ledgerColumns, columnGap: '12px' };
-  const flag = { marginLeft: '2px', color: muted56, fontSize: '0.72em', fontVariantNumeric: 'tabular-nums', lineHeight: 0, verticalAlign: 'super' };
-  const legalFlag = { marginLeft: '2px', fontSize: '0.72em', lineHeight: 0, verticalAlign: 'super' };
+  const flag = { marginLeft: '2px', color: muted56, fontSize: '0.72em', fontVariantNumeric: 'tabular-nums', lineHeight: 0, verticalAlign: 'super', position: 'static', top: 'auto' };
+  const legalFlag = { marginLeft: '2px', fontSize: '0.72em', lineHeight: 0, verticalAlign: 'super', position: 'static', top: 'auto' };
   const footerP = { margin: 0 };
   const details = [
     ['Statement period', '09/01/2026 – 09/30/2026'],
@@ -27,7 +27,7 @@ export const StatementExample = () => {
     { id: 'c2', day: '08', type: 'Debit card purchase', party: 'Blue Bottle Coffee', terminal: 'Los Angeles, CA', amount: '-$18.75', disputable: true },
     { id: 'c3', day: '12', type: 'ACH debit', party: 'Pacific Gas & Electric', amount: '-$142.30', disputable: true },
     { id: 'c4', day: '18', type: 'Wire transfer out', party: 'First National Escrow', amount: '-$1,000.00', disputable: false },
-    { id: 'c4-fee', day: '18', type: 'Wire transfer fee', party: '', amount: '-$15.00', disputable: false },
+    { id: 'c4-fee', day: '18', type: 'Wire transfer fee', party: 'Lead Bank', amount: '-$15.00', disputable: false },
     { id: 'c5', day: '24', type: 'RTP received', party: 'Sofía Herrera', amount: '+$250.00', disputable: false },
   ];
   const noticeSteps = [
@@ -104,9 +104,9 @@ export const StatementExample = () => {
               ))}
             </ol>
             <p style={footerP}>We will investigate your complaint and will correct any error promptly. If we take more than 10 business days to do this, we will credit your account for the amount you think is in error, so that you will have the use of the money during the time it takes us to complete our investigation.</p>
-            <p style={{ margin: '2px 0 0' }}>Report errors within 60 days of the statement date.</p>
+            <p style={{ margin: '2px 0 0' }}>Report errors within 60 days after we send this statement.</p>
           </div>
-          <p style={{ margin: 0, paddingTop: '8px', borderTop: hairline }}>Lightspark is the program manager for this account. This account is held at Lead Bank, the account-holding institution. Direct inquiries to 8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069 or (855) 516-0103.</p>
+          <p style={{ margin: 0, paddingTop: '8px', borderTop: hairline }}>This account is held at Lead Bank, the account-holding institution. Lightspark is the program manager and is not a bank.</p>
         </div>
 
       </div>
