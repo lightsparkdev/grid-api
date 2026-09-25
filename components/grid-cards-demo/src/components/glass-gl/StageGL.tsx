@@ -806,30 +806,36 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
       ro.observe(canvas);
     } else {
       // No WebGL: the same lattice, still, with no ripple and no lens. A failed
-      // WebGL context leaves the canvas free for a 2D one.
+      // WebGL context leaves the canvas free for a 2D one; a context whose
+      // shaders failed holds the canvas, so the lattice goes on the offscreen
+      // canvas and shows as this one's background instead.
       const flatCtx = canvas.getContext('2d');
-      if (flatCtx) {
-        paintFlat = () => {
-          dpr = Math.min(window.devicePixelRatio || 1, 2);
-          cssW = canvas.clientWidth;
-          cssH = canvas.clientHeight;
-          if (cssW <= 0 || cssH <= 0) return;
-          canvas.width = Math.round(cssW * dpr);
-          canvas.height = Math.round(cssH * dpr);
-          drawDotField(flatCtx, cssW, cssH, 0, dpr, palette, bg ?? palette.bg, edge);
-        };
-        paintFlat();
-        ro = new ResizeObserver(() => {
-          palette = readDotGridPalette(offCtx);
-          paintFlat?.();
-        });
-        ro.observe(canvas);
-      }
+      paintFlat = () => {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        cssW = canvas.clientWidth;
+        cssH = canvas.clientHeight;
+        if (cssW <= 0 || cssH <= 0) return;
+        const target = flatCtx ? canvas : off;
+        target.width = Math.round(cssW * dpr);
+        target.height = Math.round(cssH * dpr);
+        drawDotField(flatCtx ?? offCtx, cssW, cssH, 0, dpr, palette, bg ?? palette.bg, edge);
+        if (!flatCtx) {
+          canvas.style.backgroundImage = `url(${off.toDataURL()})`;
+          canvas.style.backgroundSize = '100% 100%';
+        }
+      };
+      paintFlat();
+      ro = new ResizeObserver(() => {
+        palette = readDotGridPalette(offCtx);
+        paintFlat?.();
+      });
+      ro.observe(canvas);
     }
 
     return () => {
       cancelAnimationFrame(raf);
       ro?.disconnect();
+      canvas.style.backgroundImage = '';
       stopTheme();
       pointer?.dispose();
       press?.dispose();
