@@ -1,7 +1,22 @@
+These outcomes apply when the external account **funds an incoming transfer**
+— money pulled from it into a Grid account. When the same account is the
+**destination of a payout**, the quote suffix table applies instead, and several
+suffixes mean different things there.
+
 | Suffix | Behavior |
 |--------|----------|
 | **002** | Insufficient funds — transfer fails immediately |
 | **003** | Account closed/invalid — transfer fails immediately |
 | **004** | Transfer rejected — bank rejects the transfer |
 | **005** | Timeout/delayed failure — stays pending ~30s, then fails |
+| **006** | Return after settlement — the deposit settles and completes, then ~30s later the originating bank returns it. The transaction moves to `REFUNDED` and the credited balance is reversed |
 | **Any other** | Success — transfer completes normally |
+
+Quote suffix `005` looks similar but is not the same test: that one returns a
+**payout** you sent, while transfer `006` claws back a **deposit** you received.
+
+Use **006** to test how your integration handles money arriving and then being
+taken back. The deposit completes first, so any logic that treats a completed
+incoming payment as final will be exercised before the return arrives. You
+receive an `INCOMING_PAYMENT.COMPLETED` webhook, then an
+`INCOMING_PAYMENT.REFUND_COMPLETED` webhook when the return lands.

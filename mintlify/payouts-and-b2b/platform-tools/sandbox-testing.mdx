@@ -67,8 +67,7 @@ Alternatively, you can also fund internal accounts using the `/quotes` endpoint 
 
 ### Testing Transfer Outcomes
 
-The external account's test pattern determines the outcome whenever that account is used,
-whether you are pushing funds to it or pulling funds from it:
+The external account's test pattern determines the outcome when that account is used:
 
 <SandboxTransferPatterns />
 
@@ -212,30 +211,32 @@ Here's a complete test workflow for a USD → EUR payout:
 
 Test each failure mode systematically:
 
+The suffix means different things depending on which side of the quote the
+account sits on, so each scenario below says which it is.
+
 ```bash
-# 1. Test insufficient funds
+# 1. Pull from the account: insufficient funds
 # Create external account ending in 002
 POST /customers/external-accounts { "accountNumber": "000000002" }
 
-# Attempt to pull from it - should fail immediately
+# Fund a quote from it - the transfer fails immediately
 POST /quotes
 
-# 2. Test account closed
-# Create external account ending in 003
-POST /customers/external-accounts { "accountNumber": "000000003" }
+# 2. Push to the account: counterparty delivery fails
+# Create external account ending in 004
+POST /customers/external-accounts { "accountNumber": "000000004" }
 
-# Attempt to push to it - should fail immediately
+# Pay out to it - the payout fails at the counterparty
 POST /quotes
 
-# 3. Test timeout scenario
+# 3. Push to the account: the receiving bank returns the payment
 # Create external account ending in 005
 POST /customers/external-accounts { "accountNumber": "000000005" }
 
-# Attempt transfer - should pend then fail after ~30s
+# Pay out to it - the transaction completes, then fails with
+# failureReason: PAYOUT_RETURNED
 POST /quotes
-# Check status immediately - will show PENDING
 GET /transactions/{transactionId}
-# Wait 30s, check again - will show FAILED
 ```
 
 ## Global Account magic values
@@ -246,7 +247,7 @@ GET /transactions/{transactionId}
 
 While sandbox closely mimics production, there are some differences:
 
-- **Instant settlement**: All transfers complete immediately (success cases) or fail immediately (error cases), except timeout scenarios (005)
+- **Instant settlement**: Most transfers resolve immediately. The delayed outcomes are the exceptions: a transfer suffix `005` pends about 30 seconds before failing, a transfer suffix `006` completes and is returned about 30 seconds later, a quote suffix `003` takes about six minutes, and a quote suffix `005` completes before the payout is returned
 - **No real bank validation**: Account numbers aren't validated against real banking networks
 - **Simplified KYC**: KYC processes are simulated rather than reviewed for real. On an unregulated platform the result resolves after a complete packet is submitted with `POST /verifications` — an incomplete one returns `RESOLVE_ERRORS` first. On a regulated platform, or with **Skip verification paperwork** on, an individual resolves at creation; a business never does — a terminal registration-number suffix resolves it on the first submission, while `001` and `003` still require a complete packet. Customers can be onboarded through `POST /customers` or the hosted link flow, as in production.
 - **Fixed exchange rates**: Currency conversion rates may not reflect real-time market rates.

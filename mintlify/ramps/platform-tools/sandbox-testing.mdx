@@ -8,6 +8,7 @@ icon: "/images/icons/hammer.svg"
 import SandboxBeneficiaryVerification from '/snippets/sandbox-beneficiary-verification.mdx';
 import SandboxExternalAccounts from '/snippets/sandbox-external-accounts.mdx';
 import SandboxTransferPatterns from '/snippets/sandbox-transfer-patterns.mdx';
+import SandboxQuotePatterns from '/snippets/sandbox-quote-patterns.mdx';
 import SandboxGlobalAccountMagic from '/snippets/sandbox-global-account-magic.mdx';
 
 The Grid Sandbox environment provides a complete testing environment for ramp operations, allowing you to validate on-ramp and off-ramp flows without using real money or cryptocurrency.
@@ -233,7 +234,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 ```
 
 <Note>
-In sandbox, you can use special account number patterns to test different scenarios. The **last 3 digits** determine the behavior: **002** (insufficient funds), **003** (account closed), **004** (transfer rejected), **005** (timeout/delayed failure). Any other ending succeeds normally. See "Testing transfer failures" below for details.
+In sandbox, you can use special account number patterns to test different scenarios. The **last 3 digits** determine the behavior, and the meaning depends on how the account is used. This account is the destination of the off-ramp quote below, so the quote patterns apply: **002** (quote execution failed), **003** (long payment), **004** (counterparty delivery failed), **005** (receiving bank returned the payment), **006** (user cancellation), **007** (payout and refund failed). Any other ending succeeds normally. See "Quote destination test patterns" below for the full table.
 </Note>
 
 ### Step 3: Create and execute off-ramp quote
@@ -277,6 +278,10 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execut
 
 <SandboxTransferPatterns />
 
+### Quote destination test patterns
+
+<SandboxQuotePatterns />
+
 ## Beneficiary name verification
 
 <SandboxBeneficiaryVerification />
@@ -300,12 +305,14 @@ The complete on-ramp and off-ramp flows described in the sections above demonstr
 
 ### Failed conversions
 
-Test error scenarios systematically using the magic account patterns:
+Test error scenarios systematically using the magic account patterns. The
+accounts below are the off-ramp quote's destination, so the quote suffixes
+apply:
 
-**1. Test external account insufficient funds (002):**
+**1. Test quote execution failure (002):**
 
 ```bash
-# Create account with insufficient funds pattern
+# Create account with the quote-execution-failure pattern
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
@@ -324,20 +331,22 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
     }
   }'
 
-# Attempt off-ramp to this account - will fail immediately
+# Execute an off-ramp quote to this account
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execute' \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
-# Response: 400 Bad Request with insufficient funds error
+# The transaction fails on the way to settlement with
+# failureReason: QUOTE_EXECUTION_FAILED
 ```
 
-**2. Test account closed (003):**
+**2. Test a long-running payment (003):**
 
 ```bash
-# Create account with closed pattern
+# Create account with the long-payment pattern
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
   -d '{"customerId": "Customer:sandbox001", "accountNumber": "000000003", ...}'
 
-# Attempt to use - will fail with account closed error
+# Execute a quote to this account - it stays PROCESSING for about
+# six minutes before completing, so you can exercise pending-state handling
 ```
 
 **3. Test insufficient balance in internal account:**
