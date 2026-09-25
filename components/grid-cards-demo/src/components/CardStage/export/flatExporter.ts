@@ -92,10 +92,11 @@ export class FlatExporter implements CardFrameSource {
   }
 
   render({ width, height, pose, cardFrac }: ExportFrameOptions): ExportFrame {
-    // Before the first paint there is no card to picture: fail (the share
-    // offers a retry) rather than hand back a blank frame.
+    // Before the first paint there is no card to picture, and while a logo or
+    // art loads the paint is the last design's: fail (the share offers a
+    // retry) rather than hand back a blank or stale frame.
     const faces = this.deps.faces();
-    if (!faces) throw new Error('The flat card has not painted yet');
+    if (!faces?.ready) throw new Error('The flat card is not painted yet');
     const canvas = (this.canvas ??= document.createElement('canvas'));
     canvas.width = width;
     canvas.height = height;
