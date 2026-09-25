@@ -1,6 +1,26 @@
 type: object
 description: Platform-level settings that apply to cards issued by the platform.
 properties:
+  pinTargetOrigin:
+    anyOf:
+      - type: string
+        format: uri
+        pattern: '^https://(?:[^\s/?#@:\[\]\\]+|\[[0-9A-Fa-f:.]+\])(?::[0-9]{1,5})?$'
+      - type: 'null'
+    description: >-
+      Canonical HTTPS origin of the page that hosts the PIN-entry iframe
+      returned by `GET /cards/{id}/set-pin-url`. Include the scheme, host,
+      and optional port, without a path, trailing slash, query, fragment,
+      or credentials. The iframe is restricted to this origin, so it must
+      match the embedding page's origin exactly. Different user-specific
+      paths on the same origin use this one setting.
+
+
+      Required before requesting a PIN-entry URL. Omit this field when
+      updating platform configuration to preserve its value; set it to
+      `null` to clear it. If unset, PIN-entry URL requests return
+      `409 CONFLICT`. Changes apply to newly requested URLs.
+    example: https://app.example.com
   maxSpendPerTransaction:
     anyOf:
       - type: integer

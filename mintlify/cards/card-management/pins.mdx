@@ -1,0 +1,118 @@
+---
+title: "Card PINs"
+description: "Let cardholders set, change, check, and unblock online PINs on cards."
+icon: "/images/icons/key2.svg"
+---
+
+import CardPinBehavior from '/snippets/cards/pin-behavior.mdx';
+
+<CardPinBehavior />
+
+These APIs support **online PINs only**. Offline PINs, which are checked by a card's chip, are not currently supported.
+
+An online PIN is checked over the payment network when a payment requires it. "Online" describes how the PIN is checked; it does not mean the customer is shopping on a website.
+
+## Use the hosted PIN-entry iframe
+
+<Steps>
+<Step title="Configure your platform">
+Set `cardConfigs.pinTargetOrigin` once through `PATCH /platform/config`:
+
+```json
+{
+  "cardConfigs": {
+    "pinTargetOrigin": "https://app.example.com"
+  }
+}
+```
+
+Use the canonical HTTPS origin of the page that hosts the iframe: scheme, host, and optional port, without a path, trailing slash, credentials, query, or fragment. One origin covers all user-specific paths on that website. Omit this setting in later configuration updates to preserve it, or set it to `null` to clear it. Changes apply to newly requested URLs.
+</Step>
+
+<Step title="Get a PIN-entry URL">
+Call `GET /cards/{id}/set-pin-url` from your backend immediately before displaying the form. Send no request body or origin parameter; Grid uses your platform's configured origin. If the origin is unset, the request returns `409 CONFLICT`.
+
+Grid returns `iframeUrl`, `sessionToken`, `expiresAt`, and `environment`. The URL already contains the temporary token and selects the appropriate environment.
+
+Each request creates a fresh, temporary PIN-entry session and returns `Cache-Control: no-store`. Requesting a URL does not set or change the PIN.
+</Step>
+
+<Step title="Load the form">
+Before setting the iframe's `src`, register a `message` listener on your page. Only accept messages whose `origin` equals `new URL(iframeUrl).origin` and whose `source` equals your iframe's `contentWindow`; also require `data.embedType` to equal `PIN_SETTING`.
+
+Set the iframe's `src` to `iframeUrl` exactly as returned. Wait for `data.messageType` to be `Embed:Rendered` before enabling your submit button. The cardholder enters a four-digit PIN directly into this secure form, so the plaintext PIN never reaches your servers or Grid's.
+</Step>
+
+<Step title="Submit the PIN">
+When the cardholder clicks your submit button, send `{ messageType: "Embed:SubmitPin", embedType: "PIN_SETTING" }` to the iframe's `contentWindow` using `postMessage`. Set the target origin to `new URL(iframeUrl).origin`; never use `*`. Disable the button while submission is in progress.
+</Step>
+
+<Step title="Confirm the result">
+Listen for `Embed:PinSubmissionStatusChanged` with the following `data.status` values:
+
+| Status | Your app's action |
+| --- | --- |
+| `STARTED` | Keep submission disabled while waiting for a result. |
+| `SUCCEEDED` | Show confirmation, remove the iframe, and refresh the card's PIN status. |
+| `FAILED` | Show a PIN-entry error and let the cardholder correct the input. Request a new URL if the session is expired. |
+
+Remove your event listener when you remove the iframe. If you stop waiting before a result arrives, treat the outcome as unknown: do not report success or automatically resubmit. An `OK` status alone cannot prove that an already configured PIN was changed.
+</Step>
+</Steps>
+
+The session permits one successful submission and expires at `expiresAt`. Request a new URL for another PIN change or after expiration. Treat both the URL and token as secrets: never persist, cache, log, or send them to analytics.
+
+## Encrypt a PIN in your own UI
+
+If you collect the PIN in your own UI, you **must encrypt it in the customer’s browser or mobile app before sending it to your server or Grid**. Download the [PIN encryption public key](/keys/pin-encryption-public-key.pem.txt). This PEM-encoded RSA public key is the same for sandbox and production; save it as `pin-encryption-public-key.pem` in your client integration.
+
+1. Collect a four-digit PIN as a string so leading zeros are preserved.
+2. Generate a fresh, cryptographically random integer `nonce` for each request.
+3. Serialize an object containing `nonce` and `pin` as JSON. Encode the JSON as UTF-8.
+4. Encrypt those bytes using the PIN encryption public key, then base64-encode the ciphertext.
+5. Send the base64 string as `encryptedPinBlock` in `POST /cards/{id}/set-pin`.
+
+For example, a PIN of `0123` produces JSON with this shape **before encryption**:
+
+```json
+{
+  "nonce": 582306194725183,
+  "pin": "0123"
+}
+```
+
+Generate your own nonce each time; do not reuse the example. Encrypt the entire JSON payload. Never send this plaintext object to your server or Grid, and keep both plaintext and ciphertext out of logs, analytics, and persistent storage. Grid cannot decrypt the block.
+
+A rejected block returns `400 INVALID_INPUT`. Check the payload, encoding, and public key, then create a new encrypted block with a fresh nonce. A `204` response means the PIN change was accepted; read `pinStatus` from `GET /cards/{id}` to check its resulting state.
+
+## Check and recover a PIN
+
+Read `pinStatus` from `GET /cards/{id}`:
+
+| Status | Next action |
+| --- | --- |
+| `NOT_SET` | No PIN is configured. The cardholder can choose a PIN to enable PIN verification. |
+| `OK` | The PIN is configured. |
+| `BLOCKED` | Authenticate the cardholder and offer a PIN change or unblock. |
+
+Three consecutive incorrect attempts block an online PIN. Call `POST /cards/{id}/pin/unblock` to keep the same PIN, or use either PIN-entry flow to choose a new one. Unblocking a PIN that is already `OK` is safe; a card with no PIN returns `409 CONFLICT`.
+
+There is no PIN-reveal API. If the cardholder forgets the PIN, let them set a new one. Setting a PIN does not activate a closed or frozen card or change its spending limits.
+
+`Card.pinStatus` is the last known PIN status, populated when a card with PIN management is created. An absent value means PIN management is unavailable for this card; it does not mean `NOT_SET` or tell you whether a payment requires a PIN.
+
+## Receive PIN status changes
+
+Handle `CARD.PIN_STATUS_CHANGE` at your webhook endpoint to keep your app's PIN status up to date. The event contains the updated `Card` resource in `data`, including `pinStatus`.
+
+- `NOT_SET → OK`: a PIN was configured.
+- `OK → BLOCKED`: the PIN became blocked.
+- `BLOCKED → OK`: the PIN was unblocked or replaced.
+
+Grid sends this event when its saved status changes, including changes detected after an iframe submission or a PIN API request. Initial card creation and replacing a PIN while the status stays `OK` do not trigger it. Use the iframe submission result or PIN API response to confirm a PIN replacement.
+
+Verify the webhook signature and deduplicate deliveries by event `id`. Deliveries may arrive out of order; use `data.updatedAt` to avoid overwriting a newer card snapshot. See [Card webhooks](/cards/platform-tools/webhooks) for payloads and retry behavior.
+
+## Offline PIN cards are not supported
+
+An offline PIN is checked by a physical card's chip. Physical cards can also use online PINs; the distinction is where the PIN is checked.

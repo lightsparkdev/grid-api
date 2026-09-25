@@ -1,10 +1,14 @@
-import { topLevelProductName } from '/snippets/variables.mdx';
 import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+import CardPinBehavior from '/snippets/cards/pin-behavior.mdx';
 
-With {topLevelProductName} Cards, you can issue virtual debit cards backed by an
+You can issue debit cards backed by an
 internal account, decision authorizations in real time against that
 account's balance, and reconcile every pull, clearing, and refund against
 the same ledger you already use for payouts.
+
+<CardPinBehavior />
+
+See [Card PINs](/cards/card-management/pins) to let cardholders set, change, or unblock a PIN.
 
 <FeatureCardGrid cols={2}>
   <FeatureCard icon="/images/icons/lightning.svg" title="Real-time decisioning">

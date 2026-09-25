@@ -92,7 +92,10 @@ paths:
                 $ref: '#/components/schemas/Error500'
     patch:
       summary: Update platform configuration
-      description: Update platform configuration settings. `cardConfigs` can establish platform-level caps on a single card transaction, on spend during one UTC calendar day, and on the number of transactions during one UTC calendar day. Grid enforces the lower of each platform cap and its corresponding card-specific value without replacing the card-specific value. Daily limits reset at 00:00 UTC.
+      description: |-
+        Update platform configuration settings. `cardConfigs` can establish platform-level caps on a single card transaction, on spend during one UTC calendar day, and on the number of transactions during one UTC calendar day. Grid enforces the lower of each platform cap and its corresponding card-specific value without replacing the card-specific value. Daily limits reset at 00:00 UTC.
+
+        Set `cardConfigs.pinTargetOrigin` to the canonical HTTPS origin of your frontend before calling `GET /cards/{id}/set-pin-url`. Omit the field to preserve its value or set it to `null` to clear it.
       operationId: updatePlatformConfig
       tags:
         - Platform Configuration
@@ -140,6 +143,7 @@ paths:
                   templateSid: HJaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
                   bodyText: Use this code to finish adding your Acme card to your digital wallet.
               cardConfigs:
+                pinTargetOrigin: https://app.example.com
                 maxSpendPerTransaction: 10000
                 maxSpendPerDay: 50000
                 maxTransactionsPerDay: 50
@@ -151,7 +155,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PlatformConfig'
         '400':
-          description: Bad request
+          description: Bad request. Includes `INVALID_INPUT` when `cardConfigs.pinTargetOrigin` is supplied but is neither null nor a canonical HTTPS origin.
           content:
             application/json:
               schema:
@@ -9114,6 +9118,220 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
+  /cards/{id}/set-pin:
+    parameters:
+      - name: id
+        in: path
+        description: System-generated unique card identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Set a card PIN
+      description: |-
+        Set or replace the card's online PIN using a block encrypted in your client with the published PIN encryption public key. Grid cannot decrypt the block and never stores or logs PIN material.
+
+        Use this when you operate your own PIN-entry UI. For a hosted PIN-entry iframe, use `GET /cards/{id}/set-pin-url` — the two are alternatives, and a card may use either at any time.
+
+        Setting a PIN clears a `BLOCKED` PIN, so a cardholder locked out by incorrect attempts can recover by choosing a new PIN without a separate unblock. Read `GET /cards/{id}` for the resulting status. Grid supports online PINs only; offline PIN cards are not supported.
+
+        Every call is audit-logged with the requesting actor.
+      operationId: setCardPin
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardPinSetRequest'
+      responses:
+        '204':
+          description: PIN change accepted.
+        '400':
+          description: Bad request. Returned with `INVALID_INPUT` when `encryptedPinBlock` is absent, is not valid base64, or the encrypted block is rejected.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. The session has no attributable actor to audit the change against (for example, an impersonated dashboard session).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. Returned with `CONFLICT` for a closed card or a card that does not support PIN management.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without card support return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
+  /cards/{id}/set-pin-url:
+    parameters:
+      - name: id
+        in: path
+        description: System-generated unique card identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a PIN-entry URL
+      description: |-
+        Get a temporary URL for a secure PIN-entry iframe. The cardholder chooses a four-digit PIN inside the iframe, without the plaintext PIN crossing your servers or Grid's. Grid supports online PINs only.
+
+        Configure `cardConfigs.pinTargetOrigin` through `PATCH /platform/config` before requesting a URL. It is the canonical HTTPS origin of the page that hosts the iframe. The iframe is restricted to that origin; this endpoint takes no request body or origin parameter.
+
+        Each call creates a fresh, temporary PIN-entry session. Request a URL immediately before displaying the form. Fetching the URL does not set or change the PIN. Set your iframe's `src` to the returned `iframeUrl` without modifying it. Follow the [Card PIN guide](https://docs.lightspark.com/cards/card-management/pins) to submit the form and confirm the result. Never store, cache, or log the URL or token. The session expires at `expiresAt` and permits one successful PIN submission. Responses include `Cache-Control: no-store`.
+
+        Use the iframe's submission result to confirm completion, and `GET /cards/{id}` to read `pinStatus`. `OK` alone cannot confirm a change to an already configured PIN.
+
+        If you operate your own PIN-entry UI, use `POST /cards/{id}/set-pin` with a client-encrypted payload instead.
+
+        Requires permission to manage cards. Every successful URL request is audit-logged with the requesting actor.
+      operationId: getCardPinUrl
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: A fresh PIN-entry URL and its expiration.
+          headers:
+            Cache-Control:
+              description: Prevents storage of the temporary PIN-entry credential.
+              schema:
+                type: string
+                enum:
+                  - no-store
+              example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardPinUrlResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. The caller lacks permission to manage cards or has no attributable actor to audit the request against (for example, an impersonated dashboard session).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. Returned with `CONFLICT` for a closed card, a card that does not support PIN management, or an unset `cardConfigs.pinTargetOrigin`. Configure the origin through `PATCH /platform/config` before requesting a PIN-entry URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without card support return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
+  /cards/{id}/pin/unblock:
+    parameters:
+      - name: id
+        in: path
+        description: System-generated unique card identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Unblock a card PIN
+      description: |-
+        Clear a `BLOCKED` PIN, restoring the cardholder's existing PIN without changing it. A PIN blocks after three consecutive incorrect entries; until it is cleared, PIN-verified transactions decline.
+
+        Unblocking is idempotent and safe to call on a card whose `pinStatus` is already `OK`. It has no effect on a card with no PIN set, which returns `409` — set a PIN with `POST /cards/{id}/set-pin` instead.
+
+        Grid supports online PINs only. Offline PIN cards are not supported. Read `GET /cards/{id}` to check `pinStatus`.
+
+        Every call is audit-logged with the requesting actor.
+      operationId: unblockCardPin
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: PIN unblock accepted; read GET /cards/{id} for its `pinStatus`.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. The session has no attributable actor to audit the change against (for example, an impersonated dashboard session).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. Returned with `CONFLICT` for a closed card, a card with no PIN to unblock, or a card that does not support PIN management.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without card support return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /sandbox/cards/{id}/simulate/authorization:
     post:
       summary: Simulate a card authorization
@@ -12391,6 +12609,73 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+  card-pin-status-change:
+    post:
+      summary: Card PIN status change
+      description: |-
+        Sent when Grid records a change to a card's PIN status, including changes detected after a hosted PIN submission, an API request, or a PIN becoming blocked. The data contains the updated Card resource and its new pinStatus.
+
+        Initial card creation does not trigger this event. Changing an existing PIN while its status remains OK does not trigger it either; use the submission result to confirm that the PIN changed.
+
+        Changes made outside the Grid API are detected asynchronously. The event describes the status Grid observed, not every intermediate PIN status. Delivery can be repeated or arrive out of order. Deduplicate by id and use data.updatedAt to avoid replacing newer card data with an older snapshot. Read pinStatus from GET /cards/{id} to retrieve the card's saved status.
+
+        Verify the X-Grid-Signature header using your Grid webhook public key, as for other Grid webhooks. No PIN, encrypted PIN block, or PIN-entry session credential is included.
+      operationId: cardPinStatusChangeWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardPinStatusChangeWebhook'
+            examples:
+              blocked:
+                summary: The card PIN became blocked
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000023
+                  type: CARD.PIN_STATUS_CHANGE
+                  timestamp: '2026-05-09T10:00:00Z'
+                  data:
+                    id: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    status: ACTIVE
+                    pinStatus: BLOCKED
+                    brand: VISA
+                    form: VIRTUAL
+                    last4: '4242'
+                    expMonth: 12
+                    expYear: 2029
+                    fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    maxSpendPerTransaction: null
+                    maxSpendPerDay: null
+                    maxTransactionsPerDay: null
+                    currency: USD
+                    createdAt: '2026-05-08T14:10:00Z'
+                    updatedAt: '2026-05-09T10:00:00Z'
+      responses:
+        '200':
+          description: Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
   card-transaction:
     post:
       summary: Card transaction
@@ -13021,6 +13306,17 @@ components:
       type: object
       description: Platform-level settings that apply to cards issued by the platform.
       properties:
+        pinTargetOrigin:
+          anyOf:
+            - type: string
+              format: uri
+              pattern: ^https://(?:[^\s/?#@:\[\]\\]+|\[[0-9A-Fa-f:.]+\])(?::[0-9]{1,5})?$
+            - type: 'null'
+          description: |-
+            Canonical HTTPS origin of the page that hosts the PIN-entry iframe returned by `GET /cards/{id}/set-pin-url`. Include the scheme, host, and optional port, without a path, trailing slash, query, fragment, or credentials. The iframe is restricted to this origin, so it must match the embedding page's origin exactly. Different user-specific paths on the same origin use this one setting.
+
+            Required before requesting a PIN-entry URL. Omit this field when updating platform configuration to preserve its value; set it to `null` to clear it. If unset, PIN-entry URL requests return `409 CONFLICT`. Changes apply to newly requested URLs.
+          example: https://app.example.com
         maxSpendPerTransaction:
           anyOf:
             - type: integer
@@ -13349,7 +13645,7 @@ components:
             to subsequent delivery attempts.
         cardConfigs:
           $ref: '#/components/schemas/CardConfig'
-          description: Update platform-level card settings. Fields omitted from the nested object are left unchanged. For any card limit, supply null to clear the platform cap or a positive integer to set it. Omit this field at the top level to leave all card settings unchanged.
+          description: Update platform-level card settings. Fields omitted from the nested object are left unchanged. For any card limit, supply null to clear the platform cap or a positive integer to set it. Set `pinTargetOrigin` to configure the website that hosts PIN-entry iframes, or supply null to clear it. Omit this field at the top level to leave all card settings unchanged.
         feeConfigs:
           type: array
           items:
@@ -27432,6 +27728,24 @@ components:
       description: |
         Physical form factor of the card. Only `VIRTUAL` is supported in v1;
         `PHYSICAL` will be added in a later release.
+    CardPinStatus:
+      type: string
+      enum:
+        - NOT_SET
+        - OK
+        - BLOCKED
+      example: OK
+      description: |
+        State of the card's PIN. On the Card resource, this is the last known status
+        and is present whenever PIN management is supported. An absent value means
+        PIN management is unavailable for this card; it does not mean `NOT_SET`.
+        Use `GET /cards/{id}` to retrieve `pinStatus`.
+
+        | Status | Description |
+        |--------|-------------|
+        | `NOT_SET` | No PIN has been set on the card. PIN verification is not enabled. Set one with `POST /cards/{id}/set-pin` or the hosted form returned by `GET /cards/{id}/set-pin-url`. |
+        | `OK` | A PIN is set and usable. |
+        | `BLOCKED` | The PIN was entered incorrectly three consecutive times and is refused until cleared with `POST /cards/{id}/pin/unblock`, or replaced with `POST /cards/{id}/set-pin`. |
     Card:
       type: object
       required:
@@ -27467,6 +27781,8 @@ components:
           $ref: '#/components/schemas/CardBrand'
         form:
           $ref: '#/components/schemas/CardForm'
+        pinStatus:
+          $ref: '#/components/schemas/CardPinStatus'
         last4:
           type: string
           description: Last four digits of the card PAN.
@@ -27924,6 +28240,55 @@ components:
           APPLE_PAY: '#/components/schemas/ApplePayTokenizationResponse'
           GOOGLE_PAY: '#/components/schemas/GooglePayTokenizationResponse'
           SAMSUNG_PAY: '#/components/schemas/SamsungPayTokenizationResponse'
+    CardPinSetRequest:
+      type: object
+      required:
+        - encryptedPinBlock
+      properties:
+        encryptedPinBlock:
+          type: string
+          description: |-
+            The cardholder's PIN, encrypted in your client before calling Grid. Use the [PIN encryption public key](https://docs.lightspark.com/keys/pin-encryption-public-key.pem.txt) for both sandbox and production. Grid cannot decrypt the block and never stores or logs PIN material.
+
+            Build it in the client, immediately after PIN entry, so the PIN never reaches your servers either: serialize `{"nonce": <random integer>, "pin": "<4-digit PIN>"}` as JSON, encode it as UTF-8, encrypt it using the public key above, and base64-encode the ciphertext. Generate a fresh cryptographically random integer `nonce` for each request to prevent replay. Preserve the PIN as a string, including leading zeros. Send the resulting base64 string as `encryptedPinBlock`. Never send the plaintext PIN or the unencrypted JSON to Grid. Keep ciphertext out of logs, storage, and analytics too.
+
+            A rejected block returns `400 INVALID_INPUT`. Check the payload, encoding, and public key, then create a new block with a fresh nonce. See [Card PINs](https://docs.lightspark.com/cards/card-management/pins) for the complete PIN-entry flows.
+          minLength: 16
+          maxLength: 1024
+          example: SGVsbG8sIHRoaXMgaXMgYSBiYXNlNjQtZW5jb2RlZCBjaXBoZXJ0ZXh0Li4u
+    CardPinUrlResponse:
+      type: object
+      description: A temporary PIN-entry iframe URL, its credential, and expiration.
+      required:
+        - iframeUrl
+        - sessionToken
+        - expiresAt
+        - environment
+      properties:
+        iframeUrl:
+          type: string
+          format: uri
+          description: |-
+            Ready-to-use URL for the secure PIN-entry iframe. Set this as your iframe's `src` without modifying it. The cardholder enters their PIN inside the iframe, so the plaintext PIN never reaches your servers or Grid's. Use the message flow in the [Card PIN guide](https://docs.lightspark.com/cards/card-management/pins) to submit and confirm the result.
+
+            The URL contains a temporary credential. Never store, cache, or log it. It expires at `expiresAt` and permits one successful PIN submission.
+          example: https://embed.example.com/pin?session=eyJhbGciOiJIUzI1NiJ9...
+        sessionToken:
+          type: string
+          description: Temporary credential authorizing one successful PIN submission. It is already included in `iframeUrl`; use that URL to load the form. Never store, cache, or log the token. Use the iframe's submission result to confirm a change; status `OK` alone cannot prove that an existing PIN was changed. Read `GET /cards/{id}` for its `pinStatus`.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the URL stops working. Request a new URL rather than reusing an expired URL or token.
+          example: '2026-05-08T14:16:00Z'
+        environment:
+          type: string
+          enum:
+            - SANDBOX
+            - PRODUCTION
+          description: Session environment. The iframeUrl already selects the matching environment.
+          example: SANDBOX
     SandboxCardAuthorizationRequest:
       type: object
       required:
@@ -28974,6 +29339,7 @@ components:
         - BULK_UPLOAD.FAILED
         - AGENT_ACTION.PENDING_APPROVAL
         - CARD.STATUS_CHANGE
+        - CARD.PIN_STATUS_CHANGE
         - CARD_TRANSACTION.AUTHORIZED
         - CARD_TRANSACTION.PARTIALLY_SETTLED
         - CARD_TRANSACTION.SETTLED
@@ -29208,6 +29574,20 @@ components:
               type: string
               enum:
                 - CARD.STATUS_CHANGE
+    CardPinStatusChangeWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/Card'
+              description: The updated card, including its new pinStatus.
+            type:
+              type: string
+              enum:
+                - CARD.PIN_STATUS_CHANGE
     CardTransactionWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'

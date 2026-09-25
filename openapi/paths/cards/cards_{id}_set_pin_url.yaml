@@ -1,0 +1,107 @@
+parameters:
+  - name: id
+    in: path
+    description: System-generated unique card identifier
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get a PIN-entry URL
+  description: >-
+    Get a temporary URL for a secure PIN-entry iframe. The cardholder
+    chooses a four-digit PIN inside the iframe, without the plaintext PIN
+    crossing your servers or Grid's. Grid supports online PINs only.
+
+
+    Configure `cardConfigs.pinTargetOrigin` through `PATCH /platform/config`
+    before requesting a URL. It is the canonical HTTPS origin of the page
+    that hosts the iframe. The iframe is restricted to that origin; this
+    endpoint takes no request body or origin parameter.
+
+
+    Each call creates a fresh, temporary PIN-entry session. Request a URL
+    immediately before displaying the form. Fetching the URL does not set
+    or change the PIN. Set your
+    iframe's `src` to the returned `iframeUrl` without modifying it. Follow
+    the [Card PIN guide](https://docs.lightspark.com/cards/card-management/pins)
+    to submit the form and confirm the result. Never store, cache, or log
+    the URL or token. The session expires at `expiresAt` and permits one
+    successful PIN submission. Responses include `Cache-Control: no-store`.
+
+
+    Use the iframe's submission result to confirm completion, and
+    `GET /cards/{id}` to read `pinStatus`. `OK` alone cannot confirm a
+    change to an already configured PIN.
+
+
+    If you operate your own PIN-entry UI, use `POST /cards/{id}/set-pin` with
+    a client-encrypted payload instead.
+
+
+    Requires permission to manage cards. Every successful URL request is
+    audit-logged with the requesting actor.
+  operationId: getCardPinUrl
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: A fresh PIN-entry URL and its expiration.
+      headers:
+        Cache-Control:
+          description: Prevents storage of the temporary PIN-entry credential.
+          schema:
+            type: string
+            enum: [no-store]
+          example: no-store
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardPinUrlResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden. The caller lacks permission to manage cards or has no
+        attributable actor to audit the request against (for example, an
+        impersonated dashboard session).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `CONFLICT` for a closed card, a card that
+        does not support PIN management, or an unset
+        `cardConfigs.pinTargetOrigin`. Configure the origin through
+        `PATCH /platform/config` before requesting a PIN-entry URL.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: >-
+        Not implemented in this environment. Cards are not enabled for
+        every Grid deployment; environments without card support return
+        `501 NOT_IMPLEMENTED`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml
