@@ -108,11 +108,10 @@ export function FlatCard({
   const { img: logo, pending: logoPending } = useLoadedImage(design.logoUrl);
   const { img: art, pending: artPending } = useLoadedImage(design.backgroundUrl);
 
+  // The faces are offered for pictures from their first paint (so there is
+  // never a blank card to render) until the card goes.
   useEffect(() => {
-    const front = frontRef.current;
-    const back = backRef.current;
-    if (!facesRef || !front || !back) return;
-    facesRef.current = { front, back, ready: false };
+    if (!facesRef) return;
     return () => {
       facesRef.current = null;
     };
@@ -128,7 +127,7 @@ export function FlatCard({
     texture.current ??= makeCanvas(TEX_W, TEX_H);
     paintFront(texture.current.getContext('2d')!, { design, logo, art, frozen, closed }, assets);
     present(canvas, texture.current, design.orientation, 'front');
-    if (facesRef?.current) facesRef.current.ready = true;
+    if (facesRef && backRef.current) facesRef.current = { front: canvas, back: backRef.current, ready: true };
     if (!paintedOnce.current) {
       paintedOnce.current = true;
       onPaintedRef.current?.();

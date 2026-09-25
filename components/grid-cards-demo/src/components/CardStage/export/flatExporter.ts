@@ -17,7 +17,8 @@ const CELLS_LONG = 18;
  *  anti-aliased seams between neighbors are covered. */
 const SEAM_PX = 0.75;
 
-/** The flat card's painted faces, as it is held (see FlatCard). */
+/** The flat card's painted faces, as it is held (see FlatCard). Null until
+ *  the front has painted once. */
 export interface FlatFaces {
   front: HTMLCanvasElement;
   back: HTMLCanvasElement;
@@ -91,13 +92,16 @@ export class FlatExporter implements CardFrameSource {
   }
 
   render({ width, height, pose, cardFrac }: ExportFrameOptions): ExportFrame {
+    // Before the first paint there is no card to picture: fail (the share
+    // offers a retry) rather than hand back a blank frame.
+    const faces = this.deps.faces();
+    if (!faces) throw new Error('The flat card has not painted yet');
     const canvas = (this.canvas ??= document.createElement('canvas'));
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
     ctx.clearRect(0, 0, width, height);
-    const faces = this.deps.faces();
-    if (faces) this.paint(ctx, faces, width, height, pose, cardFrac);
+    this.paint(ctx, faces, width, height, pose, cardFrac);
     return { width, height, data: ctx.getImageData(0, 0, width, height).data };
   }
 
