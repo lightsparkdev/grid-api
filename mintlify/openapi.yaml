@@ -25971,6 +25971,9 @@ components:
         rateDetails:
           $ref: '#/components/schemas/OutgoingRateDetails'
           description: Details about the rate and fees for the transaction.
+        purposeOfPayment:
+          $ref: '#/components/schemas/PurposeOfPayment'
+          description: The purpose of payment the quote was created with. Present only when the quote request set `purposeOfPayment`.
         documentIds:
           type: array
           description: IDs of the supporting documents attached to the payment behind this quote, as passed in `documentIds` on `POST /quotes`. Present only when the quote was created with `documentIds`. Grid returns such a quote only after it has attached every document. Call `GET /payment-documents/{paymentDocumentId}` for each document's details, such as its `documentType` and its `ATTACHED` status.

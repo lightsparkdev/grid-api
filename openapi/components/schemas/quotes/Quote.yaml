@@ -141,6 +141,11 @@ properties:
   rateDetails:
     $ref: ../transactions/OutgoingRateDetails.yaml
     description: Details about the rate and fees for the transaction.
+  purposeOfPayment:
+    $ref: ./PurposeOfPayment.yaml
+    description: >-
+      The purpose of payment the quote was created with. Present only when the
+      quote request set `purposeOfPayment`.
   documentIds:
     type: array
     description: >-
