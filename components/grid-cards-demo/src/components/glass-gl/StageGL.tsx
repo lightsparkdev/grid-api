@@ -758,10 +758,14 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
     };
     stage.addEventListener('pointerdown', onDown, { capture: true });
 
+    // Without WebGL the dot field is drawn straight onto the canvas (see below).
+    let paintFlat: (() => void) | null = null;
+
     // Re-read the palette on theme flip and repaint the dot texture once.
     const stopTheme = observeTheme(() => {
       palette = readDotGridPalette(offCtx);
-      invalidate(true);
+      if (paintFlat) paintFlat();
+      else invalidate(true);
     });
 
     let ro: ResizeObserver | null = null;
@@ -800,6 +804,27 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
         invalidate(true);
       });
       ro.observe(canvas);
+    } else {
+      // No WebGL: the same lattice, still, with no ripple and no lens. A failed
+      // WebGL context leaves the canvas free for a 2D one.
+      const flatCtx = canvas.getContext('2d');
+      if (flatCtx) {
+        paintFlat = () => {
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+          cssW = canvas.clientWidth;
+          cssH = canvas.clientHeight;
+          if (cssW <= 0 || cssH <= 0) return;
+          canvas.width = Math.round(cssW * dpr);
+          canvas.height = Math.round(cssH * dpr);
+          drawDotField(flatCtx, cssW, cssH, 0, dpr, palette, bg ?? palette.bg, edge);
+        };
+        paintFlat();
+        ro = new ResizeObserver(() => {
+          palette = readDotGridPalette(offCtx);
+          paintFlat?.();
+        });
+        ro.observe(canvas);
+      }
     }
 
     return () => {

@@ -456,3 +456,11 @@
   opacity: 0;
 }
 
+/* Without WebGL (FlatCardStage): the flat card in the hit box, dimming as the
+   3D canvas does. */
+.flatCard {
+  transition:
+    opacity 0.45s ease,
+    filter 0.45s ease;
+}
+
