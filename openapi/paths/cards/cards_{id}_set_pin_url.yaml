@@ -13,7 +13,7 @@ get:
     crossing your servers or Grid's. Grid supports online PINs only.
 
 
-    Configure `cardConfigs.pinTargetOrigin` through `PATCH /platform/config`
+    Configure `cardConfigs.pinTargetOrigin` through `PATCH /config`
     before requesting a URL. It is the canonical HTTPS origin of the page
     that hosts the iframe. The iframe is restricted to that origin; this
     endpoint takes no request body or origin parameter.
@@ -85,7 +85,7 @@ get:
         Conflict. Returned with `CONFLICT` for a closed card, a card that
         does not support PIN management, or an unset
         `cardConfigs.pinTargetOrigin`. Configure the origin through
-        `PATCH /platform/config` before requesting a PIN-entry URL.
+        `PATCH /config` before requesting a PIN-entry URL.
       content:
         application/json:
           schema:
