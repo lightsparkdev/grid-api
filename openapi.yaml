@@ -4204,6 +4204,139 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /payment-documents:
+    post:
+      summary: Upload a payment document
+      description: |
+        Upload a supporting document for a payout that requires one. Today that
+        means China B2B CNY payouts, which are CNY bank transfers to a business
+        beneficiary. [Supporting Documents for China Business
+        Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+        lists the documents each `purposeOfPayment` needs. Upload each file here,
+        then pass the returned `id` values in `documentIds` on `POST /quotes`.
+        Grid attaches the files to the payment before it returns the quote.
+
+        The request must use multipart/form-data with the file in the `file`
+        field and metadata in the remaining fields. Each request uploads one file.
+        To upload several files, send one request per file. You can send them in
+        parallel. A quote accepts up to 3 documents.
+
+        Supported formats are PDF, JPEG, and PNG. Grid detects the format from the
+        file contents, not the file name. The file must be from 1 to 8,000,000
+        bytes. An empty file, a larger file, and any other format return
+        `400 INVALID_INPUT`.
+
+        A payment document:
+
+        - can be used until its `expiresAt`, 24 hours after upload
+        - can be used on one quote only, and only on a quote for the customer in
+          `customerId`, or on the platform's own quote when `customerId` is
+          omitted
+        - has its file deleted by Grid once it is attached to the payment
+
+        Grid does not check what a document says. The payout partner reviews each
+        document after Grid attaches it. To avoid a rejected or delayed payout:
+
+        - Every document must carry the beneficiary's stamp. A contract must be
+          stamped by both parties.
+        - The invoice amount must match the transaction amount.
+        - The invoice currency must match the payout currency.
+        - Sender and beneficiary details in the documents must match the details
+          you send through the API.
+
+        A successful attachment means the payout partner received the file, not
+        that it approved it. The partner may later request more information about
+        the payment, with a deadline of 15 calendar days.
+      operationId: uploadPaymentDocument
+      tags:
+        - Cross-Currency Transfers
+      security:
+        - BasicAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/PaymentDocumentUploadRequestBody'
+      responses:
+        '201':
+          description: Payment document uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentDocument'
+              example:
+                id: PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                documentType: INVOICE
+                fileName: invoice-2025-0142.pdf
+                sizeBytes: 482133
+                contentType: application/pdf
+                status: UPLOADED
+                expiresAt: '2025-10-04T12:00:00Z'
+                createdAt: '2025-10-03T12:00:00Z'
+        '400':
+          description: Bad request. Returned with `INVALID_INPUT` when the file is empty, larger than 8,000,000 bytes, or not a PDF, JPEG, or PNG, when `documentType` is not a valid value, or when a required field is missing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found. Returned with `CUSTOMER_NOT_FOUND` when `customerId` does not match a customer on your platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /payment-documents/{paymentDocumentId}:
+    get:
+      summary: Get a payment document
+      description: Retrieve a payment document by ID. Use it to check whether the document can still be used on a quote, or which quote it is attached to.
+      operationId: getPaymentDocument
+      tags:
+        - Cross-Currency Transfers
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: paymentDocumentId
+          in: path
+          description: Payment document ID
+          required: true
+          schema:
+            type: string
+            example: PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentDocument'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Payment document not found. Returned with `PAYMENT_DOCUMENT_NOT_FOUND` when the ID does not match a payment document on your platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /quotes/{quoteId}:
     get:
       summary: Get quote by ID
@@ -4284,6 +4417,7 @@ paths:
           required: false
           description: |
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+            Required when the request includes `documentIds`. A request that fails with `409 PAYMENT_DOCUMENT_ALREADY_USED`, `410 PAYMENT_DOCUMENT_EXPIRED`, or `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED` created no quote, so a retry with the same key runs the request again.
           schema:
             type: string
             maxLength: 255
@@ -4350,6 +4484,24 @@ paths:
                   lockedCurrencyAmount: 10000
                   immediatelyExecute: true
                   description: Bitcoin reward payout!
+              chinaB2BAccountingServicesWithDocuments:
+                summary: China B2B CNY payout with supporting documents
+                value:
+                  lookupId: Lookup:019542f5-b3e7-1d02-0000-000000000009
+                  source:
+                    sourceType: ACCOUNT
+                    accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                  destination:
+                    destinationType: ACCOUNT
+                    accountId: ExternalAccount:c34dcbd6-dced-4ec4-b756-3c3a9ea3d789
+                  lockedCurrencySide: RECEIVING
+                  lockedCurrencyAmount: 7250000
+                  purposeOfPayment: ACCOUNTING_SERVICES
+                  documentIds:
+                    - PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
+                    - PaymentDocument:019542f5-b3e7-1d02-0000-000000000002
+                    - PaymentDocument:019542f5-b3e7-1d02-0000-000000000003
+                  description: Accounting services, invoice INV-2025-0142
       responses:
         '201':
           description: |
@@ -4395,7 +4547,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Quote'
         '400':
-          description: Bad request - Missing or invalid parameters
+          description: Bad request. Returned with `DOCUMENTS_REQUIRED` when the destination requires supporting documents for the `purposeOfPayment` and `documentIds` does not supply all of them. `details.missingRequirements` lists the requirement ID of each missing document. Returned with `INVALID_INPUT` for missing or invalid parameters. These include `documentIds` without an `Idempotency-Key` header, `documentIds` sent to a destination that does not require documents, a document whose `documentType` fills no remaining requirement for the `purposeOfPayment`, and a China B2B CNY payout whose `purposeOfPayment` is not one of the China business purposes listed in [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents).
           content:
             application/json:
               schema:
@@ -4412,6 +4564,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found. Returned with `PAYMENT_DOCUMENT_NOT_FOUND` when an ID in `documentIds` does not match a payment document of the sending customer on your platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '408':
           description: Request Timeout - the request body could not be read in time; retry
           content:
@@ -4419,11 +4577,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error408'
         '409':
-          description: Conflict. Returned with `BANK_ACCOUNT_VALIDATION_PENDING` when the US bank account on the request is still being validated. Grid verifies a newly added ACH account by sending a micro-entry and waiting out the return window, which takes a few banking days. The account is not rejected, so retry once validation completes. An account that failed validation outright returns `400` with `INVALID_BANK_ACCOUNT`.
+          description: |-
+            Conflict. Returned with `BANK_ACCOUNT_VALIDATION_PENDING` when the US bank account on the request is still being validated. Grid verifies a newly added ACH account by sending a micro-entry and waiting out the return window, which takes a few banking days. The account is not rejected, so retry once validation completes. An account that failed validation outright returns `400` with `INVALID_BANK_ACCOUNT`.
+            Returned with `PAYMENT_DOCUMENT_ALREADY_USED` when a document in `documentIds` is already attached to a quote. A document can be used on one quote only. Upload the file again and retry with the new ID. Grid created no quote, so you can reuse the same `Idempotency-Key`.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '410':
+          description: Gone. Returned with `PAYMENT_DOCUMENT_EXPIRED` when a document in `documentIds` passed its `expiresAt` before it was attached. Upload the file again and retry with the new ID. Grid created no quote, so you can reuse the same `Idempotency-Key`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error410'
         '412':
           description: Counterparty doesn't support UMA version
           content:
@@ -4431,7 +4597,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error412'
         '424':
-          description: Counterparty issue
+          description: Counterparty issue. Returned with `PAYMENT_DOCUMENT_ATTACHMENT_FAILED` when Grid could not attach a supporting document to the payment. Grid created no quote. Retry the same request with the same `Idempotency-Key`.
           content:
             application/json:
               schema:
@@ -13405,6 +13571,15 @@ components:
           type: string
           description: Human-readable explanation of what's wrong with this field.
           example: Value is not one of the allowed enum members.
+    PaymentDocumentRequirementId:
+      type: string
+      description: |-
+        A stable identifier for one required document within a purpose's requirements. The same ID means the same requirement across quotes. It is separate from `PaymentDocumentType`. The requirement ID names the document to supply, and the document type names what a file is. The two differ where a requirement accepts alternatives. For example, a file declared as either `PURCHASE_ORDER` or `DELIVERY_SLIP` fills the `SUPPORTING_PROOF` requirement.
+
+        China B2B CNY payouts use these IDs: `PURCHASE_ORDER`, `LOGISTICS_BILL`, `CUSTOMS_DECLARATION`, `COMMERCIAL_AGREEMENT`, `CONTRACT`, `INVOICE`, `SUPPORTING_PROOF`, `BILL_OF_LADING`, `CONTRACT_OR_INVOICE`, `FLIGHT_TICKET`, `TRAVEL_DOCUMENT`, and `HOTEL_BOOKING_CONFIRMATION`. [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the IDs each purpose requires.
+
+        Treat the ID as an opaque value, not a member of a fixed list. Grid may add new IDs as requirements change.
+      example: SUPPORTING_PROOF
     Error400:
       type: object
       required:
@@ -13476,6 +13651,7 @@ components:
             | STABLECOIN_PROVIDER_ERROR | The stablecoin provider rejected the operation |
             | STABLECOIN_PROVIDER_SOURCE_NOT_LINKED | The provider source account is not linked |
             | STABLECOIN_VERIFICATION_FAILED | The stablecoin could not be verified with the provider |
+            | DOCUMENTS_REQUIRED | The destination requires supporting documents for the quote's `purposeOfPayment` that the request did not supply. `details.missingRequirements` lists the requirement ID of each one |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -13537,6 +13713,7 @@ components:
             - STABLECOIN_PROVIDER_ERROR
             - STABLECOIN_PROVIDER_SOURCE_NOT_LINKED
             - STABLECOIN_VERIFICATION_FAILED
+            - DOCUMENTS_REQUIRED
         reason:
           type: string
           description: Error message
@@ -13549,6 +13726,11 @@ components:
               description: One entry per invalid field. Present on field-validation errors from submit endpoints.
               items:
                 $ref: '#/components/schemas/FieldError'
+            missingRequirements:
+              type: array
+              description: The requirement ID of each required document that the quote request did not supply. Present on `DOCUMENTS_REQUIRED`.
+              items:
+                $ref: '#/components/schemas/PaymentDocumentRequirementId'
           additionalProperties: true
     Error501:
       type: object
@@ -14853,6 +15035,7 @@ components:
             | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
             | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
             | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
+            | PAYMENT_DOCUMENT_ALREADY_USED | The payment document is already attached to a quote. A document can be used on one quote only, so upload the file again to use it on another quote |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
             - TRANSACTION_NOT_CANCELLABLE
@@ -14877,6 +15060,7 @@ components:
             - STABLECOIN_SYMBOL_ALREADY_EXISTS
             - STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS
             - WALLET_NOT_PROVISIONED
+            - PAYMENT_DOCUMENT_ALREADY_USED
         reason:
           type: string
           description: Error message
@@ -14918,6 +15102,7 @@ components:
             | STABLECOIN_NOT_FOUND | Stablecoin not found |
             | STABLECOIN_OPERATION_NOT_FOUND | Stablecoin operation not found |
             | VERIFICATION_NOT_FOUND | Verification not found |
+            | PAYMENT_DOCUMENT_NOT_FOUND | Payment document not found |
           enum:
             - TRANSACTION_NOT_FOUND
             - INVITATION_NOT_FOUND
@@ -14942,6 +15127,7 @@ components:
             - STABLECOIN_NOT_FOUND
             - STABLECOIN_OPERATION_NOT_FOUND
             - VERIFICATION_NOT_FOUND
+            - PAYMENT_DOCUMENT_NOT_FOUND
         reason:
           type: string
           description: Error message
@@ -14961,8 +15147,10 @@ components:
             | Error Code | Description |
             |------------|-------------|
             | CUSTOMER_DELETED | Customer has been permanently deleted |
+            | PAYMENT_DOCUMENT_EXPIRED | The payment document passed its `expiresAt` without being attached to a quote. Upload the file again |
           enum:
             - CUSTOMER_DELETED
+            - PAYMENT_DOCUMENT_EXPIRED
         reason:
           type: string
           description: Error message
@@ -15071,6 +15259,7 @@ components:
             | LNURLP_REQUEST_FAILED | LNURLP request failed |
             | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
             | SMS_OTP_CREDENTIAL_SYNC_FAILED | One or more tied SMS_OTP credentials could not be updated |
+            | PAYMENT_DOCUMENT_ATTACHMENT_FAILED | Grid could not attach a supporting document to the payment, so it created no quote. Retry the same request with the same `Idempotency-Key` |
           enum:
             - PAYREQ_REQUEST_FAILED
             - COUNTERPARTY_PUBKEY_FETCH_ERROR
@@ -15078,6 +15267,7 @@ components:
             - LNURLP_REQUEST_FAILED
             - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
             - SMS_OTP_CREDENTIAL_SYNC_FAILED
+            - PAYMENT_DOCUMENT_ATTACHMENT_FAILED
         reason:
           type: string
           description: Error message
@@ -15865,7 +16055,14 @@ components:
             - $ref: '#/components/schemas/PaymentRail'
     PurposeOfPayment:
       type: string
-      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India). Business payments to China must use one of the China-specific purposes rather than `GOODS_OR_SERVICES`, because each purpose requires its own supporting documents. Those purposes are `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `SERVICE_CHARGES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`. The six China-only values are rejected on other corridors.
+      description: |-
+        The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
+
+        Business payments to China must use one of the China-specific purposes rather than `GOODS_OR_SERVICES`, because each purpose requires its own supporting documents. Those purposes are `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `COMMISSION_ON_GOODS`, `COMMISSION_ON_SERVICES`, `ACCOUNTING_SERVICES`, `EXHIBITION_SERVICES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`. [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the documents each one requires.
+
+        A payment for services uses the purpose that names the service. The receiving bank needs that detail, so `SERVICE_CHARGES` is not accepted on these payouts.
+
+        The China-specific purposes also work on other corridors. There, Grid sends the closest purpose the payout partner accepts, or the partner's own "other" purpose when none fits.
       enum:
         - GIFT
         - SELF
@@ -15886,6 +16083,10 @@ components:
         - OFFICE_EXPENSES
         - DELIVERY_FEES
         - HOTEL_ACCOMMODATION
+        - COMMISSION_ON_GOODS
+        - COMMISSION_ON_SERVICES
+        - ACCOUNTING_SERVICES
+        - EXHIBITION_SERVICES
         - OTHER
     PlatformFeeOverride:
       type: object
@@ -25411,6 +25612,113 @@ components:
               type: string
               description: The external account ID that was looked up
               example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+    PaymentDocumentType:
+      type: string
+      description: |-
+        What a supporting document is. These are kinds of evidence, not file formats: `INVOICE` means the file is an invoice.
+
+        [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the types each requirement accepts. When you upload a file with `POST /payment-documents`, `documentType` declares which type the file is.
+      enum:
+        - PURCHASE_ORDER
+        - LOGISTICS_BILL
+        - CUSTOMS_DECLARATION
+        - INVOICE
+        - CONTRACT
+        - DELIVERY_SLIP
+        - BILL_OF_LADING
+        - FLIGHT_TICKET
+        - TRAVEL_DOCUMENT
+        - HOTEL_BOOKING_CONFIRMATION
+      example: INVOICE
+    PaymentDocumentUploadRequest:
+      title: Payment Document Upload Request
+      type: object
+      required:
+        - file
+        - documentType
+      properties:
+        file:
+          type: string
+          format: binary
+          description: |
+            The document file, from 1 to 8,000,000 bytes. Grid accepts PDF, JPEG,
+            and PNG files and detects the format from the file contents, not the
+            file name. An empty file, a larger file, and any other format return
+            `400 INVALID_INPUT`.
+        documentType:
+          $ref: '#/components/schemas/PaymentDocumentType'
+          description: What the file is. To fill a requirement, use one of the types it accepts, as listed in [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents).
+        customerId:
+          type: string
+          description: ID of the sending customer whose payment this document supports. The document can only be used on this customer's quotes. Omit it when the platform itself is the sender, as on a quote with no `customerId`. The document can then only be used on the platform's own quotes.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    PaymentDocumentStatus:
+      type: string
+      description: |
+        Where the payment document is in its lifecycle.
+
+        | Status | Terminal | Meaning |
+        |--------|----------|---------|
+        | `UPLOADED` | No | Ready to use. Pass the `id` in `documentIds` on `POST /quotes` before `expiresAt`. |
+        | `ATTACHED` | Yes | Attached to the payment behind the quote in `quoteId`. Grid has deleted the file. |
+        | `EXPIRED` | Yes | Not attached to a quote before `expiresAt`. The document can no longer be used. |
+      enum:
+        - UPLOADED
+        - ATTACHED
+        - EXPIRED
+      example: UPLOADED
+    PaymentDocument:
+      type: object
+      description: A supporting document uploaded for a payout that requires one. Pass its `id` in `documentIds` on `POST /quotes`.
+      required:
+        - id
+        - documentType
+        - fileName
+        - sizeBytes
+        - contentType
+        - status
+        - expiresAt
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this payment document
+          example: PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
+        customerId:
+          type: string
+          description: ID of the sending customer whose payment this document supports. The document can only be used on this customer's quotes. Absent when the platform itself is the sender.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        documentType:
+          $ref: '#/components/schemas/PaymentDocumentType'
+        fileName:
+          type: string
+          description: File name of the uploaded file
+          example: invoice-2025-0142.pdf
+        sizeBytes:
+          type: integer
+          description: Size of the uploaded file in bytes. It never exceeds the largest file `POST /payment-documents` accepts, which is 8,000,000 bytes today.
+          minimum: 1
+          example: 482133
+        contentType:
+          type: string
+          description: File format as a MIME type, as Grid detected it from the file contents. Today one of `application/pdf`, `image/jpeg`, or `image/png`. Treat it as an open value, because Grid may accept more formats later.
+          example: application/pdf
+        status:
+          $ref: '#/components/schemas/PaymentDocumentStatus'
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the document stops being usable if it has not been attached to a quote. This is 24 hours after `createdAt`.
+          example: '2025-10-04T12:00:00Z'
+        quoteId:
+          type: string
+          description: ID of the quote whose payment this document is attached to. Present only when `status` is `ATTACHED`.
+          example: Quote:019542f5-b3e7-1d02-0000-000000000006
+        createdAt:
+          type: string
+          format: date-time
+          description: When this document was uploaded
+          example: '2025-10-03T12:00:00Z'
     QuoteSourceType:
       type: string
       enum:
@@ -25661,6 +25969,18 @@ components:
         rateDetails:
           $ref: '#/components/schemas/OutgoingRateDetails'
           description: Details about the rate and fees for the transaction.
+        purposeOfPayment:
+          $ref: '#/components/schemas/PurposeOfPayment'
+          description: The purpose of payment the quote was created with. Present only when the quote request set `purposeOfPayment`.
+        documentIds:
+          type: array
+          description: IDs of the supporting documents attached to the payment behind this quote, as passed in `documentIds` on `POST /quotes`. Present only when the quote was created with `documentIds`. Grid returns such a quote only after it has attached every document. Call `GET /payment-documents/{paymentDocumentId}` for each document's details, such as its `documentType` and its `ATTACHED` status.
+          items:
+            type: string
+          example:
+            - PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
+            - PaymentDocument:019542f5-b3e7-1d02-0000-000000000002
+            - PaymentDocument:019542f5-b3e7-1d02-0000-000000000003
         scaChallenge:
           $ref: '#/components/schemas/ScaChallenge'
           description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this quote can be executed (or, for realtime-funding sources, before `paymentInstructions` are issued). Omitted for customers outside SCA-regulated regions (non-EU).'
@@ -25716,6 +26036,23 @@ components:
           example: '12345'
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
+        documentIds:
+          type: array
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+          description: |-
+            IDs of payment documents from `POST /payment-documents` that support this payment. Required when the destination requires supporting documents. Today that means China B2B CNY payouts, which are CNY bank transfers to a business beneficiary. Supply one document for each requirement of your `purposeOfPayment`. [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the requirements for each purpose and the document types each requirement accepts. Grid matches each document to a requirement by its `documentType`, which must be one of the types that requirement accepts. A request that leaves a requirement unfilled returns `400 DOCUMENTS_REQUIRED`. Each document must belong to the customer sending the payment, or to the platform when the platform itself is the sender. Any other ID returns `404 PAYMENT_DOCUMENT_NOT_FOUND`.
+
+            Grid attaches every document to the payment before it returns the quote. With `immediatelyExecute: true`, Grid attaches the documents before it executes the quote. If an attachment fails, Grid creates no quote and returns `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED`. Retry the same request with the same `Idempotency-Key`.
+
+            Requires the `Idempotency-Key` header. A destination that does not require supporting documents rejects `documentIds` with `400 INVALID_INPUT`.
+          items:
+            type: string
+          example:
+            - PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
+            - PaymentDocument:019542f5-b3e7-1d02-0000-000000000002
+            - PaymentDocument:019542f5-b3e7-1d02-0000-000000000003
         platformFeeOverride:
           $ref: '#/components/schemas/PlatformFeeOverride'
         scaFactor:
@@ -29371,3 +29708,9 @@ components:
         multipart/form-data:
           schema:
             $ref: '#/components/schemas/DocumentReplaceRequest'
+    PaymentDocumentUploadRequestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/PaymentDocumentUploadRequest'

@@ -1,0 +1,22 @@
+type: string
+description: >-
+  What a supporting document is. These are kinds of evidence, not file
+  formats: `INVOICE` means the file is an invoice.
+
+
+  [Supporting Documents for China Business
+  Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+  lists the types each requirement accepts. When you upload a file with
+  `POST /payment-documents`, `documentType` declares which type the file is.
+enum:
+  - PURCHASE_ORDER
+  - LOGISTICS_BILL
+  - CUSTOMS_DECLARATION
+  - INVOICE
+  - CONTRACT
+  - DELIVERY_SLIP
+  - BILL_OF_LADING
+  - FLIGHT_TICKET
+  - TRAVEL_DOCUMENT
+  - HOTEL_BOOKING_CONFIRMATION
+example: INVOICE

@@ -1,0 +1,65 @@
+type: object
+description: >-
+  A supporting document uploaded for a payout that requires one. Pass its `id`
+  in `documentIds` on `POST /quotes`.
+required:
+  - id
+  - documentType
+  - fileName
+  - sizeBytes
+  - contentType
+  - status
+  - expiresAt
+  - createdAt
+properties:
+  id:
+    type: string
+    description: Unique identifier for this payment document
+    example: PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
+  customerId:
+    type: string
+    description: >-
+      ID of the sending customer whose payment this document supports. The
+      document can only be used on this customer's quotes. Absent when the
+      platform itself is the sender.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  documentType:
+    $ref: ./PaymentDocumentType.yaml
+  fileName:
+    type: string
+    description: File name of the uploaded file
+    example: invoice-2025-0142.pdf
+  sizeBytes:
+    type: integer
+    description: >-
+      Size of the uploaded file in bytes. It never exceeds the largest file
+      `POST /payment-documents` accepts, which is 8,000,000 bytes today.
+    minimum: 1
+    example: 482133
+  contentType:
+    type: string
+    description: >-
+      File format as a MIME type, as Grid detected it from the file contents.
+      Today one of `application/pdf`, `image/jpeg`, or `image/png`. Treat it as
+      an open value, because Grid may accept more formats later.
+    example: application/pdf
+  status:
+    $ref: ./PaymentDocumentStatus.yaml
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      When the document stops being usable if it has not been attached to a
+      quote. This is 24 hours after `createdAt`.
+    example: '2025-10-04T12:00:00Z'
+  quoteId:
+    type: string
+    description: >-
+      ID of the quote whose payment this document is attached to. Present only
+      when `status` is `ATTACHED`.
+    example: Quote:019542f5-b3e7-1d02-0000-000000000006
+  createdAt:
+    type: string
+    format: date-time
+    description: When this document was uploaded
+    example: '2025-10-03T12:00:00Z'

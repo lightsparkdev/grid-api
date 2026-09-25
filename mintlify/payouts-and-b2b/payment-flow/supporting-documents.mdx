@@ -1,0 +1,190 @@
+---
+title: "Supporting Documents for China Business Payouts"
+description: "The documents each purpose of payment needs for a business payout to China, and how to attach them to a quote"
+icon: "/images/icons/file-text.svg"
+"og:image": "/images/og/og-payouts-b2b.png"
+---
+
+A business payout to China needs supporting documents, such as an invoice or a contract.
+You upload each file first, then pass the document IDs when you create the quote. Grid
+attaches the files to the payment before it returns the quote.
+
+The requirements are the same for every payout. Only the `purposeOfPayment` decides which
+documents you need.
+
+## When documents are needed
+
+A payout needs supporting documents when it is a CNY bank transfer to a business
+beneficiary. That is an external account in `CNY` with a bank `accountNumber` and
+`beneficiaryType: "BUSINESS"`. See the China tab in
+[External Accounts](/payouts-and-b2b/depositing-funds/external-accounts) to create one.
+
+Other payouts don't take documents. A quote with `documentIds` for any other destination
+returns `400 INVALID_INPUT`.
+
+## Requirements by purpose
+
+The payout must use one of the purposes below. Any other `purposeOfPayment` returns
+`400 INVALID_INPUT`, including `GOODS_OR_SERVICES` and `SERVICE_CHARGES`. A payment for
+services uses the purpose that names the service.
+
+Each row is one document to supply. Upload one file for each requirement of your purpose.
+Where a requirement lists more than one type, the types are alternatives for that one file.
+Declare any one of them as the file's `documentType`.
+
+| Purpose | Requirement ID | Accepted document types |
+| --- | --- | --- |
+| `EXPORTED_GOODS_PREPAYMENT` | `PURCHASE_ORDER` | `PURCHASE_ORDER` |
+| `EXPORTED_GOODS_POSTPAYMENT` | `LOGISTICS_BILL` | `LOGISTICS_BILL` |
+| | `CUSTOMS_DECLARATION` | `CUSTOMS_DECLARATION` |
+| | `COMMERCIAL_AGREEMENT` | `PURCHASE_ORDER`, `INVOICE`, `CONTRACT` |
+| `COMMISSION_ON_GOODS`, `COMMISSION_ON_SERVICES`, `ACCOUNTING_SERVICES`, `EXHIBITION_SERVICES` | `CONTRACT` | `CONTRACT` |
+| | `INVOICE` | `INVOICE` |
+| | `SUPPORTING_PROOF` | `PURCHASE_ORDER`, `DELIVERY_SLIP` |
+| `OFFICE_EXPENSES` | `CONTRACT` | `CONTRACT` |
+| | `INVOICE` | `INVOICE` |
+| `DELIVERY_FEES` | `BILL_OF_LADING` | `BILL_OF_LADING` |
+| | `CONTRACT_OR_INVOICE` | `CONTRACT`, `INVOICE` |
+| `TRAVEL` | `FLIGHT_TICKET` | `FLIGHT_TICKET` |
+| | `TRAVEL_DOCUMENT` | `TRAVEL_DOCUMENT` |
+| | `HOTEL_BOOKING_CONFIRMATION` | `HOTEL_BOOKING_CONFIRMATION` |
+| `HOTEL_ACCOMMODATION` | `HOTEL_BOOKING_CONFIRMATION` | `HOTEL_BOOKING_CONFIRMATION` |
+
+The four service purposes share one set of requirements. For example, an
+`ACCOUNTING_SERVICES` payout needs three files: a contract, an invoice, and either a
+purchase order or a delivery slip.
+
+<Note>
+  The requirement ID names the document to supply. The document type names what a file is.
+  `400 DOCUMENTS_REQUIRED` reports missing documents by requirement ID.
+</Note>
+
+## Limits
+
+- A quote accepts at most 3 documents.
+- Each file fills one requirement. A requirement that accepts several types still takes
+  one file.
+- Each file is a PDF, JPEG, or PNG, from 1 to 8,000,000 bytes. Grid detects the format from
+  the file contents, not the file name.
+- A document can be used for 24 hours after upload, until its `expiresAt`.
+- A document can be used on one quote only.
+- A document belongs to the customer in its `customerId`. Only that customer's quotes can
+  use it. Omit `customerId` when the platform itself is the sender. The document can then
+  be used only on the platform's own quotes.
+
+## Send a payout with documents
+
+<Steps>
+<Step title="Upload each file">
+  Upload one file per request with `POST /payment-documents`. You can send the requests in
+  parallel.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/payment-documents' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -F 'file=@invoice-2025-0142.pdf' \
+  -F 'documentType=INVOICE' \
+  -F 'customerId=Customer:019542f5-b3e7-1d02-0000-000000000001'
+```
+
+```json Success (201 Created)
+{
+  "id": "PaymentDocument:019542f5-b3e7-1d02-0000-000000000001",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "documentType": "INVOICE",
+  "fileName": "invoice-2025-0142.pdf",
+  "sizeBytes": 482133,
+  "contentType": "application/pdf",
+  "status": "UPLOADED",
+  "expiresAt": "2025-10-04T12:00:00Z",
+  "createdAt": "2025-10-03T12:00:00Z"
+}
+```
+
+  Keep the `id` of each document. To check whether a document can still be used, call
+  `GET /payment-documents/{paymentDocumentId}`.
+</Step>
+
+<Step title="Create the quote with the document IDs">
+  Pass the IDs in `documentIds`, along with the `purposeOfPayment` they support. A request
+  with `documentIds` must carry an `Idempotency-Key` header.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: 7c9e6679-7425-40de-944b-e07fc1f90ae7' \
+  -d '{
+    "source": { "sourceType": "ACCOUNT", "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965" },
+    "destination": { "destinationType": "ACCOUNT", "accountId": "ExternalAccount:c34dcbd6-dced-4ec4-b756-3c3a9ea3d789" },
+    "lockedCurrencySide": "RECEIVING",
+    "lockedCurrencyAmount": 7250000,
+    "purposeOfPayment": "ACCOUNTING_SERVICES",
+    "documentIds": [
+      "PaymentDocument:019542f5-b3e7-1d02-0000-000000000001",
+      "PaymentDocument:019542f5-b3e7-1d02-0000-000000000002",
+      "PaymentDocument:019542f5-b3e7-1d02-0000-000000000003"
+    ],
+    "description": "Accounting services, invoice INV-2025-0142"
+  }'
+```
+
+  Grid attaches every document to the payment before it returns the quote. The quote lists
+  their IDs in its `documentIds` field. For a document's details, such as its type and its
+  `ATTACHED` status, call `GET /payment-documents/{paymentDocumentId}`. With
+  `immediatelyExecute: true`, Grid attaches the documents before it executes the quote.
+  Otherwise, execute the quote as described in
+  [Sending Payments](/payouts-and-b2b/payment-flow/send-payment).
+</Step>
+</Steps>
+
+## When a document is missing
+
+If `documentIds` doesn't fill every requirement of the purpose, `POST /quotes` returns
+`400 DOCUMENTS_REQUIRED`. `details.missingRequirements` lists the requirement ID of each
+missing document.
+
+```json
+{
+  "code": "DOCUMENTS_REQUIRED",
+  "reason": "Required supporting documents are missing",
+  "details": {
+    "missingRequirements": ["SUPPORTING_PROOF"]
+  }
+}
+```
+
+Upload the missing documents, then send the quote request again with a new
+`Idempotency-Key`. Treat each requirement ID as an opaque value. Grid may add new ones as
+requirements change.
+
+Other errors on a quote with documents:
+
+| Error | Cause | What to do |
+| --- | --- | --- |
+| `400 INVALID_INPUT` | No `Idempotency-Key`, a document whose type fills no remaining requirement, or a purpose outside the table | Fix the request and send it with a new `Idempotency-Key` |
+| `404 PAYMENT_DOCUMENT_NOT_FOUND` | An ID doesn't match a document of the sending customer, or of the platform when it is the sender | Fix the IDs and send the request with a new `Idempotency-Key` |
+| `409 PAYMENT_DOCUMENT_ALREADY_USED` | A document is already attached to another quote | Upload the file again and retry with the new ID |
+| `410 PAYMENT_DOCUMENT_EXPIRED` | A document passed its `expiresAt` | Upload the file again and retry with the new ID |
+| `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED` | Grid could not attach a document to the payment | Retry the same request with the same `Idempotency-Key` |
+
+A request that fails with a `409`, `410`, or `424` created no quote. A retry with the same
+`Idempotency-Key` runs the request again.
+
+## What the payout partner checks
+
+Grid does not check what a document says. The payout partner reviews each document after
+Grid attaches it. To avoid a rejected or delayed payout:
+
+- Every document must carry the beneficiary's stamp. A contract must be stamped by both
+  parties.
+- The invoice amount must match the transaction amount.
+- The invoice currency must match the payout currency.
+- Sender and beneficiary details in the documents must match the details you send through
+  the API.
+
+<Warning>
+  A successful attachment means the payout partner received the file, not that it approved
+  it. The partner may later request more information about the payment, with a deadline of
+  15 calendar days.
+</Warning>

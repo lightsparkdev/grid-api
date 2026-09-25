@@ -1,0 +1,23 @@
+type: string
+description: >-
+  A stable identifier for one required document within a purpose's
+  requirements. The same ID means the same requirement across quotes. It is
+  separate from `PaymentDocumentType`. The requirement ID names the document
+  to supply, and the document type names what a file is. The two differ where
+  a requirement accepts alternatives. For example, a file declared as either
+  `PURCHASE_ORDER` or `DELIVERY_SLIP` fills the `SUPPORTING_PROOF`
+  requirement.
+
+
+  China B2B CNY payouts use these IDs: `PURCHASE_ORDER`, `LOGISTICS_BILL`,
+  `CUSTOMS_DECLARATION`, `COMMERCIAL_AGREEMENT`, `CONTRACT`, `INVOICE`,
+  `SUPPORTING_PROOF`, `BILL_OF_LADING`, `CONTRACT_OR_INVOICE`,
+  `FLIGHT_TICKET`, `TRAVEL_DOCUMENT`, and `HOTEL_BOOKING_CONFIRMATION`.
+  [Supporting Documents for China Business
+  Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+  lists the IDs each purpose requires.
+
+
+  Treat the ID as an opaque value, not a member of a fixed list. Grid may add
+  new IDs as requirements change.
+example: SUPPORTING_PROOF

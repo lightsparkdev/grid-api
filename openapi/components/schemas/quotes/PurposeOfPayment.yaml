@@ -1,12 +1,28 @@
 type: string
 description: >-
   The purpose of the payment. This may be required when sending to certain
-  geographies (e.g. India). Business payments to China must use one of the
-  China-specific purposes rather than `GOODS_OR_SERVICES`, because each purpose
-  requires its own supporting documents. Those purposes are
-  `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `SERVICE_CHARGES`,
-  `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`. The
-  six China-only values are rejected on other corridors.
+  geographies (e.g. India).
+
+
+  Business payments to China must use one of the China-specific purposes
+  rather than `GOODS_OR_SERVICES`, because each purpose requires its own
+  supporting documents. Those purposes are `EXPORTED_GOODS_PREPAYMENT`,
+  `EXPORTED_GOODS_POSTPAYMENT`, `COMMISSION_ON_GOODS`,
+  `COMMISSION_ON_SERVICES`, `ACCOUNTING_SERVICES`, `EXHIBITION_SERVICES`,
+  `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`.
+  [Supporting Documents for China Business
+  Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+  lists the documents each one requires.
+
+
+  A payment for services uses the purpose that names the service. The
+  receiving bank needs that detail, so `SERVICE_CHARGES` is not accepted on
+  these payouts.
+
+
+  The China-specific purposes also work on other corridors. There, Grid sends
+  the closest purpose the payout partner accepts, or the partner's own
+  "other" purpose when none fits.
 enum:
   - GIFT
   - SELF
@@ -27,4 +43,8 @@ enum:
   - OFFICE_EXPENSES
   - DELIVERY_FEES
   - HOTEL_ACCOMMODATION
+  - COMMISSION_ON_GOODS
+  - COMMISSION_ON_SERVICES
+  - ACCOUNTING_SERVICES
+  - EXHIBITION_SERVICES
   - OTHER
