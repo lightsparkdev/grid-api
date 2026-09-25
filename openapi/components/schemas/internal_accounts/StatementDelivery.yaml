@@ -1,0 +1,32 @@
+type: object
+required:
+  - internalAccountId
+  - periodStart
+properties:
+  internalAccountId:
+    type: string
+    description: The account whose statement this is
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  periodStart:
+    type: string
+    format: date
+    description: First day of the statement period
+    example: '2026-09-01'
+  fetchedAt:
+    anyOf:
+      - type: string
+        format: date-time
+      - type: 'null'
+    description: >-
+      When the statement for this period was first read from Grid, or null if
+      it never has been
+    example: '2026-10-01T09:00:00Z'
+  confirmedAt:
+    anyOf:
+      - type: string
+        format: date-time
+      - type: 'null'
+    description: >-
+      When the statement was first delivered to the customer, or null if
+      delivery has not been confirmed. Later confirmations do not move it.
+    example: '2026-10-03T14:31:00Z'

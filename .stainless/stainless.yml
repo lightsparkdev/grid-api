@@ -125,6 +125,11 @@ resources:
       internal_account_update_request: '#/components/schemas/InternalAccountUpdateRequest'
       internal_account_export_request: '#/components/schemas/InternalAccountExportRequest'
       internal_account_export_response: '#/components/schemas/InternalAccountExportResponse'
+      # Periodic statements
+      balance_change: '#/components/schemas/BalanceChange'
+      balance_change_list_response: '#/components/schemas/BalanceChangeListResponse'
+      confirm_statement_delivery_request: '#/components/schemas/ConfirmStatementDeliveryRequest'
+      statement_delivery: '#/components/schemas/StatementDelivery'
       # KYC link generation
       kyc_link_create_request: '#/components/schemas/KycLinkCreateRequest'
       kyc_link_response: '#/components/schemas/KycLinkResponse'
@@ -143,6 +148,10 @@ resources:
       update_internal_account:
         endpoint: patch /internal-accounts/{id}
         body_param_name: InternalAccountUpdateRequest
+      list_balance_changes: get /internal-accounts/{id}/balance-changes
+      confirm_statement_delivery:
+        endpoint: post /internal-accounts/{id}/statement-confirmations
+        body_param_name: ConfirmStatementDeliveryRequest
       create_kyc_link:
         endpoint: post /customers/{customerId}/kyc-link
         body_param_name: KycLinkCreateRequest

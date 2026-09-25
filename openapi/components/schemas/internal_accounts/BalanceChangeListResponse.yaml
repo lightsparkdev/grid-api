@@ -1,0 +1,51 @@
+type: object
+description: >-
+  A window of balance changes with the balances that bound it. The opening and
+  closing balances describe the whole window, not the page, so they are the
+  same on every page, and the identity `openingBalance + Σ(data[].amount) ==
+  closingBalance` holds only once every page's `data` is summed.
+required:
+  - data
+  - periodStart
+  - periodEnd
+  - openingBalance
+  - closingBalance
+  - hasMore
+properties:
+  data:
+    type: array
+    description: Balance changes on this page, ordered by `effectiveAt`
+    items:
+      $ref: ./BalanceChange.yaml
+  periodStart:
+    type: string
+    format: date-time
+    description: Start of the window, inclusive
+    example: '2026-08-01T00:00:00Z'
+  periodEnd:
+    type: string
+    format: date-time
+    description: End of the window, exclusive
+    example: '2026-09-01T00:00:00Z'
+  openingBalance:
+    $ref: ../common/CurrencyAmount.yaml
+  closingBalance:
+    $ref: ../common/CurrencyAmount.yaml
+  hasMore:
+    type: boolean
+    description: Indicates if more changes are available beyond this page
+    example: false
+  nextCursor:
+    type: string
+    description: >-
+      Cursor to retrieve the next page of results (only present if hasMore is
+      true)
+    example: BalanceChange:019542f5-b3e7-1d02-0000-000000000003
+  countIsExact:
+    type: boolean
+    description: Whether `totalCount` is exact rather than capped
+    example: true
+  totalCount:
+    type: integer
+    description: Number of balance changes in the window, across all pages
+    example: 42

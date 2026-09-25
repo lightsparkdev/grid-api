@@ -1,0 +1,134 @@
+parameters:
+  - name: id
+    in: path
+    description: The id of the internal account to list balance changes for.
+    required: true
+    schema:
+      type: string
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+
+get:
+  summary: List balance changes for a period
+  description: >
+    Every change to this account's balance in a window, in the order the money
+    moved, with the opening and closing balances for that window in the same
+    response.
+
+
+    This is the statement feed. `GET /transactions` returns one row per
+    transaction. This returns one row per change to the balance, and a
+    transaction that moves the balance more than once produces more than one
+    change: an ACH deposit and its later return are two, and a card purchase
+    that clears in two parts is two.
+
+
+    **The identity to assert:** `openingBalance + Σ(data[].amount) ==
+    closingBalance`, summed over every page. The opening and closing balances
+    describe the window rather than the page, so they are the same on every
+    page. Page until `hasMore` is false, then assert the identity before
+    rendering a statement.
+
+
+    `from` and `to` are instants and the window is half-open: a change at
+    exactly `to` belongs to the next window. Consecutive periods therefore
+    tile with no gap and no overlap. For a monthly statement, pass the first
+    instant of the month and the first instant of the following month.
+
+
+    A window whose card settlement has not closed is refused with `409
+    BALANCE_NOT_YET_FINAL`, because its figures could still change. Retry once
+    it has settled. A window Grid cannot report at all is refused with `422
+    PERIOD_NOT_REPORTABLE`, and retrying will not change that.
+
+
+    Merchant, counterparty and rail detail live on the transaction; read them
+    from `GET /transactions`.
+  operationId: listInternalAccountBalanceChanges
+  tags:
+    - Periodic Statements
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: from
+      in: query
+      required: true
+      description: Start of the window, inclusive. Must include a timezone offset.
+      schema:
+        type: string
+        format: date-time
+      example: '2026-08-01T00:00:00Z'
+    - name: to
+      in: query
+      required: true
+      description: >-
+        End of the window, exclusive. Must include a timezone offset and must
+        not be in the future.
+      schema:
+        type: string
+        format: date-time
+      example: '2026-09-01T00:00:00Z'
+    - name: limit
+      in: query
+      required: false
+      description: Maximum number of changes to return per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 100
+    - name: cursor
+      in: query
+      required: false
+      description: Cursor for pagination (returned from previous request)
+      schema:
+        type: string
+  responses:
+    '200':
+      description: The balance changes in the window, with the balances that bound it
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/internal_accounts/BalanceChangeListResponse.yaml
+    '400':
+      description: >-
+        Bad request. Returned when `from` or `to` is missing, has no timezone
+        offset, or is in the future, or when `from` is not before `to`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Internal account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        The window is not final yet. Card settlement for one of its boundaries
+        has not closed, so its balances and changes could still change. Retry
+        once it has settled.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '422':
+      description: >-
+        No statement is available for this window, and retrying will not change
+        that.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error422.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
