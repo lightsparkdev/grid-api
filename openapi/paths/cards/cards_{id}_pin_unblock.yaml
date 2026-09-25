@@ -15,7 +15,7 @@ post:
 
     Unblocking is idempotent and safe to call on a card whose `pinStatus` is
     already `OK`. It has no effect on a card with no PIN set, which returns
-    `409` — set a PIN with `POST /cards/{id}/pin` instead.
+    `409` — set a PIN with `POST /cards/{id}/set-pin` instead.
 
 
     Grid supports online PINs only. Offline PIN cards

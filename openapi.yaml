@@ -9114,7 +9114,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
-  /cards/{id}/pin:
+  /cards/{id}/set-pin:
     parameters:
       - name: id
         in: path
@@ -9205,7 +9205,7 @@ paths:
 
         Use the iframe's submission result to confirm completion, and `GET /cards/{id}` to read `pinStatus`. `OK` alone cannot confirm a change to an already configured PIN.
 
-        If you operate your own PIN-entry UI, use `POST /cards/{id}/pin` with a client-encrypted payload instead.
+        If you operate your own PIN-entry UI, use `POST /cards/{id}/set-pin` with a client-encrypted payload instead.
 
         Every successful session request is audit-logged with the requesting actor.
       operationId: createCardPinSession
@@ -9281,7 +9281,7 @@ paths:
       description: |-
         Clear a `BLOCKED` PIN, restoring the cardholder's existing PIN without changing it. A PIN blocks after three consecutive incorrect entries; until it is cleared, PIN-verified transactions decline.
 
-        Unblocking is idempotent and safe to call on a card whose `pinStatus` is already `OK`. It has no effect on a card with no PIN set, which returns `409` — set a PIN with `POST /cards/{id}/pin` instead.
+        Unblocking is idempotent and safe to call on a card whose `pinStatus` is already `OK`. It has no effect on a card with no PIN set, which returns `409` — set a PIN with `POST /cards/{id}/set-pin` instead.
 
         Grid supports online PINs only. Offline PIN cards are not supported. Read `GET /cards/{id}` to check `pinStatus`.
 
@@ -27730,9 +27730,9 @@ components:
 
         | Status | Description |
         |--------|-------------|
-        | `NOT_SET` | No PIN has been set on the card. PIN verification is not enabled. Set one with `POST /cards/{id}/pin` or `POST /cards/{id}/pin/session`. |
+        | `NOT_SET` | No PIN has been set on the card. PIN verification is not enabled. Set one with `POST /cards/{id}/set-pin` or `POST /cards/{id}/pin/session`. |
         | `OK` | A PIN is set and usable. |
-        | `BLOCKED` | The PIN was entered incorrectly three consecutive times and is refused until cleared with `POST /cards/{id}/pin/unblock`, or replaced with `POST /cards/{id}/pin`. |
+        | `BLOCKED` | The PIN was entered incorrectly three consecutive times and is refused until cleared with `POST /cards/{id}/pin/unblock`, or replaced with `POST /cards/{id}/set-pin`. |
     Card:
       type: object
       required:

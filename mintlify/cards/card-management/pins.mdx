@@ -54,7 +54,7 @@ If you collect the PIN in your own UI, you **must encrypt it in the customer’s
 2. Generate a fresh, cryptographically random integer `nonce` for each request.
 3. Serialize an object containing `nonce` and `pin` as JSON. Encode the JSON as UTF-8.
 4. Encrypt those bytes using the PIN encryption public key, then base64-encode the ciphertext.
-5. Send the base64 string as `encryptedPinBlock` in `POST /cards/{id}/pin`.
+5. Send the base64 string as `encryptedPinBlock` in `POST /cards/{id}/set-pin`.
 
 For example, a PIN of `0123` produces JSON with this shape **before encryption**:
 

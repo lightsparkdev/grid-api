@@ -350,8 +350,8 @@ paths:
     $ref: paths/cards/cards_{id}_reveal.yaml
   /cards/{id}/tokenize:
     $ref: paths/cards/cards_{id}_tokenize.yaml
-  /cards/{id}/pin:
-    $ref: paths/cards/cards_{id}_pin.yaml
+  /cards/{id}/set-pin:
+    $ref: paths/cards/cards_{id}_set_pin.yaml
   /cards/{id}/pin/session:
     $ref: paths/cards/cards_{id}_pin_session.yaml
   /cards/{id}/pin/unblock:

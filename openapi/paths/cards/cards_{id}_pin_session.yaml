@@ -26,7 +26,7 @@ post:
     change to an already configured PIN.
 
 
-    If you operate your own PIN-entry UI, use `POST /cards/{id}/pin` with
+    If you operate your own PIN-entry UI, use `POST /cards/{id}/set-pin` with
     a client-encrypted payload instead.
 
 
