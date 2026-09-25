@@ -1,4 +1,5 @@
 type: object
+description: A temporary PIN-entry iframe URL, its credential, and expiration.
 required:
   - iframeUrl
   - sessionToken
@@ -33,7 +34,7 @@ properties:
     type: string
     format: date-time
     description: >-
-      When the session stops working. Request a new session rather than
+      When the URL stops working. Request a new URL rather than
       reusing an expired URL or token.
     example: '2026-05-08T14:16:00Z'
   environment:

@@ -92,7 +92,10 @@ paths:
                 $ref: '#/components/schemas/Error500'
     patch:
       summary: Update platform configuration
-      description: Update platform configuration settings. `cardConfigs` can establish platform-level caps on a single card transaction, on spend during one UTC calendar day, and on the number of transactions during one UTC calendar day. Grid enforces the lower of each platform cap and its corresponding card-specific value without replacing the card-specific value. Daily limits reset at 00:00 UTC.
+      description: |-
+        Update platform configuration settings. `cardConfigs` can establish platform-level caps on a single card transaction, on spend during one UTC calendar day, and on the number of transactions during one UTC calendar day. Grid enforces the lower of each platform cap and its corresponding card-specific value without replacing the card-specific value. Daily limits reset at 00:00 UTC.
+
+        Set `cardConfigs.pinTargetOrigin` to the canonical HTTPS origin of your frontend before calling `GET /cards/{id}/set-pin-url`. Omit the field to preserve its value or set it to `null` to clear it.
       operationId: updatePlatformConfig
       tags:
         - Platform Configuration
@@ -140,6 +143,7 @@ paths:
                   templateSid: HJaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
                   bodyText: Use this code to finish adding your Acme card to your digital wallet.
               cardConfigs:
+                pinTargetOrigin: https://app.example.com
                 maxSpendPerTransaction: 10000
                 maxSpendPerDay: 50000
                 maxTransactionsPerDay: 50
@@ -151,7 +155,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PlatformConfig'
         '400':
-          description: Bad request
+          description: Bad request. Includes `INVALID_INPUT` when `cardConfigs.pinTargetOrigin` is supplied but is neither null nor a canonical HTTPS origin.
           content:
             application/json:
               schema:
@@ -9127,7 +9131,7 @@ paths:
       description: |-
         Set or replace the card's online PIN using a block encrypted in your client with the published PIN encryption public key. Grid cannot decrypt the block and never stores or logs PIN material.
 
-        Use this when you operate your own PIN-entry UI. For a hosted PIN-entry iframe, use `POST /cards/{id}/pin/session` — the two are alternatives, and a card may use either at any time.
+        Use this when you operate your own PIN-entry UI. For a hosted PIN-entry iframe, use `GET /cards/{id}/set-pin-url` — the two are alternatives, and a card may use either at any time.
 
         Setting a PIN clears a `BLOCKED` PIN, so a cardholder locked out by incorrect attempts can recover by choosing a new PIN without a separate unblock. Read `GET /cards/{id}` for the resulting status. Grid supports online PINs only; offline PIN cards are not supported.
 
@@ -9188,7 +9192,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
-  /cards/{id}/pin/session:
+  /cards/{id}/set-pin-url:
     parameters:
       - name: id
         in: path
@@ -9196,42 +9200,40 @@ paths:
         required: true
         schema:
           type: string
-    post:
-      summary: Create a PIN-entry session
+    get:
+      summary: Get a PIN-entry URL
       description: |-
-        Create a temporary session for a secure PIN-entry iframe. The cardholder chooses a four-digit PIN inside the iframe, without the plaintext PIN crossing your servers or Grid's. Grid supports online PINs only.
+        Get a temporary URL for a secure PIN-entry iframe. The cardholder chooses a four-digit PIN inside the iframe, without the plaintext PIN crossing your servers or Grid's. Grid supports online PINs only.
 
-        Request the session immediately before displaying the form. Set your iframe's `src` to the returned `iframeUrl` without modifying it. Follow the [Card PIN guide](https://docs.lightspark.com/cards/card-management/pins) to submit the form and confirm the result. Never store, cache, or log the URL or token. The session expires at `expiresAt` and permits one successful PIN submission.
+        Configure `cardConfigs.pinTargetOrigin` through `PATCH /platform/config` before requesting a URL. It is the canonical HTTPS origin of the page that hosts the iframe. The iframe is restricted to that origin; this endpoint takes no request body or origin parameter.
+
+        Each call creates a fresh, temporary PIN-entry session. Request a URL immediately before displaying the form. Fetching the URL does not set or change the PIN. Set your iframe's `src` to the returned `iframeUrl` without modifying it. Follow the [Card PIN guide](https://docs.lightspark.com/cards/card-management/pins) to submit the form and confirm the result. Never store, cache, or log the URL or token. The session expires at `expiresAt` and permits one successful PIN submission. Responses include `Cache-Control: no-store`.
 
         Use the iframe's submission result to confirm completion, and `GET /cards/{id}` to read `pinStatus`. `OK` alone cannot confirm a change to an already configured PIN.
 
         If you operate your own PIN-entry UI, use `POST /cards/{id}/set-pin` with a client-encrypted payload instead.
 
-        Every successful session request is audit-logged with the requesting actor.
-      operationId: createCardPinSession
+        Requires permission to manage cards. Every successful URL request is audit-logged with the requesting actor.
+      operationId: getCardPinUrl
       tags:
         - Cards
       security:
         - BasicAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CardPinSessionRequest'
       responses:
         '200':
-          description: PIN-entry session minted.
+          description: A fresh PIN-entry URL and its expiration.
+          headers:
+            Cache-Control:
+              description: Prevents storage of the temporary PIN-entry credential.
+              schema:
+                type: string
+                enum:
+                  - no-store
+              example: no-store
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CardPinSessionResponse'
-        '400':
-          description: Bad request. Returned with `INVALID_INPUT` when `targetOrigin` is absent or is not a canonical HTTPS origin.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
+                $ref: '#/components/schemas/CardPinUrlResponse'
         '401':
           description: Unauthorized
           content:
@@ -9239,7 +9241,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden. The session has no attributable actor to audit the mint against (for example, an impersonated dashboard session).
+          description: Forbidden. The caller lacks permission to manage cards or has no attributable actor to audit the request against (for example, an impersonated dashboard session).
           content:
             application/json:
               schema:
@@ -9251,7 +9253,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict. Returned with `CONFLICT` for a closed card or a card that does not support PIN management.
+          description: Conflict. Returned with `CONFLICT` for a closed card, a card that does not support PIN management, or an unset `cardConfigs.pinTargetOrigin`. Configure the origin through `PATCH /platform/config` before requesting a PIN-entry URL.
           content:
             application/json:
               schema:
@@ -13304,6 +13306,17 @@ components:
       type: object
       description: Platform-level settings that apply to cards issued by the platform.
       properties:
+        pinTargetOrigin:
+          anyOf:
+            - type: string
+              format: uri
+              pattern: ^https://(?:[^\s/?#@:\[\]\\]+|\[[0-9A-Fa-f:.]+\])(?::[0-9]{1,5})?$
+            - type: 'null'
+          description: |-
+            Canonical HTTPS origin of the page that hosts the PIN-entry iframe returned by `GET /cards/{id}/set-pin-url`. Include the scheme, host, and optional port, without a path, trailing slash, query, fragment, or credentials. The iframe is restricted to this origin, so it must match the embedding page's origin exactly. Different user-specific paths on the same origin use this one setting.
+
+            Required before requesting a PIN-entry URL. Omit this field when updating platform configuration to preserve its value; set it to `null` to clear it. If unset, PIN-entry URL requests return `409 CONFLICT`. Changes apply to newly requested URLs.
+          example: https://app.example.com
         maxSpendPerTransaction:
           anyOf:
             - type: integer
@@ -13632,7 +13645,7 @@ components:
             to subsequent delivery attempts.
         cardConfigs:
           $ref: '#/components/schemas/CardConfig'
-          description: Update platform-level card settings. Fields omitted from the nested object are left unchanged. For any card limit, supply null to clear the platform cap or a positive integer to set it. Omit this field at the top level to leave all card settings unchanged.
+          description: Update platform-level card settings. Fields omitted from the nested object are left unchanged. For any card limit, supply null to clear the platform cap or a positive integer to set it. Set `pinTargetOrigin` to configure the website that hosts PIN-entry iframes, or supply null to clear it. Omit this field at the top level to leave all card settings unchanged.
         feeConfigs:
           type: array
           items:
@@ -27730,7 +27743,7 @@ components:
 
         | Status | Description |
         |--------|-------------|
-        | `NOT_SET` | No PIN has been set on the card. PIN verification is not enabled. Set one with `POST /cards/{id}/set-pin` or `POST /cards/{id}/pin/session`. |
+        | `NOT_SET` | No PIN has been set on the card. PIN verification is not enabled. Set one with `POST /cards/{id}/set-pin` or the hosted form returned by `GET /cards/{id}/set-pin-url`. |
         | `OK` | A PIN is set and usable. |
         | `BLOCKED` | The PIN was entered incorrectly three consecutive times and is refused until cleared with `POST /cards/{id}/pin/unblock`, or replaced with `POST /cards/{id}/set-pin`. |
     Card:
@@ -28243,19 +28256,9 @@ components:
           minLength: 16
           maxLength: 1024
           example: SGVsbG8sIHRoaXMgaXMgYSBiYXNlNjQtZW5jb2RlZCBjaXBoZXJ0ZXh0Li4u
-    CardPinSessionRequest:
+    CardPinUrlResponse:
       type: object
-      required:
-        - targetOrigin
-      properties:
-        targetOrigin:
-          type: string
-          format: uri
-          pattern: ^https://(?:[^\s/?#@:\[\]\\]+|\[[0-9A-Fa-f:.]+\])(?::[0-9]{1,5})?$
-          description: Canonical HTTPS origin of the page that will host the PIN-entry iframe. The iframe is restricted to this origin, so it must match the embedding page's origin exactly — scheme, host, and optional port; no path, trailing slash, query, fragment, or credentials.
-          example: https://app.example.com
-    CardPinSessionResponse:
-      type: object
+      description: A temporary PIN-entry iframe URL, its credential, and expiration.
       required:
         - iframeUrl
         - sessionToken
@@ -28277,7 +28280,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: When the session stops working. Request a new session rather than reusing an expired URL or token.
+          description: When the URL stops working. Request a new URL rather than reusing an expired URL or token.
           example: '2026-05-08T14:16:00Z'
         environment:
           type: string

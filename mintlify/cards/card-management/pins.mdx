@@ -15,10 +15,26 @@ An online PIN is checked over the payment network when a payment requires it. "O
 ## Use the hosted PIN-entry iframe
 
 <Steps>
-<Step title="Create a session">
-Call `POST /cards/{id}/pin/session` from your backend with the canonical HTTPS `targetOrigin` of your frontend. Include the scheme, host, and optional port, without a path, trailing slash, credentials, query, or fragment.
+<Step title="Configure your platform">
+Set `cardConfigs.pinTargetOrigin` once through `PATCH /platform/config`:
+
+```json
+{
+  "cardConfigs": {
+    "pinTargetOrigin": "https://app.example.com"
+  }
+}
+```
+
+Use the canonical HTTPS origin of the page that hosts the iframe: scheme, host, and optional port, without a path, trailing slash, credentials, query, or fragment. One origin covers all user-specific paths on that website. Omit this setting in later configuration updates to preserve it, or set it to `null` to clear it. Changes apply to newly requested URLs.
+</Step>
+
+<Step title="Get a PIN-entry URL">
+Call `GET /cards/{id}/set-pin-url` from your backend immediately before displaying the form. Send no request body or origin parameter; Grid uses your platform's configured origin. If the origin is unset, the request returns `409 CONFLICT`.
 
 Grid returns `iframeUrl`, `sessionToken`, `expiresAt`, and `environment`. The URL already contains the temporary token and selects the appropriate environment.
+
+Each request creates a fresh, temporary PIN-entry session and returns `Cache-Control: no-store`. Requesting a URL does not set or change the PIN.
 </Step>
 
 <Step title="Load the form">
@@ -38,13 +54,13 @@ Listen for `Embed:PinSubmissionStatusChanged` with the following `data.status` v
 | --- | --- |
 | `STARTED` | Keep submission disabled while waiting for a result. |
 | `SUCCEEDED` | Show confirmation, remove the iframe, and refresh the card's PIN status. |
-| `FAILED` | Show a PIN-entry error and let the cardholder correct the input. Request a new session if the session is expired. |
+| `FAILED` | Show a PIN-entry error and let the cardholder correct the input. Request a new URL if the session is expired. |
 
 Remove your event listener when you remove the iframe. If you stop waiting before a result arrives, treat the outcome as unknown: do not report success or automatically resubmit. An `OK` status alone cannot prove that an already configured PIN was changed.
 </Step>
 </Steps>
 
-The session permits one successful submission and expires at `expiresAt`. Request a new session for another PIN change or after expiration. Treat both the URL and token as secrets: never persist, cache, log, or send them to analytics.
+The session permits one successful submission and expires at `expiresAt`. Request a new URL for another PIN change or after expiration. Treat both the URL and token as secrets: never persist, cache, log, or send them to analytics.
 
 ## Encrypt a PIN in your own UI
 

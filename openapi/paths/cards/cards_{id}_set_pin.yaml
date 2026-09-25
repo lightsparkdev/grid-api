@@ -15,7 +15,7 @@ post:
 
     Use this when you operate your own PIN-entry UI. For a hosted PIN-entry
     iframe, use
-    `POST /cards/{id}/pin/session` — the two are alternatives, and a card may
+    `GET /cards/{id}/set-pin-url` — the two are alternatives, and a card may
     use either at any time.
 
 

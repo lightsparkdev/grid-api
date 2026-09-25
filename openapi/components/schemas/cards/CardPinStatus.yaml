@@ -12,6 +12,6 @@ description: |
 
   | Status | Description |
   |--------|-------------|
-  | `NOT_SET` | No PIN has been set on the card. PIN verification is not enabled. Set one with `POST /cards/{id}/set-pin` or `POST /cards/{id}/pin/session`. |
+  | `NOT_SET` | No PIN has been set on the card. PIN verification is not enabled. Set one with `POST /cards/{id}/set-pin` or the hosted form returned by `GET /cards/{id}/set-pin-url`. |
   | `OK` | A PIN is set and usable. |
   | `BLOCKED` | The PIN was entered incorrectly three consecutive times and is refused until cleared with `POST /cards/{id}/pin/unblock`, or replaced with `POST /cards/{id}/set-pin`. |
