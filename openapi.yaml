@@ -31,6 +31,31 @@ tags:
     description: Endpoints for uploading and managing verification documents for customers and beneficial owners. Supports KYC and KYB document requirements.
   - name: Internal Accounts
     description: Internal account management endpoints for creating and managing internal accounts
+  - name: Periodic Statements
+    description: |
+      Build, deliver, and evidence a Regulation E periodic statement for a customer's internal account. A statement period is a calendar month.
+
+      **1. The statement — `GET /internal-accounts/{id}/balance-changes?from=&to=`**
+
+      One row per change to the balance, in the order the money moved, with the opening and closing balances for the window in the same response. Page until `hasMore` is false, then assert this identity across every page before you render anything:
+
+      ```
+      openingBalance + Σ(data[].amount) == closingBalance
+      ```
+
+      If it does not hold, do not send the statement; contact support instead. `from` and `to` bound a half-open window `[from, to)`: for a monthly statement, pass the first instant of the month and the first instant of the following month.
+
+      **2. The attestation — `POST /internal-accounts/{id}/statement-confirmations`**
+
+      Regulation E requires the statement to be delivered, not only available. Once you have delivered it, confirm with the `periodStart` you delivered for. Confirming is idempotent and keeps the first delivery time.
+
+      **Coverage**
+
+      Grid monitors periods that were never fetched and periods that were fetched but never confirmed. Confirm each period you deliver and neither signal fires.
+
+      **Timing**
+
+      A window whose card settlement has not closed is refused with `409 BALANCE_NOT_YET_FINAL` rather than answered with figures that could still change; retry once it has settled. A window Grid cannot report at all is refused with `422 PERIOD_NOT_REPORTABLE`.
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
   - name: Same-Currency Transfers
@@ -6154,6 +6179,170 @@ paths:
                 $ref: '#/components/schemas/Error400'
         '401':
           description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending export challenge for this internal account, when the `Request-Id` does not match an unexpired pending challenge, or when the retry's `clientPublicKey` does not match the one bound into `payloadToSign` on the initial call.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /internal-accounts/{id}/balance-changes:
+    parameters:
+      - name: id
+        in: path
+        description: The id of the internal account to list balance changes for.
+        required: true
+        schema:
+          type: string
+        example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+    get:
+      summary: List balance changes for a period
+      description: |
+        Every change to this account's balance in a window, in the order the money moved, with the opening and closing balances for that window in the same response.
+
+        This is the statement feed. `GET /transactions` returns one row per transaction. This returns one row per change to the balance, and a transaction that moves the balance more than once produces more than one change: an ACH deposit and its later return are two, and a card purchase that clears in two parts is two.
+
+        **The identity to assert:** `openingBalance + Σ(data[].amount) == closingBalance`, summed over every page. The opening and closing balances describe the window rather than the page, so they are the same on every page. Page until `hasMore` is false, then assert the identity before rendering a statement.
+
+        `from` and `to` are instants and the window is half-open: a change at exactly `to` belongs to the next window. Consecutive periods therefore tile with no gap and no overlap. For a monthly statement, pass the first instant of the month and the first instant of the following month.
+
+        A window whose card settlement has not closed is refused with `409 BALANCE_NOT_YET_FINAL`, because its figures could still change. Retry once it has settled. A window Grid cannot report at all is refused with `422 PERIOD_NOT_REPORTABLE`, and retrying will not change that.
+
+        Merchant, counterparty and rail detail live on the transaction; read them from `GET /transactions`.
+      operationId: listInternalAccountBalanceChanges
+      tags:
+        - Periodic Statements
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: true
+          description: Start of the window, inclusive. Must include a timezone offset.
+          schema:
+            type: string
+            format: date-time
+          example: '2026-08-01T00:00:00Z'
+        - name: to
+          in: query
+          required: true
+          description: End of the window, exclusive. Must include a timezone offset and must not be in the future.
+          schema:
+            type: string
+            format: date-time
+          example: '2026-09-01T00:00:00Z'
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of changes to return per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 100
+        - name: cursor
+          in: query
+          required: false
+          description: Cursor for pagination (returned from previous request)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The balance changes in the window, with the balances that bound it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceChangeListResponse'
+        '400':
+          description: Bad request. Returned when `from` or `to` is missing, has no timezone offset, or is in the future, or when `from` is not before `to`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The window is not final yet. Card settlement for one of its boundaries has not closed, so its balances and changes could still change. Retry once it has settled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '422':
+          description: No statement is available for this window, and retrying will not change that.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /internal-accounts/{id}/statement-confirmations:
+    parameters:
+      - name: id
+        in: path
+        description: The id of the internal account whose statement was delivered.
+        required: true
+        schema:
+          type: string
+        example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+    post:
+      summary: Confirm delivery of a periodic statement
+      description: |
+        Record that this account's periodic statement for a period was delivered to the customer.
+
+        Regulation E requires the statement to be delivered, not only available. Grid provides the statement through `GET /internal-accounts/{id}/balance-changes`; only you know whether it reached your customer. Call this once you have delivered it.
+
+        `periodStart` names the period: the first day of the statement month, as a date. It must be the first of a month, and a month that has already begun.
+
+        Confirming is idempotent. The stored time is when delivery first happened, so re-sending a statement or calling this endpoint again does not move it. If `deliveredAt` is omitted, the current time is used.
+      operationId: confirmStatementDelivery
+      tags:
+        - Periodic Statements
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmStatementDeliveryRequest'
+      responses:
+        '200':
+          description: Statement delivery recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatementDelivery'
+        '400':
+          description: Bad request. Returned when `periodStart` is not the first day of a month or names a month that has not begun, or when `deliveredAt` is in the future.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -15140,6 +15329,7 @@ components:
             | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
             | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
             | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
+            | BALANCE_NOT_YET_FINAL | Card settlement for a boundary of the requested window has not closed, so its balances and balance changes could still change. Retry once it has settled |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
             | DOCUMENT_ALREADY_EXISTS | A document of this type already exists for the holder; replace it with PUT |
             | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists |
@@ -15164,6 +15354,7 @@ components:
             - CARD_NOT_MUTABLE
             - CARD_LIMIT_REACHED
             - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
+            - BALANCE_NOT_YET_FINAL
             - CONFLICT
             - DOCUMENT_ALREADY_EXISTS
             - DUPLICATE_EXTERNAL_ACCOUNT
@@ -24521,8 +24712,10 @@ components:
             | Error Code | Description |
             |------------|-------------|
             | DOCUMENT_REJECTED | The verification provider screened the uploaded file and marked it unusable. `precheckErrors` names each problem it found |
+            | PERIOD_NOT_REPORTABLE | No statement is available for the requested window. Retrying will not change that |
           enum:
             - DOCUMENT_REJECTED
+            - PERIOD_NOT_REPORTABLE
         reason:
           type: string
           description: Error message
@@ -26603,6 +26796,120 @@ components:
       anyOf:
         - $ref: '#/components/schemas/InternalAccountExportResponse'
         - $ref: '#/components/schemas/WalletOperationProcessing'
+    BalanceChange:
+      type: object
+      description: 'One movement of the account''s balance, signed in the account holder''s polarity: money out is negative and money in is positive, so a window''s changes sum to its closing balance less its opening balance.'
+      required:
+        - id
+        - transactionId
+        - amount
+        - effectiveAt
+      properties:
+        id:
+          type: string
+          description: Stable identifier for this balance change
+          example: BalanceChange:019542f5-b3e7-1d02-0000-000000000003
+        transactionId:
+          type: string
+          description: Opaque identifier for the movement this change belongs to. Several changes can share one, so it groups the lines of a single movement on a statement. It is not a `Transaction` id and does not resolve through `GET /transactions/{transactionId}`.
+          example: 019542f5-b3e7-1d02-0000-000000000004
+        amount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        effectiveAt:
+          type: string
+          format: date-time
+          description: When the account holder's balance moved. Changes are ordered by this time.
+          example: '2026-09-03T14:31:00Z'
+    BalanceChangeListResponse:
+      type: object
+      description: A window of balance changes with the balances that bound it. The opening and closing balances describe the whole window, not the page, so they are the same on every page, and the identity `openingBalance + Σ(data[].amount) == closingBalance` holds only once every page's `data` is summed.
+      required:
+        - data
+        - periodStart
+        - periodEnd
+        - openingBalance
+        - closingBalance
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: Balance changes on this page, ordered by `effectiveAt`
+          items:
+            $ref: '#/components/schemas/BalanceChange'
+        periodStart:
+          type: string
+          format: date-time
+          description: Start of the window, inclusive
+          example: '2026-08-01T00:00:00Z'
+        periodEnd:
+          type: string
+          format: date-time
+          description: End of the window, exclusive
+          example: '2026-09-01T00:00:00Z'
+        openingBalance:
+          $ref: '#/components/schemas/CurrencyAmount'
+        closingBalance:
+          $ref: '#/components/schemas/CurrencyAmount'
+        hasMore:
+          type: boolean
+          description: Indicates if more changes are available beyond this page
+          example: false
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
+          example: BalanceChange:019542f5-b3e7-1d02-0000-000000000003
+        countIsExact:
+          type: boolean
+          description: Whether `totalCount` is exact rather than capped
+          example: true
+        totalCount:
+          type: integer
+          description: Number of balance changes in the window, across all pages
+          example: 42
+    ConfirmStatementDeliveryRequest:
+      type: object
+      required:
+        - periodStart
+      properties:
+        periodStart:
+          type: string
+          format: date
+          description: First day of the statement period being confirmed. Must be the first day of a month that has already begun.
+          example: '2026-09-01'
+        deliveredAt:
+          type: string
+          format: date-time
+          description: When the statement was delivered to the customer. Must include a timezone offset and must not be in the future. Defaults to the current time.
+          example: '2026-10-03T14:31:00Z'
+    StatementDelivery:
+      type: object
+      required:
+        - internalAccountId
+        - periodStart
+      properties:
+        internalAccountId:
+          type: string
+          description: The account whose statement this is
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        periodStart:
+          type: string
+          format: date
+          description: First day of the statement period
+          example: '2026-09-01'
+        fetchedAt:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          description: When the statement for this period was first read from Grid, or null if it never has been
+          example: '2026-10-01T09:00:00Z'
+        confirmedAt:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          description: When the statement was first delivered to the customer, or null if delivery has not been confirmed. Later confirmations do not move it.
+          example: '2026-10-03T14:31:00Z'
     AuthMethodType:
       type: string
       enum:

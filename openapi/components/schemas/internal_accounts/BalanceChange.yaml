@@ -1,0 +1,32 @@
+type: object
+description: >-
+  One movement of the account's balance, signed in the account holder's
+  polarity: money out is negative and money in is positive, so a window's
+  changes sum to its closing balance less its opening balance.
+required:
+  - id
+  - transactionId
+  - amount
+  - effectiveAt
+properties:
+  id:
+    type: string
+    description: Stable identifier for this balance change
+    example: BalanceChange:019542f5-b3e7-1d02-0000-000000000003
+  transactionId:
+    type: string
+    description: >-
+      Opaque identifier for the movement this change belongs to. Several
+      changes can share one, so it groups the lines of a single movement on a
+      statement. It is not a `Transaction` id and does not resolve through
+      `GET /transactions/{transactionId}`.
+    example: 019542f5-b3e7-1d02-0000-000000000004
+  amount:
+    $ref: ../common/CurrencyAmount.yaml
+  effectiveAt:
+    type: string
+    format: date-time
+    description: >-
+      When the account holder's balance moved. Changes are ordered by this
+      time.
+    example: '2026-09-03T14:31:00Z'
