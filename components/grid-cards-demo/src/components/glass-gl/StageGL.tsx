@@ -77,6 +77,9 @@ const DEFAULT_LENS: StageGLLens = {
 // hair under the gap, so the first off-frame dot hides behind the edge). The
 // visible canvas samples the inner window via the shader's toUV.
 const DOT_BLEED = 48;
+/** Without WebGL, when the dot field is a background image: how long a resize
+ *  must hold still before the image is encoded again (ms). */
+const FLAT_SETTLE_MS = 150;
 
 // Stashed: the original behavior fired the ripple immediately on pointer-down.
 // Now the grid presses in on hold and fires the ripple on RELEASE. Flip this to
@@ -760,6 +763,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
 
     // Without WebGL the dot field is drawn straight onto the canvas (see below).
     let paintFlat: (() => void) | null = null;
+    let flatSettle = 0;
 
     // Re-read the palette on theme flip and repaint the dot texture once.
     const stopTheme = observeTheme(() => {
@@ -825,9 +829,16 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
         }
       };
       paintFlat();
+      // Encoding the background is a stage-sized PNG: through a resize it waits
+      // for the size to settle (the last image stretches meanwhile).
       ro = new ResizeObserver(() => {
         palette = readDotGridPalette(offCtx);
-        paintFlat?.();
+        if (flatCtx) {
+          paintFlat?.();
+          return;
+        }
+        clearTimeout(flatSettle);
+        flatSettle = window.setTimeout(() => paintFlat?.(), FLAT_SETTLE_MS);
       });
       ro.observe(canvas);
     }
@@ -835,6 +846,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
     return () => {
       cancelAnimationFrame(raf);
       ro?.disconnect();
+      clearTimeout(flatSettle);
       canvas.style.backgroundImage = '';
       stopTheme();
       pointer?.dispose();
