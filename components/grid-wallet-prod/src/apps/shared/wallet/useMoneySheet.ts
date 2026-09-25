@@ -11,7 +11,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
 import type { DepositSection, DepositWallet } from '@/lib/gridReads';
-import { currencyFor, recipientNamesFor, type BankCountry } from '@/data/bankCountries';
+import {
+  FUNDING_ACCOUNT_TYPES,
+  currencyFor,
+  recipientNamesFor,
+  type BankCountry,
+} from '@/data/bankCountries';
 import { useUsdRates } from '@/hooks/useUsdRates';
 import { formatUsdCents, typedToCents } from './format';
 import type { MoneySheetMode, ReceivedPayment, TransferActivity } from './types';
@@ -175,12 +180,23 @@ export function useMoneySheet({
   const fxFractionDigits = stablecoinDest && isBtcDest ? 6 : 2;
   const fxLabel = stablecoinDest ? cryptoCurrency : localCurrency;
 
-  // Country picker lists: Popular (by volume) on top, then All (alphabetical).
+  // Country picker lists: Popular on top, then All (alphabetical).
+  //
+  // PAYING OUT (withdraw, send) reaches every corridor in the list. FUNDING is
+  // narrower by necessity — money arrives over the rails this wallet settles, so
+  // Add money offers only FUNDING_ACCOUNT_TYPES. Each side has its own "popular"
+  // order too: payout ranks follow payment volume, funding ranks the corridors we
+  // can actually be paid over.
+  const funding = mode === 'add';
+  const countryPool = funding
+    ? BANK_COUNTRIES.filter((c) => FUNDING_ACCOUNT_TYPES.includes(c.accountType))
+    : BANK_COUNTRIES;
+  const rankOf = (c: BankCountry) => (funding ? c.fundingRank : c.popularRank) ?? 0;
   const countryQ = countryQuery.trim().toLowerCase();
-  const allCountries = [...BANK_COUNTRIES].sort((a, b) => a.name.localeCompare(b.name));
-  const popularCountries = BANK_COUNTRIES.filter((c) => c.popularRank).sort(
-    (a, b) => (a.popularRank ?? 0) - (b.popularRank ?? 0),
-  );
+  const allCountries = [...countryPool].sort((a, b) => a.name.localeCompare(b.name));
+  const popularCountries = countryPool
+    .filter((c) => rankOf(c) > 0)
+    .sort((a, b) => rankOf(a) - rankOf(b));
   const filteredCountries = allCountries.filter(
     (c) =>
       c.name.toLowerCase().includes(countryQ) ||
