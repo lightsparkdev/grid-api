@@ -2,7 +2,7 @@
    pictures, and remember the maker's edit tokens so a card they come back
    to is still theirs. */
 
-import type { CardExporter, ExportPose } from '@/components/CardStage/export/exportRenderer';
+import type { CardFrameSource, ExportPose } from '@/components/CardStage/export/exportRenderer';
 import {
   hexToRgb,
   prepareHand,
@@ -159,7 +159,7 @@ async function shrinkRaster(blob: Blob): Promise<Blob> {
 }
 
 export interface CreateShareOptions {
-  exporter: CardExporter;
+  exporter: CardFrameSource;
   design: CardDesign;
   kind: ShareCreateInput['kind'];
   slug?: string;

@@ -77,6 +77,9 @@ const DEFAULT_LENS: StageGLLens = {
 // hair under the gap, so the first off-frame dot hides behind the edge). The
 // visible canvas samples the inner window via the shader's toUV.
 const DOT_BLEED = 48;
+/** Without WebGL, when the dot field is a background image: how long a resize
+ *  must hold still before the image is encoded again (ms). */
+const FLAT_SETTLE_MS = 150;
 
 // Stashed: the original behavior fired the ripple immediately on pointer-down.
 // Now the grid presses in on hold and fires the ripple on RELEASE. Flip this to
@@ -758,10 +761,15 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
     };
     stage.addEventListener('pointerdown', onDown, { capture: true });
 
+    // Without WebGL the dot field is drawn straight onto the canvas (see below).
+    let paintFlat: (() => void) | null = null;
+    let flatSettle = 0;
+
     // Re-read the palette on theme flip and repaint the dot texture once.
     const stopTheme = observeTheme(() => {
       palette = readDotGridPalette(offCtx);
-      invalidate(true);
+      if (paintFlat) paintFlat();
+      else invalidate(true);
     });
 
     let ro: ResizeObserver | null = null;
@@ -800,11 +808,46 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
         invalidate(true);
       });
       ro.observe(canvas);
+    } else {
+      // No WebGL: the same lattice, still, with no ripple and no lens. A failed
+      // WebGL context leaves the canvas free for a 2D one; a context whose
+      // shaders failed holds the canvas, so the lattice goes on the offscreen
+      // canvas and shows as this one's background instead.
+      const flatCtx = canvas.getContext('2d');
+      paintFlat = () => {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        cssW = canvas.clientWidth;
+        cssH = canvas.clientHeight;
+        if (cssW <= 0 || cssH <= 0) return;
+        const target = flatCtx ? canvas : off;
+        target.width = Math.round(cssW * dpr);
+        target.height = Math.round(cssH * dpr);
+        drawDotField(flatCtx ?? offCtx, cssW, cssH, 0, dpr, palette, bg ?? palette.bg, edge);
+        if (!flatCtx) {
+          canvas.style.backgroundImage = `url(${off.toDataURL()})`;
+          canvas.style.backgroundSize = '100% 100%';
+        }
+      };
+      paintFlat();
+      // Encoding the background is a stage-sized PNG: through a resize it waits
+      // for the size to settle (the last image stretches meanwhile).
+      ro = new ResizeObserver(() => {
+        palette = readDotGridPalette(offCtx);
+        if (flatCtx) {
+          paintFlat?.();
+          return;
+        }
+        clearTimeout(flatSettle);
+        flatSettle = window.setTimeout(() => paintFlat?.(), FLAT_SETTLE_MS);
+      });
+      ro.observe(canvas);
     }
 
     return () => {
       cancelAnimationFrame(raf);
       ro?.disconnect();
+      clearTimeout(flatSettle);
+      canvas.style.backgroundImage = '';
       stopTheme();
       pointer?.dispose();
       press?.dispose();

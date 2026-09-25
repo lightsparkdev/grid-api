@@ -10,10 +10,11 @@
 import { IconRotate360Right } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate360Right';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import clsx from 'clsx';
-import { useReducedMotion } from 'motion/react';
+import { cancelFrame, frame, useReducedMotion } from 'motion/react';
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -31,6 +32,8 @@ import { flushDeferredPaints, holdDeferredPaints } from '@/components/CardStage/
 import { preheatSoon } from '@/lib/sounds';
 import { CardIntro } from '@/components/CardStage/CardIntro';
 import { CardMotion, ORIENT_ROLL } from '@/components/CardStage/cardMotion';
+import { CardStageBoundary } from '@/components/CardStage/CardStageBoundary';
+import { applyIntroLook, clearIntroLook, FlatCard, poseTransform } from '@/components/CardStage/FlatCard';
 import { exposureFor, paletteOn, TEMPLATE_TUPLE, type Palette } from '@/components/CardStage/export/compose';
 import { INTRO_END, introCard, stepIntro } from '@/components/CardStage/introTimeline';
 import { StageGL } from '@/components/glass-gl/StageGL';
@@ -92,6 +95,11 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
   const [overCardNow, setOverCardNow] = useState(false);
   /** The card has been turned by hand once: the hint has done its job. */
   const [dragged, setDragged] = useState(false);
+  // Once the 3D card has failed (no WebGL, or its GPU gone) the card is flat,
+  // on the same motion and intro (see the flat rig below).
+  const [flat, setFlat] = useState(false);
+  const lookRef = useRef<HTMLDivElement>(null);
+  const turnRef = useRef<HTMLDivElement>(null);
 
   // The theme is on <html>, set by the root layout's boot script before the
   // first paint. The page's colors come from the stylesheet off that
@@ -220,6 +228,54 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
 
   const foot = footprint(design.orientation);
 
+  // ── The flat rig: what Rig does for the mesh, for the flat card ──────────
+  const flatIntro = useRef({ t: -1, done: false });
+  const onFlatPainted = useCallback(() => {
+    if (flatIntro.current.t < 0) flatIntro.current.t = 0;
+  }, []);
+  const flatLive = useRef({ orientation: design.orientation, reduceMotion, introDone });
+  flatLive.current = { orientation: design.orientation, reduceMotion, introDone };
+  useLayoutEffect(() => {
+    const stage = stageRef.current;
+    const hit = hitRef.current;
+    if (!flat || !stage || !hit) return;
+    // The 3D card played the intro before it failed: the flat one starts shown.
+    if (flatLive.current.introDone) flatIntro.current = { t: INTRO_END, done: true };
+    let last: number | null = null;
+    const step = ({ timestamp }: { timestamp: number }) => {
+      const look = lookRef.current;
+      const turn = turnRef.current;
+      if (!look || !turn) return;
+      const dt = last === null ? 0 : Math.min(0.05, (timestamp - last) / 1000);
+      last = timestamp;
+      const { orientation, reduceMotion: still } = flatLive.current;
+      const f = footprint(orientation);
+      const w = stage.clientWidth;
+      const h = stage.clientHeight;
+      const s = cardScale(w, h, f);
+      const it = flatIntro.current;
+      const p = motion.step(dt, { wantBack: false, hold: !it.done, reduceMotion: still, bob: it.done });
+      const bob = it.done ? p.dy : 0;
+      hit.style.transform = `translate(${w / 2 + p.dx * s - f.w / 2}px, ${h / 2 + bob - f.h / 2}px) scale(${s})`;
+      hit.style.setProperty('--card-scale', s.toFixed(4));
+      turn.style.transform = poseTransform(p);
+      if (!it.done) {
+        if (it.t >= 0) it.t += dt;
+        if (still && it.t >= 0) it.t = INTRO_END;
+        if (overlayRef.current && it.t >= 0) stepIntro(overlayRef.current, it.t);
+        applyIntroLook(look, it.t);
+        if (it.t >= INTRO_END) {
+          it.done = true;
+          clearIntroLook(look);
+          onIntroDone();
+        }
+      }
+    };
+    step({ timestamp: performance.now() });
+    frame.postRender(step, true);
+    return () => cancelFrame(step);
+  }, [flat, motion, onIntroDone]);
+
   return (
     // The pointer is handled here, on the page: the stage paints over the
     // columns (the card is always on top) but lets the pointer through, so
@@ -246,31 +302,35 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
 
       {/* The card's stage: the whole page; the card sits at its center. */}
       <div ref={stageRef} className={styles.stage} role="img" aria-label={alt}>
-        <Canvas
-          className={styles.canvas}
-          dpr={[1, 2]}
-          gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-          camera={{ position: [0, 0, CAMERA_Z], near: 200, far: 6000 }}
-          onCreated={({ gl }) => {
-            gl.toneMapping = NEUTRAL_TONE_MAPPING;
-            // Hidden until the intro brings it into focus.
-            gl.domElement.style.opacity = '0';
-          }}
-        >
-          <StageCamera exposure={exposureFor(palette)} />
-          <CardEnv />
-          <directionalLight position={[2, 5, 6]} intensity={0.3} color="#eef2f8" />
-          <Rig
-            motion={motion}
-            state={meshState}
-            reduceMotion={reduceMotion}
-            hitRef={hitRef}
-            overlayRef={overlayRef}
-            onIntroDone={onIntroDone}
-          />
-        </Canvas>
+        {!flat && (
+          <CardStageBoundary fallback={null} onFallback={() => setFlat(true)}>
+            <Canvas
+              className={styles.canvas}
+              dpr={[1, 2]}
+              gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+              camera={{ position: [0, 0, CAMERA_Z], near: 200, far: 6000 }}
+              onCreated={({ gl }) => {
+                gl.toneMapping = NEUTRAL_TONE_MAPPING;
+                // Hidden until the intro brings it into focus.
+                gl.domElement.style.opacity = '0';
+              }}
+            >
+              <StageCamera exposure={exposureFor(palette)} />
+              <CardEnv />
+              <directionalLight position={[2, 5, 6]} intensity={0.3} color="#eef2f8" />
+              <Rig
+                motion={motion}
+                state={meshState}
+                reduceMotion={reduceMotion}
+                hitRef={hitRef}
+                overlayRef={overlayRef}
+                onIntroDone={onIntroDone}
+              />
+            </Canvas>
+          </CardStageBoundary>
+        )}
         {/* Rides with the card, its footprint in card px: the blueprint is
-            laid out on it. */}
+            laid out on it (or, flat, the card itself). */}
         <div
           ref={hitRef}
           className={styles.hit}
@@ -278,6 +338,11 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
           data-stage-foreground
           aria-hidden
         >
+          {flat && (
+            <div ref={lookRef}>
+              <FlatCard design={design} turnRef={turnRef} onPainted={onFlatPainted} />
+            </div>
+          )}
           {!introDone && <CardIntro ref={overlayRef} brand={brand} orientation={design.orientation} />}
           {/* The playground's hint, under the card, until it has been turned. */}
           <span className={clsx(styles.hint, (dragged || !introDone) && styles.hintGone)}>

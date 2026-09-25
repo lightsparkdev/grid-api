@@ -38,21 +38,14 @@ import { CARD_FONT_FAMILY } from './card3d/cardFont';
 import { CardMotion, ORIENT_ROLL } from './cardMotion';
 import { flushDeferredPaints, holdDeferredPaints } from './card3d/deferredPaint';
 import { installExportDevHook } from './export/devHook';
-import { CardExporter, type ExportPose } from './export/exportRenderer';
+import { CardExporter, type CardFrameSource, type ExportPose } from './export/exportRenderer';
 import { useCardMomentSounds } from './cardSounds';
 import { resizeCursor, rotateCursor } from './cursors';
 import { CardIntro } from './CardIntro';
 import { INTRO_END, introCard, stepIntro } from './introTimeline';
+import { clipToScreen, GLIDE_TAU, restOn, ShareFlight, towardSlot, type Placement } from './stagePlacement';
 import styles from './CardStage.module.scss';
 
-/** Largest the card gets on stage, relative to its size in the phone. */
-const MAX_SCALE = 1.4;
-const MIN_SCALE = 0.55;
-/** Stage margin around the card. */
-const GUTTER_X = 28;
-const GUTTER_Y = 120;
-/** Glide time constant toward the rest position (seconds). */
-const GLIDE_TAU = 0.14;
 /** Camera distance, stage px. Scene units are stage px at z = 0. */
 const CAMERA_Z = 2000;
 /** How far outside the brand's box (spec px) still grabs it. */
@@ -70,24 +63,6 @@ const ROTATE_STEP = 15;
 const SNAP_DEG = 3;
 /** Spec px → card px, the hit box's unit (the same along either axis). */
 const CARD_PER_SPEC = CARD_W / FIGMA_CARD_W;
-/** The card's fade under the screen's scroll edge has run out this far down
- *  the strip (the header's bottom edge). */
-const EDGE_FADE_RAMP_END = 0.8;
-const EDGE_FADE_STOPS = 8;
-
-/** The parked card's mask under the scroll edge: from `top` (stage px) it
- *  fades in over `run` px, the alpha easing on a smoothstep so neither end of
- *  the ramp shows as a line, and reaching only as deep as `strength` (0..1). */
-function edgeMask(top: number, run: number, strength: number): string {
-  const stops: string[] = [];
-  for (let i = 0; i <= EDGE_FADE_STOPS; i++) {
-    const t = i / EDGE_FADE_STOPS;
-    const ease = t * t * (3 - 2 * t);
-    const alpha = 1 - strength * (1 - ease);
-    stops.push(`rgba(0,0,0,${alpha.toFixed(3)}) ${(top + run * t).toFixed(1)}px`);
-  }
-  return `linear-gradient(to bottom, ${stops.join(', ')})`;
-}
 
 // Khronos PBR-neutral tone map keeps silver true (ACES warms highlights).
 const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
@@ -125,14 +100,9 @@ interface Live {
    *  stepped by the frame loop). */
   shareWanted: boolean;
   shareT: number;
-  /** The angles the card had when the flight began: it turns to the pose
-   *  along the flight, arriving as it lands. Null between flights. */
-  shareFrom: ExportPose | null;
   shareLocked: boolean;
   onTurned: (() => void) | undefined;
   onSettled: ((settled: boolean) => void) | undefined;
-  /** The card is parked in the frame's slot and still (last told). */
-  shareSettled: boolean;
   intro: Intro;
   /** Something the camera sees changed off the frame loop (a material, a
    *  map, the exposure): the next frame paints. See CardRig's render gate. */
@@ -274,9 +244,6 @@ export interface ShareStageState {
   onSettled?: (settled: boolean) => void;
 }
 
-/** The flight into the share frame and back (s). */
-const SHARE_FLIGHT_S = 0.6;
-
 interface CardStageProps {
   design: CardDesign;
   home: CardHome;
@@ -284,7 +251,7 @@ interface CardStageProps {
   onDesignChange?: (patch: Partial<CardDesign>, opts?: DesignEditOptions) => void;
   /** Filled with the card's exporter once the mesh is mounted (the share flow
    *  renders stills and video through it). */
-  exportRef?: React.MutableRefObject<CardExporter | null>;
+  exportRef?: React.MutableRefObject<CardFrameSource | null>;
   share?: ShareStageState;
   /** The blueprint has dissolved and the card stands alone (the stage's
    *  chrome waits for this). */
@@ -372,11 +339,9 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     orientation: design.orientation,
     shareWanted: false,
     shareT: 0,
-    shareFrom: null,
     shareLocked: false,
     onTurned: undefined,
     onSettled: undefined,
-    shareSettled: false,
     dirty: true,
     intro: {
       t: -1,
@@ -1728,7 +1693,7 @@ interface CardRigProps {
   placement: React.MutableRefObject<FacePlacement | null>;
   onPlacement: (p: FacePlacement) => void;
   state: CardMeshState;
-  exportRef?: React.MutableRefObject<CardExporter | null>;
+  exportRef?: React.MutableRefObject<CardFrameSource | null>;
 }
 
 /** Drives the mesh and the DOM hit box every frame. Memoized: every prop
@@ -1776,11 +1741,8 @@ const CardRig = memo(function CardRig({
       exporter.dispose();
     };
   }, [exportRef, get, live, motion]);
-  const pos = useRef<{ x: number; y: number; s: number } | null>(null);
-  /** The share frame's slot as the card follows it: the slot moves and
-   *  resizes with what the panel shows (Template, a hand), and the card
-   *  glides after it rather than jumping. Null between flights. */
-  const shareSlot = useRef<{ x: number; y: number; s: number } | null>(null);
+  const pos = useRef<Placement | null>(null);
+  const shareFlight = useMemo(() => new ShareFlight(), []);
   // The turning card's air (see the frame loop), and how long it has been still.
   const airRef = useRef<Airflow | null>(null);
   const airStill = useRef(0);
@@ -1873,12 +1835,7 @@ const CardRig = memo(function CardRig({
     // The card's footprint on screen: flat or upright.
     const { orientation } = live.current;
     const foot = footprint(orientation);
-    // Rest position: centered on the stage, scaled to fit it.
-    const rest = {
-      x: r.width / 2,
-      y: r.height / 2,
-      s: Math.max(MIN_SCALE, Math.min(MAX_SCALE, (r.width - GUTTER_X * 2) / foot.w, (r.height - GUTTER_Y) / foot.h)),
-    };
+    const rest = restOn(r.width, r.height, foot);
     // Glide toward rest (exponential approach), snapping on the first frame.
     const k = pos.current ? 1 - Math.exp(-dt / GLIDE_TAU) : 1;
     const p = pos.current ?? { ...rest };
@@ -1886,76 +1843,24 @@ const CardRig = memo(function CardRig({
     p.y += (rest.y - p.y) * k;
     p.s += (rest.s - p.s) * k;
     pos.current = p;
-    // Phone up: interpolate toward the phone's live card slot and park there,
-    // at the scale that fits the slot (its width or its height, whichever
-    // the footprint needs).
-    let { x, y, s } = p;
-    const { t } = live.current;
-    if (t > 0) {
-      const slot = root.ownerDocument.querySelector<HTMLElement>('[data-card-slot]');
-      if (slot) {
-        const b = slot.getBoundingClientRect();
-        x += (b.left + b.width / 2 - r.left - x) * t;
-        y += (b.top + b.height / 2 - r.top - y) * t;
-        s += (Math.min(b.width / foot.w, b.height / foot.h) - s) * t;
-      }
-    }
-    // The share frame: the flight's clock steps toward wanted; the card
-    // interpolates to the frame's slot on the eased curve, as for the phone.
+    // Phone up, it interpolates toward the phone's live card slot and parks
+    // there; the share frame, open, takes it from there to its own slot.
     const lv = live.current;
-    const shareDir = lv.shareWanted ? 1 : -1;
-    const shareWas = lv.shareT;
-    lv.shareT = Math.max(0, Math.min(1, lv.shareT + (shareDir * dt) / (lv.reduceMotion ? 0.001 : SHARE_FLIGHT_S)));
-    const st = easeInOutCubic(lv.shareT);
-    // The turn rides the flight: where the card starts is read as the flight
-    // begins (either way), and the angles follow the flight's own curve so
-    // the pose lands with the card. Settled, the spring has it again.
-    const shareLanded = lv.shareT === 0 || lv.shareT === 1;
-    if (!shareLanded && shareWas !== lv.shareT && lv.shareFrom === null) lv.shareFrom = motion.pose;
-    if (shareLanded) lv.shareFrom = null;
-    const sharePath = lv.shareFrom ? { from: lv.shareFrom, u: lv.shareWanted ? st : 1 - st } : undefined;
-    let shareInPlace = false;
-    if (st > 0) {
-      const slot = root.ownerDocument.querySelector<HTMLElement>('[data-share-card-slot]');
-      if (slot) {
-        const b = slot.getBoundingClientRect();
-        const want = {
-          x: b.left + b.width / 2 - r.left,
-          y: b.top + b.height / 2 - r.top,
-          s: Math.min(b.width / foot.w, b.height / foot.h),
-        };
-        // As the flight begins the slot is where it is; landed, the card
-        // glides after a slot that moves (the same approach as toward rest).
-        const g = shareSlot.current;
-        const sk = g && shareWas > 0 && !lv.reduceMotion ? 1 - Math.exp(-dt / GLIDE_TAU) : 1;
-        const tgt = g ?? { ...want };
-        tgt.x += (want.x - tgt.x) * sk;
-        tgt.y += (want.y - tgt.y) * sk;
-        tgt.s += (want.s - tgt.s) * sk;
-        shareSlot.current = tgt;
-        x += (tgt.x - x) * st;
-        y += (tgt.y - y) * st;
-        s += (tgt.s - s) * st;
-        // Nearly in place: landed, the glide within a tenth of the card's
-        // width of the slot, the turn within twenty degrees. The glide and
-        // the spring take about half a second from here, and what waits on
-        // the card (the hand) arrives over that.
-        const near = want.s * foot.w * 0.1;
-        shareInPlace =
-          lv.shareT === 1 &&
-          Math.abs(want.x - tgt.x) < near &&
-          Math.abs(want.y - tgt.y) < near &&
-          Math.abs(want.s - tgt.s) < want.s * 0.1 &&
-          motion.nearRest(20);
-      }
-    } else {
-      shareSlot.current = null;
-    }
-    if (shareInPlace !== lv.shareSettled) {
-      lv.shareSettled = shareInPlace;
-      lv.onSettled?.(shareInPlace);
-    }
-    const shareFlying = lv.shareT > 0 && lv.shareT < 1;
+    const { t } = lv;
+    const flight = shareFlight.step(dt, {
+      wanted: lv.shareWanted,
+      reduceMotion: lv.reduceMotion,
+      motion,
+      doc: root.ownerDocument,
+      r,
+      foot,
+      at: t > 0 ? towardSlot(p, t, root.ownerDocument, r, foot) : p,
+      onSettled: lv.onSettled,
+    });
+    lv.shareT = shareFlight.t;
+    const { x, y, s } = flight.at;
+    const sharePath = flight.path;
+    const shareFlying = shareFlight.flying;
 
     const { intro } = live.current;
     const pose = motion.step(dt, {
@@ -2044,37 +1949,9 @@ const CardRig = memo(function CardRig({
       hit.style.setProperty('--card-scale', s.toFixed(4));
     }
 
-    // Parked, the card is screen content: the phone's content layer paints
-    // over it (AppShell), and the card is clipped to the screen, so a push
-    // that slides its slot past the bezel can't show it over the shell. (Not
-    // during the flight in or out, when it crosses the bezel on purpose.)
-    // The screen's scroll edge ([data-card-fade], the strip under the status
-    // bar and header) blurs and tints the content scrolling under it; the card
-    // is in this layer, out of the blur's reach, so it fades out over the
-    // strip instead as the page scroll carries it up there.
-    let clip = '';
-    let mask = '';
-    if (t >= CARD_PARKED_T) {
-      const doc = root.ownerDocument;
-      const screen = doc.querySelector<HTMLElement>('[data-screen-body]');
-      if (screen) {
-        const b = screen.getBoundingClientRect();
-        const ins = (v: number) => Math.max(0, v).toFixed(1);
-        clip = `inset(${ins(b.top - r.top)}px ${ins(r.right - b.right)}px ${ins(r.bottom - b.bottom)}px ${ins(b.left - r.left)}px)`;
-      }
-      const fade = doc.querySelector<HTMLElement>('[data-card-fade]');
-      if (fade) {
-        // The strip's own strength (it comes in with the scroll) scales the
-        // card's fade; the stops ease like the strip's tint.
-        const strength = Number(fade.style.getPropertyValue('--edge-fade')) || 0;
-        if (strength > 0.005) {
-          const f = fade.getBoundingClientRect();
-          mask = edgeMask(f.top - r.top, f.height * EDGE_FADE_RAMP_END, strength);
-        }
-      }
-    }
-    if (root.style.clipPath !== clip) root.style.clipPath = clip;
-    if (root.style.maskImage !== mask) root.style.maskImage = mask;
+    // Clipped to the screen once parked; not during the flight in or out,
+    // when it crosses the bezel on purpose.
+    clipToScreen(root, r, t >= CARD_PARKED_T);
 
     // ── The render gate ──────────────────────────────────────────────────
     const last = painted.current;

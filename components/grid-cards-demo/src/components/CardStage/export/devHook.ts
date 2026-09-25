@@ -16,11 +16,11 @@ import {
   type BackdropId,
   type Treatment,
 } from './compose';
-import type { CardExporter } from './exportRenderer';
+import type { CardFrameSource } from './exportRenderer';
 import { renderSpinVideo } from './exportVideo';
 import { renderStill, type StillFormat } from './stills';
 
-export function installExportDevHook(exporter: CardExporter, design: () => CardDesign) {
+export function installExportDevHook(exporter: CardFrameSource, design: () => CardDesign) {
   if (process.env.NODE_ENV !== 'development') return () => {};
   const w = window as unknown as Record<string, unknown>;
   const paletteOf = async (backdrop: BackdropId) => {

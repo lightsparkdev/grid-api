@@ -20,7 +20,7 @@ import type { CardMeshUserData } from '../card3d/CardMesh';
 
 /** The stage camera's distance; the export keeps the same perspective so the
  *  card's foreshortening matches what the visitor saw. Scene units are px. */
-const CAMERA_Z = 2000;
+export const CAMERA_Z = 2000;
 /** The card's tone mapping exposure on the stage, by the backdrop it sits on. */
 export const EXPOSURE_LIGHT = 1.25;
 export const EXPOSURE_DARK = 1.0;
@@ -64,6 +64,18 @@ export interface ExportFrame {
   data: Uint8ClampedArray<ArrayBuffer>;
 }
 
+/** What the share asks of the card: a picture of it at a pose. The 3D card's
+ *  exporter (below), or the flat card's without WebGL (flatExporter). */
+export interface CardFrameSource {
+  /** The card is a finished picture: painted, nothing loading. */
+  readonly ready: boolean;
+  readonly orientation: Orientation;
+  /** The card as it is turned on the stage, for a picture of what is seen. */
+  readonly livePose: ExportPose;
+  warm(sizes: Array<{ width: number; height: number }>): void;
+  renderSafe(opts: ExportFrameOptions): ExportFrame;
+}
+
 /** Targets kept ready, by size: the share renders a few sizes in turn. */
 interface Targets {
   scene: THREE.WebGLRenderTarget;
@@ -72,7 +84,7 @@ interface Targets {
 }
 const TARGET_SIZES_KEPT = 3;
 
-export class CardExporter {
+export class CardExporter implements CardFrameSource {
   private readonly targetsBySize = new Map<string, Targets>();
   private readonly output = new OutputPass();
   private readonly camera = new THREE.PerspectiveCamera(30, 1, 200, 6000);
