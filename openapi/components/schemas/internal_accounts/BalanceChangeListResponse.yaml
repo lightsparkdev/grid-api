@@ -21,12 +21,12 @@ properties:
     type: string
     format: date-time
     description: Start of the window, inclusive
-    example: '2026-08-01T00:00:00Z'
+    example: '2026-08-01T00:00:00-05:00'
   periodEnd:
     type: string
     format: date-time
     description: End of the window, exclusive
-    example: '2026-09-01T00:00:00Z'
+    example: '2026-09-01T00:00:00-05:00'
   openingBalance:
     $ref: ../common/CurrencyAmount.yaml
   closingBalance:

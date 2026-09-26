@@ -49,8 +49,9 @@ post:
     '400':
       description: >-
         Bad request. Returned when `periodStart` is not the first day of a
-        month or names a month that has not begun, or when `deliveredAt` is
-        in the future.
+        month or names a month that has not begun, when `deliveredAt` (or,
+        if omitted, the time of the request) is in the future or before the
+        period has ended, or when the account has no statement of its own.
       content:
         application/json:
           schema:
