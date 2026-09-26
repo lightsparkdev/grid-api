@@ -33,7 +33,9 @@ tags:
     description: Internal account management endpoints for creating and managing internal accounts
   - name: Periodic Statements
     description: |
-      Build, deliver, and evidence a Regulation E periodic statement for a customer's internal account. A statement period is a calendar month.
+      Build, deliver, and evidence a Regulation E periodic statement for a customer's internal account. A statement period is a calendar month in US Central time (`America/Chicago`).
+
+      A statement is issued for each customer's own USD internal account and covers their whole balance. Money received through a rule-based account appears on its owner's statement; rule-based, bulk settlement and platform-owned accounts have no statement of their own.
 
       **1. The statement — `GET /internal-accounts/{id}/balance-changes?from=&to=`**
 
@@ -43,7 +45,7 @@ tags:
       openingBalance + Σ(data[].amount) == closingBalance
       ```
 
-      If it does not hold, do not send the statement; contact support instead. `from` and `to` bound a half-open window `[from, to)`: for a monthly statement, pass the first instant of the month and the first instant of the following month.
+      If it does not hold, do not send the statement; contact support instead. `from` and `to` bound a half-open window `[from, to)`: for a monthly statement, pass the first instant of the month and the first instant of the following month, both in US Central time (for August 2026, `2026-08-01T00:00:00-05:00` and `2026-09-01T00:00:00-05:00`). Grid records a statement as fetched only for a window that is exactly one such month.
 
       **2. The attestation — `POST /internal-accounts/{id}/statement-confirmations`**
 
@@ -6213,7 +6215,7 @@ paths:
 
         **The identity to assert:** `openingBalance + Σ(data[].amount) == closingBalance`, summed over every page. The opening and closing balances describe the window rather than the page, so they are the same on every page. Page until `hasMore` is false, then assert the identity before rendering a statement.
 
-        `from` and `to` are instants and the window is half-open: a change at exactly `to` belongs to the next window. Consecutive periods therefore tile with no gap and no overlap. For a monthly statement, pass the first instant of the month and the first instant of the following month.
+        `from` and `to` are instants and the window is half-open: a change at exactly `to` belongs to the next window. Consecutive periods therefore tile with no gap and no overlap. For a monthly statement, pass the first instant of the month and the first instant of the following month, both in US Central time (`America/Chicago`). Grid records a statement as fetched only for a window that is exactly one such month.
 
         A window whose card settlement has not closed is refused with `409 NOT_YET_AVAILABLE`, because its figures could still change. Retry once it has settled.
 
@@ -6231,7 +6233,7 @@ paths:
           schema:
             type: string
             format: date-time
-          example: '2026-08-01T00:00:00Z'
+          example: '2026-08-01T00:00:00-05:00'
         - name: to
           in: query
           required: true
@@ -6239,7 +6241,7 @@ paths:
           schema:
             type: string
             format: date-time
-          example: '2026-09-01T00:00:00Z'
+          example: '2026-09-01T00:00:00-05:00'
         - name: limit
           in: query
           required: false
@@ -6263,7 +6265,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BalanceChangeListResponse'
         '400':
-          description: Bad request. Returned when `from` or `to` is missing, has no timezone offset, or is in the future, or when `from` is not before `to`.
+          description: Bad request. Returned when `from` or `to` is missing, has no timezone offset, or is in the future, when `from` is not before `to`, when `cursor` was not issued by this endpoint, or when the account has no statement of its own.
           content:
             application/json:
               schema:
@@ -6330,7 +6332,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StatementDelivery'
         '400':
-          description: Bad request. Returned when `periodStart` is not the first day of a month or names a month that has not begun, or when `deliveredAt` is in the future.
+          description: Bad request. Returned when `periodStart` is not the first day of a month or names a month that has not begun, when `deliveredAt` (or, if omitted, the time of the request) is in the future or before the period has ended, or when the account has no statement of its own.
           content:
             application/json:
               schema:
@@ -26832,12 +26834,12 @@ components:
           type: string
           format: date-time
           description: Start of the window, inclusive
-          example: '2026-08-01T00:00:00Z'
+          example: '2026-08-01T00:00:00-05:00'
         periodEnd:
           type: string
           format: date-time
           description: End of the window, exclusive
-          example: '2026-09-01T00:00:00Z'
+          example: '2026-09-01T00:00:00-05:00'
         openingBalance:
           $ref: '#/components/schemas/CurrencyAmount'
         closingBalance:
@@ -26866,12 +26868,12 @@ components:
         periodStart:
           type: string
           format: date
-          description: First day of the statement period being confirmed. Must be the first day of a month that has already begun.
+          description: First day of the statement period being confirmed, a calendar month in US Central time. Must be the first day of a month that has already begun.
           example: '2026-09-01'
         deliveredAt:
           type: string
           format: date-time
-          description: When the statement was delivered to the customer. Must include a timezone offset and must not be in the future. Defaults to the current time.
+          description: When the statement was delivered to the customer. Must include a timezone offset, must not be in the future, and must be at or after the end of the period. Defaults to the current time.
           example: '2026-10-03T14:31:00Z'
     StatementDelivery:
       type: object

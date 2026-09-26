@@ -32,7 +32,9 @@ get:
     `from` and `to` are instants and the window is half-open: a change at
     exactly `to` belongs to the next window. Consecutive periods therefore
     tile with no gap and no overlap. For a monthly statement, pass the first
-    instant of the month and the first instant of the following month.
+    instant of the month and the first instant of the following month, both
+    in US Central time (`America/Chicago`). Grid records a statement as
+    fetched only for a window that is exactly one such month.
 
 
     A window whose card settlement has not closed is refused with `409
@@ -55,7 +57,7 @@ get:
       schema:
         type: string
         format: date-time
-      example: '2026-08-01T00:00:00Z'
+      example: '2026-08-01T00:00:00-05:00'
     - name: to
       in: query
       required: true
@@ -65,7 +67,7 @@ get:
       schema:
         type: string
         format: date-time
-      example: '2026-09-01T00:00:00Z'
+      example: '2026-09-01T00:00:00-05:00'
     - name: limit
       in: query
       required: false
@@ -91,7 +93,9 @@ get:
     '400':
       description: >-
         Bad request. Returned when `from` or `to` is missing, has no timezone
-        offset, or is in the future, or when `from` is not before `to`.
+        offset, or is in the future, when `from` is not before `to`, when
+        `cursor` was not issued by this endpoint, or when the account has no
+        statement of its own.
       content:
         application/json:
           schema:
