@@ -47,6 +47,26 @@ card data never crosses your servers. `Card.cardCapabilities` gains
 to work for every card with no integration. See
 [Digital wallet tokenization](/cards/card-management/digital-wallet-tokenization).
 
+## Let cardholders set, change, and unblock PINs
+
+Three new endpoints manage online PINs on cards:
+
+- `GET /cards/{id}/set-pin-url` returns a temporary URL for a secure PIN-entry iframe. The
+  cardholder enters their PIN inside the iframe, so the plaintext PIN never reaches your
+  servers or Grid's. Configure `cardConfigs.pinTargetOrigin` through `PATCH /platform/config`
+  before requesting a URL.
+- `POST /cards/{id}/set-pin` accepts an encrypted PIN block when you operate your own
+  PIN-entry UI. Build the block in the client with the published
+  [PIN encryption public key](/keys/pin-encryption-public-key.pem.txt), so the PIN never
+  reaches your servers either.
+- `POST /cards/{id}/pin/unblock` clears a blocked PIN without changing it.
+
+`Card` gains `pinStatus`: `NOT_SET`, `OK`, or `BLOCKED`. Three consecutive incorrect entries
+block a PIN until you clear it with `POST /cards/{id}/pin/unblock` or replace it with either
+PIN-entry flow. A new `CARD.PIN_STATUS_CHANGE` webhook fires when Grid's saved status changes.
+
+See [Card PINs](/cards/card-management/pins).
+
 ## Card refunds, declines, and voids report distinct outcomes
 
 Three card-statement corrections to `CardTransaction`:
