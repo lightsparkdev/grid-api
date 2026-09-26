@@ -77,6 +77,16 @@ post:
               sweepRule:
                 destination:
                   accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+          onBehalfOfCustomer:
+            summary: A platform account that receives payments for a customer
+            value:
+              onBehalfOfCustomerId: Customer:019542f5-b3e7-1d02-0000-000000000002
+              type: RULE_BASED
+              currency: USD
+              label: customer-0002-collections
+              sweepRule:
+                destination:
+                  accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
   responses:
     '200':
       description: >-
