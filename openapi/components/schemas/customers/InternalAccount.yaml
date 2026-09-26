@@ -35,9 +35,9 @@ properties:
   onBehalfOfCustomerId:
     type: string
     description: >-
-      The customer whose payments this platform-owned account receives.
-      Omitted for accounts that name no such customer, which includes every
-      account owned by a customer.
+      The customer whose payments this platform-owned account receives. Only
+      set by regulated financial institutions. Omitted for accounts that name
+      no such customer, which includes every account owned by a customer.
     example: Customer:019542f5-b3e7-1d02-0000-000000000002
   label:
     type: string

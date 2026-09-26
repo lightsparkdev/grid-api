@@ -109,8 +109,7 @@ post:
         Bad request. Returned when `type` is not `RULE_BASED`, when `sweepRule`
         is missing, when the currency is not supported for rule-based accounts,
         when the account holder has no account in that currency yet, when the
-        destination cannot accept the requested payment rail, when
-        `onBehalfOfCustomerId` is sent alongside `customerId`, and for general
+        destination cannot accept the requested payment rail, and for general
         invalid parameters.
       content:
         application/json:
@@ -130,9 +129,7 @@ post:
           schema:
             $ref: ../components/schemas/errors/Error403.yaml
     '404':
-      description: >-
-        Customer or destination account not found. Also returned when
-        `onBehalfOfCustomerId` names no customer of your platform.
+      description: Customer or destination account not found
       content:
         application/json:
           schema:

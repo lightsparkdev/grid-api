@@ -33,10 +33,11 @@ properties:
   onBehalfOfCustomerId:
     type: string
     description: >-
-      The customer whose payments this platform-owned account receives. Only
-      accepted when `customerId` is omitted, so the account stays yours; it
-      records who incoming payments are for. The customer must belong to your
-      platform. Several of your accounts can name the same customer.
+      For regulated financial institutions only. The customer whose payments
+      this platform-owned account receives. Only accepted when `customerId` is
+      omitted, so the account stays yours; it records who incoming payments are
+      for. The customer must belong to your platform. Several of your accounts
+      can name the same customer.
     example: Customer:019542f5-b3e7-1d02-0000-000000000002
   label:
     type: string

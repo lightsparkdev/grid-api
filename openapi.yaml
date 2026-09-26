@@ -2231,7 +2231,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalAccount'
         '400':
-          description: Bad request. Returned when `type` is not `RULE_BASED`, when `sweepRule` is missing, when the currency is not supported for rule-based accounts, when the account holder has no account in that currency yet, when the destination cannot accept the requested payment rail, when `onBehalfOfCustomerId` is sent alongside `customerId`, and for general invalid parameters.
+          description: Bad request. Returned when `type` is not `RULE_BASED`, when `sweepRule` is missing, when the currency is not supported for rule-based accounts, when the account holder has no account in that currency yet, when the destination cannot accept the requested payment rail, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -2249,7 +2249,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error403'
         '404':
-          description: Customer or destination account not found. Also returned when `onBehalfOfCustomerId` names no customer of your platform.
+          description: Customer or destination account not found
           content:
             application/json:
               schema:
@@ -16267,7 +16267,7 @@ components:
           example: USD
         onBehalfOfCustomerId:
           type: string
-          description: The customer whose payments this platform-owned account receives. Only accepted when `customerId` is omitted, so the account stays yours; it records who incoming payments are for. The customer must belong to your platform. Several of your accounts can name the same customer.
+          description: For regulated financial institutions only. The customer whose payments this platform-owned account receives. Only accepted when `customerId` is omitted, so the account stays yours; it records who incoming payments are for. The customer must belong to your platform. Several of your accounts can name the same customer.
           example: Customer:019542f5-b3e7-1d02-0000-000000000002
         label:
           type: string
@@ -19245,7 +19245,7 @@ components:
             $ref: '#/components/schemas/PaymentInstructions'
         onBehalfOfCustomerId:
           type: string
-          description: The customer whose payments this platform-owned account receives. Omitted for accounts that name no such customer, which includes every account owned by a customer.
+          description: The customer whose payments this platform-owned account receives. Only set by regulated financial institutions. Omitted for accounts that name no such customer, which includes every account owned by a customer.
           example: Customer:019542f5-b3e7-1d02-0000-000000000002
         label:
           type: string
