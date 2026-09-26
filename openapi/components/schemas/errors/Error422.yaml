@@ -9,10 +9,8 @@ properties:
       | Error Code | Description |
       |------------|-------------|
       | DOCUMENT_REJECTED | The verification provider screened the uploaded file and marked it unusable. `precheckErrors` names each problem it found |
-      | PERIOD_NOT_REPORTABLE | No statement is available for the requested window. Retrying will not change that |
     enum:
       - DOCUMENT_REJECTED
-      - PERIOD_NOT_REPORTABLE
   reason:
     type: string
     description: Error message

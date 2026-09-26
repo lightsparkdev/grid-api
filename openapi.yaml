@@ -55,7 +55,7 @@ tags:
 
       **Timing**
 
-      A window whose card settlement has not closed is refused with `409 NOT_YET_AVAILABLE` rather than answered with figures that could still change; retry once it has settled. A window Grid cannot report at all is refused with `422 PERIOD_NOT_REPORTABLE`.
+      A window whose card settlement has not closed is refused with `409 NOT_YET_AVAILABLE` rather than answered with figures that could still change; retry once it has settled.
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
   - name: Same-Currency Transfers
@@ -6215,7 +6215,7 @@ paths:
 
         `from` and `to` are instants and the window is half-open: a change at exactly `to` belongs to the next window. Consecutive periods therefore tile with no gap and no overlap. For a monthly statement, pass the first instant of the month and the first instant of the following month.
 
-        A window whose card settlement has not closed is refused with `409 NOT_YET_AVAILABLE`, because its figures could still change. Retry once it has settled. A window Grid cannot report at all is refused with `422 PERIOD_NOT_REPORTABLE`, and retrying will not change that.
+        A window whose card settlement has not closed is refused with `409 NOT_YET_AVAILABLE`, because its figures could still change. Retry once it has settled.
 
         Merchant, counterparty and rail detail live on the transaction; read them from `GET /transactions`.
       operationId: listInternalAccountBalanceChanges
@@ -6286,12 +6286,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
-        '422':
-          description: No statement is available for this window, and retrying will not change that.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422'
         '500':
           description: Internal service error
           content:
@@ -24712,10 +24706,8 @@ components:
             | Error Code | Description |
             |------------|-------------|
             | DOCUMENT_REJECTED | The verification provider screened the uploaded file and marked it unusable. `precheckErrors` names each problem it found |
-            | PERIOD_NOT_REPORTABLE | No statement is available for the requested window. Retrying will not change that |
           enum:
             - DOCUMENT_REJECTED
-            - PERIOD_NOT_REPORTABLE
         reason:
           type: string
           description: Error message
