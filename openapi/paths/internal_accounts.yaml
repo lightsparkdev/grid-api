@@ -77,6 +77,16 @@ post:
               sweepRule:
                 destination:
                   accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+          onBehalfOfCustomer:
+            summary: A platform account that receives payments for a customer
+            value:
+              onBehalfOfCustomerId: Customer:019542f5-b3e7-1d02-0000-000000000002
+              type: RULE_BASED
+              currency: USD
+              label: customer-0002-collections
+              sweepRule:
+                destination:
+                  accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
   responses:
     '200':
       description: >-
@@ -99,7 +109,8 @@ post:
         Bad request. Returned when `type` is not `RULE_BASED`, when `sweepRule`
         is missing, when the currency is not supported for rule-based accounts,
         when the account holder has no account in that currency yet, when the
-        destination cannot accept the requested payment rail, and for general
+        destination cannot accept the requested payment rail, when
+        `onBehalfOfCustomerId` is sent alongside `customerId`, and for general
         invalid parameters.
       content:
         application/json:
@@ -119,7 +130,9 @@ post:
           schema:
             $ref: ../components/schemas/errors/Error403.yaml
     '404':
-      description: Customer or destination account not found
+      description: >-
+        Customer or destination account not found. Also returned when
+        `onBehalfOfCustomerId` names no customer of your platform.
       content:
         application/json:
           schema:
