@@ -87,6 +87,14 @@ post:
                 postalCode: '98101'
                 country: US
   responses:
+    '200':
+      description: >-
+        The customer already created under this `Idempotency-Key`. A repeated
+        request replays the original result and creates nothing.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/CustomerOneOf.yaml
     '201':
       description: Customer created successfully
       content:

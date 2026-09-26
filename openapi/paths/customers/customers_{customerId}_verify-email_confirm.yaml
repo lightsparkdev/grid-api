@@ -31,7 +31,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/customers/Customer.yaml
+            $ref: ../../components/schemas/customers/CustomerOneOf.yaml
     '400':
       description: Invalid or expired code
       content:
