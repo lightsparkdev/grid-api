@@ -36,7 +36,7 @@ get:
 
 
     A window whose card settlement has not closed is refused with `409
-    BALANCE_NOT_YET_FINAL`, because its figures could still change. Retry once
+    NOT_YET_AVAILABLE`, because its figures could still change. Retry once
     it has settled. A window Grid cannot report at all is refused with `422
     PERIOD_NOT_REPORTABLE`, and retrying will not change that.
 
