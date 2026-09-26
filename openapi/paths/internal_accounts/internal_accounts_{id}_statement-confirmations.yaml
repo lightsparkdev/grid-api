@@ -1,0 +1,76 @@
+parameters:
+  - name: id
+    in: path
+    description: The id of the internal account whose statement was delivered.
+    required: true
+    schema:
+      type: string
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+
+post:
+  summary: Confirm delivery of a periodic statement
+  description: >
+    Record that this account's periodic statement for a period was delivered
+    to the customer.
+
+
+    Regulation E requires the statement to be delivered, not only available.
+    Grid provides the statement through `GET
+    /internal-accounts/{id}/balance-changes`; only you know whether it reached
+    your customer. Call this once you have delivered it.
+
+
+    `periodStart` names the period: the first day of the statement month, as a
+    date. It must be the first of a month, and a month that has already
+    begun.
+
+
+    Confirming is idempotent. The stored time is when delivery first
+    happened, so re-sending a statement or calling this endpoint again does
+    not move it. If `deliveredAt` is omitted, the current time is used.
+  operationId: confirmStatementDelivery
+  tags:
+    - Periodic Statements
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/internal_accounts/ConfirmStatementDeliveryRequest.yaml
+  responses:
+    '200':
+      description: Statement delivery recorded
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/internal_accounts/StatementDelivery.yaml
+    '400':
+      description: >-
+        Bad request. Returned when `periodStart` is not the first day of a
+        month or names a month that has not begun, when `deliveredAt` (or,
+        if omitted, the time of the request) is in the future or before the
+        period has ended, or when the account has no statement of its own.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Internal account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -22,6 +22,7 @@ properties:
       | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
       | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
       | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
+      | NOT_YET_AVAILABLE | The request is valid, but its result is not available yet because the data it depends on could still change. Retry later. `reason` says what is outstanding. For balance changes, card settlement for a window boundary has not closed |
       | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
       | DOCUMENT_ALREADY_EXISTS | A document of this type already exists for the holder; replace it with PUT |
       | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists |
@@ -46,6 +47,7 @@ properties:
       - CARD_NOT_MUTABLE
       - CARD_LIMIT_REACHED
       - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
+      - NOT_YET_AVAILABLE
       - CONFLICT
       - DOCUMENT_ALREADY_EXISTS
       - DUPLICATE_EXTERNAL_ACCOUNT

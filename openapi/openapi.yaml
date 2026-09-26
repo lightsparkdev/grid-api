@@ -38,6 +38,33 @@ tags:
       and beneficial owners. Supports KYC and KYB document requirements.
   - name: Internal Accounts
     description: Internal account management endpoints for creating and managing internal accounts
+  - name: Periodic Statements
+    description: |
+      Build, deliver, and evidence a Regulation E periodic statement for a customer's internal account. A statement period is a calendar month in US Central time (`America/Chicago`).
+
+      A statement is issued for each customer's own USD internal account and covers their whole balance. Money received through a rule-based account appears on its owner's statement; rule-based, bulk settlement and platform-owned accounts have no statement of their own.
+
+      **1. The statement — `GET /internal-accounts/{id}/balance-changes?from=&to=`**
+
+      One row per change to the balance, in the order the money moved, with the opening and closing balances for the window in the same response. Page until `hasMore` is false, then assert this identity across every page before you render anything:
+
+      ```
+      openingBalance + Σ(data[].amount) == closingBalance
+      ```
+
+      If it does not hold, do not send the statement; contact support instead. `from` and `to` bound a half-open window `[from, to)`: for a monthly statement, pass the first instant of the month and the first instant of the following month, both in US Central time (for August 2026, `2026-08-01T00:00:00-05:00` and `2026-09-01T00:00:00-05:00`). Grid records a statement as fetched only for a window that is exactly one such month.
+
+      **2. The attestation — `POST /internal-accounts/{id}/statement-confirmations`**
+
+      Regulation E requires the statement to be delivered, not only available. Once you have delivered it, confirm with the `periodStart` you delivered for. Confirming is idempotent and keeps the first delivery time.
+
+      **Coverage**
+
+      Grid monitors periods that were never fetched and periods that were fetched but never confirmed. Confirm each period you deliver and neither signal fires.
+
+      **Timing**
+
+      A window whose card settlement has not closed is refused with `409 NOT_YET_AVAILABLE` rather than answered with figures that could still change; retry once it has settled.
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
   - name: Same-Currency Transfers
@@ -283,6 +310,10 @@ paths:
     $ref: paths/internal_accounts/internal_accounts_{id}.yaml
   /internal-accounts/{id}/export:
     $ref: paths/internal_accounts/internal_accounts_{id}_export.yaml
+  /internal-accounts/{id}/balance-changes:
+    $ref: paths/internal_accounts/internal_accounts_{id}_balance-changes.yaml
+  /internal-accounts/{id}/statement-confirmations:
+    $ref: paths/internal_accounts/internal_accounts_{id}_statement-confirmations.yaml
   /auth/credentials:
     $ref: paths/auth/auth_credentials.yaml
   /auth/credentials/{id}:
