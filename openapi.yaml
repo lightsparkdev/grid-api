@@ -55,7 +55,7 @@ tags:
 
       **Timing**
 
-      A window whose card settlement has not closed is refused with `409 BALANCE_NOT_YET_FINAL` rather than answered with figures that could still change; retry once it has settled. A window Grid cannot report at all is refused with `422 PERIOD_NOT_REPORTABLE`.
+      A window whose card settlement has not closed is refused with `409 NOT_YET_AVAILABLE` rather than answered with figures that could still change; retry once it has settled. A window Grid cannot report at all is refused with `422 PERIOD_NOT_REPORTABLE`.
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
   - name: Same-Currency Transfers
@@ -6215,7 +6215,7 @@ paths:
 
         `from` and `to` are instants and the window is half-open: a change at exactly `to` belongs to the next window. Consecutive periods therefore tile with no gap and no overlap. For a monthly statement, pass the first instant of the month and the first instant of the following month.
 
-        A window whose card settlement has not closed is refused with `409 BALANCE_NOT_YET_FINAL`, because its figures could still change. Retry once it has settled. A window Grid cannot report at all is refused with `422 PERIOD_NOT_REPORTABLE`, and retrying will not change that.
+        A window whose card settlement has not closed is refused with `409 NOT_YET_AVAILABLE`, because its figures could still change. Retry once it has settled. A window Grid cannot report at all is refused with `422 PERIOD_NOT_REPORTABLE`, and retrying will not change that.
 
         Merchant, counterparty and rail detail live on the transaction; read them from `GET /transactions`.
       operationId: listInternalAccountBalanceChanges
@@ -15329,7 +15329,7 @@ components:
             | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
             | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
             | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
-            | BALANCE_NOT_YET_FINAL | Card settlement for a boundary of the requested window has not closed, so its balances and balance changes could still change. Retry once it has settled |
+            | NOT_YET_AVAILABLE | The request is valid, but its result is not available yet because the data it depends on could still change. Retry later. `reason` says what is outstanding. For balance changes, card settlement for a window boundary has not closed |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
             | DOCUMENT_ALREADY_EXISTS | A document of this type already exists for the holder; replace it with PUT |
             | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists |
@@ -15354,7 +15354,7 @@ components:
             - CARD_NOT_MUTABLE
             - CARD_LIMIT_REACHED
             - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
-            - BALANCE_NOT_YET_FINAL
+            - NOT_YET_AVAILABLE
             - CONFLICT
             - DOCUMENT_ALREADY_EXISTS
             - DUPLICATE_EXTERNAL_ACCOUNT
