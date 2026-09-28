@@ -13412,6 +13412,7 @@ components:
         - variableFeeBps
         - fixedFee
     CrossCurrencyTransactionFeeConfig:
+      title: Cross-Currency Transaction Fee Config
       allOf:
         - $ref: '#/components/schemas/FeeConfig'
         - type: object
@@ -13421,7 +13422,7 @@ components:
                 - CROSS_CURRENCY_TRANSACTION
             sourceCurrency:
               type: string
-              description: Currency code of the sending side this fee applies to. Only `USD` is accepted today; other currencies return a `NOT_IMPLEMENTED` error.
+              description: Currency code of the sending side this fee applies to. `USD` and crypto currencies such as `USDC` and `USDT` are accepted; other fiat currencies return a `NOT_IMPLEMENTED` error.
               example: USD
           required:
             - sourceCurrency
@@ -13461,6 +13462,7 @@ components:
         `ACH` will settle on the standard next-business-day schedule. Until a date we announce in advance, `ACH` continues to settle same-business-day on production platforms; it already settles next-business-day on sandbox platforms. To guarantee same-day settlement after that date, request `ACH_SAME_DAY`.
       example: ACH
     RailFeeConfig:
+      title: Rail Fee Config
       allOf:
         - $ref: '#/components/schemas/FeeConfig'
         - type: object
@@ -16195,14 +16197,14 @@ components:
         - OTHER
     PlatformFeeOverride:
       type: object
-      description: Overrides the platform-collected fee for this transaction. When present, it replaces any configured platform-collected fees that would otherwise apply to the transaction. Currently only supported when the quote's source currency is USD; the fixed fee must be denominated in the source currency.
+      description: Overrides the platform-collected fee for this transaction. When present, it replaces any configured platform-collected fees that would otherwise apply to the transaction. Supported when the quote's source currency is USD or a crypto currency such as USDC or USDT. The fixed fee must be denominated in the source currency.
       required:
         - platformFixedFee
         - platformVariableFeeBps
       properties:
         platformFixedFee:
           $ref: '#/components/schemas/FixedFee'
-          description: Fixed fee charged for this transaction. Must be denominated in the quote's source currency (USD today).
+          description: Fixed fee charged for this transaction. Must be denominated in the quote's source currency.
         platformVariableFeeBps:
           type: integer
           minimum: 0
