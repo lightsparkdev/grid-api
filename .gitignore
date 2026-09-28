@@ -64,3 +64,6 @@ scripts/export-icons.js
 .claude/worktrees/
 .claude/scheduled_tasks.lock
 error-audit/
+
+# Exported git stash contents (local scratch)
+stash-work/
