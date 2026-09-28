@@ -519,7 +519,7 @@ export function walletBrandingCalls(programName: string, logoUrl: string | null)
   return [
     {
       method: 'PATCH',
-      path: '/platform/config',
+      path: '/config',
       title: 'Set up wallet branding',
       reqBody: body,
       status: '200 OK',
