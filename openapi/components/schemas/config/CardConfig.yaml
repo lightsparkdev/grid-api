@@ -9,7 +9,7 @@ properties:
       - type: 'null'
     description: >-
       Canonical HTTPS origin of the page that hosts the PIN-entry iframe
-      returned by `GET /cards/{id}/set-pin-url`. Include the scheme, host,
+      returned by `GET /cards/{id}/pin-entry-url`. Include the scheme, host,
       and optional port, without a path, trailing slash, query, fragment,
       or credentials. The iframe is restricted to this origin, so it must
       match the embedding page's origin exactly. Different user-specific

@@ -30,7 +30,7 @@ Use the canonical HTTPS origin of the page that hosts the iframe: scheme, host, 
 </Step>
 
 <Step title="Get a PIN-entry URL">
-Call `GET /cards/{id}/set-pin-url` from your backend immediately before displaying the form. Send no request body or origin parameter; Grid uses your platform's configured origin. If the origin is unset, the request returns `409 CONFLICT`.
+Call `GET /cards/{id}/pin-entry-url` from your backend immediately before displaying the form. Send no request body or origin parameter; Grid uses your platform's configured origin. If the origin is unset, the request returns `409 CONFLICT`.
 
 Grid returns `iframeUrl`, `sessionToken`, `expiresAt`, and `environment`. The URL already contains the temporary token and selects the appropriate environment.
 
