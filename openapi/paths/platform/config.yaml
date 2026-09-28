@@ -38,7 +38,7 @@ patch:
 
 
     Set `cardConfigs.pinTargetOrigin` to the canonical HTTPS origin of your
-    frontend before calling `GET /cards/{id}/set-pin-url`. Omit the field to
+    frontend before calling `GET /cards/{id}/pin-entry-url`. Omit the field to
     preserve its value or set it to `null` to clear it.
   operationId: updatePlatformConfig
   tags:

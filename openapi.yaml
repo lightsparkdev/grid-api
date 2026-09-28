@@ -95,7 +95,7 @@ paths:
       description: |-
         Update platform configuration settings. `cardConfigs` can establish platform-level caps on a single card transaction, on spend during one UTC calendar day, and on the number of transactions during one UTC calendar day. Grid enforces the lower of each platform cap and its corresponding card-specific value without replacing the card-specific value. Daily limits reset at 00:00 UTC.
 
-        Set `cardConfigs.pinTargetOrigin` to the canonical HTTPS origin of your frontend before calling `GET /cards/{id}/set-pin-url`. Omit the field to preserve its value or set it to `null` to clear it.
+        Set `cardConfigs.pinTargetOrigin` to the canonical HTTPS origin of your frontend before calling `GET /cards/{id}/pin-entry-url`. Omit the field to preserve its value or set it to `null` to clear it.
       operationId: updatePlatformConfig
       tags:
         - Platform Configuration
@@ -9141,7 +9141,7 @@ paths:
       description: |-
         Set or replace the card's online PIN using a block encrypted in your client with the published PIN encryption public key. Grid cannot decrypt the block and never stores or logs PIN material.
 
-        Use this when you operate your own PIN-entry UI. For a hosted PIN-entry iframe, use `GET /cards/{id}/set-pin-url` — the two are alternatives, and a card may use either at any time.
+        Use this when you operate your own PIN-entry UI. For a hosted PIN-entry iframe, use `GET /cards/{id}/pin-entry-url` — the two are alternatives, and a card may use either at any time.
 
         Setting a PIN clears a `BLOCKED` PIN, so a cardholder locked out by incorrect attempts can recover by choosing a new PIN without a separate unblock. Read `GET /cards/{id}` for the resulting status. Grid supports online PINs only; offline PIN cards are not supported.
 
@@ -9202,7 +9202,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
-  /cards/{id}/set-pin-url:
+  /cards/{id}/pin-entry-url:
     parameters:
       - name: id
         in: path
@@ -13323,7 +13323,7 @@ components:
               pattern: ^https://(?:[^\s/?#@:\[\]\\]+|\[[0-9A-Fa-f:.]+\])(?::[0-9]{1,5})?$
             - type: 'null'
           description: |-
-            Canonical HTTPS origin of the page that hosts the PIN-entry iframe returned by `GET /cards/{id}/set-pin-url`. Include the scheme, host, and optional port, without a path, trailing slash, query, fragment, or credentials. The iframe is restricted to this origin, so it must match the embedding page's origin exactly. Different user-specific paths on the same origin use this one setting.
+            Canonical HTTPS origin of the page that hosts the PIN-entry iframe returned by `GET /cards/{id}/pin-entry-url`. Include the scheme, host, and optional port, without a path, trailing slash, query, fragment, or credentials. The iframe is restricted to this origin, so it must match the embedding page's origin exactly. Different user-specific paths on the same origin use this one setting.
 
             Required before requesting a PIN-entry URL. Omit this field when updating platform configuration to preserve its value; set it to `null` to clear it. If unset, PIN-entry URL requests return `409 CONFLICT`. Changes apply to newly requested URLs.
           example: https://app.example.com
@@ -27761,7 +27761,7 @@ components:
 
         | Status | Description |
         |--------|-------------|
-        | `NOT_SET` | No PIN has been set on the card. PIN verification is not enabled. Set one with `POST /cards/{id}/set-pin` or the hosted form returned by `GET /cards/{id}/set-pin-url`. |
+        | `NOT_SET` | No PIN has been set on the card. PIN verification is not enabled. Set one with `POST /cards/{id}/set-pin` or the hosted form returned by `GET /cards/{id}/pin-entry-url`. |
         | `OK` | A PIN is set and usable. |
         | `BLOCKED` | The PIN was entered incorrectly three consecutive times and is refused until cleared with `POST /cards/{id}/pin/unblock`, or replaced with `POST /cards/{id}/set-pin`. |
     Card:
