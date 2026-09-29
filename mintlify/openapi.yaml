@@ -14851,6 +14851,11 @@ components:
           example:
             - UBO
             - DIRECTOR
+        title:
+          type: string
+          maxLength: 128
+          description: Job title of this person within the business, such as Chief Executive Officer. Sent to the banking partner for a control person.
+          example: Chief Executive Officer
         ownershipPercentage:
           type: integer
           description: Percentage of ownership in the business (0-100)
@@ -24330,6 +24335,11 @@ components:
           example:
             - UBO
             - DIRECTOR
+        title:
+          type: string
+          maxLength: 128
+          description: Job title of this person within the business, such as Chief Executive Officer. Sent to the banking partner for a control person.
+          example: Chief Executive Officer
         ownershipPercentage:
           type: integer
           description: Percentage of ownership in the business (0-100). Relevant when role includes UBO.
@@ -24402,6 +24412,11 @@ components:
           example:
             - UBO
             - DIRECTOR
+        title:
+          type: string
+          maxLength: 128
+          description: Job title of this person within the business, such as Chief Executive Officer. Sent to the banking partner for a control person.
+          example: Chief Executive Officer
         ownershipPercentage:
           type: integer
           description: Percentage of ownership in the business (0-100)
