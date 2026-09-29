@@ -16406,6 +16406,7 @@ components:
         intermediaryBankName: JPMorgan Chase Bank
         intermediaryRoutingNumber: '021000021'
         fiToFiInformation: /BNF/Invoice 4471
+        bankAccountType: CHECKING
     UsdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/UsdAccountInfoBase'
@@ -16425,7 +16426,7 @@ components:
                   - FEDNOW
             bankAccountType:
               type: string
-              description: Whether the account is a checking or a savings account. Grid uses this to set the ACH transaction code, so a value that does not match the account causes the receiving bank to return a notification of change. Omitted on accounts created before the field was required.
+              description: Whether the account is a checking or a savings account. Grid uses this to set the ACH transaction code, so a value that does not match the account causes the receiving bank to return a notification of change.
               enum:
                 - CHECKING
                 - SAVINGS
@@ -20027,6 +20028,43 @@ components:
           maxLength: 50
           description: The identity document number
           minLength: 1
+    CopBusinessBeneficiary:
+      title: Business Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - legalName
+        - taxId
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+        legalName:
+          type: string
+          maxLength: 250
+          description: The legal name of the business
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          maxLength: 100
+          description: The company registration number of the business
+        taxId:
+          type: string
+          maxLength: 64
+          description: The tax identification number of the business
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
     CopExternalAccountInfo:
       title: COP Account
       allOf:
@@ -20041,12 +20079,12 @@ components:
                 - title: Individual Beneficiary
                   $ref: '#/components/schemas/CopBeneficiary'
                 - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                  $ref: '#/components/schemas/CopBusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/CopBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+                  BUSINESS: '#/components/schemas/CopBusinessBeneficiary'
     DkkBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -23319,12 +23357,12 @@ components:
                 - title: Individual Beneficiary
                   $ref: '#/components/schemas/CopBeneficiary'
                 - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                  $ref: '#/components/schemas/CopBusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/CopBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+                  BUSINESS: '#/components/schemas/CopBusinessBeneficiary'
     DkkExternalAccountCreateInfo:
       title: DKK Account
       allOf:
