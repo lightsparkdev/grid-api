@@ -8,7 +8,7 @@ properties:
     description: |
       | Error Code | Description |
       |------------|-------------|
-      | INVALID_PAYREQ_RESPONSE | Counterparty Payreq response was invalid. Retryable |
+      | INVALID_PAYREQ_RESPONSE | Counterparty payment request response was invalid. Retryable |
     enum:
       - INVALID_PAYREQ_RESPONSE
   reason:

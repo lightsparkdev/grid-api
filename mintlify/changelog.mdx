@@ -11,15 +11,15 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
-## Receiving VASP failures return retryable statuses
+## Counterparty failures return retryable statuses
 
-Three error codes caused by the receiving VASP no longer return `400`. The codes are
+Three error codes caused by the counterparty no longer return `400`. The codes are
 unchanged. Only their HTTP status moves, to one that signals a retry.
 
-- `LOOKUP_REQUEST_FAILED` returns `424`. A receiver lookup couldn't reach the receiving VASP.
+- `LOOKUP_REQUEST_FAILED` returns `424`. A receiver lookup couldn't reach the counterparty.
 - `QUOTE_REQUEST_FAILED` returns `424`. `POST /quotes` couldn't send the quote request to
-  the receiving VASP.
-- `INVALID_PAYREQ_RESPONSE` returns `502`. The receiving VASP returned an invalid payment
+  the counterparty.
+- `INVALID_PAYREQ_RESPONSE` returns `502`. The counterparty returned an invalid payment
   request.
 
 A quote to a receiver whose provider is temporarily unavailable also changes. It now returns
