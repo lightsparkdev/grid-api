@@ -378,7 +378,7 @@
           },
           {
             "group": "API documentation",
-            "openapi": "https://app.stainless.com/api/spec/documented/grid/openapi.documented.yml"
+            "openapi": "openapi.yaml"
           }
         ]
       }
@@ -429,6 +429,9 @@
   },
   "seo": {},
   "integrations": {
+    "amplitude": {
+      "apiKey": "7f2e340589501177fa6f8a5cc7b6bc51"
+    },
     "gtm": {
       "tagId": "GTM-5R5NP3DS"
     }
