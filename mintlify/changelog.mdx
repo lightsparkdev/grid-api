@@ -25,6 +25,9 @@ unchanged. Only their HTTP status moves, to one that signals a retry.
 A quote to a receiver whose provider is temporarily unavailable also changes. It now returns
 `424 PAYREQ_REQUEST_FAILED` instead of `400 INVALID_INPUT`.
 
+A lookup for a UMA address whose domain doesn't exist is a bad address, not a retryable
+failure. It now returns `404 USER_NOT_FOUND` instead of `400 LOOKUP_REQUEST_FAILED`.
+
 If you already retry on `424` and `5xx`, these are retried with no code-specific handling.
 If you detect them by matching `400`, match on `code` instead. See
 [Error handling](/payouts-and-b2b/payment-flow/error-handling).
