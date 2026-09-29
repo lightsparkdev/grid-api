@@ -67,3 +67,6 @@ error-audit/
 
 # Exported git stash contents (local scratch)
 stash-work/
+
+# Local partner guides and working docs. Files already tracked here stay tracked.
+docs/
