@@ -11,16 +11,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Ensure docs.json uses production OpenAPI URL
+      - name: Ensure docs.json references a known OpenAPI source
         run: |
-          EXPECTED_URL="https://app.stainless.com/api/spec/documented/grid/openapi.documented.yml"
-          if grep -q '"openapi.yaml"' mintlify/docs.json; then
-            echo "::error file=mintlify/docs.json::docs.json references local 'openapi.yaml' instead of the production Stainless URL."
-            echo ""
-            echo "The openapi field must point to:"
-            echo "  $EXPECTED_URL"
-            echo ""
-            echo "Local openapi.yaml is only for development (make mint handles this automatically)."
-            exit 1
+          STAINLESS_URL="https://app.stainless.com/api/spec/documented/grid/openapi.documented.yml"
+          LOCAL_PATH="openapi.yaml"
+          if grep -q "\"openapi\": \"$STAINLESS_URL\"" mintlify/docs.json; then
+            echo "docs.json references the Stainless documented spec."
+            exit 0
           fi
-          echo "docs.json openapi reference looks good."
+          if grep -q "\"openapi\": \"$LOCAL_PATH\"" mintlify/docs.json; then
+            echo "::notice file=mintlify/docs.json::docs.json references the local bundle '$LOCAL_PATH'. The API reference is served without Stainless SDK code samples until it points back to $STAINLESS_URL."
+            exit 0
+          fi
+          echo "::error file=mintlify/docs.json::docs.json must reference either the Stainless documented spec ($STAINLESS_URL) or the local bundle ($LOCAL_PATH)."
+          exit 1
