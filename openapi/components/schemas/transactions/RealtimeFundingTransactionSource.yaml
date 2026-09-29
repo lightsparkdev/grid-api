@@ -20,52 +20,73 @@ allOf:
         example: USDC
       accountHolderName:
         type: string
-        description: The name of the originator (sender) of the payment.
+        deprecated: true
+        description: >-
+          Deprecated. Use `railDetails.bankAccount.accountHolderName`. The name of
+          the originator (sender) of the payment.
         example: John Sender
       accountIdentifier:
         type: string
+        deprecated: true
         description: >-
-          The originator's account number or IBAN. May be masked or partial
-          depending on the rail.
+          Deprecated. Use `railDetails.bankAccount.accountNumber`. The
+          originator's account number or IBAN. May be masked or partial depending on
+          the rail.
         example: '****6789'
       bankName:
         type: string
-        description: The name of the originating bank.
+        deprecated: true
+        description: >-
+          Deprecated. Use `railDetails.bankAccount.bankName` on wires. The name of the
+          originating bank.
         example: Chase Bank
       bankIdentifier:
         type: string
+        deprecated: true
         description: >-
-          The identifier of the originating bank, such as a routing number, BIC,
-          or SWIFT code.
+          Deprecated. Use `railDetails.bankAccount.routingNumber`. The identifier
+          of the originating bank, such as a routing number, BIC, or SWIFT code.
         example: '021000021'
       paymentRail:
-        description: The payment rail the funds arrived on.
+        deprecated: true
+        description: >-
+          Deprecated. Use `railDetails.paymentRail`. The payment rail the funds
+          arrived on.
         allOf:
           - $ref: ../common/PaymentRail.yaml
       remittanceInformation:
         type: string
+        deprecated: true
         description: >-
-          Free-form information about the payment provided by the originator.
-          The source field depends on the payment rail: the Addenda record for
-          ACH, the OBI / beneficiary information for wires, and the
-          remittanceInformation field for RTP and FedNow.
+          Deprecated. Use `railDetails.addenda` for ACH,
+          `railDetails.originatorToBeneficiaryInformation` for wires and
+          `railDetails.remittanceInformation` for RTP and FedNow. Free-form
+          information about the payment provided by the originator.
         example: '12345'
       endToEndId:
         type: string
-        description: The originator's own end-to-end reference for the payment.
+        deprecated: true
+        description: >-
+          Deprecated. Use `railDetails.endToEndId`. The originator's own
+          end-to-end reference for the payment.
         example: E2E-9f2c6b6f
       traceNumber:
         type: string
+        deprecated: true
         description: >-
-          Rail-level tracking identifier for the payment, such as an ACH trace
-          number or a wire IMAD/OMAD, useful for reconciliation.
+          Deprecated. Use `railDetails.traceNumber` for ACH and
+          `railDetails.imad` for wires. Rail-level
+          tracking identifier for the payment.
         example: '021000020123456'
+      railDetails:
+        $ref: ./RailDetailsOneOf.yaml
       onChainTransaction:
         $ref: ./OnChainTransaction.yaml
+        deprecated: true
         description: >-
-          On-chain transaction that delivered the funding, when the funds arrived from an
-          external crypto wallet. Populated once the crypto transfer has settled.
+          Deprecated. Use `railDetails`, which carries the same hash and network when
+          `paymentRail` is `ONCHAIN`.
     description: >-
-      Transaction was funded using an external funding source. All originator
-      fields are optional and populated on a best-effort basis depending on what
-      the funding source provides.
+      Transaction was funded using an external funding source. `railDetails`
+      describes the transfer that delivered the funds; its fields are populated on a
+      best-effort basis depending on what the funding source provides.

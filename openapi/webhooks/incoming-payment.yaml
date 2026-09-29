@@ -154,6 +154,10 @@ post:
                 source:
                   sourceType: REALTIME_FUNDING
                   currency: USDC
+                  railDetails:
+                    paymentRail: ONCHAIN
+                    transactionHash: 7RJWhvQBQPEjJmki5fhBboGBWRJhmcFkMvrr4Fu3tMSJ5EdynMEiYSyiWAH9GpcbHpeUzeSQF9ZY6q4x8AhBskUf
+                    network: SOLANA
                   onChainTransaction:
                     transactionHash: 7RJWhvQBQPEjJmki5fhBboGBWRJhmcFkMvrr4Fu3tMSJ5EdynMEiYSyiWAH9GpcbHpeUzeSQF9ZY6q4x8AhBskUf
                     network: SOLANA
@@ -172,6 +176,53 @@ post:
                 settledAt: '2025-08-15T14:30:00Z'
                 createdAt: '2025-08-15T14:25:18Z'
                 description: USDC deposit from self-custody wallet
+          incomingCompletedWirePayment:
+            summary: Completed payment funded by a wire
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000011
+              type: INCOMING_PAYMENT.COMPLETED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000012
+                status: COMPLETED
+                type: INCOMING
+                direction: CREDIT
+                source:
+                  sourceType: REALTIME_FUNDING
+                  currency: USD
+                  railDetails:
+                    paymentRail: WIRE
+                    status: SETTLED
+                    settledAt: '2025-08-15T14:30:00Z'
+                    imad: 20250815MMQFMP9C000123
+                    originatorToBeneficiaryInformation: INV-12345
+                    bankAccount:
+                      accountHolderName: John Sender
+                      routingNumber: '021000021'
+                      accountNumber: '****6789'
+                      bankName: Chase Bank
+                  paymentRail: WIRE
+                  accountHolderName: John Sender
+                  accountIdentifier: '****6789'
+                  bankName: Chase Bank
+                  bankIdentifier: '021000021'
+                  remittanceInformation: INV-12345
+                  traceNumber: 20250815MMQFMP9C000123
+                destination:
+                  destinationType: ACCOUNT
+                  accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                receivedAmount:
+                  amount: 2500000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                settledAt: '2025-08-15T14:30:00Z'
+                createdAt: '2025-08-15T14:25:18Z'
+                description: Wire deposit
           incomingRefundedPayment:
             summary: Refunded incoming payment notification
             value:

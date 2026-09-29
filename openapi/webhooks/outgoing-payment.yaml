@@ -105,6 +105,10 @@ post:
                 destination:
                   destinationType: ACCOUNT
                   accountId: ExternalAccount:c34dcbd6-dced-4ec4-b756-3c3a9ea3d789
+                  railDetails:
+                    paymentRail: ONCHAIN
+                    transactionHash: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
+                    network: SOLANA
                   onChainTransaction:
                     transactionHash: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
                     network: SOLANA
@@ -128,6 +132,59 @@ post:
                 settledAt: '2025-08-15T14:30:00Z'
                 createdAt: '2025-08-15T14:25:18Z'
                 description: USDC withdrawal to self-custody wallet
+                paymentInstructions: []
+          outgoingCompletedAchPaymentReturned:
+            summary: Completed ACH payout returned by the receiving bank
+            description: >-
+              The payout settled, and the receiving bank later returned the ACH entry.
+              The destination's `railDetails` moves to `RETURNED`; the transaction's
+              `status` stays `COMPLETED`.
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000011
+              type: OUTGOING_PAYMENT.COMPLETED
+              timestamp: '2025-08-18T15:02:00Z'
+              data:
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000012
+                status: COMPLETED
+                type: OUTGOING
+                direction: DEBIT
+                source:
+                  sourceType: ACCOUNT
+                  accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                destination:
+                  destinationType: ACCOUNT
+                  accountId: ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456
+                  railDetails:
+                    paymentRail: ACH
+                    status: RETURNED
+                    bankAccount:
+                      accountHolderName: Jane Receiver
+                      routingNumber: '021000021'
+                      accountNumber: '****4321'
+                    traceNumber: '021000020123456'
+                    addenda: 'INV-2025-0815'
+                    settledAt: '2025-08-15T14:30:00Z'
+                    returnedAt: '2025-08-18T15:00:00Z'
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                sentAmount:
+                  amount: 50000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                receivedAmount:
+                  amount: 50000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                quoteId: Quote:019542f5-b3e7-1d02-0000-000000000013
+                settledAt: '2025-08-15T14:30:00Z'
+                createdAt: '2025-08-15T14:25:18Z'
+                description: Vendor payout
                 paymentInstructions: []
           failedPayment:
             summary: Failed outgoing payment

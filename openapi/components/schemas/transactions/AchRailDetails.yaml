@@ -1,0 +1,77 @@
+title: ACH Transfer
+type: object
+required:
+  - paymentRail
+  - status
+properties:
+  paymentRail:
+    type: string
+    enum:
+      - ACH
+      - ACH_SAME_DAY
+  status:
+    type: string
+    enum:
+      - PENDING
+      - SETTLED
+      - RETURNED
+      - REVERSED
+      - FAILED
+    description: |-
+      Status of the entry on the ACH network.
+
+      | Status | Description |
+      |--------|-------------|
+      | `PENDING` | Submitted to the ACH network and not yet settled. |
+      | `SETTLED` | The entry settled. |
+      | `RETURNED` | The receiving bank returned the entry, before or after it settled. |
+      | `REVERSED` | The originator reversed the entry after it settled. |
+      | `FAILED` | The entry was rejected before submission and no funds moved. |
+
+      A return or reversal can arrive days after `SETTLED`. It changes this status and
+      leaves the transaction's top-level `status` unchanged.
+    example: SETTLED
+  bankAccount:
+    type: object
+    description: >-
+      The account on the other end of the entry: the originator's account on a source,
+      the receiver's account on a destination.
+    properties:
+      accountHolderName:
+        type: string
+        description: Name on the entry for the account holder.
+        example: John Sender
+      routingNumber:
+        type: string
+        description: 9-digit ABA routing number of the account's bank.
+        example: '021000021'
+      accountNumber:
+        type: string
+        description: Account number, masked to its last four digits.
+        example: '****6789'
+  traceNumber:
+    type: string
+    description: 15-digit ACH trace number of the entry.
+    example: '021000020123456'
+  addenda:
+    type: string
+    description: >-
+      Payment-related text carried in the entry's addenda record. On payments you
+      originate, this is the `remittanceInformation` you provided.
+    example: 'INV-12345'
+  settledAt:
+    type: string
+    format: date-time
+    description: When the entry settled.
+    example: '2026-09-29T15:04:12Z'
+  returnedAt:
+    type: string
+    format: date-time
+    description: When the receiving bank returned the entry. Present when `status` is `RETURNED`.
+    example: '2026-10-01T14:00:00Z'
+  reversedAt:
+    type: string
+    format: date-time
+    description: When the originator reversed the entry. Present when `status` is `REVERSED`.
+    example: '2026-10-01T14:00:00Z'
+description: A transfer over the ACH network.
