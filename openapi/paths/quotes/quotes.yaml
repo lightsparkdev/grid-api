@@ -105,8 +105,8 @@ post:
               lockedCurrencyAmount: 10000
               immediatelyExecute: true
               description: 'Bitcoin reward payout!'
-          chinaB2BAccountingServicesWithDocuments:
-            summary: China B2B CNY payout with supporting documents
+          payoutWithSupportingDocuments:
+            summary: Payout with supporting documents
             value:
               lookupId: Lookup:019542f5-b3e7-1d02-0000-000000000009
               source:
@@ -182,10 +182,8 @@ post:
         parameters. These include `documentIds` without an `Idempotency-Key`
         header, `documentIds` sent to a destination that does not require
         documents, a document whose `documentType` fills no remaining
-        requirement for the `purposeOfPayment`, and a China B2B CNY payout
-        whose `purposeOfPayment` is not one of the China business purposes
-        listed in [Supporting Documents for China Business
-        Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents).
+        requirement for the `purposeOfPayment`, and a `purposeOfPayment` the
+        destination does not accept.
       content:
         application/json:
           schema:

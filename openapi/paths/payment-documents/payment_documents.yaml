@@ -1,11 +1,11 @@
 post:
   summary: Upload a payment document
   description: |
-    Upload a supporting document for a payout that requires one. Today that
-    means China B2B CNY payouts, which are CNY bank transfers to a business
-    beneficiary. [Supporting Documents for China Business
-    Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
-    lists the documents each `purposeOfPayment` needs. Upload each file here,
+    Upload a supporting document for a payout that requires one. [Supporting
+    Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+    lists which payouts need documents, the documents each
+    `purposeOfPayment` needs, and what the payout partner checks in them.
+    Upload each file here,
     then pass the returned `id` values in `documentIds` on `POST /quotes`.
     Grid attaches the files to the payment before it returns the quote.
 
@@ -28,18 +28,9 @@ post:
     - has its file deleted by Grid once it is attached to the payment
 
     Grid does not check what a document says. The payout partner reviews each
-    document after Grid attaches it. To avoid a rejected or delayed payout:
-
-    - Every document must carry the beneficiary's stamp. A contract must be
-      stamped by both parties.
-    - The invoice amount must match the transaction amount.
-    - The invoice currency must match the payout currency.
-    - Sender and beneficiary details in the documents must match the details
-      you send through the API.
-
-    A successful attachment means the payout partner received the file, not
-    that it approved it. The partner may later request more information about
-    the payment, with a deadline of 15 calendar days.
+    document after Grid attaches it, and may reject or delay the payout. A
+    successful attachment means the payout partner received the file, not
+    that it approved it.
   operationId: uploadPaymentDocument
   tags:
     - Cross-Currency Transfers

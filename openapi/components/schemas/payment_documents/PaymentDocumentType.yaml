@@ -4,8 +4,8 @@ description: >-
   formats: `INVOICE` means the file is an invoice.
 
 
-  [Supporting Documents for China Business
-  Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+  [Supporting
+  Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
   lists the types each requirement accepts. When you upload a file with
   `POST /payment-documents`, `documentType` declares which type the file is.
 enum:

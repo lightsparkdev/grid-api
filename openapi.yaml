@@ -4228,11 +4228,11 @@ paths:
     post:
       summary: Upload a payment document
       description: |
-        Upload a supporting document for a payout that requires one. Today that
-        means China B2B CNY payouts, which are CNY bank transfers to a business
-        beneficiary. [Supporting Documents for China Business
-        Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
-        lists the documents each `purposeOfPayment` needs. Upload each file here,
+        Upload a supporting document for a payout that requires one. [Supporting
+        Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+        lists which payouts need documents, the documents each
+        `purposeOfPayment` needs, and what the payout partner checks in them.
+        Upload each file here,
         then pass the returned `id` values in `documentIds` on `POST /quotes`.
         Grid attaches the files to the payment before it returns the quote.
 
@@ -4255,18 +4255,9 @@ paths:
         - has its file deleted by Grid once it is attached to the payment
 
         Grid does not check what a document says. The payout partner reviews each
-        document after Grid attaches it. To avoid a rejected or delayed payout:
-
-        - Every document must carry the beneficiary's stamp. A contract must be
-          stamped by both parties.
-        - The invoice amount must match the transaction amount.
-        - The invoice currency must match the payout currency.
-        - Sender and beneficiary details in the documents must match the details
-          you send through the API.
-
-        A successful attachment means the payout partner received the file, not
-        that it approved it. The partner may later request more information about
-        the payment, with a deadline of 15 calendar days.
+        document after Grid attaches it, and may reject or delay the payout. A
+        successful attachment means the payout partner received the file, not
+        that it approved it.
       operationId: uploadPaymentDocument
       tags:
         - Cross-Currency Transfers
@@ -4504,8 +4495,8 @@ paths:
                   lockedCurrencyAmount: 10000
                   immediatelyExecute: true
                   description: Bitcoin reward payout!
-              chinaB2BAccountingServicesWithDocuments:
-                summary: China B2B CNY payout with supporting documents
+              payoutWithSupportingDocuments:
+                summary: Payout with supporting documents
                 value:
                   lookupId: Lookup:019542f5-b3e7-1d02-0000-000000000009
                   source:
@@ -4567,7 +4558,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Quote'
         '400':
-          description: Bad request. Returned with `DOCUMENTS_REQUIRED` when the destination requires supporting documents for the `purposeOfPayment` and `documentIds` does not supply all of them. `details.missingRequirements` lists the requirement ID of each missing document. Returned with `INVALID_INPUT` for missing or invalid parameters. These include `documentIds` without an `Idempotency-Key` header, `documentIds` sent to a destination that does not require documents, a document whose `documentType` fills no remaining requirement for the `purposeOfPayment`, and a China B2B CNY payout whose `purposeOfPayment` is not one of the China business purposes listed in [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents).
+          description: Bad request. Returned with `DOCUMENTS_REQUIRED` when the destination requires supporting documents for the `purposeOfPayment` and `documentIds` does not supply all of them. `details.missingRequirements` lists the requirement ID of each missing document. Returned with `INVALID_INPUT` for missing or invalid parameters. These include `documentIds` without an `Idempotency-Key` header, `documentIds` sent to a destination that does not require documents, a document whose `documentType` fills no remaining requirement for the `purposeOfPayment`, and a `purposeOfPayment` the destination does not accept.
           content:
             application/json:
               schema:
@@ -13888,7 +13879,7 @@ components:
       description: |-
         A stable identifier for one required document within a purpose's requirements. The same ID means the same requirement across quotes. It is separate from `PaymentDocumentType`. The requirement ID names the document to supply, and the document type names what a file is. The two differ where a requirement accepts alternatives. For example, a file declared as either `PURCHASE_ORDER` or `DELIVERY_SLIP` fills the `SUPPORTING_PROOF` requirement.
 
-        China B2B CNY payouts use these IDs: `PURCHASE_ORDER`, `LOGISTICS_BILL`, `CUSTOMS_DECLARATION`, `COMMERCIAL_AGREEMENT`, `CONTRACT`, `INVOICE`, `SUPPORTING_PROOF`, `BILL_OF_LADING`, `CONTRACT_OR_INVOICE`, `FLIGHT_TICKET`, `TRAVEL_DOCUMENT`, and `HOTEL_BOOKING_CONFIRMATION`. [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the IDs each purpose requires.
+        [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the IDs each purpose requires.
 
         Treat the ID as an opaque value, not a member of a fixed list. Grid may add new IDs as requirements change.
       example: SUPPORTING_PROOF
@@ -16370,11 +16361,7 @@ components:
       description: |-
         The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
 
-        Business payments to China must use one of the China-specific purposes rather than `GOODS_OR_SERVICES`, because each purpose requires its own supporting documents. Those purposes are `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `COMMISSION_ON_GOODS`, `COMMISSION_ON_SERVICES`, `ACCOUNTING_SERVICES`, `EXHIBITION_SERVICES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`. [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the documents each one requires.
-
-        A payment for services uses the purpose that names the service. The receiving bank needs that detail, so `SERVICE_CHARGES` is not accepted on these payouts.
-
-        The China-specific purposes also work on other corridors. There, Grid sends the closest purpose the payout partner accepts, or the partner's own "other" purpose when none fits.
+        Some destinations accept only certain purposes. A business payout to China must use one of the purposes listed in [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents), and each needs its own supporting documents. Those purposes also work on other corridors, where Grid sends the closest purpose the payout partner accepts, or the partner's own "other" purpose when none fits.
       enum:
         - GIFT
         - SELF
@@ -25975,7 +25962,7 @@ components:
       description: |-
         What a supporting document is. These are kinds of evidence, not file formats: `INVOICE` means the file is an invoice.
 
-        [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the types each requirement accepts. When you upload a file with `POST /payment-documents`, `documentType` declares which type the file is.
+        [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the types each requirement accepts. When you upload a file with `POST /payment-documents`, `documentType` declares which type the file is.
       enum:
         - PURCHASE_ORDER
         - LOGISTICS_BILL
@@ -26005,7 +25992,7 @@ components:
             `400 INVALID_INPUT`.
         documentType:
           $ref: '#/components/schemas/PaymentDocumentType'
-          description: What the file is. To fill a requirement, use one of the types it accepts, as listed in [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents).
+          description: What the file is. To fill a requirement, use one of the types it accepts, as listed in [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents).
         customerId:
           type: string
           description: ID of the sending customer whose payment this document supports. The document can only be used on this customer's quotes. Omit it when the platform itself is the sender, as on a quote with no `customerId`. The document can then only be used on the platform's own quotes.
@@ -26400,7 +26387,7 @@ components:
           maxItems: 3
           uniqueItems: true
           description: |-
-            IDs of payment documents from `POST /payment-documents` that support this payment. Required when the destination requires supporting documents. Today that means China B2B CNY payouts, which are CNY bank transfers to a business beneficiary. Supply one document for each requirement of your `purposeOfPayment`. [Supporting Documents for China Business Payouts](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the requirements for each purpose and the document types each requirement accepts. Grid matches each document to a requirement by its `documentType`, which must be one of the types that requirement accepts. A request that leaves a requirement unfilled returns `400 DOCUMENTS_REQUIRED`. Each document must belong to the customer sending the payment, or to the platform when the platform itself is the sender. Any other ID returns `404 PAYMENT_DOCUMENT_NOT_FOUND`.
+            IDs of payment documents from `POST /payment-documents` that support this payment. Required when the destination requires supporting documents. Supply one document for each requirement of your `purposeOfPayment`. [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists which payouts need documents, the requirements for each purpose, and the document types each requirement accepts. Grid matches each document to a requirement by its `documentType`, which must be one of the types that requirement accepts. A request that leaves a requirement unfilled returns `400 DOCUMENTS_REQUIRED`. Each document must belong to the customer sending the payment, or to the platform when the platform itself is the sender. Any other ID returns `404 PAYMENT_DOCUMENT_NOT_FOUND`.
 
             Grid attaches every document to the payment before it returns the quote. With `immediatelyExecute: true`, Grid attaches the documents before it executes the quote. If an attachment fails, Grid creates no quote and returns `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED`. Retry the same request with the same `Idempotency-Key`.
 
