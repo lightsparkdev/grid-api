@@ -11864,6 +11864,8 @@ webhooks:
 
         For transactions with other statuses (COMPLETED, FAILED, REFUNDED), this webhook is purely informational.
 
+        The webhook is also sent when a side's `railDetails.status` changes while the payment's status stays the same (for example, an ACH return after `COMPLETED`). Such an update repeats the current event type, so don't discard a repeated event type as a duplicate; use the webhook `id` for deduplication.
+
         Bank-rail incoming payments (e.g. SWIFT) are informational at every status, including PENDING: the funds have already moved interbank, so the approval mechanism and the 5-second response window do not apply.
       operationId: incomingPaymentWebhook
       tags:
@@ -11957,6 +11959,10 @@ webhooks:
                     source:
                       sourceType: REALTIME_FUNDING
                       currency: USDC
+                      railDetails:
+                        paymentRail: ONCHAIN
+                        transactionHash: 7RJWhvQBQPEjJmki5fhBboGBWRJhmcFkMvrr4Fu3tMSJ5EdynMEiYSyiWAH9GpcbHpeUzeSQF9ZY6q4x8AhBskUf
+                        network: SOLANA
                       onChainTransaction:
                         transactionHash: 7RJWhvQBQPEjJmki5fhBboGBWRJhmcFkMvrr4Fu3tMSJ5EdynMEiYSyiWAH9GpcbHpeUzeSQF9ZY6q4x8AhBskUf
                         network: SOLANA
@@ -11975,6 +11981,53 @@ webhooks:
                     settledAt: '2025-08-15T14:30:00Z'
                     createdAt: '2025-08-15T14:25:18Z'
                     description: USDC deposit from self-custody wallet
+              incomingCompletedWirePayment:
+                summary: Completed payment funded by a wire
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000011
+                  type: INCOMING_PAYMENT.COMPLETED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000012
+                    status: COMPLETED
+                    type: INCOMING
+                    direction: CREDIT
+                    source:
+                      sourceType: REALTIME_FUNDING
+                      currency: USD
+                      railDetails:
+                        paymentRail: WIRE
+                        status: SETTLED
+                        settledAt: '2025-08-15T14:30:00Z'
+                        imad: 20250815MMQFMP9C000123
+                        originatorToBeneficiaryInformation: INV-12345
+                        bankAccount:
+                          accountHolderName: John Sender
+                          routingNumber: '021000021'
+                          accountNumber: '****6789'
+                          bankName: Chase Bank
+                      paymentRail: WIRE
+                      accountHolderName: John Sender
+                      accountIdentifier: '****6789'
+                      bankName: Chase Bank
+                      bankIdentifier: '021000021'
+                      remittanceInformation: INV-12345
+                      traceNumber: 20250815MMQFMP9C000123
+                    destination:
+                      destinationType: ACCOUNT
+                      accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    receivedAmount:
+                      amount: 2500000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    settledAt: '2025-08-15T14:30:00Z'
+                    createdAt: '2025-08-15T14:25:18Z'
+                    description: Wire deposit
               incomingRefundedPayment:
                 summary: Refunded incoming payment notification
                 value:
@@ -12069,7 +12122,7 @@ webhooks:
     post:
       summary: Outgoing payment status webhook
       description: |
-        Webhook that is called when an outgoing payment's status changes.
+        Webhook that is called when an outgoing payment's status changes, or when a side's `railDetails.status` changes while the payment's status stays the same (for example, an ACH return after `COMPLETED`). Such an update repeats the current event type, so don't discard a repeated event type as a duplicate; use the webhook `id` for deduplication.
         This endpoint should be implemented by clients of the Grid API.
 
         ### Authentication
@@ -12160,6 +12213,10 @@ webhooks:
                     destination:
                       destinationType: ACCOUNT
                       accountId: ExternalAccount:c34dcbd6-dced-4ec4-b756-3c3a9ea3d789
+                      railDetails:
+                        paymentRail: ONCHAIN
+                        transactionHash: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
+                        network: SOLANA
                       onChainTransaction:
                         transactionHash: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
                         network: SOLANA
@@ -12183,6 +12240,56 @@ webhooks:
                     settledAt: '2025-08-15T14:30:00Z'
                     createdAt: '2025-08-15T14:25:18Z'
                     description: USDC withdrawal to self-custody wallet
+                    paymentInstructions: []
+              outgoingCompletedAchPaymentReturned:
+                summary: Completed ACH payout returned by the receiving bank
+                description: The payout settled, and the receiving bank later returned the ACH entry. The destination's `railDetails` moves to `RETURNED`; the transaction's `status` stays `COMPLETED`.
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000011
+                  type: OUTGOING_PAYMENT.COMPLETED
+                  timestamp: '2025-08-18T15:02:00Z'
+                  data:
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000012
+                    status: COMPLETED
+                    type: OUTGOING
+                    direction: DEBIT
+                    source:
+                      sourceType: ACCOUNT
+                      accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    destination:
+                      destinationType: ACCOUNT
+                      accountId: ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456
+                      railDetails:
+                        paymentRail: ACH
+                        status: RETURNED
+                        bankAccount:
+                          accountHolderName: Jane Receiver
+                          routingNumber: '021000021'
+                          accountNumber: '****4321'
+                        traceNumber: '021000020123456'
+                        addenda: INV-2025-0815
+                        settledAt: '2025-08-15T14:30:00Z'
+                        returnedAt: '2025-08-18T15:00:00Z'
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    sentAmount:
+                      amount: 50000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    receivedAmount:
+                      amount: 50000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    quoteId: Quote:019542f5-b3e7-1d02-0000-000000000013
+                    settledAt: '2025-08-15T14:30:00Z'
+                    createdAt: '2025-08-15T14:25:18Z'
+                    description: Vendor payout
                     paymentInstructions: []
               failedPayment:
                 summary: Failed outgoing payment
@@ -24827,10 +24934,10 @@ components:
         | `PENDING` | Quote has been created |
         | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
         | `PROCESSING` | Funding has been received and payment initiated |
-        | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network |
+        | `COMPLETED` | The funds reached their destination. A later ACH return or reversal is reported on that side's `railDetails` and does not change this status |
         | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
         | `FAILED` | An error occurred during payment |
-        | `REFUNDED` | Payment was unable to complete and refunded |
+        | `REFUNDED` | Deprecated. A refund is reported on the transaction's `refund` object, and the status stays `FAILED` |
         | `EXPIRED` | Quote has expired |
     TransactionPendingReason:
       type: string
@@ -24886,6 +24993,289 @@ components:
         - SPARK
       description: The blockchain network an on-chain transaction settled on. Whether this is the mainnet or a test network (e.g. Solana devnet) is determined by your platform's environment — sandbox platforms operate on test networks, production platforms on mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
       example: SOLANA
+    OnChainRailDetails:
+      title: On-Chain Transfer
+      type: object
+      required:
+        - paymentRail
+        - transactionHash
+        - network
+      properties:
+        paymentRail:
+          type: string
+          enum:
+            - ONCHAIN
+        transactionHash:
+          type: string
+          description: On-chain transaction hash of the crypto transfer for this leg of the transaction.
+          example: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
+        network:
+          $ref: '#/components/schemas/CryptoNetwork'
+          description: Blockchain network the transaction settled on (mainnet vs test network is determined by your platform environment).
+      description: A crypto transfer to or from an external wallet.
+    AchRailDetails:
+      title: ACH Transfer
+      type: object
+      required:
+        - paymentRail
+        - status
+      properties:
+        paymentRail:
+          type: string
+          enum:
+            - ACH
+            - ACH_SAME_DAY
+        status:
+          type: string
+          enum:
+            - PENDING
+            - SETTLED
+            - RETURNED
+            - REVERSED
+            - FAILED
+          description: |-
+            Status of the entry on the ACH network.
+
+            | Status | Description |
+            |--------|-------------|
+            | `PENDING` | Submitted to the ACH network and not yet settled. |
+            | `SETTLED` | The entry settled. |
+            | `RETURNED` | The receiving bank returned the entry, before or after it settled. |
+            | `REVERSED` | The originator reversed the entry after it settled. |
+            | `FAILED` | The entry was rejected before submission and no funds moved. |
+
+            A return or reversal can arrive days after `SETTLED`. It changes this status and
+            leaves the transaction's top-level `status` unchanged.
+          example: SETTLED
+        bankAccount:
+          type: object
+          description: 'The account on the other end of the entry: the originator''s account on a source, the receiver''s account on a destination.'
+          properties:
+            accountHolderName:
+              type: string
+              description: Name on the entry for the account holder.
+              example: John Sender
+            routingNumber:
+              type: string
+              description: 9-digit ABA routing number of the account's bank.
+              example: '021000021'
+            accountNumber:
+              type: string
+              description: Account number, masked to its last four digits.
+              example: '****6789'
+        traceNumber:
+          type: string
+          description: 15-digit ACH trace number of the entry.
+          example: '021000020123456'
+        addenda:
+          type: string
+          description: Payment-related text carried in the entry's addenda record. On payments you originate, this is the `remittanceInformation` you provided.
+          example: INV-12345
+        settledAt:
+          type: string
+          format: date-time
+          description: When the entry settled.
+          example: '2026-09-29T15:04:12Z'
+        returnedAt:
+          type: string
+          format: date-time
+          description: When the receiving bank returned the entry. Present when `status` is `RETURNED`.
+          example: '2026-10-01T14:00:00Z'
+        reversedAt:
+          type: string
+          format: date-time
+          description: When the originator reversed the entry. Present when `status` is `REVERSED`.
+          example: '2026-10-01T14:00:00Z'
+      description: A transfer over the ACH network.
+    WireRailDetails:
+      title: Wire Transfer
+      type: object
+      required:
+        - paymentRail
+        - status
+      properties:
+        paymentRail:
+          type: string
+          enum:
+            - WIRE
+        status:
+          type: string
+          enum:
+            - PENDING
+            - SETTLED
+            - FAILED
+          description: |-
+            Status of the wire on Fedwire.
+
+            | Status | Description |
+            |--------|-------------|
+            | `PENDING` | Submitted to Fedwire and not yet delivered. |
+            | `SETTLED` | Fedwire delivered the wire. |
+            | `FAILED` | Fedwire or the receiving bank rejected the wire and no funds moved. |
+          example: SETTLED
+        bankAccount:
+          type: object
+          description: 'The account on the other end of the wire: the originator''s account on a source, the beneficiary''s account on a destination.'
+          properties:
+            accountHolderName:
+              type: string
+              description: Name of the account holder.
+              example: John Sender
+            routingNumber:
+              type: string
+              description: 9-digit ABA routing number of the account's bank.
+              example: '021000021'
+            accountNumber:
+              type: string
+              description: Account number, masked to its last four digits.
+              example: '****6789'
+            bankName:
+              type: string
+              description: Name of the account's bank.
+              example: Chase Bank
+        imad:
+          type: string
+          description: Fedwire Input Message Accountability Data assigned when the wire was sent.
+          example: 20260929MMQFMP9C000123
+        originatorToBeneficiaryInformation:
+          type: string
+          description: Free-form originator-to-beneficiary information (OBI) sent with the wire.
+          example: INV-12345
+        settledAt:
+          type: string
+          format: date-time
+          description: When Fedwire delivered the wire.
+          example: '2026-09-29T15:04:12Z'
+      description: A domestic wire over Fedwire.
+    FedNowRailDetails:
+      title: FedNow Transfer
+      type: object
+      required:
+        - paymentRail
+        - status
+      properties:
+        paymentRail:
+          type: string
+          enum:
+            - FEDNOW
+        status:
+          type: string
+          enum:
+            - PENDING
+            - SETTLED
+            - FAILED
+          description: |-
+            Status of the payment on FedNow.
+
+            | Status | Description |
+            |--------|-------------|
+            | `PENDING` | Submitted and awaiting the receiving bank's response. |
+            | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
+            | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
+          example: SETTLED
+        bankAccount:
+          type: object
+          description: 'The account on the other end of the payment: the sender''s account on a source, the recipient''s account on a destination.'
+          properties:
+            accountHolderName:
+              type: string
+              description: Name of the account holder.
+              example: John Sender
+            routingNumber:
+              type: string
+              description: 9-digit ABA routing number of the account's bank.
+              example: '021000021'
+            accountNumber:
+              type: string
+              description: Account number, masked to its last four digits.
+              example: '****6789'
+        endToEndId:
+          type: string
+          description: The originator's end-to-end reference for the payment.
+          example: E2E-9f2c6b6f
+        remittanceInformation:
+          type: string
+          description: Unstructured remittance information sent with the payment.
+          example: INV-12345
+        settledAt:
+          type: string
+          format: date-time
+          description: When the payment settled.
+          example: '2026-09-29T15:04:12Z'
+      description: An instant payment over the FedNow Service.
+    RtpRailDetails:
+      title: RTP Transfer
+      type: object
+      required:
+        - paymentRail
+        - status
+      properties:
+        paymentRail:
+          type: string
+          enum:
+            - RTP
+        status:
+          type: string
+          enum:
+            - PENDING
+            - SETTLED
+            - FAILED
+          description: |-
+            Status of the payment on the RTP network.
+
+            | Status | Description |
+            |--------|-------------|
+            | `PENDING` | Submitted and awaiting the receiving bank's response. |
+            | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
+            | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
+          example: SETTLED
+        bankAccount:
+          type: object
+          description: 'The account on the other end of the payment: the sender''s account on a source, the recipient''s account on a destination.'
+          properties:
+            accountHolderName:
+              type: string
+              description: Name of the account holder.
+              example: John Sender
+            routingNumber:
+              type: string
+              description: 9-digit ABA routing number of the account's bank.
+              example: '021000021'
+            accountNumber:
+              type: string
+              description: Account number, masked to its last four digits.
+              example: '****6789'
+        endToEndId:
+          type: string
+          description: The originator's end-to-end reference for the payment.
+          example: E2E-9f2c6b6f
+        remittanceInformation:
+          type: string
+          description: Unstructured remittance information sent with the payment.
+          example: INV-12345
+        settledAt:
+          type: string
+          format: date-time
+          description: When the payment settled.
+          example: '2026-09-29T15:04:12Z'
+      description: An instant payment over The Clearing House RTP network.
+    RailDetailsOneOf:
+      description: 'The rail transfer that moved funds for this side of the transaction. `paymentRail` determines the shape: each rail carries its own identifiers. Absent until a rail transfer exists for this side, and on sides whose funds move within Grid.'
+      oneOf:
+        - $ref: '#/components/schemas/OnChainRailDetails'
+        - $ref: '#/components/schemas/AchRailDetails'
+        - $ref: '#/components/schemas/WireRailDetails'
+        - $ref: '#/components/schemas/FedNowRailDetails'
+        - $ref: '#/components/schemas/RtpRailDetails'
+      discriminator:
+        propertyName: paymentRail
+        mapping:
+          ONCHAIN: '#/components/schemas/OnChainRailDetails'
+          ACH: '#/components/schemas/AchRailDetails'
+          ACH_SAME_DAY: '#/components/schemas/AchRailDetails'
+          WIRE: '#/components/schemas/WireRailDetails'
+          FEDNOW: '#/components/schemas/FedNowRailDetails'
+          RTP: '#/components/schemas/RtpRailDetails'
     OnChainTransaction:
       type: object
       required:
@@ -24916,9 +25306,12 @@ components:
               type: string
               description: Destination account identifier
               example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+            railDetails:
+              $ref: '#/components/schemas/RailDetailsOneOf'
             onChainTransaction:
               $ref: '#/components/schemas/OnChainTransaction'
-              description: On-chain transaction that delivered funds to this destination, when the destination is an external crypto wallet. Populated once the crypto transfer has settled.
+              deprecated: true
+              description: Deprecated. Use `railDetails`, which carries the same hash and network when `paymentRail` is `ONCHAIN`.
           description: Destination account details
     UmaAddressTransactionDestination:
       title: UMA Address Destination
@@ -25112,9 +25505,12 @@ components:
               type: string
               description: Source account identifier
               example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+            railDetails:
+              $ref: '#/components/schemas/RailDetailsOneOf'
             onChainTransaction:
               $ref: '#/components/schemas/OnChainTransaction'
-              description: On-chain transaction that delivered funds from this source, when the source is an external crypto wallet. Populated once the crypto transfer has settled.
+              deprecated: true
+              description: Deprecated. Use `railDetails`, which carries the same hash and network when `paymentRail` is `ONCHAIN`.
           description: Source account details
     UmaAddressTransactionSource:
       title: UMA Address Source
@@ -25157,40 +25553,51 @@ components:
               example: USDC
             accountHolderName:
               type: string
-              description: The name of the originator (sender) of the payment.
+              deprecated: true
+              description: Deprecated. Use `railDetails.bankAccount.accountHolderName`. The name of the originator (sender) of the payment. Still populated on rails without a `railDetails` variant, such as SWIFT.
               example: John Sender
             accountIdentifier:
               type: string
-              description: The originator's account number or IBAN. May be masked or partial depending on the rail.
+              deprecated: true
+              description: Deprecated. Use `railDetails.bankAccount.accountNumber`. The originator's account number or IBAN. May be masked or partial depending on the rail. Still populated on rails without a `railDetails` variant, such as SWIFT.
               example: '****6789'
             bankName:
               type: string
-              description: The name of the originating bank.
+              deprecated: true
+              description: Deprecated. Use `railDetails.bankAccount.bankName` on wires. The name of the originating bank. Still populated on rails without a `railDetails` variant, such as SWIFT.
               example: Chase Bank
             bankIdentifier:
               type: string
-              description: The identifier of the originating bank, such as a routing number, BIC, or SWIFT code.
+              deprecated: true
+              description: Deprecated. Use `railDetails.bankAccount.routingNumber`. The identifier of the originating bank, such as a routing number, BIC, or SWIFT code. Still populated on rails without a `railDetails` variant, such as SWIFT.
               example: '021000021'
             paymentRail:
-              description: The payment rail the funds arrived on.
+              deprecated: true
+              description: Deprecated. Use `railDetails.paymentRail`. The payment rail the funds arrived on. Still populated on rails without a `railDetails` variant, such as SWIFT.
               allOf:
                 - $ref: '#/components/schemas/PaymentRail'
             remittanceInformation:
               type: string
-              description: 'Free-form information about the payment provided by the originator. The source field depends on the payment rail: the Addenda record for ACH, the OBI / beneficiary information for wires, and the remittanceInformation field for RTP and FedNow.'
+              deprecated: true
+              description: Deprecated. Use `railDetails.addenda` for ACH, `railDetails.originatorToBeneficiaryInformation` for wires and `railDetails.remittanceInformation` for RTP and FedNow. Free-form information about the payment provided by the originator. Still populated on rails without a `railDetails` variant, such as SWIFT.
               example: '12345'
             endToEndId:
               type: string
-              description: The originator's own end-to-end reference for the payment.
+              deprecated: true
+              description: Deprecated. Use `railDetails.endToEndId`. The originator's own end-to-end reference for the payment. Still populated on rails without a `railDetails` variant, such as SWIFT.
               example: E2E-9f2c6b6f
             traceNumber:
               type: string
-              description: Rail-level tracking identifier for the payment, such as an ACH trace number or a wire IMAD/OMAD, useful for reconciliation.
+              deprecated: true
+              description: Deprecated. Use `railDetails.traceNumber` for ACH and `railDetails.imad` for wires. Rail-level tracking identifier for the payment. Still populated on rails without a `railDetails` variant, such as SWIFT.
               example: '021000020123456'
+            railDetails:
+              $ref: '#/components/schemas/RailDetailsOneOf'
             onChainTransaction:
               $ref: '#/components/schemas/OnChainTransaction'
-              description: On-chain transaction that delivered the funding, when the funds arrived from an external crypto wallet. Populated once the crypto transfer has settled.
-          description: Transaction was funded using an external funding source. All originator fields are optional and populated on a best-effort basis depending on what the funding source provides.
+              deprecated: true
+              description: Deprecated. Use `railDetails`, which carries the same hash and network when `paymentRail` is `ONCHAIN`.
+          description: Transaction was funded using an external funding source. `railDetails` describes the transfer that delivered the funds; its fields are populated on a best-effort basis depending on what the funding source provides. Rails without a `railDetails` variant, such as SWIFT, carry the originator's details in the deprecated flat fields only.
     TransactionSourceOneOf:
       oneOf:
         - $ref: '#/components/schemas/AccountTransactionSource'
@@ -25205,7 +25612,7 @@ components:
     ReconciliationInstructions:
       type: object
       minProperties: 1
-      description: Instructions for reconciling a payment with this transaction. For the on-chain transaction to or from an external crypto wallet that is the transaction's own source or destination, use the `onChainTransaction` on the relevant source or destination instead.
+      description: Instructions for reconciling a payment with this transaction. For the on-chain transaction to or from an external crypto wallet that is the transaction's own source or destination, use the `railDetails` on the relevant source or destination instead.
       properties:
         reference:
           type: string
@@ -25217,9 +25624,9 @@ components:
           description: |-
             Transaction hash of the settlement transfer, when available. This field reports two different transfers, and only one of them has a replacement today:
 
-            For a crypto transfer to or from a customer's own external wallet, use the `onChainTransaction` on the relevant source or destination instead — it names the network alongside the hash. That is the transfer this field is deprecated for.
+            For a crypto transfer to or from a customer's own external wallet, use the `railDetails` on the relevant source or destination instead — it names the network alongside the hash. That is the transfer this field is deprecated for.
 
-            For the inter-VASP settlement leg of a UMA payment (e.g. USDC on Solana to the receiving partner), this field remains the only place the hash is reported: a UMA address is not a wallet you hold, so its source and destination carry no `onChainTransaction`. The field will not be removed before that leg has a replacement.
+            For the inter-VASP settlement leg of a UMA payment (e.g. USDC on Solana to the receiving partner), this field remains the only place the hash is reported: a UMA address is not a wallet you hold, so its source and destination carry no `railDetails`. The field will not be removed before that leg has a replacement.
           example: '0x9f2c6b6f4b6c8f2a8d9e0b1c2d3e4f5061728394a5b6c7d8e9f00112233445566'
     IncomingTransactionFailureReason:
       type: string
@@ -25286,7 +25693,7 @@ components:
         | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
         | `EXPIRED` | Quote wasn't executed before expiry window |
         | `PROCESSING` | Executing the quote after receiving funds |
-        | `COMPLETED` | Payout successfully reached the destination |
+        | `COMPLETED` | Payout reached the destination. A later ACH return or reversal is reported on the destination's `railDetails` and does not change this status |
         | `FAILED` | Something went wrong — accompanied by a `failureReason` |
     OutgoingRateDetails:
       description: 'Details about the rate and fees for an outgoing transaction or quote. Note: `counterpartyFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'
@@ -25376,7 +25783,7 @@ components:
         | `QUOTE_EXECUTION_FAILED` | The quote could not be executed. Covers any internal failure on the way to settlement, whether or not funds were debited — a debited amount is refunded automatically |
         | `FUNDING_AMOUNT_MISMATCH` | The funds received did not match the expected amount |
         | `SCA_NOT_COMPLETED` | The customer did not complete the Strong Customer Authentication challenge before it expired |
-        | `PAYOUT_RETURNED` | The receiving bank accepted the payout and then returned or reversed it |
+        | `PAYOUT_RETURNED` | The receiving bank returned the payout before it reached the destination. A return after `COMPLETED` is reported on the destination's `railDetails` instead |
         | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner |
         | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency or payment rail isn't supported for that account. A sweep whose rule names a rail the destination cannot accept reports this |
         | `ACCOUNT_INVALID` | The recipient account couldn't be found or the details are wrong — bad IBAN/account number, beneficiary not found, or account closed |
@@ -25435,7 +25842,7 @@ components:
               example: 5
             reconciliationInstructions:
               $ref: '#/components/schemas/ReconciliationInstructions'
-              description: Reconciliation details for this transaction. For the on-chain hash of a crypto payout to an external wallet, see the destination's `onChainTransaction` instead.
+              description: Reconciliation details for this transaction. For the on-chain hash of a crypto payout to an external wallet, see the destination's `railDetails` instead.
             paymentInstructions:
               type: array
               description: Payment instructions for executing the payment.

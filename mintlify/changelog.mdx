@@ -23,6 +23,34 @@ integration changes. Generated clients now enforce it at build time.
 `201 Created`. The `202 Accepted` reply for a quote awaiting Strong Customer
 Authentication is unchanged.
 
+## `railDetails` on transaction sources and destinations
+
+Account and external-funding sources, and account destinations, carry a
+`railDetails` describing the rail transfer that moved funds for that side. It is a
+oneOf discriminated by `paymentRail`, and each rail has its own schema, status values,
+and bank account fields. It covers the rails below; a side that moved over any other
+rail has no `railDetails`, and the deprecated fields remain its source of rail
+details.
+
+| `paymentRail` | Schema | `status` values | Rail-specific fields |
+|---|---|---|---|
+| `ONCHAIN` | `OnChainRailDetails` | — | `transactionHash`, `network` |
+| `ACH`, `ACH_SAME_DAY` | `AchRailDetails` | `PENDING`, `SETTLED`, `RETURNED`, `REVERSED`, `FAILED` | `traceNumber`, `addenda`, `returnedAt`, `reversedAt` |
+| `WIRE` | `WireRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `imad`, `originatorToBeneficiaryInformation` |
+| `FEDNOW` | `FedNowRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `endToEndId`, `remittanceInformation` |
+| `RTP` | `RtpRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `endToEndId`, `remittanceInformation` |
+
+A transaction's top-level `status` reports whether the funds reached their destination.
+An ACH return or reversal that arrives after `COMPLETED` changes only the affected side's
+`railDetails.status`; the transaction stays `COMPLETED`. `TransactionStatus.REFUNDED`
+is deprecated: a refund is reported on the transaction's `refund` object.
+
+The flat originator fields on the external funding source (`accountHolderName`, `accountIdentifier`,
+`bankName`, `bankIdentifier`, `paymentRail`, `remittanceInformation`, `endToEndId`,
+`traceNumber`) are deprecated, as is `onChainTransaction`. They remain populated alongside
+`railDetails`, and on rails without a `railDetails` variant, such as SWIFT, they are the only
+source of the originator's details.
+
 </Update>
 
 <Update label="September 2026">
