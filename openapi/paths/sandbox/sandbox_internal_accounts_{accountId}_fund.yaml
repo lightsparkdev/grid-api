@@ -20,6 +20,10 @@ post:
     a very small amount to rehearse that path. Either way the rule-based account
     is left at zero; it never holds a balance.
 
+    The sweep's transaction reports a placeholder ACH depositor as its
+    `REALTIME_FUNDING` source and the funded account as its
+    `ruleBasedAccountId`, matching what a production deposit reports.
+
     Sandbox simulates the API contract and the routing decision, not the
     banking rails. The quote, the corridor bounds, the destination checks and
     the webhook are all real; the settlement legs behind them are not, so

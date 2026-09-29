@@ -1,0 +1,29 @@
+/* The 3D stage's camera distance (2000 stage px), in the card px of a box
+   scaled by --card-scale, so the turn foreshortens as the 3D card does. */
+.card {
+  position: relative;
+  perspective: calc(2000px / var(--card-scale, 1));
+}
+
+.turn {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--card-radius);
+  backface-visibility: hidden;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.12),
+    0 16px 40px -12px rgb(0 0 0 / 0.35);
+
+  &[data-side='back'] {
+    transform: rotateY(180deg);
+  }
+}

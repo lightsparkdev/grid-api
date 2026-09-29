@@ -1,10 +1,10 @@
-Cards add seven webhook event types on top of Grid's existing webhook
+Cards add eight webhook event types on top of Grid's existing webhook
 infrastructure. Signature verification (`X-Grid-Signature`) and
 retry behavior are identical to the rest of Grid — see
 [Authentication](/api-reference/authentication) and
 [Webhooks](/api-reference/webhooks) for the underlying mechanics.
 
-One covers the card itself; the others cover a card transaction's
+Two cover the card itself; the others cover a card transaction's
 lifecycle.
 
 ## Event types
@@ -12,6 +12,7 @@ lifecycle.
 | Type | Fires on |
 |------|----------|
 | `CARD.STATUS_CHANGE` | `PROCESSING → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
+| `CARD.PIN_STATUS_CHANGE` | Grid records a new PIN status, such as `NOT_SET → OK`, `OK → BLOCKED`, or `BLOCKED → OK`. |
 | `CARD_TRANSACTION.AUTHORIZED` | An authorization is approved and a hold is placed on the funding source. |
 | `CARD_TRANSACTION.PARTIALLY_SETTLED` | A clearing posted, but more are still expected. |
 | `CARD_TRANSACTION.SETTLED` | All clearings have posted. Also fires for a merchant return, which posts as its own `CREDIT` row linked via `originalTransactionId`. |
@@ -30,7 +31,7 @@ All of them carry the standard envelope:
 }
 ```
 
-The `id` is unique per delivery and safe to use for idempotency.
+The `id` identifies an event and stays the same across delivery retries. Use it for idempotency.
 
 ## CARD.STATUS_CHANGE
 
@@ -74,6 +75,24 @@ Common branches to handle in your consumer:
   your UI.
 - `status: "CLOSED"`, `statusReason: "CLOSED_BY_PLATFORM"` — close
   confirmed; stop showing the card.
+
+## CARD.PIN_STATUS_CHANGE
+
+The `data` payload is the updated `Card` resource, including `pinStatus`.
+Use it to offer PIN setup when the status is `NOT_SET`, reflect a configured
+PIN when it is `OK`, or offer recovery when it is `BLOCKED`.
+
+This event fires when Grid's saved PIN status changes, whether the change is
+observed through a PIN API request or an asynchronous update after an iframe
+submission or an incorrect PIN attempt. Creating a card does not fire it.
+Replacing an existing PIN while its status stays `OK` also does not fire it;
+use the submission result to confirm that change.
+
+The payload never includes a PIN, encrypted PIN block, or session credential.
+Delivery can lag behind a change or arrive out of order. Compare `data.updatedAt`
+before replacing a newer card snapshot. Read `pinStatus` from
+`GET /cards/{id}` to retrieve the card's saved status.
+See [Card PINs](/cards/card-management/pins) for the setup and recovery flows.
 
 ## Card-transaction lifecycle
 

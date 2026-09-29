@@ -15,7 +15,7 @@ import {
   type Treatment,
 } from './compose';
 import { flushDeferredPaintsNow } from '../card3d/deferredPaint';
-import type { CardExporter, ExportPose } from './exportRenderer';
+import type { CardFrameSource, ExportPose } from './exportRenderer';
 
 export type StillFormat = 'post' | 'square';
 
@@ -94,7 +94,7 @@ export interface StillOptions {
 /** Render a still to a canvas (the sheet's preview draws it; the share
  *  encodes it). `prepareTemplate` (and `prepareHand(id)`, for the hand) must
  *  have resolved. */
-export function renderStillCanvas(exporter: CardExporter, opts: StillOptions): HTMLCanvasElement {
+export function renderStillCanvas(exporter: CardFrameSource, opts: StillOptions): HTMLCanvasElement {
   // A still before the intro has let the back's maps paint gets them now.
   flushDeferredPaintsNow();
   const size = stillSize(opts.format);
@@ -127,6 +127,6 @@ export function renderStillCanvas(exporter: CardExporter, opts: StillOptions): H
   return compose(frame, { palette: opts.palette });
 }
 
-export async function renderStill(exporter: CardExporter, opts: StillOptions): Promise<Blob> {
+export async function renderStill(exporter: CardFrameSource, opts: StillOptions): Promise<Blob> {
   return encodeCanvas(renderStillCanvas(exporter, opts));
 }

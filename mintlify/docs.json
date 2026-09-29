@@ -157,6 +157,7 @@
               "payouts-and-b2b/payment-flow/supporting-documents",
               "payouts-and-b2b/payment-flow/assessing-fees",
               "payouts-and-b2b/payment-flow/list-transactions",
+              "payouts-and-b2b/payment-flow/statements",
               "payouts-and-b2b/payment-flow/receipts",
               "payouts-and-b2b/payment-flow/reconciliation",
               "payouts-and-b2b/payment-flow/error-handling"
@@ -320,6 +321,7 @@
               "cards/card-management/funding-sources",
               "cards/card-management/embedded-wallet-funding",
               "cards/card-management/freezing-and-closing",
+              "cards/card-management/pins",
               "cards/card-management/digital-wallet-tokenization"
             ]
           },
@@ -327,6 +329,12 @@
             "group": "Transactions",
             "pages": [
               "cards/transactions/reconciliation"
+            ]
+          },
+          {
+            "group": "Statements",
+            "pages": [
+              "cards/statements"
             ]
           },
           {
@@ -371,7 +379,7 @@
           },
           {
             "group": "API documentation",
-            "openapi": "https://app.stainless.com/api/spec/documented/grid/openapi.documented.yml"
+            "openapi": "openapi.yaml"
           }
         ]
       }
@@ -422,6 +430,9 @@
   },
   "seo": {},
   "integrations": {
+    "amplitude": {
+      "apiKey": "7f2e340589501177fa6f8a5cc7b6bc51"
+    },
     "gtm": {
       "tagId": "GTM-5R5NP3DS"
     }

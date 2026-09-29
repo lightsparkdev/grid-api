@@ -7,7 +7,7 @@
 
 import { ArrayBufferTarget, Muxer } from 'mp4-muxer';
 import { compose, exposureFor, prepareTemplate, type Palette } from './compose';
-import type { CardExporter } from './exportRenderer';
+import type { CardFrameSource } from './exportRenderer';
 import { flushDeferredPaintsNow } from '../card3d/deferredPaint';
 import { cardFracFor } from './stills';
 
@@ -66,7 +66,7 @@ export interface VideoOptions {
  * Render and encode the spin. Resolves to the MP4, or null where the browser
  * has no encoder. Rejects on abort.
  */
-export async function renderSpinVideo(exporter: CardExporter, opts: VideoOptions): Promise<Blob | null> {
+export async function renderSpinVideo(exporter: CardFrameSource, opts: VideoOptions): Promise<Blob | null> {
   if (!canEncodeVideo()) return null;
   flushDeferredPaintsNow();
   const codec = await pickCodec();

@@ -1,0 +1,79 @@
+post:
+  summary: Card PIN status change
+  description: >-
+    Sent when Grid records a change to a card's PIN status, including changes
+    detected after a hosted PIN submission, an API request, or a PIN becoming
+    blocked. The data contains the updated Card resource and its new pinStatus.
+
+
+    Initial card creation does not trigger this event. Changing an existing
+    PIN while its status remains OK does not trigger it either; use the
+    submission result to confirm that the PIN changed.
+
+
+    Changes made outside the Grid API are detected asynchronously. The event
+    describes the status Grid observed, not every intermediate PIN status.
+    Delivery can be repeated or arrive out of order. Deduplicate by id and
+    use data.updatedAt to avoid replacing newer card data with an older
+    snapshot. Read pinStatus from GET /cards/{id} to retrieve the card's saved status.
+
+
+    Verify the X-Grid-Signature header using your Grid webhook public key,
+    as for other Grid webhooks. No PIN, encrypted PIN block, or PIN-entry
+    session credential is included.
+  operationId: cardPinStatusChangeWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/webhooks/CardPinStatusChangeWebhook.yaml
+        examples:
+          blocked:
+            summary: The card PIN became blocked
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000023
+              type: CARD.PIN_STATUS_CHANGE
+              timestamp: '2026-05-09T10:00:00Z'
+              data:
+                id: Card:019542f5-b3e7-1d02-0000-000000000010
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                status: ACTIVE
+                pinStatus: BLOCKED
+                brand: VISA
+                form: VIRTUAL
+                last4: '4242'
+                expMonth: 12
+                expYear: 2029
+                fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                maxSpendPerTransaction: null
+                maxSpendPerDay: null
+                maxTransactionsPerDay: null
+                currency: USD
+                createdAt: '2026-05-08T14:10:00Z'
+                updatedAt: '2026-05-09T10:00:00Z'
+  responses:
+    '200':
+      description: Webhook received successfully
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Signature validation failed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - Webhook has already been processed (duplicate id)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error409.yaml

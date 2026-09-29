@@ -6,7 +6,7 @@ import { IconArrowRight } from '@central-icons-react/round-outlined-radius-3-str
 import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeft';
 import { ConfigurePanel } from '@/components/ConfigurePanel/ConfigurePanel';
 import { AppPanel } from '@/components/AppPanel/AppPanel';
-import type { CardExporter } from '@/components/CardStage/export/exportRenderer';
+import type { CardFrameSource } from '@/components/CardStage/export/exportRenderer';
 import { StageShareButton } from '@/components/ShareSheet/StageShareButton';
 import { ApiPanel } from '@/components/ApiPanel/ApiPanel';
 import { ColumnResizeHandle } from '@/components/ColumnResizeHandle/ColumnResizeHandle';
@@ -39,7 +39,7 @@ export default function Page() {
   const logic = useCardsDemoLogic();
   const { layoutRef, apiColRef, apiWidth, resizing, onResizeStart } = useColumnResize();
   // The card's exporter (filled by the stage) and the share sheet over it.
-  const exportRef = useRef<CardExporter | null>(null);
+  const exportRef = useRef<CardFrameSource | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const toggleShare = useCallback(() => setShareOpen((o) => !o), []);
   // A flow brings the phone in and takes the card: the share is over, so

@@ -4,13 +4,9 @@ description: >-
   Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` /
   `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`) and, when the start
   issued one, the `challengeId`. The beneficiary is identified by the
-  `externalAccountId` in the path — no separate handle is needed.
-anyOf:
-  - required:
-      - code
-  - required:
-      - passkeyAssertion
-      - origin
+  `externalAccountId` in the path — no separate handle is needed. Provide
+  exactly one of `code` or `passkeyAssertion`, with `origin` alongside a
+  `passkeyAssertion`.
 properties:
   challengeId:
     type:

@@ -40,7 +40,6 @@ import {
   brandBox,
   brandRegion,
   loadFaceAssets,
-  loadImage,
   lockupBox,
   makeCanvas,
   paintArtMask,
@@ -71,6 +70,7 @@ import {
   surfaceMapsReady,
   type BakeJob,
 } from './surfaceBakeClient';
+import { useLoadedImage } from './useLoadedImage';
 
 export interface CardMeshState {
   design: CardDesign;
@@ -124,31 +124,6 @@ const SURFACE: Record<Surface, { clearcoat: number; clearcoatRoughness: number; 
   'bare-matte': { clearcoat: 0, clearcoatRoughness: 0, specular: 1, sheen: 0, normalScale: 0.6 },
   'bare-gloss': { clearcoat: 0, clearcoatRoughness: 0, specular: 1, sheen: 0, normalScale: 0.4 },
 };
-
-/** The image at `url` once loaded (null on failure or with no url), and
- *  whether it is still on its way: a face is not painted against a missing
- *  logo or art, or the wordmark and the color would flash first. */
-function useLoadedImage(url: string | null): { img: HTMLImageElement | null; pending: boolean } {
-  const [state, setState] = useState<{
-    url: string | null;
-    img: HTMLImageElement | null;
-  }>({ url: null, img: null });
-  useEffect(() => {
-    if (!url) {
-      setState({ url: null, img: null });
-      return;
-    }
-    let alive = true;
-    loadImage(url).then((img) => {
-      if (alive) setState({ url, img });
-    });
-    return () => {
-      alive = false;
-    };
-  }, [url]);
-  const settled = state.url === url;
-  return { img: settled ? state.img : null, pending: !!url && !settled };
-}
 
 /**
  * The Visa mark's silver foil, as the layer it is: a film stamped onto the

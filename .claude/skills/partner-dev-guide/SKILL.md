@@ -65,10 +65,10 @@ For each endpoint in the guide, read the path file and every schema it reference
 
 The order is the same for every guide. Drop a section only if the flow has no such step.
 
-1. Title and three-sentence summary of the phases, then the credentials block.
+1. Title and a short summary of the phases. Nothing else goes before the scope notes.
 2. Scope notes from the AM (pilot exclusions, unreleased pieces, settlement details). One bold lead-in per note. If any endpoint is not live, say so here and again at the top of the section that uses it.
 3. How Grid models this flow: resource bullets and the table from step 1.
-4. Prerequisites: webhook endpoint, and end user terms consent if the platform is unregulated.
+4. Prerequisites: the credentials block (Basic auth env vars and the base URL), webhook endpoint, and end user terms consent if the platform is unregulated.
 5. One numbered H2 per phase. Inside each: curl, response JSON, then a short "field notes" list. Store-this-ID sentences go right after the response that returns the ID.
 6. Transaction lifecycle: status table, mermaid `stateDiagram-v2`, failure reason table with recovery, refund payload, listing for reconciliation.
 7. Webhooks: event table scoped to this flow, envelope, signature verification (the four steps and the JavaScript in `references/webhook-verification.md`), idempotency and retry facts from `mintlify/snippets/webhooks.mdx`.

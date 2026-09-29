@@ -1,10 +1,12 @@
 'use client';
 
 import clsx from 'clsx';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
 import { CardStage, type ShareStageState } from '@/components/CardStage/CardStage';
-import type { CardExporter } from '@/components/CardStage/export/exportRenderer';
+import { CardStageBoundary } from '@/components/CardStage/CardStageBoundary';
+import { FlatCardStage } from '@/components/CardStage/FlatCardStage';
+import type { CardFrameSource } from '@/components/CardStage/export/exportRenderer';
 import { SharePanel } from '@/components/ShareSheet/SharePanel';
 import type { DesignEditOptions, SharedCard } from '@/hooks/useCardsDemoLogic';
 import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
@@ -37,7 +39,7 @@ export interface AppPanelProps {
   cardOptions?: UseCardHomeOptions['card'];
   onSettled?: () => void;
   /** The card's exporter, filled by the stage (see CardStage). */
-  exportRef?: React.MutableRefObject<CardExporter | null>;
+  exportRef?: React.MutableRefObject<CardFrameSource | null>;
   /** Extra chrome on the stage under the floating card (the Share button). */
   stageActions?: React.ReactNode;
   /** Share, on the stage: the card parks in the panel's frame. */
@@ -83,6 +85,23 @@ export function AppPanel({
     phoneUp,
   });
   const theme = useThemeMode();
+  // The 3D card, until it fails (no WebGL, or its GPU gone): then the flat
+  // card takes the stage. One that failed after its intro doesn't play it again.
+  const [introPlayed, setIntroPlayed] = useState(false);
+  const introDone = useCallback(() => {
+    setIntroPlayed(true);
+    onIntroDone?.();
+  }, [onIntroDone]);
+  const flatStage = (
+    <FlatCardStage
+      design={design}
+      home={home}
+      exportRef={exportRef}
+      share={shareStage}
+      introPlayed={introPlayed}
+      onIntroDone={introDone}
+    />
+  );
   // Two states only: the card floats alone, or it is in the phone. The first
   // flow brings the phone in and the card flies into its slot; the phone stays
   // through later flows until the visitor sends it away.
@@ -136,14 +155,16 @@ export function AppPanel({
                 frontHost={frontHost}
               />
             )}
-            <CardStage
-              design={design}
-              home={home}
-              onDesignChange={onDesignChange}
-              exportRef={exportRef}
-              share={shareStage}
-              onIntroDone={onIntroDone}
-            />
+            <CardStageBoundary fallback={flatStage}>
+              <CardStage
+                design={design}
+                home={home}
+                onDesignChange={onDesignChange}
+                exportRef={exportRef}
+                share={shareStage}
+                onIntroDone={introDone}
+              />
+            </CardStageBoundary>
             <div ref={setFrontHost} className={styles.shareFront} aria-hidden />
             {stageActions}
           </DotGridCanvas>

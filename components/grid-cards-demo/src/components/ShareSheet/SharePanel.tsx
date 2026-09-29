@@ -14,7 +14,7 @@ import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stro
 import { IconVideoClip } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconVideoClip';
 import { IconX } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconX';
 import type { ShareStageState } from '@/components/CardStage/CardStage';
-import type { CardExporter, ExportPose } from '@/components/CardStage/export/exportRenderer';
+import type { CardFrameSource, ExportPose } from '@/components/CardStage/export/exportRenderer';
 import {
   BACKDROPS,
   brandSurfaceFor,
@@ -67,7 +67,7 @@ import styles from './SharePanel.module.scss';
 
 interface SharePanelProps {
   open: boolean;
-  exporterRef: React.MutableRefObject<CardExporter | null>;
+  exporterRef: React.MutableRefObject<CardFrameSource | null>;
   design: CardDesign;
   /** The share the playground was opened from, if any. */
   shared: SharedCard | null;
