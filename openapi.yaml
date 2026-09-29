@@ -450,6 +450,12 @@ paths:
                     postalCode: '98101'
                     country: US
       responses:
+        '200':
+          description: The customer already created under this `Idempotency-Key`. A repeated request replays the original result and creates nothing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOneOf'
         '201':
           description: Customer created successfully
           content:
@@ -1047,7 +1053,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Customer'
+                $ref: '#/components/schemas/CustomerOneOf'
         '400':
           description: Invalid or expired code
           content:
@@ -1167,7 +1173,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Customer'
+                $ref: '#/components/schemas/CustomerOneOf'
         '400':
           description: Invalid or expired code
           content:
