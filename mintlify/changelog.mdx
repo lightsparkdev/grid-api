@@ -11,6 +11,24 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
+## Receiving VASP failures return retryable statuses
+
+Three error codes caused by the receiving VASP no longer return `400`. The codes are
+unchanged. Only their HTTP status moves, to one that signals a retry.
+
+- `LOOKUP_REQUEST_FAILED` returns `424`. A receiver lookup couldn't reach the receiving VASP.
+- `QUOTE_REQUEST_FAILED` returns `424`. `POST /quotes` couldn't send the quote request to
+  the receiving VASP.
+- `INVALID_PAYREQ_RESPONSE` returns `502`. The receiving VASP returned an invalid payment
+  request.
+
+A quote to a receiver whose provider is temporarily unavailable also changes. It now returns
+`424 PAYREQ_REQUEST_FAILED` instead of `400 INVALID_INPUT`.
+
+If you already retry on `424` and `5xx`, these are retried with no code-specific handling.
+If you detect them by matching `400`, match on `code` instead. See
+[Error handling](/payouts-and-b2b/payment-flow/error-handling).
+
 ## `customerId` is required when creating a customer external account
 
 `POST /customers/external-accounts` has always rejected a request that omits

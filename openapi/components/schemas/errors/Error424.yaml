@@ -14,6 +14,8 @@ properties:
       | LNURLP_REQUEST_FAILED | LNURLP request failed |
       | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
       | SMS_OTP_CREDENTIAL_SYNC_FAILED | One or more tied SMS_OTP credentials could not be updated |
+      | LOOKUP_REQUEST_FAILED | Network error or timeout reaching the receiving VASP during lookup. Retryable |
+      | QUOTE_REQUEST_FAILED | Network error or timeout sending the quote request to the receiving VASP. Retryable |
     enum:
       - PAYREQ_REQUEST_FAILED
       - COUNTERPARTY_PUBKEY_FETCH_ERROR
@@ -21,6 +23,8 @@ properties:
       - LNURLP_REQUEST_FAILED
       - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
       - SMS_OTP_CREDENTIAL_SYNC_FAILED
+      - LOOKUP_REQUEST_FAILED
+      - QUOTE_REQUEST_FAILED
   reason:
     type: string
     description: Error message

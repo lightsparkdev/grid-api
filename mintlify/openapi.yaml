@@ -4474,6 +4474,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
+        '502':
+          description: Counterparty returned an invalid response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error502'
   /quotes/{quoteId}/execute:
     post:
       summary: Execute a quote
@@ -13735,8 +13741,6 @@ components:
             | INVITATIONS_NOT_CONFIGURED | Invitations are not configured |
             | INVALID_UMA_ADDRESS | UMA address format is invalid |
             | INVITATION_CANCELLED | Invitation has been cancelled |
-            | QUOTE_REQUEST_FAILED | An issue occurred during the quote process; this is retryable |
-            | INVALID_PAYREQ_RESPONSE | Counterparty Payreq response was invalid |
             | INVALID_RECEIVER | Receiver is invalid |
             | PARSE_PAYREQ_RESPONSE_ERROR | Error parsing receiver PayReq response |
             | CERT_CHAIN_INVALID | Counterparty certificate chain is invalid |
@@ -13751,7 +13755,6 @@ components:
             | INVALID_REQUEST_FORMAT | Request format is invalid |
             | INVALID_BANK_ACCOUNT | Bank account is invalid |
             | SELF_PAYMENT | Self payment not allowed |
-            | LOOKUP_REQUEST_FAILED | Lookup request failed |
             | PARSE_LNURLP_RESPONSE_ERROR | Error parsing LNURLP response |
             | INVALID_AMOUNT | Amount is invalid |
             | WEBHOOK_ENDPOINT_NOT_SET | Webhook endpoint is not set |
@@ -13796,8 +13799,6 @@ components:
             - INVITATIONS_NOT_CONFIGURED
             - INVALID_UMA_ADDRESS
             - INVITATION_CANCELLED
-            - QUOTE_REQUEST_FAILED
-            - INVALID_PAYREQ_RESPONSE
             - INVALID_RECEIVER
             - PARSE_PAYREQ_RESPONSE_ERROR
             - CERT_CHAIN_INVALID
@@ -13812,7 +13813,6 @@ components:
             - INVALID_REQUEST_FORMAT
             - INVALID_BANK_ACCOUNT
             - SELF_PAYMENT
-            - LOOKUP_REQUEST_FAILED
             - PARSE_LNURLP_RESPONSE_ERROR
             - INVALID_AMOUNT
             - WEBHOOK_ENDPOINT_NOT_SET
@@ -15383,6 +15383,8 @@ components:
             | LNURLP_REQUEST_FAILED | LNURLP request failed |
             | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
             | SMS_OTP_CREDENTIAL_SYNC_FAILED | One or more tied SMS_OTP credentials could not be updated |
+            | LOOKUP_REQUEST_FAILED | Network error or timeout reaching the receiving VASP during lookup. Retryable |
+            | QUOTE_REQUEST_FAILED | Network error or timeout sending the quote request to the receiving VASP. Retryable |
           enum:
             - PAYREQ_REQUEST_FAILED
             - COUNTERPARTY_PUBKEY_FETCH_ERROR
@@ -15390,6 +15392,8 @@ components:
             - LNURLP_REQUEST_FAILED
             - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
             - SMS_OTP_CREDENTIAL_SYNC_FAILED
+            - LOOKUP_REQUEST_FAILED
+            - QUOTE_REQUEST_FAILED
         reason:
           type: string
           description: Error message
@@ -26108,6 +26112,27 @@ components:
         details:
           type: object
           description: Additional error details
+    Error502:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | INVALID_PAYREQ_RESPONSE | Counterparty Payreq response was invalid. Retryable |
+          enum:
+            - INVALID_PAYREQ_RESPONSE
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     ExecuteQuoteRequest:
       type: object
       description: Optional body for executing a quote. Only needed to request a specific Strong Customer Authentication factor (`scaFactor`) for the challenge this call issues; omit the body entirely otherwise.

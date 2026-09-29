@@ -15,8 +15,6 @@ properties:
       | INVITATIONS_NOT_CONFIGURED | Invitations are not configured |
       | INVALID_UMA_ADDRESS | UMA address format is invalid |
       | INVITATION_CANCELLED | Invitation has been cancelled |
-      | QUOTE_REQUEST_FAILED | An issue occurred during the quote process; this is retryable |
-      | INVALID_PAYREQ_RESPONSE | Counterparty Payreq response was invalid |
       | INVALID_RECEIVER | Receiver is invalid |
       | PARSE_PAYREQ_RESPONSE_ERROR | Error parsing receiver PayReq response |
       | CERT_CHAIN_INVALID | Counterparty certificate chain is invalid |
@@ -31,7 +29,6 @@ properties:
       | INVALID_REQUEST_FORMAT | Request format is invalid |
       | INVALID_BANK_ACCOUNT | Bank account is invalid |
       | SELF_PAYMENT | Self payment not allowed |
-      | LOOKUP_REQUEST_FAILED | Lookup request failed |
       | PARSE_LNURLP_RESPONSE_ERROR | Error parsing LNURLP response |
       | INVALID_AMOUNT | Amount is invalid |
       | WEBHOOK_ENDPOINT_NOT_SET | Webhook endpoint is not set |
@@ -76,8 +73,6 @@ properties:
       - INVITATIONS_NOT_CONFIGURED
       - INVALID_UMA_ADDRESS
       - INVITATION_CANCELLED
-      - QUOTE_REQUEST_FAILED
-      - INVALID_PAYREQ_RESPONSE
       - INVALID_RECEIVER
       - PARSE_PAYREQ_RESPONSE_ERROR
       - CERT_CHAIN_INVALID
@@ -92,7 +87,6 @@ properties:
       - INVALID_REQUEST_FORMAT
       - INVALID_BANK_ACCOUNT
       - SELF_PAYMENT
-      - LOOKUP_REQUEST_FAILED
       - PARSE_LNURLP_RESPONSE_ERROR
       - INVALID_AMOUNT
       - WEBHOOK_ENDPOINT_NOT_SET
