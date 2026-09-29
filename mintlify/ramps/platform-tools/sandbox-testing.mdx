@@ -234,7 +234,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 ```
 
 <Note>
-In sandbox, you can use special account number patterns to test different scenarios. The **last 3 digits** determine the behavior, and the meaning depends on how the account is used. This account is the destination of the off-ramp quote below, so the quote patterns apply: **002** (quote execution failed), **003** (long payment), **004** (counterparty delivery failed), **005** (receiving bank returned the payment), **006** (user cancellation), **007** (payout and refund failed). Any other ending succeeds normally. See "Quote destination test patterns" below for the full table.
+In sandbox, you can use special account number patterns to test different scenarios. The **last 3 digits** determine the behavior, and the meaning depends on how the account is used. This account is the destination of the off-ramp quote below, so the quote patterns apply: **002** (quote execution failed), **003** (long payment), **004** (counterparty delivery failed), **005** (receiving bank returned the payment), **006** (user cancellation), **007** (payout and refund failed), **008** (user cancellation while processing). Any other ending succeeds normally. See "Quote destination test patterns" below for the full table.
 </Note>
 
 ### Step 3: Create and execute off-ramp quote

@@ -8,6 +8,7 @@ When creating a quote with an external account destination, the account number s
 | **005** | Receiving bank returned the payment — completes, then fails with `failureReason: PAYOUT_RETURNED` |
 | **006** | User cancellation |
 | **007** | Payout and refund failed |
+| **008** | User cancellation while processing — the payment is refunded about a minute after execution, before it reaches the destination |
 | **Any other** | Successful payment |
 
 One suffix applies to the quote's **source** instead of its destination. Use it
