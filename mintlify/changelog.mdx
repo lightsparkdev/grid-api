@@ -11,6 +11,13 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
+## Beneficial owners carry a job title
+
+`POST /beneficial-owners` and `PATCH /beneficial-owners/{beneficialOwnerId}` accept an
+optional `title`, the person's job title within the business, such as
+`Chief Executive Officer`. Beneficial owner responses return it. Provide it for every
+control person: banks require a title for each individual who controls the business.
+
 ## `customerId` is required when creating a customer external account
 
 `POST /customers/external-accounts` has always rejected a request that omits
