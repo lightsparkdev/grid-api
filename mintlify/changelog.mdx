@@ -10,6 +10,13 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## Beneficial owners carry a job title
+
+`POST /beneficial-owners` and `PATCH /beneficial-owners/{beneficialOwnerId}` accept an
+optional `title`, the person's job title within the business, such as
+`Chief Executive Officer`. Beneficial owner responses return it. Provide it for every
+control person: banks require a title for each individual who controls the business.
+
 ## Sandbox suffix for a paused corridor
 
 In sandbox, an external account whose account number ends in `014` simulates a corridor
