@@ -924,6 +924,6 @@ export GRID_API_TOKEN_ID="your-token-id"
 export GRID_API_CLIENT_SECRET="your-client-secret"
 ```
 
-## Support
+## Contact us
 
-For any questions or issues, please contact Grid support at <support@lightspark.com>.
+For any questions or issues, [contact our team](https://www.lightspark.com/contact).
