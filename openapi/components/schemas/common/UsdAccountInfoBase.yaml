@@ -58,3 +58,4 @@ example:
   intermediaryBankName: JPMorgan Chase Bank
   intermediaryRoutingNumber: '021000021'
   fiToFiInformation: /BNF/Invoice 4471
+  bankAccountType: CHECKING
