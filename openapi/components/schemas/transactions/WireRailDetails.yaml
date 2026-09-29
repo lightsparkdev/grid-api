@@ -1,0 +1,61 @@
+title: Wire Transfer
+type: object
+required:
+  - paymentRail
+  - status
+properties:
+  paymentRail:
+    type: string
+    enum:
+      - WIRE
+  status:
+    type: string
+    enum:
+      - PENDING
+      - SETTLED
+      - FAILED
+    description: |-
+      Status of the wire on Fedwire.
+
+      | Status | Description |
+      |--------|-------------|
+      | `PENDING` | Submitted to Fedwire and not yet delivered. |
+      | `SETTLED` | Fedwire delivered the wire. |
+      | `FAILED` | Fedwire or the receiving bank rejected the wire and no funds moved. |
+    example: SETTLED
+  bankAccount:
+    type: object
+    description: >-
+      The account on the other end of the wire: the originator's account on a source,
+      the beneficiary's account on a destination.
+    properties:
+      accountHolderName:
+        type: string
+        description: Name of the account holder.
+        example: John Sender
+      routingNumber:
+        type: string
+        description: 9-digit ABA routing number of the account's bank.
+        example: '021000021'
+      accountNumber:
+        type: string
+        description: Account number, masked to its last four digits.
+        example: '****6789'
+      bankName:
+        type: string
+        description: Name of the account's bank.
+        example: Chase Bank
+  imad:
+    type: string
+    description: Fedwire Input Message Accountability Data assigned when the wire was sent.
+    example: 20260929MMQFMP9C000123
+  originatorToBeneficiaryInformation:
+    type: string
+    description: Free-form originator-to-beneficiary information (OBI) sent with the wire.
+    example: 'INV-12345'
+  settledAt:
+    type: string
+    format: date-time
+    description: When Fedwire delivered the wire.
+    example: '2026-09-29T15:04:12Z'
+description: A domestic wire over Fedwire.
