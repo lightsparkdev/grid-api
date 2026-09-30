@@ -12349,7 +12349,8 @@ webhooks:
 
         ### Event types
         - `EXTERNAL_ACCOUNT.STATUS_UPDATED` — Fired when the status of an external account changes. The `data` payload contains the full external account object.
-        - `EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED` — Fired when Grid corrects an external account's `accountInfo`. Today this happens when the receiving bank sends an ACH notification of change (NOC) with corrected details, such as a new routing number, account number or bank account type. The account keeps its `id`, and later payments to it use the corrected details. The `data` payload contains the full external account object with the corrected `accountInfo`. Update any copy of the account details you store.
+        - `EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED` — Fired when Grid corrects an external account's `accountInfo`. Today this happens when the receiving bank sends an ACH notification of change (NOC) with corrected details, such as a new routing number, account number or bank account type. The account keeps its `id`, and later payments to it use the corrected details. The `data` payload contains the full external account object with the corrected `accountInfo`.
+        Deliveries can arrive out of order, and the external account has no version field, so an older `STATUS_UPDATED` payload can carry the pre-correction details. Before you replace a stored copy of the account details, fetch the current account with `GET /customers/external-accounts/{externalAccountId}` (or the platform equivalent) and store that response.
       operationId: externalAccountStatusWebhook
       tags:
         - Webhooks
@@ -12410,6 +12411,12 @@ webhooks:
                       routingNumber: '061000227'
                       bankAccountType: CHECKING
                       bankName: Chase Bank
+                      paymentRails:
+                        - ACH
+                        - WIRE
+                      beneficiary:
+                        beneficiaryType: INDIVIDUAL
+                        fullName: John Doe
               verificationFailed:
                 summary: A liveness check failed; a new challenge is needed to retry
                 value:
