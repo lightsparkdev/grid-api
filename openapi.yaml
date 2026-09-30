@@ -16177,7 +16177,10 @@ components:
             - $ref: '#/components/schemas/PaymentRail'
     PurposeOfPayment:
       type: string
-      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India). Business payments to China must use one of the China-specific purposes rather than `GOODS_OR_SERVICES`, because each purpose requires its own supporting documents. Those purposes are `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `SERVICE_CHARGES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, and `HOTEL_ACCOMMODATION`. The six China-only values are rejected on other corridors.
+      description: |-
+        The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
+
+        Some destinations accept only certain purposes. A business payout to China must use one of `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `COMMISSION_ON_GOODS`, `COMMISSION_ON_SERVICES`, `ACCOUNTING_SERVICES`, `EXHIBITION_SERVICES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, or `HOTEL_ACCOMMODATION`. Those purposes also work on other corridors, where Grid sends the closest purpose the payout partner accepts, or the partner's own "other" purpose when none fits.
       enum:
         - GIFT
         - SELF
@@ -16198,6 +16201,10 @@ components:
         - OFFICE_EXPENSES
         - DELIVERY_FEES
         - HOTEL_ACCOMMODATION
+        - COMMISSION_ON_GOODS
+        - COMMISSION_ON_SERVICES
+        - ACCOUNTING_SERVICES
+        - EXHIBITION_SERVICES
         - OTHER
     PlatformFeeOverride:
       type: object
@@ -26019,6 +26026,9 @@ components:
         rateDetails:
           $ref: '#/components/schemas/OutgoingRateDetails'
           description: Details about the rate and fees for the transaction.
+        purposeOfPayment:
+          $ref: '#/components/schemas/PurposeOfPayment'
+          description: The purpose of payment the quote was created with. Present only when the quote request set `purposeOfPayment`.
         scaChallenge:
           $ref: '#/components/schemas/ScaChallenge'
           description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this quote can be executed (or, for realtime-funding sources, before `paymentInstructions` are issued). Omitted for customers outside SCA-regulated regions (non-EU).'
