@@ -19,7 +19,9 @@ get:
     transaction. This returns one row per change to the balance, and a
     transaction that moves the balance more than once produces more than one
     change: an ACH deposit and its later return are two, and a card purchase
-    that clears in two parts is two.
+    that clears in two parts is two. Each change's `transactionId` names its
+    transaction, so fetch it from `GET /transactions/{transactionId}` for the
+    type, counterparty and merchant a statement line shows.
 
 
     **The identity to assert:** `openingBalance + Σ(data[].amount) ==

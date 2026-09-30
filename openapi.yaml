@@ -6380,7 +6380,7 @@ paths:
       description: |
         Every change to this account's balance in a window, in the order the money moved, with the opening and closing balances for that window in the same response.
 
-        This is the statement feed. `GET /transactions` returns one row per transaction. This returns one row per change to the balance, and a transaction that moves the balance more than once produces more than one change: an ACH deposit and its later return are two, and a card purchase that clears in two parts is two.
+        This is the statement feed. `GET /transactions` returns one row per transaction. This returns one row per change to the balance, and a transaction that moves the balance more than once produces more than one change: an ACH deposit and its later return are two, and a card purchase that clears in two parts is two. Each change's `transactionId` names its transaction, so fetch it from `GET /transactions/{transactionId}` for the type, counterparty and merchant a statement line shows.
 
         **The identity to assert:** `openingBalance + Σ(data[].amount) == closingBalance`, summed over every page. The opening and closing balances describe the window rather than the page, so they are the same on every page. Page until `hasMore` is false, then assert the identity before rendering a statement.
 
@@ -27177,7 +27177,6 @@ components:
       description: 'One movement of the account''s balance, signed in the account holder''s polarity: money out is negative and money in is positive, so a window''s changes sum to its closing balance less its opening balance.'
       required:
         - id
-        - transactionId
         - amount
         - effectiveAt
       properties:
@@ -27186,9 +27185,11 @@ components:
           description: Stable identifier for this balance change
           example: BalanceChange:019542f5-b3e7-1d02-0000-000000000003
         transactionId:
-          type: string
-          description: Opaque identifier for the movement this change belongs to. Several changes can share one, so it groups the lines of a single movement on a statement. It is not a `Transaction` id and does not resolve through `GET /transactions/{transactionId}`.
-          example: 019542f5-b3e7-1d02-0000-000000000004
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The transaction this change belongs to. Fetch it with `GET /transactions/{transactionId}` for its type, counterparty, merchant and rail. Several changes can share one transaction, for example an ACH deposit and its return, or a card purchase that settles in parts. Null for an adjustment with no transaction behind it.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000004
         amount:
           $ref: '#/components/schemas/CurrencyAmount'
         effectiveAt:

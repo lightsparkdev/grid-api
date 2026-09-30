@@ -5,7 +5,6 @@ description: >-
   changes sum to its closing balance less its opening balance.
 required:
   - id
-  - transactionId
   - amount
   - effectiveAt
 properties:
@@ -14,13 +13,16 @@ properties:
     description: Stable identifier for this balance change
     example: BalanceChange:019542f5-b3e7-1d02-0000-000000000003
   transactionId:
-    type: string
+    anyOf:
+      - type: string
+      - type: 'null'
     description: >-
-      Opaque identifier for the movement this change belongs to. Several
-      changes can share one, so it groups the lines of a single movement on a
-      statement. It is not a `Transaction` id and does not resolve through
-      `GET /transactions/{transactionId}`.
-    example: 019542f5-b3e7-1d02-0000-000000000004
+      The transaction this change belongs to. Fetch it with
+      `GET /transactions/{transactionId}` for its type, counterparty, merchant
+      and rail. Several changes can share one transaction, for example an ACH
+      deposit and its return, or a card purchase that settles in parts. Null
+      for an adjustment with no transaction behind it.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000004
   amount:
     $ref: ../common/CurrencyAmount.yaml
   effectiveAt:
