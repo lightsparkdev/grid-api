@@ -1879,24 +1879,9 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 **Plasma**
 
-Supported assets: USDC, USDT.
+Supported assets: USDT.
 
-```bash cURL USDC
-curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  -H 'Content-Type: application/json' \
-  -d '{
-      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-      "currency": "USDC",
-      "platformAccountId": "plasma_usdc_001",
-      "accountInfo": {
-        "accountType": "PLASMA_WALLET",
-        "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
-      }
-    }'
-```
-
-```bash cURL USDT
+```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
