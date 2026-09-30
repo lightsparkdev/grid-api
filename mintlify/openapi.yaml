@@ -16180,7 +16180,7 @@ components:
       description: |-
         The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
 
-        Some destinations accept only certain purposes. A business payout to China must use one of `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `COMMISSION_ON_GOODS`, `COMMISSION_ON_SERVICES`, `ACCOUNTING_SERVICES`, `EXHIBITION_SERVICES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, or `HOTEL_ACCOMMODATION`. Those purposes also work on other corridors, where Grid sends the closest purpose the payout partner accepts, or the partner's own "other" purpose when none fits.
+        Some destinations accept only certain purposes. A business payout to China must use one of `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`, `COMMISSION_ON_GOODS`, `COMMISSION_ON_SERVICES`, `ACCOUNTING_SERVICES`, `EXHIBITION_SERVICES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, or `HOTEL_ACCOMMODATION`.
       enum:
         - GIFT
         - SELF
