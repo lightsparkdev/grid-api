@@ -1,4 +1,4 @@
-For account types that support beneficiary name verification, you can simulate different verification outcomes in sandbox. Use account identifiers with a `1xx` suffix to trigger verification scenarios (this range is reserved for verification and does not conflict with transfer or quote test patterns):
+For account types that support beneficiary name verification, you can simulate different verification outcomes in sandbox. Use account identifiers ending in `102`–`107` to trigger verification scenarios. These suffixes don't overlap the transfer and quote test patterns (`002`–`008`, or `112`–`118` for base58 addresses):
 
 | Suffix | `beneficiaryVerificationStatus` | Behavior |
 |--------|--------------------------------|----------|
