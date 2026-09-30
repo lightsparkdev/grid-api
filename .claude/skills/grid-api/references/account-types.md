@@ -56,7 +56,7 @@ The **Available Rails** column lists the payment rails Grid may use for the crea
 | ETHEREUM_WALLET | USDC, USDT | Ethereum L1 wallet address (0x...) |
 | SOLANA_WALLET | USDC | Solana wallet address |
 | TRON_WALLET | USDT | TRON wallet address |
-| PLASMA_WALLET | USDC, USDT | Plasma wallet address (0x...) |
+| PLASMA_WALLET | USDT | Plasma wallet address (0x...) |
 | ARBITRUM_WALLET | USDC, USDT | Arbitrum wallet address (0x...) |
 | POLYGON_WALLET | USDC | Polygon wallet address (0x...) |
 | BASE_WALLET | USDC | Base wallet address (0x...) |
@@ -985,7 +985,7 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
 #### Other Crypto Wallets
 
 - **TRON_WALLET**: USDT, requires `address`
-- **PLASMA_WALLET**: USDC or USDT, requires `address` (0x format)
+- **PLASMA_WALLET**: USDT, requires `address` (0x format)
 - **POLYGON_WALLET**: USDC, requires `address` (0x format)
 - **BASE_WALLET**: USDC, requires `address` (0x format)
 - **ETHEREUM_WALLET**: USDC or USDT, requires `address` (0x format)

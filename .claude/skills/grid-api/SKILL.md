@@ -567,7 +567,7 @@ Use this flow when the user asks for a "realtime quote" or "just in time" funded
 
 **Compatible instant methods:**
 
-- **Crypto:** BTC (Lightning, Spark), USDC (Solana, Base, Polygon, Ethereum, Arbitrum, Plasma), USDT (Tron, Ethereum, Plasma, Arbitrum)
+- **Crypto:** BTC (Lightning, Spark), USDC (Solana, Base, Polygon, Ethereum, Arbitrum), USDT (Tron, Ethereum, Plasma, Arbitrum)
 - **Fiat:** RTP, SEPA Instant, and other instant payment rails
 
 **Flow:**
