@@ -17436,6 +17436,7 @@ components:
               type: string
               description: Type of asset
               enum:
+                - USDC
                 - USDT
     ArbitrumWalletInfo:
       type: object
