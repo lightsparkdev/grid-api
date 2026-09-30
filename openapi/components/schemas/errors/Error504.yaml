@@ -8,11 +8,11 @@ properties:
     description: |
       | Error Code | Description |
       |------------|-------------|
-      | INVALID_PAYREQ_RESPONSE | Counterparty payment request response was invalid. Retryable |
-      | COUNTERPARTY_SERVER_ERROR | Counterparty returned a server error. Retryable |
+      | LOOKUP_REQUEST_FAILED | Network error or timeout reaching the counterparty during lookup. Retryable |
+      | QUOTE_REQUEST_FAILED | Network error or timeout sending the quote request to the counterparty. Retryable |
     enum:
-      - INVALID_PAYREQ_RESPONSE
-      - COUNTERPARTY_SERVER_ERROR
+      - LOOKUP_REQUEST_FAILED
+      - QUOTE_REQUEST_FAILED
   reason:
     type: string
     description: Error message

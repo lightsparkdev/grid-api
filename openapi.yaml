@@ -4143,6 +4143,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '502':
+          description: Counterparty returned an error or an invalid response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error502'
+        '504':
+          description: Counterparty could not be reached or timed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error504'
   /receiver/external-account/{accountId}:
     get:
       summary: Look up an external account for payment
@@ -4224,6 +4236,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '502':
+          description: Counterparty returned an error or an invalid response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error502'
+        '504':
+          description: Counterparty could not be reached or timed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error504'
   /quotes/{quoteId}:
     get:
       summary: Get quote by ID
@@ -4475,11 +4499,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error501'
         '502':
-          description: Counterparty returned an invalid response
+          description: Counterparty returned an error or an invalid response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error502'
+        '504':
+          description: Counterparty could not be reached or timed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error504'
   /quotes/{quoteId}/execute:
     post:
       summary: Execute a quote
@@ -8140,6 +8170,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '502':
+          description: Counterparty returned an error or an invalid response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error502'
+        '504':
+          description: Counterparty could not be reached or timed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error504'
   /agents/me/quotes/{quoteId}:
     parameters:
       - name: quoteId
@@ -15383,8 +15425,6 @@ components:
             | LNURLP_REQUEST_FAILED | LNURLP request failed |
             | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
             | SMS_OTP_CREDENTIAL_SYNC_FAILED | One or more tied SMS_OTP credentials could not be updated |
-            | LOOKUP_REQUEST_FAILED | Network error or timeout reaching the counterparty during lookup. Retryable |
-            | QUOTE_REQUEST_FAILED | Network error or timeout sending the quote request to the counterparty. Retryable |
           enum:
             - PAYREQ_REQUEST_FAILED
             - COUNTERPARTY_PUBKEY_FETCH_ERROR
@@ -15392,8 +15432,6 @@ components:
             - LNURLP_REQUEST_FAILED
             - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
             - SMS_OTP_CREDENTIAL_SYNC_FAILED
-            - LOOKUP_REQUEST_FAILED
-            - QUOTE_REQUEST_FAILED
         reason:
           type: string
           description: Error message
@@ -25762,6 +25800,52 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    Error502:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | INVALID_PAYREQ_RESPONSE | Counterparty payment request response was invalid. Retryable |
+            | COUNTERPARTY_SERVER_ERROR | Counterparty returned a server error. Retryable |
+          enum:
+            - INVALID_PAYREQ_RESPONSE
+            - COUNTERPARTY_SERVER_ERROR
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    Error504:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | LOOKUP_REQUEST_FAILED | Network error or timeout reaching the counterparty during lookup. Retryable |
+            | QUOTE_REQUEST_FAILED | Network error or timeout sending the quote request to the counterparty. Retryable |
+          enum:
+            - LOOKUP_REQUEST_FAILED
+            - QUOTE_REQUEST_FAILED
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     ReceiverExternalAccountLookupResponse:
       allOf:
         - $ref: '#/components/schemas/ReceiverLookupResponse'
@@ -26112,27 +26196,6 @@ components:
         details:
           type: object
           description: Additional error details
-    Error502:
-      type: object
-      required:
-        - reason
-        - code
-      properties:
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | INVALID_PAYREQ_RESPONSE | Counterparty payment request response was invalid. Retryable |
-          enum:
-            - INVALID_PAYREQ_RESPONSE
-        reason:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     ExecuteQuoteRequest:
       type: object
       description: Optional body for executing a quote. Only needed to request a specific Strong Customer Authentication factor (`scaFactor`) for the challenge this call issues; omit the body entirely otherwise.

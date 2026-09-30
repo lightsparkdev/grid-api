@@ -221,8 +221,14 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error501.yaml
     '502':
-      description: Counterparty returned an invalid response
+      description: Counterparty returned an error or an invalid response
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error502.yaml
+    '504':
+      description: Counterparty could not be reached or timed out
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error504.yaml
