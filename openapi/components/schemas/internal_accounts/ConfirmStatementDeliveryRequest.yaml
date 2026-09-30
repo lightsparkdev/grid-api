@@ -6,7 +6,7 @@ properties:
     type: string
     format: date
     description: >-
-      First day of the statement period being confirmed, a calendar month in
+      First day of the statement period the receipt covers, a calendar month in
       US Central time. Must be the first day of a month that has already
       begun.
     example: '2026-09-01'
@@ -14,7 +14,7 @@ properties:
     type: string
     format: date-time
     description: >-
-      When the statement was delivered to the customer. Must include a
-      timezone offset, must not be in the future, and must be at or after the
-      end of the period. Defaults to the current time.
+      When you issued the statement to the customer. Must include a timezone
+      offset, must not be in the future, and must be at or after the end of
+      the period. Defaults to the current time.
     example: '2026-10-03T14:31:00Z'

@@ -27,6 +27,6 @@ properties:
         format: date-time
       - type: 'null'
     description: >-
-      When the statement was first delivered to the customer, or null if
-      delivery has not been confirmed. Later confirmations do not move it.
+      When the statement was issued, from the first receipt for this period,
+      or null if no receipt has been sent. Later receipts do not move it.
     example: '2026-10-03T14:31:00Z'

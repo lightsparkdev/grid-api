@@ -54,13 +54,9 @@ tags:
 
       If it does not hold, do not send the statement; contact support instead. `from` and `to` bound a half-open window `[from, to)`: for a monthly statement, pass the first instant of the month and the first instant of the following month, both in US Central time (for August 2026, `2026-08-01T00:00:00-05:00` and `2026-09-01T00:00:00-05:00`). Grid records a statement as fetched only for a window that is exactly one such month.
 
-      **2. The attestation — `POST /internal-accounts/{id}/statement-confirmations`**
+      **2. The receipt — `POST /internal-accounts/{id}/statement-confirmations`**
 
-      Regulation E requires the statement to be delivered, not only available. Once you have delivered it, confirm with the `periodStart` you delivered for. Confirming is idempotent and keeps the first delivery time.
-
-      **Coverage**
-
-      Grid monitors periods that were never fetched and periods that were fetched but never confirmed. Confirm each period you deliver and neither signal fires.
+      Once a month, after you have pulled and issued a period's statement, send a receipt with the `periodStart` it covers. Grid stores it as the delivery record for that account and period. Sending it again is harmless: the first receipt's time is kept.
 
       **Timing**
 

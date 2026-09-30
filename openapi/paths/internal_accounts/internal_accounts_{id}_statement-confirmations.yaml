@@ -8,16 +8,15 @@ parameters:
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
 
 post:
-  summary: Confirm delivery of a periodic statement
+  summary: Send a receipt for a periodic statement
   description: >
-    Record that this account's periodic statement for a period was delivered
-    to the customer.
+    Record your monthly receipt that you pulled and issued this account's
+    periodic statement for a period. Grid stores it as the delivery record for
+    that account and period.
 
 
-    Regulation E requires the statement to be delivered, not only available.
-    Grid provides the statement through `GET
-    /internal-accounts/{id}/balance-changes`; only you know whether it reached
-    your customer. Call this once you have delivered it.
+    Send it once a month for each account, after you have issued the statement
+    built from `GET /internal-accounts/{id}/balance-changes`.
 
 
     `periodStart` names the period: the first day of the statement month, as a
@@ -25,9 +24,9 @@ post:
     begun.
 
 
-    Confirming is idempotent. The stored time is when delivery first
-    happened, so re-sending a statement or calling this endpoint again does
-    not move it. If `deliveredAt` is omitted, the current time is used.
+    Sending a receipt is idempotent. The stored time is the first receipt's,
+    so calling this again does not move it. If `deliveredAt` is omitted, the
+    current time is used.
   operationId: confirmStatementDelivery
   tags:
     - Periodic Statements
@@ -41,7 +40,7 @@ post:
           $ref: ../../components/schemas/internal_accounts/ConfirmStatementDeliveryRequest.yaml
   responses:
     '200':
-      description: Statement delivery recorded
+      description: Receipt recorded
       content:
         application/json:
           schema:

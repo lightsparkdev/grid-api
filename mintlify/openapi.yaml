@@ -47,13 +47,9 @@ tags:
 
       If it does not hold, do not send the statement; contact support instead. `from` and `to` bound a half-open window `[from, to)`: for a monthly statement, pass the first instant of the month and the first instant of the following month, both in US Central time (for August 2026, `2026-08-01T00:00:00-05:00` and `2026-09-01T00:00:00-05:00`). Grid records a statement as fetched only for a window that is exactly one such month.
 
-      **2. The attestation — `POST /internal-accounts/{id}/statement-confirmations`**
+      **2. The receipt — `POST /internal-accounts/{id}/statement-confirmations`**
 
-      Regulation E requires the statement to be delivered, not only available. Once you have delivered it, confirm with the `periodStart` you delivered for. Confirming is idempotent and keeps the first delivery time.
-
-      **Coverage**
-
-      Grid monitors periods that were never fetched and periods that were fetched but never confirmed. Confirm each period you deliver and neither signal fires.
+      Once a month, after you have pulled and issued a period's statement, send a receipt with the `periodStart` it covers. Grid stores it as the delivery record for that account and period. Sending it again is harmless: the first receipt's time is kept.
 
       **Timing**
 
@@ -6477,15 +6473,15 @@ paths:
           type: string
         example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
     post:
-      summary: Confirm delivery of a periodic statement
+      summary: Send a receipt for a periodic statement
       description: |
-        Record that this account's periodic statement for a period was delivered to the customer.
+        Record your monthly receipt that you pulled and issued this account's periodic statement for a period. Grid stores it as the delivery record for that account and period.
 
-        Regulation E requires the statement to be delivered, not only available. Grid provides the statement through `GET /internal-accounts/{id}/balance-changes`; only you know whether it reached your customer. Call this once you have delivered it.
+        Send it once a month for each account, after you have issued the statement built from `GET /internal-accounts/{id}/balance-changes`.
 
         `periodStart` names the period: the first day of the statement month, as a date. It must be the first of a month, and a month that has already begun.
 
-        Confirming is idempotent. The stored time is when delivery first happened, so re-sending a statement or calling this endpoint again does not move it. If `deliveredAt` is omitted, the current time is used.
+        Sending a receipt is idempotent. The stored time is the first receipt's, so calling this again does not move it. If `deliveredAt` is omitted, the current time is used.
       operationId: confirmStatementDelivery
       tags:
         - Periodic Statements
@@ -6499,7 +6495,7 @@ paths:
               $ref: '#/components/schemas/ConfirmStatementDeliveryRequest'
       responses:
         '200':
-          description: Statement delivery recorded
+          description: Receipt recorded
           content:
             application/json:
               schema:
@@ -27254,12 +27250,12 @@ components:
         periodStart:
           type: string
           format: date
-          description: First day of the statement period being confirmed, a calendar month in US Central time. Must be the first day of a month that has already begun.
+          description: First day of the statement period the receipt covers, a calendar month in US Central time. Must be the first day of a month that has already begun.
           example: '2026-09-01'
         deliveredAt:
           type: string
           format: date-time
-          description: When the statement was delivered to the customer. Must include a timezone offset, must not be in the future, and must be at or after the end of the period. Defaults to the current time.
+          description: When you issued the statement to the customer. Must include a timezone offset, must not be in the future, and must be at or after the end of the period. Defaults to the current time.
           example: '2026-10-03T14:31:00Z'
     StatementDelivery:
       type: object
@@ -27288,7 +27284,7 @@ components:
             - type: string
               format: date-time
             - type: 'null'
-          description: When the statement was first delivered to the customer, or null if delivery has not been confirmed. Later confirmations do not move it.
+          description: When the statement was issued, from the first receipt for this period, or null if no receipt has been sent. Later receipts do not move it.
           example: '2026-10-03T14:31:00Z'
     AuthMethodType:
       type: string
