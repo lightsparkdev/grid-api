@@ -10,6 +10,16 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="September 2026">
 
+## `EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED` webhook
+
+Grid now tells you when it corrects an external account's details. When the
+receiving bank returns an ACH notification of change (NOC), Grid applies the
+corrected routing number, account number or bank account type and sends
+`EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED`. The payload is the full external account
+with the corrected `accountInfo`. The account keeps its `id`, and later payments use
+the corrected details. Deliveries can arrive out of order, so fetch the account
+before you replace any copy of its details you store.
+
 ## Sandbox test suffixes work on Solana addresses
 
 A sandbox external account's last three characters pick the test outcome, and every
