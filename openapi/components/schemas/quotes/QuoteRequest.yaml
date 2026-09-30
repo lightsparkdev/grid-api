@@ -78,7 +78,7 @@ properties:
       this payment. Required when the destination requires supporting
       documents. Supply one document for each requirement of your
       `purposeOfPayment`. [Supporting
-      Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+      Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents)
       lists which payouts need documents, the requirements for each purpose,
       and the document types each requirement accepts. Grid matches each
       document to a requirement by its `documentType`, which must be one of

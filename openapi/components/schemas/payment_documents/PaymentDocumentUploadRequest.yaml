@@ -17,7 +17,7 @@ properties:
     description: >-
       What the file is. To fill a requirement, use one of the types it
       accepts, as listed in [Supporting
-      Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents).
+      Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents).
   customerId:
     type: string
     description: >-

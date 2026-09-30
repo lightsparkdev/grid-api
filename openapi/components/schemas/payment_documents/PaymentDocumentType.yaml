@@ -5,7 +5,7 @@ description: >-
 
 
   [Supporting
-  Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+  Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents)
   lists the types each requirement accepts. When you upload a file with
   `POST /payment-documents`, `documentType` declares which type the file is.
 enum:

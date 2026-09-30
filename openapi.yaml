@@ -4229,7 +4229,7 @@ paths:
       summary: Upload a payment document
       description: |
         Upload a supporting document for a payout that requires one. [Supporting
-        Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+        Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents)
         lists which payouts need documents, the documents each
         `purposeOfPayment` needs, and what the payout partner checks in them.
         Upload each file here,
@@ -13879,7 +13879,7 @@ components:
       description: |-
         A stable identifier for one required document within a purpose's requirements. The same ID means the same requirement across quotes. It is separate from `PaymentDocumentType`. The requirement ID names the document to supply, and the document type names what a file is. The two differ where a requirement accepts alternatives. For example, a file declared as either `PURCHASE_ORDER` or `DELIVERY_SLIP` fills the `SUPPORTING_PROOF` requirement.
 
-        [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the IDs each purpose requires.
+        [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents) lists the IDs each purpose requires.
 
         Treat the ID as an opaque value, not a member of a fixed list. Grid may add new IDs as requirements change.
       example: SUPPORTING_PROOF
@@ -16361,7 +16361,7 @@ components:
       description: |-
         The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
 
-        Some destinations accept only certain purposes. A business payout to China must use one of the purposes listed in [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents), and each needs its own supporting documents.
+        Some destinations accept only certain purposes. A business payout to China must use one of the purposes listed in [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents), and each needs its own supporting documents.
       enum:
         - GIFT
         - SELF
@@ -25962,7 +25962,7 @@ components:
       description: |-
         What a supporting document is. These are kinds of evidence, not file formats: `INVOICE` means the file is an invoice.
 
-        [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists the types each requirement accepts. When you upload a file with `POST /payment-documents`, `documentType` declares which type the file is.
+        [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents) lists the types each requirement accepts. When you upload a file with `POST /payment-documents`, `documentType` declares which type the file is.
       enum:
         - PURCHASE_ORDER
         - LOGISTICS_BILL
@@ -25992,7 +25992,7 @@ components:
             `400 INVALID_INPUT`.
         documentType:
           $ref: '#/components/schemas/PaymentDocumentType'
-          description: What the file is. To fill a requirement, use one of the types it accepts, as listed in [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents).
+          description: What the file is. To fill a requirement, use one of the types it accepts, as listed in [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents).
         customerId:
           type: string
           description: ID of the sending customer whose payment this document supports. The document can only be used on this customer's quotes. Omit it when the platform itself is the sender, as on a quote with no `customerId`. The document can then only be used on the platform's own quotes.
@@ -26387,7 +26387,7 @@ components:
           maxItems: 3
           uniqueItems: true
           description: |-
-            IDs of payment documents from `POST /payment-documents` that support this payment. Required when the destination requires supporting documents. Supply one document for each requirement of your `purposeOfPayment`. [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents) lists which payouts need documents, the requirements for each purpose, and the document types each requirement accepts. Grid matches each document to a requirement by its `documentType`, which must be one of the types that requirement accepts. A request that leaves a requirement unfilled returns `400 DOCUMENTS_REQUIRED`. Each document must belong to the customer sending the payment, or to the platform when the platform itself is the sender. Any other ID returns `404 PAYMENT_DOCUMENT_NOT_FOUND`.
+            IDs of payment documents from `POST /payment-documents` that support this payment. Required when the destination requires supporting documents. Supply one document for each requirement of your `purposeOfPayment`. [Supporting Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents) lists which payouts need documents, the requirements for each purpose, and the document types each requirement accepts. Grid matches each document to a requirement by its `documentType`, which must be one of the types that requirement accepts. A request that leaves a requirement unfilled returns `400 DOCUMENTS_REQUIRED`. Each document must belong to the customer sending the payment, or to the platform when the platform itself is the sender. Any other ID returns `404 PAYMENT_DOCUMENT_NOT_FOUND`.
 
             Grid attaches every document to the payment before it returns the quote. With `immediatelyExecute: true`, Grid attaches the documents before it executes the quote. If an attachment fails, Grid creates no quote and returns `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED`. Retry the same request with the same `Idempotency-Key`.
 

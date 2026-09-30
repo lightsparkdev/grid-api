@@ -2,7 +2,7 @@ post:
   summary: Upload a payment document
   description: |
     Upload a supporting document for a payout that requires one. [Supporting
-    Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents)
+    Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents)
     lists which payouts need documents, the documents each
     `purposeOfPayment` needs, and what the payout partner checks in them.
     Upload each file here,
