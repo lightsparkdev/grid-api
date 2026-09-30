@@ -1,1 +1,3 @@
 The flows for creating external accounts in sandbox are the same as in production. The **last 3 digits** of an external account's primary identifier (account number, IBAN, CLABE, Spark wallet address, etc.) determine the test scenario when that account is used in transfers or quotes. For identifiers with a domain part (e.g. PIX email keys), append the test digits to the username portion — for example, `testuser.002@pix.com.br`.
+
+Base58 addresses, such as Solana wallets, cannot contain `0`. For these, replace the leading `00` with `11`: an address ending in `112` behaves like one ending in `002`, `117` like `007`, and so on. Either form works for any external account.
