@@ -10,6 +10,15 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="September 2026">
 
+## Sandbox test suffixes work on Solana addresses
+
+A sandbox external account's last three characters pick the test outcome, and every
+failure suffix starts with `00`. Base58 has no `0`, so no valid Solana address could end
+in one. The transfer and quote destination suffixes `002`–`008` now have `11X` twins: an
+address ending in `112` behaves like `002`, and `117` like `007`. The `00X` forms still
+work. See
+[Sandbox testing](/api-reference/sandbox-testing).
+
 ## `customerId` is required when creating a customer external account
 
 `POST /customers/external-accounts` has always rejected a request that omits
