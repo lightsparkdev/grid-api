@@ -44,6 +44,15 @@ get:
     it has settled.
 
 
+    **Fees are inside the changes.** A fee Grid charges comes out of the
+    balance, so it is already in `amount`: inside a send's change, or a change
+    of its own for a withdrawal's fee. Each change's `fee` says how much of
+    its `amount` was a fee, negative when charged and positive when refunded.
+    To show a fee as its own statement line, split the change into
+    `amount - fee` and `fee`. Never add `fee` on top of `amount`, or the
+    identity stops holding. Card transactions carry no Grid fee.
+
+
     Merchant, counterparty and rail detail live on the transaction; read them
     from `GET /transactions`.
   operationId: listInternalAccountBalanceChanges
