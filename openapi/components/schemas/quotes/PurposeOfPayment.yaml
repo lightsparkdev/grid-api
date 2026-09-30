@@ -7,9 +7,7 @@ description: >-
   Some destinations accept only certain purposes. A business payout to China
   must use one of the purposes listed in [Supporting
   Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/supporting-documents),
-  and each needs its own supporting documents. Those purposes also work on
-  other corridors, where Grid sends the closest purpose the payout partner
-  accepts, or the partner's own "other" purpose when none fits.
+  and each needs its own supporting documents.
 enum:
   - GIFT
   - SELF

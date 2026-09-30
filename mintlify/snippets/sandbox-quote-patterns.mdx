@@ -5,7 +5,21 @@ When creating a quote with an external account destination, the account number s
 | **002** | Quote execution failed |
 | **003** | Long payment — completes after approximately 6 minutes |
 | **004** | Counterparty delivery failed |
-| **005** | Receiving bank returned payment (completes then transitions to failed) |
+| **005** | Receiving bank returned the payment — completes, then fails with `failureReason: PAYOUT_RETURNED` |
 | **006** | User cancellation |
 | **007** | Payout and refund failed |
+| **008** | User cancellation while processing — the payment is refunded about a minute after execution, before it reaches the destination |
 | **Any other** | Successful payment |
+
+One suffix applies to the quote's **source** instead of its destination. Use it
+on the external account a quote pulls funds from:
+
+| Suffix | Behavior |
+|--------|----------|
+| **009** | Return after settlement — the pull settles and the transaction completes, then about 30 seconds later the originating bank returns it. The credited balance is taken back and the transaction moves to `FAILED`. Not simulated when the quote credits an Embedded Wallet |
+
+Use **009** to test how your integration handles money arriving and then being
+taken back. The deposit completes first, so any logic that treats a completed
+incoming payment as final runs before the return arrives. You receive an
+`INCOMING_PAYMENT.COMPLETED` webhook, then an `INCOMING_PAYMENT.FAILED` webhook
+when the return lands.
