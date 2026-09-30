@@ -1,0 +1,45 @@
+get:
+  summary: Get a payment document
+  description: >-
+    Retrieve a payment document by ID. Use it to check whether the document
+    can still be used on a quote, or which quote it is attached to.
+  operationId: getPaymentDocument
+  tags:
+    - Cross-Currency Transfers
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: paymentDocumentId
+      in: path
+      description: Payment document ID
+      required: true
+      schema:
+        type: string
+        example: PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/payment_documents/PaymentDocument.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: >-
+        Payment document not found. Returned with `PAYMENT_DOCUMENT_NOT_FOUND`
+        when the ID does not match a payment document on your platform.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

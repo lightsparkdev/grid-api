@@ -5,10 +5,9 @@ description: >-
 
 
   Some destinations accept only certain purposes. A business payout to China
-  must use one of `EXPORTED_GOODS_PREPAYMENT`, `EXPORTED_GOODS_POSTPAYMENT`,
-  `COMMISSION_ON_GOODS`, `COMMISSION_ON_SERVICES`, `ACCOUNTING_SERVICES`,
-  `EXHIBITION_SERVICES`, `OFFICE_EXPENSES`, `DELIVERY_FEES`, `TRAVEL`, or
-  `HOTEL_ACCOMMODATION`.
+  must use one of the purposes listed in [Supporting
+  Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents),
+  and each needs its own supporting documents.
 enum:
   - GIFT
   - SELF
