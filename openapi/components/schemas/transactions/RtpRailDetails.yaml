@@ -1,57 +1,36 @@
 title: RTP Transfer
-type: object
-required:
-  - paymentRail
-  - status
-properties:
-  paymentRail:
-    type: string
-    enum:
-      - RTP
-  status:
-    type: string
-    enum:
-      - PENDING
-      - SETTLED
-      - FAILED
-    description: |-
-      Status of the payment on the RTP network.
-
-      | Status | Description |
-      |--------|-------------|
-      | `PENDING` | Submitted and awaiting the receiving bank's response. |
-      | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
-      | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
-    example: SETTLED
-  bankAccount:
-    type: object
-    description: >-
-      The account on the other end of the payment: the sender's account on a source,
-      the recipient's account on a destination.
-    properties:
-      accountHolderName:
-        type: string
-        description: Name of the account holder.
-        example: John Sender
-      routingNumber:
-        type: string
-        description: 9-digit ABA routing number of the account's bank.
-        example: '021000021'
-      accountNumber:
-        type: string
-        description: Account number, masked to its last four digits.
-        example: '****6789'
-  endToEndId:
-    type: string
-    description: The originator's end-to-end reference for the payment.
-    example: E2E-9f2c6b6f
-  remittanceInformation:
-    type: string
-    description: Unstructured remittance information sent with the payment.
-    example: 'INV-12345'
-  settledAt:
-    type: string
-    format: date-time
-    description: When the payment settled.
-    example: '2026-09-29T15:04:12Z'
 description: An instant payment over The Clearing House RTP network.
+allOf:
+  - $ref: ./BaseUsdBankRailDetails.yaml
+  - type: object
+    required:
+      - paymentRail
+      - status
+    properties:
+      paymentRail:
+        type: string
+        enum:
+          - RTP
+      status:
+        type: string
+        enum:
+          - PENDING
+          - SETTLED
+          - FAILED
+        description: |-
+          Status of the payment on the RTP network.
+
+          | Status | Description |
+          |--------|-------------|
+          | `PENDING` | Submitted and awaiting the receiving bank's response. |
+          | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
+          | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
+        example: SETTLED
+      endToEndId:
+        type: string
+        description: The originator's end-to-end reference for the payment.
+        example: E2E-9f2c6b6f
+      remittanceInformation:
+        type: string
+        description: Unstructured remittance information sent with the payment.
+        example: 'INV-12345'
