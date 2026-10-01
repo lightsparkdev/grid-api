@@ -2528,11 +2528,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '409':
-          description: Conflict - External account already exists
+          description: Conflict - External account already exists. When the existing account belongs to the caller, `details` carries its `externalAccountId` and `platformAccountId` so a retried request can recover it.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+              examples:
+                duplicateExternalAccount:
+                  summary: Duplicate external account
+                  value:
+                    code: DUPLICATE_EXTERNAL_ACCOUNT
+                    reason: An external account with this platform_account_id already exists
+                    details:
+                      externalAccountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                      platformAccountId: acme-acct-42
         '500':
           description: Internal service error
           content:
@@ -2888,11 +2897,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '409':
-          description: Conflict - External account already exists
+          description: Conflict - External account already exists. When the existing account belongs to the caller, `details` carries its `externalAccountId` and `platformAccountId` so a retried request can recover it.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+              examples:
+                duplicateExternalAccount:
+                  summary: Duplicate external account
+                  value:
+                    code: DUPLICATE_EXTERNAL_ACCOUNT
+                    reason: An external account with this platform_account_id already exists
+                    details:
+                      externalAccountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                      platformAccountId: acme-settlement-usdc
         '500':
           description: Internal service error
           content:
@@ -15331,7 +15349,7 @@ components:
             | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
             | DOCUMENT_ALREADY_EXISTS | A document of this type already exists for the holder; replace it with PUT |
-            | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists |
+            | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists. When the existing account belongs to the caller, `details.externalAccountId` and `details.platformAccountId` identify it |
             | DUPLICATE_PAY_REQUEST | A pay request with this idempotency key already exists |
             | SMS_OTP_CREDENTIAL_SET_CHANGED | The SMS_OTP credential set changed while the request was in flight |
             | SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS | The phone number is already associated with an SMS_OTP credential |

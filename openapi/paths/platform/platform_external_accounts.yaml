@@ -122,11 +122,23 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '409':
-      description: Conflict - External account already exists
+      description: >-
+        Conflict - External account already exists. When the existing account
+        belongs to the caller, `details` carries its `externalAccountId` and
+        `platformAccountId` so a retried request can recover it.
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error409.yaml
+          examples:
+            duplicateExternalAccount:
+              summary: Duplicate external account
+              value:
+                code: DUPLICATE_EXTERNAL_ACCOUNT
+                reason: An external account with this platform_account_id already exists
+                details:
+                  externalAccountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  platformAccountId: acme-settlement-usdc
     '500':
       description: Internal service error
       content:
