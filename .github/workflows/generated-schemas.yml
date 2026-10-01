@@ -1,0 +1,54 @@
+name: Generated Schemas
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'openapi/components/schemas/**'
+
+jobs:
+  no-manual-edits:
+    name: Check for manual edits
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for manual edits to generated schemas
+        if: >-
+          github.event.pull_request.user.login != 'lightspark-copybara[bot]' &&
+          !contains(github.event.pull_request.labels.*.name, 'edit-generated-schemas')
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+
+          manifest=openapi/generated-schemas.txt
+          if [ ! -f "$manifest" ]; then
+            echo "$manifest does not exist yet; nothing to check."
+            exit 0
+          fi
+
+          : > edited.txt
+          git diff --name-only "origin/$BASE_REF...HEAD" > changed.txt
+          while IFS= read -r file; do
+            case "$file" in
+              openapi/components/schemas/*) ;;
+              *) continue ;;
+            esac
+            if grep -qxF "$(basename "$file")" "$manifest"; then
+              echo "  $file" >> edited.txt
+            fi
+          done < changed.txt
+
+          if [ -s edited.txt ]; then
+            echo "::error::These schemas are generated. Edits to them are overwritten by the next sync."
+            cat edited.txt
+            echo "Add the 'edit-generated-schemas' label to override."
+            exit 1
+          fi
+
+          echo "No generated schemas were edited."
