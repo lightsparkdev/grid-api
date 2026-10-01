@@ -1,8 +1,8 @@
 type: object
 description: |
-  Business information returned on a customer. `taxId` and `incorporatedOn` are
-  required on creation but may be absent on legacy customers that pre-date the
-  requirement, so both are optional in responses.
+  Business information returned on a customer. `taxId` and `incorporatedOn` may
+  be absent for customers of regulated platforms that perform their own KYB, and
+  for customers created before the fields were required.
 required:
   - legalName
 properties:
