@@ -25013,252 +25013,205 @@ components:
           $ref: '#/components/schemas/CryptoNetwork'
           description: Blockchain network the transaction settled on (mainnet vs test network is determined by your platform environment).
       description: A crypto transfer to or from an external wallet.
+    UsdBankAccountDetails:
+      title: US Bank Account Details
+      type: object
+      description: 'The account on the other end of the transfer: the sender''s account on a source, the recipient''s account on a destination.'
+      properties:
+        accountHolderName:
+          type: string
+          description: Name of the account holder.
+          example: John Sender
+        routingNumber:
+          type: string
+          description: 9-digit ABA routing number of the account's bank.
+          example: '021000021'
+        accountNumber:
+          type: string
+          description: Account number, masked to its last four digits.
+          example: '****6789'
+        bankName:
+          type: string
+          description: Name of the account's bank. Present on wires.
+          example: Chase Bank
+    BaseUsdBankRailDetails:
+      title: Base US Bank Rail Details
+      type: object
+      description: Fields shared by every US bank rail.
+      properties:
+        bankAccount:
+          $ref: '#/components/schemas/UsdBankAccountDetails'
+        settledAt:
+          type: string
+          format: date-time
+          description: When the transfer settled.
+          example: '2026-09-29T15:04:12Z'
     AchRailDetails:
       title: ACH Transfer
-      type: object
-      required:
-        - paymentRail
-        - status
-      properties:
-        paymentRail:
-          type: string
-          enum:
-            - ACH
-            - ACH_SAME_DAY
-        status:
-          type: string
-          enum:
-            - PENDING
-            - SETTLED
-            - RETURNED
-            - REVERSED
-            - FAILED
-          description: |-
-            Status of the entry on the ACH network.
-
-            | Status | Description |
-            |--------|-------------|
-            | `PENDING` | Submitted to the ACH network and not yet settled. |
-            | `SETTLED` | The entry settled. |
-            | `RETURNED` | The receiving bank returned the entry, before or after it settled. |
-            | `REVERSED` | The originator reversed the entry after it settled. |
-            | `FAILED` | The entry was rejected before submission and no funds moved. |
-
-            A return or reversal can arrive days after `SETTLED`. It changes this status and
-            leaves the transaction's top-level `status` unchanged.
-          example: SETTLED
-        bankAccount:
-          type: object
-          description: 'The account on the other end of the entry: the originator''s account on a source, the receiver''s account on a destination.'
-          properties:
-            accountHolderName:
-              type: string
-              description: Name on the entry for the account holder.
-              example: John Sender
-            routingNumber:
-              type: string
-              description: 9-digit ABA routing number of the account's bank.
-              example: '021000021'
-            accountNumber:
-              type: string
-              description: Account number, masked to its last four digits.
-              example: '****6789'
-        traceNumber:
-          type: string
-          description: 15-digit ACH trace number of the entry.
-          example: '021000020123456'
-        addenda:
-          type: string
-          description: Payment-related text carried in the entry's addenda record. On payments you originate, this is the `remittanceInformation` you provided.
-          example: INV-12345
-        settledAt:
-          type: string
-          format: date-time
-          description: When the entry settled.
-          example: '2026-09-29T15:04:12Z'
-        returnedAt:
-          type: string
-          format: date-time
-          description: When the receiving bank returned the entry. Present when `status` is `RETURNED`.
-          example: '2026-10-01T14:00:00Z'
-        reversedAt:
-          type: string
-          format: date-time
-          description: When the originator reversed the entry. Present when `status` is `REVERSED`.
-          example: '2026-10-01T14:00:00Z'
       description: A transfer over the ACH network.
+      allOf:
+        - $ref: '#/components/schemas/BaseUsdBankRailDetails'
+        - type: object
+          required:
+            - paymentRail
+            - status
+          properties:
+            paymentRail:
+              type: string
+              enum:
+                - ACH
+                - ACH_SAME_DAY
+            status:
+              type: string
+              enum:
+                - PENDING
+                - SETTLED
+                - RETURNED
+                - REVERSED
+                - FAILED
+              description: |-
+                Status of the entry on the ACH network.
+
+                | Status | Description |
+                |--------|-------------|
+                | `PENDING` | Submitted to the ACH network and not yet settled. |
+                | `SETTLED` | The entry settled. |
+                | `RETURNED` | The receiving bank returned the entry, before or after it settled. |
+                | `REVERSED` | The originator reversed the entry after it settled. |
+                | `FAILED` | The entry was rejected before submission and no funds moved. |
+
+                A return or reversal can arrive days after `SETTLED`. It changes this status and
+                leaves the transaction's top-level `status` unchanged.
+              example: SETTLED
+            traceNumber:
+              type: string
+              description: 15-digit ACH trace number of the entry.
+              example: '021000020123456'
+            addenda:
+              type: string
+              description: Payment-related text carried in the entry's addenda record. On payments you originate, this is the `remittanceInformation` you provided.
+              example: INV-12345
+            returnedAt:
+              type: string
+              format: date-time
+              description: When the receiving bank returned the entry. Present when `status` is `RETURNED`.
+              example: '2026-10-01T14:00:00Z'
+            reversedAt:
+              type: string
+              format: date-time
+              description: When the originator reversed the entry. Present when `status` is `REVERSED`.
+              example: '2026-10-01T14:00:00Z'
     WireRailDetails:
       title: Wire Transfer
-      type: object
-      required:
-        - paymentRail
-        - status
-      properties:
-        paymentRail:
-          type: string
-          enum:
-            - WIRE
-        status:
-          type: string
-          enum:
-            - PENDING
-            - SETTLED
-            - FAILED
-          description: |-
-            Status of the wire on Fedwire.
-
-            | Status | Description |
-            |--------|-------------|
-            | `PENDING` | Submitted to Fedwire and not yet delivered. |
-            | `SETTLED` | Fedwire delivered the wire. |
-            | `FAILED` | Fedwire or the receiving bank rejected the wire and no funds moved. |
-          example: SETTLED
-        bankAccount:
-          type: object
-          description: 'The account on the other end of the wire: the originator''s account on a source, the beneficiary''s account on a destination.'
-          properties:
-            accountHolderName:
-              type: string
-              description: Name of the account holder.
-              example: John Sender
-            routingNumber:
-              type: string
-              description: 9-digit ABA routing number of the account's bank.
-              example: '021000021'
-            accountNumber:
-              type: string
-              description: Account number, masked to its last four digits.
-              example: '****6789'
-            bankName:
-              type: string
-              description: Name of the account's bank.
-              example: Chase Bank
-        imad:
-          type: string
-          description: Fedwire Input Message Accountability Data assigned when the wire was sent.
-          example: 20260929MMQFMP9C000123
-        originatorToBeneficiaryInformation:
-          type: string
-          description: Free-form originator-to-beneficiary information (OBI) sent with the wire.
-          example: INV-12345
-        settledAt:
-          type: string
-          format: date-time
-          description: When Fedwire delivered the wire.
-          example: '2026-09-29T15:04:12Z'
       description: A domestic wire over Fedwire.
+      allOf:
+        - $ref: '#/components/schemas/BaseUsdBankRailDetails'
+        - type: object
+          required:
+            - paymentRail
+            - status
+          properties:
+            paymentRail:
+              type: string
+              enum:
+                - WIRE
+            status:
+              type: string
+              enum:
+                - PENDING
+                - SETTLED
+                - FAILED
+              description: |-
+                Status of the wire on Fedwire.
+
+                | Status | Description |
+                |--------|-------------|
+                | `PENDING` | Submitted to Fedwire and not yet delivered. |
+                | `SETTLED` | Fedwire delivered the wire. |
+                | `FAILED` | Fedwire or the receiving bank rejected the wire and no funds moved. |
+              example: SETTLED
+            imad:
+              type: string
+              description: Fedwire Input Message Accountability Data assigned when the wire was sent.
+              example: 20260929MMQFMP9C000123
+            originatorToBeneficiaryInformation:
+              type: string
+              description: Free-form originator-to-beneficiary information (OBI) sent with the wire.
+              example: INV-12345
     FedNowRailDetails:
       title: FedNow Transfer
-      type: object
-      required:
-        - paymentRail
-        - status
-      properties:
-        paymentRail:
-          type: string
-          enum:
-            - FEDNOW
-        status:
-          type: string
-          enum:
-            - PENDING
-            - SETTLED
-            - FAILED
-          description: |-
-            Status of the payment on FedNow.
-
-            | Status | Description |
-            |--------|-------------|
-            | `PENDING` | Submitted and awaiting the receiving bank's response. |
-            | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
-            | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
-          example: SETTLED
-        bankAccount:
-          type: object
-          description: 'The account on the other end of the payment: the sender''s account on a source, the recipient''s account on a destination.'
-          properties:
-            accountHolderName:
-              type: string
-              description: Name of the account holder.
-              example: John Sender
-            routingNumber:
-              type: string
-              description: 9-digit ABA routing number of the account's bank.
-              example: '021000021'
-            accountNumber:
-              type: string
-              description: Account number, masked to its last four digits.
-              example: '****6789'
-        endToEndId:
-          type: string
-          description: The originator's end-to-end reference for the payment.
-          example: E2E-9f2c6b6f
-        remittanceInformation:
-          type: string
-          description: Unstructured remittance information sent with the payment.
-          example: INV-12345
-        settledAt:
-          type: string
-          format: date-time
-          description: When the payment settled.
-          example: '2026-09-29T15:04:12Z'
       description: An instant payment over the FedNow Service.
+      allOf:
+        - $ref: '#/components/schemas/BaseUsdBankRailDetails'
+        - type: object
+          required:
+            - paymentRail
+            - status
+          properties:
+            paymentRail:
+              type: string
+              enum:
+                - FEDNOW
+            status:
+              type: string
+              enum:
+                - PENDING
+                - SETTLED
+                - FAILED
+              description: |-
+                Status of the payment on FedNow.
+
+                | Status | Description |
+                |--------|-------------|
+                | `PENDING` | Submitted and awaiting the receiving bank's response. |
+                | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
+                | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
+              example: SETTLED
+            endToEndId:
+              type: string
+              description: The originator's end-to-end reference for the payment.
+              example: E2E-9f2c6b6f
+            remittanceInformation:
+              type: string
+              description: Unstructured remittance information sent with the payment.
+              example: INV-12345
     RtpRailDetails:
       title: RTP Transfer
-      type: object
-      required:
-        - paymentRail
-        - status
-      properties:
-        paymentRail:
-          type: string
-          enum:
-            - RTP
-        status:
-          type: string
-          enum:
-            - PENDING
-            - SETTLED
-            - FAILED
-          description: |-
-            Status of the payment on the RTP network.
-
-            | Status | Description |
-            |--------|-------------|
-            | `PENDING` | Submitted and awaiting the receiving bank's response. |
-            | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
-            | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
-          example: SETTLED
-        bankAccount:
-          type: object
-          description: 'The account on the other end of the payment: the sender''s account on a source, the recipient''s account on a destination.'
-          properties:
-            accountHolderName:
-              type: string
-              description: Name of the account holder.
-              example: John Sender
-            routingNumber:
-              type: string
-              description: 9-digit ABA routing number of the account's bank.
-              example: '021000021'
-            accountNumber:
-              type: string
-              description: Account number, masked to its last four digits.
-              example: '****6789'
-        endToEndId:
-          type: string
-          description: The originator's end-to-end reference for the payment.
-          example: E2E-9f2c6b6f
-        remittanceInformation:
-          type: string
-          description: Unstructured remittance information sent with the payment.
-          example: INV-12345
-        settledAt:
-          type: string
-          format: date-time
-          description: When the payment settled.
-          example: '2026-09-29T15:04:12Z'
       description: An instant payment over The Clearing House RTP network.
+      allOf:
+        - $ref: '#/components/schemas/BaseUsdBankRailDetails'
+        - type: object
+          required:
+            - paymentRail
+            - status
+          properties:
+            paymentRail:
+              type: string
+              enum:
+                - RTP
+            status:
+              type: string
+              enum:
+                - PENDING
+                - SETTLED
+                - FAILED
+              description: |-
+                Status of the payment on the RTP network.
+
+                | Status | Description |
+                |--------|-------------|
+                | `PENDING` | Submitted and awaiting the receiving bank's response. |
+                | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
+                | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
+              example: SETTLED
+            endToEndId:
+              type: string
+              description: The originator's end-to-end reference for the payment.
+              example: E2E-9f2c6b6f
+            remittanceInformation:
+              type: string
+              description: Unstructured remittance information sent with the payment.
+              example: INV-12345
     RailDetailsOneOf:
       description: 'The rail transfer that moved funds for this side of the transaction. `paymentRail` determines the shape: each rail carries its own identifiers. Absent until a rail transfer exists for this side, and on sides whose funds move within Grid.'
       oneOf:
