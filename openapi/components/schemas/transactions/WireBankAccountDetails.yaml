@@ -1,0 +1,9 @@
+title: Wire Bank Account Details
+allOf:
+  - $ref: ./UsdBankAccountDetails.yaml
+  - type: object
+    properties:
+      bankName:
+        type: string
+        description: Name of the account's bank.
+        example: Chase Bank

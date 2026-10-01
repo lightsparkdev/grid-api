@@ -16,7 +16,3 @@ properties:
     type: string
     description: Account number, masked to its last four digits.
     example: '****6789'
-  bankName:
-    type: string
-    description: Name of the account's bank. Present on wires.
-    example: Chase Bank
