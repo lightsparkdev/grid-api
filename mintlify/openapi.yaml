@@ -6479,7 +6479,7 @@ paths:
       description: |
         Record your monthly receipt that you pulled and issued this account's periodic statement for a period. Grid stores it as the delivery record for that account and period.
 
-        Send it once a month for each account, after you have issued the statement built from `GET /internal-accounts/{id}/balance-changes`.
+        Send it once a month for each account, after you have issued the statement built from `GET /internal-accounts/{id}/balance-changes`. Send it within five days of the month's end for every customer holding a card: Grid checks then that every cardholder's statement was issued.
 
         `periodStart` names the period: the first day of the statement month, as a date. It must be the first of a month, and a month that has already begun.
 
@@ -6520,6 +6520,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: The period is not final yet. Card settlement for the month has not closed, so its statement could still change and cannot have been issued. Send the receipt once `GET /internal-accounts/{id}/balance-changes` serves the month.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
