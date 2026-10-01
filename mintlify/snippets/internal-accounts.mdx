@@ -152,6 +152,11 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
     }
     ```
 
+    Some USD accounts also return a `swiftCode`. When it is present, the
+    account can receive international wires: payers outside the US send to
+    `accountNumber` at the bank identified by `swiftCode`, and include the
+    `reference` the same way.
+
     <Tip>
       Each internal account has unique banking details in the `accountOrWalletInfo`
       field, which ensures deposits are automatically credited to the correct
