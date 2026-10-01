@@ -1,0 +1,128 @@
+---
+title: "Launch checklist"
+description: "Everything Lightspark reviews before you move from sandbox to production"
+icon: "/images/icons/rocket.svg"
+"og:image": "/images/og/og-payouts-b2b.png"
+---
+
+import { topLevelProductName } from '/snippets/variables.mdx';
+
+Work through this checklist before you request production access. Lightspark reviews each item and confirms your platform is ready to move real funds.
+
+<Warning>
+Launch approval is a gate, not a formality. Lightspark enables production credentials after reviewing the agreements you present to end users, the disclosures you send, and a recording of your sandbox flow. Start assembling this evidence while you build, not after.
+</Warning>
+
+<Info>
+The agreement and disclosure requirements on this page apply to end users in the **United States**. For requirements in other regions, contact your Lightspark representative.
+</Info>
+
+## Commercial and compliance prerequisites
+
+Complete these before you build the consent and disclosure flows below. They gate everything else.
+
+| Item | What Lightspark confirms |
+| --- | --- |
+| Signed contract | Your agreement with Lightspark is executed, with legal and compliance sign-off on both sides. |
+| KYB complete | Your business has passed Know Your Business verification. |
+| UBO verification complete | Every ultimate beneficial owner of your business is identified and verified. |
+| Funds flows validated | Lightspark has reviewed and signed off on how money moves between your platform, your end users, and Grid for each product you're launching. |
+
+## End user agreements
+
+Which agreements you present depends on who your end user is and, for businesses, whether Lightspark Payments is licensed in the end user's state. Present every applicable agreement in your onboarding flow and capture affirmative consent before the end user can transact.
+
+| Agreement | US consumers | US businesses (licensed states) | US businesses (unlicensed states) |
+| --- | :---: | :---: | :---: |
+| Lightspark terms of service | Required | Required | Required |
+| Lightspark e-sign consent | Required | Required | Required |
+| Lightspark privacy policy | Required | Required | Required |
+| Partner bank e-sign consent | Required | Not required | Not required |
+| Partner bank accountholder agreement | Required | Not required | Required |
+| Partner bank privacy policy | Required | Not required | Required |
+
+<Note>
+Business end users in states where Lightspark Payments is licensed contract with Lightspark alone, so they see no partner bank agreements. Confirm which states apply to your product with your Lightspark representative.
+</Note>
+
+### Sample consent screen
+
+Present the agreements as two separate affirmative actions: one consent to receive records electronically, one acceptance of the terms. Each bracketed item links to the live agreement.
+
+```text Consent screen copy
+Account provided by [Partner Bank].
+
+☐ I consent to receive all disclosures, agreements, and records electronically.
+  Lightspark [E-Sign Consent] · [Partner Bank] [E-Sign Consent]
+
+☐ I agree to Lightspark's [Terms of Service] and [Partner Bank]'s
+  [Accountholder Agreement], and I acknowledge Lightspark's [Privacy Policy]
+  and [Partner Bank]'s [Privacy Policy].
+```
+
+Use unchecked checkboxes or an equivalent affirmative action. Pre-checked boxes and implied consent are not acceptable.
+
+### Record each acceptance
+
+If you're an unregulated platform moving funds on Lightspark's money transmitter licenses, send evidence of acceptance as `endUserTermsConsent` when you create the customer. For the field reference and the API behavior when consent is missing, see [Disclosures](/payouts-and-b2b/onboarding/disclosures).
+
+## Transaction disclosures and records
+
+Beyond onboarding, you owe end users disclosures and records over the life of the account.
+
+| Requirement | When it applies | Where to start |
+| --- | --- | --- |
+| Reg E Part B pre-transaction disclosure | Before an end user confirms an international remittance. Shows the exchange rate, fees, and the amount the recipient receives. | Quote response fields, see [Assessing fees](/payouts-and-b2b/payment-flow/assessing-fees) |
+| Receipts | Every completed transaction. | [Receipts](/payouts-and-b2b/payment-flow/receipts) |
+| Periodic statements | On the cadence your product commits to, for end users holding a balance. | [List transactions](/payouts-and-b2b/payment-flow/list-transactions) |
+| ACH mandate | Before you debit an end user's bank account by ACH. Captures their authorization for the debit. | [External accounts](/payouts-and-b2b/depositing-funds/external-accounts) |
+
+## If you're launching Cards
+
+Card programs carry the same commercial prerequisites above, plus one more agreement.
+
+- **Cardholder agreement** at card sign-up. Present it and capture acceptance before you issue the card.
+
+For the card issuing flow, see the [Cards](/cards/index) documentation.
+
+## Technical readiness
+
+Confirm your integration handles production traffic and failure modes.
+
+- **Webhooks** are registered, signature verification is in place, and your handler is idempotent. See [Webhooks](/payouts-and-b2b/platform-tools/webhooks).
+- **Idempotency keys** are sent on every request that moves money, so a retry can't double-send.
+- **Error handling** covers rejected quotes, expired quotes, and failed payments, with each surfaced to the end user. See [Error handling](/payouts-and-b2b/payment-flow/error-handling).
+- **Reconciliation** ties every {topLevelProductName} transaction back to a record in your ledger. See [Reconciliation](/payouts-and-b2b/payment-flow/reconciliation).
+- **Monitoring and alerting** cover webhook delivery failures and stuck transactions.
+- **Sandbox UAT** exercises your full flow end to end, including the failure paths. See [Sandbox testing](/payouts-and-b2b/platform-tools/sandbox-testing).
+
+## What to submit to Lightspark
+
+Send these two items to your Lightspark representative to request review.
+
+<Steps>
+  <Step title="Your terms and disclosure content">
+    For each agreement and disclosure in the tables above, provide either:
+
+    - **A link** to the live page where the content is hosted, or
+    - **A screenshot** of the screen where the end user sees it, if the content isn't publicly reachable.
+
+    Include the consent screen itself, so Lightspark can confirm each agreement is presented and accepted before the end user transacts.
+  </Step>
+
+  <Step title="A recording of your sandbox flow">
+    Record a screen capture of the complete end user experience in sandbox, from a new end user through a completed payment. Cover:
+
+    - Onboarding, including the consent screen and every agreement link
+    - Identity verification (KYC or KYB)
+    - Adding a funding source or payout account
+    - Creating and confirming a payment, including the pre-transaction disclosure
+    - The completed payment and the receipt the end user receives
+
+    A single unedited recording is preferred. Narration is optional.
+  </Step>
+</Steps>
+
+<Check>
+After Lightspark approves your submission, your representative enables production credentials and activates the corridors your product needs.
+</Check>
