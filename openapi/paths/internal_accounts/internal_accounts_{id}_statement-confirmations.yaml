@@ -17,8 +17,8 @@ post:
 
     Send it once a month for each account, after you have issued the statement
     built from `GET /internal-accounts/{id}/balance-changes`. Send it within
-    five days of the month's end for every customer holding a card: Grid checks
-    then that every cardholder's statement was issued.
+    five days of the month's end for every customer account: Grid checks then
+    that every account's statement was issued.
 
 
     `periodStart` names the period: the first day of the statement month, as a
