@@ -27,6 +27,7 @@ export const Customers = ({ individualEnabled = true, businessEnabled = true, um
       - Full name
       - Date of birth (YYYY-MM-DD format)
       - Physical address (including country, state, city, postalCode)
+      - Tax identification (`idType` and `identifier`) — required for US account holders. Accepted types are `SSN` (Social Security Number) and `ITIN` (Individual Taxpayer Identification Number). The `identifier` field is write-only and never returned in responses.
 
       **Note:** Check the `providerRequiredCustomerFields` for each relevant currency in your platform's configuration to determine which of these fields are strictly mandatory at creation/update time for that customer to transact in those currencies.
 
