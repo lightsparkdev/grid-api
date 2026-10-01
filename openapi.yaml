@@ -25005,10 +25005,6 @@ components:
           type: string
           description: Account number, masked to its last four digits.
           example: '****6789'
-        bankName:
-          type: string
-          description: Name of the account's bank. Present on wires.
-          example: Chase Bank
     BaseUsdBankRailDetails:
       title: Base US Bank Rail Details
       type: object
@@ -25076,6 +25072,16 @@ components:
               format: date-time
               description: When the originator reversed the entry. Present when `status` is `REVERSED`.
               example: '2026-10-01T14:00:00Z'
+    WireBankAccountDetails:
+      title: Wire Bank Account Details
+      allOf:
+        - $ref: '#/components/schemas/UsdBankAccountDetails'
+        - type: object
+          properties:
+            bankName:
+              type: string
+              description: Name of the account's bank.
+              example: Chase Bank
     WireRailDetails:
       title: Wire Transfer
       description: A domestic wire over Fedwire.
@@ -25086,6 +25092,8 @@ components:
             - paymentRail
             - status
           properties:
+            bankAccount:
+              $ref: '#/components/schemas/WireBankAccountDetails'
             paymentRail:
               type: string
               enum:
