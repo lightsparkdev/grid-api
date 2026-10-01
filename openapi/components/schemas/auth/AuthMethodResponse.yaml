@@ -38,8 +38,9 @@ allOf:
           per OTP issuance — re-issue via
           `POST /auth/credentials/{id}/challenge` to obtain a fresh bundle.
           The matching TEK private key must remain on the client and is used
-          to sign the `verificationToken` returned on the subsequent
-          signed-retry. Treat the bundle as opaque and pass it to your HPKE
+          to stamp the exact UTF-8 bytes of the `payloadToSign` string
+          returned by the first verify call. Preserve that string unchanged
+          on the signed retry. Treat the bundle as opaque and pass it to your HPKE
           library; the Global Accounts client-keys guide shows how.
         example: '{"version":"v1.0.0","data":"7b227461726765745075626c6963...","dataSignature":"30450221...","enclaveQuorumPublic":"04a1b2c3..."}'
 unevaluatedProperties: false

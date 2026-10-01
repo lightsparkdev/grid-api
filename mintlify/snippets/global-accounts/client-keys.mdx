@@ -138,7 +138,7 @@ func generateClientKeyPair() -> ClientKeyPair {
 
 Grid returns an `otpEncryptionTargetBundle` whenever it initiates or reissues an OTP challenge, including `POST /auth/credentials/{id}/challenge` and add-EMAIL_OTP signed-retry responses. First-time EMAIL_OTP wallet bootstrap registration can omit it; if the registration response has no bundle, call `POST /auth/credentials/{id}/challenge` for that credential before verifying. The bundle is a signed enclave bundle whose `data` field is hex-encoded JSON carrying the enclave's HPKE target key as `targetPublic`. Pull out `targetPublic`, HPKE-encrypt `{ otp_code, public_key }` to it, and submit the library's `{ encappedPublic, ciphertext }` output as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`.
 
-`public_key` must be the **compressed** public key: 66 hex characters starting with `02` or `03`. The step 1 samples produce the uncompressed form (130 hex characters starting with `04`), so compress the key before you encrypt it. The example below does this for you. The `verificationToken` Grid returns is bound to this exact key, so the same compressed hex must be the `publicKey` in the `Grid-Wallet-Signature` stamp on the signed retry (see <a href="#4-sign-a-payloadtosign">step 4</a>); a different value there fails the login.
+`public_key` must be the **compressed** public key: 66 hex characters starting with `02` or `03`. The step 1 samples produce the uncompressed form (130 hex characters starting with `04`), so compress the key before you encrypt it. The example below does this for you. The OTP login challenge is bound to this exact key, so the same compressed hex must be the `publicKey` in the `Grid-Wallet-Signature` stamp on the signed retry (see <a href="#4-sign-a-payloadtosign">step 4</a>); a different value there fails the login.
 
 In production, an uncompressed key makes the enclave reject the OTP code, even when the code is correct. The first verify call then returns:
 
@@ -336,10 +336,11 @@ The plaintext is a **32-byte P-256 private scalar**. Treat it as the session sig
 Grid returns `payloadToSign` strings from several endpoints:
 
 - `POST /quotes` (when the source is a Global Account) — the quote's `paymentInstructions[].accountOrWalletInfo.payloadToSign`.
+- `POST /auth/credentials/{id}/verify` (`EMAIL_OTP` or `SMS_OTP`) — 202 response body; use the TEK private key generated for this login.
 - `POST /auth/credentials` (adding an additional credential) — 202 response body.
 - `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /auth/sessions/{id}/refresh`, `POST /internal-accounts/{id}/export`, `PATCH /internal-accounts/{id}`, `PATCH /customers/{id}` for tied `EMAIL_OTP` email updates — all 202 response bodies.
 
-Stamp the payload **byte-for-byte as returned** (do not re-parse, re-serialize, or trim whitespace). The session signing key produces a Grid wallet signature: derive its compressed P-256 public key, sign the payload with the private scalar, then base64url-encode the signature envelope:
+Stamp the exact UTF-8 bytes of the `payloadToSign` string **as returned** (do not re-parse, re-serialize, or trim whitespace). For OTP verification, use the matching TEK private key; for other signed wallet actions, use an active session signing key. Build a Grid wallet signature: derive its compressed P-256 public key, sign the payload with the private scalar, then base64url-encode the signature envelope:
 
 ```json
 {
@@ -352,7 +353,7 @@ Stamp the payload **byte-for-byte as returned** (do not re-parse, re-serialize, 
 Pass that full stamp as the `Grid-Wallet-Signature` header on the retry (and, for endpoints that use it, echo the 202 `requestId` as `Request-Id`).
 
 <Note>
-  **In sandbox, send `Grid-Wallet-Signature: sandbox-valid-signature`** for any signed account action. Sandbox skips the ECDSA check, so you don't need a real session signing key or an extracted `payloadToSign`. The signing pattern below applies only to production.
+  Use real stamps in sandbox to exercise the same signing flow as production. OTP verification requires a stamp over the returned `payloadToSign` with the TEK private key. Some other signed wallet actions still accept the legacy `sandbox-valid-signature` shortcut, but it does not validate your client's signing implementation.
 </Note>
 
 <CodeGroup>
