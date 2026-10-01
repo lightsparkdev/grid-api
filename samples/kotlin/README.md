@@ -11,6 +11,8 @@ This sample walks through a complete payout:
 3. **Create Quote** — Get a real-time quote for USD or USDC conversion
 4. **Sandbox Fund** — Simulate funding to complete the transaction
 
+It also includes a **Card Issuing** flow that issues a virtual debit card against the customer's USD internal account, reveals the card details in the processor's iframe, simulates purchases (authorize, settle with a tip, refund, decline), and freezes, re-limits, or closes the card.
+
 Webhook events are streamed to the frontend in real time via Server-Sent Events (SSE).
 
 ## Prerequisites
@@ -103,12 +105,15 @@ Grid API calls are in `src/main/kotlin/com/grid/sample/routes/`:
 | File | Description |
 |------|-------------|
 | [`Customers.kt`](src/main/kotlin/com/grid/sample/routes/Customers.kt) | Create a customer via `clients.customers().create()` |
-| [`ExternalAccounts.kt`](src/main/kotlin/com/grid/sample/routes/ExternalAccounts.kt) | Link a bank account via `client.customers().externalAccounts().create()` |
+| [`ExternalAccounts.kt`](src/main/kotlin/com/grid/sample/routes/ExternalAccounts.kt) | Link a bank account via `POST /customers/external-accounts` |
+| [`Cards.kt`](src/main/kotlin/com/grid/sample/routes/Cards.kt) | Issue, reveal, freeze, and close cards via `/cards`, and simulate card transactions via `/sandbox/cards/{id}/simulate/*` |
 | [`Quotes.kt`](src/main/kotlin/com/grid/sample/routes/Quotes.kt) | Create a quote via `client.quotes().create()` |
 | [`Sandbox.kt`](src/main/kotlin/com/grid/sample/routes/Sandbox.kt) | Simulate funding via `client.sandbox().sendFunds()` |
 | [`Webhooks.kt`](src/main/kotlin/com/grid/sample/routes/Webhooks.kt) | Verify and parse incoming webhooks via `WebhookUtils.verifyWebhookSignature()` |
 
 Client initialization is in [`GridClientBuilder.kt`](src/main/kotlin/com/grid/sample/GridClientBuilder.kt).
+
+Where the pinned SDK version doesn't yet model the current API shape (cards, external accounts, and KYC links), routes call the REST API directly through [`GridRest.kt`](src/main/kotlin/com/grid/sample/GridRest.kt), which uses the same credentials and base URL.
 
 ## Testing
 

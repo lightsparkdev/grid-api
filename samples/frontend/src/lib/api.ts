@@ -17,6 +17,18 @@ export async function apiPost<T = unknown>(
   return parseResponse<T>(res)
 }
 
+export async function apiPatch<T = unknown>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Session-Id': getSessionId(),
+    },
+    body: JSON.stringify(body),
+  })
+  return parseResponse<T>(res)
+}
+
 export async function apiGet<T = unknown>(path: string): Promise<T> {
   const res = await fetch(path, {
     headers: { 'X-Session-Id': getSessionId() },
@@ -33,7 +45,8 @@ async function parseResponse<T>(res: Response): Promise<T> {
     throw new Error(text)
   }
   if (!res.ok) {
-    throw new Error((data as Record<string, string>).error ?? text)
+    const err = data as Record<string, string>
+    throw new Error(err.error ?? (err.code ? `${err.code}: ${err.reason ?? err.message ?? ''}` : text))
   }
   return data
 }

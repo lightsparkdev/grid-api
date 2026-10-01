@@ -18,8 +18,11 @@ fun Application.module() {
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Patch)
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
+        allowHeader("X-Session-Id")
+        allowHeader("Idempotency-Key")
         allowCredentials = true
         anyHost()
     }
@@ -41,6 +44,7 @@ fun Application.module() {
         internalAccountRoutes()
         authCredentialRoutes()
         quoteRoutes()
+        cardRoutes()
         exchangeRateRoutes()
         sandboxRoutes()
         webhookRoutes()
