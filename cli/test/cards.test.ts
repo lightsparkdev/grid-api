@@ -6,37 +6,37 @@ describe("cards list", () => {
     const { request } = await runCli([
       "cards",
       "list",
-      "--cardholder-id",
+      "--customer-id",
       "Customer:abc",
-      "--state",
+      "--status",
       "ACTIVE",
     ]);
 
     expect(request?.path).toBe("/grid/v1/cards");
     expect(request?.query).toMatchObject({
-      cardholderId: "Customer:abc",
-      state: "ACTIVE",
+      customerId: "Customer:abc",
+      status: "ACTIVE",
     });
   });
 });
 
 describe("cards create", () => {
-  it("builds the create body with funding sources and default form", async () => {
+  it("builds the create body with a funding source and default form", async () => {
     const { request } = await runCli([
       "cards",
       "create",
-      "--cardholder-id",
+      "--customer-id",
       "Customer:abc",
-      "--funding-sources",
-      "InternalAccount:1,InternalAccount:2",
+      "--funding-source",
+      "InternalAccount:1",
     ]);
 
     expect(request?.method).toBe("POST");
     expect(request?.path).toBe("/grid/v1/cards");
     expect(request?.body).toMatchObject({
-      cardholderId: "Customer:abc",
+      customerId: "Customer:abc",
       form: "VIRTUAL",
-      fundingSources: ["InternalAccount:1", "InternalAccount:2"],
+      fundingSource: "InternalAccount:1",
     });
   });
 
@@ -44,9 +44,9 @@ describe("cards create", () => {
     const { request } = await runCli([
       "cards",
       "create",
-      "--cardholder-id",
+      "--customer-id",
       "Customer:abc",
-      "--funding-sources",
+      "--funding-source",
       "InternalAccount:1",
       "--max-spend-per-transaction",
       "5000",
@@ -55,14 +55,42 @@ describe("cards create", () => {
     expect(request?.body).toMatchObject({ maxSpendPerTransaction: 5000 });
   });
 
+  it("rejects a create with an empty funding source", async () => {
+    await expect(
+      runCli([
+        "cards",
+        "create",
+        "--customer-id",
+        "Customer:abc",
+        "--funding-source",
+        "",
+      ])
+    ).rejects.toThrow();
+  });
+
+  it("trims surrounding whitespace off the funding source", async () => {
+    const { request } = await runCli([
+      "cards",
+      "create",
+      "--customer-id",
+      "Customer:abc",
+      "--funding-source",
+      "  InternalAccount:1  ",
+    ]);
+
+    expect(request?.body).toMatchObject({
+      fundingSource: "InternalAccount:1",
+    });
+  });
+
   it("rejects a non-positive spending limit", async () => {
     await expect(
       runCli([
         "cards",
         "create",
-        "--cardholder-id",
+        "--customer-id",
         "Customer:abc",
-        "--funding-sources",
+        "--funding-source",
         "InternalAccount:1",
         "--max-spend-per-transaction",
         "0",
@@ -72,18 +100,18 @@ describe("cards create", () => {
 });
 
 describe("cards update", () => {
-  it("freezes a card via state", async () => {
+  it("freezes a card via status", async () => {
     const { request } = await runCli([
       "cards",
       "update",
       "Card:1",
-      "--state",
+      "--status",
       "FROZEN",
     ]);
 
     expect(request?.method).toBe("PATCH");
     expect(request?.path).toBe("/grid/v1/cards/Card:1");
-    expect(request?.body).toMatchObject({ state: "FROZEN" });
+    expect(request?.body).toMatchObject({ status: "FROZEN" });
   });
 
   it("forwards a supplied wallet signature and request id as headers", async () => {
@@ -91,7 +119,7 @@ describe("cards update", () => {
       "cards",
       "update",
       "Card:1",
-      "--state",
+      "--status",
       "CLOSED",
       "--wallet-signature",
       "stamp123",
@@ -126,31 +154,26 @@ describe("cards update", () => {
     expect(request?.body).toEqual({ maxSpendPerTransaction: null });
   });
 
-  it("rejects an update with no state or funding sources", async () => {
+  it("rejects an update with no status or funding source", async () => {
     const { calls } = await runCli(["cards", "update", "Card:1"]);
     expect(calls).toBe(0);
   });
 
-  it("rejects an invalid --state value", async () => {
+  it("rejects an invalid --status value", async () => {
     const { calls } = await runCli([
       "cards",
       "update",
       "Card:1",
-      "--state",
+      "--status",
       "PENDING_KYC",
     ]);
     expect(calls).toBe(0);
   });
 
-  it("rejects an empty --funding-sources value", async () => {
-    const { calls } = await runCli([
-      "cards",
-      "update",
-      "Card:1",
-      "--funding-sources",
-      ",",
-    ]);
-    expect(calls).toBe(0);
+  it("rejects an empty --funding-source value", async () => {
+    await expect(
+      runCli(["cards", "update", "Card:1", "--funding-source", "  "])
+    ).rejects.toThrow();
   });
 
   it("rejects a partial signed-retry (wallet-signature without request-id)", async () => {
@@ -158,7 +181,7 @@ describe("cards update", () => {
       "cards",
       "update",
       "Card:1",
-      "--state",
+      "--status",
       "FROZEN",
       "--wallet-signature",
       "stamp",
@@ -166,14 +189,14 @@ describe("cards update", () => {
     expect(calls).toBe(0);
   });
 
-  it("rejects CLOSED combined with funding sources", async () => {
+  it("rejects CLOSED combined with a funding source", async () => {
     const { calls } = await runCli([
       "cards",
       "update",
       "Card:1",
-      "--state",
+      "--status",
       "CLOSED",
-      "--funding-sources",
+      "--funding-source",
       "InternalAccount:1",
     ]);
     expect(calls).toBe(0);
@@ -196,7 +219,7 @@ describe("cards update", () => {
       "cards",
       "update",
       "Card:1",
-      "--state",
+      "--status",
       "CLOSED",
       "--max-spend-per-transaction",
       "5000",

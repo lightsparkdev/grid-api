@@ -10,18 +10,23 @@ properties:
     - BUSINESS
   legalName:
     type: string
+    maxLength: 250
     description: The legal name of the business
   registrationNumber:
     type: string
+    maxLength: 100
     description: The registration number of the business
   taxId:
     type: string
+    maxLength: 100
     description: The tax identification number of the business
   email:
     type: string
+    maxLength: 320
     description: The email of the beneficiary
   phoneNumber:
     type: string
+    maxLength: 50
     description: The phone number of the beneficiary
   countryOfResidence:
     type: string

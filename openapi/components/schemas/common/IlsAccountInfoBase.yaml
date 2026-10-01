@@ -17,10 +17,13 @@ properties:
     pattern: ^IL[0-9]{21}$
   bankName:
     type: string
-    description: The name of the bank
+    description: The name of the bank. Must be one of the `bankName` values `GET /discoveries`
+      returns for this country and currency. Send it exactly as returned; any other
+      name is rejected.
     minLength: 1
     maxLength: 255
+    example: Bank Leumi Le-Israel B.M
 example:
   accountType: ILS_ACCOUNT
   iban: IL620108000000099999999
-  bankName: Example Bank
+  bankName: Bank Leumi Le-Israel B.M

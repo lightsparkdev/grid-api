@@ -29,10 +29,17 @@ patch:
   summary: Update platform configuration
   description: >-
     Update platform configuration settings. `cardConfigs` can establish
-    platform-level per-transaction and UTC-calendar-day card caps. Grid
+    platform-level caps on a single card transaction, on spend during one UTC
+    calendar day, and on the number of transactions during one UTC calendar
+    day. Grid
     enforces the lower of each platform cap and its corresponding card-specific
     value without replacing the card-specific value. Daily limits reset at
     00:00 UTC.
+
+
+    Set `cardConfigs.pinTargetOrigin` to the canonical HTTPS origin of your
+    frontend before calling `GET /cards/{id}/pin-entry-url`. Omit the field to
+    preserve its value or set it to `null` to clear it.
   operationId: updatePlatformConfig
   tags:
     - Platform Configuration
@@ -80,8 +87,10 @@ patch:
               templateSid: HJaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
               bodyText: Use this code to finish adding your Acme card to your digital wallet.
           cardConfigs:
+            pinTargetOrigin: https://app.example.com
             maxSpendPerTransaction: 10000
             maxSpendPerDay: 50000
+            maxTransactionsPerDay: 50
   responses:
     '200':
       description: Configuration updated successfully
@@ -90,7 +99,9 @@ patch:
           schema:
             $ref: ../../components/schemas/config/PlatformConfig.yaml
     '400':
-      description: Bad request
+      description: >-
+        Bad request. Includes `INVALID_INPUT` when `cardConfigs.pinTargetOrigin`
+        is supplied but is neither null nor a canonical HTTPS origin.
       content:
         application/json:
           schema:

@@ -1,14 +1,8 @@
 type: object
 required:
-  - message
-  - status
+  - reason
   - code
 properties:
-  status:
-    type: integer
-    enum: 
-      - 401
-    description: HTTP status code
   code:
     type: string
     description: |
@@ -29,7 +23,7 @@ properties:
       - WALLET_SIGNATURE_BODY_MISMATCH
       - WALLET_SIGNATURE_INVALID
       - REQUEST_ID_MISSING
-  message:
+  reason:
     type: string
     description: Error message
   details:

@@ -10,14 +10,17 @@ required:
 properties:
   firstName:
     type: string
+    maxLength: 250
     description: First name of the individual
     example: Jane
   middleName:
     type: string
+    maxLength: 250
     description: Middle name of the individual
     example: Marie
   lastName:
     type: string
+    maxLength: 250
     description: Last name of the individual
     example: Smith
   birthDate:
@@ -32,6 +35,7 @@ properties:
   email:
     type: string
     format: email
+    maxLength: 255
     description: Email address of the individual
     example: jane.smith@acmecorp.com
   phoneNumber:
@@ -45,6 +49,7 @@ properties:
     $ref: ./IdentificationType.yaml
   identifier:
     type: string
+    maxLength: 100
     description: The identification number or value
     example: 123-45-6789
   countryOfIssuance:

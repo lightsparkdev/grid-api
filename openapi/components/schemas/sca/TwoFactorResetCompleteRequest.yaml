@@ -1,8 +1,18 @@
 type: object
 description: >-
-  Optional body for completing a 2FA reset. Only needed when resetting the
-  `SMS_OTP` factor to a new phone number; omit the body entirely otherwise.
+  Completes a 2FA reset. The body is required and carries the IP address the end
+  user is completing the reset from; `mobile` is only needed when resetting the
+  `SMS_OTP` factor to a new phone number.
+required:
+  - endUserIpAddress
 properties:
+  endUserIpAddress:
+    type: string
+    description: >-
+      The IP address of the end user's device completing this reset, recorded
+      against the reset by the SCA provider. Supply the customer's address, not
+      your server's — it feeds the provider's risk assessment of the recovery.
+    example: 203.0.113.42
   mobile:
     type: object
     description: >-

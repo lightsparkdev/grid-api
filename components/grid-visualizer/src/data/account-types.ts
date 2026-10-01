@@ -16,6 +16,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     fields: [
       { name: 'accountNumber', example: '123456789' },
       { name: 'routingNumber', example: '021000021' },
+      { name: 'bankAccountType', example: 'CHECKING', description: 'CHECKING or SAVINGS' },
     ],
     beneficiaryRequired: true,
   },
@@ -266,6 +267,13 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
   },
   PLASMA_WALLET: {
     accountType: 'PLASMA_WALLET',
+    fields: [
+      { name: 'address', example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12' },
+    ],
+    beneficiaryRequired: false,
+  },
+  ARBITRUM_WALLET: {
+    accountType: 'ARBITRUM_WALLET',
     fields: [
       { name: 'address', example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12' },
     ],

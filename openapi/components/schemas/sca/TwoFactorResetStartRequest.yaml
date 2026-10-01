@@ -1,8 +1,18 @@
 type: object
-description: Selects which enrolled factor to reset via the liveness-gated recovery flow.
+description: >-
+  Selects which enrolled factor to reset via the liveness-gated recovery flow,
+  and the IP address the end user is starting the reset from.
 required:
   - factor
+  - endUserIpAddress
 properties:
   factor:
     $ref: ./ScaFactor.yaml
     description: The enrolled factor to reset.
+  endUserIpAddress:
+    type: string
+    description: >-
+      The IP address of the end user's device starting this reset, recorded
+      against the reset by the SCA provider. Supply the customer's address, not
+      your server's — it feeds the provider's risk assessment of the recovery.
+    example: 203.0.113.42

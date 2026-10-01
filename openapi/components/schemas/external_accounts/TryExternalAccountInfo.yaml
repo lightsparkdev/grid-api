@@ -1,0 +1,19 @@
+title: TRY Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/TryAccountInfo.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/TryBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/TryBusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/TryBeneficiary.yaml
+          BUSINESS: ../common/TryBusinessBeneficiary.yaml

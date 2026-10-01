@@ -12,7 +12,7 @@ properties:
   fromName:
     type: string
     maxLength: 255
-    description: Sender display name.
+    description: Sender display name. Defaults to `displayName`.
     example: Acme Cards
   replyToAddress:
     type: string
@@ -23,7 +23,9 @@ properties:
   subject:
     type: string
     maxLength: 255
-    description: Subject for the authentication email.
+    description: |
+      Subject for the authentication email. Defaults to
+      "Your {displayName} verification code".
     example: Your Acme card verification code
   bodyText:
     type: string
@@ -31,5 +33,6 @@ properties:
     description: |
       Plain-text message content. Lightspark inserts the authentication code into
       a controlled text and HTML template; arbitrary HTML and template variables
-      are not supported.
+      are not supported. Defaults to "Use this code to finish adding your
+      {displayName} card to your wallet."
     example: Use this code to finish adding your Acme card to your digital wallet.

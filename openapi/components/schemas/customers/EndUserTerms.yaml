@@ -1,7 +1,11 @@
 type: object
+deprecated: true
 required:
   - version
   - url
+description: >-
+  Deprecated; read the agreement documents list instead, which reports every
+  agreement Grid supports rather than the End User Terms alone.
 properties:
   version:
     type: string

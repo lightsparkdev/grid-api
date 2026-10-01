@@ -1,0 +1,13 @@
+type: object
+required:
+  - wallet
+  - applePay
+properties:
+  wallet:
+    type: string
+    enum:
+      - APPLE_PAY
+    description: Discriminator value identifying an Apple Pay response.
+    example: APPLE_PAY
+  applePay:
+    $ref: ./CardTokenizationApplePayPayload.yaml

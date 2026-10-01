@@ -1,0 +1,367 @@
+@use '../../styles/breakpoints' as *;
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+/* Share, on the stage: a panel centered over the dot grid, under the card's
+   layer (the stage canvas is above, click-through except at the card), so
+   the card parks in the frame's slot and the controls under it take the
+   pointer. */
+
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Anchored where its grown height sits centered (see the panel's `top`), so
+   the growth runs downward and nothing above it moves. */
+.panel {
+  position: absolute;
+  left: 50%;
+  /* Centered by `translate`, apart from the transform Motion animates. */
+  translate: -50% 0;
+  transform-origin: 50% 0;
+  corner-shape: var(--corner-shape);
+  /* As wide as the frame plus its padding and border, whatever those are. */
+  width: fit-content;
+  padding: var(--spacing-sm);
+  /* The configure panel's own surface (globals.scss: primary, or the docs
+     chrome gray beside docs chrome), so the two read as one piece of chrome. */
+  background: var(--panel-bg);
+  border: var(--stroke-xs) solid var(--border-secondary, var(--border-primary));
+  /* Concentric with the tiles inside: their radius plus the padding. */
+  border-radius: calc(var(--corner-radius-md) + var(--spacing-sm));
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+}
+
+/* The clip the panel grows inside: the frame, then the controls. */
+.grow {
+  overflow: hidden;
+}
+
+.growInner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* ── The frame: the share template, with the card's slot in the middle ──── */
+.frame {
+  position: relative;
+  flex: none;
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-md);
+  overflow: hidden;
+  transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1), color 240ms cubic-bezier(0.19, 1, 0.22, 1);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 var(--stroke-xs) var(--border-primary);
+    pointer-events: none;
+  }
+}
+
+.rule {
+  position: absolute;
+  width: 0.5px;
+  background: currentColor;
+}
+
+.logo {
+  position: absolute;
+  display: block;
+}
+
+.text {
+  position: absolute;
+  font-family: var(--font-family-sans);
+  font-weight: 400;
+  white-space: nowrap;
+  font-feature-settings: 'salt' 1, 'zero' 1;
+}
+
+.textRight {
+  text-align: right;
+}
+
+/* Where the stage parks the card: an empty box, centered. */
+.slot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* With the hand, the slot is where its card was. */
+.slotHand {
+  position: absolute;
+}
+
+/* The hand, in the host above the stage's canvas: a clip the size of the
+   frame, placed over it once the panel has landed, arriving out of a blur
+   (as the panel and the phone do); the photograph inside it, scaled about
+   the card. */
+.handClip {
+  position: absolute;
+  overflow: hidden;
+  border-radius: var(--corner-radius-md);
+  pointer-events: none;
+}
+
+/* What moves, inside the clip (a filter on the clip itself would bleed its
+   blur past the frame): leaving (the transition into this state) eases in
+   and out, so it thins evenly into the blur rather than dropping out at the
+   end. */
+.handMotion {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  filter: blur(16px);
+  transform: scale(1.06);
+  transition:
+    opacity 560ms cubic-bezier(0.45, 0, 0.55, 1),
+    filter 560ms cubic-bezier(0.45, 0, 0.55, 1),
+    transform 560ms cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .handMotion,
+  .handMotionOn {
+    transition: none;
+    filter: none;
+    transform: none;
+  }
+}
+
+/* Arriving: quick out of the blur, settling slowly. */
+.handMotionOn {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+  transition:
+    opacity 480ms cubic-bezier(0.19, 1, 0.22, 1),
+    filter 620ms cubic-bezier(0.19, 1, 0.22, 1),
+    transform 620ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.handLayer {
+  position: absolute;
+  display: block;
+}
+
+/* The rim's shading follows the backdrop as it changes. */
+.handRim {
+  transition: opacity 240ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+
+/* The rows group, whose third row swaps (Skin for Pose): the row leaving
+   is lifted out of the flow (Motion's popLayout, so it must have something
+   to be positioned against), and the dividers sit on the top of each row
+   after the first rather than the bottom of each before the last, so a
+   lifted-out last row leaves no stray line behind. */
+.rows {
+  position: relative;
+
+  > * {
+    border-bottom: none;
+  }
+
+  > * + * {
+    border-top: var(--stroke-xs) solid var(--border-primary);
+  }
+}
+
+/* A choice as a glyph on the tile's surface (the Style row). */
+.iconSwatch {
+  display: grid;
+  place-items: center;
+  background: var(--picker-fill, var(--surface-secondary));
+  color: var(--text-secondary);
+  box-shadow: inset 0 0 0 1px var(--picker-border, var(--border-primary));
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+/* ── Rows (DesignPicker's tile, its row, its swatches) ────────────────────── */
+/* A backdrop as a sample of its surface; the ring picks it out. */
+.swatch {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+
+  :global([data-theme='dark']) & {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  }
+}
+
+
+/* A pose as a small card held that way, on the tile's surface. */
+.poseSwatch {
+  display: grid;
+  place-items: center;
+  background: var(--picker-fill, var(--surface-secondary));
+  box-shadow: inset 0 0 0 1px var(--picker-border, var(--border-primary));
+  perspective: 40px;
+}
+
+.poseCard {
+  display: block;
+  width: 12px;
+  height: 8px;
+  border-radius: 1.5px;
+  background: var(--text-secondary);
+  transform-style: preserve-3d;
+}
+
+.pose_angle .poseCard {
+  transform: rotateX(-9deg) rotateY(21deg);
+}
+
+.pose_turned .poseCard {
+  transform: rotateX(-6deg) rotateY(56deg);
+}
+
+/* The back: the same card the other way round, with its stripe. */
+.pose_back .poseCard {
+  transform: rotateX(-9deg) rotateY(201deg);
+  background: linear-gradient(to bottom, var(--text-secondary) 0 2px, var(--text-tertiary) 2px);
+}
+
+/* ── Actions: the flow tiles' idiom, four square tiles in one card ───────── */
+.tiles {
+  --tile-bg: var(--panel-tile-bg);
+  corner-shape: var(--corner-shape);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  background: var(--tile-bg);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-md);
+  overflow: clip;
+}
+
+.tile {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: var(--spacing-sm) var(--spacing-xs);
+  background: var(--tile-bg);
+  border-right: var(--stroke-xs) solid var(--border-primary);
+  cursor: pointer;
+  transition: background 100ms ease, opacity 150ms ease;
+
+  &:last-child {
+    border-right: none;
+  }
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--tile-bg) 98%, black);
+
+      :global([data-theme='dark']) & {
+        background: var(--color-alpha-white-04);
+      }
+    }
+  }
+
+  &:active:not(:disabled) {
+    background: color-mix(in srgb, var(--tile-bg) 98%, black);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-alpha-white-04);
+    }
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--state-focus, var(--text-primary));
+  }
+}
+
+/* The tile at work is the one lit; the others wait dimmed. */
+.tileLoading:disabled {
+  opacity: 1;
+  cursor: progress;
+}
+
+.tileIcon {
+  position: relative;
+  display: flex;
+  width: 24px;
+  height: 24px;
+  color: var(--icon-primary);
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.tileGlyph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  display: block;
+  animation: spin 900ms linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 1800ms;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tileLabel {
+  @include label-sm;
+  color: var(--text-primary);
+  text-align: center;
+  text-wrap: balance;
+  font-feature-settings: 'salt' 1;
+}
+
+/* ── Status ──────────────────────────────────────────────────────────────── */
+/* Last in the column: the gap above it and the panel's padding below are the
+   same spacing, so it carries no vertical padding of its own. */
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+  padding: 0 var(--spacing-3xs);
+}
+
+.statusLine {
+  @include label-xs;
+  color: var(--text-tertiary);
+}
+
+.statusError {
+  color: var(--text-critical, #c0392b);
+}

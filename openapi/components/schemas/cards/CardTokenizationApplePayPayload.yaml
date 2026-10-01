@@ -1,0 +1,22 @@
+type: object
+description: >-
+  The encrypted pass data for Apple Wallet. Pass the three fields straight
+  into the `PKAddPaymentPassRequest` your delegate's completion handler
+  expects.
+required:
+  - activationData
+  - encryptedPassData
+  - ephemeralPublicKey
+properties:
+  activationData:
+    type: string
+    description: Base64 `activationData` for `PKAddPaymentPassRequest`.
+    example: YWN0aXZhdGlvbi1kYXRh
+  encryptedPassData:
+    type: string
+    description: Base64 `encryptedPassData` for `PKAddPaymentPassRequest`.
+    example: ZW5jcnlwdGVkLXBhc3MtZGF0YQ==
+  ephemeralPublicKey:
+    type: string
+    description: Base64 `ephemeralPublicKey` for `PKAddPaymentPassRequest`.
+    example: ZXBoZW1lcmFsLXB1YmxpYy1rZXk=

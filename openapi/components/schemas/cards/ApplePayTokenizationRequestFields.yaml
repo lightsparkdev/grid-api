@@ -1,0 +1,28 @@
+type: object
+required:
+  - wallet
+  - certificate
+  - nonce
+  - nonceSignature
+properties:
+  wallet:
+    type: string
+    enum:
+      - APPLE_PAY
+    description: Discriminator value identifying an Apple Pay request.
+    example: APPLE_PAY
+  certificate:
+    type: string
+    description: >-
+      The leaf certificate from the `certificates` array Apple passes to your
+      `PKAddPaymentPassViewControllerDelegate`, base64-encoded in PEM form.
+    example: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM=
+  nonce:
+    type: string
+    description: The `nonce` Apple passes to your delegate, base64-encoded.
+    example: MTIzNDU2Nzg=
+  nonceSignature:
+    type: string
+    description: >-
+      The `nonceSignature` Apple passes to your delegate, base64-encoded.
+    example: c2lnbmF0dXJl

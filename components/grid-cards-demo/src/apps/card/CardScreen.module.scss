@@ -1,0 +1,351 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Clear the iOS status bar — screenBody underlaps it (see AppShell). */
+  padding-top: 62px;
+  /* No surface of its own: the screen under the stage paints --wallet-bg
+     (DemoPhone sets it as the screen's surface), and the card in the stage's
+     canvas shows through the empty slot. */
+  background: transparent;
+
+  /* Header strip height — the body underlaps it by this much. */
+  --wallet-header-height: 56px;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
+.header {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  height: var(--wallet-header-height);
+  padding: 8px 24px;
+  box-sizing: border-box;
+}
+
+/* Interactive: takes the pointer back (the content layer passes it through by
+   default, for the card under the slot). */
+.headerInner {
+  position: absolute;
+  inset: 8px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: auto;
+  pointer-events: auto;
+}
+
+/* The pushed page's title, centered in the header the way Wallet's is; the
+   back button sits over it at the left. */
+.title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0;
+  @include ios.ios-text-headline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+  color: var(--ios-label-primary);
+  text-align: center;
+  pointer-events: none;
+}
+
+/* Card numbers on its own, then the limits + lock pill (Wallet's card header). */
+.headerActions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* ── Body ─────────────────────────────────────────────────────────────────── */
+
+.body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Creating: underlap the header strip so the card's top drop-shadow bleed
+     paints unclipped, and center the card in what is left. */
+  margin-top: calc(-1 * var(--wallet-header-height));
+  padding-top: var(--wallet-header-height);
+}
+
+/* Issued: the body runs to the screen's top edge (under the status bar and
+   the header) so the stack inside can page-scroll the card up under them,
+   Aurora's home. The stack carries the offset as padding, so nothing moves. */
+.bodyHome {
+  margin-top: calc(-1 * (62px + var(--wallet-header-height)));
+  padding-top: 0;
+}
+
+/* Tap-to-pay lifts the body over the (still-present) header; raising it above the
+   header layer hides the header buttons as they fade rather than ghosting them. */
+.bodyTap {
+  z-index: 3;
+}
+
+/* Card slot. It scrolls with the content (not Aurora's pinned card: the
+   home's surface is the screen's, so a surface sliding over the card read as
+   the card being cut off), fading out under the header as it goes. */
+.cardArea {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 16px 8px;
+}
+
+/* Aurora's issuance slot (Figma 2219:48842): the card centered in the body,
+   the "Creating…" caption 12 below it; the 96 bottom padding sits the pair 48
+   above true center. */
+.cardAreaCreating {
+  flex: 1 1 0;
+  min-height: 0;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px 96px;
+}
+
+/* Carries the slot between the top and the centered slot (layout-animated),
+   and scales it for issuance. */
+.cardCarry {
+  width: 100%;
+  transform-origin: center center;
+}
+
+/* Figma 2219:48913 — "Creating your card…" with a leading spinner. */
+.creating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  color: var(--ios-label-secondary);
+}
+
+.creatingText {
+  @include ios.ios-text-subheadline;
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}
+
+.spinner {
+  display: inline-flex;
+  flex-shrink: 0;
+  animation: card-creating-spin 0.9s linear infinite;
+}
+
+@keyframes card-creating-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
+
+/* The card's footprint (DebitCard is 232 tall at the screen width minus gutters). */
+.cardSlot {
+  width: 100%;
+  height: 232px;
+}
+
+/* Held upright, the card is as tall as it was wide, and the slot with it. */
+.cardSlotPortrait {
+  height: 370px;
+}
+
+
+/* Hub content below the card. */
+.homeContent {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+/* The home grows with the Activity list (never shrinks below it) so the
+   stack page-scrolls it. */
+.homeFlow {
+  flex: 1 0 auto;
+}
+
+/* A page's content scrolls in its own box (Card numbers, Spending limits). */
+.homeScroll {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  /* Blocks keep their height; the list below them grows and the column scrolls. */
+  & > * {
+    flex-shrink: 0;
+  }
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* The card slot and the content under it, pushed aside as one by a page
+   over the body. */
+.stack {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Issued: the stack is the page scroll, the card riding in it. Its top
+   padding stands in for the status bar and header the body now underlaps. */
+.stackScroll {
+  overflow-y: auto;
+  /* No overscroll-behavior: contain here (or on a page's scroll): at the
+     home's end the wheel must go on to the page around the phone, and
+     contain would stop it there even when the home has nothing to scroll. */
+  scrollbar-width: none;
+  padding-top: calc(62px + var(--wallet-header-height));
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Not the home (tap-to-pay, a page): the scroll holds where it is. */
+.stackLocked {
+  overflow-y: hidden;
+}
+
+/* A page over the whole body, the card's slot included (Spending limits).
+   Under the header (the body is its own stacking context below it), so the
+   back button and title stay on top. */
+.pageCover {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  padding-top: calc(62px + var(--wallet-header-height));
+  background: var(--wallet-bg);
+}
+
+/* ── Scroll edge ──────────────────────────────────────────────────────────── */
+
+/* iOS's scroll edge: the strip under the status bar and header progressively
+   blurs and fades the scrolling content into the surface, so it never collides
+   with the status bar glyphs or the header's buttons. Above the body (z 1),
+   below the header (z 2, later in the DOM) and AppShell's status bar. */
+.topFade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 150px;
+  z-index: 2;
+  pointer-events: none;
+  /* Nothing is under the header at rest: the strip comes in with the first
+     px of scroll (CardScreen sets --edge-fade, 0..1, from the scroll
+     position). NOT as opacity on this box: an opacity below 1 makes it a
+     backdrop root, and the blur layers inside then see only this empty box
+     and blur nothing. The blur radius and the tint's opacity carry it. */
+}
+
+/* Progressive blur (Aurora's three-layer stack): each layer ups the radius
+   and is masked to a band, so the blur ramps from 0 at the bottom to full at
+   the top with no hard edge where it stops. */
+.fadeBlur {
+  position: absolute;
+  inset: 0;
+  /* Hairline fill kicks backdrop-filter into compositing. */
+  background: rgba(255, 255, 255, 0.01);
+  -webkit-backdrop-filter: blur(calc(var(--fade-blur) * var(--edge-fade, 0)));
+  backdrop-filter: blur(calc(var(--fade-blur) * var(--edge-fade, 0)));
+  mask-image: var(--fade-mask);
+  -webkit-mask-image: var(--fade-mask);
+
+  :global([data-theme='dark']) & {
+    background: rgba(0, 0, 0, 0.01);
+  }
+}
+
+.fadeBlurStrong {
+  --fade-blur: 8px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 16%, transparent 46%);
+}
+
+.fadeBlurMid {
+  --fade-blur: 4px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 34%, transparent 68%);
+}
+
+.fadeBlurSoft {
+  --fade-blur: 2px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 56%, transparent 100%);
+}
+
+/* The surface's tint over the blur: solid at the very edge (under the status
+   bar), melting to clear so the blurred content shows through below. The
+   stops follow a smoothstep (1 − 3t² + 2t³): a straight ramp shows its two
+   ends as lines (Mach bands), an eased one has no edge to see. */
+.fadeTint {
+  position: absolute;
+  inset: 0;
+  /* A plain gradient, no filter inside: its own opacity is safe. */
+  opacity: var(--edge-fade, 0);
+  background: linear-gradient(
+    to bottom,
+    var(--wallet-bg) 0%,
+    color-mix(in srgb, var(--wallet-bg) 95.6%, transparent) 12.5%,
+    color-mix(in srgb, var(--wallet-bg) 84.4%, transparent) 25%,
+    color-mix(in srgb, var(--wallet-bg) 68.4%, transparent) 37.5%,
+    color-mix(in srgb, var(--wallet-bg) 50%, transparent) 50%,
+    color-mix(in srgb, var(--wallet-bg) 31.6%, transparent) 62.5%,
+    color-mix(in srgb, var(--wallet-bg) 15.6%, transparent) 75%,
+    color-mix(in srgb, var(--wallet-bg) 4.4%, transparent) 87.5%,
+    transparent 100%
+  );
+}
+
+/* Tap-to-pay reader status — fills below the raised card; glyph + label sit just
+   beneath it (Figma 2143:41178 section pt 50). */
+.tapStatus {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+  width: 100%;
+  padding-top: 50px;
+}
+
+/* Face ID (Dynamic Island) overlay — above the screen, click-through. */
+.faceIdLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}

@@ -24,6 +24,14 @@ post:
               cryptoNetwork: SOLANA
               amount: 1000000
               destinationAddress: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+          estimateArbitrumWithdrawal:
+            summary: Estimate fee for USDC withdrawal on Arbitrum
+            value:
+              internalAccountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+              currency: USDC
+              cryptoNetwork: ARBITRUM
+              amount: 1000000
+              destinationAddress: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
   responses:
     '200':
       description: Fee estimation returned successfully

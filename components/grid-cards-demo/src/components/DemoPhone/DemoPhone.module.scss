@@ -1,0 +1,8 @@
+/* Host for the card face — fills the phone screen. */
+.flow {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}

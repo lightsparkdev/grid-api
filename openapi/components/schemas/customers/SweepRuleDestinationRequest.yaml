@@ -2,7 +2,6 @@ title: Sweep Rule Destination Request
 type: object
 description: >-
   The account a rule-based account sweeps its incoming payments to.
-additionalProperties: false
 required:
   - accountId
 properties:

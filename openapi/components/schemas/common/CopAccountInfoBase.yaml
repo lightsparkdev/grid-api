@@ -25,9 +25,12 @@ properties:
     - SAVINGS
   bankName:
     type: string
-    description: The name of the bank
+    description: The name of the bank. Must be one of the `bankName` values `GET /discoveries`
+      returns for this country and currency. Send it exactly as returned; any other
+      name is rejected.
     minLength: 1
     maxLength: 255
+    example: Banco de Colombia (Bancolombia)
   phoneNumber:
     type: string
     description: The phone number in international format
@@ -39,5 +42,5 @@ example:
   accountType: COP_ACCOUNT
   accountNumber: '1234567890'
   bankAccountType: CHECKING
-  bankName: Example Bank
+  bankName: Banco de Colombia (Bancolombia)
   phoneNumber: '+1234567890'

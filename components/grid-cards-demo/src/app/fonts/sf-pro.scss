@@ -1,0 +1,18 @@
+/* SF Pro variable font — iOS phone mock screens.
+   Axes: wght 1–1000, opsz 17–28 (auto via font-optical-sizing). The file is
+   a subset of Apple's: Latin, Latin-1, general punctuation, currency,
+   arrows, math, Greek, box drawing and shapes (1104 glyphs), with the width
+   axis pinned at 100 (nothing here leaves it). 222 KB, where the full font
+   was 8.2 MB and sat on the line ahead of the card's assets on every first
+   visit. To widen the subset: fonttools, subset then instancer wdth=100. */
+
+@font-face {
+  font-family: 'SF Pro';
+  src: url('/fonts/SF-Pro.woff2') format('woff2');
+  font-weight: 1 1000;
+  font-display: swap;
+}
+
+:root {
+  --font-family-sf-pro: 'SF Pro', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}

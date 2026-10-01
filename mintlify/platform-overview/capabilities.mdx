@@ -18,7 +18,7 @@ import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
   className="page-hero hidden dark:block"
 />
 
-Grid exposes low-level primitives that you combine to build any payment flow. Fiat, crypto, or both.
+Lightspark exposes low-level primitives that you combine to build any payment flow. Fiat, crypto, or both.
 
 <FeatureCardGrid cols={3}>
   <FeatureCard 
@@ -91,5 +91,18 @@ Grid exposes low-level primitives that you combine to build any payment flow. Fi
     linkText="Onboarding guide"
   >
     KYC/KYB verification—use Grid's hosted flows or bring your own compliance.
+  </FeatureCard>
+  <FeatureCard
+    icon="/images/icons/credit-card1.svg"
+    title="Issue"
+    color="#8263E8"
+  >
+    Issue debit cards backed by internal accounts, or issue stablecoins and manage minting and burning through the API.
+
+    <div className="feature-card-link-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '16px' }}>
+      <a href="/cards/card-management/issuing-cards" className="feature-card-text-link" style={{ color: '#8263E8' }}>Card issuing</a>
+      <span aria-hidden="true">·</span>
+      <a href="/api-reference/stablecoins/request-grid-enablement-for-a-stablecoin" className="feature-card-text-link" style={{ color: '#8263E8' }}>Stablecoin issuance</a>
+    </div>
   </FeatureCard>
 </FeatureCardGrid>

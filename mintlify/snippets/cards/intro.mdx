@@ -1,10 +1,14 @@
-import { topLevelProductName } from '/snippets/variables.mdx';
 import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+import CardPinBehavior from '/snippets/cards/pin-behavior.mdx';
 
-With {topLevelProductName} Cards, you can issue virtual debit cards backed by an
+You can issue debit cards backed by an
 internal account, decision authorizations in real time against that
 account's balance, and reconcile every pull, clearing, and refund against
 the same ledger you already use for payouts.
+
+<CardPinBehavior />
+
+See [Card PINs](/cards/card-management/pins) to let cardholders set, change, or unblock a PIN.
 
 <FeatureCardGrid cols={2}>
   <FeatureCard icon="/images/icons/lightning.svg" title="Real-time decisioning">
@@ -30,7 +34,7 @@ A card moves through five states:
 | `FROZEN` | Card is temporarily disabled. New authorizations are declined; in-flight settlements continue. |
 | `CLOSED` | Card is permanently closed. Terminal, irreversible. |
 
-Every transition emits a `CARD.STATE_CHANGE` webhook so you can mirror
+Every transition emits a `CARD.STATUS_CHANGE` webhook so you can mirror
 state changes into your application.
 
 ## What's covered in this tab
@@ -41,7 +45,7 @@ state changes into your application.
     reconcile against an internal account.
   </Card>
   <Card title="Card management" icon="credit-card" href="/cards/card-management/issuing-cards">
-    Issue cards, bind funding sources, freeze, unfreeze, and close.
+    Issue cards, bind a funding source, freeze, unfreeze, and close.
   </Card>
   <Card title="Transactions & reconciliation" icon="check" href="/cards/transactions/reconciliation">
     The relationship between authorizations, pulls, clearings, and

@@ -1,0 +1,17 @@
+type: object
+required:
+  - wallet
+  - provisioningPayload
+properties:
+  wallet:
+    type: string
+    enum:
+      - SAMSUNG_PAY
+    description: Discriminator value identifying a Samsung Pay response.
+    example: SAMSUNG_PAY
+  provisioningPayload:
+    type: string
+    description: >-
+      Base64-encoded opaque payload. Pass it to the Samsung Pay SDK's
+      `addCard` call.
+    example: eyJjYXJkIjoiLi4uIn0=

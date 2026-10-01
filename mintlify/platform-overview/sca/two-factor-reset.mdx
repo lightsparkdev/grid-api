@@ -23,7 +23,7 @@ All paths below are relative to `https://api.lightspark.com/grid/2025-10-13`.
 ```bash
 POST /sca/factors/reset?customerId={customerId}
 
-{ "factor": "TOTP" }
+{ "factor": "TOTP", "endUserIpAddress": "203.0.113.42" }
 ```
 
 Returns **`201`** with a `resetId` and opaque liveness handles. Embed
@@ -70,12 +70,13 @@ status or once `expiresAt` passes; never poll indefinitely.
 ```bash
 POST /sca/factors/reset/{resetId}/complete?customerId={customerId}
 
-{ "mobile": { "countryCode": "+1", "number": "4155550123" } }
+{ "endUserIpAddress": "203.0.113.42", "mobile": { "countryCode": "+1", "number": "4155550123" } }
 ```
 
-Returns `204` and clears the lost factor. For an `SMS_OTP` reset, include the new
-`mobile` number in the body — it's enrolled as the customer completes the reset;
-other factors need no body. Calling it before liveness has passed returns `400`.
+Returns `204` and clears the lost factor. The body is required and must carry
+`endUserIpAddress`. For an `SMS_OTP` reset, also include the new `mobile` number —
+it's enrolled as the customer completes the reset; other factors need no `mobile`.
+Calling it before liveness has passed returns `400`.
 The customer can then re-enroll via
 [factor enrollment](/platform-overview/sca/factor-enrollment).
 </Step>

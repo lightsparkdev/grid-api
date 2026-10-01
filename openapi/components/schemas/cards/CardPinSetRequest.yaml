@@ -1,0 +1,31 @@
+type: object
+required:
+  - encryptedPinBlock
+properties:
+  encryptedPinBlock:
+    type: string
+    description: >-
+      The cardholder's PIN, encrypted in your client before calling Grid.
+      Use the [PIN encryption public key](https://docs.lightspark.com/keys/pin-encryption-public-key.pem.txt)
+      for both sandbox and production. Grid cannot decrypt the block and
+      never stores or logs PIN material.
+
+
+      Build it in the client, immediately after PIN entry, so the PIN never
+      reaches your servers either: serialize `{"nonce": <random integer>,
+      "pin": "<4-digit PIN>"}` as JSON, encode it as UTF-8, encrypt it using
+      the public key above, and base64-encode the ciphertext. Generate a
+      fresh cryptographically random integer `nonce` for each request to
+      prevent replay. Preserve the PIN as a string, including leading zeros.
+      Send the resulting base64 string as `encryptedPinBlock`. Never send
+      the plaintext PIN or the unencrypted JSON to Grid. Keep ciphertext
+      out of logs, storage, and analytics too.
+
+
+      A rejected block returns `400 INVALID_INPUT`. Check the payload,
+      encoding, and public key, then create a new block with a fresh nonce.
+      See [Card PINs](https://docs.lightspark.com/cards/card-management/pins)
+      for the complete PIN-entry flows.
+    minLength: 16
+    maxLength: 1024
+    example: SGVsbG8sIHRoaXMgaXMgYSBiYXNlNjQtZW5jb2RlZCBjaXBoZXJ0ZXh0Li4u

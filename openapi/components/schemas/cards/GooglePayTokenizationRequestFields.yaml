@@ -1,0 +1,40 @@
+type: object
+required:
+  - wallet
+  - walletAccountId
+  - serverSessionId
+properties:
+  wallet:
+    type: string
+    enum:
+      - GOOGLE_PAY
+    description: Discriminator value identifying a Google Pay request.
+    example: GOOGLE_PAY
+  walletAccountId:
+    type: string
+    description: >-
+      The stable identifier of the Google Wallet account the card is being
+      added to, as reported by the TapAndPay client.
+    example: wallet-account-8f14e45f
+  serverSessionId:
+    type: string
+    format: uuid
+    description: >-
+      The `serverSessionId` Google supplies in the TapAndPay
+      payment-credentials callback under Unified Push Provisioning.
+    example: 8c3b8a7e-2a5d-4b7f-9c1e-6d2f0a1b3c4d
+  deviceId:
+    type: string
+    description: >-
+      The stable device identifier from `getStableHardwareId`, when the SDK
+      supplies one. Unified Push Provisioning does not always.
+    example: device-3c59dc04
+  opaquePaymentCardRequested:
+    type: boolean
+    default: false
+    description: >-
+      Set to the value Google supplies in the payment-credentials callback.
+      When `true`, the response also carries `googleAccountPayload`, which
+      saves the card to the cardholder's Google Account for online payments
+      in addition to the device token.
+    example: false

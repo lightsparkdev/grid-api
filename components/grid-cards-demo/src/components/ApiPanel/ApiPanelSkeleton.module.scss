@@ -1,0 +1,201 @@
+@use '../../styles/breakpoints' as *;
+
+/* gray-100 (was 075): at the feed's 0.5 opacity the pills washed out against
+   the chrome-gray panel — one notch darker keeps them faint but legible. */
+$skeleton-bone-light: var(--color-gray-100);
+$skeleton-bone-dark: var(--color-gray-850);
+
+.list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
+}
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  /* Sides match the Configure panel's content padding. */
+  padding: 48px $layout-laptop-content-padding;
+  padding-top: calc(var(--spacing-md) + 12px);
+  gap: var(--spacing-md);
+  opacity: 0.5;
+
+  :global([data-theme='dark']) & {
+    opacity: 0.2;
+  }
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.groupEntries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.feedEntry {
+  min-width: 0;
+}
+
+.callCard {
+  --badge-height: 20px;
+  --row-padding: calc((48px - var(--badge-height)) / 2);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: var(--surface-base);
+  border: 0.5px solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+  overflow: clip;
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-925);
+  }
+
+  /* Match the live cards' softer surface on the chrome-gray panel (wide). */
+  @media (min-width: $breakpoint-layout-wide) {
+    background: var(--surface-primary);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-gray-950);
+    }
+  }
+}
+
+.entryHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: calc(var(--row-padding) - 2px) var(--row-padding) 0;
+}
+
+.bone {
+  border-radius: 9999px;
+  background: $skeleton-bone-light;
+
+  :global([data-theme='dark']) & {
+    background: $skeleton-bone-dark;
+  }
+}
+
+.entryTitle {
+  height: 14px;
+  max-width: 180px;
+}
+
+.timestamp {
+  width: 52px;
+  height: 14px;
+}
+
+.endpointBlock {
+  padding: var(--row-padding) 0 var(--row-padding) var(--row-padding);
+  border-bottom: 0.5px solid var(--border-tertiary);
+}
+
+.endpointScroll {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.methodBadge {
+  flex-shrink: 0;
+  width: 40px;
+  height: 20px;
+}
+
+.pathLine {
+  height: 14px;
+  min-width: 0;
+}
+
+.endpointPath {
+  flex: 1;
+  min-width: 0;
+}
+
+.codeBlock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.codeBlockToolbar {
+  position: relative;
+  min-height: 40px;
+  padding: 0 calc(32px + var(--spacing-xs)) 0 0;
+  border-bottom: 0.5px solid var(--border-tertiary);
+}
+
+.tabGroup {
+  display: flex;
+  position: relative;
+  height: 40px;
+  margin-bottom: -0.5px;
+}
+
+/* One tab cell — the real .tab's geometry (label centered, spacing-md pads). */
+.tab {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 var(--spacing-md);
+}
+
+/* The leading tab is "active": the indicator box reads as its trailing
+   hairline (card bg matches the indicator fill, so the border is the look). */
+.tabActive {
+  border-right: 0.5px solid var(--border-tertiary);
+}
+
+/* Label-sm sized text line. */
+.tabLabel {
+  height: 10px;
+}
+
+.codeBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--spacing-md);
+}
+
+.codeLine {
+  height: 14px;
+  min-width: 0;
+}
+
+.codeLineIndent1 {
+  margin-left: 16px;
+}
+
+.codeLineIndent2 {
+  margin-left: 32px;
+}
+
+@include layout-laptop {
+  .list {
+    align-items: center;
+  }
+
+  .feed {
+    width: 100%;
+    max-width: $layout-laptop-api-content-max-width;
+    padding-left: $layout-laptop-content-padding;
+    padding-right: $layout-laptop-content-padding;
+    padding-bottom: $layout-laptop-content-padding;
+  }
+}

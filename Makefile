@@ -10,14 +10,8 @@ build:
 build-openapi:
 	npm run build:openapi
 
-STAINLESS_OPENAPI_URL := https://app.stainless.com/api/spec/documented/grid/openapi.documented.yml
-LOCAL_OPENAPI_PATH := openapi.yaml
-
 mint:
-	@cd mintlify && \
-	sed -i.bak 's|$(STAINLESS_OPENAPI_URL)|$(LOCAL_OPENAPI_PATH)|' docs.json && \
-	trap 'mv docs.json.bak docs.json' EXIT INT TERM; \
-	mint dev
+	@cd mintlify && mint dev
 
 lint:
 	npm run lint

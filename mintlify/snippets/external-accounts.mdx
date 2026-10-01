@@ -51,6 +51,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "USD",
     "platformAccountId": "user_123_primary_bank",
     "accountInfo": {
@@ -77,7 +78,9 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 ```
 
 <Note>
-  Category must be `CHECKING` or `SAVINGS`. Routing number must be 9 digits.
+  `bankAccountType` is required and must be `CHECKING` or `SAVINGS`. Grid uses it to set the
+  ACH transaction code, so a value that does not match the account causes the receiving bank
+  to return a notification of change. `routingNumber` must be 9 digits.
 </Note>
 
 <Note>
@@ -95,6 +98,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "MXN",
     "platformAccountId": "mx_beneficiary_001",
     "accountInfo": {
@@ -128,6 +132,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "BRL",
     "platformAccountId": "br_pix_001",
     "accountInfo": {
@@ -168,6 +173,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "COP",
     "platformAccountId": "co_bank_001",
     "accountInfo": {
@@ -200,6 +206,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "COP",
     "platformAccountId": "co_mobile_001",
     "accountInfo": {
@@ -244,6 +251,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "USD",
     "platformAccountId": "sv_bank_001",
     "accountInfo": {
@@ -274,6 +282,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "USD",
     "platformAccountId": "sv_mobile_001",
     "accountInfo": {
@@ -302,13 +311,14 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 </Tab>
 
 <Tab title="Europe">
-**IBAN/SEPA**
+**EUR Account (IBAN)**
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "EUR",
     "platformAccountId": "eu_iban_001",
     "accountInfo": {
@@ -345,6 +355,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "PHP",
     "platformAccountId": "ph_bank_001",
     "accountInfo": {
@@ -381,6 +392,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "GBP",
     "platformAccountId": "gb_bank_001",
     "accountInfo": {
@@ -420,6 +432,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "INR",
     "platformAccountId": "in_upi_001",
     "accountInfo": {
@@ -449,6 +462,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "INR",
     "platformAccountId": "in_neft_001",
     "accountInfo": {
@@ -489,6 +503,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "NGN",
     "platformAccountId": "ng_bank_001",
     "accountInfo": {
@@ -525,6 +540,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "ZAR",
     "platformAccountId": "za_bank_001",
     "accountInfo": {
@@ -561,6 +577,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "KES",
     "platformAccountId": "ke_mpesa_001",
     "accountInfo": {
@@ -596,6 +613,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "TZS",
     "platformAccountId": "tz_mobile_001",
     "accountInfo": {
@@ -631,6 +649,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "ZMW",
     "platformAccountId": "zm_mobile_001",
     "accountInfo": {
@@ -666,6 +685,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "RWF",
     "platformAccountId": "rw_mobile_001",
     "accountInfo": {
@@ -701,6 +721,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "MWK",
     "platformAccountId": "mw_mobile_001",
     "accountInfo": {
@@ -736,6 +757,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "UGX",
     "platformAccountId": "ug_mobile_001",
     "accountInfo": {
@@ -771,6 +793,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "XOF",
     "platformAccountId": "xof_mobile_001",
     "accountInfo": {
@@ -809,6 +832,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "CAD",
     "platformAccountId": "ca_bank_001",
     "accountInfo": {
@@ -846,6 +870,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "AED",
       "platformAccountId": "ae_bank_001",
       "accountInfo": {
@@ -881,6 +906,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "ILS",
       "platformAccountId": "il_bank_001",
       "accountInfo": {
@@ -918,6 +944,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "BDT",
       "platformAccountId": "bd_bank_001",
       "accountInfo": {
@@ -948,6 +975,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "BDT",
       "platformAccountId": "bd_mobile_001",
       "accountInfo": {
@@ -983,6 +1011,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "BWP",
       "platformAccountId": "bw_mobile_001",
       "accountInfo": {
@@ -1020,6 +1049,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "CNY",
       "platformAccountId": "cn_bank_001",
       "accountInfo": {
@@ -1048,6 +1078,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "CNY",
       "platformAccountId": "cn_mobile_001",
       "accountInfo": {
@@ -1074,7 +1105,9 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   `bankName` is always required. For a wallet payout it selects the wallet and must be
   exactly `AliPay` or `WechatPay`, paired with `phoneNumber`. Bank transfer uses
   `accountNumber` with the beneficiary bank's name, and is business-to-business only —
-  send `beneficiaryType: "BUSINESS"`.
+  send `beneficiaryType: "BUSINESS"`. A bank transfer payout also needs supporting
+  documents. See [Supporting
+  documents](/payouts-and-b2b/payment-flow/send-payment#supporting-documents).
 </Note>
 </Tab>
 
@@ -1088,6 +1121,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "EGP",
       "platformAccountId": "eg_bank_001",
       "accountInfo": {
@@ -1117,6 +1151,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "EGP",
       "platformAccountId": "eg_mobile_001",
       "accountInfo": {
@@ -1154,6 +1189,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "GHS",
       "platformAccountId": "gh_bank_001",
       "accountInfo": {
@@ -1183,6 +1219,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "GHS",
       "platformAccountId": "gh_mobile_001",
       "accountInfo": {
@@ -1218,6 +1255,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "GTQ",
       "platformAccountId": "gt_bank_001",
       "accountInfo": {
@@ -1256,6 +1294,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "HTG",
       "platformAccountId": "ht_mobile_001",
       "accountInfo": {
@@ -1290,6 +1329,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "JMD",
       "platformAccountId": "jm_bank_001",
       "accountInfo": {
@@ -1330,6 +1370,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "PKR",
       "platformAccountId": "pk_bank_001",
       "accountInfo": {
@@ -1360,6 +1401,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "PKR",
       "platformAccountId": "pk_mobile_001",
       "accountInfo": {
@@ -1395,6 +1437,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "XAF",
       "platformAccountId": "xaf_mobile_001",
       "accountInfo": {
@@ -1430,6 +1473,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "DKK",
       "platformAccountId": "dk_bank_001",
       "accountInfo": {
@@ -1465,6 +1509,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "HKD",
       "platformAccountId": "hk_bank_001",
       "accountInfo": {
@@ -1501,6 +1546,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "IDR",
       "platformAccountId": "id_bank_001",
       "accountInfo": {
@@ -1538,6 +1584,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "MYR",
       "platformAccountId": "my_bank_001",
       "accountInfo": {
@@ -1574,6 +1621,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "SGD",
       "platformAccountId": "sg_bank_001",
       "accountInfo": {
@@ -1610,6 +1658,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "THB",
       "platformAccountId": "th_bank_001",
       "accountInfo": {
@@ -1646,6 +1695,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "VND",
       "platformAccountId": "vn_bank_001",
       "accountInfo": {
@@ -1676,13 +1726,14 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 <Tab title="SWIFT (International)">
 **SWIFT / International Wire**
 
-Use a SWIFT account to send payouts to bank accounts in countries or currencies where Grid doesn't offer a local payment rail. Provide the bank's SWIFT/BIC code and the beneficiary's account number (or IBAN for IBAN-based corridors).
+Use a `SWIFT_ACCOUNT` external account to send payouts to bank accounts in countries or currencies where Grid doesn't offer a local payment rail. Provide the bank's SWIFT/BIC code and the beneficiary's account number (or IBAN for IBAN-based corridors).
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "USD",
     "platformAccountId": "swift_usd_001",
     "accountInfo": {
@@ -1723,6 +1774,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "currency": "BTC",
     "platformAccountId": "btc_spark_001",
     "accountInfo": {
@@ -1741,6 +1793,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "USDC",
       "platformAccountId": "eth_usdc_001",
       "accountInfo": {
@@ -1759,6 +1812,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "USDC",
       "platformAccountId": "base_usdc_001",
       "accountInfo": {
@@ -1777,6 +1831,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "USDC",
       "platformAccountId": "polygon_usdc_001",
       "accountInfo": {
@@ -1795,6 +1850,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "USDC",
       "platformAccountId": "sol_usdc_001",
       "accountInfo": {
@@ -1813,6 +1869,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "USDT",
       "platformAccountId": "tron_usdt_001",
       "accountInfo": {
@@ -1831,10 +1888,45 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "USDT",
       "platformAccountId": "plasma_usdt_001",
       "accountInfo": {
         "accountType": "PLASMA_WALLET",
+        "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
+      }
+    }'
+```
+
+**Arbitrum**
+
+Supported assets: USDC, USDT.
+
+```bash cURL USDC
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "currency": "USDC",
+      "platformAccountId": "arbitrum_usdc_001",
+      "accountInfo": {
+        "accountType": "ARBITRUM_WALLET",
+        "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
+      }
+    }'
+```
+
+```bash cURL USDT
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "currency": "USDT",
+      "platformAccountId": "arbitrum_usdt_001",
+      "accountInfo": {
+        "accountType": "ARBITRUM_WALLET",
         "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
       }
     }'
@@ -1850,6 +1942,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "currency": "BTC",
       "platformAccountId": "btc_lightning_001",
       "accountInfo": {
@@ -1860,8 +1953,8 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 ```
 <Note>
   Crypto wallets don't require beneficiary information. Send only assets on the
-  named network — EVM addresses look identical across Ethereum, Base, Polygon and
-  Plasma, and funds sent on the wrong network are unrecoverable.
+  named network — EVM addresses look identical across Ethereum, Base, Polygon,
+  Plasma, and Arbitrum, and funds sent on the wrong network are unrecoverable.
 </Note>
 </Tab>
 </Tabs>

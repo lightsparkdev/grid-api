@@ -6,10 +6,129 @@ mode: "wide"
 ---
 
 Follow along with the latest additions and improvements to the Grid API. For upcoming
-changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
-[contact support](mailto:support@lightspark.com).
+changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="September 2026">
+
+## Sandbox test suffixes work on Solana addresses
+
+A sandbox external account's last three characters pick the test outcome, and every
+failure suffix starts with `00`. Base58 has no `0`, so no valid Solana address could end
+in one. The transfer and quote destination suffixes `002`–`008` now have `11X` twins: an
+address ending in `112` behaves like `002`, and `117` like `007`. The `00X` forms still
+work. See
+[Sandbox testing](/api-reference/sandbox-testing).
+
+## `customerId` is required when creating a customer external account
+
+`POST /customers/external-accounts` has always rejected a request that omits
+`customerId`, and the spec now says so. Its request body is its own schema,
+`CustomerExternalAccountCreateRequest`, in which `customerId` is required. Use
+`POST /platform/external-accounts` to create an external account owned by the
+platform itself.
+## Same-day ACH is its own payment rail
+
+`ACH_SAME_DAY` joins `ACH` in `PaymentRail`. Pin it on a quote's destination to request
+same-business-day settlement for a USD payout.
+
+- Grid never selects `ACH_SAME_DAY` for you. It is only used when you name it, so
+  existing integrations that omit `paymentRail` are unaffected.
+- The two rails are priced separately. A `RailFeeConfig` with `rail: ACH_SAME_DAY`
+  prices same-day sends; your existing `ACH` config keeps pricing standard sends.
+- `ACH_SAME_DAY` is capped at $1,000,000 per entry by the NACHA same-day limit, rising
+  to $10,000,000 on 2027-09-17. A payout above the limit is rejected rather than slowed;
+  send it over `ACH` instead.
+- `ACH` will settle on the standard next-business-day schedule. Until a date we
+  announce in advance, `ACH` continues to settle same-business-day on production
+  platforms; it already settles next-business-day on sandbox platforms. To guarantee
+  same-day settlement after that date, request `ACH_SAME_DAY`.
+
+See [Assessing fees](/payouts-and-b2b/payment-flow/assessing-fees).
+
+## Add cards to Apple Pay, Google Pay, and Samsung Pay from your app
+
+New `POST /cards/{id}/tokenize` exchanges the values a wallet SDK produces
+for the encrypted provisioning payload that completes an in-app "Add to
+Wallet" tap. The payload is encrypted to the wallet provider's keys, so
+card data never crosses your servers. `Card.cardCapabilities` gains
+`supportsDigitalWalletTokenization`. Manual entry into a wallet continues
+to work for every card with no integration. See
+[Digital wallet tokenization](/cards/card-management/digital-wallet-tokenization).
+
+## Card refunds, declines, and voids report distinct outcomes
+
+Three card-statement corrections to `CardTransaction`:
+
+- **Refunds are their own dated rows.** A merchant `RETURN` against a purchase now opens
+  its own `CardTransaction` (`direction: CREDIT`, credited value in `settledAmount`)
+  linked back to the purchase via the new `originalTransactionId` field, instead of
+  folding into the purchase's `refundedAmount`. The purchase stays `SETTLED`; the refund
+  fires its own `CARD_TRANSACTION.*` webhooks on the refund row. To reverse a sandbox
+  return, pass the refund row's id to `POST /sandbox/cards/{id}/simulate/return_reversal`.
+- **`DECLINED` status with `cardDeclinedReason`.** An authorization declined before any
+  money moved now reports `DECLINED` (and fires `CARD_TRANSACTION.DECLINED`) instead of
+  `EXCEPTION`, which is reserved for settlement anomalies. The new `cardDeclinedReason`
+  field explains why Grid declined the authorization: `CARD_NOT_ACTIVE` (frozen or closed
+  card), `SPEND_LIMIT_EXCEEDED`, `INSUFFICIENT_FUNDS` (sandbox only—production approves
+  underfunded auths and resolves them as `EXCEPTION`), `NO_ELIGIBLE_FUNDING_SOURCE` (e.g.,
+  Embedded Wallet with no delegated key), `BLOCKED` (merchant category or transaction
+  blocked), `UNSUPPORTED_NETWORK`, or `OTHER`. Declines must be excluded from cardholder
+  statements.
+- **`VOIDED` status.** An approved authorization that is fully reversed or expires
+  before any clearing posts now reports `VOIDED` (and fires
+  `CARD_TRANSACTION.VOIDED`) instead of `SETTLED`.
+- Card rows now carry the same full currency metadata (`decimals`, `name`, `symbol`) as
+  payment rows, and `merchant` gains `city` and `state` when the network reports them.
+- `GET /transactions` accepts a `cardId` filter (`Card:` LSID or UUID) for listing one
+  card of a multi-card cardholder, and rejects `status` combined with `type=CARD` with a
+  400—`status` applies to payment transactions only.
+## Record consent for each agreement by type
+
+`agreementConsents` supersedes `endUserTermsConsent`: a list with one entry per agreement,
+so a customer's acceptance of each document is recorded and auditable separately.
+
+- Each entry carries a `type` alongside the existing `acceptedAt`, `ipAddress`,
+  `termsVersion`, and `acceptanceMethod` fields. Send at most one entry per type.
+- `GET /customers/agreements` lists every supported agreement with its `type`, current
+  `version`, and hosted `url`. Send an entry's `version` as `termsVersion` when recording
+  that agreement's acceptance. `GET /customers/end-user-terms` is deprecated but unchanged
+  — it still returns the single `{ version, url }` object, so existing callers keep working.
+- Customer responses return `agreementConsents`, holding the most recent acceptance per
+  accepted type, and an empty list until the first acceptance.
+- On update, supplying consents records additional acceptances; acceptances already on
+  file for other types are left untouched.
+
+`endUserTermsConsent` is **deprecated, not removed** — it still works on both the request
+and response, and is equivalent to a single `LIGHTSPARK_END_USER_TERMS` entry. Acceptance
+you have already recorded is migrated for you and reported under that type; you don't need
+to re-collect it. Sending both fields in one request is rejected.
+
+Accepting one agreement never implies acceptance of another, so the remaining six types
+must be collected from each customer.
+
+See [Disclosures](/payouts-and-b2b/onboarding/disclosures).
+
+## Card returns report as `SETTLED` with a `refundedAmount`
+
+`REFUNDED` is removed from `CardTransactionStatus`, and `CARD_TRANSACTION.REFUNDED` from
+the webhook types. A card transaction's status tracks authorization outcomes and
+settlement—a return is reported through `direction` and `refundedAmount`, which together
+already carry it.
+
+- A settled purchase that the merchant later returns stays `SETTLED`, with the returned
+  value in `refundedAmount`. A standalone merchant refund arrives as `direction: CREDIT`
+  and `status: SETTLED`, with the credited value in `settledAmount`.
+- Returns no longer get a webhook type of their own—the transaction re-fires
+  `CARD_TRANSACTION.SETTLED` with the updated amounts.
+- The sandbox return reversal simulator requires a parent with a posted return (non-zero
+  `refundedAmount`) rather than a `REFUNDED` parent, which the previous docs described
+  and the server never produced.
+
+Nothing you have received changes: the status was always derived on read, so existing
+transactions already report `SETTLED`. `TransactionStatus.REFUNDED` on cross-border
+payments is a separate enum and is unaffected.
+
+See [Reconciliation](/cards/transactions/reconciliation).
 
 ## Sandbox KYC and KYB follow the production flow
 
@@ -44,6 +163,19 @@ Walk through the fix-and-resubmit loop in [sandbox testing](/api-reference/sandb
 </Update>
 
 <Update label="August 2026">
+
+## `bankAccountType` is required on USD external accounts
+
+Creating an external account with `accountType: USD_ACCOUNT` now requires
+`bankAccountType`. Send `CHECKING` or `SAVINGS` on `POST /customers/external-accounts`,
+`POST /platform/external-accounts`, and `POST /agents/me/external-accounts`.
+
+- Grid uses `bankAccountType` to set the ACH transaction code. Accounts created without
+  it were sent as checking, and the receiving bank returned a notification of change to
+  correct savings accounts.
+- External accounts created before this change are unaffected.
+
+See [External accounts](/ramps/accounts/external-accounts) for a full request body.
 
 ## `/transfer-in` and `/transfer-out` are deprecated
 

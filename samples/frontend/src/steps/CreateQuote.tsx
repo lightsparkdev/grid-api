@@ -16,7 +16,7 @@ const SOURCE_CURRENCIES = ['USD', 'USDC'] as const
 // Currencies that fund over a crypto network and therefore require `cryptoNetwork`.
 const CRYPTO_SOURCE_CURRENCIES = ['USDC']
 // Networks a stablecoin funding source can deposit on.
-const CRYPTO_NETWORKS = ['BASE', 'ETHEREUM', 'POLYGON', 'SOLANA']
+const CRYPTO_NETWORKS = ['ARBITRUM', 'BASE', 'ETHEREUM', 'POLYGON', 'SOLANA']
 
 // Decimals per source currency, used to scale the default sending amount into the
 // currency's smallest unit (lockedCurrencyAmount with lockedCurrencySide=SENDING).

@@ -1,0 +1,40 @@
+/* Figma 90:13450 — the actions row, under the card. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px 8px;
+}
+
+.button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Label, then the contactless mark, with no gap between. The mark's strokes
+   lean right in their box, so the pair sits 6px right of geometric center to
+   read centered. */
+.tapLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  margin-left: 12px;
+
+  svg {
+    display: block;
+  }
+}
+
+/* The icon carries more weight than the label's first letter; 4px less on
+   the left balances the pair. */
+.walletButton {
+  padding-left: 16px;
+}
+
+/* Apple's Wallet app icon (public/assets/icon-apple-wallet.png, 512 × 379),
+   at the glyph's height. */
+.walletIcon {
+  display: block;
+  width: auto;
+  height: 13px;
+}

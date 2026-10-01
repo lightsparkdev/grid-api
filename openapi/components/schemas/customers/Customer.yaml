@@ -7,7 +7,6 @@ properties:
   id:
     type: string
     description: System-generated unique identifier
-    readOnly: true
     example: Customer:019542f5-b3e7-1d02-0000-000000000001
   platformCustomerId:
     type: string
@@ -16,11 +15,23 @@ properties:
   customerType:
     $ref: ./CustomerType.yaml
   endUserTermsConsent:
-    $ref: ./EndUserTermsConsent.yaml
+    deprecated: true
+    readOnly: true
+    allOf:
+      - $ref: ./EndUserTermsConsent.yaml
+    description: >-
+      Deprecated; read `agreementConsents` instead. Mirrors the customer's
+      `LIGHTSPARK_END_USER_TERMS` acceptance when one is on file, and is
+      omitted otherwise.
+  agreementConsents:
+    type: array
     readOnly: true
     description: >-
-      The customer's recorded acceptance of the End User Terms. Omitted until
-      acceptance has been recorded.
+      The customer's recorded agreement acceptances, one entry per accepted
+      type holding that type's most recent acceptance. Omitted when the
+      customer has not accepted any agreement yet.
+    items:
+      $ref: ./AgreementConsent.yaml
   region:
     type: string
     description: >-
@@ -58,23 +69,19 @@ properties:
     type: string
     format: date-time
     description: Creation timestamp
-    readOnly: true
     example: '2025-07-21T17:32:28Z'
   updatedAt:
     type: string
     format: date-time
     description: Last update timestamp
-    readOnly: true
     example: '2025-07-21T17:32:28Z'
   isDeleted:
     type: boolean
     description: Whether the customer is marked as deleted
     example: false
-    readOnly: true
   contactVerification:
     allOf:
       - $ref: ./ContactVerification.yaml
-    readOnly: true
     description: >-
       Email and phone verification state. **Only present when the customer's
       payment provider requires it** (e.g. EU customers); omitted otherwise.

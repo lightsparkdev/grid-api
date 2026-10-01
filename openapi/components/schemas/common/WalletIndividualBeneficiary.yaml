@@ -11,6 +11,7 @@ properties:
       - INDIVIDUAL
   fullName:
     type: string
+    maxLength: 250
     description: The full name of the beneficiary
     example: John Michael Doe
   countryOfResidence:

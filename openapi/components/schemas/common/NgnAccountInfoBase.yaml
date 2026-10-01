@@ -17,10 +17,13 @@ properties:
     pattern: ^[0-9]{10}$
   bankName:
     type: string
-    description: The name of the bank
+    description: The name of the bank. Must be one of the `bankName` values `GET /discoveries`
+      returns for this country and currency. Send it exactly as returned; any other
+      name is rejected.
     minLength: 1
     maxLength: 255
+    example: Access Bank
 example:
   accountType: NGN_ACCOUNT
   accountNumber: '0123456789'
-  bankName: Example Bank
+  bankName: Access Bank

@@ -1,0 +1,4 @@
+title: Samsung Pay Tokenization Response
+allOf:
+  - $ref: ./CardTokenizationResponse.yaml
+  - $ref: ./SamsungPayTokenizationResponseFields.yaml

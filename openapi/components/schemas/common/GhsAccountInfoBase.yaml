@@ -19,9 +19,12 @@ properties:
     maxLength: 34
   bankName:
     type: string
-    description: The name of the bank
+    description: The name of the bank. Must be one of the `bankName` values `GET /discoveries`
+      returns for this country and currency. Send it exactly as returned; any other
+      name is rejected.
     minLength: 1
     maxLength: 255
+    example: Gcb Bank Ltd
   phoneNumber:
     type: string
     description: The phone number in international format
@@ -32,5 +35,5 @@ properties:
 example:
   accountType: GHS_ACCOUNT
   accountNumber: '1234567890'
-  bankName: Example Bank
+  bankName: Gcb Bank Ltd
   phoneNumber: '+1234567890'

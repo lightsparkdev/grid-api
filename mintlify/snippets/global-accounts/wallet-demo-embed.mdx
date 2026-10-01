@@ -16,11 +16,13 @@ export const WalletDemoEmbed = () => {
     if (!host) {
       host = document.createElement('div');
       host.id = 'wallet-demo-host';
+      host.className = 'ls-playground-host';
       host.style.cssText = 'position:fixed;z-index:1;overflow:hidden;';
       const iframe = document.createElement('iframe');
       iframe.id = 'wallet-demo-iframe';
+      iframe.className = 'ls-playground-iframe';
       iframe.src = base + '/?embed=true&theme=' + (isDark() ? 'dark' : 'light') + '&nav=' + navWidth();
-      iframe.title = 'Grid Global Accounts — live demo';
+      iframe.title = 'Lightspark Global Accounts — playground';
       iframe.setAttribute('allow', 'publickey-credentials-create *; publickey-credentials-get *; clipboard-write');
       iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;';
       host.appendChild(iframe);

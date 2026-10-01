@@ -1,0 +1,22 @@
+type: string
+enum:
+  - CARD_NOT_ACTIVE
+  - SPEND_LIMIT_EXCEEDED
+  - INSUFFICIENT_FUNDS
+  - NO_ELIGIBLE_FUNDING_SOURCE
+  - BLOCKED
+  - UNSUPPORTED_NETWORK
+  - OTHER
+description: |
+  Why Grid declined a card authorization. Present only when a card
+  transaction's `status` is `DECLINED`.
+
+  | Reason | Returned when |
+  |--------|---------------|
+  | `CARD_NOT_ACTIVE` | The card is not `ACTIVE`. A `FROZEN`, `PROCESSING`, `PENDING_KYC`, or `CLOSED` card declines every authorization. |
+  | `SPEND_LIMIT_EXCEEDED` | The authorization exceeds `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, or the matching platform cap. |
+  | `INSUFFICIENT_FUNDS` | Sandbox only. Production does not check the funding source balance when it decides an authorization, so an underfunded card approves and then resolves as `EXCEPTION` when the pull fails. |
+  | `NO_ELIGIBLE_FUNDING_SOURCE` | The card has no usable funding source, for example an Embedded Wallet source with no active delegated key. |
+  | `BLOCKED` | Program rules block the merchant category or the transaction. |
+  | `UNSUPPORTED_NETWORK` | Grid does not support the network or the transaction type. |
+  | `OTHER` | Any other reason, including a decline the card processor made on its own. |

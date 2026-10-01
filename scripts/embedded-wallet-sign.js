@@ -10,13 +10,18 @@
  *
  *   gen-keypair [--compressed]
  *       Generate an ephemeral P-256 keypair. Prints JSON with `pubHex` and
- *       `privHex`. By default `pubHex` is uncompressed SEC1 (`04...`): for
- *       EMAIL_OTP, it's encrypted inside the OTP bundle and the private key
- *       becomes the session signing key after successful verify. With
- *       `--compressed`, `pubHex` is compressed SEC1 (`02`/`03...`) — pass it
- *       as `clientPublicKey` on the OAuth/PASSKEY challenge or verify call to
- *       select the client-held-key flow, where this private key becomes the
- *       session signing key directly.
+ *       `privHex`. `pubHex` is uncompressed (`04...`) by default, or
+ *       compressed (`02...`/`03...`) with `--compressed`.
+ *
+ *       Use `--compressed` for:
+ *       - EMAIL_OTP. The enclave rejects an uncompressed key inside the OTP
+ *         bundle, and verify returns `400 INVALID_INPUT`.
+ *       - The OAuth/PASSKEY client-held-key flow, where you pass `pubHex` as
+ *         `clientPublicKey`.
+ *       In both, the private key becomes the session signing key directly.
+ *
+ *       The uncompressed default is only for the legacy PASSKEY/OAUTH flow,
+ *       where you decrypt the session key with `decrypt-bundle`.
  *
  *   encrypt-otp <otpEncryptionTargetBundle> <pubHex> <otpCode>
  *       HPKE-encrypt `{otp_code, public_key}` under the target bundle
@@ -166,7 +171,7 @@ function usage(code) {
     "embedded-wallet-sign — signing helpers for the Grid offramp flow",
     "",
     "Subcommands:",
-    "  gen-keypair [--compressed]                        Generate ephemeral P-256 keypair; --compressed for the OAuth/PASSKEY client-held flow",
+    "  gen-keypair [--compressed]                        Generate ephemeral P-256 keypair; --compressed for EMAIL_OTP and the OAuth/PASSKEY client-held flow",
     "  encrypt-otp <targetBundle> <pubHex> <otpCode>     HPKE-encrypt OTP for EMAIL_OTP verify",
     "  decrypt-bundle <bundle> <privHex>                 HPKE-open the session signing key (legacy PASSKEY/OAUTH flow)",
     "  stamp <sessionPrivHex> <payload>                  Build a Grid-Wallet-Signature stamp",

@@ -1,0 +1,82 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+/* Spending limits page: the grouped settings card, and Save pinned below. The
+   bottom padding keeps the card clear of the footer when it scrolls. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 16px 128px;
+}
+
+/* The sheets' CTA footer: anchored to the page's bottom, 32px all around, on
+   a fade of the page's background so content scrolls cleanly under it. */
+.bottomCtaWrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 32px;
+  background: linear-gradient(to top, var(--wallet-bg), var(--wallet-bg) 56%, transparent);
+}
+
+/* Apple Cash's Auto Reload card: rows with their values in pills; a row's
+   wheel opens beneath it. */
+.group {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px;
+  border-radius: 24px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-bg-grouped-secondary, #ffffff);
+}
+
+.setting {
+  border-bottom: 0.5px solid var(--ios-separator);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 56px;
+  margin: 0;
+  padding: 10px 0;
+  border: 0;
+  background: none;
+  color: var(--ios-label-primary);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.label {
+  @include ios.ios-text-body;
+  color: var(--ios-label-primary);
+}
+
+/* The value, in a quiet pill; the open row's reads in the tint. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 1000px;
+  corner-shape: round;
+  background: var(--ios-fill-quaternary, rgba(120, 120, 128, 0.08));
+  @include ios.ios-text-body;
+  font-variant-numeric: tabular-nums;
+  color: var(--ios-label-primary);
+  transition: color 160ms ease;
+}
+
+.pillOpen {
+  color: var(--ios-tint, #007aff);
+}

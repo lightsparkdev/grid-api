@@ -1,0 +1,55 @@
+/* Dot-grid backdrop canvas — absolute so it fills the stage behind the phone.
+   The phone (.stage, position:relative) comes later in the DOM, so it paints
+   on top without needing an explicit z-index. */
+.gridLayer {
+  position: absolute;
+  inset: 0;
+}
+
+/* Swag WebGL canvas — pass events through to the phone; pointer wake uses the stage. */
+.gridLayerSwag {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Opaque until WebGL's first draw — matches the shader fill token. */
+  background-color: var(--dot-grid-bg);
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out-snappy);
+
+  &.gridLayerVisible {
+    opacity: 1;
+  }
+}
+
+.canvas {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  width: 100%;
+  /* CSS fallback behind the themed <DotGrid> canvas — same tokens so the two
+     always agree (the canvas reads --dot-grid-* and repaints on theme flip). */
+  background-color: var(--dot-grid-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect x='8.75' y='8.75' width='2.5' height='2.5' fill='%23DEDED9'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-position: 8px 8px;
+
+  :global([data-theme='dark']) & {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect x='8.75' y='8.75' width='2.5' height='2.5' fill='%23333330'/%3E%3C/svg%3E");
+  }
+}
+
+/* Swag stage — the WebGL StageGL canvas (dots + glass lens) fills this, so the
+   container just needs a neutral base and a positioning context. */
+.canvasGlassDemo {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  width: 100%;
+  background-color: var(--dot-grid-bg);
+}

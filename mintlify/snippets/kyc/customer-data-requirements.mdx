@@ -1,0 +1,31 @@
+import KybDataRequirements from '/snippets/kyc/kyb-data-requirements.mdx'
+
+What you collect depends on the customer type: **KYC** for `INDIVIDUAL` customers, **KYB** for `BUSINESS` customers. Grid validates against these requirements when you call `POST /verifications` — anything missing comes back as a `RESOLVE_ERRORS` entry naming the exact field or document.
+
+<Note>
+Most of these fields are optional to the API schema at customer creation and only become mandatory at verification. Two things widen the list further: the `providerRequiredCustomerFields` for each currency in your platform's configuration (`GET /config`), and the KYC provider's per-jurisdiction rules. Treat the lists below as the baseline, not the ceiling.
+</Note>
+
+### KYC — individual customers
+
+Personal information, submitted via `POST /customers` (or `PATCH /customers/{customerId}`):
+
+| Field | Notes |
+|-------|-------|
+| `fullName` | Must contain both a given name and a family name — a single-word name is rejected at submission |
+| `birthDate` | `YYYY-MM-DD` |
+| `nationality` | ISO 3166-1 alpha-2 |
+| `address` | `line1`, `postalCode`, and `country` are required; `line2`, `city`, and `state` as applicable |
+| `idType` + `identifier` | Required to onboard a US account holder. Only `SSN` (format `###-##-####`) and `ITIN` are accepted for individuals |
+| `email` / `phoneNumber` | Required in regions that verify a contact channel before verification begins (for example, the EU) |
+
+Documents, uploaded via `POST /documents` — identity documents also require `documentNumber` and `issuingAuthority`:
+
+- **Identity document** — a `PASSPORT` (single image), or a `DRIVERS_LICENSE` / `NATIONAL_ID` uploaded as separate `FRONT` and `BACK` images via the `side` field.
+- **Proof of address** — requested in some jurisdictions and for some currencies. Any of `UTILITY_BILL`, `ELECTRICITY_BILL`, `RENT_OR_LEASE_AGREEMENT`, `BANK_STATEMENT`, or `TAX_RETURN`, dated within the last 3 months.
+
+Some jurisdictions, flows, and volume tiers also require enhanced due diligence. These are optional top-level fields on the individual customer — `sourceOfFundsCategories`, `sourceOfWealthCategories`, `purposeOfAccount`, `expectedMonthlyTransactionCount`, `expectedMonthlyTransactionVolume`, `annualIncomeRange`, `netWorthRange`, and `pepStatus`. The provider decides which apply; you learn which ones through `MISSING_FIELD` errors on `POST /verifications` rather than up front. Each `*Categories` field that includes `OTHER` also requires its matching `*OtherDescription`.
+
+### KYB — business customers
+
+<KybDataRequirements />

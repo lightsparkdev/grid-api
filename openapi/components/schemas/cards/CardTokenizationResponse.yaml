@@ -1,0 +1,11 @@
+type: object
+description: >-
+  Fields shared by every add-to-wallet response. The payload is encrypted to
+  the wallet provider's keys: neither your app nor your servers can read the
+  card data inside it. Hand it to the wallet SDK; it is valid for a single
+  provisioning attempt.
+required:
+  - wallet
+properties:
+  wallet:
+    $ref: ./DigitalWallet.yaml

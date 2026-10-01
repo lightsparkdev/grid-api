@@ -21,9 +21,10 @@ get:
       description: >-
         Filter by internal account type. Use `EMBEDDED_WALLET` to find the
         self-custodial wallet provisioned for a customer, `INTERNAL_FIAT` /
-        `INTERNAL_CRYPTO` for the platform-managed holding accounts, or
+        `INTERNAL_CRYPTO` for the platform-managed holding accounts,
         `RULE_BASED` for the additional account numbers issued with a sweep
-        rule.
+        rule, or `BULK_SETTLEMENT` for the account that receives bulk
+        settlements.
       required: false
       schema:
         $ref: ../../components/schemas/customers/InternalAccountType.yaml

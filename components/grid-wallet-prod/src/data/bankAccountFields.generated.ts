@@ -460,6 +460,15 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         ],
         "description": "The bank account type",
         "example": "CHECKING"
+      },
+      {
+        "key": "bankName",
+        "required": true,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the beneficiary's bank",
+        "example": "Example Bank"
       }
     ]
   },
@@ -557,19 +566,82 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
       }
     ]
   },
+  "ILS_ACCOUNT": {
+    "accountType": "ILS_ACCOUNT",
+    "currency": "ILS",
+    "fields": [
+      {
+        "key": "iban",
+        "required": true,
+        "kind": "text",
+        "pattern": "^IL[0-9]{21}$",
+        "minLength": 23,
+        "maxLength": 23,
+        "description": "Israeli IBAN (23 characters, starting with IL)",
+        "example": "IL620108000000099999999"
+      },
+      {
+        "key": "bankName",
+        "required": true,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the bank",
+        "example": "Example Bank"
+      }
+    ]
+  },
   "INR_ACCOUNT": {
     "accountType": "INR_ACCOUNT",
     "currency": "INR",
     "fields": [
       {
         "key": "vpa",
-        "required": true,
+        "required": false,
         "kind": "text",
         "pattern": "^[a-zA-Z0-9.\\-_]+@[a-zA-Z0-9]+$",
         "minLength": 3,
         "maxLength": 255,
         "description": "The UPI Virtual Payment Address",
         "example": "user@upi"
+      },
+      {
+        "key": "accountNumber",
+        "required": false,
+        "kind": "text",
+        "pattern": "^[0-9]{9,18}$",
+        "minLength": 9,
+        "maxLength": 18,
+        "description": "Indian bank account number (9–18 digits)",
+        "example": "000111222333"
+      },
+      {
+        "key": "ifsc",
+        "required": false,
+        "kind": "text",
+        "pattern": "^[A-Z]{4}0[A-Z0-9]{6}$",
+        "minLength": 11,
+        "maxLength": 11,
+        "description": "The Indian Financial System Code (IFSC) of the beneficiary's bank branch (NEFT/RTGS)",
+        "example": "HDFC0001234"
+      },
+      {
+        "key": "rail",
+        "required": false,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 32,
+        "description": "The payment rail to route the payout over: NEFT or RTGS. Omitted, the payout resolves it by amount.",
+        "example": "NEFT"
+      },
+      {
+        "key": "bankName",
+        "required": false,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the bank",
+        "example": "Example Bank"
       }
     ]
   },
@@ -606,6 +678,15 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         ],
         "description": "The bank account type",
         "example": "CHECKING"
+      },
+      {
+        "key": "bankName",
+        "required": true,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the bank",
+        "example": "Example Bank"
       }
     ]
   },
@@ -738,6 +819,15 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
     "accountType": "PHP_ACCOUNT",
     "currency": "PHP",
     "fields": [
+      {
+        "key": "rail",
+        "required": false,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 32,
+        "description": "The payment rail to route the payout over: INSTAPAY or PESONET. Omitted, the payout resolves it by amount.",
+        "example": "INSTAPAY"
+      },
       {
         "key": "bankName",
         "required": true,
@@ -1067,6 +1157,53 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "maxLength": 9,
         "description": "The ABA routing number",
         "example": "021000021"
+      },
+      {
+        "key": "bankName",
+        "required": false,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 140,
+        "description": "The name of the financial institution holding the account. Optional on every rail, and recommended for wires, where it identifies the beneficiary's institution on the payment message.",
+        "example": "Chase Bank"
+      },
+      {
+        "key": "bankAccountType",
+        "required": true,
+        "kind": "select",
+        "enum": [
+          "CHECKING",
+          "SAVINGS"
+        ],
+        "description": "Whether the account is a checking or a savings account. Grid uses this to set the ACH transaction code, so a value that does not match the account causes the receiving bank to return a notification of change.",
+        "example": "CHECKING"
+      },
+      {
+        "key": "intermediaryBankName",
+        "required": false,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 140,
+        "description": "The name of the intermediary financial institution, for accounts reachable only through a correspondent bank. Used on the WIRE rail; ignored on ACH, RTP and FEDNOW.",
+        "example": "JPMorgan Chase Bank"
+      },
+      {
+        "key": "intermediaryRoutingNumber",
+        "required": false,
+        "kind": "text",
+        "pattern": "^[0-9]{9}$",
+        "minLength": 9,
+        "maxLength": 9,
+        "description": "The ABA routing number of the intermediary financial institution. Used on the WIRE rail; ignored on ACH, RTP and FEDNOW.",
+        "example": "021000021"
+      },
+      {
+        "key": "fiToFiInformation",
+        "required": false,
+        "kind": "text",
+        "maxLength": 210,
+        "description": "Bank-to-bank instructions carried alongside the payment. Used on the WIRE rail; ignored on ACH, RTP and FEDNOW.",
+        "example": "/BNF/Invoice 4471"
       }
     ]
   },

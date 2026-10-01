@@ -1,14 +1,8 @@
 type: object
 required:
-  - message
-  - status
+  - reason
   - code
 properties:
-  status:
-    type: integer
-    enum: 
-      - 412
-    description: HTTP status code
   code:
     type: string
     description: |
@@ -16,7 +10,7 @@ properties:
       |------------|-------------|
       | UNSUPPORTED_UMA_VERSION | Counterparty doesn't support the Grid UMA version |
     enum: [UNSUPPORTED_UMA_VERSION]
-  message:
+  reason:
     type: string
     description: Error message
   details:

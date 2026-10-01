@@ -1,0 +1,26 @@
+get:
+  summary: List the current Grid agreement documents
+  description: >-
+    Retrieve the current version and Grid-hosted URL of every agreement Grid
+    supports. Supply an entry's `version` as `termsVersion` when recording a
+    customer's acceptance of that agreement. The list is a catalog of available
+    agreements, not a list of the agreements a given customer is required to
+    accept.
+  operationId: listAgreementDocuments
+  tags:
+    - Customers
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Current agreement documents retrieved successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/AgreementDocumentListResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml

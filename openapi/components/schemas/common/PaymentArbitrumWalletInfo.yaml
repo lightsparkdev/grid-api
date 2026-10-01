@@ -1,0 +1,10 @@
+title: Arbitrum Wallet
+allOf:
+  - $ref: ./BasePaymentAccountInfo.yaml
+  - $ref: ./ArbitrumWalletInfo.yaml
+  - type: object
+    properties:
+      assetType:
+        type: string
+        description: Type of asset
+        enum: [USDC, USDT]

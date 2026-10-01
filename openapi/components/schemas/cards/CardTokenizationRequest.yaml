@@ -1,0 +1,10 @@
+type: object
+description: >-
+  Fields shared by every add-to-wallet request. The wallet SDK hands your app
+  a set of values when the cardholder taps "Add to Wallet"; pass them here
+  unchanged in the request shape for that `wallet`.
+required:
+  - wallet
+properties:
+  wallet:
+    $ref: ./DigitalWallet.yaml

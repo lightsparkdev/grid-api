@@ -1,0 +1,38 @@
+/* Tokens for the share page. The root layout's boot script sets `data-theme`
+   on <html> (from the URL, the stored preference, or the OS), the same way
+   the playground reads it, so the page follows the same switch. */
+
+:root {
+  --share-bg: #f8f8f7;
+  --share-text-primary: #111111;
+  --share-text-secondary: #6b6b6b;
+  --share-border: rgba(0, 0, 0, 0.08);
+  --share-font: var(--font-family-sans, var(--font-geist-sans, system-ui, sans-serif));
+}
+
+html[data-theme='dark'] {
+  --share-bg: #111111;
+  --share-text-primary: #ffffff;
+  --share-text-secondary: #9a9a9a;
+  --share-border: rgba(255, 255, 255, 0.1);
+  /* The dot grid on this page's dark surface (the app's is a step lighter):
+     the dots a tenth of the way to the ink, as the share still draws them. */
+  --dot-grid-bg: #111111;
+  --dot-grid-dot: #272726;
+  --dot-grid-dot-peak: #474741;
+}
+
+/* Light: the app's wide layout takes the grid's surface a step down
+   (#f4f4f3, globals.scss); this page's grid stays on the page's surface.
+   The selector carries one more attribute than that rule's, to win. */
+html:not([data-theme='dark']):not([data-layout='stacked']):not([data-embed]) {
+  --dot-grid-bg: #f8f8f7;
+}
+
+/* The document itself takes the page's surface. Mobile Safari colors the
+   status bar and the tab bar from it, and the app's body surface (a step
+   lighter in dark) showed as grey bands above and below the page. */
+html,
+body {
+  background: var(--share-bg);
+}

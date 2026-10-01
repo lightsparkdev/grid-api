@@ -1,0 +1,1 @@
+export { FaceIdAuth } from './FaceIdAuth';

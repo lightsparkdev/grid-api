@@ -15,7 +15,7 @@ Internal accounts are created for both:
 
 <Warning>
   On unregulated platforms, a customer's internal accounts aren't provisioned
-  until you record their End User Terms acceptance in `endUserTermsConsent`, and
+  until you record their End User Terms acceptance in `agreementConsents`, and
   customer-scoped transactions are rejected with `403
   END_USER_TERMS_NOT_ACCEPTED` until then. See
   [Disclosures](/payouts-and-b2b/onboarding/disclosures).
@@ -159,8 +159,8 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
     </Tip>
   </Accordion>
 
-  <Accordion title="SEPA EUR transfers">
-    For EUR accounts, instructions use SEPA IBAN numbers:
+  <Accordion title="EUR account funding (SEPA)">
+    A `EUR_ACCOUNT` returns an IBAN, and deposits reach it over SEPA:
 
     ```json
     {
@@ -171,7 +171,7 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
         "iban": "DE89370400440532013000",
         "swiftCode": "DEUTDEFF",
         "accountHolderName": "Lightspark Payments FBO Maria Garcia",
-        "bankName": "Banco de México"
+        "bankName": "Deutsche Bank"
       }
     }
     ```
@@ -243,6 +243,20 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
       "accountOrWalletInfo": {
         "accountType": "PLASMA_WALLET",
         "assetType": "USDT",
+        "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Arbitrum Stablecoin Funding">
+    For Arbitrum wallet accounts, using an Arbitrum wallet as the funding source (USDC or USDT):
+
+    ```json
+    {
+      "accountOrWalletInfo": {
+        "accountType": "ARBITRUM_WALLET",
+        "assetType": "USDC",
         "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
       }
     }

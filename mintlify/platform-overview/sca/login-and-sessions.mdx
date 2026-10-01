@@ -93,7 +93,7 @@ report the security-relevant events it sees so the engine can act on them:
 ```bash
 POST /sca/record-event?customerId={customerId}
 
-{ "eventType": "FAILED_LOGIN_ATTEMPT" }
+{ "eventType": "FAILED_LOGIN_ATTEMPT", "endUserIpAddress": "203.0.113.42" }
 ```
 
 Returns the customer's resulting login-security state so you can surface a

@@ -1,0 +1,6 @@
+title: Arbitrum Wallet
+allOf:
+  - $ref: ./BaseExternalAccountInfo.yaml
+  - $ref: ../common/ArbitrumWalletInfo.yaml
+  - $ref: ./WalletBeneficiaryFields.yaml
+  - $ref: ./WalletCustodyFields.yaml

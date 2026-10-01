@@ -5,6 +5,7 @@ description: >-
   lockout).
 required:
   - eventType
+  - endUserIpAddress
 properties:
   eventType:
     type: string
@@ -19,3 +20,11 @@ properties:
       | `RESET_PASSWORD_COMPLETED` | Revokes every active SCA session for the customer and clears the failed-login counter. |
       | `FAILED_LOGIN_ATTEMPT` | Increments the cumulative failed-login counter and escalates the lockout at each milestone: 5 attempts → 15 minutes, 6 → 30 minutes, 7 → 1 hour, 8 → 24 hours, 9 or more → suspension. |
     example: FAILED_LOGIN_ATTEMPT
+  endUserIpAddress:
+    type: string
+    description: >-
+      The IP address of the end user's device the event was observed from,
+      recorded against the event by the SCA provider. Supply the customer's
+      address, not your server's — it feeds the provider's risk assessment and
+      the adaptive-authentication signals derived from this event.
+    example: 203.0.113.42

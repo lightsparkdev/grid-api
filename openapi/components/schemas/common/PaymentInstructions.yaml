@@ -54,11 +54,13 @@ properties:
     - $ref: ../common/PaymentSwiftAccountInfo.yaml
     - $ref: ../common/PaymentCnyAccountInfo.yaml
     - $ref: ../common/PaymentIlsAccountInfo.yaml
+    - $ref: ../common/PaymentTryAccountInfo.yaml
     - $ref: ../common/PaymentSparkWalletInfo.yaml
     - $ref: ../common/PaymentLightningInvoiceInfo.yaml
     - $ref: ../common/PaymentSolanaWalletInfo.yaml
     - $ref: ../common/PaymentTronWalletInfo.yaml
     - $ref: ../common/PaymentPlasmaWalletInfo.yaml
+    - $ref: ../common/PaymentArbitrumWalletInfo.yaml
     - $ref: ../common/PaymentPolygonWalletInfo.yaml
     - $ref: ../common/PaymentBaseWalletInfo.yaml
     - $ref: ../common/PaymentEthereumWalletInfo.yaml
@@ -88,6 +90,7 @@ properties:
         SOLANA_WALLET: ../common/PaymentSolanaWalletInfo.yaml
         TRON_WALLET: ../common/PaymentTronWalletInfo.yaml
         PLASMA_WALLET: ../common/PaymentPlasmaWalletInfo.yaml
+        ARBITRUM_WALLET: ../common/PaymentArbitrumWalletInfo.yaml
         POLYGON_WALLET: ../common/PaymentPolygonWalletInfo.yaml
         BASE_WALLET: ../common/PaymentBaseWalletInfo.yaml
         ETHEREUM_WALLET: ../common/PaymentEthereumWalletInfo.yaml
@@ -117,3 +120,4 @@ properties:
         SWIFT_ACCOUNT: ../common/PaymentSwiftAccountInfo.yaml
         CNY_ACCOUNT: ../common/PaymentCnyAccountInfo.yaml
         ILS_ACCOUNT: ../common/PaymentIlsAccountInfo.yaml
+        TRY_ACCOUNT: ../common/PaymentTryAccountInfo.yaml

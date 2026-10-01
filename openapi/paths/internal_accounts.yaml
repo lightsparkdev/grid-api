@@ -16,8 +16,7 @@ post:
 
     The response carries the account's own `fundingPaymentInstructions` — the
     routable number payers send to. Rule-based accounts are currently available
-    in `USD`, for individual customers, and must be enabled for your platform
-    before this endpoint accepts requests.
+    in `USD`, for a customer or for your platform itself.
 
     Sandbox platforms can create rule-based accounts and exercise the whole
     flow. The account number is generated locally rather than issued by a
@@ -25,11 +24,11 @@ post:
     in for a settled deposit — funding the account triggers its sweep just as a
     real deposit would.
 
-    Creating an account mints a new account number that cannot be reversed, so
-    an `Idempotency-Key` header is required. A retry carrying the same key
-    returns the account created by the first request with a `200` instead of a
-    `201`; reusing a key for a materially different account is rejected with
-    `409`.
+    Send an `Idempotency-Key` header to make retries safe: a request carrying a
+    key already used returns the account created by the first request with a
+    `200` instead of a `201`. Reusing a key for a materially different account
+    is rejected with `409`. Without a key a retry cannot be recognised, so each
+    request creates its own account and mints its own account number.
   operationId: createInternalAccount
   tags:
     - Internal Accounts
@@ -39,12 +38,13 @@ post:
     - name: Idempotency-Key
       in: header
       description: >
-        A unique identifier for the request. Required, because creating the
-        account mints an account number that cannot be reversed. Retries must
-        carry the same key.
-      required: true
+        A unique identifier for the request. Strongly recommended: creating the
+        account mints an account number that cannot be reversed, and the key is
+        what lets a retry return the first account rather than minting a second.
+      required: false
       schema:
         type: string
+        maxLength: 255
         example: 550e8400-e29b-41d4-a716-446655440000
   requestBody:
     required: true
@@ -74,6 +74,16 @@ post:
               type: RULE_BASED
               currency: USD
               label: payer-northwind
+              sweepRule:
+                destination:
+                  accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+          onBehalfOfCustomer:
+            summary: A platform account that receives payments for a customer
+            value:
+              onBehalfOfCustomerId: Customer:019542f5-b3e7-1d02-0000-000000000002
+              type: RULE_BASED
+              currency: USD
+              label: customer-0002-collections
               sweepRule:
                 destination:
                   accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
@@ -126,9 +136,8 @@ post:
             $ref: ../components/schemas/errors/Error404.yaml
     '409':
       description: >-
-        Conflict - the `Idempotency-Key` was already used to create a different
-        account, or the account for this key is still being provisioned. Retry
-        with the same key.
+        Conflict - the `Idempotency-Key` was already used to create a
+        materially different account. Use a new key for a new account.
       content:
         application/json:
           schema:

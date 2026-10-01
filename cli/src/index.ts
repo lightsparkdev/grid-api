@@ -75,9 +75,6 @@ export async function buildProgram(): Promise<Command> {
   );
   const { registerCryptoCommand } = await import("./commands/crypto");
   const { registerDiscoveriesCommand } = await import("./commands/discoveries");
-  const { registerUmaProvidersCommand } = await import(
-    "./commands/uma-providers"
-  );
   const { registerInternalAccountsCommand } = await import(
     "./commands/internal-accounts"
   );
@@ -97,7 +94,6 @@ export async function buildProgram(): Promise<Command> {
   registerExchangeRatesCommand(program, getClient);
   registerCryptoCommand(program, getClient);
   registerDiscoveriesCommand(program, getClient);
-  registerUmaProvidersCommand(program, getClient);
   registerInternalAccountsCommand(program, getClient);
   registerTokensCommand(program, getClient);
 

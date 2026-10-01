@@ -237,7 +237,10 @@
     var root = document.documentElement;
     var path = location.pathname.replace(/\/+$/, '') || '/';
     root.classList.toggle('ls-page-flow-builder', path === '/flow-builder');
-    root.classList.toggle('ls-page-wallet-demo', path === '/global-accounts/demo');
+    root.classList.toggle(
+      'ls-page-playground',
+      path === '/global-accounts/demo' || path === '/cards/demo',
+    );
     // Custom-layout pages (frontmatter mode: "custom") — detected from the
     // DOM so future custom pages are covered without listing paths here.
     root.classList.toggle('ls-page-custom', !!document.querySelector('.is-custom'));

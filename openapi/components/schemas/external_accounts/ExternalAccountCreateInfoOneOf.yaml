@@ -42,10 +42,12 @@ oneOf:
 - $ref: ./LightningExternalAccountInfo.yaml
 - $ref: ./PolygonWalletExternalAccountInfo.yaml
 - $ref: ./PlasmaWalletExternalAccountInfo.yaml
+- $ref: ./ArbitrumWalletExternalAccountInfo.yaml
 - $ref: ./SolanaWalletExternalAccountInfo.yaml
 - $ref: ./SparkWalletExternalAccountInfo.yaml
 - $ref: ./TronWalletExternalAccountInfo.yaml
 - $ref: ./IlsExternalAccountCreateInfo.yaml
+- $ref: ./TryExternalAccountCreateInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -92,7 +94,9 @@ discriminator:
     LIGHTNING: ./LightningExternalAccountInfo.yaml
     POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml
     PLASMA_WALLET: ./PlasmaWalletExternalAccountInfo.yaml
+    ARBITRUM_WALLET: ./ArbitrumWalletExternalAccountInfo.yaml
     SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
     TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
     ILS_ACCOUNT: ./IlsExternalAccountCreateInfo.yaml
+    TRY_ACCOUNT: ./TryExternalAccountCreateInfo.yaml

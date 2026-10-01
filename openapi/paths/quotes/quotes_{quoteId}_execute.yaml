@@ -42,6 +42,7 @@ post:
         the server will return the same response as the first request.
       schema:
         type: string
+        maxLength: 255
         example: <uuid>
     - name: Grid-Wallet-Signature
       in: header

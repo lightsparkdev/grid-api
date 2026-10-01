@@ -1,0 +1,22 @@
+type: object
+required:
+  - wallet
+  - walletAccountId
+  - deviceId
+properties:
+  wallet:
+    type: string
+    enum:
+      - SAMSUNG_PAY
+    description: Discriminator value identifying a Samsung Pay request.
+    example: SAMSUNG_PAY
+  walletAccountId:
+    type: string
+    description: >-
+      The cardholder's Samsung Wallet identifier (`walletUserId`) reported by
+      the Samsung Pay SDK.
+    example: wallet-account-8f14e45f
+  deviceId:
+    type: string
+    description: The stable device identifier reported by the Samsung Pay SDK.
+    example: device-3c59dc04

@@ -1,15 +1,11 @@
 post:
   summary: Simulate a card return reversal
   description: >
-    Simulate a `RETURN_REVERSAL` against an existing `REFUNDED` card
-    transaction in the sandbox environment — reversing a previously settled
-    return. The parent transaction must be in `REFUNDED` state. The resulting
-    card operation is delivered asynchronously via the issuer's events webhook.
-
-
-    Note: authorization reversal / void has no dedicated card-issuer simulate
-    path (the void simulator emits a distinct `VOID` event), so — like
-    authorization expiry — it is not exposed here.
+    Simulate a `RETURN_REVERSAL` against an existing refund in the sandbox
+    environment — reversing a previously posted return. Pass the refund
+    row's own id (the `CREDIT` `CardTransaction` linked to the purchase via
+    `originalTransactionId`) as `cardTransactionId`. The resulting card
+    operation is delivered asynchronously via the issuer's events webhook.
 
 
     Production returns `404` on this path.
@@ -34,9 +30,9 @@ post:
           $ref: ../../../components/schemas/cards/SandboxCardTransactionRefRequest.yaml
         examples:
           returnReversal:
-            summary: Reverse a settled return on a refunded transaction
+            summary: Reverse a settled return on a transaction with a posted return
             value:
-              cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+              cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
   responses:
     '202':
       description: >-
@@ -71,6 +67,16 @@ post:
         application/json:
           schema:
             $ref: ../../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. The simulation targets a card in a program where the card
+        issuer makes authorization decisions. These sandbox simulators support
+        only card programs where Grid makes authorization decisions. This is a
+        property of the card's program, so retrying will not help.
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error409.yaml
     '500':
       description: Internal service error
       content:

@@ -64,6 +64,7 @@ Rates are cached ~5 minutes and include platform-specific fees.
 | GET | `/beneficial-owners` | List beneficial owners |
 | GET | `/beneficial-owners/{beneficialOwnerId}` | Get a beneficial owner |
 | PATCH | `/beneficial-owners/{beneficialOwnerId}` | Update a beneficial owner |
+| DELETE | `/beneficial-owners/{beneficialOwnerId}` | Delete a beneficial owner |
 
 ## Documents
 
@@ -296,7 +297,7 @@ The `/agents/me/*` endpoints are called by an agent using its own credentials (A
 | POST | `/cards` | Issue a card |
 | GET | `/cards` | List cards |
 | GET | `/cards/{id}` | Get a card |
-| PATCH | `/cards/{id}` | Update a card (freeze/unfreeze, rebind funding sources, close) |
+| PATCH | `/cards/{id}` | Update a card (freeze/unfreeze, replace the funding source, close) |
 | POST | `/cards/{id}/reveal` | Reveal card details |
 
 ### Sandbox Card Simulation
@@ -316,12 +317,13 @@ Drive card lifecycle events in sandbox to test authorization, clearing, and retu
 | POST | `/stablecoin-provider-accounts` | Link a stablecoin provider account |
 | GET | `/stablecoin-provider-accounts` | List stablecoin provider account links |
 | GET | `/stablecoin-provider-accounts/{stablecoinProviderAccountId}` | Get a stablecoin provider account link |
+| DELETE | `/stablecoin-provider-accounts/{stablecoinProviderAccountId}` | Revoke a stablecoin provider account link |
 
 ## Webhooks
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/sandbox/webhooks/test` | Send a test webhook (sandbox only) |
+| POST | `/webhooks/test` | Send a test webhook to the configured endpoint |
 
 ### Webhook Events
 
@@ -332,7 +334,6 @@ Drive card lifecycle events in sandbox to test authorization, clearing, and retu
 - `verification-update`: Verification status change
 - `agent-action`: Agent action requires approval or changed status
 - `card-state-change`: Card state changed
-- `card-funding-source-change`: Card funding source changed
 - `card-transaction`: Card transaction event
 - `bulk-upload`: Bulk job completion
 - `invitation-claimed`: Invitation claimed
@@ -373,12 +374,6 @@ Use these account number endings for testing:
 | GET | `/tokens` | List tokens |
 | GET | `/tokens/{tokenId}` | Get API token by ID |
 | DELETE | `/tokens/{tokenId}` | Delete API token by ID |
-
-## UMA Providers
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/uma-providers` | List available Counterparty Providers |
 
 ## Pagination
 

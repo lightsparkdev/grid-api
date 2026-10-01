@@ -8,8 +8,8 @@ allOf:
       rail:
         $ref: ../common/PaymentRail.yaml
         description: >-
-          The rail used in the transaction. `ACH`, `RTP`, `FEDNOW` and `WIRE` are
-          accepted today; other rails return a `NOT_IMPLEMENTED` error.
+          The rail used in the transaction. `ACH`, `ACH_SAME_DAY`, `RTP`, `FEDNOW` and
+          `WIRE` are accepted today; other rails return a `NOT_IMPLEMENTED` error.
       direction:
         type: string
         enum:
@@ -35,4 +35,5 @@ allOf:
 description: >-
   A fee charged when a transaction uses the specified rail. There can be at most one for
   a given rail, direction and originator. For example, a config with rail: ACH, direction: OUT,
-  originator: GRID will charge a fee on all outgoing ACH transactions.
+  originator: GRID will charge a fee on all outgoing ACH transactions. `ACH` and
+  `ACH_SAME_DAY` are separate rails, so price each one with its own config.

@@ -1,0 +1,8 @@
+/* The Activity block fills the column to the phone's bottom, like the section
+   inside it (the reveal wrapper must pass the growth through). */
+.activity {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  min-height: 0;
+}

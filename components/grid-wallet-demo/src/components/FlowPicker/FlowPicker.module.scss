@@ -1,11 +1,10 @@
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
-@use '../../styles/breakpoints' as *;
 
 .group {
   corner-shape: var(--corner-shape);
-  /* Single source for the tile surface — press states mix from it, and the
-     wide layout steps it down to sit on the chrome-gray panel. */
-  --tile-bg: var(--surface-base);
+  /* Tile surface — press states mix from it. The token (globals.scss) steps
+     it down whenever the panel wears the chrome gray. */
+  --tile-bg: var(--panel-tile-bg);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 100%;
@@ -13,20 +12,8 @@
   border: var(--stroke-xs) solid var(--border-primary);
   border-radius: var(--corner-radius-md);
   overflow: clip;
-  // The tile surface steps down side-by-side — glide it across the crossing.
+  // Glide the tile surface across the crossing instead of snapping.
   transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
-
-  :global([data-theme='dark']) & {
-    --tile-bg: var(--color-gray-925);
-  }
-
-  @media (min-width: $breakpoint-layout-wide) {
-    --tile-bg: var(--surface-primary);
-
-    :global([data-theme='dark']) & {
-      --tile-bg: var(--color-gray-950);
-    }
-  }
 }
 
 .option {

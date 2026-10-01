@@ -1,14 +1,8 @@
 type: object
 required:
-  - message
-  - status
+  - reason
   - code
 properties:
-  status:
-    type: integer
-    enum:
-      - 423
-    description: HTTP status code
   code:
     type: string
     description: |
@@ -17,7 +11,7 @@ properties:
       | ACCOUNT_LOCKED | The customer's login is temporarily locked (or suspended) after too many failed attempts. Inspect `details.lockedUntil` for when the customer may retry, and `details.failedAttempts` for the current count. |
     enum:
       - ACCOUNT_LOCKED
-  message:
+  reason:
     type: string
     description: Error message
   details:

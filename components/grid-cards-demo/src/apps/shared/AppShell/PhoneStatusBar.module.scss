@@ -1,0 +1,79 @@
+/* iOS status bar — Figma phone-gga (2143:19945).
+   Self-contained: resets Origin/Suisse inheritance (salt, tracking, tabular nums). */
+
+@use '../typography/ios-type-mixins' as ios;
+
+.statusBar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 154px;
+  width: 100%;
+  padding: 21px 24px 19px;
+  /* Explicit black — don't use --ios-label-primary; it flips white under [data-theme='dark']. */
+  color: #000000;
+  font-feature-settings: normal;
+  letter-spacing: 0;
+  pointer-events: none;
+  transition: color 0.2s ease;
+  /* System chrome — always the system font, never the skin's. */
+  @include ios.ios-system-font;
+}
+
+.statusBarLight {
+  /* Scoped to status bar only — must not flip --ios-label-primary on .screen. */
+  color: #ffffff;
+}
+
+.timeSlot {
+  display: flex;
+  flex: 1 0 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 22px;
+  padding-top: 1.5px;
+}
+
+.time {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  @include ios.ios-text-status-time;
+  color: inherit;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.levelsSlot {
+  display: flex;
+  flex: 1 0 0;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  height: 22px;
+  padding-top: 1px;
+  padding-right: 1px;
+}
+
+.signalIcon {
+  flex-shrink: 0;
+  width: 19.2px;
+  height: 12.226px;
+}
+
+.wifiIcon {
+  flex-shrink: 0;
+  width: 17.142px;
+  height: 12.328px;
+}
+
+.batteryIcon {
+  flex-shrink: 0;
+  width: 27.328px;
+  height: 13px;
+}

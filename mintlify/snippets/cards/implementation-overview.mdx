@@ -15,10 +15,11 @@ cards. Cards do not require new webhook endpoints or new API
 credentials — they reuse what's already configured for the rest of
 Grid. You'll only need to:
 
-- Subscribe to the new card-specific webhook types (`CARD.STATE_CHANGE`
-  and `CARD.FUNDING_SOURCE_CHANGE`). Card-transaction lifecycle events
-  ride on the generic transaction webhook stream that already covers
-  outgoing-payment activity.
+- Subscribe to the card webhook types: `CARD.STATUS_CHANGE` for card
+  state, `CARD.PIN_STATUS_CHANGE` for PIN status, and `CARD_TRANSACTION.AUTHORIZED`,
+  `CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`,
+  `CARD_TRANSACTION.DECLINED`, `CARD_TRANSACTION.VOIDED`, and
+  `CARD_TRANSACTION.EXCEPTION` for the transaction lifecycle.
 - Confirm with your Lightspark contact that cards are enabled for your
   platform — issuance requires an issuer-side onboarding.
 - If your program includes physical cards, start the artwork early:
@@ -36,38 +37,51 @@ KYC to completion before issuing.
 
 ## Funding sources
 
-Every card is bound to at least one `InternalAccount` as its funding
-source at issue time. Authorization Decisioning checks the source's
+Every card is bound to one `InternalAccount` as its funding source at
+issue time. Authorization Decisioning checks the source's
 balance before approving each auth, so:
 
 - Top up the funding source before you expect transactions.
 - Use existing funding instructions (ACH, SEPA, wires, stablecoin) the
   same way you would for any other internal account.
 - See [Funding sources](/cards/card-management/funding-sources) for
-  rules around binding, unbinding, and the future multi-source path.
+  rules around binding and replacing the source.
+- A card funded from a customer's Embedded Wallet also needs a delegated
+  signing key, created once by the cardholder, before authorizations can
+  pull from it. See
+  [Embedded Wallet funding](/cards/card-management/embedded-wallet-funding).
 
 ## Issuing and lifecycle
 
 Issuance is a single `POST /cards` call. New cards start in
 `PROCESSING` while the issuer provisions them and transition to
 `ACTIVE` automatically — you observe both transitions via the
-`CARD.STATE_CHANGE` webhook. Day-to-day operational changes are:
+`CARD.STATUS_CHANGE` webhook. Day-to-day operational changes are:
 
 - `PATCH /cards/{id}` to freeze, unfreeze, or close permanently
-  (`state: "CLOSED"`).
+  (`status: "CLOSED"`).
 
 Both freeze and close use Grid's `202 → signed-retry` pattern (the same
 pattern as Embedded Wallet credential revocation). See
 [Freezing and closing cards](/cards/card-management/freezing-and-closing).
 
+Cardholders can add a card to Apple Pay, Google Pay, or Samsung Pay by
+typing its details into the wallet with no work on your side. An
+in-app "Add to Wallet" button needs wallet-provider approval plus one
+`POST /cards/{id}/tokenize` call from your backend. See
+[Digital wallet tokenization](/cards/card-management/digital-wallet-tokenization).
+
 ## Transactions and reconciliation
 
-Each authorization on a card produces a parent `CardTransaction` row.
-Children (pulls, clearings, refunds) are reconciled against the parent
-and rolled up into `pullSummary`, `settlementSummary`, and
-`refundSummary` aggregates. The lifecycle status moves
-`AUTHORIZED → PARTIALLY_SETTLED → SETTLED → REFUNDED`, with
-`EXCEPTION` as the failure path for stuck post-hoc pulls.
+Each authorization on a card produces a `CardTransaction` row, with
+clearings reconciled against it and rolled up into `settledAmount`.
+The lifecycle status moves
+`AUTHORIZED → PARTIALLY_SETTLED → SETTLED`, with `DECLINED` for auths
+refused before approval, `VOIDED` for approved auths fully reversed or
+expired before clearing, and `EXCEPTION` as the failure path for stuck
+post-hoc pulls. A merchant return is its own dated `CREDIT`
+`CardTransaction` row linked to the purchase via
+`originalTransactionId`; the purchase keeps its `SETTLED` status.
 
 The full event model is covered in
 [Reconciliation](/cards/transactions/reconciliation).
@@ -91,10 +105,9 @@ When you're ready to go live:
 
 - Complete card-issuer onboarding through your Lightspark contact.
 - Confirm webhook security, monitoring, and alerting cover the
-  `CARD.*` event types plus card-destination transactions on the
-  generic transaction webhook stream.
-- Build the `EXCEPTION` dashboard view from card-destination
-  transaction webhooks (filter by `status: "EXCEPTION"`) and wire it
+  `CARD.*` and `CARD_TRANSACTION.*` event types.
+- Build the `EXCEPTION` dashboard view from `CARD_TRANSACTION.EXCEPTION`
+  webhooks and wire it
   into on-call alerting.
 
 <Check>

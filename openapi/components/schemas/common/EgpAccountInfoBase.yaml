@@ -21,9 +21,12 @@ properties:
     pattern: ^EG[0-9]{27}$
   bankName:
     type: string
-    description: The name of the bank
+    description: The name of the bank. Must be one of the `bankName` values `GET /discoveries`
+      returns for this country and currency. Send it exactly as returned; any other
+      name is rejected.
     minLength: 1
     maxLength: 255
+    example: BANQUE MISR
   phoneNumber:
     type: string
     description: The phone number in international format
@@ -34,5 +37,5 @@ properties:
 example:
   accountType: EGP_ACCOUNT
   iban: EG380019000500000000263180002
-  bankName: Example Bank
+  bankName: BANQUE MISR
   phoneNumber: '+1234567890'

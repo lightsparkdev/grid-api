@@ -1,0 +1,7 @@
+type: string
+enum:
+  - APPLE_PAY
+  - GOOGLE_PAY
+  - SAMSUNG_PAY
+description: The digital wallet a card is being added to.
+example: APPLE_PAY

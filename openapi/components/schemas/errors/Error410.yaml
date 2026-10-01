@@ -1,23 +1,19 @@
 type: object
 required:
-  - message
-  - status
+  - reason
   - code
 properties:
-  status:
-    type: integer
-    enum: 
-      - 410
-    description: HTTP status code
   code:
     type: string
     description: |
       | Error Code | Description |
       |------------|-------------|
       | CUSTOMER_DELETED | Customer has been permanently deleted |
+      | PAYMENT_DOCUMENT_EXPIRED | The payment document passed its `expiresAt` without being attached to a quote. Upload the file again |
     enum:
       - CUSTOMER_DELETED
-  message:
+      - PAYMENT_DOCUMENT_EXPIRED
+  reason:
     type: string
     description: Error message
   details:
