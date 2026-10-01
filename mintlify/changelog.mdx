@@ -6,8 +6,7 @@ mode: "wide"
 ---
 
 Follow along with the latest additions and improvements to the Grid API. For upcoming
-changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
-[contact support](mailto:support@lightspark.com).
+changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="September 2026">
 
@@ -33,6 +32,15 @@ failure. It now returns `404 USER_NOT_FOUND` instead of `400 LOOKUP_REQUEST_FAIL
 If you already retry on `5xx`, these are retried with no code-specific handling. If you
 detect them by matching `400` or `424`, match on `code` instead. See
 [Error handling](/payouts-and-b2b/payment-flow/error-handling).
+
+## Sandbox test suffixes work on Solana addresses
+
+A sandbox external account's last three characters pick the test outcome, and every
+failure suffix starts with `00`. Base58 has no `0`, so no valid Solana address could end
+in one. The transfer and quote destination suffixes `002`–`008` now have `11X` twins: an
+address ending in `112` behaves like `002`, and `117` like `007`. The `00X` forms still
+work. See
+[Sandbox testing](/api-reference/sandbox-testing).
 
 ## `customerId` is required when creating a customer external account
 

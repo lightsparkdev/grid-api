@@ -230,7 +230,7 @@ base64-encoded in PEM form; `nonce` and `nonceSignature` are base64.
 | `404` | `NOT_FOUND` | The card does not exist on your platform. |
 | `409` | `CARD_NOT_MUTABLE` | The card is `CLOSED`. |
 | `409` | `CONFLICT` | The card is not `ACTIVE`, or its `cardCapabilities.supportsDigitalWalletTokenization` is false. Unfreeze the card first; the capability itself is fixed for the card's lifetime. |
-| `500` | `INTERNAL_ERROR` | The card issuer could not be reached or returned an unusable response. Retry; if it persists, contact support. |
+| `500` | `INTERNAL_ERROR` | The card issuer could not be reached or returned an unusable response. Retry; if it persists, [contact our team](https://www.lightspark.com/contact). |
 | `501` | `NOT_IMPLEMENTED` | Cards are not enabled in this environment. |
 
 Every call is audit-logged with the requesting actor and the target

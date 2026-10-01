@@ -31,6 +31,7 @@ properties:
       | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
       | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
       | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
+      | PAYMENT_DOCUMENT_ALREADY_USED | The payment document is already attached to a quote. A document can be used on one quote only, so upload the file again to use it on another quote |
     enum:
       - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
       - TRANSACTION_NOT_CANCELLABLE
@@ -55,6 +56,7 @@ properties:
       - STABLECOIN_SYMBOL_ALREADY_EXISTS
       - STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS
       - WALLET_NOT_PROVISIONED
+      - PAYMENT_DOCUMENT_ALREADY_USED
   reason:
     type: string
     description: Error message

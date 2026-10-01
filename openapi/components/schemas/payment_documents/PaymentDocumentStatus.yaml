@@ -1,0 +1,14 @@
+type: string
+description: |
+  Where the payment document is in its lifecycle.
+
+  | Status | Terminal | Meaning |
+  |--------|----------|---------|
+  | `UPLOADED` | No | Ready to use. Pass the `id` in `documentIds` on `POST /quotes` before `expiresAt`. |
+  | `ATTACHED` | Yes | Attached to the payment behind the quote in `quoteId`. Grid has deleted the file. |
+  | `EXPIRED` | Yes | Not attached to a quote before `expiresAt`. The document can no longer be used. |
+enum:
+  - UPLOADED
+  - ATTACHED
+  - EXPIRED
+example: UPLOADED
