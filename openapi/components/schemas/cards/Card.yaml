@@ -30,7 +30,7 @@ properties:
     $ref: ./CardStatusReason.yaml
     description: >-
       Reason associated with the current `status`. Present when the card is
-      `CLOSED` or when provisioning was rejected; absent otherwise.
+      `PENDING`, `CLOSED`, or when provisioning was rejected; absent otherwise.
   brand:
     $ref: ./CardBrand.yaml
   form:
