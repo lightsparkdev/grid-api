@@ -10,6 +10,29 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="September 2026">
 
+## Counterparty failures a retry can fix return `5xx`
+
+When a lookup or quote fails because of the counterparty and a retry could succeed, Grid
+now returns a `5xx` status. Some of these failures returned `400`, which reads as "your
+request was wrong". Existing error codes keep their names. Only their HTTP status moves.
+
+- `LOOKUP_REQUEST_FAILED` returns `504` instead of `400`. A network error or timeout
+  stopped a receiver lookup from reaching the counterparty.
+- `QUOTE_REQUEST_FAILED` returns `504` instead of `400`. A network error or timeout
+  stopped `POST /quotes` from sending the quote request to the counterparty.
+- `INVALID_PAYREQ_RESPONSE` returns `502` instead of `400`. The counterparty returned an
+  invalid payment request.
+- The new `COUNTERPARTY_SERVER_ERROR` returns `502`. The counterparty answered a lookup
+  or quote request with a server error. This includes a quote to a receiver whose
+  provider is temporarily unavailable, which returned `400 INVALID_INPUT`.
+
+A lookup for a UMA address whose domain doesn't exist is a bad address, not a retryable
+failure. It now returns `404 USER_NOT_FOUND` instead of `400 LOOKUP_REQUEST_FAILED`.
+
+If you already retry on `5xx`, these are retried with no code-specific handling. If you
+detect them by matching `400` or `424`, match on `code` instead. See
+[Error handling](/payouts-and-b2b/payment-flow/error-handling).
+
 ## Sandbox test suffixes work on Solana addresses
 
 A sandbox external account's last three characters pick the test outcome, and every

@@ -23,6 +23,8 @@ Grid uses standard HTTP status codes to indicate the success or failure of reque
 | `424 Failed Dependency`     | Counterparty issue      | Problem with external UMA provider                      |
 | `500 Internal Server Error` | Server error            | Unexpected server issue ([contact our team](https://www.lightspark.com/contact))               |
 | `501 Not Implemented`       | Not implemented         | Feature not yet supported                               |
+| `502 Bad Gateway`           | Counterparty error      | Counterparty returned an error or an invalid response; retry |
+| `504 Gateway Timeout`       | Counterparty timeout    | Counterparty could not be reached or timed out; retry   |
 
 ## API error responses
 
@@ -297,10 +299,10 @@ async function createQuoteWithRetry(params, maxRetries = 3) {
       // Volume limits (DAILY_VOLUME_LIMIT_EXCEEDED) are NOT retryable
       const isRateLimited =
         error.status === 429 && error.code === "RATE_LIMITED";
+      // 424 and 5xx are transient, except 501 Not Implemented
       const isRetryable =
-        error.status === 500 ||
         error.status === 424 ||
-        error.code === "QUOTE_REQUEST_FAILED" ||
+        (error.status >= 500 && error.status !== 501) ||
         isRateLimited;
 
       if (!isRetryable || attempt === maxRetries) {
