@@ -133,9 +133,13 @@ post:
             $ref: ../../components/schemas/errors/Error401.yaml
     '409':
       description: >-
-        Conflict - External account already exists. When the existing account
-        belongs to the caller, `details` carries its `externalAccountId` and
-        `platformAccountId` so a retried request can recover it.
+        Conflict - External account already exists. When the conflicting
+        account belongs to the customer in `customerId` (a duplicate wallet) or
+        to any account on your platform (a duplicate `platformAccountId`),
+        `details` carries its `externalAccountId` and `platformAccountId` so a
+        retried request can recover it. `details` is omitted when the
+        conflicting account cannot be identified, for example when the
+        `platformAccountId` is already used on another platform.
       content:
         application/json:
           schema:
