@@ -172,7 +172,7 @@ patch:
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/customers/CustomerOneOf.yaml
+            $ref: ../../components/schemas/customers/CustomerUpdateResponse.yaml
     '202':
       description: >-
         Challenge issued for an Embedded Wallet email or SMS auth phone update.
@@ -243,6 +243,17 @@ patch:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error424.yaml
+    '429':
+      description: Too many requests. Returned with `RATE_LIMITED`.
+      headers:
+        Retry-After:
+          description: Number of seconds to wait before retrying the request.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
     '500':
       description: Internal service error
       content:
