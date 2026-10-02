@@ -39,7 +39,12 @@ spending-limit units.
 
 ```text
 USD:  PROCESSING ──► ACTIVE ◄──► FROZEN
+                        │           │
+                        └───────────┴──► CLOSED
+
 USDB: PROCESSING ──► PENDING ◄──► ACTIVE ◄──► FROZEN
+                        │            │           │
+                        └────────────┴───────────┴──► CLOSED
 ```
 
 Cards can also be closed permanently. Issuer rejection closes a card while
