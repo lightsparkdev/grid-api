@@ -47,31 +47,29 @@ USDB: PROCESSING ──► PENDING ◄──► ACTIVE ◄──► FROZEN
                         └────────────┴───────────┴──► CLOSED
 ```
 
-Cards can also be closed permanently. Issuer rejection closes a card while
-provisioning. An unfinished signing challenge leaves a provisioned USDB card pending.
+| State | When you see it |
+|-------|-----------------|
+| `PROCESSING` | Returned synchronously from `POST /cards`. The card cannot transact yet. |
+| `PENDING` | The issuer has provisioned the card, but its USDB Embedded Wallet funding source has no active delegated key. Complete delegated-key setup. |
+| `ACTIVE` | Issuer provisioned the card. Reached via `CARD.STATUS_CHANGE` webhook. |
+| `FROZEN` | You called `PATCH /cards/{id}` with `status: "FROZEN"`. |
+| `CLOSED` | You called `PATCH /cards/{id}` with `status: "CLOSED"`. Terminal. |
 
-| Status | When you see it |
-|--------|-----------------|
-| `PROCESSING` | The issuer is still provisioning the card. |
-| `PENDING` | The issuer has provisioned the card, but its USDB Embedded Wallet funding source has no usable delegated key. Complete delegated-key setup. |
-| `ACTIVE` | Provisioning and required signing authorization are complete. Transactions remain subject to balance and authorization checks. |
-| `FROZEN` | The card was frozen through `PATCH /cards/{id}`. Completing delegation does not unfreeze it. |
-| `CLOSED` | The card was permanently closed. Completing delegation cannot reopen it. |
-
-`PENDING_KYC` is valid but is not emitted in v1 because issuance is gated
-on KYC up front.
+`PENDING_KYC` is also a valid status but you should not see it in v1 —
+issuance is gated on KYC up front.
 
 ## After issuance
 
-`POST /cards` returns `PROCESSING` while provisioning is incomplete. If
-provisioning completes synchronously, the response can already be `ACTIVE`
-or `PENDING`, with `last4`, `expMonth`, and `expYear` populated.
+`POST /cards` returns immediately with `status: "PROCESSING"`. The
+issuer provisions the card asynchronously; on success a
+`CARD.STATUS_CHANGE` webhook fires with the activated `Card` resource
+including the populated `last4`, `expMonth`, and `expYear`.
 
-For USDB Embedded Wallet funding, complete all three calls to
-`POST /auth/delegated-keys`, including both signed retries. The card remains
-`PENDING` with `statusReason: "DELEGATION_REQUIRED"` until the final retry
-returns an `ACTIVE` delegated key. A provisioned pending card then becomes
-`ACTIVE` automatically and emits `CARD.STATUS_CHANGE`.
+For USDB Embedded Wallet funding without an active delegated key, the
+provisioning webhook reports `PENDING` with `statusReason: "DELEGATION_REQUIRED"`.
+Complete all three calls to `POST /auth/delegated-keys`, including both signed
+retries. When the final retry returns an `ACTIVE` delegated key, the pending
+card becomes `ACTIVE` automatically and emits `CARD.STATUS_CHANGE`.
 
 USD funding does not require delegation. If delegation completes before
 provisioning, the card can go directly from `PROCESSING` to `ACTIVE`.
