@@ -1,4 +1,0 @@
-title: INR Account
-allOf:
-  - $ref: ./BasePaymentAccountInfo.yaml
-  - $ref: ./InrAccountInfo.yaml

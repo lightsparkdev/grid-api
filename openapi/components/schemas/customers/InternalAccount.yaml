@@ -29,7 +29,10 @@ properties:
     description: The total balance, including pending and held funds
   fundingPaymentInstructions:
     type: array
-    description: Payment instructions for funding the account
+    description: >-
+      Payment instructions for funding the account. Empty while funding is
+      withheld. Only bank (`USD_ACCOUNT`, `EUR_ACCOUNT`, `SWIFT_ACCOUNT`) and
+      network wallet types appear here.
     items:
       $ref: ../common/PaymentInstructions.yaml
   onBehalfOfCustomerId:

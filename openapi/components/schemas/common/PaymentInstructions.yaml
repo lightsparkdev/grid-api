@@ -13,111 +13,44 @@ properties:
       account.
     example: true
   accountOrWalletInfo:
+    description: >-
+      Where to send the funds. Quotes can carry any of these types. Internal
+      accounts return only `USD_ACCOUNT`, `EUR_ACCOUNT`, `SWIFT_ACCOUNT`, and
+      the network wallet types; MXN, BRL, COP, and Lightning instructions
+      appear only on real-time funded quotes.
     oneOf:
     - $ref: ../common/PaymentUsdAccountInfo.yaml
-    - $ref: ../common/PaymentBrlAccountInfo.yaml
-    - $ref: ../common/PaymentMxnAccountInfo.yaml
-    - $ref: ../common/PaymentDkkAccountInfo.yaml
     - $ref: ../common/PaymentEurAccountInfo.yaml
-    - $ref: ../common/PaymentInrAccountInfo.yaml
-    - $ref: ../common/PaymentNgnAccountInfo.yaml
-    - $ref: ../common/PaymentCadAccountInfo.yaml
-    - $ref: ../common/PaymentGbpAccountInfo.yaml
-    - $ref: ../common/PaymentHkdAccountInfo.yaml
-    - $ref: ../common/PaymentIdrAccountInfo.yaml
-    - $ref: ../common/PaymentMyrAccountInfo.yaml
-    - $ref: ../common/PaymentPhpAccountInfo.yaml
-    - $ref: ../common/PaymentSgdAccountInfo.yaml
-    - $ref: ../common/PaymentThbAccountInfo.yaml
-    - $ref: ../common/PaymentVndAccountInfo.yaml
-    - $ref: ../common/PaymentAedAccountInfo.yaml
-    - $ref: ../common/PaymentKesAccountInfo.yaml
-    - $ref: ../common/PaymentMwkAccountInfo.yaml
-    - $ref: ../common/PaymentRwfAccountInfo.yaml
-    - $ref: ../common/PaymentTzsAccountInfo.yaml
-    - $ref: ../common/PaymentUgxAccountInfo.yaml
-    - $ref: ../common/PaymentXofAccountInfo.yaml
-    - $ref: ../common/PaymentZarAccountInfo.yaml
-    - $ref: ../common/PaymentZmwAccountInfo.yaml
-    - $ref: ../common/PaymentBwpAccountInfo.yaml
-    - $ref: ../common/PaymentXafAccountInfo.yaml
-    - $ref: ../common/PaymentBdtAccountInfo.yaml
-    - $ref: ../common/PaymentArsAccountInfo.yaml
-    - $ref: ../common/PaymentCopAccountInfo.yaml
-    - $ref: ../common/PaymentEgpAccountInfo.yaml
-    - $ref: ../common/PaymentGhsAccountInfo.yaml
-    - $ref: ../common/PaymentGtqAccountInfo.yaml
-    - $ref: ../common/PaymentHtgAccountInfo.yaml
-    - $ref: ../common/PaymentJmdAccountInfo.yaml
-    - $ref: ../common/PaymentPkrAccountInfo.yaml
-    - $ref: ../common/PaymentSlvAccountInfo.yaml
     - $ref: ../common/PaymentSwiftAccountInfo.yaml
-    - $ref: ../common/PaymentCnyAccountInfo.yaml
-    - $ref: ../common/PaymentIlsAccountInfo.yaml
-    - $ref: ../common/PaymentTryAccountInfo.yaml
+    - $ref: ../common/PaymentMxnAccountInfo.yaml
+    - $ref: ../common/PaymentBrlAccountInfo.yaml
+    - $ref: ../common/PaymentCopAccountInfo.yaml
     - $ref: ../common/PaymentSparkWalletInfo.yaml
     - $ref: ../common/PaymentLightningInvoiceInfo.yaml
     - $ref: ../common/PaymentSolanaWalletInfo.yaml
+    - $ref: ../common/PaymentEthereumWalletInfo.yaml
+    - $ref: ../common/PaymentBaseWalletInfo.yaml
+    - $ref: ../common/PaymentPolygonWalletInfo.yaml
+    - $ref: ../common/PaymentArbitrumWalletInfo.yaml
     - $ref: ../common/PaymentTronWalletInfo.yaml
     - $ref: ../common/PaymentPlasmaWalletInfo.yaml
-    - $ref: ../common/PaymentArbitrumWalletInfo.yaml
-    - $ref: ../common/PaymentPolygonWalletInfo.yaml
-    - $ref: ../common/PaymentBaseWalletInfo.yaml
-    - $ref: ../common/PaymentEthereumWalletInfo.yaml
-    - $ref: ../common/PaymentBitcoinDepositAddressInfo.yaml
     - $ref: ../common/PaymentEmbeddedWalletInfo.yaml
     discriminator:
       propertyName: accountType
       mapping:
         USD_ACCOUNT: ../common/PaymentUsdAccountInfo.yaml
-        BRL_ACCOUNT: ../common/PaymentBrlAccountInfo.yaml
-        MXN_ACCOUNT: ../common/PaymentMxnAccountInfo.yaml
-        DKK_ACCOUNT: ../common/PaymentDkkAccountInfo.yaml
         EUR_ACCOUNT: ../common/PaymentEurAccountInfo.yaml
-        INR_ACCOUNT: ../common/PaymentInrAccountInfo.yaml
-        NGN_ACCOUNT: ../common/PaymentNgnAccountInfo.yaml
-        CAD_ACCOUNT: ../common/PaymentCadAccountInfo.yaml
-        GBP_ACCOUNT: ../common/PaymentGbpAccountInfo.yaml
-        HKD_ACCOUNT: ../common/PaymentHkdAccountInfo.yaml
-        IDR_ACCOUNT: ../common/PaymentIdrAccountInfo.yaml
-        MYR_ACCOUNT: ../common/PaymentMyrAccountInfo.yaml
-        PHP_ACCOUNT: ../common/PaymentPhpAccountInfo.yaml
-        SGD_ACCOUNT: ../common/PaymentSgdAccountInfo.yaml
-        THB_ACCOUNT: ../common/PaymentThbAccountInfo.yaml
-        VND_ACCOUNT: ../common/PaymentVndAccountInfo.yaml
+        SWIFT_ACCOUNT: ../common/PaymentSwiftAccountInfo.yaml
+        MXN_ACCOUNT: ../common/PaymentMxnAccountInfo.yaml
+        BRL_ACCOUNT: ../common/PaymentBrlAccountInfo.yaml
+        COP_ACCOUNT: ../common/PaymentCopAccountInfo.yaml
         SPARK_WALLET: ../common/PaymentSparkWalletInfo.yaml
         LIGHTNING: ../common/PaymentLightningInvoiceInfo.yaml
         SOLANA_WALLET: ../common/PaymentSolanaWalletInfo.yaml
+        ETHEREUM_WALLET: ../common/PaymentEthereumWalletInfo.yaml
+        BASE_WALLET: ../common/PaymentBaseWalletInfo.yaml
+        POLYGON_WALLET: ../common/PaymentPolygonWalletInfo.yaml
+        ARBITRUM_WALLET: ../common/PaymentArbitrumWalletInfo.yaml
         TRON_WALLET: ../common/PaymentTronWalletInfo.yaml
         PLASMA_WALLET: ../common/PaymentPlasmaWalletInfo.yaml
-        ARBITRUM_WALLET: ../common/PaymentArbitrumWalletInfo.yaml
-        POLYGON_WALLET: ../common/PaymentPolygonWalletInfo.yaml
-        BASE_WALLET: ../common/PaymentBaseWalletInfo.yaml
-        ETHEREUM_WALLET: ../common/PaymentEthereumWalletInfo.yaml
-        BITCOIN_L1: ../common/PaymentBitcoinDepositAddressInfo.yaml
-        AED_ACCOUNT: ../common/PaymentAedAccountInfo.yaml
-        KES_ACCOUNT: ../common/PaymentKesAccountInfo.yaml
-        MWK_ACCOUNT: ../common/PaymentMwkAccountInfo.yaml
-        RWF_ACCOUNT: ../common/PaymentRwfAccountInfo.yaml
-        TZS_ACCOUNT: ../common/PaymentTzsAccountInfo.yaml
-        UGX_ACCOUNT: ../common/PaymentUgxAccountInfo.yaml
-        XOF_ACCOUNT: ../common/PaymentXofAccountInfo.yaml
-        ZAR_ACCOUNT: ../common/PaymentZarAccountInfo.yaml
-        ZMW_ACCOUNT: ../common/PaymentZmwAccountInfo.yaml
-        BWP_ACCOUNT: ../common/PaymentBwpAccountInfo.yaml
-        XAF_ACCOUNT: ../common/PaymentXafAccountInfo.yaml
-        BDT_ACCOUNT: ../common/PaymentBdtAccountInfo.yaml
-        ARS_ACCOUNT: ../common/PaymentArsAccountInfo.yaml
-        COP_ACCOUNT: ../common/PaymentCopAccountInfo.yaml
-        EGP_ACCOUNT: ../common/PaymentEgpAccountInfo.yaml
-        GHS_ACCOUNT: ../common/PaymentGhsAccountInfo.yaml
-        GTQ_ACCOUNT: ../common/PaymentGtqAccountInfo.yaml
-        HTG_ACCOUNT: ../common/PaymentHtgAccountInfo.yaml
-        JMD_ACCOUNT: ../common/PaymentJmdAccountInfo.yaml
-        PKR_ACCOUNT: ../common/PaymentPkrAccountInfo.yaml
-        SLV_ACCOUNT: ../common/PaymentSlvAccountInfo.yaml
         EMBEDDED_WALLET: ../common/PaymentEmbeddedWalletInfo.yaml
-        SWIFT_ACCOUNT: ../common/PaymentSwiftAccountInfo.yaml
-        CNY_ACCOUNT: ../common/PaymentCnyAccountInfo.yaml
-        ILS_ACCOUNT: ../common/PaymentIlsAccountInfo.yaml
-        TRY_ACCOUNT: ../common/PaymentTryAccountInfo.yaml
