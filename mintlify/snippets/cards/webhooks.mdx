@@ -11,7 +11,7 @@ lifecycle.
 
 | Type | Fires on |
 |------|----------|
-| `CARD.STATUS_CHANGE` | `PROCESSING → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
+| `CARD.STATUS_CHANGE` | `PROCESSING → ACTIVE / PENDING`, `ACTIVE ⇄ PENDING`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN`, `PENDING → FROZEN`, and `→ CLOSED` transition. |
 | `CARD.PIN_STATUS_CHANGE` | Grid records a new PIN status, such as `NOT_SET → OK`, `OK → BLOCKED`, or `BLOCKED → OK`. |
 | `CARD_TRANSACTION.AUTHORIZED` | An authorization is approved and a hold is placed on the funding source. |
 | `CARD_TRANSACTION.PARTIALLY_SETTLED` | A clearing posted, but more are still expected. |
@@ -64,7 +64,8 @@ activation after issuance:
 
 Common branches to handle in your consumer:
 
-- `status: "ACTIVE"` after `PROCESSING` — the card is live. To reveal
+- `status: "PENDING"` — complete delegated-key setup for the funding source.
+- `status: "ACTIVE"` after `PROCESSING` or `PENDING` — the card is live. To reveal
   the full card details, request a reveal with
   `POST /cards/{id}/reveal` right before rendering its short-lived
   `panEmbedUrl` in an iframe — webhook payloads never carry a reveal

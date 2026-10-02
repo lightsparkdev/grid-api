@@ -61,11 +61,11 @@ curl -X POST "$GRID_BASE_URL/cards" \
 The card's `currency` is `USD`. The wallet holds USDB, which Grid converts
 1:1, so a $12.50 authorization pulls 12.50 USDB.
 
-The card comes back in `status: "PROCESSING"` and activates through the
+The card comes back in `status: "PROCESSING"` and moves to `PENDING` through the
 `CARD.STATUS_CHANGE` webhook as described in
-[Issuing cards](/cards/card-management/issuing-cards). An `ACTIVE` card with
-no active delegated key declines every authorization, so complete the next
-section before you show the card to the cardholder.
+[Issuing cards](/cards/card-management/issuing-cards). Complete the next
+section to authorize funding and activate the card before you show it to
+the cardholder.
 
 Set `maxSpendPerTransaction` and `maxSpendPerDay`. Spend controls work the same
 way for a wallet-funded card as for any other card: the values on the card cap
@@ -231,29 +231,30 @@ Two behaviors differ from a custodial funding source:
 
 ## What fails without an active key
 
-Grid checks for the delegated key when it goes to sign the pull, not before.
-If the card's funding source has no `ACTIVE` key (never created, still
-`PENDING`, or revoked), the signing step fails and Grid declines the
-authorization. Nothing is pulled from the wallet.
+If an otherwise enabled card's funding source has no `ACTIVE` key (never
+created, still `PENDING`, or revoked), the provisioned card is `PENDING` with
+`statusReason: "DELEGATION_REQUIRED"`. Grid declines new synchronous
+authorizations before pulling funds from the wallet.
 
 The card transaction is recorded with `status: "DECLINED"` and
-`cardDeclinedReason: "OTHER"`, and a `CARD_TRANSACTION.DECLINED` webhook
-fires. The decline does not name the missing key, so check for it directly
-when you investigate a declined card funded from a wallet:
+`cardDeclinedReason: "CARD_NOT_ACTIVE"`, and a `CARD_TRANSACTION.DECLINED`
+webhook fires. Check the card's `statusReason` and its funding source's
+delegated keys when you investigate a pending wallet-funded card:
 
 ```bash
 curl -X GET "$GRID_BASE_URL/auth/delegated-keys?fundingSourceId=CardFundingSource:019542f5-b3e7-1d02-0000-000000000011" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
-An empty `data` array, or one with no `ACTIVE` entry, means every
-authorization on that card declines until the cardholder completes the
-three-leg flow again.
+An empty `data` array, or one with no `ACTIVE` entry, means the cardholder
+must complete the three-leg flow, including both signed retries. Once the
+new key is `ACTIVE`, the pending card becomes `ACTIVE` automatically and
+emits `CARD.STATUS_CHANGE`.
 
-The same decline path applies when the cardholder revokes the key: the card
-stays `ACTIVE`, and every authorization declines. To stop a card from
-spending without touching the key, freeze it with `PATCH /cards/{id}` and
-`status: "FROZEN"`.
+Revoking the required key moves an active card to `PENDING` and emits
+`CARD.STATUS_CHANGE`. Processing, frozen, and closed cards retain their
+status. To stop a card from spending without touching the key, freeze it
+with `PATCH /cards/{id}` and `status: "FROZEN"`.
 
 ## Manage the key
 

@@ -5,10 +5,12 @@ description: >-
   `maxTransactionsPerDay`, or `threeDSecurePassword` must be supplied. Supplying `status` also requires
   `substatus` and `reason`, so every card state change carries why it
   happened. `status`
-  transitions are limited to `ACTIVE ⇄ FROZEN` and
-  `ACTIVE | FROZEN → CLOSED`; any other transition returns
-  `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and
-  cannot be combined with `fundingSource`, `maxSpendPerTransaction`,
+  transitions include `ACTIVE ⇄ FROZEN`, `PENDING → ACTIVE | FROZEN`, and
+  `ACTIVE | PENDING | FROZEN → CLOSED`. Explicit activation requires completed
+  delegated signing authorization; otherwise it returns
+  `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile
+  `ACTIVE` / `PENDING` automatically. `PENDING` cannot be requested.
+  `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`,
   `maxSpendPerDay`, or `maxTransactionsPerDay`.
 properties:
   status:
@@ -19,7 +21,9 @@ properties:
       - CLOSED
     description: >-
       Target status for the card. Permitted transitions are
-      `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is
+      `ACTIVE ⇄ FROZEN`, `PENDING → ACTIVE | FROZEN`, and
+      `ACTIVE | PENDING | FROZEN → CLOSED`. Activation requires completed
+      delegated signing authorization. `CLOSED` is
       terminal and irreversible; once closed, the card stays in the
       system for audit and reconciliation but cannot transact again.
     example: FROZEN

@@ -38,14 +38,19 @@ spending-limit units.
 ## The lifecycle
 
 ```text
-PROCESSING ──► ACTIVE ◄──► FROZEN
-                 │
-                 └──► CLOSED
+USD:  PROCESSING ──► ACTIVE ◄──► FROZEN
+                        │           │
+                        └───────────┴──► CLOSED
+
+USDB: PROCESSING ──► PENDING ◄──► ACTIVE ◄──► FROZEN
+                        │            │           │
+                        └────────────┴───────────┴──► CLOSED
 ```
 
 | State | When you see it |
 |-------|-----------------|
 | `PROCESSING` | Returned synchronously from `POST /cards`. The card cannot transact yet. |
+| `PENDING` | The issuer has provisioned the card, but its USDB Embedded Wallet funding source has no active delegated key. Complete delegated-key setup. |
 | `ACTIVE` | Issuer provisioned the card. Reached via `CARD.STATUS_CHANGE` webhook. |
 | `FROZEN` | You called `PATCH /cards/{id}` with `status: "FROZEN"`. |
 | `CLOSED` | You called `PATCH /cards/{id}` with `status: "CLOSED"`. Terminal. |
@@ -59,6 +64,20 @@ issuance is gated on KYC up front.
 issuer provisions the card asynchronously; on success a
 `CARD.STATUS_CHANGE` webhook fires with the activated `Card` resource
 including the populated `last4`, `expMonth`, and `expYear`.
+
+For USDB Embedded Wallet funding without an active delegated key, the
+provisioning webhook reports `PENDING` with `statusReason: "DELEGATION_REQUIRED"`.
+Complete all three calls to `POST /auth/delegated-keys`, including both signed
+retries. When the final retry returns an `ACTIVE` delegated key, the pending
+card becomes `ACTIVE` automatically and emits `CARD.STATUS_CHANGE`.
+
+USD funding does not require delegation. If delegation completes before
+provisioning, the card can go directly from `PROCESSING` to `ACTIVE`.
+
+Replacing USD funding with USDB lacking an active key can move an active
+card back to `PENDING`. Switching back to USD, or completing delegation,
+restores readiness. Revoking the required key also moves an active card to
+`PENDING`. Frozen and closed cards retain their status.
 
 ## Revealing the PAN
 

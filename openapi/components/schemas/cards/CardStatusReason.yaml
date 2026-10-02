@@ -1,15 +1,17 @@
 type: string
 enum:
+  - DELEGATION_REQUIRED
   - ISSUER_REJECTED
   - CLOSED_BY_PLATFORM
   - CLOSED_BY_GRID
 description: |
   Reason a card reached a terminal or non-active status. Present on
-  `CLOSED` cards, and on cards that fail provisioning before reaching
+  `PENDING` and `CLOSED` cards, and on cards that fail provisioning before reaching
   `ACTIVE`.
 
   | Reason | Description |
   |--------|-------------|
+  | `DELEGATION_REQUIRED` | The card funding source has no usable delegated signing key. Present while the card is `PENDING`. |
   | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PROCESSING`. |
   | `CLOSED_BY_PLATFORM` | The card was closed via `PATCH /cards/{id}` (`status: CLOSED`) by the platform. |
   | `CLOSED_BY_GRID` | The card was closed by Grid (e.g. compliance or risk action). |

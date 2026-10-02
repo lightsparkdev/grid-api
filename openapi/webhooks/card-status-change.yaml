@@ -2,9 +2,10 @@ post:
   summary: Card status change
   description: >
     Webhook that is called when a card's lifecycle status changes. Fires on
-    `PROCESSING → ACTIVE`, on `PROCESSING → CLOSED (ISSUER_REJECTED)`
+    `PROCESSING → ACTIVE | PENDING`, `ACTIVE ⇄ PENDING` as funding
+    sources or delegated signing authorization change, on `PROCESSING → CLOSED (ISSUER_REJECTED)`
     when issuer provisioning fails, and on every subsequent
-    `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition.
+    `ACTIVE ⇄ FROZEN`, `PENDING → FROZEN`, and `→ CLOSED` transition.
 
 
     This endpoint should be implemented by clients of the Grid API.
@@ -52,6 +53,32 @@ post:
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCardId: card-emp-001
                 status: ACTIVE
+                brand: VISA
+                form: VIRTUAL
+                last4: '4242'
+                expMonth: 12
+                expYear: 2029
+                fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                maxSpendPerTransaction: 5000
+                maxSpendPerDay: 25000
+                maxTransactionsPerDay: 20
+                currency: USD
+                processorRef: card_b81c2a4f
+                issuerRef: lead_card_7a1b9c3d
+                createdAt: '2026-05-08T14:10:00Z'
+                updatedAt: '2026-05-08T14:11:00Z'
+          delegationRequired:
+            summary: Provisioned card requires funding authorization
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000020
+              type: CARD.STATUS_CHANGE
+              timestamp: '2026-05-08T14:11:00Z'
+              data:
+                id: Card:019542f5-b3e7-1d02-0000-000000000010
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCardId: card-emp-001
+                status: PENDING
+                statusReason: DELEGATION_REQUIRED
                 brand: VISA
                 form: VIRTUAL
                 last4: '4242'

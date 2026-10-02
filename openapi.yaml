@@ -7337,7 +7337,7 @@ paths:
 
         2. Use the session API keypair of a verified credential on the requested Embedded Wallet internal account to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The response is a second `202` with a new `payloadToSign`, `requestId`, and `expiresAt`.
 
-        3. Stamp the new `payloadToSign` with the same session keypair and retry once more with the new `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status.
+        3. Stamp the new `payloadToSign` with the same session keypair and retry once more with the new `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status. A provisioned `PENDING` card using this funding source becomes `ACTIVE` automatically. Cards still provisioning remain `PROCESSING`; frozen and closed cards retain their status.
 
         The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the signer identity exists but holds no policies, so it cannot sign or revoke itself. Abandoned `PENDING` keys do not block creating another delegated key. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account in place of a session keypair; the platform never handles the key material.
 
@@ -7524,7 +7524,7 @@ paths:
     delete:
       summary: Revoke a delegated signing key
       description: |
-        Revoke an `ACTIVE` delegated signing key. Grid uses the custodied delegated key to authorize deleting its own signer identity. Deleting the identity also removes its API key, after which the delegated key can no longer sign. The response is `204` when revocation completes.
+        Revoke an `ACTIVE` delegated signing key. An active card using this funding source becomes `PENDING` with `statusReason: "DELEGATION_REQUIRED"`. Frozen and closed cards retain their status. Grid uses the custodied delegated key to authorize deleting its own signer identity. Deleting the identity also removes its API key, after which the delegated key can no longer sign. The response is `204` when revocation completes.
 
         The underlying signing policies are left in place. Their consensus references the now-deleted signer identity, so they can never authorize anything, and deleting them is unnecessary for correctness or security.
       operationId: revokeDelegatedKey
@@ -8968,7 +8968,7 @@ paths:
 
         A platform may be limited to a maximum number of live cards. Once that limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED` until a card is closed or Lightspark raises the limit. Cards in `CLOSED` status do not count toward the limit.
 
-        New cards start in `status: "PROCESSING"` while the card issuer provisions the card. The `card.status_change` webhook fires on each status transition, including the transition to `ACTIVE` (or to `CLOSED` with `statusReason: "ISSUER_REJECTED"` if provisioning fails).
+        New cards start in `status: "PROCESSING"` while the card issuer provisions the card. The `card.status_change` webhook fires on each status transition, including the transition to `ACTIVE` (or to `CLOSED` with `statusReason: "ISSUER_REJECTED"` if provisioning fails). A provisioned card funded by a USDB Embedded Wallet remains `PENDING` with `statusReason: "DELEGATION_REQUIRED"` until all signed retries of `POST /auth/delegated-keys` are complete. Replacing USD funding with USDB without an active key, or revoking the required key, also moves an active card to `PENDING`. Completing delegation or switching back to USD restores `ACTIVE`; frozen and closed cards keep their status.
       operationId: createCard
       tags:
         - Cards
@@ -9180,8 +9180,8 @@ paths:
       description: |
         Update a card's `status`, bound `fundingSource`, and / or `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`, or set a new `threeDSecurePassword`. At least one field must be supplied.
 
-        - `status` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Any other transition returns `409 INVALID_STATE_TRANSITION`.
-        - `fundingSource`, when supplied, replaces the card's bound internal account. It must belong to the customer and be denominated in the card's currency. `fundingSource` cannot be supplied alongside `status: CLOSED`. On card programs where the card issuer makes authorization decisions, `fundingSource` cannot be combined with any `status` change, so send the changes as separate requests. On card programs where Grid makes the authorization decision, the combination remains valid for `status` changes other than `CLOSED`.
+        - `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING → ACTIVE | FROZEN`, and `ACTIVE | PENDING | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Activating a card whose USDB funding source lacks a usable delegated key returns `409 INVALID_STATE_TRANSITION`. `PENDING` is managed by Grid and cannot be requested. Completing delegation does not unfreeze or reopen a card.
+        - `fundingSource`, when supplied, replaces the card's bound internal account. It must belong to the customer and use a currency supported by the card program, including USDB for USD cards. An active card becomes `PENDING` when switched to USDB without an active delegated key. Switching back to USD restores readiness. `fundingSource` cannot be supplied alongside `status: CLOSED`. On card programs where the card issuer makes authorization decisions, `fundingSource` cannot be combined with any `status` change, so send the changes as separate requests. On card programs where Grid makes the authorization decision, the combination remains valid for `status` changes other than `CLOSED`.
         - `maxSpendPerTransaction` sets the largest amount the card can authorize on a single transaction. An authorization for exactly the limit is allowed, and a later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. Send a positive integer in the smallest unit of the card's currency (cents for USD) to set the limit, or null to remove it. If your platform config sets `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. You can only send this when the card's `cardCapabilities.supportsSpendLimits` is true, and not together with `status: CLOSED`.
         - `maxSpendPerDay`, when supplied, replaces the card-specific cap on cumulative new spend during one UTC calendar day. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. If the platform config sets `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the card and platform values. Refunds, reversals, and authorization expiries do not restore capacity during the day. The card's `cardCapabilities.supportsSpendLimits` must be true. `maxSpendPerDay` cannot be supplied alongside `status: CLOSED`.
         - `maxTransactionsPerDay`, when supplied, replaces the card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Supply a positive integer to set it or null to clear it. If the platform config sets `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the card and platform values. Refunds, reversals, and authorization expiries do not restore capacity during the day. `maxTransactionsPerDay` requires the card's `cardCapabilities.supportsTransactionCountLimit` to be true and cannot be supplied alongside `status: CLOSED`.
@@ -9274,7 +9274,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: 'Conflict. Returned with `INVALID_STATE_TRANSITION` when the requested `status` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE | FROZEN → CLOSED` (e.g. trying to un-freeze a `CLOSED` card); with `CARD_ALREADY_CLOSED` when `status: CLOSED` is requested for a card that is already `CLOSED`; and with `CARD_NOT_MUTABLE` when the card is `CLOSED`.'
+          description: 'Conflict. Returned with `INVALID_STATE_TRANSITION` when the requested `status` transition is not one of `ACTIVE ⇄ FROZEN`, `PENDING → ACTIVE | FROZEN`, or `ACTIVE | PENDING | FROZEN → CLOSED`, or when activation is requested before delegated signing authorization is complete; with `CARD_ALREADY_CLOSED` when `status: CLOSED` is requested for a card that is already `CLOSED`; and with `CARD_NOT_MUTABLE` when the card is `CLOSED`.'
           content:
             application/json:
               schema:
@@ -12855,7 +12855,7 @@ webhooks:
     post:
       summary: Card status change
       description: |
-        Webhook that is called when a card's lifecycle status changes. Fires on `PROCESSING → ACTIVE`, on `PROCESSING → CLOSED (ISSUER_REJECTED)` when issuer provisioning fails, and on every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition.
+        Webhook that is called when a card's lifecycle status changes. Fires on `PROCESSING → ACTIVE | PENDING`, `ACTIVE ⇄ PENDING` as funding sources or delegated signing authorization change, on `PROCESSING → CLOSED (ISSUER_REJECTED)` when issuer provisioning fails, and on every subsequent `ACTIVE ⇄ FROZEN`, `PENDING → FROZEN`, and `→ CLOSED` transition.
 
         This endpoint should be implemented by clients of the Grid API.
 
@@ -12892,6 +12892,32 @@ webhooks:
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCardId: card-emp-001
                     status: ACTIVE
+                    brand: VISA
+                    form: VIRTUAL
+                    last4: '4242'
+                    expMonth: 12
+                    expYear: 2029
+                    fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    maxSpendPerTransaction: 5000
+                    maxSpendPerDay: 25000
+                    maxTransactionsPerDay: 20
+                    currency: USD
+                    processorRef: card_b81c2a4f
+                    issuerRef: lead_card_7a1b9c3d
+                    createdAt: '2026-05-08T14:10:00Z'
+                    updatedAt: '2026-05-08T14:11:00Z'
+              delegationRequired:
+                summary: Provisioned card requires funding authorization
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000020
+                  type: CARD.STATUS_CHANGE
+                  timestamp: '2026-05-08T14:11:00Z'
+                  data:
+                    id: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCardId: card-emp-001
+                    status: PENDING
+                    statusReason: DELEGATION_REQUIRED
                     brand: VISA
                     form: VIRTUAL
                     last4: '4242'
@@ -28371,6 +28397,7 @@ components:
       enum:
         - PENDING_KYC
         - PROCESSING
+        - PENDING
         - ACTIVE
         - FROZEN
         - CLOSED
@@ -28381,22 +28408,25 @@ components:
         |-------|-------------|
         | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this status cannot transact. |
         | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
+        | `PENDING` | The issuer has provisioned the card, but its USDB Embedded Wallet funding source lacks an active delegated signing key. Complete `POST /auth/delegated-keys` before using the card. |
         | `ACTIVE` | The card is live and can authorize transactions. |
         | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing settlements and refunds continue to reconcile. |
         | `CLOSED` | The card is permanently closed. Terminal, irreversible status. |
     CardStatusReason:
       type: string
       enum:
+        - DELEGATION_REQUIRED
         - ISSUER_REJECTED
         - CLOSED_BY_PLATFORM
         - CLOSED_BY_GRID
       description: |
         Reason a card reached a terminal or non-active status. Present on
-        `CLOSED` cards, and on cards that fail provisioning before reaching
+        `PENDING` and `CLOSED` cards, and on cards that fail provisioning before reaching
         `ACTIVE`.
 
         | Reason | Description |
         |--------|-------------|
+        | `DELEGATION_REQUIRED` | The card funding source has no usable delegated signing key. Present while the card is `PENDING`. |
         | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PROCESSING`. |
         | `CLOSED_BY_PLATFORM` | The card was closed via `PATCH /cards/{id}` (`status: CLOSED`) by the platform. |
         | `CLOSED_BY_GRID` | The card was closed by Grid (e.g. compliance or risk action). |
@@ -28463,7 +28493,7 @@ components:
           $ref: '#/components/schemas/CardStatus'
         statusReason:
           $ref: '#/components/schemas/CardStatusReason'
-          description: Reason associated with the current `status`. Present when the card is `CLOSED` or when provisioning was rejected; absent otherwise.
+          description: Reason associated with the current `status`. Present when the card is `PENDING`, `CLOSED`, or when provisioning was rejected; absent otherwise.
         brand:
           $ref: '#/components/schemas/CardBrand'
         form:
@@ -28608,7 +28638,7 @@ components:
           example: 20
     CardUpdateRequest:
       type: object
-      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, or `threeDSecurePassword` must be supplied. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
+      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, or `threeDSecurePassword` must be supplied. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING → ACTIVE | FROZEN`, and `ACTIVE | PENDING | FROZEN → CLOSED`. Explicit activation requires completed delegated signing authorization; otherwise it returns `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile `ACTIVE` / `PENDING` automatically. `PENDING` cannot be requested. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
       properties:
         status:
           type: string
@@ -28616,7 +28646,7 @@ components:
             - ACTIVE
             - FROZEN
             - CLOSED
-          description: Target status for the card. Permitted transitions are `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible; once closed, the card stays in the system for audit and reconciliation but cannot transact again.
+          description: Target status for the card. Permitted transitions are `ACTIVE ⇄ FROZEN`, `PENDING → ACTIVE | FROZEN`, and `ACTIVE | PENDING | FROZEN → CLOSED`. Activation requires completed delegated signing authorization. `CLOSED` is terminal and irreversible; once closed, the card stays in the system for audit and reconciliation but cannot transact again.
           example: FROZEN
         substatus:
           type: string
