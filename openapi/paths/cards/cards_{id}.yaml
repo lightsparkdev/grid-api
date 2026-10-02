@@ -60,15 +60,15 @@ patch:
 
 
     - `status` transitions include `ACTIVE ⇄ FROZEN`,
-    `PENDING → ACTIVE | FROZEN`, and `ACTIVE | PENDING | FROZEN → CLOSED`.
+    `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`.
     `CLOSED` is terminal and irreversible. Activating a card whose USDB funding
     source lacks a usable delegated key returns `409 INVALID_STATE_TRANSITION`.
-    `PENDING` is managed by Grid and cannot be requested. Completing delegation
+    `PENDING_AUTH` is managed by Grid and cannot be requested. Completing delegation
     does not unfreeze or reopen a card.
 
     - `fundingSource`, when supplied, replaces the card's bound internal
     account. It must belong to the customer and use a currency supported by the
-    card program, including USDB for USD cards. An active card becomes `PENDING`
+    card program, including USDB for USD cards. An active card becomes `PENDING_AUTH`
     when switched to USDB without an active delegated key. Switching back to
     USD restores readiness. `fundingSource` cannot be supplied alongside `status: CLOSED`.
     On card programs
@@ -236,8 +236,8 @@ patch:
       description: >-
         Conflict. Returned with `INVALID_STATE_TRANSITION` when the
         requested `status` transition is not one of
-        `ACTIVE ⇄ FROZEN`, `PENDING → ACTIVE | FROZEN`, or
-        `ACTIVE | PENDING | FROZEN → CLOSED`, or when activation is requested
+        `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, or
+        `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`, or when activation is requested
         before delegated signing authorization is complete; with `CARD_ALREADY_CLOSED` when
         `status: CLOSED` is requested for a card that is already
         `CLOSED`; and with `CARD_NOT_MUTABLE` when the card is

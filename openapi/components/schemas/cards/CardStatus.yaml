@@ -2,7 +2,7 @@ type: string
 enum:
   - PENDING_KYC
   - PROCESSING
-  - PENDING
+  - PENDING_AUTH
   - ACTIVE
   - FROZEN
   - CLOSED
@@ -13,7 +13,7 @@ description: |
   |-------|-------------|
   | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this status cannot transact. |
   | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
-  | `PENDING` | The issuer has provisioned the card, but its USDB Embedded Wallet funding source lacks an active delegated signing key. Complete `POST /auth/delegated-keys` before using the card. |
+  | `PENDING_AUTH` | The issuer has provisioned the card, but its USDB Embedded Wallet funding source lacks an active delegated signing key. Complete `POST /auth/delegated-keys` before using the card. |
   | `ACTIVE` | The card is live and can authorize transactions. |
   | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing settlements and refunds continue to reconcile. |
   | `CLOSED` | The card is permanently closed. Terminal, irreversible status. |

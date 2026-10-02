@@ -2,10 +2,10 @@ post:
   summary: Card status change
   description: >
     Webhook that is called when a card's lifecycle status changes. Fires on
-    `PROCESSING → ACTIVE | PENDING`, `ACTIVE ⇄ PENDING` as funding
+    `PROCESSING → ACTIVE | PENDING_AUTH`, `ACTIVE ⇄ PENDING_AUTH` as funding
     sources or delegated signing authorization change, on `PROCESSING → CLOSED (ISSUER_REJECTED)`
     when issuer provisioning fails, and on every subsequent
-    `ACTIVE ⇄ FROZEN`, `PENDING → FROZEN`, and `→ CLOSED` transition.
+    `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → FROZEN`, and `→ CLOSED` transition.
 
 
     This endpoint should be implemented by clients of the Grid API.
@@ -77,7 +77,7 @@ post:
                 id: Card:019542f5-b3e7-1d02-0000-000000000010
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCardId: card-emp-001
-                status: PENDING
+                status: PENDING_AUTH
                 statusReason: DELEGATION_REQUIRED
                 brand: VISA
                 form: VIRTUAL
