@@ -114,7 +114,9 @@ A single `status` field represents whether the transaction reached its destinati
 | **FAILED** | Something went wrong — accompanied by a `failureReason` |
 
 <Warning>
-`EXPIRED`, `FAILED`, and `COMPLETED` are terminal. A bank can still return or reverse a transfer after the transaction is `COMPLETED`; that shows up as a `RETURNED` or `REVERSED` status on the affected side's `railDetails` and leaves the transaction's `status` unchanged. Keep processing webhook events after `COMPLETED` so you see it.
+`EXPIRED` and `FAILED` are terminal states, but `COMPLETED` is not always final — a bank can return a payment after it was marked `COMPLETED`, moving it to `FAILED`. Always continue processing webhook events for transactions even after they reach `COMPLETED`.
+
+The transaction's `status` reports the payment. Each side's `railDetails` reports the transfer on its rail, such as an ACH entry's `SETTLED` or `RETURNED` status. A returned payout moves to `FAILED`, and its destination's `railDetails` shows `RETURNED`. A returned incoming payment stays `COMPLETED`: the webhook for its current status is sent again with the source's `railDetails` showing `RETURNED`.
 </Warning>
 
 ### State Diagram
@@ -129,6 +131,7 @@ stateDiagram-v2
     PENDING --> EXPIRED : Quote expired before execution
     PROCESSING --> COMPLETED : Payout reached destination
     PROCESSING --> FAILED : Payout failed
+    COMPLETED --> FAILED : Bank returned payment
     FAILED --> REFUND_PENDING : Refund initiated
     PROCESSING --> REFUND_PENDING : Manual cancellation
     state "REFUND" as refund {
@@ -314,15 +317,9 @@ app.post('/webhooks/grid', async (req, res) => {
       break;
     }
 
-    case 'OUTGOING_PAYMENT.COMPLETED': {
-      const railStatus = data.destination.railDetails?.status;
-      if (railStatus === 'RETURNED' || railStatus === 'REVERSED') {
-        await notifyCustomer(data.customerId, 'The receiving bank returned the payment.');
-      } else {
-        await notifyCustomer(data.customerId, 'Payment delivered!');
-      }
+    case 'OUTGOING_PAYMENT.COMPLETED':
+      await notifyCustomer(data.customerId, 'Payment delivered!');
       break;
-    }
 
     case 'OUTGOING_PAYMENT.FAILED':
       await notifyCustomer(data.customerId, `Payment failed: ${data.failureReason}`);
@@ -393,15 +390,14 @@ If a refund fails, [contact our team](https://www.lightspark.com/contact) to res
 </Tab>
 
 <Tab title="Bank Return">
-Payment reaches the destination, then the receiving bank returns the transfer:
+Payment initially succeeds but the bank returns it:
 
 1. `OUTGOING_PAYMENT.PENDING`
 2. `OUTGOING_PAYMENT.PROCESSING`
-3. `OUTGOING_PAYMENT.COMPLETED` — `destination.railDetails.status` is `SETTLED`
-4. `OUTGOING_PAYMENT.COMPLETED` — `destination.railDetails.status` is `RETURNED`, with `returnedAt`
-
-The transaction's `status` stays `COMPLETED`. Read the return from the destination's
-`railDetails`.
+3. `OUTGOING_PAYMENT.COMPLETED`
+4. `OUTGOING_PAYMENT.FAILED` — `failureReason` is `PAYOUT_RETURNED`, and `destination.railDetails.status` is `RETURNED`, with `returnedAt`
+5. `OUTGOING_PAYMENT.REFUND_PENDING`
+6. `OUTGOING_PAYMENT.REFUND_COMPLETED`
 
 <Info>
 Bank returns can happen days after initial completion. Continue processing webhook events for transactions even after they reach `COMPLETED`.
@@ -490,7 +486,7 @@ Use for reconciliation and reporting.
 | `QUOTE_RATE_UNAVAILABLE` | Quoted exchange rate was refused at execution; nothing was exchanged | Create new quote |
 | `QUOTE_EXECUTION_FAILED` | Error executing the quote; a debited amount is refunded automatically | Create new quote |
 | `FUNDING_AMOUNT_MISMATCH` | Funding amount doesn't match expected amount | Verify amounts and retry |
-| `PAYOUT_RETURNED` | Receiving bank returned the payout before it reached the destination | Verify details and retry |
+| `PAYOUT_RETURNED` | Receiving bank returned or reversed the payout | Verify details and retry |
 | `LIMIT_EXCEEDED` | Payout exceeds a partner limit | Reduce amount or [contact our team](https://www.lightspark.com/contact) |
 | `ACCOUNT_CANNOT_RECEIVE` | Recipient account can't accept the payment | Use a different account |
 | `ACCOUNT_INVALID` | Recipient account details are wrong or not found | Correct recipient details |
@@ -546,12 +542,8 @@ When a transaction fails, a refund is initiated automatically. Track the refund 
           return 'Authorization required. Complete the security challenge to continue.';
         case 'OUTGOING_PAYMENT.PROCESSING':
           return 'Payment in progress...';
-        case 'OUTGOING_PAYMENT.COMPLETED': {
-          const railStatus = data.destination.railDetails?.status;
-          return railStatus === 'RETURNED' || railStatus === 'REVERSED'
-            ? 'The receiving bank returned the payment.'
-            : 'Payment delivered!';
-        }
+        case 'OUTGOING_PAYMENT.COMPLETED':
+          return 'Payment delivered!';
         case 'OUTGOING_PAYMENT.FAILED':
           return 'Payment failed. Please try again or contact support.';
         case 'OUTGOING_PAYMENT.REFUND_PENDING':

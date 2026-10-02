@@ -27,10 +27,14 @@ details.
 | `FEDNOW` | `FedNowRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `endToEndId`, `remittanceInformation` |
 | `RTP` | `RtpRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `endToEndId`, `remittanceInformation` |
 
-A transaction's top-level `status` reports whether the funds reached their destination.
-An ACH return or reversal that arrives after `COMPLETED` changes only the affected side's
-`railDetails.status`; the transaction stays `COMPLETED`. `TransactionStatus.REFUNDED`
-is deprecated: a refund is reported on the transaction's `refund` object.
+`railDetails.status` reports the transfer on its rail; the transaction's top-level
+`status` reports the payment, and its webhook events are unchanged. A returned ACH payout
+still moves to `FAILED` with `PAYOUT_RETURNED` and is refunded as before; its destination's
+`railDetails` now also shows `RETURNED` with `returnedAt`. When the originating bank returns
+an ACH deposit after `COMPLETED`, the payment stays `COMPLETED` and
+`INCOMING_PAYMENT.COMPLETED` is sent again with the source's `railDetails` showing
+`RETURNED`. `TransactionStatus.REFUNDED` is deprecated: a refund is reported on the
+transaction's `refund` object.
 
 The flat originator fields on the external funding source (`accountHolderName`, `accountIdentifier`,
 `bankName`, `bankIdentifier`, `paymentRail`, `remittanceInformation`, `endToEndId`,

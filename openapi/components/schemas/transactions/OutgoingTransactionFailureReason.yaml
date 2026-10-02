@@ -38,7 +38,7 @@ description: |
   | `QUOTE_EXECUTION_FAILED` | The quote could not be executed. Covers any internal failure on the way to settlement, whether or not funds were debited — a debited amount is refunded automatically |
   | `FUNDING_AMOUNT_MISMATCH` | The funds received did not match the expected amount |
   | `SCA_NOT_COMPLETED` | The customer did not complete the Strong Customer Authentication challenge before it expired |
-  | `PAYOUT_RETURNED` | The receiving bank returned the payout before it reached the destination. A return after `COMPLETED` is reported on the destination's `railDetails` instead |
+  | `PAYOUT_RETURNED` | The receiving bank accepted the payout and then returned or reversed it |
   | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner |
   | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency or payment rail isn't supported for that account. A sweep whose rule names a rail the destination cannot accept reports this |
   | `ACCOUNT_INVALID` | The recipient account couldn't be found or the details are wrong — bad IBAN/account number, beneficiary not found, or account closed |

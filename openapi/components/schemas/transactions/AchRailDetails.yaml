@@ -31,8 +31,9 @@ allOf:
           | `REVERSED` | The originator reversed the entry after it settled. |
           | `FAILED` | The entry was rejected before submission and no funds moved. |
 
-          A return or reversal can arrive days after `SETTLED`. It changes this status and
-          leaves the transaction's top-level `status` unchanged.
+          A return or reversal can arrive days after `SETTLED`. This status reports the ACH
+          entry; the transaction's top-level `status` reports the payment. A returned payout
+          moves to `FAILED`, while a returned incoming payment stays `COMPLETED`.
         example: SETTLED
       traceNumber:
         type: string
