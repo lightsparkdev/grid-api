@@ -44,7 +44,7 @@ tags:
 
       A statement is issued for each customer's own USD internal account and covers their whole balance. Money received through a rule-based account appears on its owner's statement; rule-based, bulk settlement and platform-owned accounts have no statement of their own.
 
-      **1. The statement — `GET /internal-accounts/{id}/balance-changes?from=&to=`**
+      **1. The statement — `GET /internal-accounts/{id}/balance-changes?startDate=&endDate=`**
 
       One row per change to the balance, in the order the money moved, with the opening and closing balances for the window in the same response. Page until `hasMore` is false, then assert this identity across every page before you render anything:
 
@@ -52,9 +52,9 @@ tags:
       openingBalance + Σ(data[].amount) == closingBalance
       ```
 
-      If it does not hold, do not send the statement; contact support instead. `from` and `to` bound a half-open window `[from, to)`: for a monthly statement, pass the first instant of the month and the first instant of the following month, both in US Central time (for August 2026, `2026-08-01T00:00:00-05:00` and `2026-09-01T00:00:00-05:00`). Grid records a statement as fetched only for a window that is exactly one such month.
+      If it does not hold, do not send the statement; contact support instead. `startDate` and `endDate` bound a half-open window `[startDate, endDate)`: for a monthly statement, pass the first instant of the month and the first instant of the following month, both in US Central time (for August 2026, `2026-08-01T00:00:00-05:00` and `2026-09-01T00:00:00-05:00`). Grid records a statement as fetched only for a window that is exactly one such month.
 
-      **2. The receipt — `POST /internal-accounts/{id}/statement-confirmations`**
+      **2. The receipt — `POST /internal-accounts/{id}/confirm-statement`**
 
       Once a month, after you have pulled and issued a period's statement, send a receipt with the `periodStart` it covers. Grid stores it as the delivery record for that account and period. Sending it again is harmless: the first receipt's time is kept.
 
@@ -312,8 +312,8 @@ paths:
     $ref: paths/internal_accounts/internal_accounts_{id}_export.yaml
   /internal-accounts/{id}/balance-changes:
     $ref: paths/internal_accounts/internal_accounts_{id}_balance-changes.yaml
-  /internal-accounts/{id}/statement-confirmations:
-    $ref: paths/internal_accounts/internal_accounts_{id}_statement-confirmations.yaml
+  /internal-accounts/{id}/confirm-statement:
+    $ref: paths/internal_accounts/internal_accounts_{id}_confirm-statement.yaml
   /auth/credentials:
     $ref: paths/auth/auth_credentials.yaml
   /auth/credentials/{id}:

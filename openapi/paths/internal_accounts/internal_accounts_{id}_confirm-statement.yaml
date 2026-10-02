@@ -27,7 +27,7 @@ post:
 
 
     Sending a receipt is idempotent. The stored time is the first receipt's,
-    so calling this again does not move it. If `deliveredAt` is omitted, the
+    so calling this again does not move it. If `statementDeliveredAt` is omitted, the
     current time is used.
   operationId: confirmStatementDelivery
   tags:
@@ -50,7 +50,7 @@ post:
     '400':
       description: >-
         Bad request. Returned when `periodStart` is not the first day of a
-        month or names a month that has not begun, when `deliveredAt` (or,
+        month or names a month that has not begun, when `statementDeliveredAt` (or,
         if omitted, the time of the request) is in the future or before the
         period has ended, or when the account has no statement of its own.
       content:

@@ -21,7 +21,7 @@ properties:
       When the statement for this period was first read from Grid, or null if
       it never has been
     example: '2026-10-01T09:00:00Z'
-  confirmedAt:
+  statementDeliveredAt:
     anyOf:
       - type: string
         format: date-time

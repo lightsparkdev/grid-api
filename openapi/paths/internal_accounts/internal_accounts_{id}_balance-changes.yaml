@@ -15,28 +15,24 @@ get:
     response.
 
 
-    This is the statement feed. `GET /transactions` returns one row per
-    transaction. This returns one row per change to the balance, and a
-    transaction that moves the balance more than once produces more than one
-    change: an ACH deposit and its later return are two, and a card purchase
-    that clears in two parts is two. Each change's `transactionId` names its
-    transaction, so fetch it from `GET /transactions/{transactionId}` for the
-    type, counterparty and merchant a statement line shows.
+    `GET /transactions` returns one row per transaction. This returns one row
+    per change to the balance, and a transaction that moves the balance more
+    than once produces more than one change: an ACH deposit and its later
+    return are two, and a card purchase that clears in two parts is two. Each
+    change's `transactionId` names its transaction, so fetch it from
+    `GET /transactions/{transactionId}` for its type, counterparty, merchant
+    and rail.
 
 
     **The identity to assert:** `openingBalance + Σ(data[].amount) ==
     closingBalance`, summed over every page. The opening and closing balances
     describe the window rather than the page, so they are the same on every
-    page. Page until `hasMore` is false, then assert the identity before
-    rendering a statement.
+    page. Page until `hasMore` is false, then assert the identity.
 
 
-    `from` and `to` are instants and the window is half-open: a change at
-    exactly `to` belongs to the next window. Consecutive periods therefore
-    tile with no gap and no overlap. For a monthly statement, pass the first
-    instant of the month and the first instant of the following month, both
-    in US Central time (`America/Chicago`). Grid records a statement as
-    fetched only for a window that is exactly one such month.
+    `startDate` and `endDate` are instants in any timezone, UTC included, and
+    the window is half-open: a change at exactly `endDate` belongs to the next
+    window. Consecutive windows therefore tile with no gap and no overlap.
 
 
     A window whose card settlement has not closed is refused with `409
@@ -48,33 +44,31 @@ get:
     balance, so it is already in `amount`: inside a send's change, or a change
     of its own for a withdrawal's fee. Each change's `fee` says how much of
     its `amount` was a fee, negative when charged and positive when refunded.
-    To show a fee as its own statement line, split the change into
-    `amount - fee` and `fee`. Never add `fee` on top of `amount`, or the
-    identity stops holding. Card transactions carry no Grid fee.
-
-
-    Merchant, counterparty and rail detail live on the transaction; read them
-    from `GET /transactions`.
+    To show a fee separately, split the change into `amount - fee` and `fee`.
+    Never add `fee` on top of `amount`, or the identity stops holding. Card
+    transactions carry no Grid fee.
   operationId: listInternalAccountBalanceChanges
   tags:
     - Periodic Statements
   security:
     - BasicAuth: []
   parameters:
-    - name: from
+    - name: startDate
       in: query
       required: true
-      description: Start of the window, inclusive. Must include a timezone offset.
+      description: >-
+        Start of the window, inclusive, in ISO 8601 format. Must carry a
+        timezone, either `Z` for UTC or an offset.
       schema:
         type: string
         format: date-time
       example: '2026-08-01T00:00:00-05:00'
-    - name: to
+    - name: endDate
       in: query
       required: true
       description: >-
-        End of the window, exclusive. Must include a timezone offset and must
-        not be in the future.
+        End of the window, exclusive, in ISO 8601 format. Must carry a timezone,
+        either `Z` for UTC or an offset, and must not be in the future.
       schema:
         type: string
         format: date-time
@@ -103,8 +97,9 @@ get:
             $ref: ../../components/schemas/internal_accounts/BalanceChangeListResponse.yaml
     '400':
       description: >-
-        Bad request. Returned when `from` or `to` is missing, has no timezone
-        offset, or is in the future, when `from` is not before `to`, when
+        Bad request. Returned when `startDate` or `endDate` is missing, has no
+        timezone, or is in the future, when `startDate` is not before
+        `endDate`, when
         `cursor` was not issued by this endpoint, or when the account has no
         statement of its own.
       content:

@@ -66,14 +66,14 @@ You build a statement from four calls:
 - [List balance changes](/api-reference/periodic-statements/list-balance-changes-for-a-period) for the month's lines and its opening and closing balances.
 - [Get transaction by ID](/api-reference/transactions/get-transaction-by-id) for each line's type, payee, and merchant.
 
-Pass `from` as the first instant of the month and `to` as the first instant of the next month, both in US Central time. Page with `cursor` while `hasMore` is `true`. The opening and closing balances describe the whole month, so they are the same on every page. All amounts are integers in the smallest unit of their currency (for example, cents), so format them using the currency's `decimals`.
+Pass `startDate` as the first instant of the month and `endDate` as the first instant of the next month, both in US Central time. Page with `cursor` while `hasMore` is `true`. The opening and closing balances describe the whole month, so they are the same on every page. All amounts are integers in the smallest unit of their currency (for example, cents), so format them using the currency's `decimals`.
 
 | Statement field | Grid source |
 |-----------------|-------------|
 | Account holder | `fullName` on the customer (`customerType: INDIVIDUAL`) or `businessInfo.legalName` (`customerType: BUSINESS`) |
 | Account type | `type` on the internal account (`INTERNAL_FIAT` for the platform-managed fiat account), shown as a plain-language label |
 | Account number | `fundingPaymentInstructions[].accountOrWalletInfo.accountNumber` on the internal account, masked to the last four digits |
-| Statement period | The Central-time month you pass as `from` and `to` |
+| Statement period | The Central-time month you pass as `startDate` and `endDate` |
 | Issue date | You supply it: the date the statement is sent |
 | Opening balance | `openingBalance` from List balance changes |
 | Closing balance | `closingBalance` from List balance changes |
@@ -158,16 +158,16 @@ async function buildStatement(customerId, accountId, year, month) {
   }
   if (!account) throw new Error(`Account ${accountId} does not belong to customer ${customerId}`);
 
-  const from = centralMonthStart(year, month);
-  const to = month === 12 ? centralMonthStart(year + 1, 1) : centralMonthStart(year, month + 1);
+  const startDate = centralMonthStart(year, month);
+  const endDate = month === 12 ? centralMonthStart(year + 1, 1) : centralMonthStart(year, month + 1);
 
   // A 409 NOT_YET_AVAILABLE means the month has not settled yet: retry later
   const path = `/internal-accounts/${accountId}/balance-changes`;
-  const first = await grid.get(`${path}?${new URLSearchParams({ from, to, limit: '1' })}`);
+  const first = await grid.get(`${path}?${new URLSearchParams({ startDate, endDate, limit: '1' })}`);
   const { openingBalance, closingBalance } = first;
 
   const changes = [];
-  for await (const change of listAll(path, { from, to })) changes.push(change);
+  for await (const change of listAll(path, { startDate, endDate })) changes.push(change);
 
   const movement = changes.reduce((sum, change) => sum + change.amount.amount, 0);
   if (openingBalance.amount + movement !== closingBalance.amount) {
@@ -216,7 +216,7 @@ async function buildStatement(customerId, accountId, year, month) {
     accountHolder: commercial ? customer.businessInfo.legalName : customer.fullName,
     accountType: account.type, // render as a label, for example "Consumer prepaid account"
     accountNumber: maskAccountNumber(account.fundingPaymentInstructions),
-    period: { from, to },
+    period: { startDate, endDate },
     issueDate: new Date().toISOString(),
     openingBalance: format(openingBalance.amount),
     closingBalance: format(closingBalance.amount),
@@ -227,9 +227,9 @@ async function buildStatement(customerId, accountId, year, month) {
   await sendStatementEmail(customer.platformCustomerId, statement); // your delivery channel
 
   // The monthly receipt: Grid's record that this account's statement was issued
-  await grid.post(`/internal-accounts/${accountId}/statement-confirmations`, {
+  await grid.post(`/internal-accounts/${accountId}/confirm-statement`, {
     periodStart: `${year}-${String(month).padStart(2, '0')}-01`,
-    deliveredAt: statement.issueDate,
+    statementDeliveredAt: statement.issueDate,
   });
 }
 ```

@@ -150,7 +150,7 @@ resources:
         body_param_name: InternalAccountUpdateRequest
       list_balance_changes: get /internal-accounts/{id}/balance-changes
       confirm_statement_delivery:
-        endpoint: post /internal-accounts/{id}/statement-confirmations
+        endpoint: post /internal-accounts/{id}/confirm-statement
         body_param_name: ConfirmStatementDeliveryRequest
       create_kyc_link:
         endpoint: post /customers/{customerId}/kyc-link

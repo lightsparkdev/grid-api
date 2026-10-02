@@ -10,7 +10,7 @@ properties:
       US Central time. Must be the first day of a month that has already
       begun.
     example: '2026-09-01'
-  deliveredAt:
+  statementDeliveredAt:
     type: string
     format: date-time
     description: >-

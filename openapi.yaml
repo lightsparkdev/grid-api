@@ -37,7 +37,7 @@ tags:
 
       A statement is issued for each customer's own USD internal account and covers their whole balance. Money received through a rule-based account appears on its owner's statement; rule-based, bulk settlement and platform-owned accounts have no statement of their own.
 
-      **1. The statement — `GET /internal-accounts/{id}/balance-changes?from=&to=`**
+      **1. The statement — `GET /internal-accounts/{id}/balance-changes?startDate=&endDate=`**
 
       One row per change to the balance, in the order the money moved, with the opening and closing balances for the window in the same response. Page until `hasMore` is false, then assert this identity across every page before you render anything:
 
@@ -45,9 +45,9 @@ tags:
       openingBalance + Σ(data[].amount) == closingBalance
       ```
 
-      If it does not hold, do not send the statement; contact support instead. `from` and `to` bound a half-open window `[from, to)`: for a monthly statement, pass the first instant of the month and the first instant of the following month, both in US Central time (for August 2026, `2026-08-01T00:00:00-05:00` and `2026-09-01T00:00:00-05:00`). Grid records a statement as fetched only for a window that is exactly one such month.
+      If it does not hold, do not send the statement; contact support instead. `startDate` and `endDate` bound a half-open window `[startDate, endDate)`: for a monthly statement, pass the first instant of the month and the first instant of the following month, both in US Central time (for August 2026, `2026-08-01T00:00:00-05:00` and `2026-09-01T00:00:00-05:00`). Grid records a statement as fetched only for a window that is exactly one such month.
 
-      **2. The receipt — `POST /internal-accounts/{id}/statement-confirmations`**
+      **2. The receipt — `POST /internal-accounts/{id}/confirm-statement`**
 
       Once a month, after you have pulled and issued a period's statement, send a receipt with the `periodStart` it covers. Grid stores it as the delivery record for that account and period. Sending it again is harmless: the first receipt's time is kept.
 
@@ -6380,35 +6380,33 @@ paths:
       description: |
         Every change to this account's balance in a window, in the order the money moved, with the opening and closing balances for that window in the same response.
 
-        This is the statement feed. `GET /transactions` returns one row per transaction. This returns one row per change to the balance, and a transaction that moves the balance more than once produces more than one change: an ACH deposit and its later return are two, and a card purchase that clears in two parts is two. Each change's `transactionId` names its transaction, so fetch it from `GET /transactions/{transactionId}` for the type, counterparty and merchant a statement line shows.
+        `GET /transactions` returns one row per transaction. This returns one row per change to the balance, and a transaction that moves the balance more than once produces more than one change: an ACH deposit and its later return are two, and a card purchase that clears in two parts is two. Each change's `transactionId` names its transaction, so fetch it from `GET /transactions/{transactionId}` for its type, counterparty, merchant and rail.
 
-        **The identity to assert:** `openingBalance + Σ(data[].amount) == closingBalance`, summed over every page. The opening and closing balances describe the window rather than the page, so they are the same on every page. Page until `hasMore` is false, then assert the identity before rendering a statement.
+        **The identity to assert:** `openingBalance + Σ(data[].amount) == closingBalance`, summed over every page. The opening and closing balances describe the window rather than the page, so they are the same on every page. Page until `hasMore` is false, then assert the identity.
 
-        `from` and `to` are instants and the window is half-open: a change at exactly `to` belongs to the next window. Consecutive periods therefore tile with no gap and no overlap. For a monthly statement, pass the first instant of the month and the first instant of the following month, both in US Central time (`America/Chicago`). Grid records a statement as fetched only for a window that is exactly one such month.
+        `startDate` and `endDate` are instants in any timezone, UTC included, and the window is half-open: a change at exactly `endDate` belongs to the next window. Consecutive windows therefore tile with no gap and no overlap.
 
         A window whose card settlement has not closed is refused with `409 NOT_YET_AVAILABLE`, because its figures could still change. Retry once it has settled.
 
-        **Fees are inside the changes.** A fee Grid charges comes out of the balance, so it is already in `amount`: inside a send's change, or a change of its own for a withdrawal's fee. Each change's `fee` says how much of its `amount` was a fee, negative when charged and positive when refunded. To show a fee as its own statement line, split the change into `amount - fee` and `fee`. Never add `fee` on top of `amount`, or the identity stops holding. Card transactions carry no Grid fee.
-
-        Merchant, counterparty and rail detail live on the transaction; read them from `GET /transactions`.
+        **Fees are inside the changes.** A fee Grid charges comes out of the balance, so it is already in `amount`: inside a send's change, or a change of its own for a withdrawal's fee. Each change's `fee` says how much of its `amount` was a fee, negative when charged and positive when refunded. To show a fee separately, split the change into `amount - fee` and `fee`. Never add `fee` on top of `amount`, or the identity stops holding. Card transactions carry no Grid fee.
       operationId: listInternalAccountBalanceChanges
       tags:
         - Periodic Statements
       security:
         - BasicAuth: []
       parameters:
-        - name: from
+        - name: startDate
           in: query
           required: true
-          description: Start of the window, inclusive. Must include a timezone offset.
+          description: Start of the window, inclusive, in ISO 8601 format. Must carry a timezone, either `Z` for UTC or an offset.
           schema:
             type: string
             format: date-time
           example: '2026-08-01T00:00:00-05:00'
-        - name: to
+        - name: endDate
           in: query
           required: true
-          description: End of the window, exclusive. Must include a timezone offset and must not be in the future.
+          description: End of the window, exclusive, in ISO 8601 format. Must carry a timezone, either `Z` for UTC or an offset, and must not be in the future.
           schema:
             type: string
             format: date-time
@@ -6436,7 +6434,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BalanceChangeListResponse'
         '400':
-          description: Bad request. Returned when `from` or `to` is missing, has no timezone offset, or is in the future, when `from` is not before `to`, when `cursor` was not issued by this endpoint, or when the account has no statement of its own.
+          description: Bad request. Returned when `startDate` or `endDate` is missing, has no timezone, or is in the future, when `startDate` is not before `endDate`, when `cursor` was not issued by this endpoint, or when the account has no statement of its own.
           content:
             application/json:
               schema:
@@ -6465,7 +6463,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /internal-accounts/{id}/statement-confirmations:
+  /internal-accounts/{id}/confirm-statement:
     parameters:
       - name: id
         in: path
@@ -6483,7 +6481,7 @@ paths:
 
         `periodStart` names the period: the first day of the statement month, as a date. It must be the first of a month, and a month that has already begun.
 
-        Sending a receipt is idempotent. The stored time is the first receipt's, so calling this again does not move it. If `deliveredAt` is omitted, the current time is used.
+        Sending a receipt is idempotent. The stored time is the first receipt's, so calling this again does not move it. If `statementDeliveredAt` is omitted, the current time is used.
       operationId: confirmStatementDelivery
       tags:
         - Periodic Statements
@@ -6503,7 +6501,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StatementDelivery'
         '400':
-          description: Bad request. Returned when `periodStart` is not the first day of a month or names a month that has not begun, when `deliveredAt` (or, if omitted, the time of the request) is in the future or before the period has ended, or when the account has no statement of its own.
+          description: Bad request. Returned when `periodStart` is not the first day of a month or names a month that has not begun, when `statementDeliveredAt` (or, if omitted, the time of the request) is in the future or before the period has ended, or when the account has no statement of its own.
           content:
             application/json:
               schema:
@@ -27194,10 +27192,8 @@ components:
           description: Stable identifier for this balance change
           example: BalanceChange:019542f5-b3e7-1d02-0000-000000000003
         transactionId:
-          anyOf:
-            - type: string
-            - type: 'null'
-          description: The transaction this change belongs to. Fetch it with `GET /transactions/{transactionId}` for its type, counterparty, merchant and rail. Several changes can share one transaction, for example an ACH deposit and its return, or a card purchase that settles in parts. Null for an adjustment with no transaction behind it.
+          type: string
+          description: The transaction this change belongs to. Fetch it with `GET /transactions/{transactionId}` for its type, counterparty, merchant and rail. Several changes can share one transaction, for example an ACH deposit and its return, or a card purchase that settles in parts. Absent for an adjustment with no transaction behind it.
           example: Transaction:019542f5-b3e7-1d02-0000-000000000004
         amount:
           $ref: '#/components/schemas/CurrencyAmount'
@@ -27215,8 +27211,8 @@ components:
       description: A window of balance changes with the balances that bound it. The opening and closing balances describe the whole window, not the page, so they are the same on every page, and the identity `openingBalance + Σ(data[].amount) == closingBalance` holds only once every page's `data` is summed.
       required:
         - data
-        - periodStart
-        - periodEnd
+        - startDate
+        - endDate
         - openingBalance
         - closingBalance
         - hasMore
@@ -27226,12 +27222,12 @@ components:
           description: Balance changes on this page, ordered by `effectiveAt`
           items:
             $ref: '#/components/schemas/BalanceChange'
-        periodStart:
+        startDate:
           type: string
           format: date-time
           description: Start of the window, inclusive
           example: '2026-08-01T00:00:00-05:00'
-        periodEnd:
+        endDate:
           type: string
           format: date-time
           description: End of the window, exclusive
@@ -27248,10 +27244,6 @@ components:
           type: string
           description: Cursor to retrieve the next page of results (only present if hasMore is true)
           example: BalanceChange:019542f5-b3e7-1d02-0000-000000000003
-        countIsExact:
-          type: boolean
-          description: Whether `totalCount` is exact rather than capped
-          example: true
         totalCount:
           type: integer
           description: Number of balance changes in the window, across all pages
@@ -27266,7 +27258,7 @@ components:
           format: date
           description: First day of the statement period the receipt covers, a calendar month in US Central time. Must be the first day of a month that has already begun.
           example: '2026-09-01'
-        deliveredAt:
+        statementDeliveredAt:
           type: string
           format: date-time
           description: When you issued the statement to the customer. Must include a timezone offset, must not be in the future, and must be at or after the end of the period. Defaults to the current time.
@@ -27293,7 +27285,7 @@ components:
             - type: 'null'
           description: When the statement for this period was first read from Grid, or null if it never has been
           example: '2026-10-01T09:00:00Z'
-        confirmedAt:
+        statementDeliveredAt:
           anyOf:
             - type: string
               format: date-time
