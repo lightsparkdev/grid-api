@@ -2,6 +2,7 @@ type: object
 required:
   - internalAccountId
   - periodStart
+  - statementDeliveredAt
 properties:
   internalAccountId:
     type: string
@@ -13,20 +14,16 @@ properties:
     description: First day of the statement period
     example: '2026-09-01'
   fetchedAt:
-    anyOf:
-      - type: string
-        format: date-time
-      - type: 'null'
+    type: string
+    format: date-time
     description: >-
-      When the statement for this period was first read from Grid, or null if
+      When the statement for this period was first read from Grid. Absent if
       it never has been
     example: '2026-10-01T09:00:00Z'
   statementDeliveredAt:
-    anyOf:
-      - type: string
-        format: date-time
-      - type: 'null'
+    type: string
+    format: date-time
     description: >-
-      When the statement was issued, from the first receipt for this period,
-      or null if no receipt has been sent. Later receipts do not move it.
+      When the statement was issued, from the first receipt for this period.
+      Later receipts do not move it.
     example: '2026-10-03T14:31:00Z'

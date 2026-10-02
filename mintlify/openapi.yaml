@@ -6481,7 +6481,7 @@ paths:
 
         `periodStart` names the period: the first day of the statement month, as a date. It must be the first of a month, and a month that has already begun.
 
-        Sending a receipt is idempotent. The stored time is the first receipt's, so calling this again does not move it. If `statementDeliveredAt` is omitted, the current time is used.
+        Sending a receipt is idempotent. The stored time is the first receipt's, so calling this again does not move it.
       operationId: confirmStatementDelivery
       tags:
         - Periodic Statements
@@ -6501,7 +6501,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StatementDelivery'
         '400':
-          description: Bad request. Returned when `periodStart` is not the first day of a month or names a month that has not begun, when `statementDeliveredAt` (or, if omitted, the time of the request) is in the future or before the period has ended, or when the account has no statement of its own.
+          description: Bad request. Returned when `periodStart` is not the first day of a month or names a month that has not begun, when `statementDeliveredAt` is missing, in the future or before the period has ended, or when the account has no statement of its own.
           content:
             application/json:
               schema:
@@ -27252,6 +27252,7 @@ components:
       type: object
       required:
         - periodStart
+        - statementDeliveredAt
       properties:
         periodStart:
           type: string
@@ -27261,13 +27262,14 @@ components:
         statementDeliveredAt:
           type: string
           format: date-time
-          description: When you issued the statement to the customer. Must include a timezone offset, must not be in the future, and must be at or after the end of the period. Defaults to the current time.
+          description: When you issued the statement to the customer. Must include a timezone offset, must not be in the future, and must be at or after the end of the period.
           example: '2026-10-03T14:31:00Z'
     StatementDelivery:
       type: object
       required:
         - internalAccountId
         - periodStart
+        - statementDeliveredAt
       properties:
         internalAccountId:
           type: string
@@ -27279,18 +27281,14 @@ components:
           description: First day of the statement period
           example: '2026-09-01'
         fetchedAt:
-          anyOf:
-            - type: string
-              format: date-time
-            - type: 'null'
-          description: When the statement for this period was first read from Grid, or null if it never has been
+          type: string
+          format: date-time
+          description: When the statement for this period was first read from Grid. Absent if it never has been
           example: '2026-10-01T09:00:00Z'
         statementDeliveredAt:
-          anyOf:
-            - type: string
-              format: date-time
-            - type: 'null'
-          description: When the statement was issued, from the first receipt for this period, or null if no receipt has been sent. Later receipts do not move it.
+          type: string
+          format: date-time
+          description: When the statement was issued, from the first receipt for this period. Later receipts do not move it.
           example: '2026-10-03T14:31:00Z'
     AuthMethodType:
       type: string
