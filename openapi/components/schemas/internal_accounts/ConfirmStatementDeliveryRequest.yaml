@@ -1,0 +1,21 @@
+type: object
+required:
+  - periodStart
+  - statementDeliveredAt
+properties:
+  periodStart:
+    type: string
+    format: date
+    description: >-
+      First day of the statement period the receipt covers, a calendar month in
+      US Central time. Must be the first day of a month that has already
+      begun.
+    example: '2026-09-01'
+  statementDeliveredAt:
+    type: string
+    format: date-time
+    description: >-
+      When you issued the statement to the customer. Must include a timezone
+      offset, must not be in the future, and must be at or after the end of
+      the period.
+    example: '2026-10-03T14:31:00Z'

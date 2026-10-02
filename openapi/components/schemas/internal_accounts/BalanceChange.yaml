@@ -1,0 +1,41 @@
+type: object
+description: >-
+  One movement of the account's balance, signed in the account holder's
+  polarity: money out is negative and money in is positive, so a window's
+  changes sum to its closing balance less its opening balance.
+required:
+  - id
+  - amount
+  - fee
+  - effectiveAt
+properties:
+  id:
+    type: string
+    description: Stable identifier for this balance change
+    example: BalanceChange:019542f5-b3e7-1d02-0000-000000000003
+  transactionId:
+    type: string
+    description: >-
+      The transaction this change belongs to. Fetch it with
+      `GET /transactions/{transactionId}` for its type, counterparty, merchant
+      and rail. Several changes can share one transaction, for example an ACH
+      deposit and its return, or a card purchase that settles in parts. Absent
+      for an adjustment with no transaction behind it.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000004
+  amount:
+    $ref: ../common/CurrencyAmount.yaml
+  fee:
+    allOf:
+      - $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      The part of `amount` that is a fee, signed the same way: negative for a
+      fee charged, positive for a fee refunded, zero when the change carries
+      no fee. Already included in `amount`, so never add it on top. Sum it
+      across a period for the period's total fees.
+  effectiveAt:
+    type: string
+    format: date-time
+    description: >-
+      When the account holder's balance moved. Changes are ordered by this
+      time.
+    example: '2026-09-03T14:31:00Z'
