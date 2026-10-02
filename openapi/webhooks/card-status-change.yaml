@@ -5,7 +5,7 @@ post:
     `PROCESSING → ACTIVE | PENDING`, `ACTIVE ⇄ PENDING` as funding
     sources or delegated signing authorization change, on `PROCESSING → CLOSED (ISSUER_REJECTED)`
     when issuer provisioning fails, and on every subsequent
-    `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition.
+    `ACTIVE ⇄ FROZEN`, `PENDING → FROZEN`, and `→ CLOSED` transition.
 
 
     This endpoint should be implemented by clients of the Grid API.
