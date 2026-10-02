@@ -120,6 +120,5 @@ issuance and finalize issuer activations.
 A provisioned card funded by a USDB Embedded Wallet is `PENDING` until all
 signed retries of `POST /auth/delegated-keys` are complete. Successful
 delegation restores `ACTIVE`; funding changes or key revocation can return
-an active card to `PENDING`. Synchronous provisioning can return `ACTIVE`
-or `PENDING` directly from `POST /cards`. Frozen and closed cards keep their
-status when delegation completes.
+an active card to `PENDING`. Frozen and closed cards keep their status when
+delegation completes.

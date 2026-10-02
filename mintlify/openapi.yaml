@@ -9125,7 +9125,7 @@ paths:
 
         A platform may be limited to a maximum number of live cards. Once that limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED` until a card is closed or Lightspark raises the limit. Cards in `CLOSED` status do not count toward the limit.
 
-        New cards start in `status: "PROCESSING"` while the card issuer provisions the card. The `card.status_change` webhook fires on each status transition, including the transition to `ACTIVE` (or to `CLOSED` with `statusReason: "ISSUER_REJECTED"` if provisioning fails). Cards whose issuer provisioning completes synchronously may be returned immediately as `ACTIVE` or `PENDING`. A provisioned card funded by a USDB Embedded Wallet remains `PENDING` with `statusReason: "DELEGATION_REQUIRED"` until all signed retries of `POST /auth/delegated-keys` are complete. Replacing USD funding with USDB without an active key, or revoking the required key, also moves an active card to `PENDING`. Completing delegation or switching back to USD restores `ACTIVE`; frozen and closed cards keep their status.
+        New cards start in `status: "PROCESSING"` while the card issuer provisions the card. The `card.status_change` webhook fires on each status transition, including the transition to `ACTIVE` (or to `CLOSED` with `statusReason: "ISSUER_REJECTED"` if provisioning fails). A provisioned card funded by a USDB Embedded Wallet remains `PENDING` with `statusReason: "DELEGATION_REQUIRED"` until all signed retries of `POST /auth/delegated-keys` are complete. Replacing USD funding with USDB without an active key, or revoking the required key, also moves an active card to `PENDING`. Completing delegation or switching back to USD restores `ACTIVE`; frozen and closed cards keep their status.
       operationId: createCard
       tags:
         - Cards
@@ -28603,7 +28603,7 @@ components:
         | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this status cannot transact. |
         | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
         | `PENDING` | The issuer has provisioned the card, but its USDB Embedded Wallet funding source lacks an active delegated signing key. Complete `POST /auth/delegated-keys` before using the card. |
-        | `ACTIVE` | Issuer provisioning and required delegated signing authorization are complete. Transactions remain subject to balance and authorization checks. |
+        | `ACTIVE` | The card is live and can authorize transactions. |
         | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing settlements and refunds continue to reconcile. |
         | `CLOSED` | The card is permanently closed. Terminal, irreversible status. |
     CardStatusReason:
