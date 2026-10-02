@@ -59,10 +59,13 @@ post:
     webhook is purely informational.
 
 
-    The webhook is also sent when a side's `railDetails.status` changes while the
-    payment's status stays the same (for example, an ACH return after
-    `COMPLETED`). Such an update repeats the current event type, so don't discard
-    a repeated event type as a duplicate; use the webhook `id` for deduplication.
+    The webhook is also sent when the source's `railDetails.status` changes while
+    the payment's status stays the same. For example, when the originating bank
+    returns an ACH deposit after `COMPLETED`, the payment stays `COMPLETED` and
+    `INCOMING_PAYMENT.COMPLETED` is sent again with `source.railDetails.status`
+    set to `RETURNED`. Such an update repeats the current event type, so don't
+    discard a repeated event type as a duplicate; use the webhook `id` for
+    deduplication.
 
 
     Bank-rail incoming payments (e.g. SWIFT) are informational at every

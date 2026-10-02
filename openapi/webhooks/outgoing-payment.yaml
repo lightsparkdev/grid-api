@@ -1,11 +1,10 @@
 post:
   summary: Outgoing payment status webhook
   description: >
-    Webhook that is called when an outgoing payment's status changes, or when
-    a side's `railDetails.status` changes while the payment's status stays the
-    same (for example, an ACH return after `COMPLETED`). Such an update repeats
-    the current event type, so don't discard a repeated event type as a
-    duplicate; use the webhook `id` for deduplication.
+    Webhook that is called when an outgoing payment's status changes. A side's
+    `railDetails` carries the rail-level status of that leg; for example, a payout
+    the receiving bank returns arrives as `OUTGOING_PAYMENT.FAILED` with
+    `destination.railDetails.status` set to `RETURNED`.
 
     This endpoint should be implemented by clients of the Grid API.
 
@@ -137,19 +136,21 @@ post:
                 createdAt: '2025-08-15T14:25:18Z'
                 description: USDC withdrawal to self-custody wallet
                 paymentInstructions: []
-          outgoingCompletedAchPaymentReturned:
-            summary: Completed ACH payout returned by the receiving bank
+          outgoingAchPaymentReturned:
+            summary: ACH payout returned by the receiving bank
             description: >-
               The payout settled, and the receiving bank later returned the ACH entry.
-              The destination's `railDetails` moves to `RETURNED`; the transaction's
-              `status` stays `COMPLETED`.
+              The transaction moves to `FAILED` with `PAYOUT_RETURNED`, and the
+              destination's `railDetails` moves to `RETURNED`. The refund back to the
+              source follows as `OUTGOING_PAYMENT.REFUND_PENDING` and
+              `OUTGOING_PAYMENT.REFUND_COMPLETED`.
             value:
               id: Webhook:019542f5-b3e7-1d02-0000-000000000011
-              type: OUTGOING_PAYMENT.COMPLETED
+              type: OUTGOING_PAYMENT.FAILED
               timestamp: '2025-08-18T15:02:00Z'
               data:
                 id: Transaction:019542f5-b3e7-1d02-0000-000000000012
-                status: COMPLETED
+                status: FAILED
                 type: OUTGOING
                 direction: DEBIT
                 source:
@@ -190,6 +191,7 @@ post:
                 createdAt: '2025-08-15T14:25:18Z'
                 description: Vendor payout
                 paymentInstructions: []
+                failureReason: PAYOUT_RETURNED
           failedPayment:
             summary: Failed outgoing payment
             value:

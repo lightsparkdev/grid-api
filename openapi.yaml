@@ -11864,7 +11864,7 @@ webhooks:
 
         For transactions with other statuses (COMPLETED, FAILED, REFUNDED), this webhook is purely informational.
 
-        The webhook is also sent when a side's `railDetails.status` changes while the payment's status stays the same (for example, an ACH return after `COMPLETED`). Such an update repeats the current event type, so don't discard a repeated event type as a duplicate; use the webhook `id` for deduplication.
+        The webhook is also sent when the source's `railDetails.status` changes while the payment's status stays the same. For example, when the originating bank returns an ACH deposit after `COMPLETED`, the payment stays `COMPLETED` and `INCOMING_PAYMENT.COMPLETED` is sent again with `source.railDetails.status` set to `RETURNED`. Such an update repeats the current event type, so don't discard a repeated event type as a duplicate; use the webhook `id` for deduplication.
 
         Bank-rail incoming payments (e.g. SWIFT) are informational at every status, including PENDING: the funds have already moved interbank, so the approval mechanism and the 5-second response window do not apply.
       operationId: incomingPaymentWebhook
@@ -12122,7 +12122,7 @@ webhooks:
     post:
       summary: Outgoing payment status webhook
       description: |
-        Webhook that is called when an outgoing payment's status changes, or when a side's `railDetails.status` changes while the payment's status stays the same (for example, an ACH return after `COMPLETED`). Such an update repeats the current event type, so don't discard a repeated event type as a duplicate; use the webhook `id` for deduplication.
+        Webhook that is called when an outgoing payment's status changes. A side's `railDetails` carries the rail-level status of that leg; for example, a payout the receiving bank returns arrives as `OUTGOING_PAYMENT.FAILED` with `destination.railDetails.status` set to `RETURNED`.
         This endpoint should be implemented by clients of the Grid API.
 
         ### Authentication
@@ -12241,16 +12241,16 @@ webhooks:
                     createdAt: '2025-08-15T14:25:18Z'
                     description: USDC withdrawal to self-custody wallet
                     paymentInstructions: []
-              outgoingCompletedAchPaymentReturned:
-                summary: Completed ACH payout returned by the receiving bank
-                description: The payout settled, and the receiving bank later returned the ACH entry. The destination's `railDetails` moves to `RETURNED`; the transaction's `status` stays `COMPLETED`.
+              outgoingAchPaymentReturned:
+                summary: ACH payout returned by the receiving bank
+                description: The payout settled, and the receiving bank later returned the ACH entry. The transaction moves to `FAILED` with `PAYOUT_RETURNED`, and the destination's `railDetails` moves to `RETURNED`. The refund back to the source follows as `OUTGOING_PAYMENT.REFUND_PENDING` and `OUTGOING_PAYMENT.REFUND_COMPLETED`.
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000011
-                  type: OUTGOING_PAYMENT.COMPLETED
+                  type: OUTGOING_PAYMENT.FAILED
                   timestamp: '2025-08-18T15:02:00Z'
                   data:
                     id: Transaction:019542f5-b3e7-1d02-0000-000000000012
-                    status: COMPLETED
+                    status: FAILED
                     type: OUTGOING
                     direction: DEBIT
                     source:
@@ -12291,6 +12291,7 @@ webhooks:
                     createdAt: '2025-08-15T14:25:18Z'
                     description: Vendor payout
                     paymentInstructions: []
+                    failureReason: PAYOUT_RETURNED
               failedPayment:
                 summary: Failed outgoing payment
                 value:
@@ -24934,7 +24935,7 @@ components:
         | `PENDING` | Quote has been created |
         | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
         | `PROCESSING` | Funding has been received and payment initiated |
-        | `COMPLETED` | The funds reached their destination. A later ACH return or reversal is reported on that side's `railDetails` and does not change this status |
+        | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network. A returned payout moves to `FAILED`. A returned incoming payment stays `COMPLETED` and reports the return on the source's `railDetails` |
         | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
         | `FAILED` | An error occurred during payment |
         | `REFUNDED` | Deprecated. A refund is reported on the transaction's `refund` object, and the status stays `FAILED` |
@@ -25076,8 +25077,9 @@ components:
                 | `REVERSED` | The originator reversed the entry after it settled. |
                 | `FAILED` | The entry was rejected before submission and no funds moved. |
 
-                A return or reversal can arrive days after `SETTLED`. It changes this status and
-                leaves the transaction's top-level `status` unchanged.
+                A return or reversal can arrive days after `SETTLED`. This status reports the ACH
+                entry; the transaction's top-level `status` reports the payment. A returned payout
+                moves to `FAILED`, while a returned incoming payment stays `COMPLETED`.
               example: SETTLED
             traceNumber:
               type: string
@@ -25654,7 +25656,7 @@ components:
         | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
         | `EXPIRED` | Quote wasn't executed before expiry window |
         | `PROCESSING` | Executing the quote after receiving funds |
-        | `COMPLETED` | Payout reached the destination. A later ACH return or reversal is reported on the destination's `railDetails` and does not change this status |
+        | `COMPLETED` | Payout successfully reached the destination |
         | `FAILED` | Something went wrong — accompanied by a `failureReason` |
     OutgoingRateDetails:
       description: 'Details about the rate and fees for an outgoing transaction or quote. Note: `counterpartyFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'
@@ -25744,7 +25746,7 @@ components:
         | `QUOTE_EXECUTION_FAILED` | The quote could not be executed. Covers any internal failure on the way to settlement, whether or not funds were debited — a debited amount is refunded automatically |
         | `FUNDING_AMOUNT_MISMATCH` | The funds received did not match the expected amount |
         | `SCA_NOT_COMPLETED` | The customer did not complete the Strong Customer Authentication challenge before it expired |
-        | `PAYOUT_RETURNED` | The receiving bank returned the payout before it reached the destination. A return after `COMPLETED` is reported on the destination's `railDetails` instead |
+        | `PAYOUT_RETURNED` | The receiving bank accepted the payout and then returned or reversed it |
         | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner |
         | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency or payment rail isn't supported for that account. A sweep whose rule names a rail the destination cannot accept reports this |
         | `ACCOUNT_INVALID` | The recipient account couldn't be found or the details are wrong — bad IBAN/account number, beneficiary not found, or account closed |
