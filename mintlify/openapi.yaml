@@ -3932,7 +3932,7 @@ paths:
                     accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
                   amount: 12550
       responses:
-        '201':
+        '200':
           description: Transfer-in request created successfully
           content:
             application/json:
@@ -4020,7 +4020,7 @@ paths:
                   amount: 12550
                   remittanceInformation: '12345'
       responses:
-        '201':
+        '200':
           description: |
             Transfer-out request created successfully.
           content:
@@ -4514,7 +4514,7 @@ paths:
                     - PaymentDocument:019542f5-b3e7-1d02-0000-000000000003
                   description: Accounting services, invoice INV-2025-0142
       responses:
-        '201':
+        '200':
           description: |
             Transfer quote created successfully. The response includes exchange rates,
             fees, and transfer details. For transfers involving UMA addresses, payment

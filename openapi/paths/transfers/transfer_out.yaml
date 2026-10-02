@@ -56,7 +56,7 @@ post:
               amount: 12550
               remittanceInformation: '12345'
   responses:
-    '201':
+    '200':
       description: >
         Transfer-out request created successfully.
       content:

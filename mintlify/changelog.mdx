@@ -8,6 +8,17 @@ mode: "wide"
 Follow along with the latest additions and improvements to the Grid API. For upcoming
 changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
+<Update label="October 2026">
+
+## Quote and transfer creation answer `200`
+
+`POST /quotes`, `POST /transfer-in` and `POST /transfer-out` have always answered
+`200 OK` for a newly created quote or transfer, and the spec now says so instead of
+`201 Created`. The `202 Accepted` reply for a quote awaiting Strong Customer
+Authentication is unchanged.
+
+</Update>
+
 <Update label="September 2026">
 
 ## Sandbox test suffixes work on Solana addresses
