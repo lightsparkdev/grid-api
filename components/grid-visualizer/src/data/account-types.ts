@@ -406,4 +406,12 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: true,
   },
+  TRY_ACCOUNT: {
+    accountType: 'TRY_ACCOUNT',
+    fields: [
+      { name: 'iban', example: 'TR330006100519786457841326', description: 'Turkish IBAN (26 characters, starting with TR)' },
+      { name: 'bankName', example: 'Garanti Bank' },
+    ],
+    beneficiaryRequired: true,
+  },
 };
