@@ -17,6 +17,14 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 `201 Created`. The `202 Accepted` reply for a quote awaiting Strong Customer
 Authentication is unchanged.
 
+## Immediate execution surfaces the SCA challenge
+
+A `POST /quotes` with `immediatelyExecute: true` for a customer whose provider
+requires Strong Customer Authentication now answers `202 Accepted` with the quote in
+`PENDING_AUTHORIZATION` and its `scaChallenge`, instead of `200 OK` with no
+challenge. Authorize it via `POST /quotes/{quoteId}/authorize`. The `202` was
+already documented but never returned.
+
 </Update>
 
 <Update label="September 2026">
