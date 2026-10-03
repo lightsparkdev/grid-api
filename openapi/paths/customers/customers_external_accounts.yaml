@@ -132,11 +132,27 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '409':
-      description: Conflict - External account already exists
+      description: >-
+        Conflict - External account already exists. When the conflicting
+        account belongs to the customer in `customerId` (a duplicate wallet) or
+        to any account on your platform (a duplicate `platformAccountId`),
+        `details` carries its `externalAccountId` and `platformAccountId` so a
+        retried request can recover it. `details` is omitted when the
+        conflicting account cannot be identified, for example when the
+        `platformAccountId` is already used on another platform.
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error409.yaml
+          examples:
+            duplicateExternalAccount:
+              summary: Duplicate external account
+              value:
+                code: DUPLICATE_EXTERNAL_ACCOUNT
+                reason: An external account with this platform_account_id already exists
+                details:
+                  externalAccountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  platformAccountId: acme-acct-42
     '500':
       description: Internal service error
       content:
