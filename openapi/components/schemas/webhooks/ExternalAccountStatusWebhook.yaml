@@ -10,3 +10,4 @@ allOf:
         type: string
         enum:
           - EXTERNAL_ACCOUNT.STATUS_UPDATED
+          - EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED
