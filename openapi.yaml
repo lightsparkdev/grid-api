@@ -4921,7 +4921,7 @@ paths:
       description: |
         Retrieve a paginated list of transactions with optional filtering.
         The transactions can be filtered by customer ID, platform customer ID, UMA address,
-        date range, status, and transaction type.
+        date range, settlement date range, status, and transaction type.
 
         Card transactions are included and identified by `type: CARD`. In Sandbox this is how
         you discover a `CardTransaction` id after simulating an authorization — list the
@@ -5002,6 +5002,22 @@ paths:
           schema:
             type: string
             format: date-time
+        - name: settlementStartDate
+          in: query
+          description: Filter to transactions whose `settledAt` is at or after this time (inclusive), in ISO 8601 format. Transactions with no `settledAt`, including all card transactions, are excluded.
+          required: false
+          schema:
+            type: string
+            format: date-time
+            example: '2025-10-01T00:00:00Z'
+        - name: settlementEndDate
+          in: query
+          description: Filter to transactions whose `settledAt` is at or before this time (inclusive), in ISO 8601 format. Transactions with no `settledAt`, including all card transactions, are excluded.
+          required: false
+          schema:
+            type: string
+            format: date-time
+            example: '2025-10-31T23:59:59Z'
         - name: limit
           in: query
           description: Maximum number of results to return (default 20, max 100)

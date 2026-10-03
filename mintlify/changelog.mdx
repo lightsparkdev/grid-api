@@ -10,6 +10,12 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## Filter transactions by settlement date
+
+`GET /transactions` accepts `settlementStartDate` and `settlementEndDate`, both
+inclusive, to list transactions by their `settledAt` time. Transactions with no
+`settledAt`, including card transactions, are excluded when either filter is set.
+
 ## Quote and transfer creation answer `200`
 
 `POST /quotes`, `POST /transfer-in` and `POST /transfer-out` have always answered
