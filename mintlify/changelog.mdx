@@ -10,6 +10,24 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## Balance changes and statement delivery for periodic statements
+
+Two new endpoints under the **Periodic Statements** tag support building and tracking
+monthly account statements:
+
+- `GET /internal-accounts/{id}/balance-changes` lists every movement of an account's
+  balance in a window, with the opening and closing balances that bound it. Each
+  change's `transactionId` links to its transaction for type, payee, and merchant
+  details. Fees are inside the changes—`fee` reports how much of each `amount` was a
+  fee.
+- `POST /internal-accounts/{id}/confirm-statement` records a receipt that you issued
+  the account's statement for a period. Send it within five days of each month's end.
+
+A window whose card settlement has not closed returns `409 NOT_YET_AVAILABLE`; retry
+once it settles.
+
+See [Periodic statements](/payouts-and-b2b/payment-flow/statements).
+
 ## Quote and transfer creation answer `200`
 
 `POST /quotes`, `POST /transfer-in` and `POST /transfer-out` have always answered
