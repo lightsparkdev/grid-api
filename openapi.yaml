@@ -14998,9 +14998,9 @@ components:
     BusinessInfoResponse:
       type: object
       description: |
-        Business information returned on a customer. `taxId` and `incorporatedOn` are
-        required on creation but may be absent on legacy customers that pre-date the
-        requirement, so both are optional in responses.
+        Business information returned on a customer. `taxId` and `incorporatedOn` may
+        be absent for customers of regulated platforms that perform their own KYB, and
+        for customers created before the fields were required.
       required:
         - legalName
       properties:
@@ -15349,12 +15349,18 @@ components:
         - $ref: '#/components/schemas/IndividualCustomerFields'
     BusinessInfo:
       type: object
-      description: Additional information required for business entities
+      description: |
+        Information about a business customer. Which fields are required depends on who
+        performs KYB on the business:
+
+        - **Regulated platforms that perform their own KYB** must provide `legalName` and
+          `country`. `taxId` and `incorporatedOn` are optional.
+        - **Platforms where Grid performs KYB** (unregulated platforms) must provide
+          `legalName`, `country`, `taxId`, and `incorporatedOn`. Customer creation fails
+          with `400 INVALID_INPUT` if `taxId` or `incorporatedOn` is missing.
       required:
         - legalName
         - country
-        - taxId
-        - incorporatedOn
       properties:
         legalName:
           type: string
@@ -15378,14 +15384,14 @@ components:
         incorporatedOn:
           type: string
           format: date
-          description: Date of incorporation in ISO 8601 format (YYYY-MM-DD)
+          description: Date of incorporation in ISO 8601 format (YYYY-MM-DD). Required when Grid performs KYB on the business.
           example: '2018-03-14'
         entityType:
           $ref: '#/components/schemas/EntityType'
         taxId:
           type: string
           maxLength: 100
-          description: Tax identification number
+          description: Tax identification number. Required when Grid performs KYB on the business.
           example: 47-1234567
         countriesOfOperation:
           type: array

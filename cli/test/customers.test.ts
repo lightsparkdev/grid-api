@@ -150,10 +150,32 @@ describe("customers create", () => {
       "BUSINESS",
       "--legal-name",
       "Acme LLC",
-      // businessCountry, taxId, and incorporatedOn omitted
+      // businessCountry omitted
     ]);
 
     expect(calls).toBe(0);
+  });
+
+  it("sends a business create without taxId or incorporatedOn", async () => {
+    const { request } = await runCli([
+      "customers",
+      "create",
+      "--platform-id",
+      "p5",
+      "--type",
+      "BUSINESS",
+      "--legal-name",
+      "Acme India Pvt Ltd",
+      "--business-country",
+      "IN",
+    ]);
+
+    expect(request?.body).toMatchObject({
+      customerType: "BUSINESS",
+      businessInfo: { legalName: "Acme India Pvt Ltd", country: "IN" },
+    });
+    expect(request?.body.businessInfo).not.toHaveProperty("taxId");
+    expect(request?.body.businessInfo).not.toHaveProperty("incorporatedOn");
   });
 
   it("rejects a partial address missing postalCode/country", async () => {

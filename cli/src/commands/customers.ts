@@ -47,11 +47,12 @@ function validateAddress(
   };
 }
 
-// BusinessInfo requires legalName, businessCountry, taxId, and incorporatedOn on create.
+// taxId and incorporatedOn are also required when Grid performs KYB. The API
+// enforces that, since the CLI cannot tell who performs KYB for the platform.
 function validateBusinessRequired(
   options: Record<string, string | undefined>
 ): ValidationResult {
-  const missing = ["legalName", "businessCountry", "taxId", "incorporatedOn"].filter(
+  const missing = ["legalName", "businessCountry"].filter(
     (key) => !options[key]
   );
   if (missing.length === 0) return { valid: true };
@@ -136,8 +137,11 @@ function businessOptions(cmd: Command): Command {
     .option("--doing-business-as <name>", "Trade/DBA name (business)")
     .option("--business-country <country>", "Country of incorporation (business)")
     .option("--registration-number <number>", "Registration number (business)")
-    .option("--tax-id <id>", "Tax ID (business)")
-    .option("--incorporated-on <date>", "Incorporation date YYYY-MM-DD (business)")
+    .option("--tax-id <id>", "Tax ID (business; required when Grid performs KYB)")
+    .option(
+      "--incorporated-on <date>",
+      "Incorporation date YYYY-MM-DD (business; required when Grid performs KYB)"
+    )
     .option("--entity-type <type>", "Entity type (business)")
     .option("--business-type <type>", "Business type (business)")
     .option("--purpose-of-account <purpose>", "Purpose of account (business)")

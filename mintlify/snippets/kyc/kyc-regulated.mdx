@@ -37,6 +37,8 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
   }'
 ```
 
+Business customers require only `businessInfo.legalName` and `businessInfo.country`. `businessInfo.taxId` and `businessInfo.incorporatedOn` are optional when you perform KYB yourself.
+
 The examples below show a more comprehensive set of data. Not all fields are strictly required by the API for customer creation itself, but become necessary based on currency and UMA provider requirements if using UMA.
 
 <Tabs>
