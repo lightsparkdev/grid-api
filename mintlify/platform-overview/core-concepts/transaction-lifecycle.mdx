@@ -115,6 +115,8 @@ A single `status` field represents whether the transaction reached its destinati
 
 <Warning>
 `EXPIRED` and `FAILED` are terminal states, but `COMPLETED` is not always final — a bank can return a payment after it was marked `COMPLETED`, moving it to `FAILED`. Always continue processing webhook events for transactions even after they reach `COMPLETED`.
+
+The transaction's `status` reports the payment. Each side's `railDetails` reports the transfer on its rail, such as an ACH entry's `SETTLED` or `RETURNED` status. A returned payout moves to `FAILED`, and its destination's `railDetails` shows `RETURNED`. A returned incoming payment stays `COMPLETED`: the webhook for its current status is sent again with the source's `railDetails` showing `RETURNED`.
 </Warning>
 
 ### State Diagram
@@ -393,7 +395,7 @@ Payment initially succeeds but the bank returns it:
 1. `OUTGOING_PAYMENT.PENDING`
 2. `OUTGOING_PAYMENT.PROCESSING`
 3. `OUTGOING_PAYMENT.COMPLETED`
-4. `OUTGOING_PAYMENT.FAILED`
+4. `OUTGOING_PAYMENT.FAILED` — `failureReason` is `PAYOUT_RETURNED`, and `destination.railDetails.status` is `RETURNED`, with `returnedAt`
 5. `OUTGOING_PAYMENT.REFUND_PENDING`
 6. `OUTGOING_PAYMENT.REFUND_COMPLETED`
 

@@ -1,7 +1,10 @@
 post:
   summary: Outgoing payment status webhook
   description: >
-    Webhook that is called when an outgoing payment's status changes.
+    Webhook that is called when an outgoing payment's status changes. A side's
+    `railDetails` carries the rail-level status of that leg; for example, a payout
+    the receiving bank returns arrives as `OUTGOING_PAYMENT.FAILED` with
+    `destination.railDetails.status` set to `RETURNED`.
 
     This endpoint should be implemented by clients of the Grid API.
 
@@ -105,6 +108,10 @@ post:
                 destination:
                   destinationType: ACCOUNT
                   accountId: ExternalAccount:c34dcbd6-dced-4ec4-b756-3c3a9ea3d789
+                  railDetails:
+                    paymentRail: ONCHAIN
+                    transactionHash: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
+                    network: SOLANA
                   onChainTransaction:
                     transactionHash: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
                     network: SOLANA
@@ -129,6 +136,62 @@ post:
                 createdAt: '2025-08-15T14:25:18Z'
                 description: USDC withdrawal to self-custody wallet
                 paymentInstructions: []
+          outgoingAchPaymentReturned:
+            summary: ACH payout returned by the receiving bank
+            description: >-
+              The payout settled, and the receiving bank later returned the ACH entry.
+              The transaction moves to `FAILED` with `PAYOUT_RETURNED`, and the
+              destination's `railDetails` moves to `RETURNED`. The refund back to the
+              source follows as `OUTGOING_PAYMENT.REFUND_PENDING` and
+              `OUTGOING_PAYMENT.REFUND_COMPLETED`.
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000011
+              type: OUTGOING_PAYMENT.FAILED
+              timestamp: '2025-08-18T15:02:00Z'
+              data:
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000012
+                status: FAILED
+                type: OUTGOING
+                direction: DEBIT
+                source:
+                  sourceType: ACCOUNT
+                  accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                destination:
+                  destinationType: ACCOUNT
+                  accountId: ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456
+                  railDetails:
+                    paymentRail: ACH
+                    status: RETURNED
+                    bankAccount:
+                      accountHolderName: Jane Receiver
+                      routingNumber: '021000021'
+                      accountNumber: '****4321'
+                    traceNumber: '021000020123456'
+                    addenda: 'INV-2025-0815'
+                    settledAt: '2025-08-15T14:30:00Z'
+                    returnedAt: '2025-08-18T15:00:00Z'
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                sentAmount:
+                  amount: 50000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                receivedAmount:
+                  amount: 50000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                quoteId: Quote:019542f5-b3e7-1d02-0000-000000000013
+                settledAt: '2025-08-15T14:30:00Z'
+                createdAt: '2025-08-15T14:25:18Z'
+                description: Vendor payout
+                paymentInstructions: []
+                failureReason: PAYOUT_RETURNED
           failedPayment:
             summary: Failed outgoing payment
             value:
