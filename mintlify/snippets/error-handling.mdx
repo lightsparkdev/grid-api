@@ -124,6 +124,34 @@ async function createQuoteWhenAccountIsReady({ accountId, amount }) {
 
 </Accordion>
 
+<Accordion title="DUPLICATE_EXTERNAL_ACCOUNT">
+**Cause:** An equivalent external account already exists
+
+**Solution:** Check the `details` field in the error response to recover the existing account
+
+```javascript
+async function createExternalAccountIdempotent(params) {
+  try {
+    return await createExternalAccount(params);
+  } catch (error) {
+    if (error.code === "DUPLICATE_EXTERNAL_ACCOUNT" && error.details) {
+      // Account already exists on your platform — use the existing one
+      const { externalAccountId, platformAccountId } = error.details;
+      console.log(`Using existing account: ${externalAccountId}`);
+      return await getExternalAccount(externalAccountId);
+    }
+    throw error;
+  }
+}
+```
+
+<Note>
+  `details.externalAccountId` and `details.platformAccountId` are included when the conflicting 
+  account belongs to your platform. If the conflict is with another platform (e.g., a duplicate 
+  `platformAccountId` used elsewhere), `details` is omitted.
+</Note>
+</Accordion>
+
 <Accordion title="INVALID_BANK_ACCOUNT">
 **Cause:** Bank account details are invalid or incomplete
 
@@ -465,6 +493,8 @@ function getUserFriendlyMessage(error) {
       "Bank account details are invalid. Please check and try again.",
     BANK_ACCOUNT_VALIDATION_PENDING:
       "We're still verifying this bank account. This usually takes a few business days.",
+    DUPLICATE_EXTERNAL_ACCOUNT:
+      "This account is already registered.",
     PAYMENT_APPROVAL_TIMED_OUT: "Payment approval timed out. Please try again.",
     AMOUNT_OUT_OF_RANGE: "Payment amount is too high or too low.",
     INVALID_CURRENCY: "This currency is not supported.",
