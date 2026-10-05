@@ -11864,7 +11864,7 @@ webhooks:
 
         For transactions with other statuses (COMPLETED, FAILED, REFUNDED), this webhook is purely informational.
 
-        The webhook is also sent when the source's `railDetails.status` changes while the payment's status stays the same. For example, when the originating bank returns an ACH deposit after `COMPLETED`, the payment stays `COMPLETED` and `INCOMING_PAYMENT.COMPLETED` is sent again with `source.railDetails.status` set to `RETURNED`. Such an update repeats the current event type, so don't discard a repeated event type as a duplicate; use the webhook `id` for deduplication.
+        An ACH deposit can be returned after `COMPLETED`, days after it settled. The return takes the funds back, so the payment moves to `FAILED` and `INCOMING_PAYMENT.FAILED` is sent with `source.railDetails.status` set to `RETURNED` and `returnedAt` set.
 
         Bank-rail incoming payments (e.g. SWIFT) are informational at every status, including PENDING: the funds have already moved interbank, so the approval mechanism and the 5-second response window do not apply.
       operationId: incomingPaymentWebhook
@@ -12028,6 +12028,46 @@ webhooks:
                     settledAt: '2025-08-15T14:30:00Z'
                     createdAt: '2025-08-15T14:25:18Z'
                     description: Wire deposit
+              incomingAchDepositReturned:
+                summary: ACH deposit returned after completion
+                description: The deposit settled, and the originating bank later returned the ACH entry. The return takes the funds back, so the payment moves to `FAILED` and the source's `railDetails` shows `RETURNED`.
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000013
+                  type: INCOMING_PAYMENT.FAILED
+                  timestamp: '2025-08-18T15:02:00Z'
+                  data:
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000014
+                    status: FAILED
+                    type: INCOMING
+                    direction: CREDIT
+                    source:
+                      sourceType: ACCOUNT
+                      accountId: ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456
+                      currency: USD
+                      railDetails:
+                        paymentRail: ACH
+                        status: RETURNED
+                        bankAccount:
+                          accountHolderName: Jane Sender
+                          routingNumber: '021000021'
+                          accountNumber: '****4321'
+                        traceNumber: '021000020123456'
+                        returnedAt: '2025-08-18T15:00:00Z'
+                    destination:
+                      destinationType: ACCOUNT
+                      accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    receivedAmount:
+                      amount: 100000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    settledAt: '2025-08-15T14:30:00Z'
+                    createdAt: '2025-08-15T14:25:18Z'
+                    description: ACH deposit
               incomingRefundedPayment:
                 summary: Refunded incoming payment notification
                 value:
@@ -24935,7 +24975,7 @@ components:
         | `PENDING` | Quote has been created |
         | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
         | `PROCESSING` | Funding has been received and payment initiated |
-        | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network. A returned payout moves to `FAILED`. A returned incoming payment stays `COMPLETED` and reports the return on the source's `railDetails` |
+        | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network. A return that takes the funds back from the destination moves the transaction to `FAILED`, and the returned side's `railDetails` shows `RETURNED` |
         | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
         | `FAILED` | An error occurred during payment |
         | `REFUNDED` | Deprecated. A refund is reported on the transaction's `refund` object, and the status stays `FAILED` |
@@ -25078,8 +25118,8 @@ components:
                 | `FAILED` | The entry was rejected before submission and no funds moved. |
 
                 A return or reversal can arrive days after `SETTLED`. This status reports the ACH
-                entry; the transaction's top-level `status` reports the payment. A returned payout
-                moves to `FAILED`, while a returned incoming payment stays `COMPLETED`.
+                entry; the transaction's top-level `status` reports whether the funds are still at
+                the destination, so a return moves the transaction to `FAILED`.
               example: SETTLED
             traceNumber:
               type: string

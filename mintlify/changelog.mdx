@@ -43,10 +43,9 @@ details.
 `railDetails.status` reports the transfer on its rail; the transaction's top-level
 `status` reports the payment, and its webhook events are unchanged. A returned ACH payout
 still moves to `FAILED` with `PAYOUT_RETURNED` and is refunded as before; its destination's
-`railDetails` now also shows `RETURNED` with `returnedAt`. When the originating bank returns
-an ACH deposit after `COMPLETED`, the payment stays `COMPLETED` and
-`INCOMING_PAYMENT.COMPLETED` is sent again with the source's `railDetails` showing
-`RETURNED`. `TransactionStatus.REFUNDED` is deprecated: a refund is reported on the
+`railDetails` now also shows `RETURNED` with `returnedAt`. An ACH deposit returned after
+`COMPLETED` moves to `FAILED` and sends `INCOMING_PAYMENT.FAILED`, with the source's
+`railDetails` showing `RETURNED`. `TransactionStatus.REFUNDED` is deprecated: a refund is reported on the
 transaction's `refund` object.
 
 The flat originator fields on the external funding source (`accountHolderName`, `accountIdentifier`,

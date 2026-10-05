@@ -116,7 +116,7 @@ A single `status` field represents whether the transaction reached its destinati
 <Warning>
 `EXPIRED` and `FAILED` are terminal states, but `COMPLETED` is not always final — a bank can return a payment after it was marked `COMPLETED`, moving it to `FAILED`. Always continue processing webhook events for transactions even after they reach `COMPLETED`.
 
-The transaction's `status` reports the payment. Each side's `railDetails` reports the transfer on its rail, such as an ACH entry's `SETTLED` or `RETURNED` status. A returned payout moves to `FAILED`, and its destination's `railDetails` shows `RETURNED`. A returned incoming payment stays `COMPLETED`: the webhook for its current status is sent again with the source's `railDetails` showing `RETURNED`.
+The transaction's `status` reports the payment. Each side's `railDetails` reports the transfer on its rail, such as an ACH entry's `SETTLED` or `RETURNED` status. The `status` follows whether the funds are still at the destination. A return takes them back, so a returned payout or incoming payment moves to `FAILED`, and the returned side's `railDetails` shows `RETURNED`. A transaction stays `COMPLETED` only when a later step that can't be undone, such as a completed conversion, already used the funds; its `railDetails` still shows `RETURNED`.
 </Warning>
 
 ### State Diagram
@@ -212,7 +212,7 @@ The webhook request body contains the full transaction resource.
 | `INCOMING_PAYMENT.PENDING` | Funds are on their way to the internal account |
 | `INCOMING_PAYMENT.PROCESSING` | Funding received, credit in progress |
 | `INCOMING_PAYMENT.COMPLETED` | Funds credited to the internal account |
-| `INCOMING_PAYMENT.FAILED` | The deposit failed |
+| `INCOMING_PAYMENT.FAILED` | The deposit failed, or a bank returned it after it completed |
 | `INCOMING_PAYMENT.REFUND_PENDING` | Refund initiated |
 | `INCOMING_PAYMENT.REFUND_COMPLETED` | Refund settled |
 | `INCOMING_PAYMENT.REFUND_FAILED` | Refund failed |
