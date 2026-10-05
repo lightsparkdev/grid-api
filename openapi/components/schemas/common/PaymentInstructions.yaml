@@ -16,7 +16,7 @@ properties:
     description: >-
       Where to send the funds. Quotes can carry any of these types. Internal
       accounts return only `USD_ACCOUNT`, `EUR_ACCOUNT`, `SWIFT_ACCOUNT`, and
-      the network wallet types; MXN, BRL, COP, Lightning, and Bitcoin L1
+      the network wallet types; MXN, BRL, COP, ARS, Lightning, and Bitcoin L1
       instructions appear only on real-time funded quotes.
     oneOf:
     - $ref: ../common/PaymentUsdAccountInfo.yaml
@@ -25,6 +25,7 @@ properties:
     - $ref: ../common/PaymentMxnAccountInfo.yaml
     - $ref: ../common/PaymentBrlAccountInfo.yaml
     - $ref: ../common/PaymentCopAccountInfo.yaml
+    - $ref: ../common/PaymentArsAccountInfo.yaml
     - $ref: ../common/PaymentSparkWalletInfo.yaml
     - $ref: ../common/PaymentLightningInvoiceInfo.yaml
     - $ref: ../common/PaymentBitcoinDepositAddressInfo.yaml
@@ -45,6 +46,7 @@ properties:
         MXN_ACCOUNT: ../common/PaymentMxnAccountInfo.yaml
         BRL_ACCOUNT: ../common/PaymentBrlAccountInfo.yaml
         COP_ACCOUNT: ../common/PaymentCopAccountInfo.yaml
+        ARS_ACCOUNT: ../common/PaymentArsAccountInfo.yaml
         SPARK_WALLET: ../common/PaymentSparkWalletInfo.yaml
         LIGHTNING: ../common/PaymentLightningInvoiceInfo.yaml
         BITCOIN_L1: ../common/PaymentBitcoinDepositAddressInfo.yaml
