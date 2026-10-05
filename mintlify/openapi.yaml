@@ -4195,6 +4195,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '502':
+          description: Counterparty returned an error or an invalid response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error502'
+        '504':
+          description: Counterparty could not be reached or timed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error504'
   /receiver/external-account/{accountId}:
     get:
       summary: Look up an external account for payment
@@ -4276,6 +4288,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '502':
+          description: Counterparty returned an error or an invalid response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error502'
+        '504':
+          description: Counterparty could not be reached or timed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error504'
   /payment-documents:
     post:
       summary: Upload a payment document
@@ -4683,6 +4707,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
+        '502':
+          description: Counterparty returned an error or an invalid response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error502'
+        '504':
+          description: Counterparty could not be reached or timed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error504'
   /quotes/{quoteId}/execute:
     post:
       summary: Execute a quote
@@ -8544,6 +8580,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '502':
+          description: Counterparty returned an error or an invalid response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error502'
+        '504':
+          description: Counterparty could not be reached or timed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error504'
   /agents/me/quotes/{quoteId}:
     parameters:
       - name: quoteId
@@ -14168,8 +14216,6 @@ components:
             | INVITATIONS_NOT_CONFIGURED | Invitations are not configured |
             | INVALID_UMA_ADDRESS | UMA address format is invalid |
             | INVITATION_CANCELLED | Invitation has been cancelled |
-            | QUOTE_REQUEST_FAILED | An issue occurred during the quote process; this is retryable |
-            | INVALID_PAYREQ_RESPONSE | Counterparty Payreq response was invalid |
             | INVALID_RECEIVER | Receiver is invalid |
             | PARSE_PAYREQ_RESPONSE_ERROR | Error parsing receiver PayReq response |
             | CERT_CHAIN_INVALID | Counterparty certificate chain is invalid |
@@ -14184,7 +14230,6 @@ components:
             | INVALID_REQUEST_FORMAT | Request format is invalid |
             | INVALID_BANK_ACCOUNT | Bank account is invalid |
             | SELF_PAYMENT | Self payment not allowed |
-            | LOOKUP_REQUEST_FAILED | Lookup request failed |
             | PARSE_LNURLP_RESPONSE_ERROR | Error parsing LNURLP response |
             | INVALID_AMOUNT | Amount is invalid |
             | WEBHOOK_ENDPOINT_NOT_SET | Webhook endpoint is not set |
@@ -14232,8 +14277,6 @@ components:
             - INVITATIONS_NOT_CONFIGURED
             - INVALID_UMA_ADDRESS
             - INVITATION_CANCELLED
-            - QUOTE_REQUEST_FAILED
-            - INVALID_PAYREQ_RESPONSE
             - INVALID_RECEIVER
             - PARSE_PAYREQ_RESPONSE_ERROR
             - CERT_CHAIN_INVALID
@@ -14248,7 +14291,6 @@ components:
             - INVALID_REQUEST_FORMAT
             - INVALID_BANK_ACCOUNT
             - SELF_PAYMENT
-            - LOOKUP_REQUEST_FAILED
             - PARSE_LNURLP_RESPONSE_ERROR
             - INVALID_AMOUNT
             - WEBHOOK_ENDPOINT_NOT_SET
@@ -25720,6 +25762,52 @@ components:
             | UNSUPPORTED_UMA_VERSION | Counterparty doesn't support the Grid UMA version |
           enum:
             - UNSUPPORTED_UMA_VERSION
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    Error502:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | INVALID_PAYREQ_RESPONSE | Counterparty payment request response was invalid. Retryable |
+            | COUNTERPARTY_SERVER_ERROR | Counterparty returned a server error. Retryable |
+          enum:
+            - INVALID_PAYREQ_RESPONSE
+            - COUNTERPARTY_SERVER_ERROR
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    Error504:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | LOOKUP_REQUEST_FAILED | Network error or timeout reaching the counterparty during lookup. Retryable |
+            | QUOTE_REQUEST_FAILED | Network error or timeout sending the quote request to the counterparty. Retryable |
+          enum:
+            - LOOKUP_REQUEST_FAILED
+            - QUOTE_REQUEST_FAILED
         reason:
           type: string
           description: Error message
