@@ -17215,6 +17215,28 @@ components:
               type: string
               description: Invoice for the payment
               example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+    PaymentBitcoinDepositAddressInfo:
+      title: Bitcoin L1 Deposit Address
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - type: object
+          required:
+            - address
+          properties:
+            accountType:
+              type: string
+              enum:
+                - BITCOIN_L1
+            address:
+              type: string
+              description: On-chain Bitcoin (L1) deposit address to send funds to
+              example: bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
+            network:
+              type: string
+              description: The blockchain network for the deposit address.
+              enum:
+                - BITCOIN
+              example: BITCOIN
     SolanaWalletInfo:
       type: object
       required:
@@ -17432,7 +17454,7 @@ components:
           description: Indicates whether the account is a platform account or a customer account.
           example: true
         accountOrWalletInfo:
-          description: Where to send the funds. Quotes can carry any of these types. Internal accounts return only `USD_ACCOUNT`, `EUR_ACCOUNT`, `SWIFT_ACCOUNT`, and the network wallet types; MXN, BRL, COP, and Lightning instructions appear only on real-time funded quotes.
+          description: Where to send the funds. Quotes can carry any of these types. Internal accounts return only `USD_ACCOUNT`, `EUR_ACCOUNT`, `SWIFT_ACCOUNT`, and the network wallet types; MXN, BRL, COP, Lightning, and Bitcoin L1 instructions appear only on real-time funded quotes.
           oneOf:
             - $ref: '#/components/schemas/PaymentUsdAccountInfo'
             - $ref: '#/components/schemas/PaymentEurAccountInfo'
@@ -17442,6 +17464,7 @@ components:
             - $ref: '#/components/schemas/PaymentCopAccountInfo'
             - $ref: '#/components/schemas/PaymentSparkWalletInfo'
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
+            - $ref: '#/components/schemas/PaymentBitcoinDepositAddressInfo'
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
             - $ref: '#/components/schemas/PaymentEthereumWalletInfo'
             - $ref: '#/components/schemas/PaymentBaseWalletInfo'
@@ -17461,6 +17484,7 @@ components:
               COP_ACCOUNT: '#/components/schemas/PaymentCopAccountInfo'
               SPARK_WALLET: '#/components/schemas/PaymentSparkWalletInfo'
               LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
+              BITCOIN_L1: '#/components/schemas/PaymentBitcoinDepositAddressInfo'
               SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
               ETHEREUM_WALLET: '#/components/schemas/PaymentEthereumWalletInfo'
               BASE_WALLET: '#/components/schemas/PaymentBaseWalletInfo'
