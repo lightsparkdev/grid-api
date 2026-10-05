@@ -1,0 +1,18 @@
+title: ARS Account
+allOf:
+  - $ref: ./BasePaymentAccountInfo.yaml
+  - type: object
+    required:
+      - accountNumber
+    properties:
+      accountType:
+        type: string
+        enum:
+          - ARS_ACCOUNT
+      accountNumber:
+        type: string
+        description: The static CVU (Clave Virtual Uniforme) bank account number to pay to.
+        minLength: 22
+        maxLength: 22
+        pattern: '^\d{22}$'
+        example: "0000003100074052501434"

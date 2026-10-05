@@ -17211,6 +17211,25 @@ components:
               format: uri
               description: A payment URL where the customer can complete their COP deposit.
               example: https://payments.example.com/t/abc123
+    PaymentArsAccountInfo:
+      title: ARS Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - type: object
+          required:
+            - accountNumber
+          properties:
+            accountType:
+              type: string
+              enum:
+                - ARS_ACCOUNT
+            accountNumber:
+              type: string
+              description: The static CVU (Clave Virtual Uniforme) bank account number to pay to.
+              minLength: 22
+              maxLength: 22
+              pattern: ^\d{22}$
+              example: '0000003100074052501434'
     SparkWalletInfo:
       type: object
       required:
@@ -17496,7 +17515,7 @@ components:
           description: Indicates whether the account is a platform account or a customer account.
           example: true
         accountOrWalletInfo:
-          description: Where to send the funds. Quotes can carry any of these types. Internal accounts return only `USD_ACCOUNT`, `EUR_ACCOUNT`, `SWIFT_ACCOUNT`, and the network wallet types; MXN, BRL, COP, Lightning, and Bitcoin L1 instructions appear only on real-time funded quotes.
+          description: Where to send the funds. Quotes can carry any of these types. Internal accounts return only `USD_ACCOUNT`, `EUR_ACCOUNT`, `SWIFT_ACCOUNT`, and the network wallet types; MXN, BRL, COP, ARS, Lightning, and Bitcoin L1 instructions appear only on real-time funded quotes.
           oneOf:
             - $ref: '#/components/schemas/PaymentUsdAccountInfo'
             - $ref: '#/components/schemas/PaymentEurAccountInfo'
@@ -17504,6 +17523,7 @@ components:
             - $ref: '#/components/schemas/PaymentMxnAccountInfo'
             - $ref: '#/components/schemas/PaymentBrlAccountInfo'
             - $ref: '#/components/schemas/PaymentCopAccountInfo'
+            - $ref: '#/components/schemas/PaymentArsAccountInfo'
             - $ref: '#/components/schemas/PaymentSparkWalletInfo'
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - $ref: '#/components/schemas/PaymentBitcoinDepositAddressInfo'
@@ -17524,6 +17544,7 @@ components:
               MXN_ACCOUNT: '#/components/schemas/PaymentMxnAccountInfo'
               BRL_ACCOUNT: '#/components/schemas/PaymentBrlAccountInfo'
               COP_ACCOUNT: '#/components/schemas/PaymentCopAccountInfo'
+              ARS_ACCOUNT: '#/components/schemas/PaymentArsAccountInfo'
               SPARK_WALLET: '#/components/schemas/PaymentSparkWalletInfo'
               LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
               BITCOIN_L1: '#/components/schemas/PaymentBitcoinDepositAddressInfo'
