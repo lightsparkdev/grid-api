@@ -10,6 +10,15 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## External accounts can become `INVALID`
+
+`ExternalAccountStatus` gains `INVALID`. Grid moves a USD bank account to `INVALID`
+when the receiving bank returns a payout because the account does not exist or
+cannot be located (ACH return `R03`). The failed transaction reports
+`ACCOUNT_INVALID`, and an `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhook announces the new
+status. Payouts to an `INVALID` account are rejected. Create a new external account
+with corrected details.
+
 ## Quote and transfer creation answer `200`
 
 `POST /quotes`, `POST /transfer-in` and `POST /transfer-out` have always answered

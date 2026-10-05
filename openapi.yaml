@@ -19841,6 +19841,7 @@ components:
         - UNVERIFIED
         - UNDER_REVIEW
         - INACTIVE
+        - INVALID
       description: |
         Status of an external account.
 
@@ -19848,7 +19849,10 @@ components:
         (e.g. under the EU Travel Rule) before unrestricted use; transfers below
         regulatory thresholds are still allowed. `UNVERIFIED`: the most recent
         verification attempt failed; start a new challenge to retry. Successful
-        verification moves the account to `ACTIVE`.
+        verification moves the account to `ACTIVE`. `INVALID`: the receiving bank
+        reported that the account does not exist or cannot be located (for example,
+        an ACH `R03` return). Payouts to it are rejected; create a new external
+        account with corrected details.
     OwnershipType:
       type: string
       enum:

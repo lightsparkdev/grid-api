@@ -214,6 +214,7 @@ PENDING → ACTIVE
 - **ACTIVE**: Verified, ready for transactions
 - **INACTIVE**: Disabled (can be reactivated)
 - **UNDER_REVIEW**: Additional review required
+- **INVALID**: The receiving bank reported the account does not exist; create a new external account
 
 You'll receive `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhooks as balance changes, and `INTERNAL_ACCOUNT.STATUS_UPDATED` webhooks when account status changes (e.g., ACTIVE to FROZEN).
 
