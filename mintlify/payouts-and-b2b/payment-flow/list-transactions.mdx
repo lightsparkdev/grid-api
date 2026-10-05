@@ -136,6 +136,15 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?startDate=2
 
 <Tip>Dates must be in ISO 8601 format (e.g., `2025-10-03T15:00:00Z`).</Tip>
 
+### Filter by settlement date
+
+To list transactions by when they settled, pass `settlementStartDate` and `settlementEndDate`. Both are inclusive and match against `settledAt`. Transactions with no `settledAt`, including card transactions, are excluded.
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?settlementStartDate=2025-10-01T00:00:00Z&settlementEndDate=2025-10-31T23:59:59Z' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
 ### Filter by account
 
 Get transactions for a specific account:
