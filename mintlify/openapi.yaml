@@ -361,12 +361,32 @@ paths:
                     data:
                       - bankName: Bank of the Philippine Islands (BPI)
                         displayName: Bank of the Philippine Islands (BPI)
+                        paymentRails:
+                          - BANK_TRANSFER
                         country: PH
                         currency: PHP
                       - bankName: BDO Network Bank
                         displayName: BDO Network Bank / One Network Bank
+                        paymentRails:
+                          - BANK_TRANSFER
                         country: PH
                         currency: PHP
+                chinaProviders:
+                  summary: Payment rails for China (CNY)
+                  value:
+                    data:
+                      - bankName: AliPay
+                        displayName: AliPay
+                        paymentRails:
+                          - MOBILE_MONEY
+                        country: CN
+                        currency: CNY
+                      - bankName: China Construction Bank
+                        displayName: China Construction Bank
+                        paymentRails:
+                          - BANK_TRANSFER
+                        country: CN
+                        currency: CNY
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -14448,6 +14468,7 @@ components:
             required:
               - bankName
               - displayName
+              - paymentRails
               - country
               - currency
             properties:
@@ -14458,6 +14479,12 @@ components:
               displayName:
                 type: string
                 description: Human-friendly display name for this payment rail.
+              paymentRails:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentRail'
+                description: |
+                  The payment rails you can use with this `bankName`. Send them as `paymentRails` when you create the external account. `MOBILE_MONEY` means this is a mobile money provider, such as MTN or AliPay, and the account needs a `phoneNumber`.
               country:
                 type: string
                 description: ISO 3166-1 alpha-2 country code.
