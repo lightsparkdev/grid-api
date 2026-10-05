@@ -1,6 +1,6 @@
 The Grid sandbox lets you exercise Global Account auth flows without moving real money. Email OTP and SMS OTP use the fixed sandbox code `000000` — HPKE-encrypt that code in the `encryptedOtpBundle` just like production. Passkey auth can use the same browser WebAuthn ceremony as production, and signed wallet actions can use the same session signing key and `Grid-Wallet-Signature` stamp as production. OAuth uses JWT-shaped sandbox OIDC tokens: sandbox skips real IdP signature verification, but still validates token claims, freshness, credential identity, and verify-time nonce binding.
 
-Sandbox runs real HPKE end-to-end for EMAIL_OTP and SMS_OTP: clients build a real `encryptedOtpBundle` against the sandbox `otpEncryptionTargetBundle` and sign a real `verificationToken` with their TEK keypair. The only sandbox shortcut is the magic OTP code the user "receives" instead of a real email or SMS delivery.
+Sandbox runs real HPKE end-to-end for EMAIL_OTP and SMS_OTP: clients build a real `encryptedOtpBundle` against the sandbox `otpEncryptionTargetBundle` and stamp the exact returned `payloadToSign` string with their TEK keypair. The only sandbox shortcut is the magic OTP code the user "receives" instead of a real email or SMS delivery.
 
 Authentication failures return `401 UNAUTHORIZED` with a `reason` field that names the specific check that failed. A malformed OIDC JWT can return `400 INVALID_INPUT` before authentication starts.
 

@@ -6,7 +6,7 @@ description: >-
   `DELETE /auth/sessions/{id}` (revoking a session), and the `EMAIL_OTP` /
   `SMS_OTP` branch of `POST /auth/credentials/{id}/verify` (the secure OTP login
   flow, where the client submits an `encryptedOtpBundle` and receives a
-  `verificationToken` to sign for the second-leg session issuance).
+  login signing message as `payloadToSign` to stamp for session issuance).
   Carries the signing fields from `SignedRequestChallenge` plus the
   `type` of the authentication credential involved (being added,
   revoked, that issued the session being revoked, or being

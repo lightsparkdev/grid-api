@@ -546,13 +546,13 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
 ```json
 {
   "type": "EMAIL_OTP",
-  "payloadToSign": "eyJhbGciOiJFUzI1NiIsImtpZCI6InR1cm5rZXkifQ...",
+  "payloadToSign": "{\"login\":{\"publicKey\":\"02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31\"},\"tokenId\":\"7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21\",\"type\":\"USAGE_TYPE_LOGIN\"}",
   "requestId": "Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21",
   "expiresAt": "2026-04-19T12:05:00Z"
 }
 ```
 
-The client signs `payloadToSign` with the TEK private key (the same key whose public key was encrypted in the bundle), then retries with the stamp:
+The client stamps the exact UTF-8 bytes of `payloadToSign`, unchanged, with the TEK private key (the same key whose public key was encrypted in the bundle), then retries the same request body with the stamp:
 
 ```bash
 curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000004/verify" \

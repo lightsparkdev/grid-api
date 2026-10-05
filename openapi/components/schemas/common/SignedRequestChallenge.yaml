@@ -16,9 +16,12 @@ properties:
   payloadToSign:
     type: string
     description: >-
-      Canonical payload for the retry authorization stamp. Build an
-      API-key stamp over this exact value with the session API keypair,
-      then send the full base64url-encoded stamp in
+      Payload for the retry authorization stamp. Build an API-key stamp
+      over the exact UTF-8 bytes of this string, without parsing,
+      re-serializing, or trimming it. Use the keypair required by the
+      endpoint: the client's TEK keypair for OTP verification, or an active
+      session API keypair for other signed wallet actions. Send the full
+      base64url-encoded stamp in
       `Grid-Wallet-Signature` on the retry that completes the original
       request.
     example: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_EXAMPLE"}'
