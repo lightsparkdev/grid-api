@@ -22746,6 +22746,7 @@ components:
           $ref: '#/components/schemas/Address'
     CnyExternalAccountInfo:
       title: CNY Account
+      description: A payout to a CNY bank account with a `BUSINESS` beneficiary needs supporting documents for its `purposeOfPayment`. Upload them with `POST /payment-documents` and pass their IDs in `documentIds` on `POST /quotes`. [Supporting documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents) lists the documents each purpose needs.
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/CnyAccountInfo'
@@ -23298,6 +23299,7 @@ components:
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
     CnyExternalAccountCreateInfo:
       title: CNY Account
+      description: A payout to a CNY bank account with a `BUSINESS` beneficiary needs supporting documents for its `purposeOfPayment`. Upload them with `POST /payment-documents` and pass their IDs in `documentIds` on `POST /quotes`. [Supporting documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents) lists the documents each purpose needs.
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/CnyAccountInfoBase'
