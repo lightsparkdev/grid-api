@@ -10,6 +10,12 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## API tokens can expire
+
+`ApiToken` has a new optional `expiresAt`. When it is present, requests made with that
+token after that time return `401`, and you need to create a new token. Tokens without
+`expiresAt` do not expire.
+
 ## A UMA address destination requires `currency`
 
 `UmaAddressDestination.currency` on `POST /quotes` is now marked required in the spec.
