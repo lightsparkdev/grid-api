@@ -46,8 +46,8 @@ The flow is two steps: create the customer with the information you have, then g
   |-------|-------|
   | `businessInfo.legalName` | Full legal entity name |
   | `businessInfo.country` | Country of incorporation, ISO 3166-1 alpha-2. Sets the applicant's jurisdiction and the tax-ID format validated against |
-  | `businessInfo.taxId` | Validated against `businessInfo.country` |
-  | `businessInfo.incorporatedOn` | `YYYY-MM-DD` |
+  | `businessInfo.taxId` | Validated against `businessInfo.country`. Required when the customer's currency uses [direct customer-owned accounts](/payouts-and-b2b/onboarding/configuring-customers#bank-account-information); can be omitted with an omnibus FBO account |
+  | `businessInfo.incorporatedOn` | `YYYY-MM-DD`. Required when the customer's currency uses [direct customer-owned accounts](/payouts-and-b2b/onboarding/configuring-customers#bank-account-information); can be omitted with an omnibus FBO account |
 
   ```bash
   curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
