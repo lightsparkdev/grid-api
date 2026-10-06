@@ -25,7 +25,7 @@
     "@central-icons-react/round-outlined-radius-2-stroke-2": "^1.1.286",
     "@central-icons-react/round-outlined-radius-3-stroke-1.5": "^1.1.135",
     "@central-icons-react/round-outlined-radius-3-stroke-2": "^1.1.290",
-    "@lightsparkdev/origin": "^0.13.4",
+    "@lightsparkdev/origin": "^0.15.0",
     "@noble/curves": "^2.2.0",
     "@noble/hashes": "^2.2.0",
     "@turnkey/api-key-stamper": "^0.6.5",

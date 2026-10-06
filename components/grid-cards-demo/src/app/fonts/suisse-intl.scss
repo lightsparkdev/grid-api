@@ -1,20 +1,7 @@
-/* Suisse Intl and Suisse Intl Mono: the variable fonts, in place of origin's
-   static faces. This app uses the variable builds everywhere; the statics
-   are not shipped.
-
-   @lightsparkdev/origin (src/tokens/_fonts.scss) declares 'Suisse Intl' at
-   400/450/500 from static woff2s that carry no stylistic sets, so the
-   `font-feature-settings: 'salt' 1` the UI asks for (the single-story a, as
-   on the card) did nothing. We re-declare the same faces (identical family +
-   weight + style, so the later rule wins the cascade) from SuisseIntlVF.woff2,
-   which has 'salt' and 'ss01', plus one face over the whole weight range for
-   the weights in between. Metrics are the Mintlify docs' 85% / 15% so glyphs
-   sit at the same height in the line box across the docs and the demo.
-
-   Must be @use'd AFTER the origin fonts import in globals.scss. */
+/* Exact-weight faces must use a separate family from Origin's variable font. */
 
 @font-face {
-  font-family: 'Suisse Intl';
+  font-family: 'Grid Suisse Intl';
   src: url('/fonts/SuisseIntlVF.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
@@ -25,7 +12,7 @@
 }
 
 @font-face {
-  font-family: 'Suisse Intl';
+  font-family: 'Grid Suisse Intl';
   src: url('/fonts/SuisseIntlVF.woff2') format('woff2');
   font-weight: 450;
   font-style: normal;
@@ -36,7 +23,7 @@
 }
 
 @font-face {
-  font-family: 'Suisse Intl';
+  font-family: 'Grid Suisse Intl';
   src: url('/fonts/SuisseIntlVF.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
@@ -46,9 +33,8 @@
   line-gap-override: 0%;
 }
 
-/* Every other weight (the phone's 590, 600, 700). */
 @font-face {
-  font-family: 'Suisse Intl';
+  font-family: 'Grid Suisse Intl';
   src: url('/fonts/SuisseIntlVF.woff2') format('woff2');
   font-weight: 300 900;
   font-style: normal;
