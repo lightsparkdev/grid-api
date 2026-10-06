@@ -114,7 +114,7 @@ A single `status` field represents whether the transaction reached its destinati
 | **FAILED** | Something went wrong — accompanied by a `failureReason` |
 
 <Warning>
-`status` reports where the funds are now. `COMPLETED` means they are where settlement put them; `FAILED` means they were sent back. A bank return can move a `COMPLETED` payment to `FAILED` days after it settled, and if the return is later dishonored, the funds come back and the payment moves to `COMPLETED` again. Only `EXPIRED` is terminal. Apply each status webhook as it arrives, and don't treat `COMPLETED` or `FAILED` as final.
+`status` reports where the funds are now. `COMPLETED` means they are where settlement put them; `FAILED` means they were sent back. A bank return can move a `COMPLETED` payment to `FAILED` days after it settled. For an incoming payment, a return the originating bank later dishonors brings the credit back and the payment moves to `COMPLETED` again. A returned payout stays `FAILED`: it has already been refunded to its source, so a dishonored return is reconciled manually rather than reported as a new completion. Only `EXPIRED` is terminal. Apply each status webhook as it arrives, and don't treat `COMPLETED` or `FAILED` as final.
 
 Each side's `railDetails` reports the transfer on its rail, such as an ACH entry's `SETTLED` or `RETURNED` status, and keeps that history even when the transaction's `status` changes. A transaction stays `COMPLETED` through a return only when a later step that can't be undone, such as a completed conversion, already used the funds; its `railDetails` still shows `RETURNED`.
 </Warning>
@@ -132,7 +132,6 @@ stateDiagram-v2
     PROCESSING --> COMPLETED : Payout reached destination
     PROCESSING --> FAILED : Payout failed
     COMPLETED --> FAILED : Bank returned payment
-    FAILED --> COMPLETED : Return dishonored, funds restored
     FAILED --> REFUND_PENDING : Refund initiated
     PROCESSING --> REFUND_PENDING : Manual cancellation
     state "REFUND" as refund {
@@ -400,7 +399,7 @@ Payment initially succeeds but the bank returns it:
 6. `OUTGOING_PAYMENT.REFUND_COMPLETED`
 
 <Info>
-Bank returns can happen days after initial completion. Continue processing webhook events for transactions even after they reach `COMPLETED`. If the return is later dishonored and the funds come back, the transaction moves to `COMPLETED` again and `OUTGOING_PAYMENT.COMPLETED` is sent.
+Bank returns can happen days after initial completion. Continue processing webhook events for transactions even after they reach `COMPLETED`. If the receiving bank later dishonors the return, the payout stays `FAILED` and its refund stands; the returned funds are reconciled manually.
 </Info>
 </Tab>
 

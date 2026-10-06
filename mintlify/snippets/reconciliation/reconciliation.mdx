@@ -13,7 +13,7 @@ A transaction's `status` reports where the funds are now, and it can change afte
 </Info>
 
 - **Outbound transactions**: The originating account is debited at transaction creation. If the transaction ultimately fails, a refund is posted back to the originating account.
-- **Inbound transactions**: The receiving account is credited only on success. Failures do not change balances.
+- **Inbound transactions**: The receiving account is credited only on success. A failure before the credit does not change balances. A return after `COMPLETED` does: the credited funds are debited back when `INCOMING_PAYMENT.FAILED` arrives with `source.railDetails.status` `RETURNED`.
 
 <Tip>
 Grid retries failed webhooks up to 160 times over 7 days with exponential backoff. Use the dashboard to review and remediate webhook delivery issues.
@@ -75,8 +75,8 @@ transaction (`GET /transactions/{id}`) to read them once settled.
 Use the envelope `id`, `data.id`, and `timestamp` to ensure idempotent handling, updating your internal ledger on each status transition.
 </Step>
 
-<Step title="Close out settled transactions">
-Treat `COMPLETED` and `FAILED` as settled but still open: an ACH entry can be returned for up to 60 days after it settles, and a return can be dishonored after that. Close a transaction once that window has passed, or keep applying its webhooks and adjust your records when its `status` changes.
+<Step title="Keep settled transactions open to late events">
+Treat `COMPLETED` and `FAILED` as settled, not final. An ACH entry can be returned for up to 60 days after it settles, and a return can be dishonored later still. Keep applying every webhook for a transaction, whenever it arrives, and adjust your records when its `status` changes. Use the daily query below to catch any event your endpoint missed.
 </Step>
 </Steps>
 
@@ -135,7 +135,7 @@ Response
 ## Troubleshooting
 
 - **Missing webhook**: Check delivery logs in the dashboard and ensure your endpoint returns `2xx`. Retries continue for 7 days.
-- **Mismatched balances**: Re-query the date range and compare each transaction's current `status` to your records; remember outbound failures are refunded, inbound failures do not change balances, and a returned payment can move back to `COMPLETED` if the return is dishonored.
+- **Mismatched balances**: Re-query the date range and compare each transaction's current `status` to your records. Outbound failures are refunded. An inbound failure before the credit changes no balance; an inbound return after `COMPLETED` debits the credited funds back.
 - **Pagination gaps**: Always follow `nextCursor` until `hasMore` is `false`.
 
 

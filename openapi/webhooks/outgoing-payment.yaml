@@ -4,9 +4,10 @@ post:
     Webhook that is called when an outgoing payment's status changes. A side's
     `railDetails` carries the rail-level status of that leg; for example, a payout
     the receiving bank returns arrives as `OUTGOING_PAYMENT.FAILED` with
-    `destination.railDetails.status` set to `RETURNED`. If that return is later
-    dishonored and the funds come back, the payout moves to `COMPLETED` again and
-    `OUTGOING_PAYMENT.COMPLETED` is sent; `railDetails` keeps `RETURNED`.
+    `destination.railDetails.status` set to `RETURNED`, and the payout is refunded
+    to its source. A returned payout stays `FAILED` even if the receiving bank later
+    dishonors the return: the refund has already been posted, so the funds are
+    reconciled manually and no further status event is sent for the payout.
 
     This endpoint should be implemented by clients of the Grid API.
 

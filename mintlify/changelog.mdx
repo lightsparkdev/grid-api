@@ -48,9 +48,10 @@ returned after `COMPLETED` moves to `FAILED` and sends `INCOMING_PAYMENT.FAILED`
 source's `railDetails` showing `RETURNED`. A transaction stays `COMPLETED` through a return
 only when a later step that can't be undone already used the funds.
 
-`FAILED` is no longer described as terminal. A dishonored return restores the funds and moves
-the transaction back to `COMPLETED`, with its `railDetails` still showing `RETURNED`. Only
-`EXPIRED` is terminal; apply each status webhook as it arrives. `TransactionStatus.REFUNDED`
+`FAILED` is no longer described as terminal. On an incoming payment, a dishonored return
+restores the credit and moves the transaction back to `COMPLETED`, with its `railDetails`
+still showing `RETURNED`. A returned payout stays `FAILED`, since it has already been
+refunded. Only `EXPIRED` is terminal; apply each status webhook as it arrives. `TransactionStatus.REFUNDED`
 is deprecated: a refund is reported on the transaction's `refund` object.
 
 The flat originator fields on the external funding source (`accountHolderName`, `accountIdentifier`,

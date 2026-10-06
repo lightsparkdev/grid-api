@@ -33,9 +33,10 @@ allOf:
 
           A return or reversal can arrive days after `SETTLED`. This status reports the ACH
           entry; the transaction's top-level `status` reports where the funds are now, so a
-          return moves the transaction to `FAILED`. If the return is dishonored and the funds
-          come back, the transaction moves to `COMPLETED` again while this status stays
-          `RETURNED`.
+          return moves the transaction to `FAILED`. If an incoming payment's return is
+          dishonored and the credit comes back, the transaction moves to `COMPLETED` again
+          while this status stays `RETURNED`. A returned payout stays `FAILED`, since it has
+          already been refunded.
         example: SETTLED
       traceNumber:
         type: string
