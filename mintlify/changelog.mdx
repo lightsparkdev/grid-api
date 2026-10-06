@@ -10,6 +10,15 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## A quote no longer re-creates a lookup made for another sending currency
+
+`POST /quotes` with a `lookupId` whose sending currency differs from the source
+account's currency now answers `400 INVALID_INPUT` ("Source account currency does
+not match lookup request sending currency"). It used to create a second lookup
+behind the scenes with the source currency. Pass `sendingCurrency` to
+`GET /receiver/uma/{address}` or `GET /receiver/external-account/{id}` so the
+lookup is made for the currency you will send from.
+
 ## Quote and transfer creation answer `200`
 
 `POST /quotes`, `POST /transfer-in` and `POST /transfer-out` have always answered
