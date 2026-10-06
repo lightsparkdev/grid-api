@@ -5,9 +5,11 @@ post:
     `railDetails` carries the rail-level status of that leg; for example, a payout
     the receiving bank returns arrives as `OUTGOING_PAYMENT.FAILED` with
     `destination.railDetails.status` set to `RETURNED`, and the payout is refunded
-    to its source. A returned payout stays `FAILED` even if the receiving bank later
-    dishonors the return: the refund has already been posted, so the funds are
-    reconciled manually and no further status event is sent for the payout.
+    to its source. A returned payout stays `FAILED` even if the originating bank
+    later dishonors the return: the refund has already been posted, so the funds are
+    reconciled manually. The dishonor is still reported: `OUTGOING_PAYMENT.FAILED`
+    is sent again with `railDetails.status` set to `RETURN_DISHONORED` and
+    `dishonoredAt` set.
 
     This endpoint should be implemented by clients of the Grid API.
 

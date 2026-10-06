@@ -135,7 +135,7 @@ Response
 ## Troubleshooting
 
 - **Missing webhook**: Check delivery logs in the dashboard and ensure your endpoint returns `2xx`. Retries continue for 7 days.
-- **Mismatched balances**: Re-query the date range and compare each transaction's current `status` to your records. Outbound failures are refunded. An inbound failure before the credit changes no balance; an inbound return after `COMPLETED` debits the credited funds back.
+- **Mismatched balances**: Re-query the date range and compare each transaction's current `status` to your records. Outbound failures are refunded. An inbound failure before the credit changes no balance; an inbound return after `COMPLETED` debits the credited funds back, and a dishonored return (`railDetails.status` `RETURN_DISHONORED`) credits them again.
 - **Pagination gaps**: Always follow `nextCursor` until `hasMore` is `false`.
 
 

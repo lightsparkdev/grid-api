@@ -116,7 +116,7 @@ A single `status` field represents whether the transaction reached its destinati
 <Warning>
 `status` reports where the funds are now. `COMPLETED` means they are where settlement put them; `FAILED` means they were sent back. A bank return can move a `COMPLETED` payment to `FAILED` days after it settled. For an incoming payment, a return the originating bank later dishonors brings the credit back and the payment moves to `COMPLETED` again. A returned payout stays `FAILED`: it has already been refunded to its source, so a dishonored return is reconciled manually rather than reported as a new completion. Only `EXPIRED` is terminal. Apply each status webhook as it arrives, and don't treat `COMPLETED` or `FAILED` as final.
 
-Each side's `railDetails` reports the transfer on its rail, such as an ACH entry's `SETTLED` or `RETURNED` status, and keeps that history even when the transaction's `status` changes. A transaction stays `COMPLETED` through a return only when a later step that can't be undone, such as a completed conversion, already used the funds; its `railDetails` still shows `RETURNED`.
+Each side's `railDetails` reports the transfer on its rail and follows every step of it: an ACH entry's status moves through `SETTLED`, `RETURNED`, `RETURN_DISHONORED` and `RETURN_CONTESTED` with a timestamp for each, whether or not the transaction's `status` changes with it. A transaction stays `COMPLETED` through a return only when a later step that can't be undone, such as a completed conversion, already used the funds; its `railDetails` still shows `RETURNED`.
 </Warning>
 
 ### State Diagram
@@ -399,7 +399,7 @@ Payment initially succeeds but the bank returns it:
 6. `OUTGOING_PAYMENT.REFUND_COMPLETED`
 
 <Info>
-Bank returns can happen days after initial completion. Continue processing webhook events for transactions even after they reach `COMPLETED`. If the receiving bank later dishonors the return, the payout stays `FAILED` and its refund stands; the returned funds are reconciled manually.
+Bank returns can happen days after initial completion. Continue processing webhook events for transactions even after they reach `COMPLETED`. If the originating bank later dishonors the return, the payout stays `FAILED` and its refund stands; the returned funds are reconciled manually, and `OUTGOING_PAYMENT.FAILED` is sent again with `destination.railDetails.status` `RETURN_DISHONORED`.
 </Info>
 </Tab>
 

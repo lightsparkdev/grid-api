@@ -64,7 +64,9 @@ post:
     `INCOMING_PAYMENT.FAILED` is sent with `source.railDetails.status` set to
     `RETURNED` and `returnedAt` set. If the return is dishonored and the funds
     come back, the payment moves to `COMPLETED` again and
-    `INCOMING_PAYMENT.COMPLETED` is sent; `railDetails` keeps `RETURNED`.
+    `INCOMING_PAYMENT.COMPLETED` is sent with `railDetails.status` set to
+    `RETURN_DISHONORED` and `dishonoredAt` set. A contested dishonor sends
+    `INCOMING_PAYMENT.FAILED` once more with `RETURN_CONTESTED`.
 
 
     Bank-rail incoming payments (e.g. SWIFT) are informational at every

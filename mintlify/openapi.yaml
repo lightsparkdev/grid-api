@@ -11864,7 +11864,7 @@ webhooks:
 
         For transactions with other statuses (COMPLETED, FAILED, REFUNDED), this webhook is purely informational.
 
-        An ACH deposit can be returned after `COMPLETED`, days after it settled. The return takes the funds back, so the payment moves to `FAILED` and `INCOMING_PAYMENT.FAILED` is sent with `source.railDetails.status` set to `RETURNED` and `returnedAt` set. If the return is dishonored and the funds come back, the payment moves to `COMPLETED` again and `INCOMING_PAYMENT.COMPLETED` is sent; `railDetails` keeps `RETURNED`.
+        An ACH deposit can be returned after `COMPLETED`, days after it settled. The return takes the funds back, so the payment moves to `FAILED` and `INCOMING_PAYMENT.FAILED` is sent with `source.railDetails.status` set to `RETURNED` and `returnedAt` set. If the return is dishonored and the funds come back, the payment moves to `COMPLETED` again and `INCOMING_PAYMENT.COMPLETED` is sent with `railDetails.status` set to `RETURN_DISHONORED` and `dishonoredAt` set. A contested dishonor sends `INCOMING_PAYMENT.FAILED` once more with `RETURN_CONTESTED`.
 
         Bank-rail incoming payments (e.g. SWIFT) are informational at every status, including PENDING: the funds have already moved interbank, so the approval mechanism and the 5-second response window do not apply.
       operationId: incomingPaymentWebhook
@@ -12162,7 +12162,7 @@ webhooks:
     post:
       summary: Outgoing payment status webhook
       description: |
-        Webhook that is called when an outgoing payment's status changes. A side's `railDetails` carries the rail-level status of that leg; for example, a payout the receiving bank returns arrives as `OUTGOING_PAYMENT.FAILED` with `destination.railDetails.status` set to `RETURNED`, and the payout is refunded to its source. A returned payout stays `FAILED` even if the receiving bank later dishonors the return: the refund has already been posted, so the funds are reconciled manually and no further status event is sent for the payout.
+        Webhook that is called when an outgoing payment's status changes. A side's `railDetails` carries the rail-level status of that leg; for example, a payout the receiving bank returns arrives as `OUTGOING_PAYMENT.FAILED` with `destination.railDetails.status` set to `RETURNED`, and the payout is refunded to its source. A returned payout stays `FAILED` even if the originating bank later dishonors the return: the refund has already been posted, so the funds are reconciled manually. The dishonor is still reported: `OUTGOING_PAYMENT.FAILED` is sent again with `railDetails.status` set to `RETURN_DISHONORED` and `dishonoredAt` set.
         This endpoint should be implemented by clients of the Grid API.
 
         ### Authentication
@@ -24977,7 +24977,7 @@ components:
         | `PROCESSING` | Funding has been received and payment initiated |
         | `COMPLETED` | The funds are where settlement put them. A return that takes them back moves the transaction to `FAILED`, and the returned side's `railDetails` shows `RETURNED`. A transaction stays `COMPLETED` through a return only when a later step that can't be undone already used the funds |
         | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
-        | `FAILED` | The payment did not reach its destination, or the funds were sent back after it did. Not terminal for an incoming payment: a dishonored return restores the credit and moves it to `COMPLETED`. A returned payout stays `FAILED`, since it has already been refunded |
+        | `FAILED` | The payment did not reach its destination, or the funds were sent back after it did. Not terminal for an incoming payment: a dishonored return restores the credit and moves it to `COMPLETED`. A returned payout stays `FAILED`, since it has already been refunded. Each step shows on the returned side's `railDetails` |
         | `REFUNDED` | Deprecated. A refund is reported on the transaction's `refund` object, and the status stays `FAILED` |
         | `EXPIRED` | Quote has expired. Terminal |
     TransactionPendingReason:
@@ -25104,6 +25104,8 @@ components:
                 - PENDING
                 - SETTLED
                 - RETURNED
+                - RETURN_DISHONORED
+                - RETURN_CONTESTED
                 - REVERSED
                 - FAILED
               description: |-
@@ -25114,15 +25116,17 @@ components:
                 | `PENDING` | Submitted to the ACH network and not yet settled. |
                 | `SETTLED` | The entry settled. |
                 | `RETURNED` | The receiving bank returned the entry, before or after it settled. |
+                | `RETURN_DISHONORED` | The originating bank dishonored the return, so the returned funds came back. |
+                | `RETURN_CONTESTED` | The receiving bank contested the dishonor, so the funds went back again. |
                 | `REVERSED` | The originator reversed the entry after it settled. |
                 | `FAILED` | The entry was rejected before submission and no funds moved. |
 
-                A return or reversal can arrive days after `SETTLED`. This status reports the ACH
-                entry; the transaction's top-level `status` reports where the funds are now, so a
-                return moves the transaction to `FAILED`. If an incoming payment's return is
-                dishonored and the credit comes back, the transaction moves to `COMPLETED` again
-                while this status stays `RETURNED`. A returned payout stays `FAILED`, since it has
-                already been refunded.
+                A return, dishonor or contest can arrive days after the step before it. This status
+                reports the ACH entry; the transaction's top-level `status` reports where the funds
+                are now. A return moves the transaction to `FAILED`. On an incoming payment, a
+                dishonor brings the credit back and moves it to `COMPLETED`, and a contest moves it
+                to `FAILED` again. A returned payout stays `FAILED` through a dishonor, since it has
+                already been refunded; the rail status still records the dishonor.
               example: SETTLED
             traceNumber:
               type: string
@@ -25135,8 +25139,18 @@ components:
             returnedAt:
               type: string
               format: date-time
-              description: When the receiving bank returned the entry. Present when `status` is `RETURNED`.
+              description: When the receiving bank returned the entry. Present once the entry has been returned, including after a later dishonor or contest.
               example: '2026-10-01T14:00:00Z'
+            dishonoredAt:
+              type: string
+              format: date-time
+              description: When the originating bank dishonored the return. Present once `status` has reached `RETURN_DISHONORED`.
+              example: '2026-10-04T14:00:00Z'
+            contestedAt:
+              type: string
+              format: date-time
+              description: When the receiving bank contested the dishonor. Present when `status` is `RETURN_CONTESTED`.
+              example: '2026-10-07T14:00:00Z'
             reversedAt:
               type: string
               format: date-time
@@ -25700,7 +25714,7 @@ components:
         | `EXPIRED` | Quote wasn't executed before expiry window. Terminal |
         | `PROCESSING` | Executing the quote after receiving funds |
         | `COMPLETED` | The funds are at the destination. A bank return moves the payout to `FAILED` |
-        | `FAILED` | The payout did not reach the destination, or was returned after it did — accompanied by a `failureReason`, and refunded to the source. A returned payout stays `FAILED` even if the return is later dishonored, since the refund has already been posted |
+        | `FAILED` | The payout did not reach the destination, or was returned after it did — accompanied by a `failureReason`, and refunded to the source. A returned payout stays `FAILED` even if the return is later dishonored, since the refund has already been posted; the dishonor shows on `destination.railDetails` |
     OutgoingRateDetails:
       description: 'Details about the rate and fees for an outgoing transaction or quote. Note: `counterpartyFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'
       type: object

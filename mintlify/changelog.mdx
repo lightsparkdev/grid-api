@@ -35,7 +35,7 @@ details.
 | `paymentRail` | Schema | `status` values | Rail-specific fields |
 |---|---|---|---|
 | `ONCHAIN` | `OnChainRailDetails` | — | `transactionHash`, `network` |
-| `ACH`, `ACH_SAME_DAY` | `AchRailDetails` | `PENDING`, `SETTLED`, `RETURNED`, `REVERSED`, `FAILED` | `traceNumber`, `addenda`, `returnedAt`, `reversedAt` |
+| `ACH`, `ACH_SAME_DAY` | `AchRailDetails` | `PENDING`, `SETTLED`, `RETURNED`, `RETURN_DISHONORED`, `RETURN_CONTESTED`, `REVERSED`, `FAILED` | `traceNumber`, `addenda`, `returnedAt`, `dishonoredAt`, `contestedAt`, `reversedAt` |
 | `WIRE` | `WireRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `imad`, `originatorToBeneficiaryInformation` |
 | `FEDNOW` | `FedNowRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `endToEndId`, `remittanceInformation` |
 | `RTP` | `RtpRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `endToEndId`, `remittanceInformation` |
@@ -49,9 +49,10 @@ source's `railDetails` showing `RETURNED`. A transaction stays `COMPLETED` throu
 only when a later step that can't be undone already used the funds.
 
 `FAILED` is no longer described as terminal. On an incoming payment, a dishonored return
-restores the credit and moves the transaction back to `COMPLETED`, with its `railDetails`
-still showing `RETURNED`. A returned payout stays `FAILED`, since it has already been
-refunded. Only `EXPIRED` is terminal; apply each status webhook as it arrives. `TransactionStatus.REFUNDED`
+restores the credit and moves the transaction back to `COMPLETED`. A returned payout stays
+`FAILED`, since it has already been refunded. Either way the ACH `railDetails` records the
+step: `RETURN_DISHONORED` with `dishonoredAt`, and `RETURN_CONTESTED` with `contestedAt` if
+the dishonor is contested. Only `EXPIRED` is terminal; apply each status webhook as it arrives. `TransactionStatus.REFUNDED`
 is deprecated: a refund is reported on the transaction's `refund` object.
 
 The flat originator fields on the external funding source (`accountHolderName`, `accountIdentifier`,

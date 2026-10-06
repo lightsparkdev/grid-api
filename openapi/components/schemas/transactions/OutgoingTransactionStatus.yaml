@@ -16,4 +16,4 @@ description: |
   | `EXPIRED` | Quote wasn't executed before expiry window. Terminal |
   | `PROCESSING` | Executing the quote after receiving funds |
   | `COMPLETED` | The funds are at the destination. A bank return moves the payout to `FAILED` |
-  | `FAILED` | The payout did not reach the destination, or was returned after it did — accompanied by a `failureReason`, and refunded to the source. A returned payout stays `FAILED` even if the return is later dishonored, since the refund has already been posted |
+  | `FAILED` | The payout did not reach the destination, or was returned after it did — accompanied by a `failureReason`, and refunded to the source. A returned payout stays `FAILED` even if the return is later dishonored, since the refund has already been posted; the dishonor shows on `destination.railDetails` |

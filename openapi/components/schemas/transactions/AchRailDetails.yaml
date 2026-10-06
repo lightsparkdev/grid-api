@@ -18,6 +18,8 @@ allOf:
           - PENDING
           - SETTLED
           - RETURNED
+          - RETURN_DISHONORED
+          - RETURN_CONTESTED
           - REVERSED
           - FAILED
         description: |-
@@ -28,15 +30,17 @@ allOf:
           | `PENDING` | Submitted to the ACH network and not yet settled. |
           | `SETTLED` | The entry settled. |
           | `RETURNED` | The receiving bank returned the entry, before or after it settled. |
+          | `RETURN_DISHONORED` | The originating bank dishonored the return, so the returned funds came back. |
+          | `RETURN_CONTESTED` | The receiving bank contested the dishonor, so the funds went back again. |
           | `REVERSED` | The originator reversed the entry after it settled. |
           | `FAILED` | The entry was rejected before submission and no funds moved. |
 
-          A return or reversal can arrive days after `SETTLED`. This status reports the ACH
-          entry; the transaction's top-level `status` reports where the funds are now, so a
-          return moves the transaction to `FAILED`. If an incoming payment's return is
-          dishonored and the credit comes back, the transaction moves to `COMPLETED` again
-          while this status stays `RETURNED`. A returned payout stays `FAILED`, since it has
-          already been refunded.
+          A return, dishonor or contest can arrive days after the step before it. This status
+          reports the ACH entry; the transaction's top-level `status` reports where the funds
+          are now. A return moves the transaction to `FAILED`. On an incoming payment, a
+          dishonor brings the credit back and moves it to `COMPLETED`, and a contest moves it
+          to `FAILED` again. A returned payout stays `FAILED` through a dishonor, since it has
+          already been refunded; the rail status still records the dishonor.
         example: SETTLED
       traceNumber:
         type: string
@@ -51,8 +55,18 @@ allOf:
       returnedAt:
         type: string
         format: date-time
-        description: When the receiving bank returned the entry. Present when `status` is `RETURNED`.
+        description: When the receiving bank returned the entry. Present once the entry has been returned, including after a later dishonor or contest.
         example: '2026-10-01T14:00:00Z'
+      dishonoredAt:
+        type: string
+        format: date-time
+        description: When the originating bank dishonored the return. Present once `status` has reached `RETURN_DISHONORED`.
+        example: '2026-10-04T14:00:00Z'
+      contestedAt:
+        type: string
+        format: date-time
+        description: When the receiving bank contested the dishonor. Present when `status` is `RETURN_CONTESTED`.
+        example: '2026-10-07T14:00:00Z'
       reversedAt:
         type: string
         format: date-time
