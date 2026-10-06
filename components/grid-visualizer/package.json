@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
-    "@base-ui/utils": "^0.2.4",
     "@central-icons-react/round-filled-radius-3-stroke-1.5": "^1.1.135",
     "@central-icons-react/round-outlined-radius-3-stroke-1.5": "^1.1.135",
     "@lightsparkdev/origin": "^0.15.0",
