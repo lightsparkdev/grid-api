@@ -26069,6 +26069,7 @@ components:
           required:
             - umaAddress
             - destinationType
+            - currency
           properties:
             destinationType:
               type: string

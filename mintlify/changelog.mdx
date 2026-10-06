@@ -10,6 +10,12 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## A UMA address destination requires `currency`
+
+`UmaAddressDestination.currency` on `POST /quotes` is now marked required in the spec.
+The API has always rejected a UMA address destination without it, so no working
+integration changes. Generated clients now enforce it at build time.
+
 ## Quote and transfer creation answer `200`
 
 `POST /quotes`, `POST /transfer-in` and `POST /transfer-out` have always answered
