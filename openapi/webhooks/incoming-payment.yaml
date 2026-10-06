@@ -62,7 +62,9 @@ post:
     An ACH deposit can be returned after `COMPLETED`, days after it settled.
     The return takes the funds back, so the payment moves to `FAILED` and
     `INCOMING_PAYMENT.FAILED` is sent with `source.railDetails.status` set to
-    `RETURNED` and `returnedAt` set.
+    `RETURNED` and `returnedAt` set. If the return is dishonored and the funds
+    come back, the payment moves to `COMPLETED` again and
+    `INCOMING_PAYMENT.COMPLETED` is sent; `railDetails` keeps `RETURNED`.
 
 
     Bank-rail incoming payments (e.g. SWIFT) are informational at every

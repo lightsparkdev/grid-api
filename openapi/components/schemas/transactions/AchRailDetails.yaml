@@ -32,8 +32,10 @@ allOf:
           | `FAILED` | The entry was rejected before submission and no funds moved. |
 
           A return or reversal can arrive days after `SETTLED`. This status reports the ACH
-          entry; the transaction's top-level `status` reports whether the funds are still at
-          the destination, so a return moves the transaction to `FAILED`.
+          entry; the transaction's top-level `status` reports where the funds are now, so a
+          return moves the transaction to `FAILED`. If the return is dishonored and the funds
+          come back, the transaction moves to `COMPLETED` again while this status stays
+          `RETURNED`.
         example: SETTLED
       traceNumber:
         type: string

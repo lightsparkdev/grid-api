@@ -6,10 +6,10 @@ Use webhooks for real-time updates and daily queries as a backstop to detect mis
 
 ## Handling webhooks
 
-Listen for transaction webhooks to track transaction status change until a terminal state is reached.
+Listen for transaction webhooks and apply every status change to your records as it arrives.
 
 <Info>
-Expected terminal statuses for outgoing transactions: `COMPLETED`, `FAILED`, `EXPIRED`. However, transitions between these can occur (e.g., a bank return moves `COMPLETED` → `FAILED`, and `destination.railDetails.status` moves to `RETURNED`). Also listen for `OUTGOING_PAYMENT.REFUND_COMPLETED` and `OUTGOING_PAYMENT.REFUND_FAILED` to track refunds on failed transactions.
+A transaction's `status` reports where the funds are now, and it can change after settlement. A bank return moves `COMPLETED` → `FAILED` and `destination.railDetails.status` to `RETURNED`; a dishonored return moves it back to `COMPLETED`. Only `EXPIRED` is terminal. Also listen for `OUTGOING_PAYMENT.REFUND_COMPLETED` and `OUTGOING_PAYMENT.REFUND_FAILED` to track refunds on failed transactions.
 </Info>
 
 - **Outbound transactions**: The originating account is debited at transaction creation. If the transaction ultimately fails, a refund is posted back to the originating account.
@@ -66,8 +66,8 @@ When funds move over an external rail, that `source` / `destination` object incl
 `ONCHAIN` transfer carries `transactionHash` + `network` (e.g. `SOLANA`) to match on a block
 explorer, an `ACH` transfer carries its `traceNumber`, a `WIRE` carries its `imad`,
 and `RTP` / `FEDNOW` transfers carry their `endToEndId`. Rail identifiers can land shortly
-after the terminal status, so a terminal webhook payload may not include them yet; retrieve
-the transaction (`GET /transactions/{id}`) to read them once settled.
+after the status changes, so the webhook payload may not include them yet; retrieve the
+transaction (`GET /transactions/{id}`) to read them once settled.
 </Note>
 </Step>
 
@@ -75,8 +75,8 @@ the transaction (`GET /transactions/{id}`) to read them once settled.
 Use the envelope `id`, `data.id`, and `timestamp` to ensure idempotent handling, updating your internal ledger on each status transition.
 </Step>
 
-<Step title="Recognize terminal states">
-When a transaction reaches a terminal state, finalize your reconciliation for that transaction.
+<Step title="Close out settled transactions">
+Treat `COMPLETED` and `FAILED` as settled but still open: an ACH entry can be returned for up to 60 days after it settles, and a return can be dishonored after that. Close a transaction once that window has passed, or keep applying its webhooks and adjust your records when its `status` changes.
 </Step>
 </Steps>
 
@@ -135,7 +135,7 @@ Response
 ## Troubleshooting
 
 - **Missing webhook**: Check delivery logs in the dashboard and ensure your endpoint returns `2xx`. Retries continue for 7 days.
-- **Mismatched balances**: Re-query the date range and verify terminal statuses; remember outbound failures are refunded, inbound failures do not change balances.
+- **Mismatched balances**: Re-query the date range and compare each transaction's current `status` to your records; remember outbound failures are refunded, inbound failures do not change balances, and a returned payment can move back to `COMPLETED` if the return is dishonored.
 - **Pagination gaps**: Always follow `nextCursor` until `hasMore` is `false`.
 
 
