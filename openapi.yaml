@@ -15125,8 +15125,8 @@ components:
       type: object
       description: |
         Business information returned on a customer. `taxId` and `incorporatedOn` are
-        required on creation but may be absent on legacy customers that pre-date the
-        requirement, so both are optional in responses.
+        required on creation only when the customer's currency uses direct
+        customer-owned accounts, so both are optional in responses.
       required:
         - legalName
       properties:
@@ -15479,8 +15479,6 @@ components:
       required:
         - legalName
         - country
-        - taxId
-        - incorporatedOn
       properties:
         legalName:
           type: string
@@ -15504,14 +15502,14 @@ components:
         incorporatedOn:
           type: string
           format: date
-          description: Date of incorporation in ISO 8601 format (YYYY-MM-DD)
+          description: Date of incorporation in ISO 8601 format (YYYY-MM-DD). Required when the customer's currency uses direct customer-owned accounts. Can be omitted when the platform funds customers from an omnibus FBO account.
           example: '2018-03-14'
         entityType:
           $ref: '#/components/schemas/EntityType'
         taxId:
           type: string
           maxLength: 100
-          description: Tax identification number
+          description: Tax identification number. Required when the customer's currency uses direct customer-owned accounts. Can be omitted when the platform funds customers from an omnibus FBO account.
           example: 47-1234567
         countriesOfOperation:
           type: array
