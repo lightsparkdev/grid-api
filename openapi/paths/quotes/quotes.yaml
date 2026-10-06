@@ -162,12 +162,12 @@ post:
             transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000005
     '202':
       description: >
-        Quote created but awaiting Strong Customer Authentication. Returned only
-        for customers whose provider requires SCA (e.g. EU) on a realtime-funding
-        source: the quote has status `PENDING_AUTHORIZATION` and carries an
-        `scaChallenge`, and `paymentInstructions` are **withheld** until the
-        challenge is authorized via `POST /quotes/{quoteId}/authorize`. Once
-        authorized, the quote's `paymentInstructions` are populated.
+        Quote created and its execution started, but paused for Strong
+        Customer Authentication. Returned only when `immediatelyExecute` is
+        true and the customer's provider requires SCA (e.g. EU): the quote has
+        status `PENDING_AUTHORIZATION` and carries an `scaChallenge`. Authorize
+        it via `POST /quotes/{quoteId}/authorize`, the same as a quote executed
+        through `POST /quotes/{quoteId}/execute`.
       content:
         application/json:
           schema:
