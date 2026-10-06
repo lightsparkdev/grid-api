@@ -869,18 +869,18 @@ openapi:
           - "$.components.schemas.AuthCredentialCreateRequest.properties"
           - "$.components.schemas.AuthCredentialVerifyRequest.properties"
         keys: [ "type" ]
-    # ── Remove $ref to AuthCredentialVerifyRequest from verify variants ──
+
     - command: remove
       reason: >-
-        Remove allOf $ref to AuthCredentialVerifyRequest from verify variants
-        because the base schema becomes an empty object after stripping the
-        type discriminator (no other shared fields on verify)
+        Drop the now-dangling type requirement from the same base schemas, so
+        the V2 normalizer keeps each variant's own type enum. That lets the
+        create and verify unions dispatch on type, and keeps the fields of
+        variants like PasskeyCredentialVerifyRequest.
       args:
         target:
-          - "$.components.schemas.EmailOtpCredentialVerifyRequest.allOf[0]"
-          - "$.components.schemas.OauthCredentialVerifyRequest.allOf[0]"
-          - "$.components.schemas.PasskeyCredentialVerifyRequest.allOf[0]"
-        keys: [ "$ref" ]
+          - "$.components.schemas.AuthCredentialCreateRequest"
+          - "$.components.schemas.AuthCredentialVerifyRequest"
+        keys: [ "required" ]
 
     # ── type: remove from BaseWebhook ──
     - command: remove
