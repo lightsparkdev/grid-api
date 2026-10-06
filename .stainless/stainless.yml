@@ -855,6 +855,40 @@ openapi:
           - "$.components.schemas.BasePaymentAccountInfo"
         keys: [ "required" ]
 
+    # ── sourceType / destinationType: remove from base schemas ──
+    - command: remove
+      reason: >-
+        Remove the wide sourceType enum from the source base schemas so each
+        variant's single-value enum is the only definition. The SDK builders
+        then default sourceType for each variant instead of requiring it.
+      args:
+        target:
+          - "$.components.schemas.BaseQuoteSource.properties"
+          - "$.components.schemas.BaseTransactionSource.properties"
+        keys: [ "sourceType" ]
+
+    - command: remove
+      reason: >-
+        Remove the wide destinationType enum from the destination base
+        schemas, for the same reason as sourceType.
+      args:
+        target:
+          - "$.components.schemas.BaseDestination.properties"
+          - "$.components.schemas.BaseTransactionDestination.properties"
+        keys: [ "destinationType" ]
+
+    - command: remove
+      reason: >-
+        Drop the now-dangling sourceType and destinationType requirements from
+        the same base schemas, for the same reason as accountType above.
+      args:
+        target:
+          - "$.components.schemas.BaseQuoteSource"
+          - "$.components.schemas.BaseTransactionSource"
+          - "$.components.schemas.BaseDestination"
+          - "$.components.schemas.BaseTransactionDestination"
+        keys: [ "required" ]
+
     # ── type: auth credential base schemas ──
     - command: remove
       reason: >-
