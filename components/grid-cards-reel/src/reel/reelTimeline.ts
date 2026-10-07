@@ -400,50 +400,88 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
     return m[5] * -y + m[8] * (d - z * d) > 0;
   };
 
-  // How many swaps have happened by each instant of the cycle: the rate
-  // integrated, counted only while the front faces the camera when swaps
-  // are front-only (scaled up so the count still finishes on time).
-  const steps = Math.max(2000, Math.ceil(cycleDur * 2000));
-  const dt = cycleDur / steps;
-  const counted = (t: number) => c.cycle.swapOn === 'both' || facesFront(t);
-  let total = 0;
-  for (let i = 0; i < steps; i++) {
-    const t = tCycle + (i + 0.5) * dt;
-    if (counted(t)) total += rateAt(c.cycle, (i + 0.5) / steps) * dt;
-  }
-  const gain = total > 0 ? swaps / total : 1;
-  const swapTimes: number[] = [0];
-  let acc = 0;
-  for (let i = 0; i < steps && swapTimes.length <= swaps; i++) {
-    const t = tCycle + (i + 0.5) * dt;
-    if (counted(t)) acc += rateAt(c.cycle, (i + 0.5) / steps) * dt * gain;
-    while (swapTimes.length <= swaps && acc >= swapTimes.length - 1e-9) swapTimes.push(t);
-  }
-  while (swapTimes.length <= swaps) swapTimes.push(tCycleEnd);
-
-  // Who goes in which slot. A back-only card takes the next slot during
-  // which the back faces the camera the whole time (a frame's shutter of
-  // margin either side, for the blur); everyone else keeps the planned
-  // order in the slots left, so the cycle still ends as planned.
+  // The cycle in stretches, split where the card turns edge-on: while the
+  // front faces the camera, the cards whose fronts may show; while the back
+  // does, the back-only cards. Each stretch's cards are paced by the cycle's
+  // rate (slow, fast, slow) within it, and the change between stretches
+  // falls on the edge-on moment, where it can't be seen. Back-only cards
+  // keep a frame clear of either edge, for the motion blur.
   const margin = 1 / c.fps;
-  const backFacing = (from: number, to: number) => {
-    for (let t = from - margin; t <= to + margin; t += 1 / (c.fps * 4)) if (facesFront(t)) return false;
-    return true;
+  const step = 1 / (c.fps * 8);
+  interface Stretch {
+    from: number;
+    to: number;
+    front: boolean;
+    weight: number[];
+  }
+  const stretches: Stretch[] = [];
+  for (let t = tCycle; t < tCycleEnd - 1e-9; t += step) {
+    const front = facesFront(t + step / 2);
+    const w = rateAt(c.cycle, (t - tCycle) / cycleDur) * step;
+    const last = stretches[stretches.length - 1];
+    if (last && last.front === front) {
+      last.to = t + step;
+      last.weight.push(w);
+    } else stretches.push({ from: t, to: t + step, front, weight: [w] });
+  }
+  // A back stretch too short to hold a card clear of both edges holds none.
+  const usableBack = (s: Stretch) => s.to - s.from > 2 * margin + 2 / c.fps;
+
+  // Share `n` cards over stretches by their rate, at least `min` each.
+  const share = (n: number, list: Stretch[], min: number): number[] => {
+    const base = list.map(() => Math.min(min, Math.floor(n / Math.max(1, list.length))));
+    let left = n - base.reduce((a, b) => a + b, 0);
+    const total = list.reduce((a, s) => a + s.weight.reduce((x, y) => x + y, 0), 0) || 1;
+    const exact = list.map((s) => (left * s.weight.reduce((x, y) => x + y, 0)) / total);
+    const counts = base.map((b, i) => b + Math.floor(exact[i]));
+    left = n - counts.reduce((a, b) => a + b, 0);
+    exact
+      .map((x, i) => ({ i, r: x - Math.floor(x) }))
+      .sort((a, b) => b.r - a.r)
+      .slice(0, left)
+      .forEach(({ i }) => counts[i]++);
+    return counts;
   };
-  const normal = planned.slice(1, -1).filter((e) => !e.backOnly);
+  const fronts = planned.slice(1, -1).filter((e) => !e.backOnly);
   const backs = planned.slice(1, -1).filter((e) => e.backOnly);
+  const frontStretches = stretches.filter((s) => s.front);
+  const backStretches = stretches.filter((s) => !s.front && usableBack(s));
+  const frontCounts = share(fronts.length, frontStretches, 1);
+  const backCounts = share(backs.length, backStretches, 0);
+  if (backs.length && !backStretches.length) console.warn('[reel] no back-facing stretch for the back-only cards');
+
   const sequence: E[] = [placeholder];
-  for (let k = 1; k < swaps; k++) {
-    const backSlot = backs.length > 0 && backFacing(swapTimes[k], swapTimes[k + 1]);
-    const next = backSlot || normal.length === 0 ? backs.shift()! : normal.shift()!;
-    if (next.backOnly && !backSlot) console.warn('[reel] no back-facing slot left for', next.id, '(its front shows)');
-    sequence.push(next);
+  const swapTimes: number[] = [0];
+  for (const s of stretches) {
+    const fi = frontStretches.indexOf(s);
+    const bi = backStretches.indexOf(s);
+    const n = fi >= 0 ? frontCounts[fi] : bi >= 0 ? backCounts[bi] : 0;
+    if (!n) continue;
+    const pool = fi >= 0 ? fronts : backs;
+    // A back stretch's cards stay a frame clear of the edges; a front
+    // stretch's first card comes on just before the front turns into view.
+    const start = s.front ? Math.max(tCycle, s.from - margin) : s.from + margin;
+    const end = s.front ? s.to : s.to - margin;
+    const total = s.weight.reduce((a, b) => a + b, 0);
+    let acc = 0;
+    let j = 0;
+    for (let i = 0; i < s.weight.length && j < n; i++) {
+      const t = s.from + i * step;
+      while (j < n && acc >= (j * total) / n - 1e-12) {
+        swapTimes.push(Math.min(end, Math.max(start, t)));
+        sequence.push(pool.shift()!);
+        j++;
+      }
+      acc += s.weight[i];
+    }
   }
   sequence.push(placeholder);
+  swapTimes.push(tCycleEnd);
+  const last = sequence.length - 1;
 
   const indexAt = (t: number) => {
     let k = 0;
-    while (k < swaps && swapTimes[k + 1] <= t) k++;
+    while (k < last && swapTimes[k + 1] <= t) k++;
     return k;
   };
 

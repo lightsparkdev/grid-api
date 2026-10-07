@@ -9,7 +9,7 @@ import { PRESETS, type PresetDesign } from '@/data/presets';
 import type { CardCredentials } from '@/apps/shared/card/cardholder';
 import type { ReelEntry } from '@reel/reel/reelTimeline';
 import { credentialsFor, HOLDERS } from './holders';
-import { BACK_ONLY, NEW_BRANDS, ORDER } from './newBrands';
+import { FRONT_SHOWN, NEW_BRANDS, ORDER } from './newBrands';
 import { rasterize } from './prepare';
 
 export interface ReelBrand extends ReelEntry {
@@ -67,7 +67,7 @@ export function loadReelBrands(): Promise<ReelBrand[]> {
       const brand: ReelBrand = {
         id,
         orientation,
-        backOnly: BACK_ONLY.has(id),
+        backOnly: !id.startsWith('preset-') && !FRONT_SHOWN.has(id),
         design: withHolder(design, holder.name),
         credentials: credentialsFor(i + 1, BACK.credentials.exp),
         country: holder.country,
