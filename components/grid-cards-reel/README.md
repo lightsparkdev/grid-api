@@ -1,5 +1,7 @@
 # Cards launch reel
 
+> Editing the video? Start in [`remotion/`](./remotion) (a ready Remotion project with the plate in it) and read [`AGENTS.md`](./AGENTS.md). This app is for changing the 3D card's motion or designs and re-rendering the plate.
+
 Video-only. Renders the cards playground's real 3D card (same mesh, materials, studio lighting, foil, and hologram) frame by frame onto transparency, for compositing in Remotion. Lives on the `pat/cards-reel` branch; never merged, never deployed. Nothing in `components/grid-cards-demo` is edited: the card is imported from it read-only.
 
 ## What you get
@@ -13,7 +15,7 @@ Video-only. Renders the cards playground's real 3D card (same mesh, materials, s
 | `out/<take>/track.json` | Per frame: which brand is on the card, and the pose. `meta.swaps` lists the time each brand comes on, for syncing sound to the flips. |
 | `out/stills/<id>/` | Per brand: `hero.png` (4K, transparent, three-quarter pose), `front.png`, `back.png`. |
 
-The latest plate is `out/plate-v3`.
+The final plate is `out/plate-final`; its WebM and `track.json` are copied into `remotion/`.
 
 ## Setup
 
