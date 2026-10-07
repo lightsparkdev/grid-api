@@ -61,8 +61,9 @@ Sample webhook payload:
 ```
 
 <Note>
-When funds move over an external rail, that `source` / `destination` object includes a
-`railDetails` describing the transfer. Its `paymentRail` determines the fields: an
+When funds move over an external rail, that `source` / `destination` object may include a
+`railDetails` describing the transfer. It is present for US bank rails and on-chain
+transfers today. Its `paymentRail` determines the fields: an
 `ONCHAIN` transfer carries `transactionHash` + `network` (e.g. `SOLANA`) to match on a block
 explorer, an `ACH` transfer carries its `traceNumber`, a `WIRE` carries its `imad`,
 and `RTP` / `FEDNOW` transfers carry their `endToEndId`. Rail identifiers can land shortly
