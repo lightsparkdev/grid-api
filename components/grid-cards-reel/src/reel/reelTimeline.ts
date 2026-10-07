@@ -400,83 +400,77 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
     return m[5] * -y + m[8] * (d - z * d) > 0;
   };
 
-  // The cycle in stretches, split where the card turns edge-on: while the
-  // front faces the camera, the cards whose fronts may show; while the back
-  // does, the back-only cards. Each stretch's cards are paced by the cycle's
-  // rate (slow, fast, slow) within it, and the change between stretches
-  // falls on the edge-on moment, where it can't be seen. Back-only cards
-  // keep a frame clear of either edge, for the motion blur.
+  // The swaps run on one continuous clock, the cycle's rate (slow, fast,
+  // slow); the face decides who each tick brings on. A tick while the front
+  // faces the camera brings the next card whose front may show; while the
+  // back faces it (a frame clear of either edge, for the blur), the next
+  // back-only card, as many as fit, the rest left out. The one tick off the
+  // clock: a back-only card still on as the front turns back into view is
+  // replaced on the edge-on frame, where the change can't be seen. The
+  // clock's speed is set so the last front card (the placeholder) comes on
+  // at the cycle's end.
   const margin = 1 / c.fps;
   const step = 1 / (c.fps * 8);
-  interface Stretch {
-    from: number;
-    to: number;
-    front: boolean;
-    weight: number[];
-  }
-  const stretches: Stretch[] = [];
-  for (let t = tCycle; t < tCycleEnd - 1e-9; t += step) {
-    const front = facesFront(t + step / 2);
-    const w = rateAt(c.cycle, (t - tCycle) / cycleDur) * step;
-    const last = stretches[stretches.length - 1];
-    if (last && last.front === front) {
-      last.to = t + step;
-      last.weight.push(w);
-    } else stretches.push({ from: t, to: t + step, front, weight: [w] });
-  }
-  // A back stretch too short to hold a card clear of both edges holds none.
-  const usableBack = (s: Stretch) => s.to - s.from > 2 * margin + 2 / c.fps;
-
-  // Share `n` cards over stretches by their rate, at least `min` each.
-  const share = (n: number, list: Stretch[], min: number): number[] => {
-    const base = list.map(() => Math.min(min, Math.floor(n / Math.max(1, list.length))));
-    let left = n - base.reduce((a, b) => a + b, 0);
-    const total = list.reduce((a, s) => a + s.weight.reduce((x, y) => x + y, 0), 0) || 1;
-    const exact = list.map((s) => (left * s.weight.reduce((x, y) => x + y, 0)) / total);
-    const counts = base.map((b, i) => b + Math.floor(exact[i]));
-    left = n - counts.reduce((a, b) => a + b, 0);
-    exact
-      .map((x, i) => ({ i, r: x - Math.floor(x) }))
-      .sort((a, b) => b.r - a.r)
-      .slice(0, left)
-      .forEach(({ i }) => counts[i]++);
-    return counts;
+  const backClear = (t: number) => {
+    for (let s = -margin; s <= 6 / c.fps + margin; s += 1 / (c.fps * 2)) if (facesFront(t + s)) return false;
+    return true;
   };
-  const fronts = planned.slice(1, -1).filter((e) => !e.backOnly);
-  const backs = planned.slice(1, -1).filter((e) => e.backOnly);
-  const frontStretches = stretches.filter((s) => s.front);
-  const backStretches = stretches.filter((s) => !s.front && usableBack(s));
-  const frontCounts = share(fronts.length, frontStretches, 1);
-  const backCounts = share(backs.length, backStretches, 0);
-  if (backs.length && !backStretches.length) console.warn('[reel] no back-facing stretch for the back-only cards');
-
-  const sequence: E[] = [placeholder];
-  const swapTimes: number[] = [0];
-  for (const s of stretches) {
-    const fi = frontStretches.indexOf(s);
-    const bi = backStretches.indexOf(s);
-    const n = fi >= 0 ? frontCounts[fi] : bi >= 0 ? backCounts[bi] : 0;
-    if (!n) continue;
-    const pool = fi >= 0 ? fronts : backs;
-    // A back stretch's cards stay a frame clear of the edges; a front
-    // stretch's first card comes on just before the front turns into view.
-    const start = s.front ? Math.max(tCycle, s.from - margin) : s.from + margin;
-    const end = s.front ? s.to : s.to - margin;
-    const total = s.weight.reduce((a, b) => a + b, 0);
-    let acc = 0;
-    let j = 0;
-    for (let i = 0; i < s.weight.length && j < n; i++) {
-      const t = s.from + i * step;
-      while (j < n && acc >= (j * total) / n - 1e-12) {
-        swapTimes.push(Math.min(end, Math.max(start, t)));
-        sequence.push(pool.shift()!);
-        j++;
+  // A front card comes on only with its front in view long enough to read.
+  const frontHolds = (t: number) => {
+    for (let s = 0; s <= 8 / c.fps; s += 1 / (c.fps * 2)) if (!facesFront(t + s)) return t + s >= tLand;
+    return true;
+  };
+  const frontPool = [...planned.slice(1, -1).filter((e) => !e.backOnly), placeholder];
+  const backPool = planned.slice(1, -1).filter((e) => e.backOnly);
+  const schedule = (gain: number) => {
+    const seq: E[] = [placeholder];
+    const times: number[] = [0];
+    let fi = 0;
+    let bi = 0;
+    // Most of a tick in hand, so the first change follows the launch.
+    let acc = 0.7;
+    for (let t = tCycle; t < tCycleEnd + 2 && fi < frontPool.length; t += step) {
+      acc += rateAt(c.cycle, Math.min(1, (t - tCycle) / cycleDur)) * gain * step;
+      const showing = seq[seq.length - 1];
+      if (showing.backOnly && facesFront(t + margin + step)) {
+        seq.push(frontPool[fi++]);
+        times.push(t);
+        acc = 0;
+        continue;
       }
-      acc += s.weight[i];
+      if (acc < 1) continue;
+      if (facesFront(t)) {
+        if (!frontHolds(t)) continue;
+        seq.push(frontPool[fi++]);
+        times.push(t);
+        acc -= 1;
+      } else if (bi < backPool.length && backClear(t)) {
+        seq.push(backPool[bi++]);
+        times.push(t);
+        acc -= 1;
+      }
+      // A tick that couldn't land waits for the next moment it can, rather
+      // than banking ticks into a burst.
+      acc = Math.min(acc, 1);
     }
+    return { seq, times, end: fi >= frontPool.length ? times[times.length - 1] : Infinity, shown: bi };
+  };
+  // The slowest clock that still brings every front card on by the end.
+  let lo = 0.05;
+  let hi = 20;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (schedule(mid).end <= tCycleEnd) hi = mid;
+    else lo = mid;
   }
-  sequence.push(placeholder);
-  swapTimes.push(tCycleEnd);
+  const plan = schedule(hi);
+  const sequence = plan.seq;
+  const swapTimes = plan.times;
+  // The placeholder comes back on at the cycle's end, the beat after the card has settled.
+  swapTimes[swapTimes.length - 1] = Math.max(swapTimes[swapTimes.length - 1], tCycleEnd);
+  if (plan.shown < backPool.length) {
+    console.info('[reel] back-only cards left out (no room on the backs):', backPool.slice(plan.shown).map((e) => e.id).join(', '));
+  }
   const last = sequence.length - 1;
 
   const indexAt = (t: number) => {

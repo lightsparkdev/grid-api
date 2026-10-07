@@ -51,7 +51,10 @@ Everything is in `REEL` at the top of `src/reel/reelTimeline.ts`. Change a numbe
 | `tumble.axisDeg`, `tumble.axisDrift` | The spin axis in the card's plane (-32 is the diagonal, so the bottom-left corner leads). Drift 0 keeps it fixed, as a free spin is. |
 | `tumble.flick`, `drag`, `catch` | The spin's speed: up over the launch, slowing a little with drag, eased to a stop over the catch. It never speeds up mid-air. |
 | `cycle.startPerSecond`, `peakPerSecond`, `endPerSecond` | The swap rate's ramp: slow, then up to 8 a second, then easing into the landing. Every brand shows exactly once; the duration (and so the spin's speed) follows. Lower = slower everything. |
-| `cycle.swapOn` | `'both'` swaps whichever face is showing; `'front'` only while the front faces the camera. |
+| `cycle.swapOn` | `'both'`: back-only cards fill the ticks while the back faces the camera. `'front'`: no back-only cards; ticks on the back wait for the front. |
+| `cycle.overrun` | Seconds the cycle keeps going after the card lands (the last swaps happen on the still card). |
+
+Which fronts show: `FRONT_SHOWN` in `src/brands/newBrands.ts` (plus the six presets). Every other new brand is back-only: the swaps run on one continuous clock (the rate curve above), a tick while the front faces the camera brings the next front card, a tick while the back faces it brings the next back-only card, and back-only cards that don't fit are left out (listed in the console). The clock's speed is set so the presets finish on time, so fewer front cards means a slower clock.
 | `orientation.mix` | `'none'` (default): the card never rolls, so upright designs flip past sideways, as a rigid card would. `'grouped'`: they play as one run with a quarter turn in and out mid-air. `'interleaved'`: scattered, the silhouette snaps. The rolls read as a change of momentum. |
 | `settle.hold` | Seconds on "Your brand" at the end. |
 | `size`, `cardFrac` | Plate size, and the card's width as a share of it (leave room for the pop). |
