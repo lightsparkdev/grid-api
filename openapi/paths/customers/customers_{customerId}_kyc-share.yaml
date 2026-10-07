@@ -1,0 +1,80 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The Grid customer ID to import the shared identity document into.
+    required: true
+    schema:
+      type: string
+post:
+  summary: Import an identity document from a reusable KYC share token
+  description: |
+    Import a customer's identity document from a Sumsub Reusable KYC share token issued by a partner that already verified them.
+
+    Grid copies the identity document images from the share into the customer's verification profile and returns the resulting documents. They are the same documents `POST /documents` creates, and appear in `GET /documents`. The import does not change the customer's verification status. Continue the normal flow: submit any remaining data and documents, then call `POST /verifications`.
+
+    Only `INDIVIDUAL` customers are supported. The customer must not already have an identity document; replace an existing one with `PUT /documents/{documentId}` instead.
+
+    Share tokens are single-use. Grid validates the customer before using the token, so a request rejected with `404` or `409` leaves the token unused. A token that Sumsub rejects returns `400 INVALID_INPUT`; ask the partner for a new one.
+  operationId: createCustomerKycShare
+  tags:
+    - KYC/KYB Verifications
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/customers/KycShareCreateRequest.yaml
+  responses:
+    '201':
+      description: Identity documents imported
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/KycShareResponse.yaml
+    '400':
+      description: >-
+        Bad request. Returned for a `BUSINESS` customer, or when Sumsub rejects
+        the share token (invalid, expired, already used, issued by a donor that
+        is not a partner, or with no identity document compatible with the
+        customer's verification level).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        `DOCUMENT_ALREADY_EXISTS` when the customer already has an identity
+        document. `CONFLICT` when the customer's verification profile has not
+        been created yet.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: >-
+        Identity verification through the API is not supported for the
+        customer's platform.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml

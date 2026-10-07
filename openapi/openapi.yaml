@@ -178,6 +178,8 @@ paths:
     $ref: paths/customers/customers_end-user-terms.yaml
   /customers/{customerId}/kyc-link:
     $ref: paths/customers/customers_{customerId}_kyc-link.yaml
+  /customers/{customerId}/kyc-share:
+    $ref: paths/customers/customers_{customerId}_kyc-share.yaml
   /customers/{customerId}/verify-email:
     $ref: paths/customers/customers_{customerId}_verify-email.yaml
   /customers/{customerId}/verify-email/confirm:

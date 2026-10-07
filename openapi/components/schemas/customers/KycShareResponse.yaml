@@ -1,0 +1,10 @@
+type: object
+description: The identity documents imported from a reusable KYC share token.
+required:
+  - documents
+properties:
+  documents:
+    type: array
+    description: One document per imported image, such as the front and back of an ID card.
+    items:
+      $ref: ../documents/Document.yaml
