@@ -68,6 +68,7 @@ export function loadReelBrands(): Promise<ReelBrand[]> {
         id,
         orientation,
         backOnly: !id.startsWith('preset-') && !FRONT_SHOWN.has(id),
+        finale: id.startsWith('preset-'),
         design: withHolder(design, holder.name),
         credentials: credentialsFor(i + 1, BACK.credentials.exp),
         country: holder.country,

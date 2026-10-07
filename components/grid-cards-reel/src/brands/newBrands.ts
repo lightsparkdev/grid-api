@@ -371,7 +371,9 @@ export const NEW_BRANDS: NewBrand[] = [
 /** The new brands whose fronts the reel shows. Every other new brand only
  *  appears while the card's back faces the camera; the playground's presets
  *  show their fronts (they close the cycle on the settled card). */
-export const FRONT_SHOWN = new Set(['ghost', 'road', 'cloud', 'fomo', 'camera', 'field', 'poly', 'note', 'cash', 'coin', 'eq']);
+export const FRONT_SHOWN = new Set([
+  'ghost', 'road', 'cloud', 'fomo', 'camera', 'field', 'poly', 'note', 'cash', 'coin', 'eq', 'pop', 'dash', 'patron', 'parcel',
+]);
 
 /** The show order: the new brands with the upright ones woven through,
  *  then the playground's six presets as the cycle slows onto the settled

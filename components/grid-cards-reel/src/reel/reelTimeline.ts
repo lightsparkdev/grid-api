@@ -180,6 +180,9 @@ export interface ReelEntry {
    *  never seen. (With swaps on the front only, such a card can't show and
    *  is left out.) */
   backOnly?: boolean;
+  /** Closes the cycle: the finale cards take the last front-facing swaps,
+   *  once each, in order. */
+  finale?: boolean;
 }
 
 export interface Reel<E extends ReelEntry> {
@@ -401,14 +404,14 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
   };
 
   // The swaps run on one continuous clock, the cycle's rate (slow, fast,
-  // slow); the face decides who each tick brings on. A tick while the front
-  // faces the camera brings the next card whose front may show; while the
-  // back faces it (a frame clear of either edge, for the blur), the next
-  // back-only card, as many as fit, the rest left out. The one tick off the
-  // clock: a back-only card still on as the front turns back into view is
-  // replaced on the edge-on frame, where the change can't be seen. The
-  // clock's speed is set so the last front card (the placeholder) comes on
-  // at the cycle's end.
+  // slow), at full pace; the face decides who each tick brings on. A tick
+  // while the front faces the camera brings a card whose front may show
+  // (they take turns, repeating as needed); while the back faces it (clear
+  // of either edge, for the blur), the next back-only card. The one tick off
+  // the clock: a back-only card still on as the front turns back into view
+  // is replaced on the edge-on frame, where the change can't be seen. The
+  // last front ticks are the finale (the presets), once each, in order;
+  // the placeholder comes back at the cycle's end.
   const margin = 1 / c.fps;
   const step = 1 / (c.fps * 8);
   const backClear = (t: number) => {
@@ -420,57 +423,65 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
     for (let s = 0; s <= 8 / c.fps; s += 1 / (c.fps * 2)) if (!facesFront(t + s)) return t + s >= tLand;
     return true;
   };
-  const frontPool = [...planned.slice(1, -1).filter((e) => !e.backOnly), placeholder];
-  const backPool = planned.slice(1, -1).filter((e) => e.backOnly);
-  const schedule = (gain: number) => {
-    const seq: E[] = [placeholder];
-    const times: number[] = [0];
-    let fi = 0;
-    let bi = 0;
-    // Most of a tick in hand, so the first change follows the launch.
-    let acc = 0.7;
-    for (let t = tCycle; t < tCycleEnd + 2 && fi < frontPool.length; t += step) {
-      acc += rateAt(c.cycle, Math.min(1, (t - tCycle) / cycleDur)) * gain * step;
-      const showing = seq[seq.length - 1];
-      if (showing.backOnly && facesFront(t + margin + step)) {
-        seq.push(frontPool[fi++]);
-        times.push(t);
+  const brandsInPlan = planned.slice(1, -1);
+  const finale = brandsInPlan.filter((e) => e.finale);
+  const fronts = brandsInPlan.filter((e) => !e.backOnly && !e.finale);
+  const backs = brandsInPlan.filter((e) => e.backOnly);
+
+  // The ticks, and which face each falls on.
+  const ticks: Array<{ t: number; back: boolean }> = [];
+  {
+    let acc = 0.7; // most of a tick in hand, so the first change follows the launch
+    let onBack = false;
+    for (let t = tCycle; t < tCycleEnd - 1e-9; t += step) {
+      acc += rateAt(c.cycle, Math.min(1, (t - tCycle) / cycleDur)) * step;
+      if (onBack && facesFront(t + margin + step)) {
+        ticks.push({ t, back: false });
+        onBack = false;
         acc = 0;
         continue;
       }
-      if (acc < 1) continue;
-      if (facesFront(t)) {
-        if (!frontHolds(t)) continue;
-        seq.push(frontPool[fi++]);
-        times.push(t);
-        acc -= 1;
-      } else if (bi < backPool.length && backClear(t)) {
-        seq.push(backPool[bi++]);
-        times.push(t);
-        acc -= 1;
+      if (acc >= 1) {
+        if (facesFront(t)) {
+          if (frontHolds(t)) {
+            ticks.push({ t, back: false });
+            onBack = false;
+            acc -= 1;
+          }
+        } else if (backs.length && backClear(t)) {
+          ticks.push({ t, back: true });
+          onBack = true;
+          acc -= 1;
+        }
       }
       // A tick that couldn't land waits for the next moment it can, rather
       // than banking ticks into a burst.
       acc = Math.min(acc, 1);
     }
-    return { seq, times, end: fi >= frontPool.length ? times[times.length - 1] : Infinity, shown: bi };
-  };
-  // The slowest clock that still brings every front card on by the end.
-  let lo = 0.05;
-  let hi = 20;
-  for (let i = 0; i < 40; i++) {
-    const mid = (lo + hi) / 2;
-    if (schedule(mid).end <= tCycleEnd) hi = mid;
-    else lo = mid;
   }
-  const plan = schedule(hi);
-  const sequence = plan.seq;
-  const swapTimes = plan.times;
-  // The placeholder comes back on at the cycle's end, the beat after the card has settled.
-  swapTimes[swapTimes.length - 1] = Math.max(swapTimes[swapTimes.length - 1], tCycleEnd);
-  if (plan.shown < backPool.length) {
-    console.info('[reel] back-only cards left out (no room on the backs):', backPool.slice(plan.shown).map((e) => e.id).join(', '));
+
+  // Who each tick brings on.
+  const frontTicks = ticks.filter((k) => !k.back);
+  const finaleFrom = Math.max(0, frontTicks.length - finale.length);
+  const sequence: E[] = [placeholder];
+  const swapTimes: number[] = [0];
+  let fi = 0;
+  let bi = 0;
+  let ni = 0;
+  for (const k of ticks) {
+    if (k.back) sequence.push(backs[bi++ % backs.length]);
+    else if (frontTicks.indexOf(k) >= finaleFrom) sequence.push(finale[ni++]);
+    else sequence.push(fronts.length ? fronts[fi++ % fronts.length] : finale[ni++]);
+    swapTimes.push(k.t);
   }
+  // The placeholder comes back on the clock's next beat, still slowing (and
+  // not before the cycle's end, the beat after the card has settled).
+  const n = swapTimes.length;
+  const lastGap = n > 2 ? swapTimes[n - 1] - swapTimes[n - 2] : 0.3;
+  sequence.push(placeholder);
+  swapTimes.push(Math.max(tCycleEnd, swapTimes[n - 1] + lastGap * 1.2));
+  if (bi < backs.length) console.info('[reel] back-only cards left out (no room on the backs):', backs.slice(bi).map((e) => e.id).join(', '));
+  if (fi < fronts.length) console.info('[reel] front cards left out (no room on the fronts):', fronts.slice(fi).map((e) => e.id).join(', '));
   const last = sequence.length - 1;
 
   const indexAt = (t: number) => {
