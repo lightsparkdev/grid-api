@@ -356,7 +356,6 @@ resources:
       base_quote_source: "#/components/schemas/BaseQuoteSource"
       quote_source_one_of: "#/components/schemas/QuoteSourceOneOf"
       base_destination: "#/components/schemas/BaseDestination"
-      quote_request: "#/components/schemas/QuoteRequest"
     methods:
       retrieve: get /quotes/{quoteId}
       create: post /quotes
@@ -428,7 +427,6 @@ resources:
               authorization_request: "#/components/schemas/SandboxCardAuthorizationRequest"
               clearing_request: "#/components/schemas/SandboxCardClearingRequest"
               refund_request: "#/components/schemas/SandboxCardReturnRequest"
-              refund: "#/components/schemas/Refund"
 
   tokens:
     models:
