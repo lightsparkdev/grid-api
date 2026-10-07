@@ -172,6 +172,7 @@ post:
                       routingNumber: '021000021'
                       accountNumber: '****4321'
                     traceNumber: '021000020123456'
+                    companyEntryDescription: INVOICE
                     addenda: 'INV-2025-0815'
                     settledAt: '2025-08-15T14:30:00Z'
                     returnedAt: '2025-08-18T15:00:00Z'

@@ -10,6 +10,28 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## Choose an ACH statement description with `railOptions`
+
+An account destination on `POST /quotes` takes a new optional `railOptions` object.
+Its `paymentRail` selects the rail, and each rail accepts only its own options. On
+`ACH` and `ACH_SAME_DAY`, `companyEntryDescription` sets the text, up to 10 characters,
+that the recipient's bank shows on their statement:
+
+```json
+"destination": {
+  "destinationType": "ACCOUNT",
+  "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+  "railOptions": { "paymentRail": "ACH", "companyEntryDescription": "PAYROLL" }
+}
+```
+
+Grid uses its default description when you omit it. ACH `railDetails` on transactions
+and webhooks reports the description as `companyEntryDescription`.
+
+`destination.paymentRail` is deprecated in favor of `railOptions.paymentRail` and
+keeps working. Send one or the other: a destination with both returns
+`400 INVALID_INPUT`.
+
 ## List balance changes for periodic statements
 
 `GET /internal-accounts/{id}/balance-changes` returns every change to an internal account's

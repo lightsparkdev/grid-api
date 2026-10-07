@@ -80,7 +80,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
     "destination": {
       "destinationType": "ACCOUNT",
       "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-      "paymentRail": "ACH"
+      "railOptions": { "paymentRail": "ACH", "companyEntryDescription": "INVOICE" }
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000,
@@ -139,7 +139,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 </Info>
 
 <Tip>
-  The `paymentRail` field is optional. If omitted, Grid selects a default rail for the destination. Specify a rail (e.g., `ACH`, `ACH_SAME_DAY`, `WIRE`, `RTP`, `FEDNOW`) when you need to control which payment network processes the transfer. `ACH_SAME_DAY` is never selected for you: it requests same-business-day settlement and is priced separately. It is capped at $1,000,000 per entry by the NACHA same-day limit (rising to $10,000,000 on 2027-09-17); a payout above that is rejected, so send it over `ACH` instead.
+  `railOptions` is optional. If omitted, Grid selects a default rail for the destination. Set `railOptions.paymentRail` to choose the rail. Common US rails are `ACH`, `ACH_SAME_DAY`, `WIRE`, `RTP` and `FEDNOW`. `ACH_SAME_DAY` is never selected for you: it requests same-business-day settlement and is priced separately. It is capped at $1,000,000 per entry by the NACHA same-day limit (rising to $10,000,000 on 2027-09-17); a payout above that is rejected, so send it over `ACH` instead. On `ACH` and `ACH_SAME_DAY`, `railOptions.companyEntryDescription` sets the text (up to 10 characters) the recipient's bank shows on their statement. `railOptions` replaces the deprecated `destination.paymentRail`; send one or the other.
 </Tip>
 
 <Info>

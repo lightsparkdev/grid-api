@@ -1,3 +1,4 @@
+# A new value also needs a branch in quotes/RailOptionsOneOf.yaml (AchRailOptions or BasicRailOptions).
 type: string
 enum:
   - ACH

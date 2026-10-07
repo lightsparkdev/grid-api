@@ -1,0 +1,29 @@
+title: ACH
+description: Options for a payment sent over ACH.
+type: object
+additionalProperties: false
+required:
+  - paymentRail
+properties:
+  paymentRail:
+    type: string
+    enum:
+      - ACH
+      - ACH_SAME_DAY
+    description: >-
+      The ACH rail to send the payment over. See `PaymentRail` for how `ACH` and
+      `ACH_SAME_DAY` settle.
+    example: ACH
+  companyEntryDescription:
+    type: string
+    minLength: 1
+    maxLength: 10
+    pattern: '^[ -~]+$'
+    description: >-
+      The ACH Company Entry Description: the text the recipient's bank shows on
+      their statement to describe this payment, such as `PAYROLL` or `INVOICE`.
+      Printable ASCII, up to 10 characters. Grid uses its default when omitted.
+      `MISC`, all zeros, and the values NACHA reserves for system entries
+      (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) return
+      `400 INVALID_INPUT`.
+    example: PAYROLL

@@ -59,7 +59,9 @@ post:
               destination:
                 destinationType: ACCOUNT
                 accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                paymentRail: ACH
+                railOptions:
+                  paymentRail: ACH
+                  companyEntryDescription: PAYROLL
               lockedCurrencySide: SENDING
               lockedCurrencyAmount: 12550
               immediatelyExecute: true

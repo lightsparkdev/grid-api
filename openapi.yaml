@@ -4548,7 +4548,9 @@ paths:
                   destination:
                     destinationType: ACCOUNT
                     accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                    paymentRail: ACH
+                    railOptions:
+                      paymentRail: ACH
+                      companyEntryDescription: PAYROLL
                   lockedCurrencySide: SENDING
                   lockedCurrencyAmount: 12550
                   immediatelyExecute: true
@@ -12354,6 +12356,7 @@ webhooks:
                           routingNumber: '021000021'
                           accountNumber: '****4321'
                         traceNumber: '021000020123456'
+                        companyEntryDescription: INVOICE
                         addenda: INV-2025-0815
                         settledAt: '2025-08-15T14:30:00Z'
                         returnedAt: '2025-08-18T15:00:00Z'
@@ -25217,6 +25220,11 @@ components:
               type: string
               description: 15-digit ACH trace number of the entry.
               example: '021000020123456'
+            companyEntryDescription:
+              type: string
+              maxLength: 10
+              description: The entry's Company Entry Description, which the receiving bank shows on the recipient's statement. On payments you originate, this is the `railOptions.companyEntryDescription` you provided, or Grid's default.
+              example: PAYROLL
             addenda:
               type: string
               description: Payment-related text carried in the entry's addenda record. On payments you originate, this is the `remittanceInformation` you provided.
@@ -26551,6 +26559,95 @@ components:
       properties:
         destinationType:
           $ref: '#/components/schemas/DestinationType'
+    AchRailOptions:
+      title: ACH
+      description: Options for a payment sent over ACH.
+      type: object
+      additionalProperties: false
+      required:
+        - paymentRail
+      properties:
+        paymentRail:
+          type: string
+          enum:
+            - ACH
+            - ACH_SAME_DAY
+          description: The ACH rail to send the payment over. See `PaymentRail` for how `ACH` and `ACH_SAME_DAY` settle.
+          example: ACH
+        companyEntryDescription:
+          type: string
+          minLength: 1
+          maxLength: 10
+          pattern: ^[ -~]+$
+          description: 'The ACH Company Entry Description: the text the recipient''s bank shows on their statement to describe this payment, such as `PAYROLL` or `INVOICE`. Printable ASCII, up to 10 characters. Grid uses its default when omitted. `MISC`, all zeros, and the values NACHA reserves for system entries (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) return `400 INVALID_INPUT`.'
+          example: PAYROLL
+    BasicRailOptions:
+      title: Other rails
+      description: Selects a rail that takes no rail-specific options.
+      type: object
+      additionalProperties: false
+      required:
+        - paymentRail
+      properties:
+        paymentRail:
+          type: string
+          enum:
+            - ACH_COLOMBIA
+            - BANK_TRANSFER
+            - BRE_B
+            - CIPS
+            - FAST
+            - FASTER_PAYMENTS
+            - FEDNOW
+            - INSTAPAY
+            - MOBILE_MONEY
+            - NEFT
+            - PAYNOW
+            - PESONET
+            - PIX
+            - RTGS
+            - RTP
+            - SEPA
+            - SEPA_INSTANT
+            - SPEI
+            - SWIFT
+            - UNIONPAY
+            - UPI
+            - WIRE
+          description: The payment rail to send the payment over. See `PaymentRail`.
+          example: WIRE
+    RailOptionsOneOf:
+      description: The payment rail to send the payment over, with options specific to that rail. `paymentRail` selects the rail and determines which other fields are accepted. The rail must be one the destination account supports. Replaces the deprecated `paymentRail` on the destination; send one or the other, not both. If neither is set, Grid selects a rail.
+      oneOf:
+        - $ref: '#/components/schemas/AchRailOptions'
+        - $ref: '#/components/schemas/BasicRailOptions'
+      discriminator:
+        propertyName: paymentRail
+        mapping:
+          ACH: '#/components/schemas/AchRailOptions'
+          ACH_SAME_DAY: '#/components/schemas/AchRailOptions'
+          ACH_COLOMBIA: '#/components/schemas/BasicRailOptions'
+          BANK_TRANSFER: '#/components/schemas/BasicRailOptions'
+          BRE_B: '#/components/schemas/BasicRailOptions'
+          CIPS: '#/components/schemas/BasicRailOptions'
+          FAST: '#/components/schemas/BasicRailOptions'
+          FASTER_PAYMENTS: '#/components/schemas/BasicRailOptions'
+          FEDNOW: '#/components/schemas/BasicRailOptions'
+          INSTAPAY: '#/components/schemas/BasicRailOptions'
+          MOBILE_MONEY: '#/components/schemas/BasicRailOptions'
+          NEFT: '#/components/schemas/BasicRailOptions'
+          PAYNOW: '#/components/schemas/BasicRailOptions'
+          PESONET: '#/components/schemas/BasicRailOptions'
+          PIX: '#/components/schemas/BasicRailOptions'
+          RTGS: '#/components/schemas/BasicRailOptions'
+          RTP: '#/components/schemas/BasicRailOptions'
+          SEPA: '#/components/schemas/BasicRailOptions'
+          SEPA_INSTANT: '#/components/schemas/BasicRailOptions'
+          SPEI: '#/components/schemas/BasicRailOptions'
+          SWIFT: '#/components/schemas/BasicRailOptions'
+          UNIONPAY: '#/components/schemas/BasicRailOptions'
+          UPI: '#/components/schemas/BasicRailOptions'
+          WIRE: '#/components/schemas/BasicRailOptions'
     AccountDestination:
       title: Account
       allOf:
@@ -26569,9 +26666,19 @@ components:
               description: Destination account identifier
               example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
             paymentRail:
+              deprecated: true
               allOf:
                 - $ref: '#/components/schemas/PaymentRail'
-                - description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
+                - description: Deprecated. Use `railOptions.paymentRail`. The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If neither this nor `railOptions` is set, the system will select a default rail. Sending both returns `400 INVALID_INPUT`.
+            railOptions:
+              $ref: '#/components/schemas/RailOptionsOneOf'
+          not:
+            properties:
+              paymentRail: {}
+              railOptions: {}
+            required:
+              - paymentRail
+              - railOptions
           description: Destination account details
     UmaAddressDestination:
       title: UMA Address

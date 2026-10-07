@@ -1,0 +1,34 @@
+title: Other rails
+description: Selects a rail that takes no rail-specific options.
+type: object
+additionalProperties: false
+required:
+  - paymentRail
+properties:
+  paymentRail:
+    type: string
+    enum:
+      - ACH_COLOMBIA
+      - BANK_TRANSFER
+      - BRE_B
+      - CIPS
+      - FAST
+      - FASTER_PAYMENTS
+      - FEDNOW
+      - INSTAPAY
+      - MOBILE_MONEY
+      - NEFT
+      - PAYNOW
+      - PESONET
+      - PIX
+      - RTGS
+      - RTP
+      - SEPA
+      - SEPA_INSTANT
+      - SPEI
+      - SWIFT
+      - UNIONPAY
+      - UPI
+      - WIRE
+    description: The payment rail to send the payment over. See `PaymentRail`.
+    example: WIRE
