@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite --port 4010",
     "render": "node scripts/render.mjs",
+    "stills": "node scripts/stills.mjs",
     "encode": "bash scripts/encode.sh",
     "typecheck": "tsc --noEmit"
   },

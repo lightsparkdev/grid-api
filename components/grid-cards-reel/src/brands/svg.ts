@@ -19,7 +19,8 @@ export const CHIP_AT = {
   portrait: { x: 480, y: 172, w: 149, h: 197 },
 } as const;
 
-const glyphs = glyphData as Record<GlyphId, { parts: string[]; box: [number, number, number, number] }>;
+/** `clip`: the glyph's geometry runs past its icon tile, which crops it. */
+const glyphs = glyphData as Record<GlyphId, { parts: string[]; box: [number, number, number, number]; clip: boolean }>;
 
 export function glyphBox(id: GlyphId) {
   const [x, y, w, h] = glyphs[id].box;
@@ -57,8 +58,10 @@ const encode = (svg: string) => `data:image/svg+xml;charset=utf-8,${encodeURICom
 export function mark(id: GlyphId, fill: string | string[], extra = ''): string {
   const b = glyphBox(id);
   const s = 8;
+  const paths = glyphPaths(id, fill);
+  const body = glyphs[id].clip ? `<g clip-path="url(#t)">${paths}</g>` : paths;
   return encode(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(b.w * s)}" height="${Math.round(b.h * s)}" viewBox="${b.x} ${b.y} ${b.w} ${b.h}"><defs><clipPath id="t"><rect width="400" height="400"/></clipPath>${extra}</defs><g clip-path="url(#t)">${glyphPaths(id, fill)}</g></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(b.w * s)}" height="${Math.round(b.h * s)}" viewBox="${b.x} ${b.y} ${b.w} ${b.h}"><defs><clipPath id="t"><rect width="400" height="400"/></clipPath>${extra}</defs>${body}</svg>`,
   );
 }
 

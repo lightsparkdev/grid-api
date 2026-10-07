@@ -331,15 +331,19 @@ export function noteArt() {
   return face('portrait', `<rect width="${P.w}" height="${P.h}" fill="#010101"/><rect width="${P.w}" height="${P.h}" fill="url(#v)"/>${bands}`, `<radialGradient id="v" cx="0.5" cy="0.45" r="0.7"><stop offset="0" stop-color="#1b1b1f"/><stop offset="1" stop-color="#010101"/></radialGradient>`);
 }
 
-/** Camera (a photo app), upright: the sunset gradient, yellow and orange
- *  rising from the bottom-left into magenta and violet, the camera body's
- *  rounded square drawn around where the lens will sit. */
+/** Camera (a photo app), upright: the icon's own tile as the card. Its
+ *  diagonal gradient (Figma 2918:15789: violet, magenta, red, orange, into
+ *  a pink-red), lit by a soft glow at the top-left, with fine grain; the
+ *  card is the camera body, as the tile is in the icon. */
 export function cameraArt() {
+  const g = grain('cg', 0.05);
   return face(
     'portrait',
     `<rect width="${P.w}" height="${P.h}" fill="url(#ig)"/>
-     <rect x="140" y="560" width="${P.w - 280}" height="${P.w - 280}" rx="190" fill="none" stroke="#fff" stroke-width="46"/>`,
-    `<radialGradient id="ig" cx="0.1" cy="1.02" r="1.35"><stop offset="0" stop-color="#ffd600"/><stop offset="0.22" stop-color="#ff7a00"/><stop offset="0.48" stop-color="#ff0069"/><stop offset="0.75" stop-color="#d300c5"/><stop offset="1" stop-color="#7638fa"/></radialGradient>`,
+     ${blob(120, 120, 420, 380, '#ffffff', 'cb', 0.22)}
+     ${g.layer(P.w, P.h)}`,
+    `<linearGradient id="ig" x1="0" y1="0" x2="${P.w}" y2="${P.h}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#7a11ff"/><stop offset="0.28" stop-color="#f102c9"/><stop offset="0.42" stop-color="#fe2d20"/><stop offset="0.63" stop-color="#f26401"/><stop offset="1" stop-color="#ff0764"/></linearGradient>
+     ${blur('cb', 140)}${g.defs}`,
   );
 }
 

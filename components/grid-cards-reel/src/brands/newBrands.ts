@@ -211,9 +211,23 @@ export const NEW_BRANDS: NewBrand[] = [
     art: art.cameraArt,
     design: card({
       finish: 'gloss',
-      color: '#d300c5',
+      color: '#7a11ff',
+      gradient: {
+        type: 'linear',
+        stops: [
+          { at: 0, color: '#7a11ff' },
+          { at: 0.28, color: '#f102c9' },
+          { at: 0.42, color: '#fe2d20' },
+          { at: 0.63, color: '#f26401' },
+          { at: 1, color: '#ff0764' },
+        ],
+        from: { x: 0, y: 0 },
+        to: { x: 963, y: 1536 },
+      },
       logoUrl: mark('instagram', '#ffffff'),
-      brandLayout: at(544, 862, 434),
+      // The ring centered on the face as on the icon (its center sits left
+      // of and below the mark's box center, the dot being up and right).
+      brandLayout: at(557, 851, 530),
       orientation: 'portrait',
     }),
   },

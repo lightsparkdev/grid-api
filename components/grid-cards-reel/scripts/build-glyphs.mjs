@@ -26,9 +26,10 @@ for (const [id, svg] of Object.entries(raw)) {
     const y0 = Math.max(0, b.y);
     const x1 = Math.min(400, b.x + b.width);
     const y1 = Math.min(400, b.y + b.height);
-    return [x0, y0, x1 - x0, y1 - y0].map((n) => Math.round(n * 10) / 10);
+    const clip = b.x < -0.5 || b.y < -0.5 || b.x + b.width > 400.5 || b.y + b.height > 400.5;
+    return { box: [x0, y0, x1 - x0, y1 - y0].map((n) => Math.round(n * 10) / 10), clip };
   }, list.join(''));
-  out[id] = { parts: list, box };
+  out[id] = { parts: list, ...box };
 }
 await browser.close();
 fs.writeFileSync(path.join(dir, 'glyphs.json'), JSON.stringify(out, null, 1));
