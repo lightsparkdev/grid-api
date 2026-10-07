@@ -1017,6 +1017,7 @@ paths:
 
         Share tokens are single-use. Grid validates the customer before using the token, so a request rejected with `404` or `409` leaves the token unused. A token that Sumsub rejects returns `400 INVALID_INPUT`; ask the partner for a new one.
       operationId: createCustomerKycShare
+      x-hidden: true
       tags:
         - KYC/KYB Verifications
       security:
