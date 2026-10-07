@@ -49,7 +49,7 @@ tags:
 
       **2. The receipt — `POST /internal-accounts/{id}/confirm-statement`**
 
-      Once a month, after you have pulled and issued a period's statement, send a receipt with the `periodStart` it covers. Grid stores it as the delivery record for that account and period. Sending it again is harmless: the first receipt's time is kept.
+      Once a month, after you have pulled and issued a period's statement, send a receipt with the `statementMonth` it covers. Grid stores it as the delivery record for that account and period. Sending it again is harmless: the first receipt's time is kept.
 
       **Timing**
 
@@ -6544,7 +6544,7 @@ paths:
 
         Send it once a month for each account, after you have issued the statement built from `GET /internal-accounts/{id}/balance-changes`. Send it within five days of the month's end for every customer account: Grid checks then that every account's statement was issued.
 
-        `periodStart` names the period: the first day of the statement month, as a date. It must be the first of a month, and a month that has already begun.
+        `statementMonth` names the statement month as `YYYY-MM`, a calendar month in US Central time. It must be a month that has already begun.
 
         Sending a receipt is idempotent. The stored time is the first receipt's, so calling this again does not move it.
       operationId: confirmStatementDelivery
@@ -6566,7 +6566,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StatementDelivery'
         '400':
-          description: Bad request. Returned when `periodStart` is not the first day of a month or names a month that has not begun, when `statementDeliveredAt` is missing, in the future or before the period has ended, or when the account has no statement of its own.
+          description: Bad request. Returned when `statementMonth` is not a `YYYY-MM` month or names a month that has not begun, when `statementDeliveredAt` is missing, in the future or before the period has ended, or when the account has no statement of its own.
           content:
             application/json:
               schema:
@@ -26936,14 +26936,14 @@ components:
     ConfirmStatementDeliveryRequest:
       type: object
       required:
-        - periodStart
+        - statementMonth
         - statementDeliveredAt
       properties:
-        periodStart:
+        statementMonth:
           type: string
-          format: date
-          description: First day of the statement period the receipt covers, a calendar month in US Central time. Must be the first day of a month that has already begun.
-          example: '2026-09-01'
+          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+          description: The statement month the receipt covers, as `YYYY-MM`. A statement month is a calendar month in US Central time, and it must have already begun.
+          example: 2026-09
         statementDeliveredAt:
           type: string
           format: date-time
@@ -26953,18 +26953,18 @@ components:
       type: object
       required:
         - internalAccountId
-        - periodStart
+        - statementMonth
         - statementDeliveredAt
       properties:
         internalAccountId:
           type: string
           description: The account whose statement this is
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-        periodStart:
+        statementMonth:
           type: string
-          format: date
-          description: First day of the statement period
-          example: '2026-09-01'
+          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+          description: The statement month, as `YYYY-MM`
+          example: 2026-09
         fetchedAt:
           type: string
           format: date-time

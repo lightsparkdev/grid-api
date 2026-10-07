@@ -228,7 +228,7 @@ async function buildStatement(customerId, accountId, year, month) {
 
   // The monthly receipt: Grid's record that this account's statement was issued
   await grid.post(`/internal-accounts/${accountId}/confirm-statement`, {
-    periodStart: `${year}-${String(month).padStart(2, '0')}-01`,
+    statementMonth: `${year}-${String(month).padStart(2, '0')}`,
     statementDeliveredAt: statement.issueDate,
   });
 }
