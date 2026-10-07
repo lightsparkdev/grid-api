@@ -13,7 +13,7 @@ Video-only. Renders the cards playground's real 3D card (same mesh, materials, s
 | `out/<take>/track.json` | Per frame: which brand is on the card, and the pose. `meta.swaps` lists the time each brand comes on, for syncing sound to the flips. |
 | `out/stills/<id>/` | Per brand: `hero.png` (4K, transparent, three-quarter pose), `front.png`, `back.png`. |
 
-The latest plate is `out/plate-v2`.
+The latest plate is `out/plate-v3`.
 
 ## Setup
 
@@ -44,14 +44,15 @@ Everything is in `REEL` at the top of `src/reel/reelTimeline.ts`. Change a numbe
 
 | Setting | What it does |
 | --- | --- |
-| `open.hold` | Seconds on the floating "Your brand" card before anything happens. |
-| `dip.depth`, `dip.windup` | How far it sinks before the pop, and how far the bottom-left corner tips back. |
-| `pop.height`, `pop.toward` | How high it flies, and how close to the camera. |
+| `open.hold`, `open.rest` | Seconds on the floating "Your brand" card before anything happens, and where it rests (below center, so the flight's arc is centered). |
+| `dip.depth`, `dip.windup` | How far it sinks before the launch, and how far the bottom-left corner tips back. |
+| `pop.height`, `pop.toward` | How high the arc rises, and how close to the camera at the top. The arc goes up like a throw and comes down softly, caught. |
 | `tumble.turns` | Full turns about the axis (2). |
-| `tumble.axisDeg`, `tumble.axisDrift` | The spin axis in the card's plane (-32 is the diagonal, so the bottom-left corner leads) and how much it wanders. |
-| `cycle.startPerSecond`, `peakPerSecond`, `endPerSecond` | The swap rate's ramp: slow, then up to 24 a second, then easing into the landing. Every brand shows exactly once; the duration follows. |
+| `tumble.axisDeg`, `tumble.axisDrift` | The spin axis in the card's plane (-32 is the diagonal, so the bottom-left corner leads). Drift 0 keeps it fixed, as a free spin is. |
+| `tumble.flick`, `drag`, `catch` | The spin's speed: up over the launch, slowing a little with drag, eased to a stop over the catch. It never speeds up mid-air. |
+| `cycle.startPerSecond`, `peakPerSecond`, `endPerSecond` | The swap rate's ramp: slow, then up to 8 a second, then easing into the landing. Every brand shows exactly once; the duration (and so the spin's speed) follows. Lower = slower everything. |
 | `cycle.swapOn` | `'both'` swaps whichever face is showing; `'front'` only while the front faces the camera. |
-| `orientation.mix` | `'grouped'`: the upright cards play as one run, with a quarter turn in and out. `'interleaved'`: scattered, the silhouette snaps. |
+| `orientation.mix` | `'none'` (default): the card never rolls, so upright designs flip past sideways, as a rigid card would. `'grouped'`: they play as one run with a quarter turn in and out mid-air. `'interleaved'`: scattered, the silhouette snaps. The rolls read as a change of momentum. |
 | `settle.hold` | Seconds on "Your brand" at the end. |
 | `size`, `cardFrac` | Plate size, and the card's width as a share of it (leave room for the pop). |
 | `blur` | Motion blur: samples per frame scale with speed so a fast frame is a smear, not copies. |

@@ -9,7 +9,7 @@
    again and settles back into its float. */
 
 export type SwapOn = 'both' | 'front';
-export type OrientationMix = 'grouped' | 'interleaved';
+export type OrientationMix = 'none' | 'grouped' | 'interleaved';
 export type ReelOrientation = 'landscape' | 'portrait';
 
 export interface ReelConfig {
@@ -35,6 +35,9 @@ export interface ReelConfig {
   open: {
     /** Seconds on the floating placeholder before the dip. */
     hold: number;
+    /** Where the card rests, up from the plate's center, a share of the
+     *  card's height. Below center, so the flight's arc is centered. */
+    rest: number;
     /** The float's bob, a share of the card's height, and its rate. */
     bob: number;
     bobHz: number;
@@ -47,10 +50,13 @@ export interface ReelConfig {
     windup: number;
   };
   pop: {
+    /** Seconds over which the wind-up lets go after the launch. */
     dur: number;
-    /** How high it flies, a share of the card's height. */
+    /** How high the arc rises above the line from launch to landing, a
+     *  share of the card's height. */
     height: number;
-    /** How far toward the camera at the top, a share of the camera's distance. */
+    /** How far toward the camera at the top of the arc, a share of the
+     *  camera's distance. */
     toward: number;
   };
   tumble: {
@@ -61,9 +67,16 @@ export interface ReelConfig {
      *  bottom-right, so the bottom-left corner swings toward the viewer
      *  first; 0 flips it top over bottom, 90 turns it like a page. */
     axisDeg: number;
-    /** How far the axis swings over the tumble, degrees, so the spin
-     *  wanders the way a flicked card does. */
+    /** How far the axis swings over the tumble, degrees. 0 keeps it fixed,
+     *  as a card spinning freely through the air does. */
     axisDrift: number;
+    /** The spin's speed over the flight, as shares of it: the flick that
+     *  gets it spinning (short: the spin comes from the launch, not from
+     *  mid-air), the drag that slows it a little, and the catch that eases
+     *  it to a stop on the landing. */
+    flick: number;
+    drag: number;
+    catch: number;
     /** Seconds of tumble before the cycle starts, and after it ends. */
     lead: number;
     tail: number;
@@ -81,6 +94,10 @@ export interface ReelConfig {
     swapOn: SwapOn;
   };
   orientation: {
+    /** 'none': the card never rolls, so an upright design shows sideways
+     *  as the blank turns, as it physically would. 'grouped' and
+     *  'interleaved' roll it upright for those designs (a turn the card
+     *  makes on its own mid-air: it reads as a change of momentum). */
     mix: OrientationMix;
     /** Where the portrait run starts, a share of the way through the brands. */
     at: number;
@@ -103,20 +120,20 @@ export const REEL: ReelConfig = {
   cardFrac: 0.55,
   exposure: 1.0,
   blur: { minSamples: 4, maxSamples: 64, stepDeg: 0.35, shutter: 0.5 },
-  open: { hold: 0.7, bob: 0.012, bobHz: 0.45 },
-  dip: { dur: 0.34, depth: 0.13, windup: 12 },
-  pop: { dur: 0.6, height: 0.34, toward: 0.12 },
-  tumble: { turns: 2, axisDeg: -32, axisDrift: 40, lead: 0.12, tail: 0.38, wobble: 6 },
+  open: { hold: 0.9, rest: -0.16, bob: 0.012, bobHz: 0.4 },
+  dip: { dur: 0.45, depth: 0.1, windup: 10 },
+  pop: { dur: 0.7, height: 0.42, toward: 0.1 },
+  tumble: { turns: 2, axisDeg: -32, axisDrift: 0, flick: 0.07, drag: 0.3, catch: 0.24, lead: 0.4, tail: 1.1, wobble: 4 },
   cycle: {
-    startPerSecond: 3,
-    peakPerSecond: 24,
-    endPerSecond: 7,
+    startPerSecond: 2.5,
+    peakPerSecond: 8,
+    endPerSecond: 3.5,
     rampShare: 0.4,
-    slowShare: 0.18,
+    slowShare: 0.22,
     swapOn: 'both',
   },
-  orientation: { mix: 'grouped', at: 0.45, rollDur: 0.24 },
-  settle: { dur: 0.9, sink: 0.035, hold: 1.0 },
+  orientation: { mix: 'none', at: 0.45, rollDur: 0.24 },
+  settle: { dur: 1.3, sink: 0.04, hold: 1.4 },
 };
 
 /** The card's quarter turn when held upright. Matches `ORIENT_ROLL` in the
@@ -195,12 +212,34 @@ const smooth = (u: number) => {
   const x = clamp01(u);
   return x * x * (3 - 2 * x);
 };
-/** The pop: quick off the floor, slowing into the top. */
-const easePop = cubicBezier(0.2, 0.85, 0.3, 1);
-/** The tumble: a hand flicks it, it flies, it is caught. */
-const easeTumble = cubicBezier(0.5, 0, 0.22, 1);
-/** Coming down from the top to the landing. */
-const easeDescend = cubicBezier(0.45, 0, 0.55, 1);
+/** The flight's height over its share `u`: up like a thrown thing (fastest
+ *  leaving the hand, still at the top), then down softly, caught, as the
+ *  spin is. */
+const arc = (u: number) => {
+  const x = clamp01(u);
+  return x < 0.5 ? 4 * x * (1 - x) : 1 - smooth((x - 0.5) / 0.5);
+};
+
+/**
+ * How far through its turns the card is at share `u` of the flight. The
+ * spin's speed comes up over the flick (the launch gives it), falls off a
+ * little with drag, and eases to nothing over the catch: it never speeds up
+ * in the air. Integrated and normalized so it ends exactly on the turns.
+ */
+function spinCurve(t: ReelConfig['tumble']): (u: number) => number {
+  const n = 2000;
+  const cum = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) {
+    const u = (i + 0.5) / n;
+    const speed = smooth(u / t.flick) * (1 - t.drag * u) * (1 - smooth((u - (1 - t.catch)) / t.catch));
+    cum[i + 1] = cum[i] + speed;
+  }
+  return (u: number) => {
+    const x = clamp01(u) * n;
+    const i = Math.min(n - 1, Math.floor(x));
+    return lerp(cum[i], cum[i + 1], x - i) / cum[n];
+  };
+}
 
 /** A damped wobble that starts at 0, for `tau` seconds after it was struck. */
 function wobble(tau: number, amp: number, hz: number, decay: number): number {
@@ -261,11 +300,17 @@ function meanRate(c: ReelConfig['cycle']): number {
 }
 
 /** Brands in show order. Grouped, the portrait cards sit together as one run
- *  (one quarter turn in, one out); interleaved, they stay where they were. */
+ *  (one quarter turn in, one out); interleaved, they stay where they were;
+ *  with no roll, they are spread evenly through the landscape cards. */
 function order<E extends ReelEntry>(brands: E[], o: ReelConfig['orientation']): E[] {
   if (o.mix === 'interleaved') return brands;
   const flat = brands.filter((b) => b.orientation === 'landscape');
   const tall = brands.filter((b) => b.orientation === 'portrait');
+  if (o.mix === 'none') {
+    const out = [...flat];
+    tall.forEach((b, i) => out.splice(Math.round(((i + 1) * flat.length) / (tall.length + 1)) + i, 0, b));
+    return out;
+  }
   const at = Math.round(flat.length * o.at);
   return [...flat.slice(0, at), ...tall, ...flat.slice(at)];
 }
@@ -288,7 +333,9 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
   const duration = tLand + c.settle.dur + c.settle.hold;
   const frames = Math.round(duration * c.fps);
 
-  const progress = (t: number) => easeTumble(clamp01((t - tPop) / (tLand - tPop)));
+  const spinShare = spinCurve(c.tumble);
+  const flight = (t: number) => clamp01((t - tPop) / (tLand - tPop));
+  const progress = (t: number) => spinShare(flight(t));
   // The wind-up tips the bottom-left corner away over the dip and lets go
   // over the start of the pop; the landing wobbles about the same axis.
   const spinAt = (t: number) => {
@@ -339,7 +386,7 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
   const firstTall = sequence.findIndex((e) => e.orientation === 'portrait');
   const lastTall = sequence.length - 1 - [...sequence].reverse().findIndex((e) => e.orientation === 'portrait');
   const roll = (t: number, k: number): number => {
-    if (firstTall < 0) return 0;
+    if (firstTall < 0 || c.orientation.mix === 'none') return 0;
     if (c.orientation.mix === 'interleaved') return sequence[k].orientation === 'portrait' ? PORTRAIT_ROLL : 0;
     const half = c.orientation.rollDur / 2;
     const into = smooth((t - (swapTimes[firstTall] - half)) / c.orientation.rollDur);
@@ -352,24 +399,21 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
     const r = roll(t, k);
     const e = eulerXYZ(mul(tumbleAt(t), rollZ(r)));
 
-    // Height: the float's bob, the dip, the pop to the top, held aloft
-    // through the cycle, down to the landing, a sink, and the float again.
+    // Height, about the rest line: the float's bob, the dip, one arc from
+    // the launch to the landing, a sink as it is caught, the float again.
     const bob = c.open.bob * Math.sin(2 * Math.PI * c.open.bobHz * t);
-    const aloft = Math.max(0, Math.min(1, (t - tPop) / c.pop.dur));
     let y: number;
     let z: number;
     if (t < tDip) {
       y = bob;
       z = 0;
     } else if (t < tPop) {
-      const u = easeInOutSine((t - tDip) / c.dip.dur);
-      y = lerp(bob, -c.dip.depth, u);
+      y = lerp(bob, -c.dip.depth, easeInOutSine((t - tDip) / c.dip.dur));
       z = 0;
     } else if (t < tLand) {
-      const up = easePop(aloft);
-      const descend = easeDescend(clamp01((t - (tLand - (tLand - tPop) * 0.42)) / ((tLand - tPop) * 0.42)));
-      y = lerp(-c.dip.depth, c.pop.height, up) * (1 - descend);
-      z = c.pop.toward * up * (1 - descend);
+      const u = flight(t);
+      y = lerp(-c.dip.depth, 0, u) + c.pop.height * arc(u);
+      z = c.pop.toward * arc(u);
     } else {
       const tau = t - tLand;
       const sink = -c.settle.sink * Math.exp(-5 * tau) * Math.sin(Math.PI * Math.min(1, tau / (c.settle.dur * 0.5)));
@@ -378,7 +422,7 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
       z = 0;
     }
 
-    return { rotX: e.x, rotY: e.y, rotZ: e.z, spin: spinAt(t), roll: r, y, z, index: k };
+    return { rotX: e.x, rotY: e.y, rotZ: e.z, spin: spinAt(t), roll: r, y: c.open.rest + y, z, index: k };
   };
 
   return { config: c, sequence, swapTimes, duration, frames, frame };
