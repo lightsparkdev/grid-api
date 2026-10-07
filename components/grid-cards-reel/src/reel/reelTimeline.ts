@@ -171,6 +171,10 @@ export interface ReelFrame {
 export interface ReelEntry {
   id: string;
   orientation: ReelOrientation;
+  /** Only ever on the card while its back faces the camera: the front is
+   *  never seen. (With swaps on the front only, such a card can't show and
+   *  is left out.) */
+  backOnly?: boolean;
 }
 
 export interface Reel<E extends ReelEntry> {
@@ -333,8 +337,9 @@ function order<E extends ReelEntry>(brands: E[], o: ReelConfig['orientation']): 
 
 export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], config: ReelConfig = REEL): Reel<E> {
   const c = config;
-  const sequence = [placeholder, ...order(brands, c.orientation), placeholder];
-  const swaps = sequence.length - 1;
+  const usable = c.cycle.swapOn === 'both' ? brands : brands.filter((b) => !b.backOnly);
+  const planned = [placeholder, ...order(usable, c.orientation), placeholder];
+  const swaps = planned.length - 1;
 
   // The beats: the dip after the hold, the pop after the dip, the cycle a
   // lead into the tumble and on past the landing (it keeps swapping as the
@@ -389,6 +394,26 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
     while (swapTimes.length <= swaps && acc >= swapTimes.length - 1e-9) swapTimes.push(t);
   }
   while (swapTimes.length <= swaps) swapTimes.push(tCycleEnd);
+
+  // Who goes in which slot. A back-only card takes the next slot during
+  // which the back faces the camera the whole time (a frame's shutter of
+  // margin either side, for the blur); everyone else keeps the planned
+  // order in the slots left, so the cycle still ends as planned.
+  const margin = 1 / c.fps;
+  const backFacing = (from: number, to: number) => {
+    for (let t = from - margin; t <= to + margin; t += 1 / (c.fps * 4)) if (facesFront(t)) return false;
+    return true;
+  };
+  const normal = planned.slice(1, -1).filter((e) => !e.backOnly);
+  const backs = planned.slice(1, -1).filter((e) => e.backOnly);
+  const sequence: E[] = [placeholder];
+  for (let k = 1; k < swaps; k++) {
+    const backSlot = backs.length > 0 && backFacing(swapTimes[k], swapTimes[k + 1]);
+    const next = backSlot || normal.length === 0 ? backs.shift()! : normal.shift()!;
+    if (next.backOnly && !backSlot) console.warn('[reel] no back-facing slot left for', next.id, '(its front shows)');
+    sequence.push(next);
+  }
+  sequence.push(placeholder);
 
   const indexAt = (t: number) => {
     let k = 0;

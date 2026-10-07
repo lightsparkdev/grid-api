@@ -368,6 +368,10 @@ export const NEW_BRANDS: NewBrand[] = [
   },
 ];
 
+/** Cards whose front stays out of the reel: they only ever appear while
+ *  the card's back faces the camera. */
+export const BACK_ONLY = new Set(['wallet', 'box', 'speed', 'pay', 'feather', 'thread', 'goat']);
+
 /** The show order: the new brands with the upright ones woven through,
  *  then the playground's six presets as the cycle slows onto the settled
  *  card, the Z steel card last before "Your brand". (With the timeline's
