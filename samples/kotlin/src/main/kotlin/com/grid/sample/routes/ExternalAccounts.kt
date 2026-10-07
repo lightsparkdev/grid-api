@@ -13,7 +13,6 @@ import com.lightspark.grid.models.UsdExternalAccountCreateInfo
 import com.lightspark.grid.models.customers.externalaccounts.Address
 import com.lightspark.grid.models.customers.externalaccounts.BaseWalletInfo
 import com.lightspark.grid.models.customers.externalaccounts.BrlBeneficiary
-import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountCreate
 import com.lightspark.grid.models.customers.externalaccounts.ExternalAccountCreateParams
 import com.lightspark.grid.models.customers.externalaccounts.GbpBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.InrBeneficiary
@@ -66,20 +65,14 @@ fun Route.externalAccountRoutes() {
 
                 val accountInfo = buildAccountInfo(accountType, accountInfoNode)
 
-                val externalAccountCreate = ExternalAccountCreate.builder()
+                val params = ExternalAccountCreateParams.builder()
                     .accountInfo(accountInfo)
                     .currency(json.optText("currency") ?: "USD")
-                    .apply {
-                        customerId(customerId)
-                        json.optText("platformAccountId")?.let { platformAccountId(it) }
-                    }
+                    .customerId(customerId)
+                    .apply { json.optText("platformAccountId")?.let { platformAccountId(it) } }
                     .build()
 
-                val params = ExternalAccountCreateParams.builder()
-                    .externalAccountCreate(externalAccountCreate)
-                    .build()
-
-                Log.gridRequest("customers.externalAccounts.create", JsonUtils.prettyPrint(externalAccountCreate))
+                Log.gridRequest("customers.externalAccounts.create", JsonUtils.prettyPrint(params._body()))
                 val account = GridClientBuilder.client.customers().externalAccounts().create(params)
                 val responseJson = JsonUtils.prettyPrint(account)
                 Log.gridResponse("customers.externalAccounts.create", responseJson)
@@ -102,7 +95,7 @@ fun Route.externalAccountRoutes() {
     }
 }
 
-private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): ExternalAccountCreate.AccountInfo {
+private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): ExternalAccountCreateParams.AccountInfo {
     val beneficiaryNode = accountInfo.get("beneficiary")
 
     return when (accountType) {
@@ -118,7 +111,7 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 )
                 .beneficiary(buildUsdBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountCreate.AccountInfo.ofUsdAccount(info)
+            ExternalAccountCreateParams.AccountInfo.ofUsdAccount(info)
         }
         "INR_ACCOUNT" -> {
             // Which fields apply depends on the rail: UPI uses vpa, NEFT/RTGS use
@@ -132,10 +125,9 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                     accountInfo.optText("accountNumber")?.let { accountNumber(it) }
                     accountInfo.optText("ifsc")?.let { ifsc(it) }
                     accountInfo.optText("rail")?.let { rail(it) }
-                    accountInfo.optText("bankName")?.let { bankName(it) }
                 }
                 .build()
-            ExternalAccountCreate.AccountInfo.ofInrAccount(info)
+            ExternalAccountCreateParams.AccountInfo.ofInrAccount(info)
         }
         "BRL_ACCOUNT" -> {
             val info = BrlExternalAccountCreateInfo.builder()
@@ -145,7 +137,7 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .taxId(accountInfo.requireText("taxId"))
                 .beneficiary(buildBrlBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountCreate.AccountInfo.ofBrlAccount(info)
+            ExternalAccountCreateParams.AccountInfo.ofBrlAccount(info)
         }
         "MXN_ACCOUNT" -> {
             val info = MxnExternalAccountCreateInfo.builder()
@@ -153,7 +145,7 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .clabeNumber(accountInfo.requireText("clabeNumber"))
                 .beneficiary(buildMxnBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountCreate.AccountInfo.ofMxnAccount(info)
+            ExternalAccountCreateParams.AccountInfo.ofMxnAccount(info)
         }
         "GBP_ACCOUNT" -> {
             val info = GbpExternalAccountCreateInfo.builder()
@@ -162,7 +154,7 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .accountNumber(accountInfo.requireText("accountNumber"))
                 .beneficiary(buildGbpBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountCreate.AccountInfo.ofGbpAccount(info)
+            ExternalAccountCreateParams.AccountInfo.ofGbpAccount(info)
         }
         "PHP_ACCOUNT" -> {
             val info = PhpExternalAccountCreateInfo.builder()
@@ -171,7 +163,7 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .accountNumber(accountInfo.requireText("accountNumber"))
                 .beneficiary(buildPhpBeneficiary(beneficiaryNode))
                 .build()
-            ExternalAccountCreate.AccountInfo.ofPhpAccount(info)
+            ExternalAccountCreateParams.AccountInfo.ofPhpAccount(info)
         }
         "EUR_ACCOUNT" -> {
             val info = EurExternalAccountCreateInfo.builder()
@@ -182,7 +174,7 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                     accountInfo.optText("swiftCode")?.let { swiftCode(it) }
                 }
                 .build()
-            ExternalAccountCreate.AccountInfo.ofEurAccount(info)
+            ExternalAccountCreateParams.AccountInfo.ofEurAccount(info)
         }
         // Crypto wallet destinations (e.g. for USDC payouts). These only need an
         // on-chain address — no beneficiary.
@@ -191,49 +183,49 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .accountType(BaseWalletInfo.AccountType.BASE_WALLET)
                 .address(accountInfo.requireText("address"))
                 .build()
-            ExternalAccountCreate.AccountInfo.ofBaseWallet(info)
+            ExternalAccountCreateParams.AccountInfo.ofBaseWallet(info)
         }
         "ETHEREUM_WALLET" -> {
             val info = EthereumWalletExternalAccountInfo.builder()
                 .accountType(EthereumWalletExternalAccountInfo.AccountType.ETHEREUM_WALLET)
                 .address(accountInfo.requireText("address"))
                 .build()
-            ExternalAccountCreate.AccountInfo.ofEthereumWalletExternal(info)
+            ExternalAccountCreateParams.AccountInfo.ofEthereumWallet(info)
         }
         "POLYGON_WALLET" -> {
             val info = PolygonWalletInfo.builder()
                 .accountType(PolygonWalletInfo.AccountType.POLYGON_WALLET)
                 .address(accountInfo.requireText("address"))
                 .build()
-            ExternalAccountCreate.AccountInfo.ofPolygonWallet(info)
+            ExternalAccountCreateParams.AccountInfo.ofPolygonWallet(info)
         }
         "SOLANA_WALLET" -> {
             val info = SolanaWalletInfo.builder()
                 .accountType(SolanaWalletInfo.AccountType.SOLANA_WALLET)
                 .address(accountInfo.requireText("address"))
                 .build()
-            ExternalAccountCreate.AccountInfo.ofSolanaWallet(info)
+            ExternalAccountCreateParams.AccountInfo.ofSolanaWallet(info)
         }
         "TRON_WALLET" -> {
             val info = TronWalletInfo.builder()
                 .accountType(TronWalletInfo.AccountType.TRON_WALLET)
                 .address(accountInfo.requireText("address"))
                 .build()
-            ExternalAccountCreate.AccountInfo.ofTronWallet(info)
+            ExternalAccountCreateParams.AccountInfo.ofTronWallet(info)
         }
         "PLASMA_WALLET" -> {
             val info = PlasmaWalletInfo.builder()
                 .accountType(PlasmaWalletInfo.AccountType.PLASMA_WALLET)
                 .address(accountInfo.requireText("address"))
                 .build()
-            ExternalAccountCreate.AccountInfo.ofPlasmaWallet(info)
+            ExternalAccountCreateParams.AccountInfo.ofPlasmaWallet(info)
         }
         "ARBITRUM_WALLET" -> {
             val info = ArbitrumWalletInfo.builder()
                 .accountType(ArbitrumWalletInfo.AccountType.ARBITRUM_WALLET)
                 .address(accountInfo.requireText("address"))
                 .build()
-            ExternalAccountCreate.AccountInfo.ofArbitrumWallet(info)
+            ExternalAccountCreateParams.AccountInfo.ofArbitrumWallet(info)
         }
         else -> throw IllegalArgumentException("Unsupported account type: $accountType")
     }
