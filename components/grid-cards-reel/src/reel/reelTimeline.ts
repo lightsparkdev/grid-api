@@ -19,7 +19,8 @@ export interface ReelConfig {
   /** The landscape card's width as a fraction of the plate's. Leaves room
    *  above for the pop. */
   cardFrac: number;
-  /** Tone mapping exposure (the playground's recording stage uses 1.25). */
+  /** Tone mapping exposure. The playground lights a card on a dark stage
+   *  at 1.0 and on a light one at 1.25. */
   exposure: number;
   blur: {
     /** Renders averaged per frame, at least and at most. 1 and 1 = no motion blur. */
@@ -53,12 +54,20 @@ export interface ReelConfig {
     toward: number;
   };
   tumble: {
-    turnsY: number;
-    turnsX: number;
+    /** Full turns about the axis. */
+    turns: number;
+    /** The axis in the card's plane, degrees from its long edge, counter-
+     *  clockwise. About -32 is the diagonal from the top-left corner to the
+     *  bottom-right, so the bottom-left corner swings toward the viewer
+     *  first; 0 flips it top over bottom, 90 turns it like a page. */
+    axisDeg: number;
+    /** How far the axis swings over the tumble, degrees, so the spin
+     *  wanders the way a flicked card does. */
+    axisDrift: number;
     /** Seconds of tumble before the cycle starts, and after it ends. */
     lead: number;
     tail: number;
-    /** The landing's wobble, degrees, and how quickly it dies. */
+    /** The landing's wobble, degrees. */
     wobble: number;
   };
   cycle: {
@@ -92,12 +101,12 @@ export const REEL: ReelConfig = {
   fps: 60,
   size: 2160,
   cardFrac: 0.55,
-  exposure: 1.25,
+  exposure: 1.0,
   blur: { minSamples: 4, maxSamples: 64, stepDeg: 0.35, shutter: 0.5 },
   open: { hold: 0.7, bob: 0.012, bobHz: 0.45 },
-  dip: { dur: 0.32, depth: 0.09, windup: 9 },
-  pop: { dur: 0.55, height: 0.2, toward: 0.08 },
-  tumble: { turnsY: 2, turnsX: 1, lead: 0.12, tail: 0.38, wobble: 5 },
+  dip: { dur: 0.34, depth: 0.13, windup: 12 },
+  pop: { dur: 0.6, height: 0.34, toward: 0.12 },
+  tumble: { turns: 2, axisDeg: -32, axisDrift: 40, lead: 0.12, tail: 0.38, wobble: 6 },
   cycle: {
     startPerSecond: 3,
     peakPerSecond: 24,
@@ -115,12 +124,15 @@ export const REEL: ReelConfig = {
 const PORTRAIT_ROLL = -90;
 
 export interface ReelFrame {
-  /** Degrees, the stage's sense: rotX pitches the top edge toward the
-   *  viewer, rotY turns the right edge away, rotZ rolls (the upright
-   *  card's quarter turn included). Euler order XYZ. */
+  /** The card's orientation as Euler angles, degrees, order XYZ (three's
+   *  default), the upright card's quarter turn included. */
   rotX: number;
   rotY: number;
   rotZ: number;
+  /** How far the card has turned about the tumble's axis, and its roll,
+   *  degrees, unwrapped: for measuring how fast it moves. */
+  spin: number;
+  roll: number;
   /** Up, a share of the landscape card's height. */
   y: number;
   /** Toward the camera, a share of the camera's distance. */
@@ -196,6 +208,41 @@ function wobble(tau: number, amp: number, hz: number, decay: number): number {
   return amp * Math.exp(-decay * tau) * Math.sin(2 * Math.PI * hz * tau);
 }
 
+/* ── Rotation ─────────────────────────────────────────────────────────────── */
+
+type Mat3 = [number, number, number, number, number, number, number, number, number];
+const RAD = Math.PI / 180;
+
+/** Rotation by `deg` about the unit axis (ax, ay, 0) in the card's plane. */
+function axisAngle(ax: number, ay: number, deg: number): Mat3 {
+  const c = Math.cos(deg * RAD);
+  const s = Math.sin(deg * RAD);
+  const t = 1 - c;
+  return [c + t * ax * ax, t * ax * ay, s * ay, t * ax * ay, c + t * ay * ay, -s * ax, -s * ay, s * ax, c];
+}
+
+function rollZ(deg: number): Mat3 {
+  const c = Math.cos(deg * RAD);
+  const s = Math.sin(deg * RAD);
+  return [c, -s, 0, s, c, 0, 0, 0, 1];
+}
+
+function mul(a: Mat3, b: Mat3): Mat3 {
+  const m = new Array(9) as Mat3;
+  for (let r = 0; r < 3; r++) {
+    for (let col = 0; col < 3; col++) m[r * 3 + col] = a[r * 3] * b[col] + a[r * 3 + 1] * b[3 + col] + a[r * 3 + 2] * b[6 + col];
+  }
+  return m;
+}
+
+/** Euler XYZ (three's order: the matrix is Rx · Ry · Rz), degrees. */
+function eulerXYZ(m: Mat3): { x: number; y: number; z: number } {
+  const m13 = Math.max(-1, Math.min(1, m[2]));
+  const y = Math.asin(m13);
+  if (Math.abs(m13) < 0.9999999) return { x: Math.atan2(-m[5], m[8]) / RAD, y: y / RAD, z: Math.atan2(-m[1], m[0]) / RAD };
+  return { x: Math.atan2(m[7], m[4]) / RAD, y: y / RAD, z: 0 };
+}
+
 /* ── The cycle's schedule ─────────────────────────────────────────────────── */
 
 /** The swap rate at share `u` of the cycle, per second. */
@@ -241,13 +288,23 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
   const duration = tLand + c.settle.dur + c.settle.hold;
   const frames = Math.round(duration * c.fps);
 
-  const spin = (t: number) => easeTumble(clamp01((t - tPop) / (tLand - tPop)));
-  const facesFront = (t: number) => {
-    const a = spin(t);
-    const rx = (-360 * c.tumble.turnsX * a * Math.PI) / 180;
-    const ry = (360 * c.tumble.turnsY * a * Math.PI) / 180;
-    return Math.cos(rx) * Math.cos(ry) > 0;
+  const progress = (t: number) => easeTumble(clamp01((t - tPop) / (tLand - tPop)));
+  // The wind-up tips the bottom-left corner away over the dip and lets go
+  // over the start of the pop; the landing wobbles about the same axis.
+  const spinAt = (t: number) => {
+    const windIn = easeInOutSine((t - tDip) / c.dip.dur);
+    const windOut = easeInOutSine((t - tPop) / (c.pop.dur * 0.8));
+    const wind = c.dip.windup * (windIn - windOut);
+    return wind - 360 * c.tumble.turns * progress(t) + wobble(t - tLand, c.tumble.wobble, 1.6, 4.5);
   };
+  const axisAt = (t: number) => (c.tumble.axisDeg + c.tumble.axisDrift * (progress(t) - 0.5)) * RAD;
+  const tumbleAt = (t: number) => {
+    const a = axisAt(t);
+    return axisAngle(Math.cos(a), Math.sin(a), spinAt(t));
+  };
+  // The tumble's axis lies in the card's plane, so the face's normal is
+  // toward the camera exactly when the matrix keeps z positive.
+  const facesFront = (t: number) => tumbleAt(t)[8] > 0;
 
   // How many swaps have happened by each instant of the cycle: the rate
   // integrated, counted only while the front faces the camera when swaps
@@ -292,15 +349,8 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
 
   const frame = (t: number): ReelFrame => {
     const k = indexAt(t);
-    const a = spin(t);
-
-    // The wind-up: in over the dip, let go over the first of the tumble.
-    const windIn = easeInOutSine((t - tDip) / c.dip.dur);
-    const windOut = easeInOutSine((t - tPop) / (c.pop.dur * 0.8));
-    const wind = c.dip.windup * (windIn - windOut);
-    const landWobble = wobble(t - tLand, c.tumble.wobble, 1.6, 4.5);
-    const rotX = wind - 360 * c.tumble.turnsX * a + landWobble * 0.6;
-    const rotY = -wind + 360 * c.tumble.turnsY * a - landWobble;
+    const r = roll(t, k);
+    const e = eulerXYZ(mul(tumbleAt(t), rollZ(r)));
 
     // Height: the float's bob, the dip, the pop to the top, held aloft
     // through the cycle, down to the landing, a sink, and the float again.
@@ -328,7 +378,7 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
       z = 0;
     }
 
-    return { rotX, rotY, rotZ: roll(t, k), y, z, index: k };
+    return { rotX: e.x, rotY: e.y, rotZ: e.z, spin: spinAt(t), roll: r, y, z, index: k };
   };
 
   return { config: c, sequence, swapTimes, duration, frames, frame };

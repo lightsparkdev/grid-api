@@ -11,7 +11,7 @@ const PAGES = {
 type PageId = keyof typeof PAGES;
 
 const pageOf = (hash: string): PageId => {
-  const id = hash.replace(/^#\/?/, '');
+  const id = hash.replace(/^#\/?/, '').split('?')[0];
   return id in PAGES ? (id as PageId) : 'render';
 };
 

@@ -40,8 +40,26 @@ function writeFrames(): Plugin {
   };
 }
 
+/** The surface bake worker has ES imports; Next bundles it, Vite serves it
+ *  as written, so it has to start as a module worker or it dies on its
+ *  first import (and every bake waits on it forever). Done at serve time:
+ *  the playground's file is left as it is. */
+function moduleBakeWorker(): Plugin {
+  const from = "new Worker(new URL('./surfaceBake.worker.ts', import.meta.url))";
+  return {
+    name: 'reel-module-bake-worker',
+    enforce: 'pre',
+    transform(code, id) {
+      if (!id.endsWith('/card3d/surfaceBakeClient.ts')) return;
+      if (!code.includes(from)) throw new Error('surfaceBakeClient changed: update moduleBakeWorker');
+      return code.replace(from, "new Worker(new URL('./surfaceBake.worker.ts', import.meta.url), { type: 'module' })");
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), writeFrames()],
+  plugins: [moduleBakeWorker(), react(), writeFrames()],
+  worker: { format: 'es' },
   // The card's sources read it to gate their dev hooks.
   define: { 'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development') },
   publicDir: path.resolve(demo, 'public'),

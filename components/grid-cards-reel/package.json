@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 4010",
+    "render": "node scripts/render.mjs",
     "encode": "bash scripts/encode.sh",
     "typecheck": "tsc --noEmit"
   },

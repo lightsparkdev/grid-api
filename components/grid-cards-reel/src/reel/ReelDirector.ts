@@ -10,10 +10,11 @@
    changing. */
 
 import { flushDeferredPaints, flushDeferredPaintsNow } from '@/components/CardStage/card3d/deferredPaint';
+import { surfaceJobs, surfaceMapsReady } from '@/components/CardStage/card3d/surfaceBakeClient';
 import type { CardDesign } from '@/data/design';
 import type { ReelBrand } from '@reel/brands/reelBrands';
 import type { Reel, ReelFrame } from './reelTimeline';
-import type { Pixels, ReelRenderer } from './ReelRenderer';
+import type { Pixels, ReelPose, ReelRenderer } from './ReelRenderer';
 import type { SceneHandle } from './ReelScene';
 
 const nextFrame = () => new Promise<number>((r) => requestAnimationFrame(r));
@@ -79,7 +80,10 @@ export class ReelDirector {
       await nextFrame();
       flushDeferredPaintsNow();
       const f = this.scene.flags();
-      if (!f.painted || f.pending || f.swapInFlight || i < 2) {
+      // The surface maps the design needs bake in a worker; until they are
+      // in, the mesh keeps the last design's (its gloss pattern, its etch).
+      const mapsIn = surfaceJobs(design).every((j) => surfaceMapsReady(j));
+      if (!f.painted || f.pending || f.swapInFlight || !mapsIn || i < 2) {
         stable = 0;
         last = null;
         continue;
@@ -87,7 +91,9 @@ export class ReelDirector {
       const opts = { size: CHECK_SIZE, cardFrac: 0.9, exposure: 1 };
       const sig = `${signature(this.renderer.render([FRONT], opts))}:${signature(this.renderer.render([BACK], opts))}`;
       if (sig === last) {
-        if (++stable >= 3) return;
+        // The maps go up to the GPU two a frame once they land, so the
+        // picture can hold still for a frame or two mid-upload.
+        if (++stable >= 5) return;
       } else {
         stable = 0;
         last = sig;
@@ -108,7 +114,7 @@ export class ReelDirector {
   }
 
   /** The shutter's instants around `t`, posed as the timeline has them. */
-  private shutter(reel: Reel<ReelBrand>, t: number): Array<Omit<ReelFrame, 'index'>> {
+  private shutter(reel: Reel<ReelBrand>, t: number): Array<ReelPose> {
     const { minSamples, maxSamples, stepDeg, shutter } = reel.config.blur;
     const span = shutter / reel.config.fps;
     // How far the card turns while the shutter is open, sampled finely
@@ -117,7 +123,7 @@ export class ReelDirector {
     let prev = reel.frame(t - span / 2);
     for (let i = 1; i <= 8; i++) {
       const f = reel.frame(t - span / 2 + (span * i) / 8);
-      travel += Math.max(Math.abs(f.rotX - prev.rotX), Math.abs(f.rotY - prev.rotY), Math.abs(f.rotZ - prev.rotZ));
+      travel += Math.abs(f.spin - prev.spin) + Math.abs(f.roll - prev.roll);
       prev = f;
     }
     const n = Math.min(maxSamples, Math.max(minSamples, Math.ceil(travel / stepDeg)));

@@ -8,6 +8,9 @@ import * as THREE from 'three';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { footprint } from '@/apps/card/cardMetrics';
 import type { ReelFrame } from './reelTimeline';
+
+/** What the renderer needs of a frame: where the card is and how it's turned. */
+export type ReelPose = Pick<ReelFrame, 'rotX' | 'rotY' | 'rotZ' | 'y' | 'z'>;
 import { CAMERA_Z, type SceneHandle } from './ReelScene';
 
 export interface RenderOptions {
@@ -85,7 +88,7 @@ export class ReelRenderer {
   }
 
   /** Put the card where the timeline has it. */
-  pose(f: Omit<ReelFrame, 'index'>) {
+  pose(f: ReelPose) {
     const { carrier, card } = this.scene;
     const cardH = footprint('landscape').h;
     carrier.position.set(0, f.y * cardH, f.z * CAMERA_Z);
@@ -98,7 +101,7 @@ export class ReelRenderer {
   }
 
   /** Render the instants in `poses` into one frame and read it back. */
-  render(poses: Array<Omit<ReelFrame, 'index'>>, o: RenderOptions): Pixels {
+  render(poses: Array<ReelPose>, o: RenderOptions): Pixels {
     const { gl, scene } = this.scene.get();
     const t = this.targetsFor(o.size);
     this.frameCamera(o);
@@ -159,7 +162,7 @@ export class ReelRenderer {
   }
 
   /** The card straight to the preview canvas, tone mapped, no blur. */
-  preview(f: Omit<ReelFrame, 'index'>, o: Omit<RenderOptions, 'size'>) {
+  preview(f: ReelPose, o: Omit<RenderOptions, 'size'>) {
     const { gl, scene } = this.scene.get();
     this.frameCamera({ ...o, size: 0 });
     this.pose(f);

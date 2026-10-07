@@ -3,7 +3,7 @@
    renders, and the render itself, written to out/<take>/. */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { PLACEHOLDER, REEL_BRANDS } from '@reel/brands/reelBrands';
+import { loadReelBrands, PLACEHOLDER, type ReelBrand } from '@reel/brands/reelBrands';
 import { buildReel, REEL } from '@reel/reel/reelTimeline';
 import { ReelScene } from '@reel/reel/ReelScene';
 import { useReelEngine } from '@reel/reel/useReelEngine';
@@ -21,16 +21,19 @@ const button: React.CSSProperties = {
 
 export function RenderPage() {
   const { engine, onHandle } = useReelEngine();
-  const reel = useMemo(() => buildReel(PLACEHOLDER, REEL_BRANDS, REEL), []);
-  /** The test second starts just before the first swap, mid-pop. */
-  const testFrom = Math.max(0, Math.round((reel.swapTimes[1] - 0.4) * REEL.fps));
+  const [brands, setBrands] = useState<ReelBrand[] | null>(null);
+  const reel = useMemo(() => (brands ? buildReel(PLACEHOLDER, brands, REEL) : null), [brands]);
   const [status, setStatus] = useState('Loading the card…');
   const [frame, setFrame] = useState(0);
   const [playing, setPlaying] = useState(false);
   const busy = useRef(false);
 
   useEffect(() => {
-    if (!engine) return;
+    loadReelBrands().then(setBrands);
+  }, []);
+
+  useEffect(() => {
+    if (!engine || !reel) return;
     engine.director.show(PLACEHOLDER.design).then(() => {
       engine.renderer.preview(reel.frame(0), REEL);
       setStatus(`${reel.sequence.length - 2} brands, ${reel.frames} frames (${reel.duration.toFixed(2)} s)`);
@@ -40,7 +43,7 @@ export function RenderPage() {
   // Real-time preview: the design is set as the clock reaches it, painted
   // whenever the card gets to it.
   useEffect(() => {
-    if (!engine || !playing) return;
+    if (!engine || !reel || !playing) return;
     let raf = 0;
     const t0 = performance.now();
     let shown = -1;
@@ -58,6 +61,24 @@ export function RenderPage() {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [engine, playing, reel]);
+
+  const scene = (
+    <div style={{ background: '#000', outline: '1px solid #222' }}>
+      <ReelScene size={PREVIEW} onHandle={onHandle} />
+    </div>
+  );
+  if (!reel) {
+    return (
+      <div style={{ display: 'flex', gap: 24, padding: 24, alignItems: 'flex-start' }}>
+        {scene}
+        <div>Preparing the art…</div>
+      </div>
+    );
+  }
+
+  const all = [PLACEHOLDER, ...reel.sequence.slice(1, -1)];
+  /** The test second starts just before the first swap, mid-pop. */
+  const testFrom = Math.max(0, Math.round((reel.swapTimes[1] - 0.4) * REEL.fps));
 
   const scrub = async (i: number) => {
     setFrame(i);
@@ -85,11 +106,10 @@ export function RenderPage() {
     }
   };
 
-  const warm = () =>
-    run('Warm-up', () => engine!.director.warm([PLACEHOLDER, ...REEL_BRANDS], (n, total) => setStatus(`Warming ${n}/${total}`)));
+  const warm = () => run('Warm-up', () => engine!.director.warm(all, (n, total) => setStatus(`Warming ${n}/${total}`)));
   const render = (take: string, from = 0, to = reel.frames) =>
     run(`Render ${take}`, async () => {
-      await engine!.director.warm([PLACEHOLDER, ...REEL_BRANDS], (n, total) => setStatus(`Warming ${n}/${total}`));
+      await engine!.director.warm(all, (n, total) => setStatus(`Warming ${n}/${total}`));
       await engine!.director.renderTake(reel, {
         take,
         from,
@@ -101,25 +121,22 @@ export function RenderPage() {
       });
     });
 
-  useEffect(() => {
-    if (!engine) return;
-    (window as unknown as Record<string, unknown>).__reel = { reel, engine, render, warm, scrub };
-  });
+  /** A take with config overrides (a smaller plate for checking motion). */
+  const renderWith = (take: string, overrides: Partial<typeof REEL>) =>
+    run(`Render ${take}`, async () => {
+      const r = buildReel(PLACEHOLDER, brands!, { ...REEL, ...overrides });
+      await engine!.director.warm(all, (n, total) => setStatus(`Warming ${n}/${total}`));
+      await engine!.director.renderTake(r, { take, onProgress: (n, total) => setStatus(`Rendering ${take}: ${n}/${total}`) });
+    });
+
+  (window as unknown as Record<string, unknown>).__reel = { reel, engine, render, renderWith, warm, scrub, testFrom };
 
   return (
     <div style={{ display: 'flex', gap: 24, padding: 24, alignItems: 'flex-start' }}>
-      <div style={{ background: '#000', outline: '1px solid #222' }}>
-        <ReelScene size={PREVIEW} onHandle={onHandle} />
-      </div>
+      {scene}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 360 }}>
         <div>{status}</div>
-        <input
-          type="range"
-          min={0}
-          max={reel.frames - 1}
-          value={frame}
-          onChange={(e) => scrub(Number(e.target.value))}
-        />
+        <input type="range" min={0} max={reel.frames - 1} value={frame} onChange={(e) => scrub(Number(e.target.value))} />
         <div style={{ color: '#888' }}>
           Frame {frame} · {(frame / REEL.fps).toFixed(2)} s · {reel.sequence[reel.frame(frame / REEL.fps).index].id}
         </div>
