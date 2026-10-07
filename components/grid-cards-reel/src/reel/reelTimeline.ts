@@ -52,8 +52,11 @@ export interface ReelConfig {
   pop: {
     /** Seconds over which the wind-up lets go after the launch. */
     dur: number;
-    /** How high the arc rises above the line from launch to landing, a
-     *  share of the card's height. */
+    /** Seconds the launch takes to carry it most of the way up: short, so
+     *  the pop has the bounce's energy. It hangs and drifts after. */
+    rise: number;
+    /** How high it flies above the line from launch to landing, a share of
+     *  the card's height. */
     height: number;
     /** How far toward the camera at the top of the arc, a share of the
      *  camera's distance. */
@@ -77,9 +80,12 @@ export interface ReelConfig {
     flick: number;
     drag: number;
     catch: number;
-    /** Seconds of tumble before the cycle starts, and after it ends. */
+    /** The launch's extra spin, as a multiple of the cruising speed, and
+     *  the seconds the air takes to bleed most of it off. */
+    burst: number;
+    burstDecay: number;
+    /** Seconds of tumble before the cycle starts. */
     lead: number;
-    tail: number;
     /** The landing's wobble, degrees. */
     wobble: number;
   };
@@ -92,6 +98,9 @@ export interface ReelConfig {
     rampShare: number;
     slowShare: number;
     swapOn: SwapOn;
+    /** Seconds the cycle keeps going after the card lands: through the
+     *  settle and a beat past it, the last swaps on a still card. */
+    overrun: number;
   };
   orientation: {
     /** 'none': the card never rolls, so an upright design shows sideways
@@ -120,17 +129,18 @@ export const REEL: ReelConfig = {
   cardFrac: 0.55,
   exposure: 1.0,
   blur: { minSamples: 4, maxSamples: 64, stepDeg: 0.35, shutter: 0.5 },
-  open: { hold: 0.9, rest: -0.16, bob: 0.012, bobHz: 0.4 },
-  dip: { dur: 0.45, depth: 0.1, windup: 10 },
-  pop: { dur: 0.7, height: 0.42, toward: 0.1 },
-  tumble: { turns: 2, axisDeg: -32, axisDrift: 0, flick: 0.07, drag: 0.3, catch: 0.24, lead: 0.4, tail: 1.1, wobble: 4 },
+  open: { hold: 0.9, rest: -0.16, bob: 0, bobHz: 0.4 },
+  dip: { dur: 0.4, depth: 0.1, windup: 10 },
+  pop: { dur: 0.45, rise: 0.42, height: 0.4, toward: 0.1 },
+  tumble: { turns: 2, axisDeg: -32, axisDrift: 0, flick: 0.02, drag: 0.25, catch: 0.22, burst: 1.6, burstDecay: 0.45, lead: 0.3, wobble: 4 },
   cycle: {
-    startPerSecond: 2.5,
+    startPerSecond: 3,
     peakPerSecond: 8,
-    endPerSecond: 3.5,
-    rampShare: 0.4,
-    slowShare: 0.22,
+    endPerSecond: 3,
+    rampShare: 0.3,
+    slowShare: 0.25,
     swapOn: 'both',
+    overrun: 1.25,
   },
   orientation: { mix: 'none', at: 0.45, rollDur: 0.24 },
   settle: { dur: 1.3, sink: 0.04, hold: 1.4 },
@@ -212,26 +222,36 @@ const smooth = (u: number) => {
   const x = clamp01(u);
   return x * x * (3 - 2 * x);
 };
-/** The flight's height over its share `u`: up like a thrown thing (fastest
- *  leaving the hand, still at the top), then down softly, caught, as the
- *  spin is. */
-const arc = (u: number) => {
-  const x = clamp01(u);
-  return x < 0.5 ? 4 * x * (1 - x) : 1 - smooth((x - 0.5) / 0.5);
-};
+/**
+ * The flight's height over its share `u`, for a flight `seconds` long: the
+ * launch carries it most of the way up in `rise` seconds, fast off the
+ * bounce and slowing (the pop has the bounce's energy); it hangs, drifting
+ * up and over; then it comes down softly, caught, as the spin is.
+ */
+function liftCurve(rise: number, seconds: number): (u: number) => number {
+  const r = Math.min(0.5, rise / seconds);
+  return (u: number) => {
+    const x = clamp01(u);
+    const up = 1 - (1 - Math.min(1, x / r)) ** 3;
+    const hang = 0.82 * up + 0.18 * Math.sin(Math.PI * x);
+    return hang * (1 - smooth((x - 0.7) / 0.3));
+  };
+}
 
 /**
- * How far through its turns the card is at share `u` of the flight. The
- * spin's speed comes up over the flick (the launch gives it), falls off a
- * little with drag, and eases to nothing over the catch: it never speeds up
- * in the air. Integrated and normalized so it ends exactly on the turns.
+ * How far through its turns the card is at share `u` of a flight `seconds`
+ * long. The launch gives the spin all its speed at once (the flick), with
+ * a burst over the cruising speed that the air bleeds off; drag slows it a
+ * little more, and the catch eases it to nothing: it never speeds up in
+ * the air. Integrated and normalized so it ends exactly on the turns.
  */
-function spinCurve(t: ReelConfig['tumble']): (u: number) => number {
+function spinCurve(t: ReelConfig['tumble'], seconds: number): (u: number) => number {
   const n = 2000;
   const cum = new Float64Array(n + 1);
   for (let i = 0; i < n; i++) {
     const u = (i + 0.5) / n;
-    const speed = smooth(u / t.flick) * (1 - t.drag * u) * (1 - smooth((u - (1 - t.catch)) / t.catch));
+    const burst = 1 + t.burst * Math.exp(-(u * seconds) / t.burstDecay);
+    const speed = smooth(u / t.flick) * burst * (1 - t.drag * u) * (1 - smooth((u - (1 - t.catch)) / t.catch));
     cum[i + 1] = cum[i] + speed;
   }
   return (u: number) => {
@@ -300,17 +320,11 @@ function meanRate(c: ReelConfig['cycle']): number {
 }
 
 /** Brands in show order. Grouped, the portrait cards sit together as one run
- *  (one quarter turn in, one out); interleaved, they stay where they were;
- *  with no roll, they are spread evenly through the landscape cards. */
+ *  (one quarter turn in, one out); otherwise they stay where they were. */
 function order<E extends ReelEntry>(brands: E[], o: ReelConfig['orientation']): E[] {
-  if (o.mix === 'interleaved') return brands;
+  if (o.mix === 'interleaved' || o.mix === 'none') return brands;
   const flat = brands.filter((b) => b.orientation === 'landscape');
   const tall = brands.filter((b) => b.orientation === 'portrait');
-  if (o.mix === 'none') {
-    const out = [...flat];
-    tall.forEach((b, i) => out.splice(Math.round(((i + 1) * flat.length) / (tall.length + 1)) + i, 0, b));
-    return out;
-  }
   const at = Math.round(flat.length * o.at);
   return [...flat.slice(0, at), ...tall, ...flat.slice(at)];
 }
@@ -323,17 +337,19 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
   const swaps = sequence.length - 1;
 
   // The beats: the dip after the hold, the pop after the dip, the cycle a
-  // lead into the tumble, the landing a tail after the cycle.
+  // lead into the tumble and on past the landing (it keeps swapping as the
+  // card settles), the hold on the placeholder after the last swap.
   const tDip = c.open.hold;
   const tPop = tDip + c.dip.dur;
   const tCycle = tPop + c.tumble.lead;
   const cycleDur = swaps / meanRate(c.cycle);
   const tCycleEnd = tCycle + cycleDur;
-  const tLand = tCycleEnd + c.tumble.tail;
-  const duration = tLand + c.settle.dur + c.settle.hold;
+  const tLand = Math.max(tPop + 1, tCycleEnd - c.cycle.overrun);
+  const duration = tCycleEnd + c.settle.hold;
   const frames = Math.round(duration * c.fps);
 
-  const spinShare = spinCurve(c.tumble);
+  const spinShare = spinCurve(c.tumble, tLand - tPop);
+  const lift = liftCurve(c.pop.rise, tLand - tPop);
   const flight = (t: number) => clamp01((t - tPop) / (tLand - tPop));
   const progress = (t: number) => spinShare(flight(t));
   // The wind-up tips the bottom-left corner away over the dip and lets go
@@ -412,8 +428,8 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
       z = 0;
     } else if (t < tLand) {
       const u = flight(t);
-      y = lerp(-c.dip.depth, 0, u) + c.pop.height * arc(u);
-      z = c.pop.toward * arc(u);
+      y = lerp(-c.dip.depth, 0, u) + c.pop.height * lift(u);
+      z = c.pop.toward * lift(u);
     } else {
       const tau = t - tLand;
       const sink = -c.settle.sink * Math.exp(-5 * tau) * Math.sin(Math.PI * Math.min(1, tau / (c.settle.dur * 0.5)));

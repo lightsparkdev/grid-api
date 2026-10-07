@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Encode a rendered take: npm run encode -- <take> [--webm]
+# Encode a rendered take: npm run encode -- <take> [--webm | --preview]
 #   out/<take>/card-reel.mov          ProRes 4444 with alpha, for compositing
 #   out/<take>/card-reel-preview.mp4  H.264 on black, for review and sharing
 #   out/<take>/card-reel.webm         VP9 with alpha (with --webm)
+# --preview makes the MP4 alone.
 set -euo pipefail
 
-take="${1:?usage: npm run encode -- <take> [--webm]}"
+take="${1:?usage: npm run encode -- <take> [--webm | --preview]}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
 dir="$root/out/$take"
 [[ -d "$dir/frames" ]] || { echo "no frames in $dir/frames" >&2; exit 1; }
@@ -14,9 +15,11 @@ fps="$(node -p "require('$dir/track.json').meta.fps")"
 size="$(node -p "require('$dir/track.json').meta.size")"
 frames="$dir/frames/frame_%05d.png"
 
-ffmpeg -y -loglevel warning -stats -framerate "$fps" -i "$frames" \
-  -c:v prores_ks -profile:v 4444 -pix_fmt yuva444p10le -alpha_bits 16 -vendor apl0 \
-  "$dir/card-reel.mov"
+if [[ "${2:-}" != "--preview" ]]; then
+  ffmpeg -y -loglevel warning -stats -framerate "$fps" -i "$frames" \
+    -c:v prores_ks -profile:v 4444 -pix_fmt yuva444p10le -alpha_bits 16 -vendor apl0 \
+    "$dir/card-reel.mov"
+fi
 
 ffmpeg -y -loglevel warning -stats -framerate "$fps" -i "$frames" \
   -f lavfi -i "color=c=black:s=${size}x${size}:r=${fps}" \

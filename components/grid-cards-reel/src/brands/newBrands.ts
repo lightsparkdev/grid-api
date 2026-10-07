@@ -368,11 +368,13 @@ export const NEW_BRANDS: NewBrand[] = [
   },
 ];
 
-/** The show order, the playground's six presets threaded through. The
- *  upright cards are pulled together into one run by the timeline. */
+/** The show order: the new brands with the upright ones woven through,
+ *  then the playground's six presets as the cycle slows onto the settled
+ *  card, the Z steel card last before "Your brand". (With the timeline's
+ *  grouped roll, the upright cards are pulled into one run instead.) */
 export const ORDER = [
-  'feather', 'cash', 'split', 'toast', 'preset-social', 'road', 'poly', 'field', 'cloud', 'coin', 'preset-marketplace',
-  'thread', 'fomo', 'dash', 'blossom', 'wallet', 'preset-creator', 'live', 'box', 'circle', 'spark', 'pay', 'preset-finance',
-  'speed', 'denim', 'preset-messaging', 'parcel', 'odds', 'market', 'video', 'courier', 'preset-ondemand', 'cross',
-  'note', 'ghost', 'pop', 'tentacle', 'table', 'eq', 'patron', 'claw', 'camera', 'goat',
+  'feather', 'cash', 'note', 'split', 'toast', 'road', 'ghost', 'poly', 'field', 'cloud', 'camera', 'coin', 'thread',
+  'fomo', 'tentacle', 'dash', 'blossom', 'wallet', 'eq', 'live', 'box', 'circle', 'pop', 'spark', 'pay', 'speed', 'claw',
+  'denim', 'parcel', 'odds', 'table', 'market', 'video', 'courier', 'patron', 'cross', 'goat',
+  'preset-finance', 'preset-creator', 'preset-marketplace', 'preset-messaging', 'preset-ondemand', 'preset-social',
 ];
