@@ -114,7 +114,9 @@ A single `status` field represents whether the transaction reached its destinati
 | **FAILED** | Something went wrong — accompanied by a `failureReason` |
 
 <Warning>
-`EXPIRED` and `FAILED` are terminal states, but `COMPLETED` is not always final — a bank can return a payment after it was marked `COMPLETED`, moving it to `FAILED`. Always continue processing webhook events for transactions even after they reach `COMPLETED`.
+`status` reports where the funds are now. `COMPLETED` means they are where settlement put them; `FAILED` means they were sent back. A bank return can move a `COMPLETED` payment to `FAILED` days after it settled. For an incoming payment, a return the originating bank later dishonors brings the credit back and the payment moves to `COMPLETED` again. A returned payout stays `FAILED`: it has already been refunded to its source, so a dishonored return is reconciled manually rather than reported as a new completion. Only `EXPIRED` is terminal. Apply each status webhook as it arrives, and don't treat `COMPLETED` or `FAILED` as final.
+
+Each side's `railDetails` reports the transfer on its rail and follows every step of it: an ACH entry's status moves through `SETTLED`, `RETURNED`, `RETURN_DISHONORED` and `RETURN_CONTESTED` with a timestamp for each, whether or not the transaction's `status` changes with it. A transaction stays `COMPLETED` through a return only when a later step that can't be undone, such as a completed conversion, already used the funds; its `railDetails` still shows `RETURNED`.
 </Warning>
 
 ### State Diagram
@@ -138,7 +140,6 @@ stateDiagram-v2
     }
     REFUND_COMPLETED --> COMPLETED : Manual cancellation resolved
     EXPIRED --> [*]
-    COMPLETED --> [*]
     REFUND_COMPLETED --> [*]
     REFUND_FAILED --> [*]
 ```
@@ -210,7 +211,7 @@ The webhook request body contains the full transaction resource.
 | `INCOMING_PAYMENT.PENDING` | Funds are on their way to the internal account |
 | `INCOMING_PAYMENT.PROCESSING` | Funding received, credit in progress |
 | `INCOMING_PAYMENT.COMPLETED` | Funds credited to the internal account |
-| `INCOMING_PAYMENT.FAILED` | The deposit failed |
+| `INCOMING_PAYMENT.FAILED` | The deposit failed, or a bank returned it after it completed |
 | `INCOMING_PAYMENT.REFUND_PENDING` | Refund initiated |
 | `INCOMING_PAYMENT.REFUND_COMPLETED` | Refund settled |
 | `INCOMING_PAYMENT.REFUND_FAILED` | Refund failed |
@@ -393,12 +394,12 @@ Payment initially succeeds but the bank returns it:
 1. `OUTGOING_PAYMENT.PENDING`
 2. `OUTGOING_PAYMENT.PROCESSING`
 3. `OUTGOING_PAYMENT.COMPLETED`
-4. `OUTGOING_PAYMENT.FAILED`
+4. `OUTGOING_PAYMENT.FAILED` — `failureReason` is `PAYOUT_RETURNED`, and `destination.railDetails.status` is `RETURNED`, with `returnedAt`
 5. `OUTGOING_PAYMENT.REFUND_PENDING`
 6. `OUTGOING_PAYMENT.REFUND_COMPLETED`
 
 <Info>
-Bank returns can happen days after initial completion. Continue processing webhook events for transactions even after they reach `COMPLETED`.
+Bank returns can happen days after initial completion. Continue processing webhook events for transactions even after they reach `COMPLETED`. If the originating bank later dishonors the return, the payout stays `FAILED` and its refund stands; the returned funds are reconciled manually, and `OUTGOING_PAYMENT.FAILED` is sent again with `destination.railDetails.status` `RETURN_DISHONORED`.
 </Info>
 </Tab>
 

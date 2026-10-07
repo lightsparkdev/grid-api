@@ -317,8 +317,8 @@ To reconcile fee revenue as it accrues, listen for `OUTGOING_PAYMENT.COMPLETED` 
 <Info>
 A fee is only earned once the payment completes. A transaction that fails or is refunded
 generates no revenue — and if the fee had already been credited, the refund reverses it —
-so reconcile against terminal statuses rather than counting `platformFees` on every event
-you receive.
+so reconcile against each transaction's current `status` rather than counting `platformFees`
+on every event you receive.
 </Info>
 
 See [Webhooks](/payouts-and-b2b/platform-tools/webhooks) for signature verification and
