@@ -5955,6 +5955,11 @@ paths:
         ### Funding a rule-based account
         Funding a `RULE_BASED` account triggers its sweep, exactly as a settled deposit does in production: the balance is swept to the rule's destination and the account is left at zero. A balance outside the corridor band moves to the account holder's own account in the same currency instead, and the transaction fails with `failureReason: SWEEP_AMOUNT_OUT_OF_RANGE` — fund a rule-based account with a very small amount to rehearse that path. Either way the rule-based account is left at zero; it never holds a balance.
         The sweep's transaction reports a placeholder ACH depositor as its `REALTIME_FUNDING` source and the funded account as its `ruleBasedAccountId`, matching what a production deposit reports.
+        To simulate the information a depositor attaches to a payment (the ACH Addenda record, FedNow or RTP remittance information, or the wire OBI), pass `remittanceInformation`. It is reported as `source.remittanceInformation` on the swept transaction.
+        `description` cannot be set when funding a rule-based account: the swept transaction's description comes from the account's sweep rule, exactly as it does for a production deposit. Sending it returns `400 INVALID_INPUT`.
+        ### Funding other account types
+        `description` sets the memo on the incoming transaction for the credit. `remittanceInformation` is supported only for `RULE_BASED` accounts; sending it for any other account type returns `400 INVALID_INPUT`.
+        The request is validated before any funds are credited, so a request rejected with `400` leaves the balance unchanged.
         Sandbox simulates the API contract and the routing decision, not the banking rails. The quote, the corridor bounds, the destination checks and the webhook are all real; the settlement legs behind them are not, so timings and failure modes that originate at a partner bank cannot be reproduced here.
       operationId: sandboxFundInternalAccount
       tags:
@@ -5984,6 +5989,16 @@ paths:
                 summary: Fund BTC internal account with 0.01 BTC
                 value:
                   amount: 1000000
+              fundUSDAccountWithDescription:
+                summary: Fund USD internal account with a memo
+                value:
+                  amount: 100000
+                  description: Test deposit for invoice reconciliation
+              fundRuleBasedAccountWithRemittance:
+                summary: Fund a rule-based account with depositor remittance information
+                value:
+                  amount: 100000
+                  remittanceInformation: INV-2026-0042
       responses:
         '200':
           description: Internal account funded successfully
@@ -27158,6 +27173,20 @@ components:
           exclusiveMinimum: 0
           maximum: 100000000000
           example: 100000
+        remittanceInformation:
+          type: string
+          maxLength: 80
+          description: |-
+            Simulates the free-form payment information a depositor's bank sends with the funds. Depending on the payment rail, a real sender attaches it as the ACH Addenda record, the FedNow or RTP remittanceInformation field, or the wire OBI (Originator to Beneficiary Information). Only printable ASCII characters are allowed.
+            Supported only for `RULE_BASED` accounts, where it is reported as `source.remittanceInformation` on the swept transaction. Sending it for any other account type returns `400 INVALID_INPUT`.
+          example: INV-2026-0042
+        description:
+          type: string
+          maxLength: 1024
+          description: |-
+            Optional description/memo for the simulated credit, reported as the `description` of the incoming transaction. Defaults to a generated description when omitted.
+            Not supported for `RULE_BASED` accounts: the swept transaction's description comes from the account's sweep rule, so sending it returns `400 INVALID_INPUT`.
+          example: Test deposit for invoice reconciliation
     Permission:
       type: string
       enum:

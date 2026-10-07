@@ -11,3 +11,29 @@ properties:
     exclusiveMinimum: 0
     maximum: 100000000000
     example: 100000
+  remittanceInformation:
+    type: string
+    maxLength: 80
+    description: >-
+      Simulates the free-form payment information a depositor's bank sends
+      with the funds. Depending on the payment rail, a real sender attaches it
+      as the ACH Addenda record, the FedNow or RTP remittanceInformation field,
+      or the wire OBI (Originator to Beneficiary Information). Only printable
+      ASCII characters are allowed.
+
+      Supported only for `RULE_BASED` accounts, where it is reported as
+      `source.remittanceInformation` on the swept transaction. Sending it for
+      any other account type returns `400 INVALID_INPUT`.
+    example: 'INV-2026-0042'
+  description:
+    type: string
+    maxLength: 1024
+    description: >-
+      Optional description/memo for the simulated credit, reported as the
+      `description` of the incoming transaction. Defaults to a generated
+      description when omitted.
+
+      Not supported for `RULE_BASED` accounts: the swept transaction's
+      description comes from the account's sweep rule, so sending it returns
+      `400 INVALID_INPUT`.
+    example: 'Test deposit for invoice reconciliation'
