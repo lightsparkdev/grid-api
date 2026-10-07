@@ -315,8 +315,8 @@ export async function faceSvgs(brand: ReelBrand, artSvg: string | null): Promise
      <g id="Contactless" transform="translate(${L.contactless.right - cw} ${L.contactless.y})">${contactless}</g>
      <g id="Account">
        ${text('Cardholder', L.x, y1, L.em, d.cardholderName || BACK.cardholderName)}
-       ${text('Card number', L.x, y2, L.em, BACK.credentials.groups.join(' '))}
-       ${text('Expiry and CVV', L.x, y3, L.em, `EXP ${BACK.credentials.exp}   CVV ${BACK.credentials.cvv}`)}
+       ${text('Card number', L.x, y2, L.em, brand.credentials.groups.join(' '))}
+       ${text('Expiry and CVV', L.x, y3, L.em, `EXP ${brand.credentials.exp}   CVV ${brand.credentials.cvv}`)}
      </g>
      <g id="Fine print">${fine}</g>
      ${visa}`,

@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { CardEnv } from '@/components/CardStage/card3d/CardEnv';
 import { CardMesh, type CardMeshState, type CardMeshUserData } from '@/components/CardStage/card3d/CardMesh';
 import type { CardDesign } from '@/data/design';
-import { BACK, PLACEHOLDER } from '@reel/brands/reelBrands';
+import { credentialsOf, PLACEHOLDER } from '@reel/brands/reelBrands';
 
 /** The stage camera's distance; scene units are card px. */
 export const CAMERA_Z = 2000;
@@ -35,7 +35,7 @@ function Rig({ onHandle }: { onHandle: (h: SceneHandle) => void }) {
   const changeCount = useRef(0);
   const [design, setDesign] = useState<CardDesign>(PLACEHOLDER.design);
   const state = useMemo<CardMeshState>(
-    () => ({ design, issued: true, credentials: BACK.credentials, frozen: false, closed: false }),
+    () => ({ design, issued: true, credentials: credentialsOf(design), frozen: false, closed: false }),
     [design],
   );
   const onChange = useCallback(() => {
