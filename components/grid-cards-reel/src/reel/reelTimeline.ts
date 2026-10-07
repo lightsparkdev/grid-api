@@ -35,8 +35,8 @@ export interface ReelConfig {
   open: {
     /** Seconds on the floating placeholder before the dip. */
     hold: number;
-    /** Where the card rests, up from the plate's center, a share of the
-     *  card's height. Below center, so the flight's arc is centered. */
+    /** Where the card rests (it starts and lands here), up from the plate's
+     *  center, a share of the card's height. */
     rest: number;
     /** The float's bob, a share of the card's height, and its rate. */
     bob: number;
@@ -129,9 +129,9 @@ export const REEL: ReelConfig = {
   cardFrac: 0.55,
   exposure: 1.0,
   blur: { minSamples: 4, maxSamples: 64, stepDeg: 0.35, shutter: 0.5 },
-  open: { hold: 0.9, rest: -0.16, bob: 0, bobHz: 0.4 },
+  open: { hold: 0.9, rest: 0, bob: 0, bobHz: 0.4 },
   dip: { dur: 0.4, depth: 0.1, windup: 10 },
-  pop: { dur: 0.45, rise: 0.42, height: 0.4, toward: 0.1 },
+  pop: { dur: 0.45, rise: 0.42, height: 0.34, toward: 0.1 },
   tumble: { turns: 2, axisDeg: -32, axisDrift: 0, flick: 0.02, drag: 0.25, catch: 0.22, burst: 1.6, burstDecay: 0.45, lead: 0.3, wobble: 4 },
   cycle: {
     startPerSecond: 3,

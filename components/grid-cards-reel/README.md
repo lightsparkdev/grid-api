@@ -44,7 +44,7 @@ Everything is in `REEL` at the top of `src/reel/reelTimeline.ts`. Change a numbe
 
 | Setting | What it does |
 | --- | --- |
-| `open.hold`, `open.rest` | Seconds on the floating "Your brand" card before anything happens, and where it rests (below center, so the flight's arc is centered). |
+| `open.hold`, `open.rest` | Seconds on the still "Your brand" card before anything happens, and where it rests (0 = dead center; it starts and lands there). |
 | `dip.depth`, `dip.windup` | How far it sinks before the launch, and how far the bottom-left corner tips back. |
 | `pop.height`, `pop.toward` | How high the arc rises, and how close to the camera at the top. The arc goes up like a throw and comes down softly, caught. |
 | `tumble.turns` | Full turns about the axis (2). |
