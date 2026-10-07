@@ -2,8 +2,7 @@ package com.grid.sample.routes
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.lightspark.grid.models.customers.CustomerCreateParams
-import com.lightspark.grid.models.customers.CustomerCreateParams.CreateCustomerRequest
-import com.lightspark.grid.models.customers.IndividualCustomerFields
+import com.lightspark.grid.models.customers.IndividualCustomerCreateRequest
 import com.lightspark.grid.models.customers.externalaccounts.Address
 import com.grid.sample.Config
 import com.grid.sample.GridClientBuilder
@@ -22,8 +21,8 @@ import java.net.http.HttpResponse
 import java.time.LocalDate
 import java.util.Base64
 
-// SDK 1.7.1 predates the current POST /customers/{id}/kyc-link endpoint shape,
-// so the kyc-link route below calls the REST API directly.
+// The kyc-link route below calls the REST API directly. TODO: switch it to
+// customers().createKycLink(), which the SDK has had since 1.9.0.
 // NOTE: keep DEFAULT_GRID_API_BASE_URL in sync with the SDK's default base URL when bumping the SDK.
 private val DEFAULT_GRID_API_BASE_URL = "https://api.lightspark.com/grid/2025-10-13"
 private val kycHttpClient: HttpClient by lazy { HttpClient.newHttpClient() }
@@ -36,8 +35,8 @@ fun Route.customerRoutes() {
                 val json = JsonUtils.mapper.readTree(body)
                 Log.incoming("POST", "/api/customers", body)
 
-                val individual = CreateCustomerRequest.Individual.builder()
-                    .customerType(IndividualCustomerFields.CustomerType.INDIVIDUAL)
+                val individual = IndividualCustomerCreateRequest.builder()
+                    .customerType(IndividualCustomerCreateRequest.CustomerType.INDIVIDUAL)
                     .apply {
                         json.optText("platformCustomerId")?.let { platformCustomerId(it) }
                         json.optText("fullName")?.let { fullName(it) }
@@ -62,7 +61,7 @@ fun Route.customerRoutes() {
                     .build()
 
                 val params = CustomerCreateParams.builder()
-                    .createCustomerRequest(CreateCustomerRequest.ofIndividual(individual))
+                    .createCustomerRequest(individual)
                     .build()
 
                 Log.gridRequest("customers.create", JsonUtils.prettyPrint(individual))
