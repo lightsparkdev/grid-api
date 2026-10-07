@@ -36,8 +36,10 @@ post:
     ### Funding other account types
 
     `description` sets the memo on the incoming transaction for the credit.
-    `remittanceInformation` is supported only for `RULE_BASED` accounts;
-    sending it for any other account type returns `400 INVALID_INPUT`.
+    `remittanceInformation` is reported as `source.remittanceInformation` on
+    that transaction. With it set, the credit is reported as a
+    `REALTIME_FUNDING` deposit from a placeholder sandbox depositor, matching
+    what a production bank deposit reports.
 
     The request is validated before any funds are credited, so a request
     rejected with `400` leaves the balance unchanged.
@@ -80,6 +82,11 @@ post:
             value:
               amount: 100000
               description: Test deposit for invoice reconciliation
+          fundUSDAccountWithRemittance:
+            summary: Fund USD internal account with depositor remittance information
+            value:
+              amount: 100000
+              remittanceInformation: INV-2026-0042
           fundRuleBasedAccountWithRemittance:
             summary: Fund a rule-based account with depositor remittance information
             value:

@@ -21,9 +21,11 @@ properties:
       or the wire OBI (Originator to Beneficiary Information). Only printable
       ASCII characters are allowed.
 
-      Supported only for `RULE_BASED` accounts, where it is reported as
-      `source.remittanceInformation` on the swept transaction. Sending it for
-      any other account type returns `400 INVALID_INPUT`.
+      It is reported as `source.remittanceInformation` on the resulting
+      transaction: the incoming transaction for the credit, or the swept
+      transaction for a `RULE_BASED` account. When it is set, the credit's
+      `source` is a `REALTIME_FUNDING` deposit from a placeholder sandbox
+      depositor.
     example: 'INV-2026-0042'
   description:
     type: string
