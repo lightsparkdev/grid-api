@@ -22,6 +22,9 @@ export interface ReelConfig {
   /** Tone mapping exposure. The playground lights a card on a dark stage
    *  at 1.0 and on a light one at 1.25. */
   exposure: number;
+  /** The camera's distance in card heights (the scene's camera z over the
+   *  card's height), for telling which face it sees. */
+  cameraDistance: number;
   blur: {
     /** Renders averaged per frame, at least and at most. 1 and 1 = no motion blur. */
     minSamples: number;
@@ -128,6 +131,8 @@ export const REEL: ReelConfig = {
   size: 2160,
   cardFrac: 0.55,
   exposure: 1.0,
+  // ReelScene's CAMERA_Z (2000) over the card's height (232).
+  cameraDistance: 2000 / 232,
   blur: { minSamples: 4, maxSamples: 64, stepDeg: 0.35, shutter: 0.5 },
   open: { hold: 0.9, rest: 0, bob: 0, bobHz: 0.4 },
   dip: { dur: 0.4, depth: 0.1, windup: 10 },
@@ -370,9 +375,30 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
     const a = axisAt(t);
     return axisAngle(Math.cos(a), Math.sin(a), spinAt(t));
   };
-  // The tumble's axis lies in the card's plane, so the face's normal is
-  // toward the camera exactly when the matrix keeps z positive.
-  const facesFront = (t: number) => tumbleAt(t)[8] > 0;
+  // Height, about the rest line: the float's bob, the dip, one arc from
+  // the launch to the landing, a sink as it is caught, the float again.
+  const placeAt = (t: number): { y: number; z: number } => {
+    const bob = c.open.bob * Math.sin(2 * Math.PI * c.open.bobHz * t);
+    if (t < tDip) return { y: c.open.rest + bob, z: 0 };
+    if (t < tPop) return { y: c.open.rest + lerp(bob, -c.dip.depth, easeInOutSine((t - tDip) / c.dip.dur)), z: 0 };
+    if (t < tLand) {
+      const u = flight(t);
+      return { y: c.open.rest + lerp(-c.dip.depth, 0, u) + c.pop.height * lift(u), z: c.pop.toward * lift(u) };
+    }
+    const tau = t - tLand;
+    const sink = -c.settle.sink * Math.exp(-5 * tau) * Math.sin(Math.PI * Math.min(1, tau / (c.settle.dur * 0.5)));
+    const float = c.open.bob * Math.sin(2 * Math.PI * c.open.bobHz * t) * smooth(tau / c.settle.dur);
+    return { y: c.open.rest + sink + float, z: 0 };
+  };
+  // Whether the camera sees the front: the face's normal against the line
+  // to the camera, in perspective (the card flies up and toward the lens,
+  // so near edge-on a face turned a little away can still be in view).
+  const facesFront = (t: number) => {
+    const m = tumbleAt(t);
+    const { y, z } = placeAt(t);
+    const d = c.cameraDistance;
+    return m[5] * -y + m[8] * (d - z * d) > 0;
+  };
 
   // How many swaps have happened by each instant of the cycle: the rate
   // integrated, counted only while the front faces the camera when swaps
@@ -440,30 +466,8 @@ export function buildReel<E extends ReelEntry>(placeholder: E, brands: E[], conf
     const r = roll(t, k);
     const e = eulerXYZ(mul(tumbleAt(t), rollZ(r)));
 
-    // Height, about the rest line: the float's bob, the dip, one arc from
-    // the launch to the landing, a sink as it is caught, the float again.
-    const bob = c.open.bob * Math.sin(2 * Math.PI * c.open.bobHz * t);
-    let y: number;
-    let z: number;
-    if (t < tDip) {
-      y = bob;
-      z = 0;
-    } else if (t < tPop) {
-      y = lerp(bob, -c.dip.depth, easeInOutSine((t - tDip) / c.dip.dur));
-      z = 0;
-    } else if (t < tLand) {
-      const u = flight(t);
-      y = lerp(-c.dip.depth, 0, u) + c.pop.height * lift(u);
-      z = c.pop.toward * lift(u);
-    } else {
-      const tau = t - tLand;
-      const sink = -c.settle.sink * Math.exp(-5 * tau) * Math.sin(Math.PI * Math.min(1, tau / (c.settle.dur * 0.5)));
-      const float = c.open.bob * Math.sin(2 * Math.PI * c.open.bobHz * t) * smooth(tau / c.settle.dur);
-      y = sink + float;
-      z = 0;
-    }
-
-    return { rotX: e.x, rotY: e.y, rotZ: e.z, spin: spinAt(t), roll: r, y: c.open.rest + y, z, index: k };
+    const { y, z } = placeAt(t);
+    return { rotX: e.x, rotY: e.y, rotZ: e.z, spin: spinAt(t), roll: r, y, z, index: k };
   };
 
   return { config: c, sequence, swapTimes, duration, frames, frame };
