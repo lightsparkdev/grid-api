@@ -75,7 +75,7 @@ or use the PNG sequence with `<Img src={staticFile(\`frames/frame_${pad(frame + 
 
 ## The cards
 
-37 brands from the Figma icon strip (Social 2025-26, node 2918:15751 and its row) plus the playground's six presets. Marks are the strip's fake glyphs (`src/brands/glyphs.raw.json`, rebuilt with `node scripts/build-glyphs.mjs`); art is per brand in `src/brands/art.ts`; each card's material, finish, mark treatment, Visa face, and orientation are in `src/brands/newBrands.ts`. No card prints a name.
+37 brands from the Figma icon strip (Social 2025-26, node 2921:13229) plus the playground's six presets. Marks are the strip's fake glyphs (`src/brands/glyphs.raw.json`, rebuilt with `node scripts/build-glyphs.mjs`); art is per brand in `src/brands/art.ts`; each card's material, finish, mark treatment, Visa face, and orientation are in `src/brands/newBrands.ts`. No card prints a name.
 
 The editable versions are on the "Card reel brands" page of the Social 2025-26 Figma file: each face as layers (print, art, mark, chip, Visa, live text on the back), with the 3D render beside it. Grain, the toast's crumb texture, and the dove hologram are image layers; everything else is vector.
 
