@@ -6531,7 +6531,7 @@ paths:
         - name: cursor
           in: query
           required: false
-          description: 'Cursor for pagination: the `nextCursor` from the previous page, unchanged. Send it with the same account, `startDate` and `endDate` as that page. A cursor expires 24 hours after it is issued.'
+          description: 'Cursor for pagination: the `nextCursor` from the previous page, unchanged. Send it with the same account, `startDate` and `endDate` as that page. A cursor does not expire.'
           schema:
             type: string
       responses:
@@ -6542,7 +6542,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BalanceChangeListResponse'
         '400':
-          description: Bad request. Returned when `startDate` or `endDate` is missing, has no timezone, or is in the future, when `startDate` is not before `endDate`, when `cursor` was not issued by this endpoint for the same account and window or has expired, or when the account has no statement of its own.
+          description: Bad request. Returned when `startDate` or `endDate` is missing, has no timezone, or is in the future, when `startDate` is not before `endDate`, when `cursor` was not issued by this endpoint for the same account and window, or when the account has no statement of its own.
           content:
             application/json:
               schema:
