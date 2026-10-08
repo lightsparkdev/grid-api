@@ -56,6 +56,12 @@ put:
     document, so there is nothing to replace. Retry those with
     `POST /documents`.
 
+    The request follows the same per-type field rules as
+    `POST /documents`, except that `documentHolder` isn't sent. Grid
+    overwrites every metadata field with the values in this request, so
+    resend `documentNumber`, `issuingAuthority`, and `side` even if they
+    haven't changed.
+
     Supported file types: `application/pdf`, `image/jpeg`, and `image/png`.
     Grid matches on the `Content-Type` of the multipart part, not the file
     extension. Any other type, and any file over 10 MB, returns

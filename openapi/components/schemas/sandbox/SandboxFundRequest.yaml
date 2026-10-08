@@ -11,3 +11,35 @@ properties:
     exclusiveMinimum: 0
     maximum: 100000000000
     example: 100000
+  remittanceInformation:
+    type: string
+    maxLength: 80
+    pattern: '^[ -~]*$'
+    description: >-
+      Simulates the free-form payment information a depositor's bank sends
+      with the funds. Depending on the payment rail, a real sender attaches it
+      as the ACH Addenda record, the FedNow or RTP remittanceInformation field,
+      or the wire OBI (Originator to Beneficiary Information). Only printable
+      ASCII characters are allowed.
+
+      It is reported on the resulting transaction: the incoming transaction
+      for the credit, or the swept transaction for a `RULE_BASED` account.
+      When it is set, the credit's `source` is a `REALTIME_FUNDING` ACH
+      deposit from a placeholder sandbox depositor.
+
+      A production ACH deposit reports this text as `source.railDetails.addenda`.
+      Sandbox credits do not include `railDetails` yet, so the value appears
+      only in the deprecated `source.remittanceInformation`.
+    example: 'INV-2026-0042'
+  description:
+    type: string
+    maxLength: 1024
+    description: >-
+      Optional description/memo for the simulated credit, reported as the
+      `description` of the incoming transaction. Defaults to a generated
+      description when omitted.
+
+      Not supported for `RULE_BASED` accounts: the swept transaction's
+      description comes from the account's sweep rule, so sending it returns
+      `400 INVALID_INPUT`.
+    example: 'Test deposit for invoice reconciliation'

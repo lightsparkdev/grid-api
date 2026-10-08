@@ -18,8 +18,8 @@ description: |
   | `PENDING` | Quote has been created |
   | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
   | `PROCESSING` | Funding has been received and payment initiated |
-  | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network |
+  | `COMPLETED` | The funds are where settlement put them. A return that takes them back moves the transaction to `FAILED`, and the returned side's `railDetails` shows `RETURNED`. A transaction stays `COMPLETED` through a return only when a later step that can't be undone already used the funds |
   | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
-  | `FAILED` | An error occurred during payment |
-  | `REFUNDED` | Payment was unable to complete and refunded |
-  | `EXPIRED` | Quote has expired |
+  | `FAILED` | The payment did not reach its destination, or the funds were sent back after it did. Not terminal for an incoming payment: a dishonored return restores the credit and moves it to `COMPLETED`. A returned payout stays `FAILED`, since it has already been refunded. Each step shows on the returned side's `railDetails` |
+  | `REFUNDED` | Deprecated. A refund is reported on the transaction's `refund` object, and the status stays `FAILED` |
+  | `EXPIRED` | Quote has expired. Terminal |

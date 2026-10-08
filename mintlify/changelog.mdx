@@ -10,6 +10,29 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## List balance changes for periodic statements
+
+`GET /internal-accounts/{id}/balance-changes` returns every change to an internal account's
+balance between `startDate` and `endDate`, in the order the money moved. The window is
+half-open, so consecutive windows leave no gap and do not overlap. The response also
+carries the window's `openingBalance` and `closingBalance`, and the opening balance plus
+the sum of every `amount` across all pages equals the closing balance.
+
+Each change has an `id`, `amount`, `fee`, `effectiveAt`, and an optional `transactionId`
+that you can fetch from `GET /transactions/{transactionId}`. `fee` is the part of `amount`
+that is a fee, so do not add it on top of `amount`. A window whose card settlement has not
+closed returns `409 NOT_YET_AVAILABLE`. Retry once it has settled. To build a statement
+from these changes, see the guides for [cards](/cards/statements) and
+[payouts](/payouts-and-b2b/payment-flow/statements).
+
+## Business customers can omit `taxId` and `incorporatedOn`
+
+`businessInfo.taxId` and `businessInfo.incorporatedOn` are no longer required in the
+schema when you create a business customer. They are still required when the customer's
+currency uses direct customer-owned accounts, and Grid returns `400 INVALID_INPUT` naming
+the missing field. When you fund customers from an omnibus FBO account, you can omit them.
+For details, see [configuring customers](/ramps/onboarding/configuring-customers).
+
 ## API tokens can expire
 
 `ApiToken` has a new optional `expiresAt`. When it is present, requests made with that
@@ -28,6 +51,44 @@ integration changes. Generated clients now enforce it at build time.
 `200 OK` for a newly created quote or transfer, and the spec now says so instead of
 `201 Created`. The `202 Accepted` reply for a quote awaiting Strong Customer
 Authentication is unchanged.
+
+## `railDetails` on transaction sources and destinations
+
+Account and external-funding sources, and account destinations, carry a
+`railDetails` describing the rail transfer that moved funds for that side. It is a
+oneOf discriminated by `paymentRail`, and each rail has its own schema, status values,
+and bank account fields. It covers the rails below; a side that moved over any other
+rail has no `railDetails`, and the deprecated fields remain its source of rail
+details.
+
+| `paymentRail` | Schema | `status` values | Rail-specific fields |
+|---|---|---|---|
+| `ONCHAIN` | `OnChainRailDetails` | — | `transactionHash`, `network` |
+| `ACH`, `ACH_SAME_DAY` | `AchRailDetails` | `PENDING`, `SETTLED`, `RETURNED`, `RETURN_DISHONORED`, `RETURN_CONTESTED`, `REVERSED`, `FAILED` | `traceNumber`, `addenda`, `returnedAt`, `dishonoredAt`, `contestedAt`, `reversedAt` |
+| `WIRE` | `WireRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `imad`, `originatorToBeneficiaryInformation` |
+| `FEDNOW` | `FedNowRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `endToEndId`, `remittanceInformation` |
+| `RTP` | `RtpRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `endToEndId`, `remittanceInformation` |
+
+`railDetails.status` reports the transfer on its rail; the transaction's top-level
+`status` reports where the funds are now, and its webhook events are unchanged. A returned
+ACH payout still moves to `FAILED` with `PAYOUT_RETURNED` and is refunded as before; its
+destination's `railDetails` now also shows `RETURNED` with `returnedAt`. An ACH deposit
+returned after `COMPLETED` moves to `FAILED` and sends `INCOMING_PAYMENT.FAILED`, with the
+source's `railDetails` showing `RETURNED`. A transaction stays `COMPLETED` through a return
+only when a later step that can't be undone already used the funds.
+
+`FAILED` is no longer described as terminal. On an incoming payment, a dishonored return
+restores the credit and moves the transaction back to `COMPLETED`. A returned payout stays
+`FAILED`, since it has already been refunded. Either way the ACH `railDetails` records the
+step: `RETURN_DISHONORED` with `dishonoredAt`, and `RETURN_CONTESTED` with `contestedAt` if
+the dishonor is contested. Only `EXPIRED` is terminal; apply each status webhook as it arrives. `TransactionStatus.REFUNDED`
+is deprecated: a refund is reported on the transaction's `refund` object.
+
+The flat originator fields on the external funding source (`accountHolderName`, `accountIdentifier`,
+`bankName`, `bankIdentifier`, `paymentRail`, `remittanceInformation`, `endToEndId`,
+`traceNumber`) are deprecated, as is `onChainTransaction`. They remain populated alongside
+`railDetails`, and on rails without a `railDetails` variant, such as SWIFT, they are the only
+source of the originator's details.
 
 </Update>
 

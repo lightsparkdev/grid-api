@@ -1,0 +1,74 @@
+title: ACH Transfer
+description: A transfer over the ACH network.
+allOf:
+  - $ref: ./BaseUsdBankRailDetails.yaml
+  - type: object
+    required:
+      - paymentRail
+      - status
+    properties:
+      paymentRail:
+        type: string
+        enum:
+          - ACH
+          - ACH_SAME_DAY
+      status:
+        type: string
+        enum:
+          - PENDING
+          - SETTLED
+          - RETURNED
+          - RETURN_DISHONORED
+          - RETURN_CONTESTED
+          - REVERSED
+          - FAILED
+        description: |-
+          Status of the entry on the ACH network.
+
+          | Status | Description |
+          |--------|-------------|
+          | `PENDING` | Submitted to the ACH network and not yet settled. |
+          | `SETTLED` | The entry settled. |
+          | `RETURNED` | The receiving bank returned the entry, before or after it settled. |
+          | `RETURN_DISHONORED` | The originating bank dishonored the return, so the returned funds came back. |
+          | `RETURN_CONTESTED` | The receiving bank contested the dishonor, so the funds went back again. |
+          | `REVERSED` | The originator reversed the entry after it settled. |
+          | `FAILED` | The entry was rejected before submission and no funds moved. |
+
+          A return, dishonor or contest can arrive days after the step before it. This status
+          reports the ACH entry; the transaction's top-level `status` reports where the funds
+          are now. A return moves the transaction to `FAILED`. On an incoming payment, a
+          dishonor brings the credit back and moves it to `COMPLETED`, and a contest moves it
+          to `FAILED` again. A returned payout stays `FAILED` through a dishonor, since it has
+          already been refunded; the rail status still records the dishonor.
+        example: SETTLED
+      traceNumber:
+        type: string
+        description: 15-digit ACH trace number of the entry.
+        example: '021000020123456'
+      addenda:
+        type: string
+        description: >-
+          Payment-related text carried in the entry's addenda record. On payments you
+          originate, this is the `remittanceInformation` you provided.
+        example: 'INV-12345'
+      returnedAt:
+        type: string
+        format: date-time
+        description: When the receiving bank returned the entry. Present once the entry has been returned, including after a later dishonor or contest.
+        example: '2026-10-01T14:00:00Z'
+      dishonoredAt:
+        type: string
+        format: date-time
+        description: When the originating bank dishonored the return. Present once `status` has reached `RETURN_DISHONORED`.
+        example: '2026-10-04T14:00:00Z'
+      contestedAt:
+        type: string
+        format: date-time
+        description: When the receiving bank contested the dishonor. Present when `status` is `RETURN_CONTESTED`.
+        example: '2026-10-07T14:00:00Z'
+      reversedAt:
+        type: string
+        format: date-time
+        description: When the originator reversed the entry. Present when `status` is `REVERSED`.
+        example: '2026-10-01T14:00:00Z'

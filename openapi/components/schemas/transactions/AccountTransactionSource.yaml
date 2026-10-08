@@ -14,9 +14,12 @@ allOf:
         type: string
         description: Source account identifier
         example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+      railDetails:
+        $ref: ./RailDetailsOneOf.yaml
       onChainTransaction:
         $ref: ./OnChainTransaction.yaml
+        deprecated: true
         description: >-
-          On-chain transaction that delivered funds from this source, when the source is an
-          external crypto wallet. Populated once the crypto transfer has settled.
+          Deprecated. Use `railDetails`, which carries the same hash and network when
+          `paymentRail` is `ONCHAIN`.
     description: Source account details

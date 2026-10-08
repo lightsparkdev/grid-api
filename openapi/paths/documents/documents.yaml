@@ -5,6 +5,23 @@ post:
     The request must use multipart/form-data with the file in the `file` field
     and metadata in the remaining fields.
 
+    Every upload requires `file`, `documentType`, `country`, and
+    `documentHolder`. Identity documents require more fields:
+
+    | `documentType` | Also required | `side` |
+    | -------------- | ------------- | ------ |
+    | `PASSPORT` | `documentNumber`, `issuingAuthority` | Not allowed |
+    | `DRIVERS_LICENSE` | `documentNumber`, `issuingAuthority` | Required |
+    | `NATIONAL_ID` | `documentNumber`, `issuingAuthority` | Required |
+    | Any other type | None | Optional |
+
+    Where `side` is required, upload the `FRONT` and `BACK` as two separate
+    documents. A driver's license issued in Brazil (`country` is `BR`) is
+    the exception: upload it as one image and omit `side`.
+
+    A missing required field, or a `side` that isn't allowed, returns
+    `400 INVALID_INPUT`.
+
     Supported file types: `application/pdf`, `image/jpeg`, and `image/png`.
     Grid matches on the `Content-Type` of the multipart part, not the file
     extension. Any other type, and any file over 10 MB, returns

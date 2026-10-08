@@ -1,0 +1,18 @@
+title: US Bank Account Details
+type: object
+description: >-
+  The account on the other end of the transfer: the sender's account on a source,
+  the recipient's account on a destination.
+properties:
+  accountHolderName:
+    type: string
+    description: Name of the account holder.
+    example: John Sender
+  routingNumber:
+    type: string
+    description: 9-digit ABA routing number of the account's bank.
+    example: '021000021'
+  accountNumber:
+    type: string
+    description: Account number, masked to its last four digits.
+    example: '****6789'
