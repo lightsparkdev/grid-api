@@ -201,19 +201,9 @@ HPKE-encrypt `{otp_code, public_key}` to the target bundle:
 ENC_BUNDLE=$($SIGN encrypt-otp "$OTP_TARGET" "$PUB_HEX" "$OTP")
 ```
 
-`$ENC_BUNDLE` is the JSON text `{"encappedPublic":"...","ciphertext":"..."}`.
-The API expects that text as a **string** value of `encryptedOtpBundle`, not
-as a nested object. Build the request body with `jq` so it is escaped
-correctly, and save it to a file so both verify legs send the exact same
-bytes:
-
-```bash
-jq -n --arg bundle "$ENC_BUNDLE" \
-  '{type: "EMAIL_OTP", encryptedOtpBundle: $bundle}' \
-  > /tmp/verify-body.json
-```
-
-The saved body looks like this:
+`encrypt-otp` prints a JSON **string literal**, quotes and escapes included,
+so `$ENC_BUNDLE` can be spliced straight into a request body as the value of
+`encryptedOtpBundle`. The resulting body looks like this:
 
 ```json
 {
@@ -222,8 +212,9 @@ The saved body looks like this:
 }
 ```
 
-> If you splice `$ENC_BUNDLE` directly into the body as an object, verify
-> fails with `{"code":"INVALID_INPUT","reason":"Invalid wallet request."}`.
+> Don't wrap `$ENC_BUNDLE` in another layer of quoting (for example
+> `jq --arg`): that double-encodes the bundle and verify returns `PROCESSING`
+> forever or `INVALID_INPUT`.
 
 ### 3.4 Verify (two-step) and obtain the session
 
@@ -232,7 +223,7 @@ The saved body looks like this:
 
 ```bash
 VERIFY1=$(g -X POST -H 'Content-Type: application/json' \
-  -d @/tmp/verify-body.json \
+  -d '{"type": "EMAIL_OTP", "encryptedOtpBundle": '"$ENC_BUNDLE"'}' \
   "$GRID_BASE_URL/auth/credentials/$CRED_ID/verify")
 
 VERIFY_PAYLOAD=$(echo "$VERIFY1" | jq -r .payloadToSign)
@@ -252,7 +243,7 @@ headers. This returns the session.
 VERIFY2=$(g -X POST -H 'Content-Type: application/json' \
   -H "Grid-Wallet-Signature: $VERIFY_STAMP" \
   -H "Request-Id: $VERIFY_REQ_ID" \
-  -d @/tmp/verify-body.json \
+  -d '{"type": "EMAIL_OTP", "encryptedOtpBundle": '"$ENC_BUNDLE"'}' \
   "$GRID_BASE_URL/auth/credentials/$CRED_ID/verify")
 ```
 
@@ -266,7 +257,7 @@ while [ "$(echo "$VERIFY2" | jq -r .status)" = "PROCESSING" ]; do
   VERIFY2=$(g -X POST -H 'Content-Type: application/json' \
     -H "Grid-Wallet-Signature: $VERIFY_STAMP" \
     -H "Request-Id: $VERIFY_REQ_ID" \
-    -d @/tmp/verify-body.json \
+    -d '{"type": "EMAIL_OTP", "encryptedOtpBundle": '"$ENC_BUNDLE"'}' \
     "$GRID_BASE_URL/auth/credentials/$CRED_ID/verify")
 done
 
