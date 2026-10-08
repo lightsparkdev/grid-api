@@ -3415,6 +3415,23 @@ paths:
         The request must use multipart/form-data with the file in the `file` field
         and metadata in the remaining fields.
 
+        Every upload requires `file`, `documentType`, `country`, and
+        `documentHolder`. Identity documents require more fields:
+
+        | `documentType` | Also required | `side` |
+        | -------------- | ------------- | ------ |
+        | `PASSPORT` | `documentNumber`, `issuingAuthority` | Not allowed |
+        | `DRIVERS_LICENSE` | `documentNumber`, `issuingAuthority` | Required |
+        | `NATIONAL_ID` | `documentNumber`, `issuingAuthority` | Required |
+        | Any other type | None | Optional |
+
+        Where `side` is required, upload the `FRONT` and `BACK` as two separate
+        documents. A driver's license issued in Brazil (`country` is `BR`) is
+        the exception: upload it as one image and omit `side`.
+
+        A missing required field, or a `side` that isn't allowed, returns
+        `400 INVALID_INPUT`.
+
         Supported file types: `application/pdf`, `image/jpeg`, and `image/png`.
         Grid matches on the `Content-Type` of the multipart part, not the file
         extension. Any other type, and any file over 10 MB, returns
@@ -3590,6 +3607,12 @@ paths:
         A file rejected on upload with `422 DOCUMENT_REJECTED` never creates a
         document, so there is nothing to replace. Retry those with
         `POST /documents`.
+
+        The request follows the same per-type field rules as
+        `POST /documents`, except that `documentHolder` isn't sent. Grid
+        overwrites every metadata field with the values in this request, so
+        resend `documentNumber`, `issuingAuthority`, and `side` even if they
+        haven't changed.
 
         Supported file types: `application/pdf`, `image/jpeg`, and `image/png`.
         Grid matches on the `Content-Type` of the multipart part, not the file
@@ -24741,7 +24764,13 @@ components:
           enum:
             - FRONT
             - BACK
-          description: Which side of the document (for two-sided documents like driver's licenses)
+          description: |
+            Which side of the document this image shows. Required when
+            `documentType` is `DRIVERS_LICENSE` or `NATIONAL_ID`: upload the
+            `FRONT` and `BACK` as two separate documents. A `PASSPORT`, or a
+            `DRIVERS_LICENSE` issued in Brazil (`country` is `BR`), is a single
+            image: sending `side` for either returns `400 INVALID_INPUT`. Optional
+            for all other document types.
           example: FRONT
         country:
           type: string
@@ -24750,12 +24779,18 @@ components:
         documentNumber:
           type: string
           maxLength: 100
-          description: Document identification number (e.g., passport number)
+          description: |
+            Identification number printed on the document, such as a passport
+            number. Required when `documentType` is `PASSPORT`,
+            `DRIVERS_LICENSE`, or `NATIONAL_ID`.
           example: A12345678
         issuingAuthority:
           type: string
           maxLength: 255
-          description: Name of the government agency or organization that issued the document
+          description: |
+            Name of the government agency or organization that issued the
+            document. Required when `documentType` is `PASSPORT`,
+            `DRIVERS_LICENSE`, or `NATIONAL_ID`.
           example: U.S. Department of State
     DocumentUploadRequest:
       title: Document Upload Request
