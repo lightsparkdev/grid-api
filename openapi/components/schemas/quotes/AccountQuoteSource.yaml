@@ -31,6 +31,6 @@ allOf:
               Options for the ACH debit Grid originates when `accountId` is an
               external US bank account. `companyEntryDescription` sets the text
               the account holder's bank shows on their statement for the debit.
-              Sending `railOptions` with any other source returns
-              `400 INVALID_INPUT`.
+              Sending `railOptions` when `accountId` is any other account, such as
+              an internal account, returns `400 INVALID_INPUT`.
     description: Source account details
