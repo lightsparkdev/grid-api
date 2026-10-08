@@ -26,8 +26,10 @@
  *   encrypt-otp <otpEncryptionTargetBundle> <pubHex> <otpCode>
  *       HPKE-encrypt `{otp_code, public_key}` under the target bundle
  *       returned by `POST /auth/credentials/{id}/challenge`. Prints the
- *       `encryptedOtpBundle` JSON to pass on
- *       `POST /auth/credentials/{id}/verify`.
+ *       `{encappedPublic, ciphertext}` JSON text. Pass it as the *string*
+ *       value of `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`
+ *       (for example `jq -n --arg b "$OUT" '{type:"EMAIL_OTP",
+ *       encryptedOtpBundle:$b}'`), not as a nested JSON object.
  *
  *   decrypt-bundle <bundle> <privHex>
  *       HPKE-open the `encryptedSessionSigningKey` returned by the legacy

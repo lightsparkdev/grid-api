@@ -195,10 +195,17 @@ Read the OTP code from the email and assign to `$OTP`.
 
 ### 3.3 Build the encrypted OTP bundle
 
-HPKE-encrypt `{otp_code, public_key}` to the target bundle:
+HPKE-encrypt `{otp_code, public_key}` to the target bundle, then build the
+verify request body once and reuse it for both legs. `encryptedOtpBundle`
+is a **string** field that holds the `{"encappedPublic":...,"ciphertext":...}`
+JSON text, so wrap the helper output with `jq` rather than splicing it into
+the body as a nested object. Sending it as a raw object fails with
+`{"code":"INVALID_INPUT","reason":"Invalid wallet request."}`.
 
 ```bash
 ENC_BUNDLE=$($SIGN encrypt-otp "$OTP_TARGET" "$PUB_HEX" "$OTP")
+jq -n --arg b "$ENC_BUNDLE" '{type: "EMAIL_OTP", encryptedOtpBundle: $b}' \
+  > /tmp/verify-body.json
 ```
 
 ### 3.4 Verify (two-step) and obtain the session
@@ -209,7 +216,7 @@ TEK private key and retry with headers:
 ```bash
 # First leg — get the verification challenge
 VERIFY1=$(g -X POST -H 'Content-Type: application/json' \
-  -d '{"type": "EMAIL_OTP", "encryptedOtpBundle": '"$ENC_BUNDLE"'}' \
+  -d @/tmp/verify-body.json \
   "$GRID_BASE_URL/auth/credentials/$CRED_ID/verify")
 
 VERIFY_PAYLOAD=$(echo "$VERIFY1" | jq -r .payloadToSign)
@@ -217,12 +224,17 @@ VERIFY_REQ_ID=$(echo "$VERIFY1" | jq -r .requestId)
 
 VERIFY_STAMP=$($SIGN stamp "$PRIV_HEX" "$VERIFY_PAYLOAD")
 
-# Signed retry — complete login
-VERIFY2=$(g -X POST -H 'Content-Type: application/json' \
-  -H "Grid-Wallet-Signature: $VERIFY_STAMP" \
-  -H "Request-Id: $VERIFY_REQ_ID" \
-  -d '{"type": "EMAIL_OTP", "encryptedOtpBundle": '"$ENC_BUNDLE"'}' \
-  "$GRID_BASE_URL/auth/credentials/$CRED_ID/verify")
+# Signed retry — complete login. A 200 with {"status":"PROCESSING"} means
+# the wallet provider is still finishing the login: re-send the identical
+# request (same body, same headers) until the session comes back.
+until
+  VERIFY2=$(g -X POST -H 'Content-Type: application/json' \
+    -H "Grid-Wallet-Signature: $VERIFY_STAMP" \
+    -H "Request-Id: $VERIFY_REQ_ID" \
+    -d @/tmp/verify-body.json \
+    "$GRID_BASE_URL/auth/credentials/$CRED_ID/verify")
+  [ "$(echo "$VERIFY2" | jq -r .status)" != "PROCESSING" ]
+do sleep 2; done
 
 echo "Session expires: $(echo "$VERIFY2" | jq -r .expiresAt)"
 
