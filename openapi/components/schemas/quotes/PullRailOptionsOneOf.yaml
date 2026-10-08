@@ -1,0 +1,9 @@
+description: >-
+  Options for the debit Grid originates to pull funds from the source account.
+  `paymentRail` selects the rail and determines which other fields are accepted.
+oneOf:
+  - $ref: ./AchPullRailOptions.yaml
+discriminator:
+  propertyName: paymentRail
+  mapping:
+    ACH: ./AchPullRailOptions.yaml

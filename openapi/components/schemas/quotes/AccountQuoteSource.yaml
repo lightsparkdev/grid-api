@@ -26,7 +26,7 @@ allOf:
         example: Customer:019542f5-b3e7-1d02-0000-000000000001
       railOptions:
         allOf:
-          - $ref: ./AchPullRailOptions.yaml
+          - $ref: ./PullRailOptionsOneOf.yaml
           - description: >-
               Options for the ACH debit Grid originates when `accountId` is an
               external US bank account. `companyEntryDescription` sets the text

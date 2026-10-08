@@ -26529,6 +26529,14 @@ components:
           example: ACH
         companyEntryDescription:
           $ref: '#/components/schemas/CompanyEntryDescription'
+    PullRailOptionsOneOf:
+      description: Options for the debit Grid originates to pull funds from the source account. `paymentRail` selects the rail and determines which other fields are accepted.
+      oneOf:
+        - $ref: '#/components/schemas/AchPullRailOptions'
+      discriminator:
+        propertyName: paymentRail
+        mapping:
+          ACH: '#/components/schemas/AchPullRailOptions'
     AccountQuoteSource:
       title: Account
       allOf:
@@ -26552,7 +26560,7 @@ components:
               example: Customer:019542f5-b3e7-1d02-0000-000000000001
             railOptions:
               allOf:
-                - $ref: '#/components/schemas/AchPullRailOptions'
+                - $ref: '#/components/schemas/PullRailOptionsOneOf'
                 - description: Options for the ACH debit Grid originates when `accountId` is an external US bank account. `companyEntryDescription` sets the text the account holder's bank shows on their statement for the debit. Sending `railOptions` when `accountId` is any other account, such as an internal account, returns `400 INVALID_INPUT`.
           description: Source account details
     RealtimeFundingQuoteSource:
