@@ -18,9 +18,9 @@ half-open, so consecutive windows leave no gap and do not overlap. The response 
 carries the window's `openingBalance` and `closingBalance`, and the opening balance plus
 the sum of every `amount` across all pages equals the closing balance.
 
-Each change has an `id`, `amount`, `fee`, `effectiveAt`, and an optional `transactionId`
-that you can fetch from `GET /transactions/{transactionId}`. `fee` is the part of `amount`
-that is a fee, so do not add it on top of `amount`. A window whose card settlement has not
+Each change has an `id`, `amount`, `effectiveAt`, and an optional `transactionId`
+that you can fetch from `GET /transactions/{transactionId}`. Fees are already inside
+`amount`; a transaction's total fee is `fees` on the transaction. A window whose card settlement has not
 closed returns `409 NOT_YET_AVAILABLE`. Retry once it has settled. To build a statement
 from these changes, see the guides for [cards](/cards/statements) and
 [payouts](/payouts-and-b2b/payment-flow/statements).

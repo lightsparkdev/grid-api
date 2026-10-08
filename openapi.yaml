@@ -6496,7 +6496,7 @@ paths:
 
         A window whose card settlement has not closed is refused with `409 NOT_YET_AVAILABLE`, because its figures could still change. Retry once it has settled.
 
-        **Fees are inside the changes.** A fee Grid charges comes out of the balance, so it is already in `amount`: inside a send's change, or a change of its own for a withdrawal's fee. Each change's `fee` says how much of its `amount` was a fee, negative when charged and positive when refunded. To show a fee separately, split the change into `amount - fee` and `fee`. Never add `fee` on top of `amount`, or the identity stops holding. Card transactions carry no Grid fee.
+        A fee is already inside a change's `amount`. For the fee itself, read `fees` on the change's transaction, counting each transaction once.
       operationId: listInternalAccountBalanceChanges
       tags:
         - Periodic Statements
@@ -27367,7 +27367,6 @@ components:
       required:
         - id
         - amount
-        - fee
         - effectiveAt
       properties:
         id:
@@ -27380,10 +27379,6 @@ components:
           example: Transaction:019542f5-b3e7-1d02-0000-000000000004
         amount:
           $ref: '#/components/schemas/CurrencyAmount'
-        fee:
-          allOf:
-            - $ref: '#/components/schemas/CurrencyAmount'
-          description: 'The part of `amount` that is a fee, signed the same way: negative for a fee charged, positive for a fee refunded, zero when the change carries no fee. Already included in `amount`, so never add it on top. Sum it across a period for the period''s total fees.'
         effectiveAt:
           type: string
           format: date-time
