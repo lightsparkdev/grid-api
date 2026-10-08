@@ -85,7 +85,10 @@ get:
     - name: cursor
       in: query
       required: false
-      description: Cursor for pagination (returned from previous request)
+      description: >-
+        Cursor for pagination: the `nextCursor` from the previous page,
+        unchanged. Send it with the same account, `startDate` and `endDate` as
+        that page. A cursor expires 24 hours after it is issued.
       schema:
         type: string
   responses:
@@ -100,7 +103,8 @@ get:
         Bad request. Returned when `startDate` or `endDate` is missing, has no
         timezone, or is in the future, when `startDate` is not before
         `endDate`, when
-        `cursor` was not issued by this endpoint, or when the account has no
+        `cursor` was not issued by this endpoint for the same account and
+        window or has expired, or when the account has no
         statement of its own.
       content:
         application/json:
