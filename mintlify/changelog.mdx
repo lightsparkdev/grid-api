@@ -25,6 +25,10 @@ that the recipient's bank shows on their statement:
 }
 ```
 
+The same `railOptions` is accepted on an `ACCOUNT` source when Grid pulls from an
+external US bank account over ACH, so the description also appears on the account
+holder's statement for the debit.
+
 Grid uses its default description when you omit it. ACH `railDetails` on transactions
 and webhooks reports the description as `companyEntryDescription`.
 

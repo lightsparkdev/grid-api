@@ -1,0 +1,12 @@
+type: string
+minLength: 1
+maxLength: 10
+pattern: '^[ -~]+$'
+description: >-
+  The ACH Company Entry Description: the text the account holder's bank shows
+  on their statement to describe this entry, such as `PAYROLL` or `INVOICE`.
+  Printable ASCII, up to 10 characters. Grid uses its default when omitted.
+  `MISC`, all zeros, and the values NACHA reserves for system entries
+  (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) return
+  `400 INVALID_INPUT`.
+example: PAYROLL

@@ -4556,6 +4556,22 @@ paths:
                   immediatelyExecute: true
                   remittanceInformation: INV-12345
                   description: Same-currency payout, no exchange required.
+              achPullToAccount:
+                summary: ACH pull from an external account into an internal account (immediate execution)
+                value:
+                  source:
+                    sourceType: ACCOUNT
+                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    railOptions:
+                      paymentRail: ACH
+                      companyEntryDescription: ACMEFUND
+                  destination:
+                    destinationType: ACCOUNT
+                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  lockedCurrencySide: SENDING
+                  lockedCurrencyAmount: 50000
+                  immediatelyExecute: true
+                  description: Top up from linked bank account
               accountToAccount:
                 summary: Account to Account Transfer
                 value:
@@ -26488,6 +26504,29 @@ components:
       properties:
         sourceType:
           $ref: '#/components/schemas/QuoteSourceType'
+    CompanyEntryDescription:
+      type: string
+      minLength: 1
+      maxLength: 10
+      pattern: ^[ -~]+$
+      description: 'The ACH Company Entry Description: the text the account holder''s bank shows on their statement to describe this entry, such as `PAYROLL` or `INVOICE`. Printable ASCII, up to 10 characters. Grid uses its default when omitted. `MISC`, all zeros, and the values NACHA reserves for system entries (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) return `400 INVALID_INPUT`.'
+      example: PAYROLL
+    AchPullRailOptions:
+      title: ACH pull
+      description: Options for an ACH debit Grid originates from an external US bank account.
+      type: object
+      additionalProperties: false
+      required:
+        - paymentRail
+      properties:
+        paymentRail:
+          type: string
+          enum:
+            - ACH
+          description: The rail Grid pulls the funds over.
+          example: ACH
+        companyEntryDescription:
+          $ref: '#/components/schemas/CompanyEntryDescription'
     AccountQuoteSource:
       title: Account
       allOf:
@@ -26509,6 +26548,10 @@ components:
               type: string
               description: The customer on whose behalf the transaction is being initiated. Required when funding from a `BULK_SETTLEMENT` account. The customer is never the account owner, because the platform owns the account. When funding from an FBO account, this field is optional. If you omit it, the transaction is initiated on behalf of the platform. For any other account, it defaults to the account owner's customerId.
               example: Customer:019542f5-b3e7-1d02-0000-000000000001
+            railOptions:
+              allOf:
+                - $ref: '#/components/schemas/AchPullRailOptions'
+                - description: Options for the ACH debit Grid originates when `accountId` is an external US bank account. `companyEntryDescription` sets the text the account holder's bank shows on their statement for the debit. Sending `railOptions` with any other source returns `400 INVALID_INPUT`.
           description: Source account details
     RealtimeFundingQuoteSource:
       title: Real-time Funding
@@ -26575,12 +26618,7 @@ components:
           description: The ACH rail to send the payment over. See `PaymentRail` for how `ACH` and `ACH_SAME_DAY` settle.
           example: ACH
         companyEntryDescription:
-          type: string
-          minLength: 1
-          maxLength: 10
-          pattern: ^[ -~]+$
-          description: 'The ACH Company Entry Description: the text the recipient''s bank shows on their statement to describe this payment, such as `PAYROLL` or `INVOICE`. Printable ASCII, up to 10 characters. Grid uses its default when omitted. `MISC`, all zeros, and the values NACHA reserves for system entries (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) return `400 INVALID_INPUT`.'
-          example: PAYROLL
+          $ref: '#/components/schemas/CompanyEntryDescription'
     BasicRailOptions:
       title: Other rails
       description: Selects a rail that takes no rail-specific options.

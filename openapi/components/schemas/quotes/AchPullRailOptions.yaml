@@ -1,5 +1,6 @@
-title: ACH
-description: Options for a payment sent over ACH.
+title: ACH pull
+description: >-
+  Options for an ACH debit Grid originates from an external US bank account.
 type: object
 additionalProperties: false
 required:
@@ -9,10 +10,7 @@ properties:
     type: string
     enum:
       - ACH
-      - ACH_SAME_DAY
-    description: >-
-      The ACH rail to send the payment over. See `PaymentRail` for how `ACH` and
-      `ACH_SAME_DAY` settle.
+    description: The rail Grid pulls the funds over.
     example: ACH
   companyEntryDescription:
     $ref: ./CompanyEntryDescription.yaml
