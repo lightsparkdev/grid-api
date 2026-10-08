@@ -26509,7 +26509,9 @@ components:
       minLength: 1
       maxLength: 10
       pattern: ^[ -~]+$
-      description: 'The ACH Company Entry Description: the text the account holder''s bank shows on their statement to describe this entry, such as `PAYROLL` or `INVOICE`. Printable ASCII, up to 10 characters. Grid uses its default when omitted. `MISC`, all zeros, and the values NACHA reserves for system entries (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) return `400 INVALID_INPUT`.'
+      not:
+        pattern: ^ *(0*|[Mm][Ii][Ss][Cc]|[Rr][Ee][Vv][Ee][Rr][Ss][Aa][Ll]|[Rr][Ee][Tt][Uu][Rr][Nn] [Ff][Ee][Ee]|[Aa][Uu][Tt][Oo][Ee][Nn][Rr][Oo][Ll][Ll]|[Nn][Oo][Nn][Ss][Ee][Tt][Tt][Ll][Ee][Dd]|[Rr][Ee][Cc][Ll][Aa][Ii][Mm]) *$
+      description: 'The ACH Company Entry Description: the text the account holder''s bank shows on their statement to describe this entry, such as `PAYROLL` or `INVOICE`. Printable ASCII, up to 10 characters. Grid uses its default when omitted. Blank values, all zeros, `MISC`, and the values NACHA reserves for system entries (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) are rejected with `400 INVALID_INPUT`, in any letter case and ignoring surrounding spaces.'
       example: PAYROLL
     AchPullRailOptions:
       title: ACH pull
