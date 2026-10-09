@@ -38,14 +38,7 @@ properties:
     description: The UMA address of the invitee
     example: $invitee@uma.domain
   status:
-    type: string
-    enum:
-      - PENDING
-      - CLAIMED
-      - EXPIRED
-      - CANCELLED
-    description: The status of the invitation
-    example: PENDING
+    $ref: ./UmaInvitationStatus.yaml
   firstName:
     type: string
     description: The inviter's first name. Will be displayed when the recipient clicks the invite link

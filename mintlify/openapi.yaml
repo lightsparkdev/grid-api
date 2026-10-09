@@ -16630,6 +16630,13 @@ components:
             failedAttempts:
               type: integer
           additionalProperties: true
+    SecurityEventType:
+      type: string
+      enum:
+        - RESET_PASSWORD_COMPLETED
+        - FAILED_LOGIN_ATTEMPT
+      description: A security event on a customer's account that affects Strong Customer Authentication.
+      example: FAILED_LOGIN_ATTEMPT
     RecordSecurityEventRequest:
       type: object
       description: Records a client-side security event for the customer so Grid can maintain the customer's login-security state (SCA session revocation and failed-login lockout).
@@ -16638,10 +16645,7 @@ components:
         - endUserIpAddress
       properties:
         eventType:
-          type: string
-          enum:
-            - RESET_PASSWORD_COMPLETED
-            - FAILED_LOGIN_ATTEMPT
+          $ref: '#/components/schemas/SecurityEventType'
           description: |
             The security event to record:
 
@@ -16649,7 +16653,6 @@ components:
             |-------|--------|
             | `RESET_PASSWORD_COMPLETED` | Revokes every active SCA session for the customer and clears the failed-login counter. |
             | `FAILED_LOGIN_ATTEMPT` | Increments the cumulative failed-login counter and escalates the lockout at each milestone: 5 attempts → 15 minutes, 6 → 30 minutes, 7 → 1 hour, 8 → 24 hours, 9 or more → suspension. |
-          example: FAILED_LOGIN_ATTEMPT
         endUserIpAddress:
           type: string
           description: The IP address of the end user's device the event was observed from, recorded against the event by the SCA provider. Supply the customer's address, not your server's — it feeds the provider's risk assessment and the adaptive-authentication signals derived from this event.
@@ -16663,12 +16666,8 @@ components:
         - failedAttempts
       properties:
         eventType:
-          type: string
-          enum:
-            - RESET_PASSWORD_COMPLETED
-            - FAILED_LOGIN_ATTEMPT
+          $ref: '#/components/schemas/SecurityEventType'
           description: The event that was recorded.
-          example: FAILED_LOGIN_ATTEMPT
         suspended:
           type: boolean
           description: Whether the customer's login is currently suspended (locked with no automatic expiry). A suspended customer must go through a password reset (`RESET_PASSWORD_COMPLETED`) to clear the lockout.
@@ -16723,6 +16722,20 @@ components:
           format: date-time
           description: Absolute UTC timestamp at the end of the reset window. Omitted when one is not returned.
           example: '2025-10-03T12:30:00Z'
+    TwoFactorResetState:
+      type: string
+      enum:
+        - INITIATED
+        - PENDING_REVIEW
+        - LIVENESS_PASSED
+        - COMPLETED
+        - REJECTED
+        - EXPIRED
+      description: |-
+        The reset status.
+        | Value | Terminal | Meaning | |-------|----------|---------| | `INITIATED` | no | Reset started; liveness not yet submitted. Keep polling. | | `PENDING_REVIEW` | no | Liveness submitted; under review. Keep polling. | | `LIVENESS_PASSED` | no | Liveness passed; call the complete endpoint to finish the reset. | | `COMPLETED` | **yes** | Reset finished; the lost factor is cleared and re-enrollment can begin. | | `REJECTED` | **yes** | Liveness failed. Stop polling; start a new reset. | | `EXPIRED` | **yes** | The reset window closed before it completed. Stop polling; start a new reset. |
+        Stop polling on any terminal value.
+      example: INITIATED
     TwoFactorResetStatus:
       type: object
       description: The status of an in-progress 2FA reset, polled until it reaches a terminal value.
@@ -16732,19 +16745,7 @@ components:
         - expiresAt
       properties:
         status:
-          type: string
-          enum:
-            - INITIATED
-            - PENDING_REVIEW
-            - LIVENESS_PASSED
-            - COMPLETED
-            - REJECTED
-            - EXPIRED
-          description: |-
-            The reset status.
-            | Value | Terminal | Meaning | |-------|----------|---------| | `INITIATED` | no | Reset started; liveness not yet submitted. Keep polling. | | `PENDING_REVIEW` | no | Liveness submitted; under review. Keep polling. | | `LIVENESS_PASSED` | no | Liveness passed; call the complete endpoint to finish the reset. | | `COMPLETED` | **yes** | Reset finished; the lost factor is cleared and re-enrollment can begin. | | `REJECTED` | **yes** | Liveness failed. Stop polling; start a new reset. | | `EXPIRED` | **yes** | The reset window closed before it completed. Stop polling; start a new reset. |
-            Stop polling on any terminal value.
-          example: INITIATED
+          $ref: '#/components/schemas/TwoFactorResetState'
         factor:
           $ref: '#/components/schemas/ScaFactor'
           description: The factor being reset.
@@ -24698,6 +24699,13 @@ components:
         **Business — Ownership structure** — SHAREHOLDER_REGISTER, TRUST_AGREEMENT, PARTNERSHIP_AGREEMENT
         **Proof of address** — UTILITY_BILL, RENT_OR_LEASE_AGREEMENT, ELECTRICITY_BILL, BANK_STATEMENT, TAX_RETURN
       example: PASSPORT
+    DocumentSide:
+      type: string
+      enum:
+        - FRONT
+        - BACK
+      description: Which side of a two-sided document, such as a driver's license or national ID, an image shows.
+      example: FRONT
     Document:
       type: object
       required:
@@ -24719,12 +24727,8 @@ components:
         documentType:
           $ref: '#/components/schemas/DocumentType'
         side:
-          type: string
-          enum:
-            - FRONT
-            - BACK
+          $ref: '#/components/schemas/DocumentSide'
           description: Which side of the document this upload represents. Relevant for two-sided documents like driver's licenses or national IDs.
-          example: FRONT
         country:
           type: string
           description: Country that issued the document (ISO 3166-1 alpha-2)
@@ -24790,10 +24794,7 @@ components:
         documentType:
           $ref: '#/components/schemas/DocumentType'
         side:
-          type: string
-          enum:
-            - FRONT
-            - BACK
+          $ref: '#/components/schemas/DocumentSide'
           description: |
             Which side of the document this image shows. Required when
             `documentType` is `DRIVERS_LICENSE` or `NATIONAL_ID`: upload the
@@ -24801,7 +24802,6 @@ components:
             `DRIVERS_LICENSE` issued in Brazil (`country` is `BR`), is a single
             image: sending `side` for either returns `400 INVALID_INPUT`. Optional
             for all other document types.
-          example: FRONT
         country:
           type: string
           description: Country that issued the document (ISO 3166-1 alpha-2)
@@ -27017,6 +27017,15 @@ components:
           enum:
             - PENDING
             - PROCESSING
+    BulkCustomerImportJobStatus:
+      type: string
+      enum:
+        - PENDING
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+      description: Current status of the job
+      example: PROCESSING
     GridError:
       type: object
       title: GridError
@@ -27055,14 +27064,7 @@ components:
           description: Unique identifier for the bulk import job
           example: Job:019542f5-b3e7-1d02-0000-000000000006
         status:
-          type: string
-          enum:
-            - PENDING
-            - PROCESSING
-            - COMPLETED
-            - FAILED
-          description: Current status of the job
-          example: PROCESSING
+          $ref: '#/components/schemas/BulkCustomerImportJobStatus'
         progress:
           type: object
           required:
@@ -27125,6 +27127,15 @@ components:
           format: date-time
           description: When the invitation expires (if at all)
           example: '2025-09-01T14:30:00Z'
+    UmaInvitationStatus:
+      type: string
+      enum:
+        - PENDING
+        - CLAIMED
+        - EXPIRED
+        - CANCELLED
+      description: The status of the invitation
+      example: PENDING
     UmaInvitation:
       type: object
       required:
@@ -27166,14 +27177,7 @@ components:
           description: The UMA address of the invitee
           example: $invitee@uma.domain
         status:
-          type: string
-          enum:
-            - PENDING
-            - CLAIMED
-            - EXPIRED
-            - CANCELLED
-          description: The status of the invitation
-          example: PENDING
+          $ref: '#/components/schemas/UmaInvitationStatus'
         firstName:
           type: string
           description: The inviter's first name. Will be displayed when the recipient clicks the invite link
