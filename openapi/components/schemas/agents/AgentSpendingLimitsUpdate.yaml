@@ -3,7 +3,10 @@ description: Partial update to spending limits. Only provided fields will be upd
 properties:
   currency:
     type: string
-    description: ISO 4217 currency code that all amount limits are denominated in. Updating this recasts all existing limits into the new currency denomination.
+    description: >-
+      ISO 4217 currency code that all amount limits are denominated in. If
+      supplied, it must equal the existing policy currency; changing it returns
+      a 400 response.
     example: USD
   perTransactionLimit:
     type: integer

@@ -10,7 +10,9 @@ required:
 properties:
   currency:
     type: string
-    description: ISO 4217 currency code that all amount limits are denominated in.
+    description: >-
+      ISO 4217 currency code that all amount limits are denominated in. This
+      currency is immutable after the agent is created.
     example: USD
   perTransactionLimit:
     type: integer

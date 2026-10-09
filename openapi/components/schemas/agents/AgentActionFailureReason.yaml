@@ -1,0 +1,15 @@
+type: string
+enum:
+  - QUOTE_EXPIRED
+  - POLICY_DENIED
+  - AGENT_INACTIVE
+  - EXECUTION_FAILED
+description: |
+  Why an agent action has status `FAILED`.
+
+  | Reason | Description |
+  |--------|-------------|
+  | `QUOTE_EXPIRED` | The action's quote expired before execution |
+  | `POLICY_DENIED` | The agent policy no longer allowed the action |
+  | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
+  | `EXECUTION_FAILED` | Grid could not execute the approved action |

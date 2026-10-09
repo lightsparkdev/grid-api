@@ -79,7 +79,7 @@ tags:
   - name: Agent Management
     description: 'Endpoints for creating and managing agents (experimental), called by the partner''s backend using platform credentials. Covers the full agent lifecycle: creation, policy configuration, pausing, deletion, the device code installation flow, and approving or rejecting transactions initiated by agents.'
   - name: Agent Operations
-    description: Endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
+    description: Experimental endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
   - name: Cards
     description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage a card's funding source, and list card transactions.
   - name: Stablecoins
@@ -7476,17 +7476,17 @@ paths:
     post:
       summary: Create a delegated signing key
       description: |
-        Delegate Spark token-transaction signing authority for a card funding source backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested card and internal account to identify the wallet funding source, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
+        Delegate Spark token-transaction signing authority for a card funding source or agent backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested owner and internal account to identify the wallet, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
 
         1. Call `POST /auth/delegated-keys` with no signature headers. Grid generates the delegated keypair and the response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
 
         2. Use the session API keypair of a verified credential on the requested Embedded Wallet internal account to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The response is a second `202` with a new `payloadToSign`, `requestId`, and `expiresAt`.
 
-        3. Stamp the new `payloadToSign` with the same session keypair and retry once more with the new `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status. A provisioned `PENDING_AUTH` card using this funding source becomes `ACTIVE` automatically. Cards still provisioning remain `PROCESSING`; frozen and closed cards retain their status.
+        3. Stamp the new `payloadToSign` with the same session keypair and retry once more with the new `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status. For card keys, a provisioned `PENDING_AUTH` card using this funding source becomes `ACTIVE` automatically. Cards still provisioning remain `PROCESSING`; frozen and closed cards retain their status.
 
-        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the signer identity exists but holds no policies, so it cannot sign or revoke itself. Abandoned `PENDING` keys do not block creating another delegated key. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account in place of a session keypair; the platform never handles the key material.
+        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the signer identity exists but holds no policies, so it cannot sign or revoke itself. Abandoned `PENDING` keys do not block creating another delegated key. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account or for policy-approved agent actions in place of a session keypair; the platform never handles the key material.
 
-        Each card funding source may have at most one `ACTIVE` delegated key for its Embedded Wallet funding account; revoke the existing active key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by the public API. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
+        Each card funding source, or each agent and Embedded Wallet pair, may have at most one `ACTIVE` delegated key; revoke the existing active key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by the public API. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
       operationId: createDelegatedKey
       tags:
         - Embedded Wallet Auth
@@ -7522,7 +7522,7 @@ paths:
                   nickname: Card payments key
       responses:
         '201':
-          description: Delegated key created and policy granted. The key is `ACTIVE` and Grid may use it to stamp card-payment quote executions for this card funding source's Embedded Wallet funding account.
+          description: Delegated key created and policy granted. The key is `ACTIVE` and Grid may use it to stamp card-payment quote executions or policy-approved actions for the selected agent.
           content:
             application/json:
               schema:
@@ -7547,7 +7547,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DelegatedKeySignedRequestChallenge'
         '400':
-          description: Bad request
+          description: Bad request. Returned when both `cardId` and `agentId` are provided, or when neither owner id is provided.
           content:
             application/json:
               schema:
@@ -7559,13 +7559,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '404':
-          description: Card, card funding source, or Embedded Wallet funding account not found
+          description: Card, agent, card funding source, or Embedded Wallet account not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: An `ACTIVE` delegated key already exists for this card funding source. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one.
+          description: An `ACTIVE` delegated key already exists for this card funding source or agent and Embedded Wallet pair. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one.
           content:
             application/json:
               schema:
@@ -7964,6 +7964,280 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /agents/me/customer:
+    get:
+      summary: Get agent customer
+      description: Retrieve the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      operationId: agentGetCustomer
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndividualCustomer'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update agent customer
+      description: Update identity information for the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent's policy. The customer is inferred from the agent and cannot be selected by the request.
+      operationId: agentUpdateCustomer
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IndividualCustomerUpdateRequest'
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndividualCustomer'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/verifications:
+    post:
+      summary: Submit agent customer for verification
+      description: Submit the authenticated agent's individual customer for KYC verification. The response reports the current status and any identity fields that still need to be supplied. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      operationId: agentCreateVerification
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Verification status returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verification'
+        '400':
+          description: Bad request - Required identity information is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/kyc-link:
+    post:
+      summary: Generate an agent customer KYC link
+      description: Generate a single-use hosted KYC link for the authenticated agent's individual customer. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      operationId: agentCreateKycLink
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KycLinkCreateRequest'
+      responses:
+        '201':
+          description: KYC link generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycLinkResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '409':
+          description: Customer is not ready to begin hosted KYC
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/deposits:
+    post:
+      summary: Create an agent deposit
+      description: Create an Orchestra-backed deposit for the authenticated agent's customer. The returned target is a BOLT11 invoice for Lightning or an address for a supported chain. Requires the RECEIVE_FUNDS permission in the agent's policy.
+      operationId: agentCreateDeposit
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Unique identifier used to return the same deposit for retries.
+          schema:
+            type: string
+            maxLength: 255
+            example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentDepositCreateRequest'
+      responses:
+        '201':
+          description: Deposit created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDeposit'
+        '400':
+          description: Bad request - Unsupported deposit route or invalid amount
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent does not have the RECEIVE_FUNDS permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/deposits/{depositId}:
+    parameters:
+      - name: depositId
+        in: path
+        required: true
+        description: System-generated unique deposit identifier
+        schema:
+          type: string
+        example: AgentDeposit:019542f5-b3e7-1d02-0000-000000000001
+    get:
+      summary: Get an agent deposit
+      description: Retrieve an Orchestra-backed deposit created by the authenticated agent. Requires the RECEIVE_FUNDS permission in the agent's policy.
+      operationId: agentGetDeposit
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDeposit'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent does not have the RECEIVE_FUNDS permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Deposit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /agents/{agentId}:
     parameters:
       - name: agentId
@@ -8090,7 +8364,7 @@ paths:
     patch:
       summary: Update agent policy
       description: |
-        Partially update an agent's policy. Only provided fields will be updated; omitted fields retain their current values. Policy changes take effect immediately.
+        Partially update an agent's policy. Only provided fields will be updated; omitted fields retain their current values. Policy changes take effect immediately. The spending limits currency is immutable; attempting to change it returns a 400 response.
       operationId: updateAgentPolicy
       tags:
         - Agent Management
@@ -8689,8 +8963,8 @@ paths:
     post:
       summary: Execute a quote
       description: |
-        Execute a quote created by the authenticated agent. Requires the EXECUTE_QUOTES permission in the agent's policy.
-        If the agent's policy requires approval for this amount (based on execution mode or approval thresholds), the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
+        Execute a quote created by the authenticated agent. Requires the EXECUTE_QUOTES permission in the agent's policy. When the source is an `EMBEDDED_WALLET`, Grid signs with the agent's active delegated key for that wallet.
+        If the agent's policy requires approval for this amount (based on execution mode or approval thresholds), the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`. The action expires when its quote expires. Approval after expiry fails the action; Grid does not create a replacement quote.
         Once executed, the quote cannot be cancelled.
       operationId: agentExecuteQuote
       tags:
@@ -8707,13 +8981,6 @@ paths:
             type: string
             maxLength: 255
             example: <uuid>
-        - name: Grid-Wallet-Signature
-          in: header
-          required: false
-          description: Full Grid wallet signature over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
-          schema:
-            type: string
-          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
       responses:
         '200':
           description: 'Action submitted successfully. If the agent''s policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated. Note: if approval is required, the underlying quote may expire before the platform approves — in that case the action will transition to `FAILED`.'
@@ -8728,13 +8995,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Also returned when the quote's source is an internal account of type `EMBEDDED_WALLET` and the provided `Grid-Wallet-Signature` header is missing, malformed, or does not match the quote's `payloadToSign`.
+          description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
+          description: Forbidden. The agent policy does not permit this operation, a spending limit was exceeded, or an `EMBEDDED_WALLET` source has no active delegated key for this agent.
           content:
             application/json:
               schema:
@@ -11864,6 +12131,7 @@ webhooks:
                       feesIncluded: 250
                       platformFeesIncluded: 0
                       transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000099
+                    expiresAt: '2025-10-03T15:00:30Z'
                     createdAt: '2025-10-03T15:00:00Z'
                     updatedAt: '2025-10-03T15:00:00Z'
       responses:
@@ -28021,15 +28289,13 @@ components:
       type: object
       required:
         - id
-        - cardId
-        - fundingSourceId
         - accountId
         - publicKey
         - nickname
         - status
         - createdAt
         - updatedAt
-      description: A delegated signing key for a card funding source backed by an Embedded Wallet internal account. Returned from `POST /auth/delegated-keys` (on activation), `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`. The keypair is generated and custodied by Grid; the private key is never returned. While `ACTIVE`, Grid may use the key to authorize Spark token-transaction signing for the card funding source's Embedded Wallet funding account in place of a session keypair. `publicKey` is informational metadata identifying the credential.
+      description: A delegated signing key for either a card funding source or an agent, backed by an Embedded Wallet internal account. Card keys include `cardId` and `fundingSourceId`; agent keys include `agentId`. Returned from `POST /auth/delegated-keys` (on activation), `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`. The keypair is generated and custodied by Grid; the private key is never returned. While `ACTIVE`, Grid may use the key to authorize Spark token-transaction signing for the selected card funding source or agent in place of a session keypair. `publicKey` is informational metadata identifying the credential.
       properties:
         id:
           type: string
@@ -28037,15 +28303,19 @@ components:
           example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
         cardId:
           type: string
-          description: The card this key is delegated for.
+          description: The card this key is delegated for. Present only for card keys.
           example: Card:019542f5-b3e7-1d02-0000-000000000010
         fundingSourceId:
           type: string
-          description: The card funding source this key is delegated for.
+          description: The card funding source this key is delegated for. Present only for card keys.
           example: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
+        agentId:
+          type: string
+          description: The agent this key is delegated for. Present only for agent keys.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
         accountId:
           type: string
-          description: The Embedded Wallet internal account this key is delegated for, derived from the card funding source.
+          description: The Embedded Wallet internal account this key is delegated for, derived from the card funding source or the agent's customer.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         publicKey:
           type: string
@@ -28081,25 +28351,29 @@ components:
     DelegatedKeyCreateRequest:
       title: Delegated Key Create Request
       type: object
+      description: Creates a delegated signing key for a card funding source or an agent. Exactly one of `cardId` or `agentId` is required. Requests that provide both fields or neither field return a 400 response.
       required:
-        - cardId
         - internalAccountId
         - nickname
       properties:
         cardId:
           type: string
-          description: The id of the card whose Embedded Wallet funding account will use this delegated signing key.
+          description: The id of the card whose Embedded Wallet funding account will use this delegated signing key. Omit when creating a key for an agent.
           example: Card:019542f5-b3e7-1d02-0000-000000000010
+        agentId:
+          type: string
+          description: The id of the agent that will use this delegated signing key. The agent must belong to the customer that owns the Embedded Wallet internal account. Omit when creating a key for a card.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
         internalAccountId:
           type: string
-          description: The id of the Embedded Wallet internal account funding the card. Grid uses the `(cardId, internalAccountId)` pair to find the active card funding-source binding.
+          description: The id of the Embedded Wallet internal account this key may sign for. For a card key, Grid uses the `(cardId, internalAccountId)` pair to find the active card funding-source binding. For an agent key, the account must belong to the agent's customer.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         nickname:
           type: string
           minLength: 1
           maxLength: 256
           description: Human-readable label for the delegated key.
-          example: Card payments key
+          example: Payments key
     DelegatedKeySignedRequestChallenge:
       title: Delegated Key Signed Request Challenge
       description: 202 response returned from the delegated-key endpoints. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`.
@@ -28112,7 +28386,9 @@ components:
         - CREATE_QUOTES
         - EXECUTE_QUOTES
         - MANAGE_EXTERNAL_ACCOUNTS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.'
+        - RECEIVE_FUNDS
+        - MANAGE_IDENTITY
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification.'
     AgentExecutionMode:
       type: string
       enum:
@@ -28128,7 +28404,7 @@ components:
       properties:
         currency:
           type: string
-          description: ISO 4217 currency code that all amount limits are denominated in.
+          description: ISO 4217 currency code that all amount limits are denominated in. This currency is immutable after the agent is created.
           example: USD
         perTransactionLimit:
           type: integer
@@ -28166,7 +28442,7 @@ components:
           type:
             - integer
             - 'null'
-          description: Per-transaction limit override, in the smallest unit of the relevant currency. Null inherits from the agent's spending limits.
+          description: Per-transaction limit override, in the smallest unit of the policy's `spendingLimits.currency`. Null inherits from the agent's spending limits.
           example: 10000
     AgentAccountRestrictions:
       type: object
@@ -28187,11 +28463,11 @@ components:
             $ref: '#/components/schemas/AgentAccountRule'
     AgentApprovalThresholds:
       type: object
-      description: Thresholds that force approval for high-value transactions, overriding the default execution mode. When a transaction is denominated in a different currency than the threshold, Grid converts using the exchange rate at evaluation time.
+      description: Thresholds that force approval for high-value transactions, overriding the default execution mode. The threshold currency must equal the policy's spending limits currency. When a transaction is denominated in a different currency, Grid converts it to the policy currency at evaluation time.
       properties:
         currency:
           type: string
-          description: ISO 4217 currency code that the amount threshold is denominated in. Required when amount is set.
+          description: ISO 4217 currency code that the amount threshold is denominated in. Required when amount is set and must equal `spendingLimits.currency`.
           example: USD
         amount:
           type:
@@ -28385,7 +28661,7 @@ components:
         | `PENDING_APPROVAL` | Submitted by the agent, awaiting platform approval before execution |
         | `APPROVED` | Approved by the platform; execution is in progress or completed |
         | `REJECTED` | Rejected by the platform; the underlying transaction was not executed |
-        | `FAILED` | Approved but execution failed (e.g. quote expired, insufficient funds) |
+        | `FAILED` | Not executed, or execution failed; see `failureReason` |
     AgentActionType:
       type: string
       enum:
@@ -28396,6 +28672,22 @@ components:
         | Type | Description |
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
+    AgentActionFailureReason:
+      type: string
+      enum:
+        - QUOTE_EXPIRED
+        - POLICY_DENIED
+        - AGENT_INACTIVE
+        - EXECUTION_FAILED
+      description: |
+        Why an agent action has status `FAILED`.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `QUOTE_EXPIRED` | The action's quote expired before execution |
+        | `POLICY_DENIED` | The agent policy no longer allowed the action |
+        | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
+        | `EXECUTION_FAILED` | Grid could not execute the approved action |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -28406,6 +28698,7 @@ components:
         - platformCustomerId
         - status
         - type
+        - expiresAt
         - createdAt
         - updatedAt
       properties:
@@ -28441,6 +28734,14 @@ components:
           type: string
           description: Human-readable reason provided by the platform when rejecting the action. Only present when status is `REJECTED`.
           example: Transaction amount exceeds customer's current risk limit.
+        failureReason:
+          $ref: '#/components/schemas/AgentActionFailureReason'
+          description: Machine-readable reason the action failed. Only present when status is `FAILED`; `rejectionReason` is used only for `REJECTED` actions.
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the action expires. For `EXECUTE_QUOTE`, this is the quote's own expiry. A `PENDING_APPROVAL` action that reaches this time transitions to `FAILED` with `failureReason` `QUOTE_EXPIRED`; approval never creates a replacement quote.
+          example: '2025-10-03T15:05:00Z'
         createdAt:
           type: string
           format: date-time
@@ -28471,6 +28772,130 @@ components:
         totalCount:
           type: integer
           description: Total number of actions matching the criteria (excluding pagination).
+    AgentDepositNetwork:
+      type: string
+      enum:
+        - LIGHTNING
+        - BASE
+        - ETHEREUM
+        - SOLANA
+      description: Network from which an agent customer can fund a deposit.
+    AgentDepositCreateRequest:
+      type: object
+      description: Request for an Orchestra-backed deposit into one of the agent customer's internal accounts.
+      required:
+        - sourceNetwork
+        - sourceCurrency
+        - destinationInternalAccountId
+      properties:
+        sourceNetwork:
+          $ref: '#/components/schemas/AgentDepositNetwork'
+          description: Network from which the customer will send the deposit.
+        sourceCurrency:
+          type: string
+          description: Currency or asset the customer will deposit.
+          example: USDC
+        destinationInternalAccountId:
+          type: string
+          description: Internal account that will receive the converted deposit. It must belong to the agent's associated customer and be allowed by the agent policy.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        destinationAmount:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+          maximum: 9000000000000000
+          description: Optional amount to receive, in the smallest unit of the destination account's currency. Required for amount-specific Lightning invoices.
+          example: 2000
+    AgentDepositStatus:
+      type: string
+      enum:
+        - PENDING
+        - PROCESSING
+        - COMPLETED
+        - EXPIRED
+        - FAILED
+        - REFUNDED
+      description: Current state of an agent deposit.
+    AgentDepositTargetType:
+      type: string
+      enum:
+        - LIGHTNING_INVOICE
+        - CHAIN_ADDRESS
+      description: Format of the payment target returned for an agent deposit.
+    AgentDeposit:
+      type: object
+      description: An Orchestra-backed deposit that converts funds from an external network into an internal account belonging to the agent's customer.
+      required:
+        - id
+        - status
+        - sourceNetwork
+        - sourceCurrency
+        - destinationInternalAccountId
+        - destinationCurrency
+        - targetType
+        - target
+        - expiresAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique deposit identifier.
+          example: AgentDeposit:019542f5-b3e7-1d02-0000-000000000001
+        status:
+          $ref: '#/components/schemas/AgentDepositStatus'
+          description: Current processing state of the deposit.
+        sourceNetwork:
+          $ref: '#/components/schemas/AgentDepositNetwork'
+          description: Network from which the customer sends the deposit.
+        sourceCurrency:
+          type: string
+          description: Currency or asset the customer sends.
+          example: BTC
+        sourceAmount:
+          type: integer
+          format: int64
+          description: Amount to send in the smallest unit of `sourceCurrency`, when the deposit quote fixes the source amount.
+          example: 31500
+        destinationInternalAccountId:
+          type: string
+          description: Internal account that receives the converted deposit.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        destinationCurrency:
+          type: string
+          description: Currency credited to the destination internal account.
+          example: USDB
+        estimatedDestinationAmount:
+          type: integer
+          format: int64
+          description: Estimated amount credited, in the smallest unit of `destinationCurrency`.
+          example: 2000
+        targetType:
+          $ref: '#/components/schemas/AgentDepositTargetType'
+          description: Whether `target` is a Lightning invoice or chain address.
+        target:
+          type: string
+          description: BOLT11 invoice when `targetType` is `LIGHTNING_INVOICE`; otherwise the address on `sourceNetwork` to which the customer sends funds.
+          example: lnbc1pndepositpp5...
+        depositMemo:
+          type: string
+          description: Memo or tag that must accompany the deposit when the source network requires one.
+          example: '104923'
+        expiresAt:
+          type: string
+          format: date-time
+          description: Time after which the deposit target or quoted conversion rate expires.
+          example: '2026-10-09T18:05:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: Time when the deposit was created.
+          example: '2026-10-09T18:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Time when the deposit was last updated.
+          example: '2026-10-09T18:01:00Z'
     AgentUpdateRequest:
       type: object
       description: Partial update to an agent's basic fields. At least one field must be provided.
@@ -28489,7 +28914,7 @@ components:
       properties:
         currency:
           type: string
-          description: ISO 4217 currency code that all amount limits are denominated in. Updating this recasts all existing limits into the new currency denomination.
+          description: ISO 4217 currency code that all amount limits are denominated in. If supplied, it must equal the existing policy currency; changing it returns a 400 response.
           example: USD
         perTransactionLimit:
           type: integer
@@ -30332,6 +30757,9 @@ components:
               type: string
               enum:
                 - AGENT_ACTION.PENDING_APPROVAL
+                - AGENT_ACTION.APPROVED
+                - AGENT_ACTION.REJECTED
+                - AGENT_ACTION.FAILED
     IncomingPaymentWebhookData:
       title: Incoming Payment Webhook Data
       allOf:
