@@ -25168,6 +25168,41 @@ components:
           format: date-time
           description: When the transfer settled.
           example: '2026-09-29T15:04:12Z'
+    AchPaymentRail:
+      type: string
+      enum:
+        - ACH
+        - ACH_SAME_DAY
+    AchRailStatus:
+      type: string
+      enum:
+        - PENDING
+        - SETTLED
+        - RETURNED
+        - RETURN_DISHONORED
+        - RETURN_CONTESTED
+        - REVERSED
+        - FAILED
+      description: |-
+        Status of the entry on the ACH network.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING` | Submitted to the ACH network and not yet settled. |
+        | `SETTLED` | The entry settled. |
+        | `RETURNED` | The receiving bank returned the entry, before or after it settled. |
+        | `RETURN_DISHONORED` | The originating bank dishonored the return, so the returned funds came back. |
+        | `RETURN_CONTESTED` | The receiving bank contested the dishonor, so the funds went back again. |
+        | `REVERSED` | The originator reversed the entry after it settled. |
+        | `FAILED` | The entry was rejected before submission and no funds moved. |
+
+        A return, dishonor or contest can arrive days after the step before it. This status
+        reports the ACH entry; the transaction's top-level `status` reports where the funds
+        are now. A return moves the transaction to `FAILED`. On an incoming payment, a
+        dishonor brings the credit back and moves it to `COMPLETED`, and a contest moves it
+        to `FAILED` again. A returned payout stays `FAILED` through a dishonor, since it has
+        already been refunded; the rail status still records the dishonor.
+      example: SETTLED
     AchRailDetails:
       title: ACH Transfer
       description: A transfer over the ACH network.
@@ -25179,40 +25214,9 @@ components:
             - status
           properties:
             paymentRail:
-              type: string
-              enum:
-                - ACH
-                - ACH_SAME_DAY
+              $ref: '#/components/schemas/AchPaymentRail'
             status:
-              type: string
-              enum:
-                - PENDING
-                - SETTLED
-                - RETURNED
-                - RETURN_DISHONORED
-                - RETURN_CONTESTED
-                - REVERSED
-                - FAILED
-              description: |-
-                Status of the entry on the ACH network.
-
-                | Status | Description |
-                |--------|-------------|
-                | `PENDING` | Submitted to the ACH network and not yet settled. |
-                | `SETTLED` | The entry settled. |
-                | `RETURNED` | The receiving bank returned the entry, before or after it settled. |
-                | `RETURN_DISHONORED` | The originating bank dishonored the return, so the returned funds came back. |
-                | `RETURN_CONTESTED` | The receiving bank contested the dishonor, so the funds went back again. |
-                | `REVERSED` | The originator reversed the entry after it settled. |
-                | `FAILED` | The entry was rejected before submission and no funds moved. |
-
-                A return, dishonor or contest can arrive days after the step before it. This status
-                reports the ACH entry; the transaction's top-level `status` reports where the funds
-                are now. A return moves the transaction to `FAILED`. On an incoming payment, a
-                dishonor brings the credit back and moves it to `COMPLETED`, and a contest moves it
-                to `FAILED` again. A returned payout stays `FAILED` through a dishonor, since it has
-                already been refunded; the rail status still records the dishonor.
-              example: SETTLED
+              $ref: '#/components/schemas/AchRailStatus'
             traceNumber:
               type: string
               description: 15-digit ACH trace number of the entry.
@@ -25251,6 +25255,21 @@ components:
               type: string
               description: Name of the account's bank.
               example: Chase Bank
+    WireRailStatus:
+      type: string
+      enum:
+        - PENDING
+        - SETTLED
+        - FAILED
+      description: |-
+        Status of the wire on Fedwire.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING` | Submitted to Fedwire and not yet delivered. |
+        | `SETTLED` | Fedwire delivered the wire. |
+        | `FAILED` | Fedwire or the receiving bank rejected the wire and no funds moved. |
+      example: SETTLED
     WireRailDetails:
       title: Wire Transfer
       description: A domestic wire over Fedwire.
@@ -25268,20 +25287,7 @@ components:
               enum:
                 - WIRE
             status:
-              type: string
-              enum:
-                - PENDING
-                - SETTLED
-                - FAILED
-              description: |-
-                Status of the wire on Fedwire.
-
-                | Status | Description |
-                |--------|-------------|
-                | `PENDING` | Submitted to Fedwire and not yet delivered. |
-                | `SETTLED` | Fedwire delivered the wire. |
-                | `FAILED` | Fedwire or the receiving bank rejected the wire and no funds moved. |
-              example: SETTLED
+              $ref: '#/components/schemas/WireRailStatus'
             imad:
               type: string
               description: Fedwire Input Message Accountability Data assigned when the wire was sent.
@@ -25290,6 +25296,21 @@ components:
               type: string
               description: Free-form originator-to-beneficiary information (OBI) sent with the wire.
               example: INV-12345
+    FedNowRailStatus:
+      type: string
+      enum:
+        - PENDING
+        - SETTLED
+        - FAILED
+      description: |-
+        Status of the payment on FedNow.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING` | Submitted and awaiting the receiving bank's response. |
+        | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
+        | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
+      example: SETTLED
     FedNowRailDetails:
       title: FedNow Transfer
       description: An instant payment over the FedNow Service.
@@ -25305,20 +25326,7 @@ components:
               enum:
                 - FEDNOW
             status:
-              type: string
-              enum:
-                - PENDING
-                - SETTLED
-                - FAILED
-              description: |-
-                Status of the payment on FedNow.
-
-                | Status | Description |
-                |--------|-------------|
-                | `PENDING` | Submitted and awaiting the receiving bank's response. |
-                | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
-                | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
-              example: SETTLED
+              $ref: '#/components/schemas/FedNowRailStatus'
             endToEndId:
               type: string
               description: The originator's end-to-end reference for the payment.
@@ -25327,6 +25335,21 @@ components:
               type: string
               description: Unstructured remittance information sent with the payment.
               example: INV-12345
+    RtpRailStatus:
+      type: string
+      enum:
+        - PENDING
+        - SETTLED
+        - FAILED
+      description: |-
+        Status of the payment on the RTP network.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING` | Submitted and awaiting the receiving bank's response. |
+        | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
+        | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
+      example: SETTLED
     RtpRailDetails:
       title: RTP Transfer
       description: An instant payment over The Clearing House RTP network.
@@ -25342,20 +25365,7 @@ components:
               enum:
                 - RTP
             status:
-              type: string
-              enum:
-                - PENDING
-                - SETTLED
-                - FAILED
-              description: |-
-                Status of the payment on the RTP network.
-
-                | Status | Description |
-                |--------|-------------|
-                | `PENDING` | Submitted and awaiting the receiving bank's response. |
-                | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
-                | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
-              example: SETTLED
+              $ref: '#/components/schemas/RtpRailStatus'
             endToEndId:
               type: string
               description: The originator's end-to-end reference for the payment.
