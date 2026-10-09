@@ -5976,7 +5976,7 @@ paths:
         Simulate receiving funds into an internal account in the sandbox environment. This is useful for testing scenarios where you need to add funds to a customer's or platform's internal account without going through a real bank transfer or following payment instructions.
         This endpoint is only for the sandbox environment and will fail for production platforms/keys.
         ### Funding a rule-based account
-        Funding a `RULE_BASED` account triggers its sweep, exactly as a settled deposit does in production: the balance is swept to the rule's destination and the account is left at zero. A balance outside the corridor band moves to the account holder's own account in the same currency instead, and the transaction fails with `failureReason: SWEEP_AMOUNT_OUT_OF_RANGE` — fund a rule-based account with a very small amount to rehearse that path. Either way the rule-based account is left at zero; it never holds a balance.
+        Funding a `RULE_BASED` account triggers its sweep, exactly as a settled deposit does in production: the balance is swept to the rule's destination and the account is left at zero. A sweep the destination's corridor cannot carry fails, and the balance moves to the account holder's own account in the same currency instead. Either way the rule-based account is left at zero; it never holds a balance.
         The sweep's transaction reports a placeholder ACH depositor as its `REALTIME_FUNDING` source and the funded account as its `ruleBasedAccountId`, matching what a production deposit reports.
         To simulate the information a depositor attaches to a payment, pass `remittanceInformation`. It appears on the swept transaction's `source` (see `remittanceInformation` in the request body for which field).
         `description` cannot be set when funding a rule-based account: the swept transaction's description comes from the account's sweep rule, exactly as it does for a production deposit. Sending it returns `400 INVALID_INPUT`.
@@ -25744,7 +25744,7 @@ components:
         - SWEEP_QUOTE_FAILED
       description: |-
         Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted. COMPLIANCE_REJECTED means compliance blocked the incoming funds. COLLECTION_FAILED means an inbound bank-rail collection deposit (e.g. a SWIFT wire) failed after arrival and did not credit — most commonly a compliance-screening rejection or an unresolved request for information, on either the collection provider's side or Grid's. Failed collections are returned to the sender per the collection provider's process.
-        A payment that settled into a rule-based account but could not be swept to the destination of the account's rule fails with one of the `SWEEP_*` reasons. A rule-based account never holds a balance, so the funds are moved to the account holder's own account in the same currency. SWEEP_AMOUNT_OUT_OF_RANGE means the amount was outside the band the corridor to the destination can carry — the rule's minimumAmount and maximumAmount give the current band — and SWEEP_QUOTE_FAILED that Grid could not price it. A sweep that was priced and then failed on the way to settlement reports QUOTE_EXECUTION_FAILED, the same as any other payment.
+        A payment that settled into a rule-based account but could not be swept to the destination of the account's rule fails with one of the `SWEEP_*` reasons. A rule-based account never holds a balance, so the funds are moved to the account holder's own account in the same currency. SWEEP_AMOUNT_OUT_OF_RANGE means the amount was outside the range the corridor to the destination can carry, and SWEEP_QUOTE_FAILED that Grid could not price it. A sweep that was priced and then failed on the way to settlement reports QUOTE_EXECUTION_FAILED, the same as any other payment.
     IncomingTransaction:
       title: Incoming Transaction
       allOf:
@@ -25889,7 +25889,7 @@ components:
         | `COMPLIANCE_REJECTED` | The payout partner rejected the recipient on compliance grounds — sanctions, watchlist, or KYC/AML screening |
         | `LIGHTNING_PAYMENT_FAILED` | Deprecated — superseded by `QUOTE_EXECUTION_FAILED`. The Lightning settlement leg failed |
         | `COUNTERPARTY_POST_TX_FAILED` | Deprecated — coarse fallback retained for historical transactions when no granular payout reason is available |
-        | `SWEEP_AMOUNT_OUT_OF_RANGE` | The amount was outside the range the corridor to the rule's destination can carry — below its minimum or above its maximum. The rule's `minimumAmount` and `maximumAmount` give the current band |
+        | `SWEEP_AMOUNT_OUT_OF_RANGE` | The amount was outside the range the corridor to the rule's destination can carry — below its minimum or above its maximum |
         | `SWEEP_QUOTE_FAILED` | Grid could not price the sweep to the rule's destination. A sweep that was priced and then failed on the way to settlement reports `QUOTE_EXECUTION_FAILED`, the same as any other payout |
 
         The `SWEEP_*` reasons apply to a payment that settled into a rule-based
