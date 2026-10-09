@@ -16,10 +16,7 @@ properties:
   documentType:
     $ref: ./DocumentType.yaml
   side:
-    type: string
-    enum:
-      - FRONT
-      - BACK
+    $ref: ./DocumentSide.yaml
     description: |
       Which side of the document this image shows. Required when
       `documentType` is `DRIVERS_LICENSE` or `NATIONAL_ID`: upload the
@@ -27,7 +24,6 @@ properties:
       `DRIVERS_LICENSE` issued in Brazil (`country` is `BR`), is a single
       image: sending `side` for either returns `400 INVALID_INPUT`. Optional
       for all other document types.
-    example: FRONT
   country:
     type: string
     description: Country that issued the document (ISO 3166-1 alpha-2)
