@@ -19,18 +19,6 @@ properties:
     description: When the refund was settled
     example: '2025-08-15T14:35:00Z'
   status:
-    type: string
-    enum:
-      - PENDING
-      - COMPLETED
-      - FAILED
-    description: Current status of the refund
-    example: COMPLETED
+    $ref: ./RefundStatus.yaml
   reason:
-    type: string
-    enum:
-      - TRANSACTION_FAILED
-      - USER_CANCELLATION
-      - TIMEOUT
-    description: Reason for the refund
-    example: TRANSACTION_FAILED
+    $ref: ./RefundReason.yaml

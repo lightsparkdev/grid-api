@@ -25453,6 +25453,22 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
+    RefundStatus:
+      type: string
+      enum:
+        - PENDING
+        - COMPLETED
+        - FAILED
+      description: Current status of the refund
+      example: COMPLETED
+    RefundReason:
+      type: string
+      enum:
+        - TRANSACTION_FAILED
+        - USER_CANCELLATION
+        - TIMEOUT
+      description: Reason for the refund
+      example: TRANSACTION_FAILED
     Refund:
       type: object
       required:
@@ -25475,21 +25491,9 @@ components:
           description: When the refund was settled
           example: '2025-08-15T14:35:00Z'
         status:
-          type: string
-          enum:
-            - PENDING
-            - COMPLETED
-            - FAILED
-          description: Current status of the refund
-          example: COMPLETED
+          $ref: '#/components/schemas/RefundStatus'
         reason:
-          type: string
-          enum:
-            - TRANSACTION_FAILED
-            - USER_CANCELLATION
-            - TIMEOUT
-          description: Reason for the refund
-          example: TRANSACTION_FAILED
+          $ref: '#/components/schemas/RefundReason'
     CounterpartyInformation:
       type: object
       description: Additional information about the counterparty, if available and relevant to the transaction and platform.
