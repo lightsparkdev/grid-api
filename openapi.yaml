@@ -4553,7 +4553,22 @@ paths:
                   lockedCurrencyAmount: 12550
                   immediatelyExecute: true
                   remittanceInformation: INV-12345
+                  statementDescriptor: PAYROLL
                   description: Same-currency payout, no exchange required.
+              achPullToAccount:
+                summary: ACH pull from an external account into an internal account (immediate execution)
+                value:
+                  source:
+                    sourceType: ACCOUNT
+                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                  destination:
+                    destinationType: ACCOUNT
+                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  lockedCurrencySide: SENDING
+                  lockedCurrencyAmount: 50000
+                  immediatelyExecute: true
+                  statementDescriptor: ACMEFUND
+                  description: Top up from linked bank account
               accountToAccount:
                 summary: Account to Account Transfer
                 value:
@@ -12354,6 +12369,7 @@ webhooks:
                           routingNumber: '021000021'
                           accountNumber: '****4321'
                         traceNumber: '021000020123456'
+                        statementDescriptor: INVOICE
                         addenda: INV-2025-0815
                         settledAt: '2025-08-15T14:30:00Z'
                         returnedAt: '2025-08-18T15:00:00Z'
@@ -25219,6 +25235,11 @@ components:
               type: string
               description: 15-digit ACH trace number of the entry.
               example: '021000020123456'
+            statementDescriptor:
+              type: string
+              maxLength: 10
+              description: The entry's Company Entry Description, which the receiving bank shows on the account holder's statement. On payments you originate, this is the quote's `statementDescriptor`, or Grid's default.
+              example: PAYROLL
             addenda:
               type: string
               description: Payment-related text carried in the entry's addenda record. On payments you originate, this is the `remittanceInformation` you provided.
@@ -26752,6 +26773,17 @@ components:
         - SENDING
         - RECEIVING
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
+    StatementDescriptor:
+      type: string
+      minLength: 1
+      maxLength: 10
+      pattern: ^[ -~]+$
+      not:
+        pattern: ^ *(0*|[Mm][Ii][Ss][Cc]|[Rr][Ee][Vv][Ee][Rr][Ss][Aa][Ll]|[Rr][Ee][Tt][Uu][Rr][Nn] [Ff][Ee][Ee]|[Aa][Uu][Tt][Oo][Ee][Nn][Rr][Oo][Ll][Ll]|[Nn][Oo][Nn][Ss][Ee][Tt][Tt][Ll][Ee][Dd]|[Rr][Ee][Cc][Ll][Aa][Ii][Mm]) *$
+      description: |-
+        Short text that labels this payment on the counterparty's bank statement, such as `PAYROLL` or `INVOICE`. Used only when the quote moves money over ACH, for both an ACH credit to an external bank account and an ACH debit pulling from one, where it is sent as the NACHA Company Entry Description. Sending it on a quote that moves no ACH entry returns `400 INVALID_INPUT`. Free-text payment details belong in `remittanceInformation`, which ACH carries in the addenda record.
+        Printable ASCII, up to 10 characters. Grid uses its default when omitted. Blank values, all zeros, `MISC`, and the values NACHA reserves for system entries (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) are rejected with `400 INVALID_INPUT`, in any letter case and ignoring surrounding spaces.
+      example: PAYROLL
     QuoteRequest:
       type: object
       required:
@@ -26794,8 +26826,17 @@ components:
         remittanceInformation:
           type: string
           maxLength: 80
-          description: 'Free-form information about the payment that travels with it to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information.'
+          description: |-
+            Free-form information about the payment, such as an invoice or reference number, that travels with it to the recipient. Printable ASCII only. Where it goes depends on the payment rail:
+            - **ACH:** the addenda record.
+            - **RTP and FedNow:** the remittance information field.
+            - **Wire:** the OBI (Originator to Beneficiary Information).
+            - **Other rails** (for example SEPA, PIX, SPEI, and Faster Payments): the payment reference shown on the recipient's bank statement. These references are often much shorter than 80 characters and may allow only letters and digits, so the value may be shortened and unsupported characters removed. Put the most important information first.
+
+            To set the short description of the payment's purpose that an ACH recipient sees on their statement, such as `PAYROLL`, use `statementDescriptor`.
           example: '12345'
+        statementDescriptor:
+          $ref: '#/components/schemas/StatementDescriptor'
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
         documentIds:
