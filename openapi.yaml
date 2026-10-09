@@ -26474,6 +26474,17 @@ components:
           format: date-time
           description: When this document was uploaded
           example: '2025-10-03T12:00:00Z'
+    QuoteStatus:
+      type: string
+      enum:
+        - PENDING
+        - PENDING_AUTHORIZATION
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+        - EXPIRED
+      description: 'Current status of the quote. `PENDING_AUTHORIZATION` occurs only for customers in a region where Strong Customer Authentication is required (e.g. EU): the quote carries an `scaChallenge` that must be authorized before execution, and for realtime-funding sources `paymentInstructions` are withheld until it is satisfied.'
+      example: PENDING
     QuoteSourceType:
       type: string
       enum:
@@ -26636,16 +26647,7 @@ components:
           description: Unique identifier for this quote
           example: Quote:019542f5-b3e7-1d02-0000-000000000006
         status:
-          type: string
-          enum:
-            - PENDING
-            - PENDING_AUTHORIZATION
-            - PROCESSING
-            - COMPLETED
-            - FAILED
-            - EXPIRED
-          description: 'Current status of the quote. `PENDING_AUTHORIZATION` occurs only for customers in a region where Strong Customer Authentication is required (e.g. EU): the quote carries an `scaChallenge` that must be authorized before execution, and for realtime-funding sources `paymentInstructions` are withheld until it is satisfied.'
-          example: PENDING
+          $ref: '#/components/schemas/QuoteStatus'
         createdAt:
           type: string
           format: date-time
