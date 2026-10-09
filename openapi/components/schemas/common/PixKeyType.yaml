@@ -1,0 +1,8 @@
+type: string
+description: The type of PIX key
+enum:
+- CPF
+- CNPJ
+- EMAIL
+- PHONE
+- RANDOM
