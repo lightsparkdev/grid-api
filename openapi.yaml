@@ -14159,6 +14159,20 @@ components:
 
         `ACH` will settle on the standard next-business-day schedule. Until a date we announce in advance, `ACH` continues to settle same-business-day on production platforms; it already settles next-business-day on sandbox platforms. To guarantee same-day settlement after that date, request `ACH_SAME_DAY`.
       example: ACH
+    FeeDirection:
+      type: string
+      enum:
+        - IN
+        - OUT
+      description: Whether the money is coming in or going out, relative to Grid. Only `OUT` is accepted today.
+      example: OUT
+    FeeOriginator:
+      type: string
+      enum:
+        - GRID
+        - EXTERNAL
+      description: Who originated the movement over the rail. An ACH OUT where Grid is the originator means Grid is pushing out the funds, while an ACH OUT with an EXTERNAL originator indicates Grid received an ACH pull request from an external source.
+      example: GRID
     RailFeeConfig:
       allOf:
         - $ref: '#/components/schemas/FeeConfig'
@@ -14171,19 +14185,9 @@ components:
               $ref: '#/components/schemas/PaymentRail'
               description: The rail used in the transaction. `ACH`, `ACH_SAME_DAY`, `RTP`, `FEDNOW` and `WIRE` are accepted today; other rails return a `NOT_IMPLEMENTED` error.
             direction:
-              type: string
-              enum:
-                - IN
-                - OUT
-              description: Whether the money is coming in or going out, relative to Grid. Only `OUT` is accepted today.
-              example: OUT
+              $ref: '#/components/schemas/FeeDirection'
             originator:
-              type: string
-              enum:
-                - GRID
-                - EXTERNAL
-              description: Who originated the movement over the rail. An ACH OUT where Grid is the originator means Grid is pushing out the funds, while an ACH OUT with an EXTERNAL originator indicates Grid received an ACH pull request from an external source.
-              example: GRID
+              $ref: '#/components/schemas/FeeOriginator'
           required:
             - rail
             - direction
@@ -16626,6 +16630,13 @@ components:
             failedAttempts:
               type: integer
           additionalProperties: true
+    SecurityEventType:
+      type: string
+      enum:
+        - RESET_PASSWORD_COMPLETED
+        - FAILED_LOGIN_ATTEMPT
+      description: A security event on a customer's account that affects Strong Customer Authentication.
+      example: FAILED_LOGIN_ATTEMPT
     RecordSecurityEventRequest:
       type: object
       description: Records a client-side security event for the customer so Grid can maintain the customer's login-security state (SCA session revocation and failed-login lockout).
@@ -16634,10 +16645,7 @@ components:
         - endUserIpAddress
       properties:
         eventType:
-          type: string
-          enum:
-            - RESET_PASSWORD_COMPLETED
-            - FAILED_LOGIN_ATTEMPT
+          $ref: '#/components/schemas/SecurityEventType'
           description: |
             The security event to record:
 
@@ -16645,7 +16653,6 @@ components:
             |-------|--------|
             | `RESET_PASSWORD_COMPLETED` | Revokes every active SCA session for the customer and clears the failed-login counter. |
             | `FAILED_LOGIN_ATTEMPT` | Increments the cumulative failed-login counter and escalates the lockout at each milestone: 5 attempts → 15 minutes, 6 → 30 minutes, 7 → 1 hour, 8 → 24 hours, 9 or more → suspension. |
-          example: FAILED_LOGIN_ATTEMPT
         endUserIpAddress:
           type: string
           description: The IP address of the end user's device the event was observed from, recorded against the event by the SCA provider. Supply the customer's address, not your server's — it feeds the provider's risk assessment and the adaptive-authentication signals derived from this event.
@@ -16659,12 +16666,8 @@ components:
         - failedAttempts
       properties:
         eventType:
-          type: string
-          enum:
-            - RESET_PASSWORD_COMPLETED
-            - FAILED_LOGIN_ATTEMPT
+          $ref: '#/components/schemas/SecurityEventType'
           description: The event that was recorded.
-          example: FAILED_LOGIN_ATTEMPT
         suspended:
           type: boolean
           description: Whether the customer's login is currently suspended (locked with no automatic expiry). A suspended customer must go through a password reset (`RESET_PASSWORD_COMPLETED`) to clear the lockout.
@@ -16719,6 +16722,20 @@ components:
           format: date-time
           description: Absolute UTC timestamp at the end of the reset window. Omitted when one is not returned.
           example: '2025-10-03T12:30:00Z'
+    TwoFactorResetState:
+      type: string
+      enum:
+        - INITIATED
+        - PENDING_REVIEW
+        - LIVENESS_PASSED
+        - COMPLETED
+        - REJECTED
+        - EXPIRED
+      description: |-
+        The reset status.
+        | Value | Terminal | Meaning | |-------|----------|---------| | `INITIATED` | no | Reset started; liveness not yet submitted. Keep polling. | | `PENDING_REVIEW` | no | Liveness submitted; under review. Keep polling. | | `LIVENESS_PASSED` | no | Liveness passed; call the complete endpoint to finish the reset. | | `COMPLETED` | **yes** | Reset finished; the lost factor is cleared and re-enrollment can begin. | | `REJECTED` | **yes** | Liveness failed. Stop polling; start a new reset. | | `EXPIRED` | **yes** | The reset window closed before it completed. Stop polling; start a new reset. |
+        Stop polling on any terminal value.
+      example: INITIATED
     TwoFactorResetStatus:
       type: object
       description: The status of an in-progress 2FA reset, polled until it reaches a terminal value.
@@ -16728,19 +16745,7 @@ components:
         - expiresAt
       properties:
         status:
-          type: string
-          enum:
-            - INITIATED
-            - PENDING_REVIEW
-            - LIVENESS_PASSED
-            - COMPLETED
-            - REJECTED
-            - EXPIRED
-          description: |-
-            The reset status.
-            | Value | Terminal | Meaning | |-------|----------|---------| | `INITIATED` | no | Reset started; liveness not yet submitted. Keep polling. | | `PENDING_REVIEW` | no | Liveness submitted; under review. Keep polling. | | `LIVENESS_PASSED` | no | Liveness passed; call the complete endpoint to finish the reset. | | `COMPLETED` | **yes** | Reset finished; the lost factor is cleared and re-enrollment can begin. | | `REJECTED` | **yes** | Liveness failed. Stop polling; start a new reset. | | `EXPIRED` | **yes** | The reset window closed before it completed. Stop polling; start a new reset. |
-            Stop polling on any terminal value.
-          example: INITIATED
+          $ref: '#/components/schemas/TwoFactorResetState'
         factor:
           $ref: '#/components/schemas/ScaFactor'
           description: The factor being reset.
@@ -17533,6 +17538,12 @@ components:
           type: string
           description: Solana wallet address
           example: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg
+    StablecoinAssetType:
+      type: string
+      description: Type of asset
+      enum:
+        - USDC
+        - USDT
     PaymentSolanaWalletInfo:
       title: Solana Wallet
       allOf:
@@ -17541,11 +17552,7 @@ components:
         - type: object
           properties:
             assetType:
-              type: string
-              description: Type of asset
-              enum:
-                - USDC
-                - USDT
+              $ref: '#/components/schemas/StablecoinAssetType'
     EthereumWalletInfo:
       type: object
       required:
@@ -17568,11 +17575,7 @@ components:
         - type: object
           properties:
             assetType:
-              type: string
-              description: Type of asset
-              enum:
-                - USDC
-                - USDT
+              $ref: '#/components/schemas/StablecoinAssetType'
     BaseWalletInfo:
       type: object
       required:
@@ -17647,11 +17650,7 @@ components:
         - type: object
           properties:
             assetType:
-              type: string
-              description: Type of asset
-              enum:
-                - USDC
-                - USDT
+              $ref: '#/components/schemas/StablecoinAssetType'
     TronWalletInfo:
       type: object
       required:
@@ -24700,6 +24699,13 @@ components:
         **Business — Ownership structure** — SHAREHOLDER_REGISTER, TRUST_AGREEMENT, PARTNERSHIP_AGREEMENT
         **Proof of address** — UTILITY_BILL, RENT_OR_LEASE_AGREEMENT, ELECTRICITY_BILL, BANK_STATEMENT, TAX_RETURN
       example: PASSPORT
+    DocumentSide:
+      type: string
+      enum:
+        - FRONT
+        - BACK
+      description: Which side of a two-sided document, such as a driver's license or national ID, an image shows.
+      example: FRONT
     Document:
       type: object
       required:
@@ -24721,12 +24727,8 @@ components:
         documentType:
           $ref: '#/components/schemas/DocumentType'
         side:
-          type: string
-          enum:
-            - FRONT
-            - BACK
+          $ref: '#/components/schemas/DocumentSide'
           description: Which side of the document this upload represents. Relevant for two-sided documents like driver's licenses or national IDs.
-          example: FRONT
         country:
           type: string
           description: Country that issued the document (ISO 3166-1 alpha-2)
@@ -24792,10 +24794,7 @@ components:
         documentType:
           $ref: '#/components/schemas/DocumentType'
         side:
-          type: string
-          enum:
-            - FRONT
-            - BACK
+          $ref: '#/components/schemas/DocumentSide'
           description: |
             Which side of the document this image shows. Required when
             `documentType` is `DRIVERS_LICENSE` or `NATIONAL_ID`: upload the
@@ -24803,7 +24802,6 @@ components:
             `DRIVERS_LICENSE` issued in Brazil (`country` is `BR`), is a single
             image: sending `side` for either returns `400 INVALID_INPUT`. Optional
             for all other document types.
-          example: FRONT
         country:
           type: string
           description: Country that issued the document (ISO 3166-1 alpha-2)
@@ -25168,6 +25166,41 @@ components:
           format: date-time
           description: When the transfer settled.
           example: '2026-09-29T15:04:12Z'
+    AchPaymentRail:
+      type: string
+      enum:
+        - ACH
+        - ACH_SAME_DAY
+    AchRailStatus:
+      type: string
+      enum:
+        - PENDING
+        - SETTLED
+        - RETURNED
+        - RETURN_DISHONORED
+        - RETURN_CONTESTED
+        - REVERSED
+        - FAILED
+      description: |-
+        Status of the entry on the ACH network.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING` | Submitted to the ACH network and not yet settled. |
+        | `SETTLED` | The entry settled. |
+        | `RETURNED` | The receiving bank returned the entry, before or after it settled. |
+        | `RETURN_DISHONORED` | The originating bank dishonored the return, so the returned funds came back. |
+        | `RETURN_CONTESTED` | The receiving bank contested the dishonor, so the funds went back again. |
+        | `REVERSED` | The originator reversed the entry after it settled. |
+        | `FAILED` | The entry was rejected before submission and no funds moved. |
+
+        A return, dishonor or contest can arrive days after the step before it. This status
+        reports the ACH entry; the transaction's top-level `status` reports where the funds
+        are now. A return moves the transaction to `FAILED`. On an incoming payment, a
+        dishonor brings the credit back and moves it to `COMPLETED`, and a contest moves it
+        to `FAILED` again. A returned payout stays `FAILED` through a dishonor, since it has
+        already been refunded; the rail status still records the dishonor.
+      example: SETTLED
     AchRailDetails:
       title: ACH Transfer
       description: A transfer over the ACH network.
@@ -25179,40 +25212,9 @@ components:
             - status
           properties:
             paymentRail:
-              type: string
-              enum:
-                - ACH
-                - ACH_SAME_DAY
+              $ref: '#/components/schemas/AchPaymentRail'
             status:
-              type: string
-              enum:
-                - PENDING
-                - SETTLED
-                - RETURNED
-                - RETURN_DISHONORED
-                - RETURN_CONTESTED
-                - REVERSED
-                - FAILED
-              description: |-
-                Status of the entry on the ACH network.
-
-                | Status | Description |
-                |--------|-------------|
-                | `PENDING` | Submitted to the ACH network and not yet settled. |
-                | `SETTLED` | The entry settled. |
-                | `RETURNED` | The receiving bank returned the entry, before or after it settled. |
-                | `RETURN_DISHONORED` | The originating bank dishonored the return, so the returned funds came back. |
-                | `RETURN_CONTESTED` | The receiving bank contested the dishonor, so the funds went back again. |
-                | `REVERSED` | The originator reversed the entry after it settled. |
-                | `FAILED` | The entry was rejected before submission and no funds moved. |
-
-                A return, dishonor or contest can arrive days after the step before it. This status
-                reports the ACH entry; the transaction's top-level `status` reports where the funds
-                are now. A return moves the transaction to `FAILED`. On an incoming payment, a
-                dishonor brings the credit back and moves it to `COMPLETED`, and a contest moves it
-                to `FAILED` again. A returned payout stays `FAILED` through a dishonor, since it has
-                already been refunded; the rail status still records the dishonor.
-              example: SETTLED
+              $ref: '#/components/schemas/AchRailStatus'
             traceNumber:
               type: string
               description: 15-digit ACH trace number of the entry.
@@ -25251,6 +25253,21 @@ components:
               type: string
               description: Name of the account's bank.
               example: Chase Bank
+    WireRailStatus:
+      type: string
+      enum:
+        - PENDING
+        - SETTLED
+        - FAILED
+      description: |-
+        Status of the wire on Fedwire.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING` | Submitted to Fedwire and not yet delivered. |
+        | `SETTLED` | Fedwire delivered the wire. |
+        | `FAILED` | Fedwire or the receiving bank rejected the wire and no funds moved. |
+      example: SETTLED
     WireRailDetails:
       title: Wire Transfer
       description: A domestic wire over Fedwire.
@@ -25268,20 +25285,7 @@ components:
               enum:
                 - WIRE
             status:
-              type: string
-              enum:
-                - PENDING
-                - SETTLED
-                - FAILED
-              description: |-
-                Status of the wire on Fedwire.
-
-                | Status | Description |
-                |--------|-------------|
-                | `PENDING` | Submitted to Fedwire and not yet delivered. |
-                | `SETTLED` | Fedwire delivered the wire. |
-                | `FAILED` | Fedwire or the receiving bank rejected the wire and no funds moved. |
-              example: SETTLED
+              $ref: '#/components/schemas/WireRailStatus'
             imad:
               type: string
               description: Fedwire Input Message Accountability Data assigned when the wire was sent.
@@ -25290,6 +25294,21 @@ components:
               type: string
               description: Free-form originator-to-beneficiary information (OBI) sent with the wire.
               example: INV-12345
+    FedNowRailStatus:
+      type: string
+      enum:
+        - PENDING
+        - SETTLED
+        - FAILED
+      description: |-
+        Status of the payment on FedNow.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING` | Submitted and awaiting the receiving bank's response. |
+        | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
+        | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
+      example: SETTLED
     FedNowRailDetails:
       title: FedNow Transfer
       description: An instant payment over the FedNow Service.
@@ -25305,20 +25324,7 @@ components:
               enum:
                 - FEDNOW
             status:
-              type: string
-              enum:
-                - PENDING
-                - SETTLED
-                - FAILED
-              description: |-
-                Status of the payment on FedNow.
-
-                | Status | Description |
-                |--------|-------------|
-                | `PENDING` | Submitted and awaiting the receiving bank's response. |
-                | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
-                | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
-              example: SETTLED
+              $ref: '#/components/schemas/FedNowRailStatus'
             endToEndId:
               type: string
               description: The originator's end-to-end reference for the payment.
@@ -25327,6 +25333,21 @@ components:
               type: string
               description: Unstructured remittance information sent with the payment.
               example: INV-12345
+    RtpRailStatus:
+      type: string
+      enum:
+        - PENDING
+        - SETTLED
+        - FAILED
+      description: |-
+        Status of the payment on the RTP network.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING` | Submitted and awaiting the receiving bank's response. |
+        | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
+        | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
+      example: SETTLED
     RtpRailDetails:
       title: RTP Transfer
       description: An instant payment over The Clearing House RTP network.
@@ -25342,20 +25363,7 @@ components:
               enum:
                 - RTP
             status:
-              type: string
-              enum:
-                - PENDING
-                - SETTLED
-                - FAILED
-              description: |-
-                Status of the payment on the RTP network.
-
-                | Status | Description |
-                |--------|-------------|
-                | `PENDING` | Submitted and awaiting the receiving bank's response. |
-                | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
-                | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
-              example: SETTLED
+              $ref: '#/components/schemas/RtpRailStatus'
             endToEndId:
               type: string
               description: The originator's end-to-end reference for the payment.
@@ -27009,6 +27017,15 @@ components:
           enum:
             - PENDING
             - PROCESSING
+    BulkCustomerImportJobStatus:
+      type: string
+      enum:
+        - PENDING
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+      description: Current status of the job
+      example: PROCESSING
     GridError:
       type: object
       title: GridError
@@ -27047,14 +27064,7 @@ components:
           description: Unique identifier for the bulk import job
           example: Job:019542f5-b3e7-1d02-0000-000000000006
         status:
-          type: string
-          enum:
-            - PENDING
-            - PROCESSING
-            - COMPLETED
-            - FAILED
-          description: Current status of the job
-          example: PROCESSING
+          $ref: '#/components/schemas/BulkCustomerImportJobStatus'
         progress:
           type: object
           required:
@@ -27117,6 +27127,15 @@ components:
           format: date-time
           description: When the invitation expires (if at all)
           example: '2025-09-01T14:30:00Z'
+    UmaInvitationStatus:
+      type: string
+      enum:
+        - PENDING
+        - CLAIMED
+        - EXPIRED
+        - CANCELLED
+      description: The status of the invitation
+      example: PENDING
     UmaInvitation:
       type: object
       required:
@@ -27158,14 +27177,7 @@ components:
           description: The UMA address of the invitee
           example: $invitee@uma.domain
         status:
-          type: string
-          enum:
-            - PENDING
-            - CLAIMED
-            - EXPIRED
-            - CANCELLED
-          description: The status of the invitation
-          example: PENDING
+          $ref: '#/components/schemas/UmaInvitationStatus'
         firstName:
           type: string
           description: The inviter's first name. Will be displayed when the recipient clicks the invite link
@@ -28837,34 +28849,38 @@ components:
           maximum: 2147483647
           description: Optional card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Omit this field for no card-specific daily transaction cap. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC. Each approved authorization counts once; refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsTransactionCountLimit` is true.
           example: 20
+    CardUpdateStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - FROZEN
+        - CLOSED
+      description: Target status for the card. Permitted transitions are `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Activation requires completed delegated signing authorization. `CLOSED` is terminal and irreversible; once closed, the card stays in the system for audit and reconciliation but cannot transact again.
+      example: FROZEN
+    CardUpdateSubstatus:
+      type: string
+      enum:
+        - LOST
+        - COMPROMISED
+        - DAMAGED
+        - END_USER_REQUEST
+        - ISSUER_REQUEST
+        - NOT_ACTIVE
+        - SUSPICIOUS_ACTIVITY
+        - INTERNAL_REVIEW
+        - EXPIRED
+        - UNDELIVERABLE
+        - OTHER
+      description: Why the card is moving, in the card issuer's vocabulary. Required whenever `status` is supplied, and forwarded to the issuer. Pick `OTHER` when none of the named values fit and say why in `reason`.
+      example: SUSPICIOUS_ACTIVITY
     CardUpdateRequest:
       type: object
       description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, or `threeDSecurePassword` must be supplied. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Explicit activation requires completed delegated signing authorization; otherwise it returns `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
       properties:
         status:
-          type: string
-          enum:
-            - ACTIVE
-            - FROZEN
-            - CLOSED
-          description: Target status for the card. Permitted transitions are `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Activation requires completed delegated signing authorization. `CLOSED` is terminal and irreversible; once closed, the card stays in the system for audit and reconciliation but cannot transact again.
-          example: FROZEN
+          $ref: '#/components/schemas/CardUpdateStatus'
         substatus:
-          type: string
-          enum:
-            - LOST
-            - COMPROMISED
-            - DAMAGED
-            - END_USER_REQUEST
-            - ISSUER_REQUEST
-            - NOT_ACTIVE
-            - SUSPICIOUS_ACTIVITY
-            - INTERNAL_REVIEW
-            - EXPIRED
-            - UNDELIVERABLE
-            - OTHER
-          description: Why the card is moving, in the card issuer's vocabulary. Required whenever `status` is supplied, and forwarded to the issuer. Pick `OTHER` when none of the named values fit and say why in `reason`.
-          example: SUSPICIOUS_ACTIVITY
+          $ref: '#/components/schemas/CardUpdateSubstatus'
         reason:
           type: string
           minLength: 1
@@ -29174,6 +29190,13 @@ components:
           minLength: 16
           maxLength: 1024
           example: SGVsbG8sIHRoaXMgaXMgYSBiYXNlNjQtZW5jb2RlZCBjaXBoZXJ0ZXh0Li4u
+    GridEnvironment:
+      type: string
+      enum:
+        - SANDBOX
+        - PRODUCTION
+      description: Session environment. The iframeUrl already selects the matching environment.
+      example: SANDBOX
     CardPinUrlResponse:
       type: object
       description: A temporary PIN-entry iframe URL, its credential, and expiration.
@@ -29201,12 +29224,7 @@ components:
           description: When the URL stops working. Request a new URL rather than reusing an expired URL or token.
           example: '2026-05-08T14:16:00Z'
         environment:
-          type: string
-          enum:
-            - SANDBOX
-            - PRODUCTION
-          description: Session environment. The iframeUrl already selects the matching environment.
-          example: SANDBOX
+          $ref: '#/components/schemas/GridEnvironment'
     SandboxCardAuthorizationRequest:
       type: object
       required:
@@ -29340,6 +29358,13 @@ components:
           type: string
           description: Free-text reason recorded on the opening event.
           example: Merchandise not received
+    SandboxCardDisputeStatus:
+      type: string
+      enum:
+        - OPEN
+        - CLOSED
+      description: Whether the dispute is still active.
+      example: OPEN
     SandboxCardDisputeResponse:
       type: object
       required:
@@ -29357,12 +29382,7 @@ components:
           description: The card issuer's token for the dispute.
           example: dispute_transaction_sandbox_5f8d2c1a
         status:
-          type: string
-          enum:
-            - OPEN
-            - CLOSED
-          description: Whether the dispute is still active.
-          example: OPEN
+          $ref: '#/components/schemas/SandboxCardDisputeStatus'
         disposition:
           type:
             - string
@@ -29393,6 +29413,16 @@ components:
           description: The amount to credit, or to take back, in the smallest unit of the transaction's currency. Must not exceed the disputed amount.
           exclusiveMinimum: 0
           example: 1500
+    CardDisputeDisposition:
+      type: string
+      enum:
+        - WON
+        - PARTIALLY_WON
+        - LOST
+        - WITHDRAWN
+        - DENIED
+      description: The outcome the dispute closes with.
+      example: WON
     SandboxCardDisputeCloseRequest:
       type: object
       required:
@@ -29405,15 +29435,7 @@ components:
           description: The id of the disputed `CardTransaction`; it must have an open dispute.
           example: Transaction:019542f5-b3e7-1d02-0000-000000000100
         disposition:
-          type: string
-          enum:
-            - WON
-            - PARTIALLY_WON
-            - LOST
-            - WITHDRAWN
-            - DENIED
-          description: The outcome the dispute closes with.
-          example: WON
+          $ref: '#/components/schemas/CardDisputeDisposition'
         recoveredAmount:
           type: integer
           format: int64
@@ -29570,21 +29592,23 @@ components:
           type: string
           description: Provider account link to register against. Optional when exactly one active link exists for the authenticated platform; required to resolve STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED when multiple links exist.
           example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+    StablecoinMintFundingSourceType:
+      type: string
+      enum:
+        - WIRE
+        - ACH_DEBIT
+        - SAME_DAY_ACH_DEBIT
+        - GRID_INTERNAL_ACCOUNT
+        - PROVIDER_INTERNAL_BALANCE
+      description: Funding source variant. Grid internal account and provider internal balance funding are reserved for follow-up support.
+      example: ACH_DEBIT
     StablecoinMintFundingSourceBase:
       type: object
       required:
         - type
       properties:
         type:
-          type: string
-          enum:
-            - WIRE
-            - ACH_DEBIT
-            - SAME_DAY_ACH_DEBIT
-            - GRID_INTERNAL_ACCOUNT
-            - PROVIDER_INTERNAL_BALANCE
-          description: Funding source variant. Grid internal account and provider internal balance funding are reserved for follow-up support.
-          example: ACH_DEBIT
+          $ref: '#/components/schemas/StablecoinMintFundingSourceType'
     StablecoinWireFundingSource:
       title: Wire
       allOf:
@@ -29748,6 +29772,17 @@ components:
         - FAILED
         - EXPIRED
       description: Stablecoin issuer operation lifecycle status.
+    StablecoinOperationSourceType:
+      type: string
+      enum:
+        - WIRE
+        - ACH_DEBIT
+        - SAME_DAY_ACH_DEBIT
+        - EXTERNAL_ACCOUNT
+        - GRID_INTERNAL_ACCOUNT
+        - PROVIDER_INTERNAL_BALANCE
+      description: Source variant. Mint funding uses `WIRE`, `ACH_DEBIT`, or `SAME_DAY_ACH_DEBIT`; burns use `EXTERNAL_ACCOUNT`. `GRID_INTERNAL_ACCOUNT` and `PROVIDER_INTERNAL_BALANCE` are shared across mint and burn.
+      example: ACH_DEBIT
     StablecoinOperationSource:
       type: object
       description: 'Source of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged shape (superset of the mint funding source and burn source request variants) so the field is unambiguously deserializable regardless of operation type: `externalAccountId` is present for external-account funded mints, `accountId` for Grid internal account sources, and `sourceTokenIdentifier`/`cryptoNetwork` for provider internal balance sources.'
@@ -29755,16 +29790,7 @@ components:
         - type
       properties:
         type:
-          type: string
-          enum:
-            - WIRE
-            - ACH_DEBIT
-            - SAME_DAY_ACH_DEBIT
-            - EXTERNAL_ACCOUNT
-            - GRID_INTERNAL_ACCOUNT
-            - PROVIDER_INTERNAL_BALANCE
-          description: Source variant. Mint funding uses `WIRE`, `ACH_DEBIT`, or `SAME_DAY_ACH_DEBIT`; burns use `EXTERNAL_ACCOUNT`. `GRID_INTERNAL_ACCOUNT` and `PROVIDER_INTERNAL_BALANCE` are shared across mint and burn.
-          example: ACH_DEBIT
+          $ref: '#/components/schemas/StablecoinOperationSourceType'
         externalAccountId:
           type: string
           description: Grid `ExternalAccount` funding the operation, present for ACH debit mints.
@@ -29807,6 +29833,14 @@ components:
         network: SPARK
         address: spark1...
         valueType: ACME
+    StablecoinOperationDestinationRail:
+      type: string
+      enum:
+        - WIRE
+        - ACH_CREDIT
+        - SAME_DAY_ACH_CREDIT
+        - RTP_CREDIT
+      description: Fiat payout rail, present for burn (fiat redemption) destinations.
     StablecoinOperationDestination:
       type: object
       description: 'Destination of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged (flat) shape so the field is unambiguously deserializable regardless of operation type: `accountId` identifies the receiving account (its `ExternalAccount:` / `InternalAccount:` prefix disambiguates external vs Grid-managed), and `rail` is present for burn (fiat payout) destinations and absent for mint destinations.'
@@ -29818,13 +29852,7 @@ components:
           description: Grid account that received the funds. An `ExternalAccount:` id for external destinations or an `InternalAccount:` id for Grid-managed destinations.
           example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
         rail:
-          type: string
-          enum:
-            - WIRE
-            - ACH_CREDIT
-            - SAME_DAY_ACH_CREDIT
-            - RTP_CREDIT
-          description: Fiat payout rail, present for burn (fiat redemption) destinations.
+          $ref: '#/components/schemas/StablecoinOperationDestinationRail'
     StablecoinEstimatedDelivery:
       type: object
       description: Static rail timing estimate for fiat redemption delivery. This is guidance, not a guaranteed arrival time.
@@ -29946,19 +29974,21 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    StablecoinBurnSourceType:
+      type: string
+      enum:
+        - EXTERNAL_ACCOUNT
+        - GRID_INTERNAL_ACCOUNT
+        - PROVIDER_INTERNAL_BALANCE
+      description: Burn source variant. Grid internal account burns are reserved for the Grid-enabled ledger movement flow.
+      example: EXTERNAL_ACCOUNT
     StablecoinBurnSourceBase:
       type: object
       required:
         - type
       properties:
         type:
-          type: string
-          enum:
-            - EXTERNAL_ACCOUNT
-            - GRID_INTERNAL_ACCOUNT
-            - PROVIDER_INTERNAL_BALANCE
-          description: Burn source variant. Grid internal account burns are reserved for the Grid-enabled ledger movement flow.
-          example: EXTERNAL_ACCOUNT
+          $ref: '#/components/schemas/StablecoinBurnSourceType'
     StablecoinExternalAccountBurnSource:
       title: External Account
       allOf:
@@ -30020,6 +30050,12 @@ components:
           EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinExternalAccountBurnSource'
           GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalBurnSource'
           PROVIDER_INTERNAL_BALANCE: '#/components/schemas/StablecoinProviderBalanceBurnSource'
+    StablecoinBurnDestinationType:
+      type: string
+      enum:
+        - EXTERNAL_ACCOUNT
+        - GRID_INTERNAL_ACCOUNT
+      description: Burn destination variant.
     StablecoinBurnDestinationRail:
       type: string
       enum:
@@ -30035,11 +30071,7 @@ components:
         - rail
       properties:
         type:
-          type: string
-          enum:
-            - EXTERNAL_ACCOUNT
-            - GRID_INTERNAL_ACCOUNT
-          description: Burn destination variant.
+          $ref: '#/components/schemas/StablecoinBurnDestinationType'
         rail:
           $ref: '#/components/schemas/StablecoinBurnDestinationRail'
     StablecoinExternalAccountBurnDestination:
@@ -30630,7 +30662,7 @@ components:
         resourceId:
           type: string
           description: LSID of the business resource this operation affected. For `auth_credential.create`, this is the **primary way to learn the new credential's id** — the request that created it can't have supplied one in advance. For `auth_credential.delete` and `session.revoke` it echoes the `AuthMethod:<uuid>` / `Session:<uuid>` you already knew and referenced in the request; for `wallet.export` it's the `InternalAccount:<uuid>` whose wallet was exported; for `customer.contact_update` it's the `Customer:<uuid>` whose email or phone number changed.
-          example: Session:019542f5-b3e7-1d02-0000-00000000009a
+          example: InternalAccount:019542f5-b3e7-1d02-0000-00000000009a
         status:
           type: string
           enum:

@@ -8,12 +8,8 @@ required:
   - failedAttempts
 properties:
   eventType:
-    type: string
-    enum:
-      - RESET_PASSWORD_COMPLETED
-      - FAILED_LOGIN_ATTEMPT
+    $ref: ./SecurityEventType.yaml
     description: The event that was recorded.
-    example: FAILED_LOGIN_ATTEMPT
   suspended:
     type: boolean
     description: >-

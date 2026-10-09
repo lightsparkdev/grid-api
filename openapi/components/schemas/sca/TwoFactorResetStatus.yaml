@@ -6,28 +6,7 @@ required:
   - expiresAt
 properties:
   status:
-    type: string
-    enum:
-      - INITIATED
-      - PENDING_REVIEW
-      - LIVENESS_PASSED
-      - COMPLETED
-      - REJECTED
-      - EXPIRED
-    description: >-
-      The reset status.
-
-      | Value | Terminal | Meaning |
-      |-------|----------|---------|
-      | `INITIATED` | no | Reset started; liveness not yet submitted. Keep polling. |
-      | `PENDING_REVIEW` | no | Liveness submitted; under review. Keep polling. |
-      | `LIVENESS_PASSED` | no | Liveness passed; call the complete endpoint to finish the reset. |
-      | `COMPLETED` | **yes** | Reset finished; the lost factor is cleared and re-enrollment can begin. |
-      | `REJECTED` | **yes** | Liveness failed. Stop polling; start a new reset. |
-      | `EXPIRED` | **yes** | The reset window closed before it completed. Stop polling; start a new reset. |
-
-      Stop polling on any terminal value.
-    example: INITIATED
+    $ref: ./TwoFactorResetState.yaml
   factor:
     $ref: ./ScaFactor.yaml
     description: The factor being reset.

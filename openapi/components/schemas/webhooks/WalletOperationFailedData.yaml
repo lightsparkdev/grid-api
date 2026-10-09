@@ -49,7 +49,7 @@ properties:
       `InternalAccount:<uuid>` whose wallet was exported; for
       `customer.contact_update` it's the `Customer:<uuid>` whose email or
       phone number changed.
-    example: Session:019542f5-b3e7-1d02-0000-00000000009a
+    example: InternalAccount:019542f5-b3e7-1d02-0000-00000000009a
   status:
     type: string
     enum:

@@ -17,12 +17,7 @@ properties:
     description: The card issuer's token for the dispute.
     example: dispute_transaction_sandbox_5f8d2c1a
   status:
-    type: string
-    enum:
-      - OPEN
-      - CLOSED
-    description: Whether the dispute is still active.
-    example: OPEN
+    $ref: ./SandboxCardDisputeStatus.yaml
   disposition:
     type:
       - string

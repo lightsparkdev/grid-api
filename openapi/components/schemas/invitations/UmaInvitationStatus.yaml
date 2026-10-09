@@ -1,0 +1,8 @@
+type: string
+enum:
+  - PENDING
+  - CLAIMED
+  - EXPIRED
+  - CANCELLED
+description: The status of the invitation
+example: PENDING

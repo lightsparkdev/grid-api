@@ -1,0 +1,5 @@
+type: string
+enum:
+  - EXTERNAL_ACCOUNT
+  - GRID_INTERNAL_ACCOUNT
+description: Burn destination variant.

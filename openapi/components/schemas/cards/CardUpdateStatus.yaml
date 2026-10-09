@@ -1,0 +1,13 @@
+type: string
+enum:
+  - ACTIVE
+  - FROZEN
+  - CLOSED
+description: >-
+  Target status for the card. Permitted transitions are
+  `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and
+  `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Activation requires completed
+  delegated signing authorization. `CLOSED` is
+  terminal and irreversible; once closed, the card stays in the
+  system for audit and reconciliation but cannot transact again.
+example: FROZEN
