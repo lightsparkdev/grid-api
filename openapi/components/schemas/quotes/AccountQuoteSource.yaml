@@ -24,13 +24,4 @@ allOf:
           it, the transaction is initiated on behalf of the platform. For any
           other account, it defaults to the account owner's customerId.
         example: Customer:019542f5-b3e7-1d02-0000-000000000001
-      railOptions:
-        allOf:
-          - $ref: ./PullRailOptionsOneOf.yaml
-          - description: >-
-              Options for the ACH debit Grid originates when `accountId` is an
-              external US bank account. `companyEntryDescription` sets the text
-              the account holder's bank shows on their statement for the debit.
-              Sending `railOptions` when `accountId` is any other account, such as
-              an internal account, returns `400 INVALID_INPUT`.
     description: Source account details

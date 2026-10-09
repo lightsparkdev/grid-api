@@ -10,31 +10,28 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
-## Choose an ACH statement description with `railOptions`
+## Set the ACH statement description with `statementDescriptor`
 
-An account destination on `POST /quotes` takes a new optional `railOptions` object.
-Its `paymentRail` selects the rail, and each rail accepts only its own options. On
-`ACH` and `ACH_SAME_DAY`, `companyEntryDescription` sets the text, up to 10 characters,
-that the recipient's bank shows on their statement:
+`POST /quotes` takes a new optional `statementDescriptor`: up to 10 characters that
+label the payment on the counterparty's bank statement, such as `PAYROLL`. It is used
+only on ACH, where it is sent as the NACHA Company Entry Description, for both a
+payout to an external US bank account and a pull from one:
 
 ```json
-"destination": {
-  "destinationType": "ACCOUNT",
-  "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-  "railOptions": { "paymentRail": "ACH", "companyEntryDescription": "PAYROLL" }
+{
+  "source": { "sourceType": "ACCOUNT", "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965" },
+  "destination": { "destinationType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "paymentRail": "ACH" },
+  "lockedCurrencySide": "SENDING",
+  "lockedCurrencyAmount": 10000,
+  "statementDescriptor": "PAYROLL",
+  "remittanceInformation": "INV-12345"
 }
 ```
 
-The same `railOptions` is accepted on an `ACCOUNT` source when Grid pulls from an
-external US bank account over ACH, so the description also appears on the account
-holder's statement for the debit.
-
-Grid uses its default description when you omit it. ACH `railDetails` on transactions
-and webhooks reports the description as `companyEntryDescription`.
-
-`destination.paymentRail` is deprecated in favor of `railOptions.paymentRail` and
-keeps working. Send one or the other: a destination with both returns
-`400 INVALID_INPUT`.
+Grid uses its default when you omit it. Sending it on a quote that moves no ACH entry
+returns `400 INVALID_INPUT`. Longer payment details still belong in
+`remittanceInformation`, which ACH carries in the addenda record. ACH `railDetails` on
+transactions and webhooks reports the value as `statementDescriptor`.
 
 ## List balance changes for periodic statements
 

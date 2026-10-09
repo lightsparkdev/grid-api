@@ -4548,13 +4548,12 @@ paths:
                   destination:
                     destinationType: ACCOUNT
                     accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                    railOptions:
-                      paymentRail: ACH
-                      companyEntryDescription: PAYROLL
+                    paymentRail: ACH
                   lockedCurrencySide: SENDING
                   lockedCurrencyAmount: 12550
                   immediatelyExecute: true
                   remittanceInformation: INV-12345
+                  statementDescriptor: PAYROLL
                   description: Same-currency payout, no exchange required.
               achPullToAccount:
                 summary: ACH pull from an external account into an internal account (immediate execution)
@@ -4562,15 +4561,13 @@ paths:
                   source:
                     sourceType: ACCOUNT
                     accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                    railOptions:
-                      paymentRail: ACH
-                      companyEntryDescription: ACMEFUND
                   destination:
                     destinationType: ACCOUNT
                     accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
                   lockedCurrencySide: SENDING
                   lockedCurrencyAmount: 50000
                   immediatelyExecute: true
+                  statementDescriptor: ACMEFUND
                   description: Top up from linked bank account
               accountToAccount:
                 summary: Account to Account Transfer
@@ -12372,7 +12369,7 @@ webhooks:
                           routingNumber: '021000021'
                           accountNumber: '****4321'
                         traceNumber: '021000020123456'
-                        companyEntryDescription: INVOICE
+                        statementDescriptor: INVOICE
                         addenda: INV-2025-0815
                         settledAt: '2025-08-15T14:30:00Z'
                         returnedAt: '2025-08-18T15:00:00Z'
@@ -25236,10 +25233,10 @@ components:
               type: string
               description: 15-digit ACH trace number of the entry.
               example: '021000020123456'
-            companyEntryDescription:
+            statementDescriptor:
               type: string
               maxLength: 10
-              description: The entry's Company Entry Description, which the receiving bank shows on the recipient's statement. On payments you originate, this is the `railOptions.companyEntryDescription` you provided, or Grid's default.
+              description: The entry's Company Entry Description, which the receiving bank shows on the account holder's statement. On payments you originate, this is the quote's `statementDescriptor`, or Grid's default.
               example: PAYROLL
             addenda:
               type: string
@@ -26504,39 +26501,6 @@ components:
       properties:
         sourceType:
           $ref: '#/components/schemas/QuoteSourceType'
-    CompanyEntryDescription:
-      type: string
-      minLength: 1
-      maxLength: 10
-      pattern: ^[ -~]+$
-      not:
-        pattern: ^ *(0*|[Mm][Ii][Ss][Cc]|[Rr][Ee][Vv][Ee][Rr][Ss][Aa][Ll]|[Rr][Ee][Tt][Uu][Rr][Nn] [Ff][Ee][Ee]|[Aa][Uu][Tt][Oo][Ee][Nn][Rr][Oo][Ll][Ll]|[Nn][Oo][Nn][Ss][Ee][Tt][Tt][Ll][Ee][Dd]|[Rr][Ee][Cc][Ll][Aa][Ii][Mm]) *$
-      description: 'The ACH Company Entry Description: the text the account holder''s bank shows on their statement to describe this entry, such as `PAYROLL` or `INVOICE`. Printable ASCII, up to 10 characters. Grid uses its default when omitted. Blank values, all zeros, `MISC`, and the values NACHA reserves for system entries (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) are rejected with `400 INVALID_INPUT`, in any letter case and ignoring surrounding spaces.'
-      example: PAYROLL
-    AchPullRailOptions:
-      title: ACH pull
-      description: Options for an ACH debit Grid originates from an external US bank account.
-      type: object
-      additionalProperties: false
-      required:
-        - paymentRail
-      properties:
-        paymentRail:
-          type: string
-          enum:
-            - ACH
-          description: The rail Grid pulls the funds over.
-          example: ACH
-        companyEntryDescription:
-          $ref: '#/components/schemas/CompanyEntryDescription'
-    PullRailOptionsOneOf:
-      description: Options for the debit Grid originates to pull funds from the source account. `paymentRail` selects the rail and determines which other fields are accepted.
-      oneOf:
-        - $ref: '#/components/schemas/AchPullRailOptions'
-      discriminator:
-        propertyName: paymentRail
-        mapping:
-          ACH: '#/components/schemas/AchPullRailOptions'
     AccountQuoteSource:
       title: Account
       allOf:
@@ -26558,10 +26522,6 @@ components:
               type: string
               description: The customer on whose behalf the transaction is being initiated. Required when funding from a `BULK_SETTLEMENT` account. The customer is never the account owner, because the platform owns the account. When funding from an FBO account, this field is optional. If you omit it, the transaction is initiated on behalf of the platform. For any other account, it defaults to the account owner's customerId.
               example: Customer:019542f5-b3e7-1d02-0000-000000000001
-            railOptions:
-              allOf:
-                - $ref: '#/components/schemas/PullRailOptionsOneOf'
-                - description: Options for the ACH debit Grid originates when `accountId` is an external US bank account. `companyEntryDescription` sets the text the account holder's bank shows on their statement for the debit. Sending `railOptions` when `accountId` is any other account, such as an internal account, returns `400 INVALID_INPUT`.
           description: Source account details
     RealtimeFundingQuoteSource:
       title: Real-time Funding
@@ -26612,90 +26572,6 @@ components:
       properties:
         destinationType:
           $ref: '#/components/schemas/DestinationType'
-    AchRailOptions:
-      title: ACH
-      description: Options for a payment sent over ACH.
-      type: object
-      additionalProperties: false
-      required:
-        - paymentRail
-      properties:
-        paymentRail:
-          type: string
-          enum:
-            - ACH
-            - ACH_SAME_DAY
-          description: The ACH rail to send the payment over. See `PaymentRail` for how `ACH` and `ACH_SAME_DAY` settle.
-          example: ACH
-        companyEntryDescription:
-          $ref: '#/components/schemas/CompanyEntryDescription'
-    BasicRailOptions:
-      title: Other rails
-      description: Selects a rail that takes no rail-specific options.
-      type: object
-      additionalProperties: false
-      required:
-        - paymentRail
-      properties:
-        paymentRail:
-          type: string
-          enum:
-            - ACH_COLOMBIA
-            - BANK_TRANSFER
-            - BRE_B
-            - CIPS
-            - FAST
-            - FASTER_PAYMENTS
-            - FEDNOW
-            - INSTAPAY
-            - MOBILE_MONEY
-            - NEFT
-            - PAYNOW
-            - PESONET
-            - PIX
-            - RTGS
-            - RTP
-            - SEPA
-            - SEPA_INSTANT
-            - SPEI
-            - SWIFT
-            - UNIONPAY
-            - UPI
-            - WIRE
-          description: The payment rail to send the payment over. See `PaymentRail`.
-          example: WIRE
-    RailOptionsOneOf:
-      description: The payment rail to send the payment over, with options specific to that rail. `paymentRail` selects the rail and determines which other fields are accepted. The rail must be one the destination account supports. Replaces the deprecated `paymentRail` on the destination; send one or the other, not both. If neither is set, Grid selects a rail.
-      oneOf:
-        - $ref: '#/components/schemas/AchRailOptions'
-        - $ref: '#/components/schemas/BasicRailOptions'
-      discriminator:
-        propertyName: paymentRail
-        mapping:
-          ACH: '#/components/schemas/AchRailOptions'
-          ACH_SAME_DAY: '#/components/schemas/AchRailOptions'
-          ACH_COLOMBIA: '#/components/schemas/BasicRailOptions'
-          BANK_TRANSFER: '#/components/schemas/BasicRailOptions'
-          BRE_B: '#/components/schemas/BasicRailOptions'
-          CIPS: '#/components/schemas/BasicRailOptions'
-          FAST: '#/components/schemas/BasicRailOptions'
-          FASTER_PAYMENTS: '#/components/schemas/BasicRailOptions'
-          FEDNOW: '#/components/schemas/BasicRailOptions'
-          INSTAPAY: '#/components/schemas/BasicRailOptions'
-          MOBILE_MONEY: '#/components/schemas/BasicRailOptions'
-          NEFT: '#/components/schemas/BasicRailOptions'
-          PAYNOW: '#/components/schemas/BasicRailOptions'
-          PESONET: '#/components/schemas/BasicRailOptions'
-          PIX: '#/components/schemas/BasicRailOptions'
-          RTGS: '#/components/schemas/BasicRailOptions'
-          RTP: '#/components/schemas/BasicRailOptions'
-          SEPA: '#/components/schemas/BasicRailOptions'
-          SEPA_INSTANT: '#/components/schemas/BasicRailOptions'
-          SPEI: '#/components/schemas/BasicRailOptions'
-          SWIFT: '#/components/schemas/BasicRailOptions'
-          UNIONPAY: '#/components/schemas/BasicRailOptions'
-          UPI: '#/components/schemas/BasicRailOptions'
-          WIRE: '#/components/schemas/BasicRailOptions'
     AccountDestination:
       title: Account
       allOf:
@@ -26714,19 +26590,9 @@ components:
               description: Destination account identifier
               example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
             paymentRail:
-              deprecated: true
               allOf:
                 - $ref: '#/components/schemas/PaymentRail'
-                - description: Deprecated. Use `railOptions.paymentRail`. The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If neither this nor `railOptions` is set, the system will select a default rail. Sending both returns `400 INVALID_INPUT`.
-            railOptions:
-              $ref: '#/components/schemas/RailOptionsOneOf'
-          not:
-            properties:
-              paymentRail: {}
-              railOptions: {}
-            required:
-              - paymentRail
-              - railOptions
+                - description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
           description: Destination account details
     UmaAddressDestination:
       title: UMA Address
@@ -26893,6 +26759,17 @@ components:
         - SENDING
         - RECEIVING
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
+    StatementDescriptor:
+      type: string
+      minLength: 1
+      maxLength: 10
+      pattern: ^[ -~]+$
+      not:
+        pattern: ^ *(0*|[Mm][Ii][Ss][Cc]|[Rr][Ee][Vv][Ee][Rr][Ss][Aa][Ll]|[Rr][Ee][Tt][Uu][Rr][Nn] [Ff][Ee][Ee]|[Aa][Uu][Tt][Oo][Ee][Nn][Rr][Oo][Ll][Ll]|[Nn][Oo][Nn][Ss][Ee][Tt][Tt][Ll][Ee][Dd]|[Rr][Ee][Cc][Ll][Aa][Ii][Mm]) *$
+      description: |-
+        Short text that labels this payment on the counterparty's bank statement, such as `PAYROLL` or `INVOICE`. Used only when the quote moves money over ACH, for both an ACH credit to an external bank account and an ACH debit pulling from one, where it is sent as the NACHA Company Entry Description. Sending it on a quote that moves no ACH entry returns `400 INVALID_INPUT`. Free-text payment details belong in `remittanceInformation`, which ACH carries in the addenda record.
+        Printable ASCII, up to 10 characters. Grid uses its default when omitted. Blank values, all zeros, `MISC`, and the values NACHA reserves for system entries (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) are rejected with `400 INVALID_INPUT`, in any letter case and ignoring surrounding spaces.
+      example: PAYROLL
     QuoteRequest:
       type: object
       required:
@@ -26937,6 +26814,8 @@ components:
           maxLength: 80
           description: 'Free-form information about the payment that travels with it to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information.'
           example: '12345'
+        statementDescriptor:
+          $ref: '#/components/schemas/StatementDescriptor'
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
         documentIds:
