@@ -14,20 +14,7 @@ allOf:
         enum:
           - WIRE
       status:
-        type: string
-        enum:
-          - PENDING
-          - SETTLED
-          - FAILED
-        description: |-
-          Status of the wire on Fedwire.
-
-          | Status | Description |
-          |--------|-------------|
-          | `PENDING` | Submitted to Fedwire and not yet delivered. |
-          | `SETTLED` | Fedwire delivered the wire. |
-          | `FAILED` | Fedwire or the receiving bank rejected the wire and no funds moved. |
-        example: SETTLED
+        $ref: ./WireRailStatus.yaml
       imad:
         type: string
         description: Fedwire Input Message Accountability Data assigned when the wire was sent.
