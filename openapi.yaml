@@ -14159,6 +14159,20 @@ components:
 
         `ACH` will settle on the standard next-business-day schedule. Until a date we announce in advance, `ACH` continues to settle same-business-day on production platforms; it already settles next-business-day on sandbox platforms. To guarantee same-day settlement after that date, request `ACH_SAME_DAY`.
       example: ACH
+    FeeDirection:
+      type: string
+      enum:
+        - IN
+        - OUT
+      description: Whether the money is coming in or going out, relative to Grid. Only `OUT` is accepted today.
+      example: OUT
+    FeeOriginator:
+      type: string
+      enum:
+        - GRID
+        - EXTERNAL
+      description: Who originated the movement over the rail. An ACH OUT where Grid is the originator means Grid is pushing out the funds, while an ACH OUT with an EXTERNAL originator indicates Grid received an ACH pull request from an external source.
+      example: GRID
     RailFeeConfig:
       allOf:
         - $ref: '#/components/schemas/FeeConfig'
@@ -14171,19 +14185,9 @@ components:
               $ref: '#/components/schemas/PaymentRail'
               description: The rail used in the transaction. `ACH`, `ACH_SAME_DAY`, `RTP`, `FEDNOW` and `WIRE` are accepted today; other rails return a `NOT_IMPLEMENTED` error.
             direction:
-              type: string
-              enum:
-                - IN
-                - OUT
-              description: Whether the money is coming in or going out, relative to Grid. Only `OUT` is accepted today.
-              example: OUT
+              $ref: '#/components/schemas/FeeDirection'
             originator:
-              type: string
-              enum:
-                - GRID
-                - EXTERNAL
-              description: Who originated the movement over the rail. An ACH OUT where Grid is the originator means Grid is pushing out the funds, while an ACH OUT with an EXTERNAL originator indicates Grid received an ACH pull request from an external source.
-              example: GRID
+              $ref: '#/components/schemas/FeeOriginator'
           required:
             - rail
             - direction
@@ -29570,21 +29574,23 @@ components:
           type: string
           description: Provider account link to register against. Optional when exactly one active link exists for the authenticated platform; required to resolve STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED when multiple links exist.
           example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+    StablecoinMintFundingSourceType:
+      type: string
+      enum:
+        - WIRE
+        - ACH_DEBIT
+        - SAME_DAY_ACH_DEBIT
+        - GRID_INTERNAL_ACCOUNT
+        - PROVIDER_INTERNAL_BALANCE
+      description: Funding source variant. Grid internal account and provider internal balance funding are reserved for follow-up support.
+      example: ACH_DEBIT
     StablecoinMintFundingSourceBase:
       type: object
       required:
         - type
       properties:
         type:
-          type: string
-          enum:
-            - WIRE
-            - ACH_DEBIT
-            - SAME_DAY_ACH_DEBIT
-            - GRID_INTERNAL_ACCOUNT
-            - PROVIDER_INTERNAL_BALANCE
-          description: Funding source variant. Grid internal account and provider internal balance funding are reserved for follow-up support.
-          example: ACH_DEBIT
+          $ref: '#/components/schemas/StablecoinMintFundingSourceType'
     StablecoinWireFundingSource:
       title: Wire
       allOf:
@@ -29748,6 +29754,17 @@ components:
         - FAILED
         - EXPIRED
       description: Stablecoin issuer operation lifecycle status.
+    StablecoinOperationSourceType:
+      type: string
+      enum:
+        - WIRE
+        - ACH_DEBIT
+        - SAME_DAY_ACH_DEBIT
+        - EXTERNAL_ACCOUNT
+        - GRID_INTERNAL_ACCOUNT
+        - PROVIDER_INTERNAL_BALANCE
+      description: Source variant. Mint funding uses `WIRE`, `ACH_DEBIT`, or `SAME_DAY_ACH_DEBIT`; burns use `EXTERNAL_ACCOUNT`. `GRID_INTERNAL_ACCOUNT` and `PROVIDER_INTERNAL_BALANCE` are shared across mint and burn.
+      example: ACH_DEBIT
     StablecoinOperationSource:
       type: object
       description: 'Source of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged shape (superset of the mint funding source and burn source request variants) so the field is unambiguously deserializable regardless of operation type: `externalAccountId` is present for external-account funded mints, `accountId` for Grid internal account sources, and `sourceTokenIdentifier`/`cryptoNetwork` for provider internal balance sources.'
@@ -29755,16 +29772,7 @@ components:
         - type
       properties:
         type:
-          type: string
-          enum:
-            - WIRE
-            - ACH_DEBIT
-            - SAME_DAY_ACH_DEBIT
-            - EXTERNAL_ACCOUNT
-            - GRID_INTERNAL_ACCOUNT
-            - PROVIDER_INTERNAL_BALANCE
-          description: Source variant. Mint funding uses `WIRE`, `ACH_DEBIT`, or `SAME_DAY_ACH_DEBIT`; burns use `EXTERNAL_ACCOUNT`. `GRID_INTERNAL_ACCOUNT` and `PROVIDER_INTERNAL_BALANCE` are shared across mint and burn.
-          example: ACH_DEBIT
+          $ref: '#/components/schemas/StablecoinOperationSourceType'
         externalAccountId:
           type: string
           description: Grid `ExternalAccount` funding the operation, present for ACH debit mints.
@@ -29807,6 +29815,14 @@ components:
         network: SPARK
         address: spark1...
         valueType: ACME
+    StablecoinOperationDestinationRail:
+      type: string
+      enum:
+        - WIRE
+        - ACH_CREDIT
+        - SAME_DAY_ACH_CREDIT
+        - RTP_CREDIT
+      description: Fiat payout rail, present for burn (fiat redemption) destinations.
     StablecoinOperationDestination:
       type: object
       description: 'Destination of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged (flat) shape so the field is unambiguously deserializable regardless of operation type: `accountId` identifies the receiving account (its `ExternalAccount:` / `InternalAccount:` prefix disambiguates external vs Grid-managed), and `rail` is present for burn (fiat payout) destinations and absent for mint destinations.'
@@ -29818,13 +29834,7 @@ components:
           description: Grid account that received the funds. An `ExternalAccount:` id for external destinations or an `InternalAccount:` id for Grid-managed destinations.
           example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
         rail:
-          type: string
-          enum:
-            - WIRE
-            - ACH_CREDIT
-            - SAME_DAY_ACH_CREDIT
-            - RTP_CREDIT
-          description: Fiat payout rail, present for burn (fiat redemption) destinations.
+          $ref: '#/components/schemas/StablecoinOperationDestinationRail'
     StablecoinEstimatedDelivery:
       type: object
       description: Static rail timing estimate for fiat redemption delivery. This is guidance, not a guaranteed arrival time.
@@ -29946,19 +29956,21 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    StablecoinBurnSourceType:
+      type: string
+      enum:
+        - EXTERNAL_ACCOUNT
+        - GRID_INTERNAL_ACCOUNT
+        - PROVIDER_INTERNAL_BALANCE
+      description: Burn source variant. Grid internal account burns are reserved for the Grid-enabled ledger movement flow.
+      example: EXTERNAL_ACCOUNT
     StablecoinBurnSourceBase:
       type: object
       required:
         - type
       properties:
         type:
-          type: string
-          enum:
-            - EXTERNAL_ACCOUNT
-            - GRID_INTERNAL_ACCOUNT
-            - PROVIDER_INTERNAL_BALANCE
-          description: Burn source variant. Grid internal account burns are reserved for the Grid-enabled ledger movement flow.
-          example: EXTERNAL_ACCOUNT
+          $ref: '#/components/schemas/StablecoinBurnSourceType'
     StablecoinExternalAccountBurnSource:
       title: External Account
       allOf:
@@ -30020,6 +30032,12 @@ components:
           EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinExternalAccountBurnSource'
           GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalBurnSource'
           PROVIDER_INTERNAL_BALANCE: '#/components/schemas/StablecoinProviderBalanceBurnSource'
+    StablecoinBurnDestinationType:
+      type: string
+      enum:
+        - EXTERNAL_ACCOUNT
+        - GRID_INTERNAL_ACCOUNT
+      description: Burn destination variant.
     StablecoinBurnDestinationRail:
       type: string
       enum:
@@ -30035,11 +30053,7 @@ components:
         - rail
       properties:
         type:
-          type: string
-          enum:
-            - EXTERNAL_ACCOUNT
-            - GRID_INTERNAL_ACCOUNT
-          description: Burn destination variant.
+          $ref: '#/components/schemas/StablecoinBurnDestinationType'
         rail:
           $ref: '#/components/schemas/StablecoinBurnDestinationRail'
     StablecoinExternalAccountBurnDestination:
