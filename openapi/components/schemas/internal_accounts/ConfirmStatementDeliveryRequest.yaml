@@ -1,16 +1,15 @@
 type: object
 required:
-  - periodStart
+  - statementMonth
   - statementDeliveredAt
 properties:
-  periodStart:
+  statementMonth:
     type: string
-    format: date
+    pattern: '^\d{4}-(0[1-9]|1[0-2])$'
     description: >-
-      First day of the statement period the receipt covers, a calendar month in
-      US Central time. Must be the first day of a month that has already
-      begun.
-    example: '2026-09-01'
+      The statement month the receipt covers, as `YYYY-MM`. A statement month is
+      a calendar month in US Central time, and it must have already begun.
+    example: '2026-09'
   statementDeliveredAt:
     type: string
     format: date-time

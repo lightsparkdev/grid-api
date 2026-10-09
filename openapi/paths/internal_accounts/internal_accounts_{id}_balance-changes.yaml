@@ -40,13 +40,8 @@ get:
     it has settled.
 
 
-    **Fees are inside the changes.** A fee Grid charges comes out of the
-    balance, so it is already in `amount`: inside a send's change, or a change
-    of its own for a withdrawal's fee. Each change's `fee` says how much of
-    its `amount` was a fee, negative when charged and positive when refunded.
-    To show a fee separately, split the change into `amount - fee` and `fee`.
-    Never add `fee` on top of `amount`, or the identity stops holding. Card
-    transactions carry no Grid fee.
+    A fee is already inside a change's `amount`. For the fee itself, read
+    `fees` on the change's transaction, counting each transaction once.
   operationId: listInternalAccountBalanceChanges
   tags:
     - Periodic Statements
@@ -85,7 +80,10 @@ get:
     - name: cursor
       in: query
       required: false
-      description: Cursor for pagination (returned from previous request)
+      description: >-
+        Cursor for pagination: the `nextCursor` from the previous page,
+        unchanged. Send it with the same account, `startDate` and `endDate` as
+        that page. A cursor does not expire.
       schema:
         type: string
   responses:
@@ -100,7 +98,8 @@ get:
         Bad request. Returned when `startDate` or `endDate` is missing, has no
         timezone, or is in the future, when `startDate` is not before
         `endDate`, when
-        `cursor` was not issued by this endpoint, or when the account has no
+        `cursor` was not issued by this endpoint for the same account and
+        window, or when the account has no
         statement of its own.
       content:
         application/json:

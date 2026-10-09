@@ -1,18 +1,18 @@
 type: object
 required:
   - internalAccountId
-  - periodStart
+  - statementMonth
   - statementDeliveredAt
 properties:
   internalAccountId:
     type: string
     description: The account whose statement this is
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-  periodStart:
+  statementMonth:
     type: string
-    format: date
-    description: First day of the statement period
-    example: '2026-09-01'
+    pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+    description: The statement month, as `YYYY-MM`
+    example: '2026-09'
   fetchedAt:
     type: string
     format: date-time

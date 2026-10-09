@@ -54,7 +54,6 @@ Every statement carries the provider line. A consumer statement also carries the
 | Payee or merchant | Counterparty name, or the merchant descriptor for a card purchase | Always |
 | Terminal location | Merchant city and state | Consumer statements, for card purchases at a merchant terminal, when the card network reports a location |
 | Transaction amount | Signed amount in the account currency | Always |
-| Fee line items | Each fee charged in the period, as its own line | When a fee was charged |
 | Total fees for the period | Sum of all fees charged in the period | Always |
 
 ## Mapping Grid data to statement fields
@@ -82,15 +81,12 @@ Pass `startDate` as the first instant of the month and `endDate` as the first in
 | Payee or merchant | `counterpartyInformation` or `description` on `INCOMING` and `OUTGOING` transactions. `merchant.descriptor` on `CARD` transactions |
 | Terminal location | `merchant.city` and `merchant.state` on `CARD` transactions, when present |
 | Transaction amount | `amount` on each balance change, already signed: money out is negative |
-| Fee line items | `fee` on each balance change. It is part of `amount`, so show the change as two lines: `amount - fee` for the transfer and `fee` for the fee |
-| Total fees for the period | Sum of `fee` across the month's balance changes, shown as a positive amount |
+| Total fees for the period | Sum of `fees` across the month's transactions, counting each transaction once. Subtract the fee of a transaction refunded in the month |
 
 **Check before you issue:** `openingBalance + Σ(amount) == closingBalance`, summed over every page. It holds by construction, so a mismatch means a page was missed.
 
 <Note>
 Each balance change is one movement of the balance, so one transaction can produce several lines. An ACH deposit and its later return are two lines. A card purchase that clears in two parts is two lines. A withdrawal's fee can be a line of its own. Several changes can share a `transactionId`, so fetch each transaction once.
-
-`fee` is negative for a fee charged and positive for a fee refunded, for example when a returned withdrawal gives its fee back. Grid charges no fee on card transactions. An ATM operator's surcharge is part of the transaction amount. Never add `fee` on top of `amount`.
 
 `transactionId` is `null` for an adjustment with no transaction behind it. List it with a generic description, such as "Account adjustment".
 </Note>
@@ -182,24 +178,21 @@ async function buildStatement(customerId, accountId, year, month) {
     }
   }
 
-  // A fee is inside its change's amount: split it into its own line
   const lines = [];
   for (const change of changes) {
     const detail = describe(transactions.get(change.transactionId));
-    const fee = change.fee.amount;
-    const principal = change.amount.amount - fee;
     if (commercial) delete detail.terminalLocation;
-    if (principal !== 0) lines.push({ date: change.effectiveAt, ...detail, amount: principal });
-    if (fee !== 0) {
-      lines.push({
-        date: change.effectiveAt,
-        type: fee < 0 ? 'FEE' : 'FEE_REFUND',
-        payee: detail.payee,
-        amount: fee,
-      });
-    }
+    lines.push({ date: change.effectiveAt, ...detail, amount: change.amount.amount });
   }
-  const totalFees = -changes.reduce((sum, change) => sum + change.fee.amount, 0);
+
+  // Count each transaction's fee once; a refund in the month gives it back
+  let totalFees = 0;
+  for (const [transactionId, transaction] of transactions) {
+    if (!transaction.fees || transaction.source?.accountId !== accountId) continue;
+    const own = changes.filter((change) => change.transactionId === transactionId);
+    if (own.some((change) => change.amount.amount < 0)) totalFees += transaction.fees;
+    if (own.some((change) => change.amount.amount > 0)) totalFees -= transaction.fees;
+  }
 
   const { currency } = closingBalance;
   const format = (amount) => (amount / 10 ** currency.decimals).toFixed(currency.decimals);
@@ -228,7 +221,7 @@ async function buildStatement(customerId, accountId, year, month) {
 
   // The monthly receipt: Grid's record that this account's statement was issued
   await grid.post(`/internal-accounts/${accountId}/confirm-statement`, {
-    periodStart: `${year}-${String(month).padStart(2, '0')}-01`,
+    statementMonth: `${year}-${String(month).padStart(2, '0')}`,
     statementDeliveredAt: statement.issueDate,
   });
 }

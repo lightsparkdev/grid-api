@@ -21,9 +21,8 @@ post:
     that every account's statement was issued.
 
 
-    `periodStart` names the period: the first day of the statement month, as a
-    date. It must be the first of a month, and a month that has already
-    begun.
+    `statementMonth` names the statement month as `YYYY-MM`, a calendar month
+    in US Central time. It must be a month that has already begun.
 
 
     Sending a receipt is idempotent. The stored time is the first receipt's,
@@ -48,8 +47,8 @@ post:
             $ref: ../../components/schemas/internal_accounts/StatementDelivery.yaml
     '400':
       description: >-
-        Bad request. Returned when `periodStart` is not the first day of a
-        month or names a month that has not begun, when `statementDeliveredAt`
+        Bad request. Returned when `statementMonth` is not a `YYYY-MM` month or
+        names a month that has not begun, when `statementDeliveredAt`
         is missing, in the future or before the period has ended, or when the
         account has no statement of its own.
       content:

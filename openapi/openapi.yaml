@@ -56,7 +56,7 @@ tags:
 
       **2. The receipt — `POST /internal-accounts/{id}/confirm-statement`**
 
-      Once a month, after you have pulled and issued a period's statement, send a receipt with the `periodStart` it covers. Grid stores it as the delivery record for that account and period. Sending it again is harmless: the first receipt's time is kept.
+      Once a month, after you have pulled and issued a period's statement, send a receipt with the `statementMonth` it covers. Grid stores it as the delivery record for that account and period. Sending it again is harmless: the first receipt's time is kept.
 
       **Timing**
 

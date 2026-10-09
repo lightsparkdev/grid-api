@@ -49,7 +49,7 @@ tags:
 
       **2. The receipt — `POST /internal-accounts/{id}/confirm-statement`**
 
-      Once a month, after you have pulled and issued a period's statement, send a receipt with the `periodStart` it covers. Grid stores it as the delivery record for that account and period. Sending it again is harmless: the first receipt's time is kept.
+      Once a month, after you have pulled and issued a period's statement, send a receipt with the `statementMonth` it covers. Grid stores it as the delivery record for that account and period. Sending it again is harmless: the first receipt's time is kept.
 
       **Timing**
 
@@ -6496,7 +6496,7 @@ paths:
 
         A window whose card settlement has not closed is refused with `409 NOT_YET_AVAILABLE`, because its figures could still change. Retry once it has settled.
 
-        **Fees are inside the changes.** A fee Grid charges comes out of the balance, so it is already in `amount`: inside a send's change, or a change of its own for a withdrawal's fee. Each change's `fee` says how much of its `amount` was a fee, negative when charged and positive when refunded. To show a fee separately, split the change into `amount - fee` and `fee`. Never add `fee` on top of `amount`, or the identity stops holding. Card transactions carry no Grid fee.
+        A fee is already inside a change's `amount`. For the fee itself, read `fees` on the change's transaction, counting each transaction once.
       operationId: listInternalAccountBalanceChanges
       tags:
         - Periodic Statements
@@ -6531,7 +6531,7 @@ paths:
         - name: cursor
           in: query
           required: false
-          description: Cursor for pagination (returned from previous request)
+          description: 'Cursor for pagination: the `nextCursor` from the previous page, unchanged. Send it with the same account, `startDate` and `endDate` as that page. A cursor does not expire.'
           schema:
             type: string
       responses:
@@ -6542,7 +6542,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BalanceChangeListResponse'
         '400':
-          description: Bad request. Returned when `startDate` or `endDate` is missing, has no timezone, or is in the future, when `startDate` is not before `endDate`, when `cursor` was not issued by this endpoint, or when the account has no statement of its own.
+          description: Bad request. Returned when `startDate` or `endDate` is missing, has no timezone, or is in the future, when `startDate` is not before `endDate`, when `cursor` was not issued by this endpoint for the same account and window, or when the account has no statement of its own.
           content:
             application/json:
               schema:
@@ -6587,7 +6587,7 @@ paths:
 
         Send it once a month for each account, after you have issued the statement built from `GET /internal-accounts/{id}/balance-changes`. Send it within five days of the month's end for every customer account: Grid checks then that every account's statement was issued.
 
-        `periodStart` names the period: the first day of the statement month, as a date. It must be the first of a month, and a month that has already begun.
+        `statementMonth` names the statement month as `YYYY-MM`, a calendar month in US Central time. It must be a month that has already begun.
 
         Sending a receipt is idempotent. The stored time is the first receipt's, so calling this again does not move it.
       operationId: confirmStatementDelivery
@@ -6609,7 +6609,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StatementDelivery'
         '400':
-          description: Bad request. Returned when `periodStart` is not the first day of a month or names a month that has not begun, when `statementDeliveredAt` is missing, in the future or before the period has ended, or when the account has no statement of its own.
+          description: Bad request. Returned when `statementMonth` is not a `YYYY-MM` month or names a month that has not begun, when `statementDeliveredAt` is missing, in the future or before the period has ended, or when the account has no statement of its own.
           content:
             application/json:
               schema:
@@ -27393,7 +27393,6 @@ components:
       required:
         - id
         - amount
-        - fee
         - effectiveAt
       properties:
         id:
@@ -27406,10 +27405,6 @@ components:
           example: Transaction:019542f5-b3e7-1d02-0000-000000000004
         amount:
           $ref: '#/components/schemas/CurrencyAmount'
-        fee:
-          allOf:
-            - $ref: '#/components/schemas/CurrencyAmount'
-          description: 'The part of `amount` that is a fee, signed the same way: negative for a fee charged, positive for a fee refunded, zero when the change carries no fee. Already included in `amount`, so never add it on top. Sum it across a period for the period''s total fees.'
         effectiveAt:
           type: string
           format: date-time
@@ -27460,14 +27455,14 @@ components:
     ConfirmStatementDeliveryRequest:
       type: object
       required:
-        - periodStart
+        - statementMonth
         - statementDeliveredAt
       properties:
-        periodStart:
+        statementMonth:
           type: string
-          format: date
-          description: First day of the statement period the receipt covers, a calendar month in US Central time. Must be the first day of a month that has already begun.
-          example: '2026-09-01'
+          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+          description: The statement month the receipt covers, as `YYYY-MM`. A statement month is a calendar month in US Central time, and it must have already begun.
+          example: 2026-09
         statementDeliveredAt:
           type: string
           format: date-time
@@ -27477,18 +27472,18 @@ components:
       type: object
       required:
         - internalAccountId
-        - periodStart
+        - statementMonth
         - statementDeliveredAt
       properties:
         internalAccountId:
           type: string
           description: The account whose statement this is
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-        periodStart:
+        statementMonth:
           type: string
-          format: date
-          description: First day of the statement period
-          example: '2026-09-01'
+          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+          description: The statement month, as `YYYY-MM`
+          example: 2026-09
         fetchedAt:
           type: string
           format: date-time
