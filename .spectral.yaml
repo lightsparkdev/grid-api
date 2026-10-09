@@ -101,6 +101,24 @@ rules:
       field: "$ref"
       function: truthy
 
+  # Enums with more than one value must be their own component schema so that
+  # generated SDKs expose an enum type instead of a plain string. Single-value
+  # enums stay inline: they are the discriminator tags on variant schemas (see
+  # README: Discriminators and Polymorphism). ErrorNNN.code enums are excluded
+  # because SDKs surface error codes through their error type, not as enums.
+  no-inline-enums:
+    description: Enums with more than one value must be a named component schema
+    message: "Inline enum. Declare it as its own file under openapi/components/schemas and $ref it. See openapi/README.md#enums"
+    severity: error
+    resolved: false
+    given:
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))].properties[?(@.enum && @.enum.length > 1)].enum"
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))].properties[?(@.items && @.items.enum && @.items.enum.length > 1)].items.enum"
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))][allOf,oneOf,anyOf].*.properties[?(@.enum && @.enum.length > 1)].enum"
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))][allOf,oneOf,anyOf].*.properties[?(@.items && @.items.enum && @.items.enum.length > 1)].items.enum"
+    then:
+      function: falsy
+
   # ============================================================
   # Pagination (README: Pagination)
   # ============================================================
@@ -191,3 +209,28 @@ overrides:
       - "openapi.yaml#/components/schemas/CardUpdateRequest/properties/threeDSecurePassword"
     rules:
       field-names-camelCase: "off"
+
+  # Enum values that cannot become a component schema because they would fail
+  # enum-values-upper-snake-case: WebAuthn transport names, the Bitcoin message
+  # signature scheme names, and the wallet operation names are lowercase by
+  # their own standards.
+  - files:
+      - "openapi.yaml#/components/schemas/OwnershipVerifyRequest/properties/signatureScheme/enum"
+      - "openapi.yaml#/components/schemas/PasskeyAttestation/properties/transports/items/enum"
+      - "openapi.yaml#/components/schemas/WalletOperationCompletedData/properties/operationType/enum"
+      - "openapi.yaml#/components/schemas/WalletOperationFailedData/properties/operationType/enum"
+    rules:
+      no-inline-enums: "off"
+  # Nullable enums express null as an enum member, which a shared string enum
+  # cannot carry without restructuring the field.
+  - files:
+      - "openapi.yaml#/components/schemas/SandboxCardDisputeResponse/properties/disposition/enum"
+      - "openapi.yaml#/components/schemas/TwoFactorResetStatus/properties/enrollmentStatus/enum"
+    rules:
+      no-inline-enums: "off"
+  # A two-value subset of BulkCustomerImportJobStatus. Pointing it at the full
+  # enum would widen the 202 response contract.
+  - files:
+      - "openapi.yaml#/components/schemas/BulkCustomerImportJobAccepted/properties/status/enum"
+    rules:
+      no-inline-enums: "off"
