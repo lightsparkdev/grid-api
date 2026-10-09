@@ -30,7 +30,9 @@ get:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '403':
-      description: Forbidden - Agent does not have the RECEIVE_FUNDS permission
+      description: >-
+        Forbidden - Agents API is not enabled for the platform or the agent does not have
+        the RECEIVE_FUNDS permission
       content:
         application/json:
           schema:

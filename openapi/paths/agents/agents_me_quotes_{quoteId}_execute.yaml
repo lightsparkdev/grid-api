@@ -62,9 +62,9 @@ post:
             $ref: ../../components/schemas/errors/Error401.yaml
     '403':
       description: >-
-        Forbidden. The agent policy does not permit this operation, a spending
-        limit was exceeded, or an `EMBEDDED_WALLET` source has no active
-        delegated key for this agent.
+        Forbidden. The Agents API is not enabled for the platform, the agent policy does
+        not permit this operation, a spending limit was exceeded, or an `EMBEDDED_WALLET`
+        source has no active delegated key for this agent.
       content:
         application/json:
           schema:

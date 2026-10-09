@@ -1,10 +1,3 @@
-parameters:
-  - name: code
-    in: path
-    description: The device code to redeem
-    required: true
-    schema:
-      type: string
 post:
   summary: Redeem device code
   description: >
@@ -19,6 +12,12 @@ post:
   tags:
     - Agent Management
   security: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentDeviceCodeRequest.yaml
   responses:
     '200':
       description: Device code redeemed successfully
@@ -32,6 +31,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error400.yaml
+    '403':
+      description: Forbidden - Agents API is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '404':
       description: Device code not found
       content:
