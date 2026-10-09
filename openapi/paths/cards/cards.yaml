@@ -40,6 +40,13 @@ post:
     provisions the card. The `card.status_change` webhook fires on each status
     transition, including the transition to `ACTIVE` (or to `CLOSED` with
     `statusReason: "ISSUER_REJECTED"` if provisioning fails).
+    A provisioned card funded by a USDB Embedded Wallet remains `PENDING_AUTH`
+    with `statusReason: "DELEGATION_REQUIRED"`
+    until all signed retries of `POST /auth/delegated-keys` are complete.
+    Replacing USD funding with USDB without an active key, or revoking the
+    required key, also moves an active card to `PENDING_AUTH`. Completing delegation
+    or switching back to USD restores `ACTIVE`; frozen and closed cards keep
+    their status.
   operationId: createCard
   tags:
     - Cards

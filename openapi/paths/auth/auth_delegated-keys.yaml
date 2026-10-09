@@ -27,7 +27,9 @@ post:
 
     3. Stamp the new `payloadToSign` with the same session keypair and retry
     once more with the new `Request-Id`. The signed retry returns `201`
-    with the created `DelegatedKey` in `ACTIVE` status.
+    with the created `DelegatedKey` in `ACTIVE` status. A provisioned `PENDING_AUTH`
+    card using this funding source becomes `ACTIVE` automatically. Cards still
+    provisioning remain `PROCESSING`; frozen and closed cards retain their status.
 
 
     The same request body must be sent on all three legs. A flow abandoned

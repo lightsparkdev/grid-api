@@ -59,13 +59,18 @@ patch:
     or set a new `threeDSecurePassword`. At least one field must be supplied.
 
 
-    - `status` transitions are limited to `ACTIVE ⇄ FROZEN` and
-    `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible.
-    Any other transition returns `409 INVALID_STATE_TRANSITION`.
+    - `status` transitions include `ACTIVE ⇄ FROZEN`,
+    `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`.
+    `CLOSED` is terminal and irreversible. Activating a card whose USDB funding
+    source lacks a usable delegated key returns `409 INVALID_STATE_TRANSITION`.
+    `PENDING_AUTH` is managed by Grid and cannot be requested. Completing delegation
+    does not unfreeze or reopen a card.
 
     - `fundingSource`, when supplied, replaces the card's bound internal
-    account. It must belong to the customer and be denominated in the card's
-    currency. `fundingSource` cannot be supplied alongside `status: CLOSED`.
+    account. It must belong to the customer and use a currency supported by the
+    card program, including USDB for USD cards. An active card becomes `PENDING_AUTH`
+    when switched to USDB without an active delegated key. Switching back to
+    USD restores readiness. `fundingSource` cannot be supplied alongside `status: CLOSED`.
     On card programs
     where the card issuer makes authorization decisions, `fundingSource` cannot
     be combined with any `status` change, so send the changes as separate
@@ -231,8 +236,9 @@ patch:
       description: >-
         Conflict. Returned with `INVALID_STATE_TRANSITION` when the
         requested `status` transition is not one of
-        `ACTIVE ⇄ FROZEN` or `ACTIVE | FROZEN → CLOSED` (e.g. trying
-        to un-freeze a `CLOSED` card); with `CARD_ALREADY_CLOSED` when
+        `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, or
+        `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`, or when activation is requested
+        before delegated signing authorization is complete; with `CARD_ALREADY_CLOSED` when
         `status: CLOSED` is requested for a card that is already
         `CLOSED`; and with `CARD_NOT_MUTABLE` when the card is
         `CLOSED`.
