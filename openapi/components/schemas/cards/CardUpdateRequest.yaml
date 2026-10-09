@@ -14,38 +14,9 @@ description: >-
   `maxSpendPerDay`, or `maxTransactionsPerDay`.
 properties:
   status:
-    type: string
-    enum:
-      - ACTIVE
-      - FROZEN
-      - CLOSED
-    description: >-
-      Target status for the card. Permitted transitions are
-      `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and
-      `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Activation requires completed
-      delegated signing authorization. `CLOSED` is
-      terminal and irreversible; once closed, the card stays in the
-      system for audit and reconciliation but cannot transact again.
-    example: FROZEN
+    $ref: ./CardUpdateStatus.yaml
   substatus:
-    type: string
-    enum:
-      - LOST
-      - COMPROMISED
-      - DAMAGED
-      - END_USER_REQUEST
-      - ISSUER_REQUEST
-      - NOT_ACTIVE
-      - SUSPICIOUS_ACTIVITY
-      - INTERNAL_REVIEW
-      - EXPIRED
-      - UNDELIVERABLE
-      - OTHER
-    description: >-
-      Why the card is moving, in the card issuer's vocabulary. Required
-      whenever `status` is supplied, and forwarded to the issuer. Pick
-      `OTHER` when none of the named values fit and say why in `reason`.
-    example: SUSPICIOUS_ACTIVITY
+    $ref: ./CardUpdateSubstatus.yaml
   reason:
     type: string
     minLength: 1
