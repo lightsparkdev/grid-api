@@ -417,6 +417,25 @@ The discriminator property must be listed in `required` in the **variant** schem
 
 - Use `allOf` for extending base schemas
 
+### Enums
+
+Declare any enum with more than one value as its own file under `openapi/components/schemas/` and reference it with `$ref`. An inline enum on a property generates a plain string field in the SDKs, so a typo in a status or type only fails at runtime. A named schema generates an enum type, such as `QuoteStatus`, that the SDK's type checker can verify. When several properties share the same values, point them at one schema and keep a property-level `description` beside the `$ref` only where it adds something the shared schema does not say.
+
+```yaml
+# ❌ Wrong — inline enum generates a string field in SDKs
+status:
+  type: string
+  enum:
+    - PENDING
+    - COMPLETED
+
+# ✅ Correct — QuoteStatus.yaml holds the enum, the property references it
+status:
+  $ref: ./QuoteStatus.yaml
+```
+
+Single-value enums stay inline. They are the discriminator tags on variant schemas, and the section on discriminators explains why each variant needs its own. The `code` enums on the `ErrorNNN` schemas also stay inline, since SDKs surface error codes through their error type. The `no-inline-enums` Spectral rule enforces this, with per-field exemptions listed in `.spectral.yaml` for values that cannot be UPPER_SNAKE_CASE or that use `null` as an enum member.
+
 ### Avoid Inline Schemas in Request and Response Definitions
 
 Never define schemas inline within path request bodies or responses. Always use `$ref` to reference a named schema in `components/schemas/`. Inline schemas produce auto-generated names in SDKs based on the operation and HTTP status code, resulting in poor developer experience.
