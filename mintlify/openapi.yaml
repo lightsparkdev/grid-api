@@ -30390,6 +30390,16 @@ components:
               items:
                 $ref: '#/components/schemas/CounterpartyFieldDefinition'
               description: Information required by the sender's VASP about the recipient. Platform must provide these in the 200 OK response if approving. Note that this only includes fields which Grid does not already have from initial customer registration.
+    IncomingPaymentWebhookEventType:
+      type: string
+      enum:
+        - INCOMING_PAYMENT.PENDING
+        - INCOMING_PAYMENT.PROCESSING
+        - INCOMING_PAYMENT.COMPLETED
+        - INCOMING_PAYMENT.FAILED
+        - INCOMING_PAYMENT.REFUND_PENDING
+        - INCOMING_PAYMENT.REFUND_COMPLETED
+        - INCOMING_PAYMENT.REFUND_FAILED
     IncomingPaymentWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -30400,15 +30410,7 @@ components:
             data:
               $ref: '#/components/schemas/IncomingPaymentWebhookData'
             type:
-              type: string
-              enum:
-                - INCOMING_PAYMENT.PENDING
-                - INCOMING_PAYMENT.PROCESSING
-                - INCOMING_PAYMENT.COMPLETED
-                - INCOMING_PAYMENT.FAILED
-                - INCOMING_PAYMENT.REFUND_PENDING
-                - INCOMING_PAYMENT.REFUND_COMPLETED
-                - INCOMING_PAYMENT.REFUND_FAILED
+              $ref: '#/components/schemas/IncomingPaymentWebhookEventType'
     IncomingPaymentWebhookResponse:
       type: object
       properties:
@@ -30438,6 +30440,18 @@ components:
               example:
                 - TAX_ID
                 - REGISTRATION_NUMBER
+    OutgoingPaymentWebhookEventType:
+      type: string
+      enum:
+        - OUTGOING_PAYMENT.PENDING
+        - OUTGOING_PAYMENT.PENDING_AUTHORIZATION
+        - OUTGOING_PAYMENT.PROCESSING
+        - OUTGOING_PAYMENT.COMPLETED
+        - OUTGOING_PAYMENT.FAILED
+        - OUTGOING_PAYMENT.EXPIRED
+        - OUTGOING_PAYMENT.REFUND_PENDING
+        - OUTGOING_PAYMENT.REFUND_COMPLETED
+        - OUTGOING_PAYMENT.REFUND_FAILED
     OutgoingPaymentWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -30448,17 +30462,7 @@ components:
             data:
               $ref: '#/components/schemas/OutgoingTransaction'
             type:
-              type: string
-              enum:
-                - OUTGOING_PAYMENT.PENDING
-                - OUTGOING_PAYMENT.PENDING_AUTHORIZATION
-                - OUTGOING_PAYMENT.PROCESSING
-                - OUTGOING_PAYMENT.COMPLETED
-                - OUTGOING_PAYMENT.FAILED
-                - OUTGOING_PAYMENT.EXPIRED
-                - OUTGOING_PAYMENT.REFUND_PENDING
-                - OUTGOING_PAYMENT.REFUND_COMPLETED
-                - OUTGOING_PAYMENT.REFUND_FAILED
+              $ref: '#/components/schemas/OutgoingPaymentWebhookEventType'
     TestWebhookRequest:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -30497,6 +30501,15 @@ components:
               type: string
               enum:
                 - INVITATION.CLAIMED
+    CustomerWebhookEventType:
+      type: string
+      enum:
+        - CUSTOMER.KYC_APPROVED
+        - CUSTOMER.KYC_REJECTED
+        - CUSTOMER.KYC_PENDING
+        - CUSTOMER.KYB_APPROVED
+        - CUSTOMER.KYB_REJECTED
+        - CUSTOMER.KYB_PENDING
     CustomerWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -30507,14 +30520,7 @@ components:
             data:
               $ref: '#/components/schemas/CustomerOneOf'
             type:
-              type: string
-              enum:
-                - CUSTOMER.KYC_APPROVED
-                - CUSTOMER.KYC_REJECTED
-                - CUSTOMER.KYC_PENDING
-                - CUSTOMER.KYB_APPROVED
-                - CUSTOMER.KYB_REJECTED
-                - CUSTOMER.KYB_PENDING
+              $ref: '#/components/schemas/CustomerWebhookEventType'
     InternalAccountStatusWebhookEventType:
       type: string
       enum:

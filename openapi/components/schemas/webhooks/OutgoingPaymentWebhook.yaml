@@ -7,14 +7,4 @@ allOf:
       data:
         $ref: ../transactions/OutgoingTransaction.yaml
       type:
-        type: string
-        enum:
-          - OUTGOING_PAYMENT.PENDING
-          - OUTGOING_PAYMENT.PENDING_AUTHORIZATION
-          - OUTGOING_PAYMENT.PROCESSING
-          - OUTGOING_PAYMENT.COMPLETED
-          - OUTGOING_PAYMENT.FAILED
-          - OUTGOING_PAYMENT.EXPIRED
-          - OUTGOING_PAYMENT.REFUND_PENDING
-          - OUTGOING_PAYMENT.REFUND_COMPLETED
-          - OUTGOING_PAYMENT.REFUND_FAILED
+        $ref: ./OutgoingPaymentWebhookEventType.yaml
