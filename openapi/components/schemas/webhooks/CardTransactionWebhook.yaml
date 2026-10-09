@@ -7,11 +7,4 @@ allOf:
       data:
         $ref: ../cards/CardTransaction.yaml
       type:
-        type: string
-        enum:
-          - CARD_TRANSACTION.AUTHORIZED
-          - CARD_TRANSACTION.PARTIALLY_SETTLED
-          - CARD_TRANSACTION.SETTLED
-          - CARD_TRANSACTION.DECLINED
-          - CARD_TRANSACTION.VOIDED
-          - CARD_TRANSACTION.EXCEPTION
+        $ref: ./CardTransactionWebhookEventType.yaml
