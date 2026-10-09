@@ -1,0 +1,7 @@
+type: string
+enum:
+  - IN
+  - OUT
+description: >-
+  Whether the money is coming in or going out, relative to Grid. Only `OUT` is accepted today.
+example: OUT
