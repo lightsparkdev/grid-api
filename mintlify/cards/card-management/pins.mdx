@@ -97,6 +97,12 @@ Read `pinStatus` from `GET /cards/{id}`:
 
 Three consecutive incorrect attempts block an online PIN. Call `POST /cards/{id}/pin/unblock` to keep the same PIN, or use either PIN-entry flow to choose a new one. Unblocking a PIN that is already `OK` is safe; a card with no PIN returns `409 CONFLICT`.
 
+Only request an unblock after authenticating the cardholder and receiving their explicit request. Do not automatically unblock after a declined transaction.
+
+Each card allows one unblock attempt per rolling seven days.
+
+If the PIN blocks again before that window ends, the endpoint returns `409 PIN_CHANGE_REQUIRED`. Use either PIN-entry flow to change the PIN and recover immediately, or wait until `details.pinUnblockAvailableAt`. Changing the PIN does not reset the unblock allowance. You can also read `pinUnblockAvailableAt` from the Card resource; it is absent until an attempt consumes the allowance.
+
 There is no PIN-reveal API. If the cardholder forgets the PIN, let them set a new one. Setting a PIN does not activate a closed or frozen card or change its spending limits.
 
 `Card.pinStatus` is the last known PIN status, populated when a card with PIN management is created. An absent value means PIN management is unavailable for this card; it does not mean `NOT_SET` or tell you whether a payment requires a PIN.

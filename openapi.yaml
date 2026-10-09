@@ -9802,6 +9802,10 @@ paths:
 
         Unblocking is idempotent and safe to call on a card whose `pinStatus` is already `OK`. It has no effect on a card with no PIN set, which returns `409` — set a PIN with `POST /cards/{id}/set-pin` instead.
 
+        Each card permits one unblock attempt per rolling seven days. Further attempts return `409 PIN_CHANGE_REQUIRED` with `details.pinUnblockAvailableAt`. Change the PIN through either PIN-entry flow to recover sooner; changing the PIN does not reset the unblock allowance.
+
+        Only request an unblock after authenticating the cardholder and receiving their explicit request. Do not automatically unblock after a declined transaction.
+
         Grid supports online PINs only. Offline PIN cards are not supported. Read `GET /cards/{id}` to check `pinStatus`.
 
         Every call is audit-logged with the requesting actor.
@@ -9832,7 +9836,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict. Returned with `CONFLICT` for a closed card, a card with no PIN to unblock, or a card that does not support PIN management.
+          description: Conflict. Returned with `CONFLICT` for a closed card, a card with no PIN to unblock, or a card that does not support PIN management. Returned with `PIN_CHANGE_REQUIRED` when the card's seven-day unblock allowance is consumed. Change the PIN or wait until `details.pinUnblockAvailableAt`.
           content:
             application/json:
               schema:
@@ -15855,6 +15859,7 @@ components:
             | INVALID_STATE_TRANSITION | The requested card `status` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE \| FROZEN → CLOSED` |
             | CARD_ALREADY_CLOSED | `status: CLOSED` was requested for a card that is already `CLOSED` |
             | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
+            | PIN_CHANGE_REQUIRED | The card's PIN unblock allowance is consumed for seven days. Change the PIN to recover sooner. `details.pinUnblockAvailableAt` gives the next allowed unblock time |
             | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
             | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
             | NOT_YET_AVAILABLE | The request is valid, but its result is not available yet because the data it depends on could still change. Retry later. `reason` says what is outstanding. For balance changes, card settlement for a window boundary has not closed |
@@ -15882,6 +15887,7 @@ components:
             - INVALID_STATE_TRANSITION
             - CARD_ALREADY_CLOSED
             - CARD_NOT_MUTABLE
+            - PIN_CHANGE_REQUIRED
             - CARD_LIMIT_REACHED
             - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
             - NOT_YET_AVAILABLE
@@ -28689,6 +28695,12 @@ components:
           $ref: '#/components/schemas/CardForm'
         pinStatus:
           $ref: '#/components/schemas/CardPinStatus'
+        pinUnblockAvailableAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Earliest time another PIN unblock attempt is allowed. Absent until the unblock allowance is used. Changing the PIN does not reset this time.
+          example: '2026-10-15T15:00:00Z'
         last4:
           type: string
           description: Last four digits of the card PAN.

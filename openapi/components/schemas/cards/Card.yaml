@@ -37,6 +37,14 @@ properties:
     $ref: ./CardForm.yaml
   pinStatus:
     $ref: ./CardPinStatus.yaml
+  pinUnblockAvailableAt:
+    type: string
+    format: date-time
+    readOnly: true
+    description: >-
+      Earliest time another PIN unblock attempt is allowed. Absent until the
+      unblock allowance is used. Changing the PIN does not reset this time.
+    example: '2026-10-15T15:00:00Z'
   last4:
     type: string
     description: Last four digits of the card PAN.
