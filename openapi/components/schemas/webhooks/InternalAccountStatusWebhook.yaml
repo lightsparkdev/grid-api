@@ -7,8 +7,4 @@ allOf:
       data:
         $ref: ../customers/InternalAccount.yaml
       type:
-        type: string
-        enum:
-          - INTERNAL_ACCOUNT.BALANCE_UPDATED
-          - INTERNAL_ACCOUNT.STATUS_UPDATED
-          - INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED
+        $ref: ./InternalAccountStatusWebhookEventType.yaml

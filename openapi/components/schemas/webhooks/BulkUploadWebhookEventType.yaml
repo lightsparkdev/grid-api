@@ -1,0 +1,4 @@
+type: string
+enum:
+  - BULK_UPLOAD.COMPLETED
+  - BULK_UPLOAD.FAILED
