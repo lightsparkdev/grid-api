@@ -137,7 +137,7 @@ components:
       description: >-
         Bearer token authentication for agent-scoped endpoints. The token is the
         `accessToken` returned when redeeming a device code via
-        `POST /agents/device-codes/{code}/redeem`. Agent credentials are
+        `POST /agents/device-codes/redeem`. Agent credentials are
         user-scoped: all requests are automatically bound to the agent's
         associated customer and subject to the agent's policy.
     WebhookSignature:
@@ -358,10 +358,10 @@ paths:
     $ref: paths/agents/agents_{agentId}_actions_{actionId}_approve.yaml
   /agents/{agentId}/actions/{actionId}/reject:
     $ref: paths/agents/agents_{agentId}_actions_{actionId}_reject.yaml
-  /agents/device-codes/{code}/status:
-    $ref: paths/agents/agents_device-codes_{code}_status.yaml
-  /agents/device-codes/{code}/redeem:
-    $ref: paths/agents/agents_device-codes_{code}_redeem.yaml
+  /agents/device-codes/status:
+    $ref: paths/agents/agents_device-codes_status.yaml
+  /agents/device-codes/redeem:
+    $ref: paths/agents/agents_device-codes_redeem.yaml
   /agents/me/transactions:
     $ref: paths/agents/agents_me_transactions.yaml
   /agents/me/transactions/{transactionId}:

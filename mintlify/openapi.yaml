@@ -7747,6 +7747,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -7842,6 +7854,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer not found when filtering by customerId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -7929,6 +7953,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -7958,6 +7988,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -7987,7 +8023,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent does not have the MANAGE_IDENTITY permission
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
           content:
             application/json:
               schema:
@@ -8032,7 +8068,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent does not have the MANAGE_IDENTITY permission
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
           content:
             application/json:
               schema:
@@ -8072,7 +8108,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent does not have the MANAGE_IDENTITY permission
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
           content:
             application/json:
               schema:
@@ -8118,7 +8154,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent does not have the MANAGE_IDENTITY permission
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
           content:
             application/json:
               schema:
@@ -8179,7 +8215,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent does not have the RECEIVE_FUNDS permission
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the RECEIVE_FUNDS permission
           content:
             application/json:
               schema:
@@ -8221,7 +8257,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent does not have the RECEIVE_FUNDS permission
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the RECEIVE_FUNDS permission
           content:
             application/json:
               schema:
@@ -8267,6 +8303,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8312,6 +8354,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8341,6 +8389,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8395,6 +8449,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8443,6 +8503,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8505,6 +8571,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent or action not found
           content:
@@ -8572,6 +8644,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent or action not found
           content:
@@ -8590,23 +8668,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /agents/device-codes/{code}/status:
-    parameters:
-      - name: code
-        in: path
-        description: The device code to check
-        required: true
-        schema:
-          type: string
-    get:
+  /agents/device-codes/status:
+    post:
       summary: Get device code status
       description: |
-        Check whether a device code has been redeemed. Use this to poll for agent installation completion after creating an agent.
+        Check the status of a device code. Use this to poll for agent installation completion after creating an agent.
       operationId: getAgentDeviceCodeStatus
       tags:
         - Agent Management
       security:
         - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentDeviceCodeRequest'
       responses:
         '200':
           description: Successful operation
@@ -8620,6 +8697,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Device code not found
           content:
@@ -8632,14 +8715,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /agents/device-codes/{code}/redeem:
-    parameters:
-      - name: code
-        in: path
-        description: The device code to redeem
-        required: true
-        schema:
-          type: string
+  /agents/device-codes/redeem:
     post:
       summary: Redeem device code
       description: |
@@ -8649,6 +8725,12 @@ paths:
       tags:
         - Agent Management
       security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentDeviceCodeRequest'
       responses:
         '200':
           description: Device code redeemed successfully
@@ -8662,6 +8744,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error400'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Device code not found
           content:
@@ -8779,6 +8867,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -8815,6 +8909,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Transaction not found
           content:
@@ -8874,7 +8974,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent policy does not permit this operation
+          description: Forbidden - Agents API is not enabled for the platform or the agent policy does not permit this operation
           content:
             application/json:
               schema:
@@ -8939,6 +9039,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Quote not found
           content:
@@ -9001,7 +9107,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden. The agent policy does not permit this operation, a spending limit was exceeded, or an `EMBEDDED_WALLET` source has no active delegated key for this agent.
+          description: Forbidden. The Agents API is not enabled for the platform, the agent policy does not permit this operation, a spending limit was exceeded, or an `EMBEDDED_WALLET` source has no active delegated key for this agent.
           content:
             application/json:
               schema:
@@ -9069,6 +9175,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -9105,6 +9217,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Action not found
           content:
@@ -9168,6 +9286,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -9225,6 +9349,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -9294,6 +9424,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '409':
           description: Conflict - External account already exists
           content:
@@ -9336,6 +9472,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: External account not found
           content:
@@ -9366,6 +9508,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: External account not found
           content:
@@ -14022,7 +14170,7 @@ components:
     AgentAuth:
       type: http
       scheme: bearer
-      description: 'Bearer token authentication for agent-scoped endpoints. The token is the `accessToken` returned when redeeming a device code via `POST /agents/device-codes/{code}/redeem`. Agent credentials are user-scoped: all requests are automatically bound to the agent''s associated customer and subject to the agent''s policy.'
+      description: 'Bearer token authentication for agent-scoped endpoints. The token is the `accessToken` returned when redeeming a device code via `POST /agents/device-codes/redeem`. Agent credentials are user-scoped: all requests are automatically bound to the agent''s associated customer and subject to the agent''s policy.'
     WebhookSignature:
       type: apiKey
       in: header
@@ -28960,19 +29108,45 @@ components:
           type: string
           description: Optional human-readable reason for the rejection, stored on the action and visible to the platform.
           example: Transaction amount exceeds customer's current risk limit.
+    AgentDeviceCodeRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: The device code.
+          example: GRID-AGENT-X7K9-M2P4
+    AgentDeviceCodeStatus:
+      type: string
+      description: |
+        The current status of the device code.
+        - `PENDING`: The code is active and has not been redeemed.
+        - `REDEEMED`: The code was successfully redeemed.
+        - `EXPIRED`: The code expired before it was redeemed.
+        - `INVALIDATED`: The code was superseded or otherwise invalidated before it was redeemed.
+      enum:
+        - PENDING
+        - REDEEMED
+        - EXPIRED
+        - INVALIDATED
+      example: PENDING
     AgentDeviceCodeStatusResponse:
       type: object
       required:
         - code
+        - status
         - redeemed
       properties:
         code:
           type: string
           description: The device code.
           example: GRID-AGENT-X7K9-M2P4
+        status:
+          $ref: '#/components/schemas/AgentDeviceCodeStatus'
         redeemed:
           type: boolean
-          description: Whether this device code has been redeemed.
+          description: Whether this device code was successfully redeemed. This is false for expired or invalidated codes.
           example: false
     AgentDeviceCodeRedeemResponse:
       type: object

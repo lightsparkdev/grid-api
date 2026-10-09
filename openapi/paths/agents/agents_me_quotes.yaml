@@ -50,7 +50,9 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '403':
-      description: Forbidden - Agent policy does not permit this operation
+      description: >-
+        Forbidden - Agents API is not enabled for the platform or the agent policy does
+        not permit this operation
       content:
         application/json:
           schema:
