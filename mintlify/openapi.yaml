@@ -17186,6 +17186,20 @@ components:
         intermediaryRoutingNumber: '021000021'
         fiToFiInformation: /BNF/Invoice 4471
         bankAccountType: CHECKING
+    UsdPaymentRail:
+      type: string
+      enum:
+        - ACH
+        - ACH_SAME_DAY
+        - WIRE
+        - RTP
+        - FEDNOW
+    BankAccountType:
+      type: string
+      description: Whether the account is a checking or a savings account.
+      enum:
+        - CHECKING
+        - SAVINGS
     UsdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/UsdAccountInfoBase'
@@ -17196,20 +17210,10 @@ components:
             paymentRails:
               type: array
               items:
-                type: string
-                enum:
-                  - ACH
-                  - ACH_SAME_DAY
-                  - WIRE
-                  - RTP
-                  - FEDNOW
+                $ref: '#/components/schemas/UsdPaymentRail'
             bankAccountType:
-              type: string
+              $ref: '#/components/schemas/BankAccountType'
               description: Whether the account is a checking or a savings account. Grid uses this to set the ACH transaction code, so a value that does not match the account causes the receiving bank to return a notification of change.
-              enum:
-                - CHECKING
-                - SAVINGS
-              example: CHECKING
     PaymentUsdAccountInfo:
       title: USD Bank Account
       allOf:
@@ -17257,6 +17261,12 @@ components:
         accountType: EUR_ACCOUNT
         iban: DE89370400440532013000
         swiftCode: DEUTDEFF
+    SepaPaymentRail:
+      type: string
+      enum:
+        - SEPA
+        - SEPA_INSTANT
+      description: SEPA payment rail.
     EurAccountInfo:
       allOf:
         - $ref: '#/components/schemas/EurAccountInfoBase'
@@ -17267,10 +17277,7 @@ components:
             paymentRails:
               type: array
               items:
-                type: string
-                enum:
-                  - SEPA
-                  - SEPA_INSTANT
+                $ref: '#/components/schemas/SepaPaymentRail'
     PaymentEurAccountInfo:
       title: EUR Account
       allOf:
@@ -18304,6 +18311,12 @@ components:
         branchCode: '11111'
         swiftCode: DEUTDEFF
         phoneNumber: '+1234567890'
+    BankOrMobileMoneyPaymentRail:
+      type: string
+      enum:
+        - BANK_TRANSFER
+        - MOBILE_MONEY
+      description: Payment rail for a bank transfer or mobile money payout.
     BdtAccountInfo:
       allOf:
         - $ref: '#/components/schemas/BdtAccountInfoBase'
@@ -18314,10 +18327,7 @@ components:
             paymentRails:
               type: array
               items:
-                type: string
-                enum:
-                  - BANK_TRANSFER
-                  - MOBILE_MONEY
+                $ref: '#/components/schemas/BankOrMobileMoneyPaymentRail'
     BdtBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -18408,6 +18418,15 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/BdtBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    PixKeyType:
+      type: string
+      description: The type of PIX key
+      enum:
+        - CPF
+        - CNPJ
+        - EMAIL
+        - PHONE
+        - RANDOM
     BrlAccountInfoBase:
       type: object
       required:
@@ -18426,14 +18445,7 @@ components:
           minLength: 1
           maxLength: 77
         pixKeyType:
-          type: string
-          description: The type of PIX key
-          enum:
-            - CPF
-            - CNPJ
-            - EMAIL
-            - PHONE
-            - RANDOM
+          $ref: '#/components/schemas/PixKeyType'
         taxId:
           type: string
           description: The tax ID (CPF or CNPJ)
@@ -18804,11 +18816,8 @@ components:
           minLength: 1
           maxLength: 34
         bankAccountType:
-          type: string
+          $ref: '#/components/schemas/BankAccountType'
           description: The bank account type
-          enum:
-            - CHECKING
-            - SAVINGS
         bankName:
           type: string
           description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
@@ -18838,10 +18847,17 @@ components:
             paymentRails:
               type: array
               items:
-                type: string
-                enum:
-                  - BANK_TRANSFER
-                  - MOBILE_MONEY
+                $ref: '#/components/schemas/BankOrMobileMoneyPaymentRail'
+    CopDocumentType:
+      type: string
+      maxLength: 32
+      description: Identity document type (Colombia)
+      enum:
+        - CC
+        - CE
+        - TI
+        - NIT
+        - PP
     CopBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -18877,15 +18893,7 @@ components:
         address:
           $ref: '#/components/schemas/Address'
         documentType:
-          type: string
-          maxLength: 32
-          description: Identity document type (Colombia)
-          enum:
-            - CC
-            - CE
-            - TI
-            - NIT
-            - PP
+          $ref: '#/components/schemas/CopDocumentType'
         documentNumber:
           type: string
           maxLength: 50
@@ -18986,10 +18994,7 @@ components:
             paymentRails:
               type: array
               items:
-                type: string
-                enum:
-                  - SEPA
-                  - SEPA_INSTANT
+                $ref: '#/components/schemas/SepaPaymentRail'
     DkkBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -19129,10 +19134,7 @@ components:
             paymentRails:
               type: array
               items:
-                type: string
-                enum:
-                  - BANK_TRANSFER
-                  - MOBILE_MONEY
+                $ref: '#/components/schemas/BankOrMobileMoneyPaymentRail'
     EgpBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -19497,10 +19499,7 @@ components:
             paymentRails:
               type: array
               items:
-                type: string
-                enum:
-                  - BANK_TRANSFER
-                  - MOBILE_MONEY
+                $ref: '#/components/schemas/BankOrMobileMoneyPaymentRail'
     GhsBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -19573,11 +19572,8 @@ components:
           minLength: 1
           maxLength: 34
         bankAccountType:
-          type: string
+          $ref: '#/components/schemas/BankAccountType'
           description: The bank account type
-          enum:
-            - CHECKING
-            - SAVINGS
         bankName:
           type: string
           description: The name of the beneficiary's bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
@@ -20078,6 +20074,12 @@ components:
         accountNumber: '000111222333'
         ifsc: HDFC0001234
         rail: NEFT
+    InrPaymentRail:
+      type: string
+      enum:
+        - UPI
+        - NEFT
+        - RTGS
     InrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/InrAccountInfoBase'
@@ -20088,11 +20090,7 @@ components:
             paymentRails:
               type: array
               items:
-                type: string
-                enum:
-                  - UPI
-                  - NEFT
-                  - RTGS
+                $ref: '#/components/schemas/InrPaymentRail'
     InrBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -20208,11 +20206,8 @@ components:
           maxLength: 5
           pattern: ^[0-9]{5}$
         bankAccountType:
-          type: string
+          $ref: '#/components/schemas/BankAccountType'
           description: The bank account type
-          enum:
-            - CHECKING
-            - SAVINGS
         bankName:
           type: string
           description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
@@ -21113,10 +21108,7 @@ components:
             paymentRails:
               type: array
               items:
-                type: string
-                enum:
-                  - BANK_TRANSFER
-                  - MOBILE_MONEY
+                $ref: '#/components/schemas/BankOrMobileMoneyPaymentRail'
     PkrBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -21338,6 +21330,12 @@ components:
         bankName: DBS Bank Ltd
         accountNumber: '0123456789'
         swiftCode: DBSSSGSG
+    SgdPaymentRail:
+      type: string
+      enum:
+        - PAYNOW
+        - FAST
+        - BANK_TRANSFER
     SgdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/SgdAccountInfoBase'
@@ -21348,11 +21346,7 @@ components:
             paymentRails:
               type: array
               items:
-                type: string
-                enum:
-                  - PAYNOW
-                  - FAST
-                  - BANK_TRANSFER
+                $ref: '#/components/schemas/SgdPaymentRail'
     SgdBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -21467,11 +21461,8 @@ components:
           minLength: 1
           maxLength: 34
         bankAccountType:
-          type: string
+          $ref: '#/components/schemas/BankAccountType'
           description: The bank account type (BANK_TRANSFER only)
-          enum:
-            - CHECKING
-            - SAVINGS
         phoneNumber:
           type: string
           description: The phone number in international format (MOBILE_MONEY only — e.g. Tigo Money)
@@ -21494,10 +21485,7 @@ components:
             paymentRails:
               type: array
               items:
-                type: string
-                enum:
-                  - BANK_TRANSFER
-                  - MOBILE_MONEY
+                $ref: '#/components/schemas/BankOrMobileMoneyPaymentRail'
     SlvBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -22184,6 +22172,15 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/VndBeneficiary'
                   BUSINESS: '#/components/schemas/VndBusinessBeneficiary'
+    XafRegion:
+      type: string
+      description: Country code within the Central African CFA franc zone
+      minLength: 2
+      maxLength: 2
+      pattern: ^[A-Z]{2}$
+      enum:
+        - CM
+        - CG
     XafAccountInfoBase:
       type: object
       required:
@@ -22209,14 +22206,7 @@ components:
           minLength: 1
           maxLength: 255
         region:
-          type: string
-          description: Country code within the Central African CFA franc zone
-          minLength: 2
-          maxLength: 2
-          pattern: ^[A-Z]{2}$
-          enum:
-            - CM
-            - CG
+          $ref: '#/components/schemas/XafRegion'
       example:
         accountType: XAF_ACCOUNT
         phoneNumber: '+1234567890'
@@ -22327,6 +22317,17 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/XafBeneficiary'
                   BUSINESS: '#/components/schemas/XafBusinessBeneficiary'
+    XofRegion:
+      type: string
+      description: Country code within the West African CFA franc zone
+      minLength: 2
+      maxLength: 2
+      pattern: ^[A-Z]{2}$
+      enum:
+        - BJ
+        - CI
+        - SN
+        - TG
     XofAccountInfoBase:
       type: object
       required:
@@ -22352,16 +22353,7 @@ components:
           minLength: 1
           maxLength: 255
         region:
-          type: string
-          description: Country code within the West African CFA franc zone
-          minLength: 2
-          maxLength: 2
-          pattern: ^[A-Z]{2}$
-          enum:
-            - BJ
-            - CI
-            - SN
-            - TG
+          $ref: '#/components/schemas/XofRegion'
       example:
         accountType: XOF_ACCOUNT
         phoneNumber: '+1234567890'
@@ -22968,10 +22960,7 @@ components:
             paymentRails:
               type: array
               items:
-                type: string
-                enum:
-                  - BANK_TRANSFER
-                  - MOBILE_MONEY
+                $ref: '#/components/schemas/BankOrMobileMoneyPaymentRail'
     CnyBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -24128,12 +24117,8 @@ components:
             - beneficiary
           properties:
             bankAccountType:
-              type: string
+              $ref: '#/components/schemas/BankAccountType'
               description: Whether the account is a checking or a savings account. Grid uses this to set the ACH transaction code, so a value that does not match the account causes the receiving bank to return a notification of change.
-              enum:
-                - CHECKING
-                - SAVINGS
-              example: CHECKING
             beneficiary:
               oneOf:
                 - title: Individual Beneficiary

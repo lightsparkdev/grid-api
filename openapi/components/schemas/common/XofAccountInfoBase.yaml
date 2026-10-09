@@ -22,16 +22,7 @@ properties:
     minLength: 1
     maxLength: 255
   region:
-    type: string
-    description: Country code within the West African CFA franc zone
-    minLength: 2
-    maxLength: 2
-    pattern: ^[A-Z]{2}$
-    enum:
-    - BJ
-    - CI
-    - SN
-    - TG
+    $ref: ./XofRegion.yaml
 example:
   accountType: XOF_ACCOUNT
   phoneNumber: '+1234567890'

@@ -1,0 +1,5 @@
+type: string
+enum:
+- SEPA
+- SEPA_INSTANT
+description: SEPA payment rail.
