@@ -12,6 +12,11 @@
   // run the full height instead of being clipped by the "API calls" header.
   z-index: 4;
 
+  /* Recording mode (?record=1, development only): no columns to divide. */
+  :global(html[data-record]) & {
+    display: none;
+  }
+
   &::before {
     content: '';
     position: absolute;

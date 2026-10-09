@@ -228,6 +228,16 @@ html:not([data-theme='dark']):not([data-layout='stacked']) {
   --dot-grid-bg: var(--color-gray-950);
   --dot-grid-dot: #2d2d2a;
   --dot-grid-dot-peak: #474741;
+}
+
+/* Recording mode (?record=1, development only; see lib/recordMode): the stage
+   alone, on black. The chrome and the dot grid are hidden where they live. */
+html[data-record] {
+  --dot-grid-bg: #000000;
+  --panel-bg: #000000;
+}
+
+[data-theme='dark'] {
   --p-bg: #000000;
   --p-screen: #000000;
   --p-surface: #141414;

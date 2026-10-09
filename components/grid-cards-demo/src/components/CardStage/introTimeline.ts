@@ -218,6 +218,9 @@ const SCORE_END = Math.max(REVEAL_AT + BLUEPRINT_OUT, REVEAL_AT - CARD_LEAD + CA
 const INTRO_DURATION = 2.8;
 const TIME_SCALE = INTRO_DURATION / SCORE_END;
 export const INTRO_END = INTRO_DURATION;
+/** Real seconds at which the blueprint is fully drawn, before the reveal.
+ *  Holding the clock here keeps the finished drawing on stage (recording). */
+export const BLUEPRINT_DRAWN = (REVEAL_AT - REVEAL_HOLD) * TIME_SCALE;
 
 const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
 

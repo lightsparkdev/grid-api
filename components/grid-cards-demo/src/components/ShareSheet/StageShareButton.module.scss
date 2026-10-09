@@ -13,6 +13,11 @@
     opacity 600ms var(--ease-out-snappy),
     transform 600ms var(--ease-out-snappy),
     filter 600ms var(--ease-out-snappy);
+
+  /* Recording mode (?record=1, development only): the card alone. */
+  :global(html[data-record]) & {
+    display: none;
+  }
 }
 
 .hidden {

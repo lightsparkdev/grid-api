@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { isRecordMode } from '@/lib/recordMode';
 
 export type Theme = 'light' | 'dark';
 
@@ -28,8 +29,11 @@ export function useTheme() {
     const params = new URLSearchParams(window.location.search);
     const paramTheme = params.get('theme');
     const stored = localStorage.getItem('grid-cards-theme') as Theme | null;
-    const resolved: Theme =
-      paramTheme === 'dark' || paramTheme === 'light'
+    // Recording mode (development, ?record=1) is always dark: the card on
+    // black, as the boot script set it.
+    const resolved: Theme = isRecordMode()
+      ? 'dark'
+      : paramTheme === 'dark' || paramTheme === 'light'
         ? paramTheme
         : stored === 'dark' || stored === 'light'
           ? stored

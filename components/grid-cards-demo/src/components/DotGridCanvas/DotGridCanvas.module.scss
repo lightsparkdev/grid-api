@@ -19,6 +19,12 @@
   &.gridLayerVisible {
     opacity: 1;
   }
+
+  /* Recording mode (?record=1, development only): no dots, the stage is
+     black (--dot-grid-bg, from globals). StageGL sets display inline. */
+  :global(html[data-record]) & {
+    display: none !important;
+  }
 }
 
 .canvas {

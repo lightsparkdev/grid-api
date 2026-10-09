@@ -88,13 +88,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               expanded-sidebar assumption and re-fitting after hydration.
             - data-nav (collapsed ⇄ expanded) from the same ?nav param, so
               chrome keyed on the docs sidebar state paints right first time.
-              Absent standalone (no ?nav), where the rules don't apply. */}
+              Absent standalone (no ?nav), where the rules don't apply.
+            - data-record from ?record=1 (full) or ?record=blueprint (the
+              blueprint alone, held once drawn), development only: the intro
+              on black, waiting for Space (see lib/recordMode). */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{
               var p=new URLSearchParams(window.location.search);
               if(p.get('embed')==='true'){document.documentElement.setAttribute('data-embed','true');}
               var t=p.get('theme');
+              var rec=p.get('record');
+              if(${process.env.NODE_ENV === 'development'}&&(rec==='1'||rec==='blueprint')){
+                document.documentElement.setAttribute('data-record',rec==='blueprint'?'blueprint':'full');
+                t='dark';
+              }
               if(t!=='dark'&&t!=='light'){
                 t=localStorage.getItem('grid-cards-theme');
               }

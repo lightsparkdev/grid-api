@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { CARD_W, faceSize, FIGMA_CARD_W, footprint } from '@/apps/card/cardMetrics';
 import { AnimatedLock } from '@/apps/shared/icons';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
+import { isRecordMode, recordVariant } from '@/lib/recordMode';
 import { canScrollBy } from '@/lib/scroll';
 import { airflow, play, playHover, preheatSoon, type Airflow } from '@/lib/sounds';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
@@ -42,7 +43,7 @@ import { CardExporter, type ExportPose } from './export/exportRenderer';
 import { useCardMomentSounds } from './cardSounds';
 import { resizeCursor, rotateCursor } from './cursors';
 import { CardIntro } from './CardIntro';
-import { INTRO_END, introCard, stepIntro } from './introTimeline';
+import { BLUEPRINT_DRAWN, INTRO_END, introCard, stepIntro } from './introTimeline';
 import styles from './CardStage.module.scss';
 
 /** Largest the card gets on stage, relative to its size in the phone. */
@@ -161,8 +162,12 @@ interface Intro {
   onDone: () => void;
   /** Run it again from the top (dev: `__cardStage.intro.replay()`). */
   replay: () => void;
-  /** Dev: freeze the clock (set `t`, then `paused = true`) to pose a frame. */
+  /** Dev: freeze the clock (set `t`, then `paused = true`) to pose a frame.
+   *  Recording mode starts paused at 0 (a black frame) until Space. */
   paused: boolean;
+  /** Recording the blueprint alone: the clock holds at BLUEPRINT_DRAWN, the
+   *  drawing stays, and the card never comes in (the intro never ends). */
+  blueprintOnly: boolean;
 }
 
 /** A point on the front face, in spec px; null when the pointer misses the
@@ -384,7 +389,8 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
       overlay: overlayRef,
       canvas: canvasRef,
       onDone: () => setIntroDone(true),
-      paused: false,
+      paused: isRecordMode(),
+      blueprintOnly: recordVariant() === 'blueprint',
       replay: () => {
         const { intro } = live.current;
         intro.t = 0;
@@ -1710,7 +1716,10 @@ function StageCamera({
     live.current.dirty = true;
   }, [camera, size.height, live]);
   useEffect(() => {
-    gl.toneMappingExposure = exposure ?? (dark ? EXPOSURE_DARK : EXPOSURE_LIGHT);
+    // Recording (development): the white card alone on black takes the light
+    // stage's exposure, so it reads white rather than the dark stage's grey.
+    const stage = dark && !isRecordMode() ? EXPOSURE_DARK : EXPOSURE_LIGHT;
+    gl.toneMappingExposure = exposure ?? stage;
     live.current.dirty = true;
   }, [gl, dark, exposure, live]);
   return null;
@@ -1856,6 +1865,29 @@ const CardRig = memo(function CardRig({
       brand: placement,
     };
   }, [get, motion, live, placement]);
+
+  // Recording mode (development, ?record=1): the intro waits on a black frame
+  // so a screen recording can start first. Space plays it (again, if it has
+  // run); R puts it back on the black frame for the next take.
+  useEffect(() => {
+    if (!isRecordMode()) return;
+    const onKey = (e: KeyboardEvent) => {
+      const { intro } = live.current;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        // Over (or, the blueprint alone, holding on the finished drawing): from the top.
+        const over = intro.done || (intro.blueprintOnly && intro.t >= BLUEPRINT_DRAWN);
+        if (over) intro.replay();
+        intro.paused = false;
+      } else if (e.code === 'KeyR') {
+        e.preventDefault();
+        intro.replay();
+        intro.paused = true;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [live]);
 
   // Priority 1: R3F leaves the paint to this callback (the mesh's and the
   // hologram's frame callbacks, at 0, have run by then), which paints only
@@ -2008,9 +2040,12 @@ const CardRig = memo(function CardRig({
     if (!intro.done) {
       if (intro.t >= 0 && !intro.paused) intro.t += dt;
       if (t > 0 || live.current.reduceMotion) intro.t = INTRO_END;
+      // The blueprint alone: the clock stops on the finished drawing, short
+      // of the reveal, so the intro never ends and the card stays hidden.
+      if (intro.blueprintOnly) intro.t = Math.min(intro.t, BLUEPRINT_DRAWN);
       if (intro.overlay.current) stepIntro(intro.overlay.current, intro.t);
       const canvas = intro.canvas.current;
-      const look = introCard(intro.t);
+      const look = intro.blueprintOnly ? { opacity: 0, blur: 0, scale: 1 } : introCard(intro.t);
       // The mesh alone settles down to size; the blueprint and hit box stay put.
       c.scale.setScalar(s * look.scale);
       if (canvas) {

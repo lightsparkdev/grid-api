@@ -39,6 +39,14 @@
   background-color: var(--dot-grid-bg);
 }
 
+/* Recording mode (?record=1, development only): the stage alone, on black. */
+:global(html[data-record]) {
+  .configCol,
+  .apiCol {
+    display: none;
+  }
+}
+
 .apiCol {
   flex: 0 0 auto;
   min-width: 0;

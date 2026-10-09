@@ -72,6 +72,10 @@
   position: absolute;
   overflow: visible;
   pointer-events: none;
+  /* The reveal drives its opacity and blur inline every frame (stepIntro).
+     Promoted up front so both run on the compositor instead of repainting
+     the drawing each frame; it is unmounted once the intro is done. */
+  will-change: filter, opacity;
 }
 
 .blueprintLabel {
@@ -449,6 +453,11 @@
 
   svg path {
     vector-effect: non-scaling-stroke;
+  }
+
+  /* Recording mode (?record=1, development only): the card alone. */
+  :global(html[data-record]) & {
+    display: none;
   }
 }
 
