@@ -1,0 +1,84 @@
+get:
+  summary: Get agent customer
+  description: >-
+    Retrieve the individual customer associated with the authenticated agent.
+    Requires the MANAGE_IDENTITY permission in the agent's policy.
+  operationId: agentGetCustomer
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/IndividualCustomer.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agent does not have the MANAGE_IDENTITY permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+patch:
+  summary: Update agent customer
+  description: >-
+    Update identity information for the individual customer associated with the
+    authenticated agent. Requires the MANAGE_IDENTITY permission in the agent's
+    policy. The customer is inferred from the agent and cannot be selected by
+    the request.
+  operationId: agentUpdateCustomer
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/customers/IndividualCustomerUpdateRequest.yaml
+  responses:
+    '200':
+      description: Customer updated successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/IndividualCustomer.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agent does not have the MANAGE_IDENTITY permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

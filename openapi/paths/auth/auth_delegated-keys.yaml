@@ -2,9 +2,9 @@ post:
   summary: Create a delegated signing key
   description: >
     Delegate Spark token-transaction signing authority for a card funding
-    source backed by an Embedded Wallet internal account to a
-    Grid-custodied P-256 API key. Grid uses the requested card and internal
-    account to identify the wallet funding source, generates the keypair
+    source or agent backed by an Embedded Wallet internal account to a
+    Grid-custodied P-256 API key. Grid uses the requested owner and internal
+    account to identify the wallet, generates the keypair
     server-side, creates an isolated signer identity holding the public key,
     then policies granting that identity signing and self-revocation authority.
     The private key is custodied by Grid and never returned. Both activities
@@ -27,9 +27,10 @@ post:
 
     3. Stamp the new `payloadToSign` with the same session keypair and retry
     once more with the new `Request-Id`. The signed retry returns `201`
-    with the created `DelegatedKey` in `ACTIVE` status. A provisioned `PENDING_AUTH`
-    card using this funding source becomes `ACTIVE` automatically. Cards still
-    provisioning remain `PROCESSING`; frozen and closed cards retain their status.
+    with the created `DelegatedKey` in `ACTIVE` status. For card keys, a
+    provisioned `PENDING_AUTH` card using this funding source becomes `ACTIVE`
+    automatically. Cards still provisioning remain `PROCESSING`; frozen and
+    closed cards retain their status.
 
 
     The same request body must be sent on all three legs. A flow abandoned
@@ -37,12 +38,12 @@ post:
     identity exists but holds no policies, so it cannot sign or revoke itself.
     Abandoned `PENDING` keys do not block creating another delegated key.
     After activation, Grid uses the custodied key to authorize signing for the
-    card's Embedded Wallet funding account in place of a session keypair; the
-    platform never handles the key material.
+    card's Embedded Wallet funding account or for policy-approved agent actions
+    in place of a session keypair; the platform never handles the key material.
 
 
-    Each card funding source may have at most one `ACTIVE` delegated key for
-    its Embedded Wallet funding account; revoke the existing active key before
+    Each card funding source, or each agent and Embedded Wallet pair, may have
+    at most one `ACTIVE` delegated key; revoke the existing active key before
     creating a new one. A delegated key authorizes raw-payload signing for the
     wallet and cannot be scoped to amounts or recipients by the public API.
     Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
@@ -91,8 +92,8 @@ post:
     '201':
       description: >-
         Delegated key created and policy granted. The key is `ACTIVE` and
-        Grid may use it to stamp card-payment quote executions for this
-        card funding source's Embedded Wallet funding account.
+        Grid may use it to stamp card-payment quote executions or
+        policy-approved actions for the selected agent.
       content:
         application/json:
           schema:
@@ -119,7 +120,9 @@ post:
           schema:
             $ref: ../../components/schemas/auth/DelegatedKeySignedRequestChallenge.yaml
     '400':
-      description: Bad request
+      description: >-
+        Bad request. Returned when both `cardId` and `agentId` are provided, or
+        when neither owner id is provided.
       content:
         application/json:
           schema:
@@ -135,15 +138,15 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '404':
-      description: Card, card funding source, or Embedded Wallet funding account not found
+      description: Card, agent, card funding source, or Embedded Wallet account not found
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
       description: >-
-        An `ACTIVE` delegated key already exists for this card funding source.
-        Revoke it with
+        An `ACTIVE` delegated key already exists for this card funding source
+        or agent and Embedded Wallet pair. Revoke it with
         `DELETE /auth/delegated-keys/{id}` before creating a new one.
       content:
         application/json:

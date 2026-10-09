@@ -104,8 +104,8 @@ tags:
       approving or rejecting transactions initiated by agents.
   - name: Agent Operations
     description: >-
-      Endpoints called by the agent itself using its own credentials (obtained via device
-      code redemption). Scoped to the agent's associated customer — all requests
+      Experimental endpoints called by the agent itself using its own credentials
+      (obtained via device code redemption). Scoped to the agent's associated customer — all requests
       automatically operate on behalf of that customer and are subject to the agent's
       policy. When an action requires approval, the resulting transaction enters a pending
       state and must be approved by the platform via
@@ -338,6 +338,16 @@ paths:
     $ref: paths/agents/agents_approvals.yaml
   /agents/me:
     $ref: paths/agents/agents_me.yaml
+  /agents/me/customer:
+    $ref: paths/agents/agents_me_customer.yaml
+  /agents/me/verifications:
+    $ref: paths/agents/agents_me_verifications.yaml
+  /agents/me/kyc-link:
+    $ref: paths/agents/agents_me_kyc-link.yaml
+  /agents/me/deposits:
+    $ref: paths/agents/agents_me_deposits.yaml
+  /agents/me/deposits/{depositId}:
+    $ref: paths/agents/agents_me_deposits_{depositId}.yaml
   /agents/{agentId}:
     $ref: paths/agents/agents_{agentId}.yaml
   /agents/{agentId}/policy:

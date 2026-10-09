@@ -1,0 +1,43 @@
+post:
+  summary: Submit agent customer for verification
+  description: >-
+    Submit the authenticated agent's individual customer for KYC verification.
+    The response reports the current status and any identity fields that still
+    need to be supplied. Requires the MANAGE_IDENTITY permission in the agent's
+    policy.
+  operationId: agentCreateVerification
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Verification status returned
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/verifications/Verification.yaml
+    '400':
+      description: Bad request - Required identity information is invalid
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agent does not have the MANAGE_IDENTITY permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

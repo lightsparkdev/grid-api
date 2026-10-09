@@ -1,0 +1,54 @@
+post:
+  summary: Generate an agent customer KYC link
+  description: >-
+    Generate a single-use hosted KYC link for the authenticated agent's
+    individual customer. Requires the MANAGE_IDENTITY permission in the agent's
+    policy.
+  operationId: agentCreateKycLink
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/customers/KycLinkCreateRequest.yaml
+  responses:
+    '201':
+      description: KYC link generated
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/KycLinkResponse.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agent does not have the MANAGE_IDENTITY permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '409':
+      description: Customer is not ready to begin hosted KYC
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

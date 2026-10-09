@@ -1,0 +1,7 @@
+type: string
+enum:
+  - LIGHTNING
+  - BASE
+  - ETHEREUM
+  - SOLANA
+description: Network from which an agent customer can fund a deposit.

@@ -1,0 +1,5 @@
+type: string
+enum:
+  - LIGHTNING_INVOICE
+  - CHAIN_ADDRESS
+description: Format of the payment target returned for an agent deposit.

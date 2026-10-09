@@ -11,6 +11,7 @@ required:
   - platformCustomerId
   - status
   - type
+  - expiresAt
   - createdAt
   - updatedAt
 properties:
@@ -52,6 +53,20 @@ properties:
       Human-readable reason provided by the platform when rejecting the action.
       Only present when status is `REJECTED`.
     example: Transaction amount exceeds customer's current risk limit.
+  failureReason:
+    $ref: ./AgentActionFailureReason.yaml
+    description: >-
+      Machine-readable reason the action failed. Only present when status is
+      `FAILED`; `rejectionReason` is used only for `REJECTED` actions.
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      When the action expires. For `EXECUTE_QUOTE`, this is the quote's own
+      expiry. A `PENDING_APPROVAL` action that reaches this time transitions to
+      `FAILED` with `failureReason` `QUOTE_EXPIRED`; approval never creates a
+      replacement quote.
+    example: '2025-10-03T15:05:00Z'
   createdAt:
     type: string
     format: date-time

@@ -10,6 +10,8 @@ patch:
   description: >
     Partially update an agent's policy. Only provided fields will be updated;
     omitted fields retain their current values. Policy changes take effect immediately.
+    The spending limits currency is immutable; attempting to change it returns
+    a 400 response.
   operationId: updateAgentPolicy
   tags:
     - Agent Management
