@@ -33,6 +33,11 @@ returns `400 INVALID_INPUT`. Longer payment details still belong in
 `remittanceInformation`, which ACH carries in the addenda record. ACH `railDetails` on
 transactions and webhooks reports the value as `statementDescriptor`.
 
+The `remittanceInformation` description now also covers rails beyond ACH, RTP, FedNow,
+and wire. On rails such as SEPA, PIX, SPEI, and Faster Payments it is sent as the payment
+reference on the recipient's bank statement, which is often much shorter than 80
+characters, so put the most important information first.
+
 ## List balance changes for periodic statements
 
 `GET /internal-accounts/{id}/balance-changes` returns every change to an internal account's
