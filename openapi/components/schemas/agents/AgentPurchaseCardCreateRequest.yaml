@@ -1,0 +1,8 @@
+oneOf:
+  - $ref: ./AgentSingleUseCardCreateRequest.yaml
+  - $ref: ./AgentMerchantLockedCardCreateRequest.yaml
+discriminator:
+  propertyName: kind
+  mapping:
+    SINGLE_USE: ./AgentSingleUseCardCreateRequest.yaml
+    MERCHANT_LOCKED: ./AgentMerchantLockedCardCreateRequest.yaml

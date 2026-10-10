@@ -1,0 +1,58 @@
+type: object
+description: >-
+  Update request for `PATCH /agents/me/cards/{cardId}`. At least one field must
+  be supplied. An agent may only tighten a card: a limit may be set or lowered
+  but not raised or removed, `blockedMccs` may only gain codes, and
+  `allowedMccs` may only lose codes once set. The only status an agent may set
+  is `FROZEN`; unfreezing and loosening happen on the platform through
+  `PATCH /cards/{id}`. Purchase-card limits are fixed at issuance.
+properties:
+  status:
+    type: string
+    enum:
+      - FROZEN
+    description: Freeze the card. New authorizations are declined.
+    example: FROZEN
+  maxSpendPerTransaction:
+    type: integer
+    format: int64
+    minimum: 1
+    maximum: 9007199254740991
+    description: >-
+      A per-transaction limit at or below the current one, in the smallest unit
+      of the card's currency.
+    example: 5000
+  maxSpendPerDay:
+    type: integer
+    format: int64
+    minimum: 1
+    maximum: 9007199254740991
+    description: A UTC-calendar-day spend cap at or below the current one.
+    example: 20000
+  maxTransactionsPerDay:
+    type: integer
+    format: int32
+    minimum: 1
+    maximum: 2147483647
+    description: A UTC-calendar-day transaction cap at or below the current one.
+    example: 10
+  allowedMccs:
+    type: array
+    description: >-
+      Merchant category codes the card may spend at. Once set, a replacement
+      must be a subset of the current list.
+    items:
+      type: string
+      pattern: ^[0-9]{4}$
+    example:
+      - '5411'
+  blockedMccs:
+    type: array
+    description: >-
+      Merchant category codes the card declines. A replacement must contain
+      every code already blocked.
+    items:
+      type: string
+      pattern: ^[0-9]{4}$
+    example:
+      - '5813'

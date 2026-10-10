@@ -86,3 +86,30 @@ properties:
       funding-source internal account's
       `cardCapabilities.supportsTransactionCountLimit` is true.
     example: 20
+  allowedMccs:
+    type: array
+    description: >-
+      Merchant category codes the card may spend at. Omit to allow every
+      category not blocked.
+    items:
+      type: string
+      pattern: ^[0-9]{4}$
+    example:
+      - '5411'
+  blockedMccs:
+    type: array
+    description: Merchant category codes the card declines.
+    items:
+      type: string
+      pattern: ^[0-9]{4}$
+    example:
+      - '7995'
+  agentId:
+    type: string
+    description: >-
+      Issue the card for this agent, which must belong to the same customer.
+      The agent can then read the card, tighten its limits, and freeze it
+      through `/agents/me/cards`. Grid's default agent merchant-category blocks
+      apply until lifted with `PATCH /cards/{id}`. The card's spend is the
+      customer's own and does not count against the agent's policy.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000042
