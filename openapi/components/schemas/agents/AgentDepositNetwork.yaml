@@ -4,4 +4,9 @@ enum:
   - BASE
   - ETHEREUM
   - SOLANA
-description: Network from which an agent customer can fund a deposit.
+  - POLYGON
+  - ARBITRUM
+  - TRON
+description: >-
+  Network from which an agent customer can fund a deposit. `TRON` deposits
+  support `USDT` only.
