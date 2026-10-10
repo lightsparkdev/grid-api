@@ -1,0 +1,36 @@
+type: object
+description: >-
+  A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET`
+  internal account of the agent's customer. The destination is either another
+  `EMBEDDED_WALLET` on the platform (`ACCOUNT`), or an address on another
+  chain (`CHAIN_ADDRESS`).
+
+
+  A `CHAIN_ADDRESS` quote sends `USDB` and requires `lockedCurrencySide`
+  `SENDING`: it commits to the `USDB` amount, the destination, and a
+  `minimumReceivingAmount`. Grid prices the conversion again when the quote
+  executes, after any approval, and sends only if the destination still
+  receives at least that minimum. Otherwise the action fails with
+  `PRICE_MOVED` and no funds move.
+required:
+  - source
+  - destination
+  - lockedCurrencySide
+  - lockedCurrencyAmount
+properties:
+  source:
+    $ref: ../quotes/QuoteSourceOneOf.yaml
+  destination:
+    $ref: ./AgentQuoteDestinationOneOf.yaml
+  lockedCurrencySide:
+    $ref: ../quotes/QuoteLockSide.yaml
+  lockedCurrencyAmount:
+    type: integer
+    format: int64
+    description: >-
+      The amount to send/receive in the smallest unit of the locked
+      currency (eg. cents). See `lockedCurrencySide` for more
+      information.
+    exclusiveMinimum: 0
+    maximum: 9000000000000000
+    example: 1000

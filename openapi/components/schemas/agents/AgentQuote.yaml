@@ -1,0 +1,18 @@
+title: Agent Quote
+allOf:
+  - $ref: ../quotes/Quote.yaml
+  - type: object
+    properties:
+      minimumReceivingAmount:
+        type: integer
+        format: int64
+        description: >-
+          Smallest amount the recipient receives, in the smallest unit of
+          `receivingCurrency`. Present for quotes to a `CHAIN_ADDRESS`
+          destination: `totalReceivingAmount` is an estimate, and the quote
+          executes only if a fresh price at execution still delivers at least
+          this amount. Otherwise the action fails with `PRICE_MOVED`.
+        example: 990000
+description: >-
+  A quote created by an agent. For a `CHAIN_ADDRESS` destination, the quote's
+  `destination` names the external account Grid recorded for the address.
