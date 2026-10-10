@@ -1,0 +1,155 @@
+parameters:
+  - name: cardId
+    in: path
+    description: Unique identifier of the card
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get agent card
+  description: >-
+    Retrieve one of the authenticated agent's cards. A card that does not
+    belong to the agent is not found. Requires the MANAGE_CARDS permission.
+  operationId: agentGetCard
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentCard.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API or agent cards are not enabled for the platform,
+        the agent does not have the MANAGE_CARDS permission, or the customer
+        is not verified
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+patch:
+  summary: Tighten or freeze an agent card
+  description: >-
+    Tighten a card's limits or merchant categories, or freeze it. An agent can
+    never loosen a card or unfreeze it; the platform does that with
+    `PATCH /cards/{id}`. Requires the MANAGE_CARDS permission.
+  operationId: agentUpdateCard
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentCardUpdateRequest.yaml
+  responses:
+    '200':
+      description: Card updated
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentCard.yaml
+    '400':
+      description: Bad request - A change would loosen the card or the card is closed
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API or agent cards are not enabled for the platform,
+        the agent does not have the MANAGE_CARDS permission, or the customer
+        is not verified
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Close a purchase card
+  description: >-
+    Close one of the agent's purchase cards and release any spend still held
+    for it. Standard cards are closed on the platform. Requires the
+    MANAGE_CARDS permission.
+  operationId: agentClosePurchaseCard
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '204':
+      description: Card closed
+    '400':
+      description: Bad request - The card is not a purchase card
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API or agent cards are not enabled for the platform,
+        the agent does not have the MANAGE_CARDS permission, or the customer
+        is not verified
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

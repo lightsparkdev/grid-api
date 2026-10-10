@@ -9526,6 +9526,338 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /agents/me/cards:
+    get:
+      summary: List agent cards
+      description: 'List the cards that belong to the authenticated agent: standard cards the customer issued for it and purchase cards it issued. Other cards of the customer are not listed. Requires the MANAGE_CARDS permission.'
+      operationId: agentListCards
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: kind
+          in: query
+          description: Filter by card kind
+          required: false
+          schema:
+            $ref: '#/components/schemas/AgentCardKind'
+        - name: status
+          in: query
+          description: Filter by card status
+          required: false
+          schema:
+            $ref: '#/components/schemas/CardStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCardListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, the agent does not have the MANAGE_CARDS permission, or the customer is not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    post:
+      summary: Issue a purchase card
+      description: 'Issue a `SINGLE_USE` or `MERCHANT_LOCKED` purchase card funded from the customer''s Embedded Wallet with the agent''s delegated key. The request is evaluated against the agent''s policy: a `SINGLE_USE` card reserves its amount plus a tolerance, and a `MERCHANT_LOCKED` card is evaluated as an exposure of its monthly cap. When approval is required the response is `202` with a `PENDING_APPROVAL` action that expires after five minutes. Card details are never returned here; request them with `POST /agents/me/cards/{cardId}/reveal`. Requires the MANAGE_CARDS permission, a verified customer, a USD policy, and an active agent delegated key on the source account.'
+      operationId: agentCreatePurchaseCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Unique identifier used to return the same action for retries.
+          schema:
+            type: string
+            maxLength: 255
+            example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentPurchaseCardCreateRequest'
+      responses:
+        '201':
+          description: Purchase card issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPurchaseCardCreateResponse'
+        '202':
+          description: Purchase card awaiting the customer's approval
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPurchaseCardCreateResponse'
+        '400':
+          description: Bad request - Invalid amount, currency, or source account, or the policy denies the card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, the agent does not have the MANAGE_CARDS permission, or the customer is not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '409':
+          description: Conflict - The agent already holds the maximum number of open purchase cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/cards/{cardId}:
+    parameters:
+      - name: cardId
+        in: path
+        description: Unique identifier of the card
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get agent card
+      description: Retrieve one of the authenticated agent's cards. A card that does not belong to the agent is not found. Requires the MANAGE_CARDS permission.
+      operationId: agentGetCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCard'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, the agent does not have the MANAGE_CARDS permission, or the customer is not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Tighten or freeze an agent card
+      description: Tighten a card's limits or merchant categories, or freeze it. An agent can never loosen a card or unfreeze it; the platform does that with `PATCH /cards/{id}`. Requires the MANAGE_CARDS permission.
+      operationId: agentUpdateCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentCardUpdateRequest'
+      responses:
+        '200':
+          description: Card updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCard'
+        '400':
+          description: Bad request - A change would loosen the card or the card is closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, the agent does not have the MANAGE_CARDS permission, or the customer is not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Close a purchase card
+      description: Close one of the agent's purchase cards and release any spend still held for it. Standard cards are closed on the platform. Requires the MANAGE_CARDS permission.
+      operationId: agentClosePurchaseCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '204':
+          description: Card closed
+        '400':
+          description: Bad request - The card is not a purchase card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, the agent does not have the MANAGE_CARDS permission, or the customer is not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/cards/{cardId}/reveal:
+    parameters:
+      - name: cardId
+        in: path
+        description: Unique identifier of the card
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Reveal a purchase card
+      description: Mint a short-lived signed URL that displays one of the agent's purchase cards. The full card number and CVV never pass through Grid; hand the URL to the customer's client immediately and never store or log it. Each reveal is audit-logged with the agent as the actor. Standard cards are revealed only on the platform. Requires the MANAGE_CARDS permission.
+      operationId: agentRevealPurchaseCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Reveal URL minted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardRevealResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, the agent does not have the MANAGE_CARDS permission, or the customer is not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The card is not an open purchase card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /cards:
     post:
       summary: Issue a card
@@ -28536,7 +28868,8 @@ components:
         - MANAGE_EXTERNAL_ACCOUNTS
         - RECEIVE_FUNDS
         - MANAGE_IDENTITY
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification.'
+        - MANAGE_CARDS
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards, and issue, reveal, and close purchase cards.'
     AgentExecutionMode:
       type: string
       enum:
@@ -28814,12 +29147,374 @@ components:
       type: string
       enum:
         - EXECUTE_QUOTE
+        - ISSUE_PURCHASE_CARD
       description: |
         The type of action the agent is requesting.
 
         | Type | Description |
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
+        | `ISSUE_PURCHASE_CARD` | Issue a purchase card |
+    AgentSingleUseCardCreateRequest:
+      title: Single-Use Card
+      type: object
+      required:
+        - kind
+        - currency
+        - amount
+        - sourceAccountId
+      properties:
+        kind:
+          type: string
+          enum:
+            - SINGLE_USE
+          description: The purchase card kind.
+          example: SINGLE_USE
+        currency:
+          type: string
+          description: Card currency. Only `USD` is supported.
+          example: USD
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The purchase amount in the smallest unit of `currency`. Grid reserves it plus a tolerance for tips and final amounts, and sets the card's spend limit to the same total.
+          example: 2000
+        sourceAccountId:
+          type: string
+          description: The customer's Embedded Wallet internal account that funds the card.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        memo:
+          type: string
+          maxLength: 255
+          description: A note about the purchase, shown to the customer.
+          example: Concert tickets
+    AgentMerchantLockedCardCreateRequest:
+      title: Merchant-Locked Card
+      type: object
+      required:
+        - kind
+        - currency
+        - monthlyCap
+        - sourceAccountId
+      properties:
+        kind:
+          type: string
+          enum:
+            - MERCHANT_LOCKED
+          description: The purchase card kind.
+          example: MERCHANT_LOCKED
+        currency:
+          type: string
+          description: Card currency. Only `USD` is supported.
+          example: USD
+        monthlyCap:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The most the card may spend per calendar month, in the smallest unit of `currency`. Issuance needs approval when this exceeds the agent's approval threshold.
+          example: 1500
+        sourceAccountId:
+          type: string
+          description: The customer's Embedded Wallet internal account that funds the card.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        memo:
+          type: string
+          maxLength: 255
+          description: A note about the merchant or subscription, shown to the customer.
+          example: Streaming subscription
+        expiresAt:
+          type: string
+          format: date-time
+          description: When Grid closes the card. Omit to keep it open until closed.
+          example: '2027-10-10T00:00:00Z'
+    AgentPurchaseCardCreateRequest:
+      oneOf:
+        - $ref: '#/components/schemas/AgentSingleUseCardCreateRequest'
+        - $ref: '#/components/schemas/AgentMerchantLockedCardCreateRequest'
+      discriminator:
+        propertyName: kind
+        mapping:
+          SINGLE_USE: '#/components/schemas/AgentSingleUseCardCreateRequest'
+          MERCHANT_LOCKED: '#/components/schemas/AgentMerchantLockedCardCreateRequest'
+    CardStatus:
+      type: string
+      enum:
+        - PENDING_KYC
+        - PROCESSING
+        - PENDING_AUTH
+        - ACTIVE
+        - FROZEN
+        - CLOSED
+      description: |
+        Lifecycle status of a card.
+
+        | Status | Description |
+        |-------|-------------|
+        | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this status cannot transact. |
+        | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
+        | `PENDING_AUTH` | The issuer has provisioned the card, but its USDB Embedded Wallet funding source lacks an active delegated signing key. Complete `POST /auth/delegated-keys` before using the card. |
+        | `ACTIVE` | The card is live and can authorize transactions. |
+        | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing settlements and refunds continue to reconcile. |
+        | `CLOSED` | The card is permanently closed. Terminal, irreversible status. |
+    CardStatusReason:
+      type: string
+      enum:
+        - DELEGATION_REQUIRED
+        - ISSUER_REJECTED
+        - CLOSED_BY_PLATFORM
+        - CLOSED_BY_GRID
+      description: |
+        Reason a card reached a terminal or non-active status. Present on
+        `PENDING_AUTH` and `CLOSED` cards, and on cards that fail provisioning before reaching
+        `ACTIVE`.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `DELEGATION_REQUIRED` | The card funding source has no usable delegated signing key. Present while the card is `PENDING_AUTH`. |
+        | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PROCESSING`. |
+        | `CLOSED_BY_PLATFORM` | The card was closed via `PATCH /cards/{id}` (`status: CLOSED`) by the platform. |
+        | `CLOSED_BY_GRID` | The card was closed by Grid (e.g. compliance or risk action). |
+    CardBrand:
+      type: string
+      enum:
+        - VISA
+        - MASTERCARD
+      description: |
+        Card network brand. Read-only — determined by Grid when the card is
+        provisioned with the issuer.
+    CardForm:
+      type: string
+      enum:
+        - VIRTUAL
+      description: |
+        Physical form factor of the card. Only `VIRTUAL` is supported in v1;
+        `PHYSICAL` will be added in a later release.
+    CardPinStatus:
+      type: string
+      enum:
+        - NOT_SET
+        - OK
+        - BLOCKED
+      example: OK
+      description: |
+        State of the card's PIN. On the Card resource, this is the last known status
+        and is present whenever PIN management is supported. An absent value means
+        PIN management is unavailable for this card; it does not mean `NOT_SET`.
+        Use `GET /cards/{id}` to retrieve `pinStatus`.
+
+        | Status | Description |
+        |--------|-------------|
+        | `NOT_SET` | No PIN has been set on the card. PIN verification is not enabled. Set one with `POST /cards/{id}/set-pin` or the hosted form returned by `GET /cards/{id}/pin-entry-url`. |
+        | `OK` | A PIN is set and usable. |
+        | `BLOCKED` | The PIN was entered incorrectly three consecutive times and is refused until cleared with `POST /cards/{id}/pin/unblock`, or replaced with `POST /cards/{id}/set-pin`. |
+    Card:
+      type: object
+      required:
+        - id
+        - customerId
+        - status
+        - form
+        - fundingSource
+        - maxSpendPerTransaction
+        - maxSpendPerDay
+        - maxTransactionsPerDay
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique card identifier
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+        customerId:
+          type: string
+          description: The id of the `Customer` who holds this card.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        platformCardId:
+          type: string
+          description: Platform-specific card identifier generated by the server.
+          example: card-emp-001
+        status:
+          $ref: '#/components/schemas/CardStatus'
+        statusReason:
+          $ref: '#/components/schemas/CardStatusReason'
+          description: Reason associated with the current `status`. Present when the card is `PENDING_AUTH`, `CLOSED`, or when provisioning was rejected; absent otherwise.
+        brand:
+          $ref: '#/components/schemas/CardBrand'
+        form:
+          $ref: '#/components/schemas/CardForm'
+        pinStatus:
+          $ref: '#/components/schemas/CardPinStatus'
+        pinUnblockAvailableAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Earliest time another PIN unblock attempt is allowed. Absent until the unblock allowance is used. Changing the PIN does not reset this time.
+          example: '2026-10-15T15:00:00Z'
+        last4:
+          type: string
+          description: Last four digits of the card PAN.
+          example: '4242'
+        expMonth:
+          type: integer
+          minimum: 1
+          maximum: 12
+          description: Card expiration month (1–12).
+          example: 12
+        expYear:
+          type: integer
+          description: Card expiration year (four digits).
+          example: 2029
+        fundingSource:
+          type: string
+          description: Internal account id that funds this card.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        cardCapabilities:
+          $ref: '#/components/schemas/CardCapabilities'
+          description: Actions supported for this card by the issuer selected at issuance. Present for cards whose program has been resolved; absent otherwise. These capabilities are fixed at issuance for the card's lifetime.
+        maxSpendPerTransaction:
+          anyOf:
+            - type: integer
+              format: int64
+              minimum: 1
+              maximum: 9007199254740991
+            - type: 'null'
+          description: The largest amount this card can authorize on a single transaction, in the smallest unit of its `currency` (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. `null` means the card sets no limit of its own. If your platform config also sets `cardConfigs.maxSpendPerTransaction` (the platform-level limit), the lower of the two applies and this value stays as you set it.
+          example: 5000
+        maxSpendPerDay:
+          anyOf:
+            - type: integer
+              format: int64
+              minimum: 1
+              maximum: 9007199254740991
+            - type: 'null'
+          description: Card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card's `currency`. The window resets at 00:00 UTC. Null means the card has no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values without replacing this configured value. Refunds, reversals, and authorization expiries do not restore capacity during the day. Spend exactly equal to the effective limit is allowed.
+          example: 25000
+        maxTransactionsPerDay:
+          anyOf:
+            - type: integer
+              format: int32
+              minimum: 1
+              maximum: 2147483647
+            - type: 'null'
+          description: Card-specific cap on the number of transactions the card may authorize during one UTC calendar day. The window resets at 00:00 UTC. Null means the card has no card-specific daily transaction cap. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values without replacing this configured value. Each approved authorization counts once for the day it was authorized; refunds, reversals, and authorization expiries do not restore capacity during the day. A transaction that brings the day's count exactly to the effective limit is allowed.
+          example: 20
+        allowedMccs:
+          type: array
+          description: Merchant category codes the card may spend at. Absent when the card may spend at any category not blocked.
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '5411'
+        blockedMccs:
+          type: array
+          description: 'Merchant category codes the card declines, with `cardDeclinedReason: BLOCKED`. Agent cards also decline Grid''s default agent categories; see `AgentCard.effectiveBlockedMccs`.'
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '7995'
+        agentId:
+          type: string
+          description: The agent the card was issued for, when there is one.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        currency:
+          type: string
+          description: Currency the card transacts in, fixed at issuance by its card program. USDB-funded cards transact in USD, with funding converted at 1 USDB = 1 USD. Spending limits use the smallest unit of the card's currency (USD cents for USDB-funded cards). Changing the funding source does not change the card's currency or spending-limit units.
+          example: USD
+        processorRef:
+          type: string
+          description: Opaque processor-side reference for the card (e.g. the Lithic card token). Useful for cross-referencing in the processor's dashboards; not used for any Grid request routing.
+          example: card_b81c2a4f
+        issuerRef:
+          type: string
+          description: Opaque identifier for the card on the issuer of record (e.g. the Lead Bank account/card identifier). Useful for cross-referencing in issuer dashboards; not used for any Grid request routing.
+          example: lead_card_7a1b9c3d
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          example: '2026-05-08T14:10:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: '2026-05-08T14:11:00Z'
+    AgentCardKind:
+      type: string
+      enum:
+        - STANDARD
+        - SINGLE_USE
+        - MERCHANT_LOCKED
+      description: |
+        How an agent card is used and funded.
+
+        | Kind | Description |
+        |------|-------------|
+        | `STANDARD` | A card the customer issued for the agent on the platform. The customer holds the card details and its spend is the customer's own; the agent can read it, tighten its limits, and freeze it. |
+        | `SINGLE_USE` | A purchase card the agent issued for one purchase. Its spend is reserved against the agent's policy at issuance and the card closes after its first authorization. |
+        | `MERCHANT_LOCKED` | A purchase card the agent issued for repeated purchases at one merchant, such as a subscription, capped by a monthly limit. Each authorization is checked against the agent's policy. |
+    AgentCardSpendLimit:
+      type: object
+      description: The spend cap the card issuer enforces for a purchase card, in the smallest unit of the card's currency.
+      required:
+        - amount
+        - duration
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The cap. For a `SINGLE_USE` card this is the requested amount plus the tolerance Grid allows for tips and final amounts.
+          example: 2300
+        duration:
+          type: string
+          enum:
+            - TRANSACTION
+            - MONTHLY
+          description: '`TRANSACTION` caps the card''s single purchase; `MONTHLY` caps spend per calendar month.'
+          example: TRANSACTION
+    AgentCard:
+      title: Agent Card
+      description: A card that belongs to the authenticated agent.
+      allOf:
+        - $ref: '#/components/schemas/Card'
+        - type: object
+          required:
+            - agentId
+            - agentCardKind
+            - effectiveBlockedMccs
+          properties:
+            agentId:
+              type: string
+              description: The agent the card belongs to.
+              example: Agent:019542f5-b3e7-1d02-0000-000000000042
+            agentCardKind:
+              $ref: '#/components/schemas/AgentCardKind'
+            spendLimit:
+              $ref: '#/components/schemas/AgentCardSpendLimit'
+              description: The issuer-enforced cap. Present for purchase cards.
+            reservedAmount:
+              type: integer
+              format: int64
+              minimum: 0
+              description: Amount of the agent's spending limits currently held for this card, in the smallest unit of the card's currency. Present for purchase cards.
+              example: 2300
+            effectiveBlockedMccs:
+              type: array
+              description: 'Every merchant category code the card declines: `blockedMccs` plus the categories Grid blocks for agent cards. A `STANDARD` card''s customer may lift the Grid defaults on the platform; a purchase card''s defaults cannot be lifted.'
+              items:
+                type: string
+                pattern: ^[0-9]{4}$
+              example:
+                - '7995'
+                - '6051'
+            expiresAt:
+              type: string
+              format: date-time
+              description: When Grid closes the card if it is still open. An unused `SINGLE_USE` card closes at this time and releases its reservation.
+              example: '2026-10-10T15:30:00Z'
     AgentActionFailureReason:
       type: string
       enum:
@@ -28827,6 +29522,8 @@ components:
         - POLICY_DENIED
         - AGENT_INACTIVE
         - EXECUTION_FAILED
+        - CARD_ISSUANCE_FAILED
+        - APPROVAL_EXPIRED
       description: |
         Why an agent action has status `FAILED`.
 
@@ -28836,6 +29533,8 @@ components:
         | `POLICY_DENIED` | The agent policy no longer allowed the action |
         | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
         | `EXECUTION_FAILED` | Grid could not execute the approved action |
+        | `CARD_ISSUANCE_FAILED` | Grid could not issue the approved purchase card |
+        | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD` action was not approved before it expired |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -28873,7 +29572,14 @@ components:
         quote:
           allOf:
             - $ref: '#/components/schemas/Quote'
-          description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user.
+          description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user. Present for `EXECUTE_QUOTE`.
+        purchaseCard:
+          $ref: '#/components/schemas/AgentPurchaseCardCreateRequest'
+          description: The purchase card requested. Present for `ISSUE_PURCHASE_CARD`, so an approval decision can show its kind, amount or cap, and source account.
+        card:
+          allOf:
+            - $ref: '#/components/schemas/AgentCard'
+          description: The issued purchase card, populated once an `ISSUE_PURCHASE_CARD` action has completed.
         transaction:
           allOf:
             - $ref: '#/components/schemas/TransactionOneOf'
@@ -28888,7 +29594,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: When the action expires. For `EXECUTE_QUOTE`, this is the quote's own expiry. A `PENDING_APPROVAL` action that reaches this time transitions to `FAILED` with `failureReason` `QUOTE_EXPIRED`; approval never creates a replacement quote.
+          description: When the action expires. For `EXECUTE_QUOTE`, this is the quote's own expiry. A `PENDING_APPROVAL` action that reaches this time transitions to `FAILED` with `failureReason` `QUOTE_EXPIRED`; approval never creates a replacement quote. An `ISSUE_PURCHASE_CARD` action expires five minutes after it is submitted and then fails with `APPROVAL_EXPIRED`.
           example: '2025-10-03T15:05:00Z'
         createdAt:
           type: string
@@ -29216,190 +29922,102 @@ components:
               default: false
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
-    CardStatus:
-      type: string
-      enum:
-        - PENDING_KYC
-        - PROCESSING
-        - PENDING_AUTH
-        - ACTIVE
-        - FROZEN
-        - CLOSED
-      description: |
-        Lifecycle status of a card.
-
-        | Status | Description |
-        |-------|-------------|
-        | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this status cannot transact. |
-        | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
-        | `PENDING_AUTH` | The issuer has provisioned the card, but its USDB Embedded Wallet funding source lacks an active delegated signing key. Complete `POST /auth/delegated-keys` before using the card. |
-        | `ACTIVE` | The card is live and can authorize transactions. |
-        | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing settlements and refunds continue to reconcile. |
-        | `CLOSED` | The card is permanently closed. Terminal, irreversible status. |
-    CardStatusReason:
-      type: string
-      enum:
-        - DELEGATION_REQUIRED
-        - ISSUER_REJECTED
-        - CLOSED_BY_PLATFORM
-        - CLOSED_BY_GRID
-      description: |
-        Reason a card reached a terminal or non-active status. Present on
-        `PENDING_AUTH` and `CLOSED` cards, and on cards that fail provisioning before reaching
-        `ACTIVE`.
-
-        | Reason | Description |
-        |--------|-------------|
-        | `DELEGATION_REQUIRED` | The card funding source has no usable delegated signing key. Present while the card is `PENDING_AUTH`. |
-        | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PROCESSING`. |
-        | `CLOSED_BY_PLATFORM` | The card was closed via `PATCH /cards/{id}` (`status: CLOSED`) by the platform. |
-        | `CLOSED_BY_GRID` | The card was closed by Grid (e.g. compliance or risk action). |
-    CardBrand:
-      type: string
-      enum:
-        - VISA
-        - MASTERCARD
-      description: |
-        Card network brand. Read-only — determined by Grid when the card is
-        provisioned with the issuer.
-    CardForm:
-      type: string
-      enum:
-        - VIRTUAL
-      description: |
-        Physical form factor of the card. Only `VIRTUAL` is supported in v1;
-        `PHYSICAL` will be added in a later release.
-    CardPinStatus:
-      type: string
-      enum:
-        - NOT_SET
-        - OK
-        - BLOCKED
-      example: OK
-      description: |
-        State of the card's PIN. On the Card resource, this is the last known status
-        and is present whenever PIN management is supported. An absent value means
-        PIN management is unavailable for this card; it does not mean `NOT_SET`.
-        Use `GET /cards/{id}` to retrieve `pinStatus`.
-
-        | Status | Description |
-        |--------|-------------|
-        | `NOT_SET` | No PIN has been set on the card. PIN verification is not enabled. Set one with `POST /cards/{id}/set-pin` or the hosted form returned by `GET /cards/{id}/pin-entry-url`. |
-        | `OK` | A PIN is set and usable. |
-        | `BLOCKED` | The PIN was entered incorrectly three consecutive times and is refused until cleared with `POST /cards/{id}/pin/unblock`, or replaced with `POST /cards/{id}/set-pin`. |
-    Card:
+    AgentCardListResponse:
       type: object
       required:
-        - id
-        - customerId
-        - status
-        - form
-        - fundingSource
-        - maxSpendPerTransaction
-        - maxSpendPerDay
-        - maxTransactionsPerDay
-        - createdAt
-        - updatedAt
+        - data
+        - hasMore
       properties:
-        id:
+        data:
+          type: array
+          description: Cards that belong to the authenticated agent.
+          items:
+            $ref: '#/components/schemas/AgentCard'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
           type: string
-          description: System-generated unique card identifier
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
           example: Card:019542f5-b3e7-1d02-0000-000000000010
-        customerId:
-          type: string
-          description: The id of the `Customer` who holds this card.
-          example: Customer:019542f5-b3e7-1d02-0000-000000000001
-        platformCardId:
-          type: string
-          description: Platform-specific card identifier generated by the server.
-          example: card-emp-001
+        totalCount:
+          type: integer
+          description: Total number of cards matching the criteria (excluding pagination).
+          example: 3
+    AgentPurchaseCardCreateResponse:
+      type: object
+      required:
+        - action
+      properties:
+        action:
+          $ref: '#/components/schemas/AgentAction'
+          description: The `ISSUE_PURCHASE_CARD` action. `PENDING_APPROVAL` when the customer must approve the card first; poll it or wait for its webhook.
+        card:
+          $ref: '#/components/schemas/AgentCard'
+          description: The issued card. Present when the action completed immediately.
+    AgentCardUpdateRequest:
+      type: object
+      description: 'Update request for `PATCH /agents/me/cards/{cardId}`. At least one field must be supplied. An agent may only tighten a card: a limit may be set or lowered but not raised or removed, `blockedMccs` may only gain codes, and `allowedMccs` may only lose codes once set. The only status an agent may set is `FROZEN`; unfreezing and loosening happen on the platform through `PATCH /cards/{id}`. Purchase-card limits are fixed at issuance.'
+      properties:
         status:
-          $ref: '#/components/schemas/CardStatus'
-        statusReason:
-          $ref: '#/components/schemas/CardStatusReason'
-          description: Reason associated with the current `status`. Present when the card is `PENDING_AUTH`, `CLOSED`, or when provisioning was rejected; absent otherwise.
-        brand:
-          $ref: '#/components/schemas/CardBrand'
-        form:
-          $ref: '#/components/schemas/CardForm'
-        pinStatus:
-          $ref: '#/components/schemas/CardPinStatus'
-        pinUnblockAvailableAt:
           type: string
-          format: date-time
-          readOnly: true
-          description: Earliest time another PIN unblock attempt is allowed. Absent until the unblock allowance is used. Changing the PIN does not reset this time.
-          example: '2026-10-15T15:00:00Z'
-        last4:
-          type: string
-          description: Last four digits of the card PAN.
-          example: '4242'
-        expMonth:
-          type: integer
-          minimum: 1
-          maximum: 12
-          description: Card expiration month (1–12).
-          example: 12
-        expYear:
-          type: integer
-          description: Card expiration year (four digits).
-          example: 2029
-        fundingSource:
-          type: string
-          description: Internal account id that funds this card.
-          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-        cardCapabilities:
-          $ref: '#/components/schemas/CardCapabilities'
-          description: Actions supported for this card by the issuer selected at issuance. Present for cards whose program has been resolved; absent otherwise. These capabilities are fixed at issuance for the card's lifetime.
+          enum:
+            - FROZEN
+          description: Freeze the card. New authorizations are declined.
+          example: FROZEN
         maxSpendPerTransaction:
-          anyOf:
-            - type: integer
-              format: int64
-              minimum: 1
-              maximum: 9007199254740991
-            - type: 'null'
-          description: The largest amount this card can authorize on a single transaction, in the smallest unit of its `currency` (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. `null` means the card sets no limit of its own. If your platform config also sets `cardConfigs.maxSpendPerTransaction` (the platform-level limit), the lower of the two applies and this value stays as you set it.
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9007199254740991
+          description: A per-transaction limit at or below the current one, in the smallest unit of the card's currency.
           example: 5000
         maxSpendPerDay:
-          anyOf:
-            - type: integer
-              format: int64
-              minimum: 1
-              maximum: 9007199254740991
-            - type: 'null'
-          description: Card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card's `currency`. The window resets at 00:00 UTC. Null means the card has no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values without replacing this configured value. Refunds, reversals, and authorization expiries do not restore capacity during the day. Spend exactly equal to the effective limit is allowed.
-          example: 25000
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9007199254740991
+          description: A UTC-calendar-day spend cap at or below the current one.
+          example: 20000
         maxTransactionsPerDay:
-          anyOf:
-            - type: integer
-              format: int32
-              minimum: 1
-              maximum: 2147483647
-            - type: 'null'
-          description: Card-specific cap on the number of transactions the card may authorize during one UTC calendar day. The window resets at 00:00 UTC. Null means the card has no card-specific daily transaction cap. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values without replacing this configured value. Each approved authorization counts once for the day it was authorized; refunds, reversals, and authorization expiries do not restore capacity during the day. A transaction that brings the day's count exactly to the effective limit is allowed.
-          example: 20
-        currency:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 2147483647
+          description: A UTC-calendar-day transaction cap at or below the current one.
+          example: 10
+        allowedMccs:
+          type: array
+          description: Merchant category codes the card may spend at. Once set, a replacement must be a subset of the current list.
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '5411'
+        blockedMccs:
+          type: array
+          description: Merchant category codes the card declines. A replacement must contain every code already blocked.
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '5813'
+    CardRevealResponse:
+      type: object
+      required:
+        - panEmbedUrl
+        - expiresAt
+      properties:
+        panEmbedUrl:
           type: string
-          description: Currency the card transacts in, fixed at issuance by its card program. USDB-funded cards transact in USD, with funding converted at 1 USDB = 1 USD. Spending limits use the smallest unit of the card's currency (USD cents for USDB-funded cards). Changing the funding source does not change the card's currency or spending-limit units.
-          example: USD
-        processorRef:
-          type: string
-          description: Opaque processor-side reference for the card (e.g. the Lithic card token). Useful for cross-referencing in the processor's dashboards; not used for any Grid request routing.
-          example: card_b81c2a4f
-        issuerRef:
-          type: string
-          description: Opaque identifier for the card on the issuer of record (e.g. the Lead Bank account/card identifier). Useful for cross-referencing in issuer dashboards; not used for any Grid request routing.
-          example: lead_card_7a1b9c3d
-        createdAt:
+          format: uri
+          description: 'Signed URL of the card processor''s iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid''s servers — render this URL in an iframe in your client to reveal card details. The URL is a short-lived bearer secret: render it immediately and never store, cache, or log it.'
+          example: https://embed.lithic.com/iframe/...?t=...
+        expiresAt:
           type: string
           format: date-time
-          description: Creation timestamp
-          example: '2026-05-08T14:10:00Z'
-        updatedAt:
-          type: string
-          format: date-time
-          description: Last update timestamp
-          example: '2026-05-08T14:11:00Z'
+          description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
+          example: '2026-05-08T14:16:00Z'
     CardListResponse:
       type: object
       required:
@@ -29466,6 +30084,26 @@ components:
           maximum: 2147483647
           description: Optional card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Omit this field for no card-specific daily transaction cap. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC. Each approved authorization counts once; refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsTransactionCountLimit` is true.
           example: 20
+        allowedMccs:
+          type: array
+          description: Merchant category codes the card may spend at. Omit to allow every category not blocked.
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '5411'
+        blockedMccs:
+          type: array
+          description: Merchant category codes the card declines.
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '7995'
+        agentId:
+          type: string
+          description: Issue the card for this agent, which must belong to the same customer. The agent can then read the card, tighten its limits, and freeze it through `/agents/me/cards`. Grid's default agent merchant-category blocks apply until lifted with `PATCH /cards/{id}`. The card's spend is the customer's own and does not count against the agent's policy.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
     CardUpdateStatus:
       type: string
       enum:
@@ -29492,7 +30130,7 @@ components:
       example: SUSPICIOUS_ACTIVITY
     CardUpdateRequest:
       type: object
-      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, or `threeDSecurePassword` must be supplied. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Explicit activation requires completed delegated signing authorization; otherwise it returns `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
+      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, `allowedMccs`, `blockedMccs`, or `threeDSecurePassword` must be supplied. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Explicit activation requires completed delegated signing authorization; otherwise it returns `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
       properties:
         status:
           $ref: '#/components/schemas/CardUpdateStatus'
@@ -29538,6 +30176,26 @@ components:
           type: string
           description: Sets a new static 3-D Secure password on the card. Send it on its own, and only when the card's `cardCapabilities.supports3dSecurePassword` is true.
           example: AbCd1234EfGh5678
+        allowedMccs:
+          anyOf:
+            - type: array
+              items:
+                type: string
+                pattern: ^[0-9]{4}$
+            - type: 'null'
+          description: 'Replacement list of merchant category codes the card may spend at. Supply null to allow every category not blocked, or omit to leave it unchanged. Cannot be supplied alongside `status: CLOSED`.'
+          example:
+            - '5411'
+        blockedMccs:
+          anyOf:
+            - type: array
+              items:
+                type: string
+                pattern: ^[0-9]{4}$
+            - type: 'null'
+          description: 'Replacement list of merchant category codes the card declines. Supply null to clear it, or omit to leave it unchanged. On a card issued for an agent, the list also replaces Grid''s default agent blocks, so a code left out is lifted. Cannot be supplied alongside `status: CLOSED`.'
+          example:
+            - '7995'
     CardRevealRequest:
       type: object
       description: Optional overrides for one reveal. Omit the body entirely to use your platform's configured settings.
@@ -29551,22 +30209,6 @@ components:
             - type: 'null'
           description: 'HTTPS URL of a stylesheet for this reveal only, overriding `cardConfigs.panRevealCssUrl` for this call without changing your platform config. Use it to style one reveal differently from the rest — to match the cardholder''s light or dark theme, for example. Subject to the same rules as the platform-level setting: it must be reachable over HTTPS without credentials, it styles the same selectors, and it loads into the page rendering the live card details, so host it somewhere you would trust with them. Omit the field, or send `null`, to fall back to your platform config.'
           example: https://acme.com/card-reveal-dark.css
-    CardRevealResponse:
-      type: object
-      required:
-        - panEmbedUrl
-        - expiresAt
-      properties:
-        panEmbedUrl:
-          type: string
-          format: uri
-          description: 'Signed URL of the card processor''s iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid''s servers — render this URL in an iframe in your client to reveal card details. The URL is a short-lived bearer secret: render it immediately and never store, cache, or log it.'
-          example: https://embed.lithic.com/iframe/...?t=...
-        expiresAt:
-          type: string
-          format: date-time
-          description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
-          example: '2026-05-08T14:16:00Z'
     DigitalWallet:
       type: string
       enum:

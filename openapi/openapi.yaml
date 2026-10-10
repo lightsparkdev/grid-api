@@ -383,6 +383,12 @@ paths:
     $ref: paths/agents/agents_me_external-accounts.yaml
   /agents/me/external-accounts/{externalAccountId}:
     $ref: paths/agents/agents_me_external-accounts_{externalAccountId}.yaml
+  /agents/me/cards:
+    $ref: paths/agents/agents_me_cards.yaml
+  /agents/me/cards/{cardId}:
+    $ref: paths/agents/agents_me_cards_{cardId}.yaml
+  /agents/me/cards/{cardId}/reveal:
+    $ref: paths/agents/agents_me_cards_{cardId}_reveal.yaml
   /cards:
     $ref: paths/cards/cards.yaml
   /cards/{id}:

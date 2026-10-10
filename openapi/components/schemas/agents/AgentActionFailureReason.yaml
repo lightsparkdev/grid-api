@@ -4,6 +4,8 @@ enum:
   - POLICY_DENIED
   - AGENT_INACTIVE
   - EXECUTION_FAILED
+  - CARD_ISSUANCE_FAILED
+  - APPROVAL_EXPIRED
 description: |
   Why an agent action has status `FAILED`.
 
@@ -13,3 +15,5 @@ description: |
   | `POLICY_DENIED` | The agent policy no longer allowed the action |
   | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
   | `EXECUTION_FAILED` | Grid could not execute the approved action |
+  | `CARD_ISSUANCE_FAILED` | Grid could not issue the approved purchase card |
+  | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD` action was not approved before it expired |

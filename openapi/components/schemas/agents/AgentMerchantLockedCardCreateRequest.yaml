@@ -1,0 +1,41 @@
+title: Merchant-Locked Card
+type: object
+required:
+  - kind
+  - currency
+  - monthlyCap
+  - sourceAccountId
+properties:
+  kind:
+    type: string
+    enum:
+      - MERCHANT_LOCKED
+    description: The purchase card kind.
+    example: MERCHANT_LOCKED
+  currency:
+    type: string
+    description: Card currency. Only `USD` is supported.
+    example: USD
+  monthlyCap:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      The most the card may spend per calendar month, in the smallest unit of
+      `currency`. Issuance needs approval when this exceeds the agent's
+      approval threshold.
+    example: 1500
+  sourceAccountId:
+    type: string
+    description: The customer's Embedded Wallet internal account that funds the card.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  memo:
+    type: string
+    maxLength: 255
+    description: A note about the merchant or subscription, shown to the customer.
+    example: Streaming subscription
+  expiresAt:
+    type: string
+    format: date-time
+    description: When Grid closes the card. Omit to keep it open until closed.
+    example: '2027-10-10T00:00:00Z'

@@ -1,0 +1,25 @@
+type: object
+description: >-
+  The spend cap the card issuer enforces for a purchase card, in the smallest
+  unit of the card's currency.
+required:
+  - amount
+  - duration
+properties:
+  amount:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      The cap. For a `SINGLE_USE` card this is the requested amount plus the
+      tolerance Grid allows for tips and final amounts.
+    example: 2300
+  duration:
+    type: string
+    enum:
+      - TRANSACTION
+      - MONTHLY
+    description: >-
+      `TRANSACTION` caps the card's single purchase; `MONTHLY` caps spend per
+      calendar month.
+    example: TRANSACTION

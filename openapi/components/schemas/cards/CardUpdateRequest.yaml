@@ -2,7 +2,8 @@ type: object
 description: >-
   Update request for `PATCH /cards/{id}`. At least one of `status`,
   `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`,
-  `maxTransactionsPerDay`, or `threeDSecurePassword` must be supplied. Supplying `status` also requires
+  `maxTransactionsPerDay`, `allowedMccs`, `blockedMccs`, or
+  `threeDSecurePassword` must be supplied. Supplying `status` also requires
   `substatus` and `reason`, so every card state change carries why it
   happened. `status`
   transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and
@@ -96,3 +97,30 @@ properties:
       and only when the card's `cardCapabilities.supports3dSecurePassword` is
       true.
     example: AbCd1234EfGh5678
+  allowedMccs:
+    anyOf:
+      - type: array
+        items:
+          type: string
+          pattern: ^[0-9]{4}$
+      - type: 'null'
+    description: >-
+      Replacement list of merchant category codes the card may spend at.
+      Supply null to allow every category not blocked, or omit to leave it
+      unchanged. Cannot be supplied alongside `status: CLOSED`.
+    example:
+      - '5411'
+  blockedMccs:
+    anyOf:
+      - type: array
+        items:
+          type: string
+          pattern: ^[0-9]{4}$
+      - type: 'null'
+    description: >-
+      Replacement list of merchant category codes the card declines. Supply
+      null to clear it, or omit to leave it unchanged. On a card issued for an
+      agent, the list also replaces Grid's default agent blocks, so a code left
+      out is lifted. Cannot be supplied alongside `status: CLOSED`.
+    example:
+      - '7995'

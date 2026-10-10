@@ -1,0 +1,66 @@
+parameters:
+  - name: cardId
+    in: path
+    description: Unique identifier of the card
+    required: true
+    schema:
+      type: string
+post:
+  summary: Reveal a purchase card
+  description: >-
+    Mint a short-lived signed URL that displays one of the agent's purchase
+    cards. The full card number and CVV never pass through Grid; hand the URL
+    to the customer's client immediately and never store or log it. Each
+    reveal is audit-logged with the agent as the actor. Standard cards are
+    revealed only on the platform. Requires the MANAGE_CARDS permission.
+  operationId: agentRevealPurchaseCard
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Reveal URL minted
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardRevealResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API or agent cards are not enabled for the platform,
+        the agent does not have the MANAGE_CARDS permission, or the customer
+        is not verified
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - The card is not an open purchase card
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '429':
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
