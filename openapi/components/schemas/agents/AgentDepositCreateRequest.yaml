@@ -1,7 +1,10 @@
 type: object
 description: >-
   Request for an Orchestra-backed deposit into one of the agent customer's
-  internal accounts.
+  internal accounts. For `LIGHTNING`, set `sourceCurrency` to `USD` and provide
+  `amount`; the user pays that exact USD amount and fees are deducted from the
+  amount received. For chain networks, no amount is required and the returned
+  standing deposit address does not expire.
 required:
   - sourceNetwork
   - sourceCurrency
@@ -12,20 +15,25 @@ properties:
     description: Network from which the customer will send the deposit.
   sourceCurrency:
     type: string
-    description: Currency or asset the customer will deposit.
-    example: USDC
+    description: >-
+      Currency or asset the customer will deposit. Must be `USD` for
+      `LIGHTNING`; for a chain network, use the asset sent on that chain.
+      `TRON` supports `USDT` only.
+    example: USD
   destinationInternalAccountId:
     type: string
     description: >-
       Internal account that will receive the converted deposit. It must belong
       to the agent's associated customer and be allowed by the agent policy.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-  destinationAmount:
+  amount:
     type: integer
     format: int64
     exclusiveMinimum: 0
     maximum: 9000000000000000
     description: >-
-      Optional amount to receive, in the smallest unit of the destination
-      account's currency. Required for amount-specific Lightning invoices.
+      Exact USD amount the user pays for a `LIGHTNING` deposit, in cents.
+      Required for `LIGHTNING`; no amount is required for chain networks. This
+      is an exact-in amount: deposit fees are deducted before the destination
+      asset is credited.
     example: 2000
