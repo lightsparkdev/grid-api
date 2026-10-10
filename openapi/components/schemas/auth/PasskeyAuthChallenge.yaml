@@ -5,7 +5,9 @@ description: >-
   `credentialId` needed to target the passkey, plus the Grid-issued
   `challenge`, corresponding `requestId`, and challenge `expiresAt`. The
   `challenge` value is the lowercase hex-encoded SHA-256 digest of the
-  canonical session-creation request body, not a base64url string.
+  canonical session-creation request body, not a base64url string; that body
+  is returned verbatim as `payloadToSign` so the client can inspect what the
+  passkey authorizes before signing.
   The client UTF-8 encodes this string as the WebAuthn challenge and signs it
   with the passkey to produce the assertion submitted to
   `POST /auth/credentials/{id}/verify`.
@@ -36,7 +38,18 @@ allOf:
           the WebAuthn challenge to `navigator.credentials.get()`. Single-use;
           a new challenge is issued on the next call to
           `POST /auth/credentials/{id}/challenge`.
-        example: 6b35a4c41d9aa7a2a0e742f9f9e7a1c2d65a2db33a3fb748f6d4f1ce78d9a729
+        example: b62e5340ab439378d5be0251e2397f7de998121f7abbf57224de7e5d96adfb9b
+      payloadToSign:
+        type: string
+        description: >-
+          The exact canonical JSON of the Turnkey session request the passkey
+          assertion authorizes. `challenge` is the lowercase hex-encoded
+          SHA-256 digest of this string's UTF-8 bytes, so a client can verify
+          the request before calling `navigator.credentials.get()`: parse it,
+          check its activity type and that it registers the client's own
+          `clientPublicKey`, and recompute the digest. Pass it back unchanged;
+          Grid forwards the stored request, not this field.
+        example: '{"organizationId":"5c1e8a3f-7b2d-4e9a-9c41-2f6d8b0a1e37","parameters":{"expirationSeconds":"900","publicKey":"02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"},"timestampMs":"1775662500000","type":"ACTIVITY_TYPE_STAMP_LOGIN"}'
       requestId:
         type: string
         description: >-
