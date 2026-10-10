@@ -13,11 +13,9 @@ post:
 
     Funding a `RULE_BASED` account triggers its sweep, exactly as a settled
     deposit does in production: the balance is swept to the rule's
-    destination and the account is left at zero. A balance outside the corridor
-    band moves to the account holder's own account in the same currency
-    instead, and the transaction fails with
-    `failureReason: SWEEP_AMOUNT_OUT_OF_RANGE` — fund a rule-based account with
-    a very small amount to rehearse that path. Either way the rule-based account
+    destination and the account is left at zero. A sweep the destination's
+    corridor cannot carry fails, and the balance moves to the account holder's
+    own account in the same currency instead. Either way the rule-based account
     is left at zero; it never holds a balance.
 
     The sweep's transaction reports a placeholder ACH depositor as its
