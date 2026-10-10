@@ -14,6 +14,8 @@ properties:
     example: MERCHANT_LOCKED
   currency:
     type: string
+    enum:
+      - USD
     description: Card currency. Only `USD` is supported.
     example: USD
   monthlyCap:

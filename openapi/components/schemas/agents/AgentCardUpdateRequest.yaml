@@ -2,10 +2,13 @@ type: object
 description: >-
   Update request for `PATCH /agents/me/cards/{cardId}`. At least one field must
   be supplied. An agent may only tighten a card: a limit may be set or lowered
-  but not raised or removed, `blockedMccs` may only gain codes, and
-  `allowedMccs` may only lose codes once set. The only status an agent may set
-  is `FROZEN`; unfreezing and loosening happen on the platform through
-  `PATCH /cards/{id}`. Purchase-card limits are fixed at issuance.
+  but not raised or removed, `blockedMccs` must contain every code in the
+  card's `effectiveBlockedMccs`, and `allowedMccs` may only lose codes once set.
+  The only status an agent may set is `FROZEN`; unfreezing and loosening happen
+  on the platform through `PATCH /cards/{id}`. A purchase card's spending
+  limits are fixed at issuance: supplying `maxSpendPerTransaction`,
+  `maxSpendPerDay` or `maxTransactionsPerDay` for one is a 400, while its
+  merchant categories and status follow the rules above.
 properties:
   status:
     type: string
@@ -38,6 +41,7 @@ properties:
     example: 10
   allowedMccs:
     type: array
+    minItems: 1
     description: >-
       Merchant category codes the card may spend at. Once set, a replacement
       must be a subset of the current list.
@@ -50,7 +54,8 @@ properties:
     type: array
     description: >-
       Merchant category codes the card declines. A replacement must contain
-      every code already blocked.
+      every code in the card's `effectiveBlockedMccs`, so an agent can never
+      lift a block, Grid's default agent blocks included.
     items:
       type: string
       pattern: ^[0-9]{4}$

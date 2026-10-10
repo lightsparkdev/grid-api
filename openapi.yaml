@@ -9602,7 +9602,7 @@ paths:
         - name: Idempotency-Key
           in: header
           required: true
-          description: Unique identifier used to return the same action for retries.
+          description: Unique identifier used to return the same action for retries. Reusing a key with a different request body is a 400.
           schema:
             type: string
             maxLength: 255
@@ -9627,7 +9627,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AgentPurchaseCardCreateResponse'
         '400':
-          description: Bad request - Invalid amount, currency, or source account, or the policy denies the card
+          description: Bad request - Invalid amount, currency, or source account, the policy denies the card, or the Idempotency-Key was used with a different body
           content:
             application/json:
               schema:
@@ -9731,7 +9731,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AgentCard'
         '400':
-          description: Bad request - A change would loosen the card or the card is closed
+          description: Bad request - A change would loosen the card, sets a spending limit on a purchase card, or the card is closed
           content:
             application/json:
               schema:
@@ -9771,12 +9771,6 @@ paths:
       responses:
         '204':
           description: Card closed
-        '400':
-          description: Bad request - The card is not a purchase card
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
         '401':
           description: Unauthorized
           content:
@@ -9795,6 +9789,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The card is not an open purchase card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -29190,6 +29190,8 @@ components:
           example: SINGLE_USE
         currency:
           type: string
+          enum:
+            - USD
           description: Card currency. Only `USD` is supported.
           example: USD
         amount:
@@ -29224,6 +29226,8 @@ components:
           example: MERCHANT_LOCKED
         currency:
           type: string
+          enum:
+            - USD
           description: Card currency. Only `USD` is supported.
           example: USD
         monthlyCap:
@@ -29419,6 +29423,7 @@ components:
           example: 20
         allowedMccs:
           type: array
+          minItems: 1
           description: Merchant category codes the card may spend at. Absent when the card may spend at any category not blocked.
           items:
             type: string
@@ -29427,7 +29432,7 @@ components:
             - '5411'
         blockedMccs:
           type: array
-          description: 'Merchant category codes the card declines, with `cardDeclinedReason: BLOCKED`. Agent cards also decline Grid''s default agent categories; see `AgentCard.effectiveBlockedMccs`.'
+          description: 'Merchant category codes the card declines, with `cardDeclinedReason: BLOCKED`. A card issued for an agent also declines Grid''s default agent categories unless `defaultMccBlocksLifted` is true; see `AgentCard.effectiveBlockedMccs`.'
           items:
             type: string
             pattern: ^[0-9]{4}$
@@ -29437,6 +29442,10 @@ components:
           type: string
           description: The agent the card was issued for, when there is one.
           example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        defaultMccBlocksLifted:
+          type: boolean
+          description: Whether the platform lifted Grid's default agent merchant-category blocks on this card. Present only for a card issued for an agent; always false for a purchase card.
+          example: false
         currency:
           type: string
           description: Currency the card transacts in, fixed at issuance by its card program. USDB-funded cards transact in USD, with funding converted at 1 USDB = 1 USD. Spending limits use the smallest unit of the card's currency (USD cents for USDB-funded cards). Changing the funding source does not change the card's currency or spending-limit units.
@@ -29521,7 +29530,7 @@ components:
               example: 2300
             effectiveBlockedMccs:
               type: array
-              description: 'Every merchant category code the card declines: `blockedMccs` plus the categories Grid blocks for agent cards. A `STANDARD` card''s customer may lift the Grid defaults on the platform; a purchase card''s defaults cannot be lifted.'
+              description: 'Every merchant category code the card declines: `blockedMccs` plus the categories Grid blocks for agent cards, unless the platform lifted those defaults on a `STANDARD` card (`defaultMccBlocksLifted`). A purchase card''s defaults cannot be lifted.'
               items:
                 type: string
                 pattern: ^[0-9]{4}$
@@ -30051,7 +30060,7 @@ components:
           description: The issued card. Present when the action completed immediately.
     AgentCardUpdateRequest:
       type: object
-      description: 'Update request for `PATCH /agents/me/cards/{cardId}`. At least one field must be supplied. An agent may only tighten a card: a limit may be set or lowered but not raised or removed, `blockedMccs` may only gain codes, and `allowedMccs` may only lose codes once set. The only status an agent may set is `FROZEN`; unfreezing and loosening happen on the platform through `PATCH /cards/{id}`. Purchase-card limits are fixed at issuance.'
+      description: 'Update request for `PATCH /agents/me/cards/{cardId}`. At least one field must be supplied. An agent may only tighten a card: a limit may be set or lowered but not raised or removed, `blockedMccs` must contain every code in the card''s `effectiveBlockedMccs`, and `allowedMccs` may only lose codes once set. The only status an agent may set is `FROZEN`; unfreezing and loosening happen on the platform through `PATCH /cards/{id}`. A purchase card''s spending limits are fixed at issuance: supplying `maxSpendPerTransaction`, `maxSpendPerDay` or `maxTransactionsPerDay` for one is a 400, while its merchant categories and status follow the rules above.'
       properties:
         status:
           type: string
@@ -30082,6 +30091,7 @@ components:
           example: 10
         allowedMccs:
           type: array
+          minItems: 1
           description: Merchant category codes the card may spend at. Once set, a replacement must be a subset of the current list.
           items:
             type: string
@@ -30090,7 +30100,7 @@ components:
             - '5411'
         blockedMccs:
           type: array
-          description: Merchant category codes the card declines. A replacement must contain every code already blocked.
+          description: Merchant category codes the card declines. A replacement must contain every code in the card's `effectiveBlockedMccs`, so an agent can never lift a block, Grid's default agent blocks included.
           items:
             type: string
             pattern: ^[0-9]{4}$
@@ -30180,6 +30190,7 @@ components:
           example: 20
         allowedMccs:
           type: array
+          minItems: 1
           description: Merchant category codes the card may spend at. Omit to allow every category not blocked.
           items:
             type: string
@@ -30196,7 +30207,7 @@ components:
             - '7995'
         agentId:
           type: string
-          description: Issue the card for this agent, which must belong to the same customer. The agent can then read the card, tighten its limits, and freeze it through `/agents/me/cards`. Grid's default agent merchant-category blocks apply until lifted with `PATCH /cards/{id}`. The card's spend is the customer's own and does not count against the agent's policy.
+          description: 'Issue the card for this agent, which must belong to the same customer. The agent can then read the card, tighten its limits, and freeze it through `/agents/me/cards`. Grid''s default agent merchant-category blocks apply in addition to `blockedMccs` until the platform lifts them with `PATCH /cards/{id}` and `defaultMccBlocksLifted: true`. The card''s spend is the customer''s own and does not count against the agent''s policy.'
           example: Agent:019542f5-b3e7-1d02-0000-000000000042
     CardUpdateStatus:
       type: string
@@ -30224,7 +30235,7 @@ components:
       example: SUSPICIOUS_ACTIVITY
     CardUpdateRequest:
       type: object
-      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, `allowedMccs`, `blockedMccs`, or `threeDSecurePassword` must be supplied. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Explicit activation requires completed delegated signing authorization; otherwise it returns `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
+      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, `allowedMccs`, `blockedMccs`, `defaultMccBlocksLifted`, or `threeDSecurePassword` must be supplied. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Explicit activation requires completed delegated signing authorization; otherwise it returns `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
       properties:
         status:
           $ref: '#/components/schemas/CardUpdateStatus'
@@ -30273,6 +30284,7 @@ components:
         allowedMccs:
           anyOf:
             - type: array
+              minItems: 1
               items:
                 type: string
                 pattern: ^[0-9]{4}$
@@ -30287,9 +30299,13 @@ components:
                 type: string
                 pattern: ^[0-9]{4}$
             - type: 'null'
-          description: 'Replacement list of merchant category codes the card declines. Supply null to clear it, or omit to leave it unchanged. On a card issued for an agent, the list also replaces Grid''s default agent blocks, so a code left out is lifted. Cannot be supplied alongside `status: CLOSED`.'
+          description: 'Replacement list of merchant category codes the card declines. Supply null to clear it, or omit to leave it unchanged. On a card issued for an agent, Grid''s default agent blocks still apply on top of this list; lift them with `defaultMccBlocksLifted`. Cannot be supplied alongside `status: CLOSED`.'
           example:
             - '7995'
+        defaultMccBlocksLifted:
+          type: boolean
+          description: 'On a `STANDARD` card issued for an agent, `true` lifts Grid''s default agent merchant-category blocks and `false` restores them. Refused on any other card, including purchase cards, whose defaults cannot be lifted. Cannot be supplied alongside `status: CLOSED`.'
+          example: true
     CardRevealRequest:
       type: object
       description: Optional overrides for one reveal. Omit the body entirely to use your platform's configured settings.

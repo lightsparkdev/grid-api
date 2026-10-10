@@ -30,9 +30,10 @@ allOf:
         type: array
         description: >-
           Every merchant category code the card declines: `blockedMccs` plus
-          the categories Grid blocks for agent cards. A `STANDARD` card's
-          customer may lift the Grid defaults on the platform; a purchase
-          card's defaults cannot be lifted.
+          the categories Grid blocks for agent cards, unless the platform
+          lifted those defaults on a `STANDARD` card
+          (`defaultMccBlocksLifted`). A purchase card's defaults cannot be
+          lifted.
         items:
           type: string
           pattern: ^[0-9]{4}$
