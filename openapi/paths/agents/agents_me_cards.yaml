@@ -87,7 +87,9 @@ post:
     - name: Idempotency-Key
       in: header
       required: true
-      description: Unique identifier used to return the same action for retries.
+      description: >-
+        Unique identifier used to return the same action for retries. Reusing a
+        key with a different request body is a 400.
       schema:
         type: string
         maxLength: 255
@@ -112,7 +114,7 @@ post:
           schema:
             $ref: ../../components/schemas/agents/AgentPurchaseCardCreateResponse.yaml
     '400':
-      description: Bad request - Invalid amount, currency, or source account, or the policy denies the card
+      description: Bad request - Invalid amount, currency, or source account, the policy denies the card, or the Idempotency-Key was used with a different body
       content:
         application/json:
           schema:

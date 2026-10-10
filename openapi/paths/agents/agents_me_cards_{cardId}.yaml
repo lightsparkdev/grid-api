@@ -74,7 +74,9 @@ patch:
           schema:
             $ref: ../../components/schemas/agents/AgentCard.yaml
     '400':
-      description: Bad request - A change would loosen the card or the card is closed
+      description: >-
+        Bad request - A change would loosen the card, sets a spending limit on a
+        purchase card, or the card is closed
       content:
         application/json:
           schema:
@@ -120,12 +122,6 @@ delete:
   responses:
     '204':
       description: Card closed
-    '400':
-      description: Bad request - The card is not a purchase card
-      content:
-        application/json:
-          schema:
-            $ref: ../../components/schemas/errors/Error400.yaml
     '401':
       description: Unauthorized
       content:
@@ -147,6 +143,12 @@ delete:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - The card is not an open purchase card
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
     '500':
       description: Internal service error
       content:
