@@ -1,49 +1,52 @@
 title: Agent Card
-description: A card that belongs to the authenticated agent.
-allOf:
-  - $ref: ../cards/Card.yaml
-  - type: object
-    required:
-      - agentId
-      - agentCardKind
-      - effectiveBlockedMccs
-    properties:
-      agentId:
-        type: string
-        description: The agent the card belongs to.
-        example: Agent:019542f5-b3e7-1d02-0000-000000000042
-      agentCardKind:
-        $ref: ./AgentCardKind.yaml
-      spendLimit:
-        $ref: ./AgentCardSpendLimit.yaml
-        description: The issuer-enforced cap. Present for purchase cards.
-      reservedAmount:
-        type: integer
-        format: int64
-        minimum: 0
-        description: >-
-          Amount of the agent's spending limits currently held for this card,
-          in the smallest unit of the card's currency. Present for purchase
-          cards.
-        example: 2300
-      effectiveBlockedMccs:
-        type: array
-        description: >-
-          Every merchant category code the card declines: `blockedMccs` plus
-          the categories Grid blocks for agent cards, unless the platform
-          lifted those defaults on a `STANDARD` card
-          (`defaultMccBlocksLifted`). A purchase card's defaults cannot be
-          lifted.
-        items:
-          type: string
-          pattern: ^[0-9]{4}$
-        example:
-          - '7995'
-          - '6051'
-      expiresAt:
-        type: string
-        format: date-time
-        description: >-
-          When Grid closes the card if it is still open. An unused
-          `SINGLE_USE` card closes at this time and releases its reservation.
-        example: '2026-10-10T15:30:00Z'
+type: object
+description: >-
+  A card that belongs to the authenticated agent: the card itself and how the
+  agent may use it.
+required:
+  - card
+  - agentId
+  - agentCardKind
+  - effectiveBlockedMccs
+properties:
+  card:
+    $ref: ../cards/Card.yaml
+  agentId:
+    type: string
+    description: The agent the card belongs to.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000042
+  agentCardKind:
+    $ref: ./AgentCardKind.yaml
+  spendLimit:
+    $ref: ./AgentCardSpendLimit.yaml
+    description: The issuer-enforced cap. Present for purchase cards.
+  reservedAmount:
+    type: integer
+    format: int64
+    minimum: 0
+    description: >-
+      Amount of the agent's spending limits currently held for this card,
+      in the smallest unit of the card's currency. Present for purchase
+      cards.
+    example: 2300
+  effectiveBlockedMccs:
+    type: array
+    description: >-
+      Every merchant category code the card declines: `blockedMccs` plus
+      the categories Grid blocks for agent cards, unless the platform
+      lifted those defaults on a `STANDARD` card
+      (`defaultMccBlocksLifted`). A purchase card's defaults cannot be
+      lifted.
+    items:
+      type: string
+      pattern: ^[0-9]{4}$
+    example:
+      - '7995'
+      - '6051'
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      When Grid closes the card if it is still open. An unused
+      `SINGLE_USE` card closes at this time and releases its reservation.
+    example: '2026-10-10T15:30:00Z'
