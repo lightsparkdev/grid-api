@@ -8933,6 +8933,7 @@ paths:
       summary: Create a transfer quote
       description: |
         Generate a quote for a cross-currency transfer on behalf of the authenticated agent's customer. Accounts referenced in the request must belong to the agent's customer. Requires the CREATE_QUOTES permission in the agent's policy.
+        The destination is another embedded wallet (`ACCOUNT`) or an address on another chain (`CHAIN_ADDRESS`). A `CHAIN_ADDRESS` quote sends `USDB` and commits to a `minimumReceivingAmount`; Grid prices the conversion again at execution and fails the action with `PRICE_MOVED` rather than send for less.
         If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount exceeds the agent's approvalThresholds, the resulting transaction will require explicit approval before funds move.
       operationId: agentCreateQuote
       tags:
@@ -8954,14 +8955,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/QuoteRequest'
+              $ref: '#/components/schemas/AgentQuoteRequest'
       responses:
         '201':
           description: Transfer quote created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quote'
+                $ref: '#/components/schemas/AgentQuote'
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -9033,7 +9034,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quote'
+                $ref: '#/components/schemas/AgentQuote'
         '401':
           description: Unauthorized
           content:
@@ -29160,6 +29161,18 @@ components:
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
         | `ISSUE_PURCHASE_CARD` | Issue a purchase card |
+    AgentQuote:
+      title: Agent Quote
+      allOf:
+        - $ref: '#/components/schemas/Quote'
+        - type: object
+          properties:
+            minimumReceivingAmount:
+              type: integer
+              format: int64
+              description: 'Smallest amount the recipient receives, in the smallest unit of `receivingCurrency`. Present for quotes to a `CHAIN_ADDRESS` destination: `totalReceivingAmount` is an estimate, and the quote executes only if a fresh price at execution still delivers at least this amount. Otherwise the action fails with `PRICE_MOVED`.'
+              example: 990000
+      description: A quote created by an agent. For a `CHAIN_ADDRESS` destination, the quote's `destination` names the external account Grid recorded for the address.
     AgentSingleUseCardCreateRequest:
       title: Single-Use Card
       type: object
@@ -29529,6 +29542,7 @@ components:
         - EXECUTION_FAILED
         - CARD_ISSUANCE_FAILED
         - APPROVAL_EXPIRED
+        - PRICE_MOVED
       description: |
         Why an agent action has status `FAILED`.
 
@@ -29540,6 +29554,7 @@ components:
         | `EXECUTION_FAILED` | Grid could not execute the approved action |
         | `CARD_ISSUANCE_FAILED` | Grid could not issue the approved purchase card |
         | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD` action was not approved before it expired |
+        | `PRICE_MOVED` | A quote to a `CHAIN_ADDRESS` would no longer deliver its `minimumReceivingAmount` when it executed, so Grid did not send |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -29576,7 +29591,7 @@ components:
           $ref: '#/components/schemas/AgentActionType'
         quote:
           allOf:
-            - $ref: '#/components/schemas/Quote'
+            - $ref: '#/components/schemas/AgentQuote'
           description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user. Present for `EXECUTE_QUOTE`.
         purchaseCard:
           $ref: '#/components/schemas/AgentPurchaseCardCreateRequest'
@@ -29899,6 +29914,80 @@ components:
           example: gat_ed0ad25881e234cc28fb2dec0a4fe64e4172a3b9
         policy:
           $ref: '#/components/schemas/AgentPolicy'
+    AgentSendNetwork:
+      type: string
+      enum:
+        - BASE
+        - ETHEREUM
+        - SOLANA
+        - POLYGON
+        - ARBITRUM
+        - TRON
+      description: Network an agent can send USDC or USDT to from an embedded wallet. `TRON` supports `USDT` only, and `BASE` supports `USDC` only.
+    AgentChainAddressDestination:
+      title: Chain Address
+      type: object
+      required:
+        - destinationType
+        - network
+        - currency
+        - address
+      properties:
+        destinationType:
+          type: string
+          enum:
+            - CHAIN_ADDRESS
+          description: Marks a destination on another chain.
+          example: CHAIN_ADDRESS
+        network:
+          $ref: '#/components/schemas/AgentSendNetwork'
+          description: Network the recipient receives on.
+          example: BASE
+        currency:
+          type: string
+          description: 'Asset the recipient receives: `USDC` or `USDT`. `TRON` supports `USDT` only, and `BASE` supports `USDC` only.'
+          example: USDC
+        address:
+          type: string
+          maxLength: 128
+          description: Recipient address on `network`.
+          example: '0x1234567890abcdef1234567890abcdef12345678'
+      description: An address on another chain, paid from an `EMBEDDED_WALLET` holding `USDB`. Grid records the address as an external account of the agent's customer, reusing the account when the customer already has one for the same network, currency and address, and screens it before quoting. The quote's `destination` names that account.
+    AgentQuoteDestinationOneOf:
+      description: Destination of an agent quote.
+      oneOf:
+        - $ref: '#/components/schemas/AccountDestination'
+        - $ref: '#/components/schemas/AgentChainAddressDestination'
+      discriminator:
+        propertyName: destinationType
+        mapping:
+          ACCOUNT: '#/components/schemas/AccountDestination'
+          CHAIN_ADDRESS: '#/components/schemas/AgentChainAddressDestination'
+    AgentQuoteRequest:
+      type: object
+      description: |-
+        A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET` internal account of the agent's customer. The destination is either another `EMBEDDED_WALLET` on the platform (`ACCOUNT`), or an address on another chain (`CHAIN_ADDRESS`).
+
+        A `CHAIN_ADDRESS` quote sends `USDB` and requires `lockedCurrencySide` `SENDING`: it commits to the `USDB` amount, the destination, and a `minimumReceivingAmount`. Grid prices the conversion again when the quote executes, after any approval, and sends only if the destination still receives at least that minimum. Otherwise the action fails with `PRICE_MOVED` and no funds move.
+      required:
+        - source
+        - destination
+        - lockedCurrencySide
+        - lockedCurrencyAmount
+      properties:
+        source:
+          $ref: '#/components/schemas/QuoteSourceOneOf'
+        destination:
+          $ref: '#/components/schemas/AgentQuoteDestinationOneOf'
+        lockedCurrencySide:
+          $ref: '#/components/schemas/QuoteLockSide'
+        lockedCurrencyAmount:
+          type: integer
+          format: int64
+          description: The amount to send/receive in the smallest unit of the locked currency (eg. cents). See `lockedCurrencySide` for more information.
+          exclusiveMinimum: 0
+          maximum: 9000000000000000
+          example: 1000
     ExternalAccountCreateRequest:
       allOf:
         - type: object

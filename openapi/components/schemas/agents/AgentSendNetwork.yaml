@@ -1,0 +1,11 @@
+type: string
+enum:
+  - BASE
+  - ETHEREUM
+  - SOLANA
+  - POLYGON
+  - ARBITRUM
+  - TRON
+description: >-
+  Network an agent can send USDC or USDT to from an embedded wallet. `TRON`
+  supports `USDT` only, and `BASE` supports `USDC` only.

@@ -6,6 +6,7 @@ enum:
   - EXECUTION_FAILED
   - CARD_ISSUANCE_FAILED
   - APPROVAL_EXPIRED
+  - PRICE_MOVED
 description: |
   Why an agent action has status `FAILED`.
 
@@ -17,3 +18,4 @@ description: |
   | `EXECUTION_FAILED` | Grid could not execute the approved action |
   | `CARD_ISSUANCE_FAILED` | Grid could not issue the approved purchase card |
   | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD` action was not approved before it expired |
+  | `PRICE_MOVED` | A quote to a `CHAIN_ADDRESS` would no longer deliver its `minimumReceivingAmount` when it executed, so Grid did not send |

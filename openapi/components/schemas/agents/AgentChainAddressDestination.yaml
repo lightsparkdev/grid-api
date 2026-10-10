@@ -1,0 +1,35 @@
+title: Chain Address
+type: object
+required:
+  - destinationType
+  - network
+  - currency
+  - address
+properties:
+  destinationType:
+    type: string
+    enum:
+      - CHAIN_ADDRESS
+    description: Marks a destination on another chain.
+    example: CHAIN_ADDRESS
+  network:
+    $ref: ./AgentSendNetwork.yaml
+    description: Network the recipient receives on.
+    example: BASE
+  currency:
+    type: string
+    description: >-
+      Asset the recipient receives: `USDC` or `USDT`. `TRON` supports `USDT`
+      only, and `BASE` supports `USDC` only.
+    example: USDC
+  address:
+    type: string
+    maxLength: 128
+    description: Recipient address on `network`.
+    example: '0x1234567890abcdef1234567890abcdef12345678'
+description: >-
+  An address on another chain, paid from an `EMBEDDED_WALLET` holding `USDB`.
+  Grid records the address as an external account of the agent's customer,
+  reusing the account when the customer already has one for the same
+  network, currency and address, and screens it before quoting. The quote's
+  `destination` names that account.
