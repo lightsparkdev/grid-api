@@ -5,6 +5,12 @@ post:
     agent's customer. Accounts referenced in the request must belong to the agent's
     customer. Requires the CREATE_QUOTES permission in the agent's policy.
 
+    The destination is another embedded wallet (`ACCOUNT`) or an address on
+    another chain (`CHAIN_ADDRESS`). A `CHAIN_ADDRESS` quote sends `USDB` and
+    commits to a `minimumReceivingAmount`; Grid prices the conversion again
+    at execution and fails the action with `PRICE_MOVED` rather than send
+    for less.
+
     If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount
     exceeds the agent's approvalThresholds, the resulting transaction will require
     explicit approval before funds move.
@@ -29,14 +35,14 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../../components/schemas/quotes/QuoteRequest.yaml
+          $ref: ../../components/schemas/agents/AgentQuoteRequest.yaml
   responses:
     '201':
       description: Transfer quote created successfully
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/quotes/Quote.yaml
+            $ref: ../../components/schemas/agents/AgentQuote.yaml
     '400':
       description: Bad request - Missing or invalid parameters
       content:
@@ -50,7 +56,9 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '403':
-      description: Forbidden - Agent policy does not permit this operation
+      description: >-
+        Forbidden - Agents API is not enabled for the platform or the agent policy does
+        not permit this operation
       content:
         application/json:
           schema:

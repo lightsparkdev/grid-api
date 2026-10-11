@@ -79,7 +79,7 @@ tags:
   - name: Agent Management
     description: 'Endpoints for creating and managing agents (experimental), called by the partner''s backend using platform credentials. Covers the full agent lifecycle: creation, policy configuration, pausing, deletion, the device code installation flow, and approving or rejecting transactions initiated by agents.'
   - name: Agent Operations
-    description: Endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
+    description: Experimental endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
   - name: Cards
     description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage a card's funding source, and list card transactions.
   - name: Stablecoins
@@ -7218,7 +7218,8 @@ paths:
                     nickname: iPhone Face-ID
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:35:00Z'
-                    challenge: 6b35a4c41d9aa7a2a0e742f9f9e7a1c2d65a2db33a3fb748f6d4f1ce78d9a729
+                    challenge: b62e5340ab439378d5be0251e2397f7de998121f7abbf57224de7e5d96adfb9b
+                    payloadToSign: '{"organizationId":"5c1e8a3f-7b2d-4e9a-9c41-2f6d8b0a1e37","parameters":{"expirationSeconds":"900","publicKey":"02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"},"timestampMs":"1775662500000","type":"ACTIVITY_TYPE_STAMP_LOGIN"}'
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
@@ -7491,17 +7492,17 @@ paths:
     post:
       summary: Create a delegated signing key
       description: |
-        Delegate Spark token-transaction signing authority for a card funding source backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested card and internal account to identify the wallet funding source, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
+        Delegate Spark token-transaction signing authority for a card funding source or agent backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested owner and internal account to identify the wallet, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
 
         1. Call `POST /auth/delegated-keys` with no signature headers. Grid generates the delegated keypair and the response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
 
         2. Use the session API keypair of a verified credential on the requested Embedded Wallet internal account to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The response is a second `202` with a new `payloadToSign`, `requestId`, and `expiresAt`.
 
-        3. Stamp the new `payloadToSign` with the same session keypair and retry once more with the new `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status. A provisioned `PENDING_AUTH` card using this funding source becomes `ACTIVE` automatically. Cards still provisioning remain `PROCESSING`; frozen and closed cards retain their status.
+        3. Stamp the new `payloadToSign` with the same session keypair and retry once more with the new `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status. For card keys, a provisioned `PENDING_AUTH` card using this funding source becomes `ACTIVE` automatically. Cards still provisioning remain `PROCESSING`; frozen and closed cards retain their status.
 
-        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the signer identity exists but holds no policies, so it cannot sign or revoke itself. Abandoned `PENDING` keys do not block creating another delegated key. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account in place of a session keypair; the platform never handles the key material.
+        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the signer identity exists but holds no policies, so it cannot sign or revoke itself. Abandoned `PENDING` keys do not block creating another delegated key. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account or for policy-approved agent actions in place of a session keypair; the platform never handles the key material.
 
-        Each card funding source may have at most one `ACTIVE` delegated key for its Embedded Wallet funding account; revoke the existing active key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by the public API. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
+        Each card funding source, or each agent and Embedded Wallet pair, may have at most one `ACTIVE` delegated key; revoke the existing active key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by the public API. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
       operationId: createDelegatedKey
       tags:
         - Embedded Wallet Auth
@@ -7537,7 +7538,7 @@ paths:
                   nickname: Card payments key
       responses:
         '201':
-          description: Delegated key created and policy granted. The key is `ACTIVE` and Grid may use it to stamp card-payment quote executions for this card funding source's Embedded Wallet funding account.
+          description: Delegated key created and policy granted. The key is `ACTIVE` and Grid may use it to stamp card-payment quote executions or policy-approved actions for the selected agent.
           content:
             application/json:
               schema:
@@ -7562,7 +7563,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DelegatedKeySignedRequestChallenge'
         '400':
-          description: Bad request
+          description: Bad request. Returned when both `cardId` and `agentId` are provided, or when neither owner id is provided.
           content:
             application/json:
               schema:
@@ -7574,13 +7575,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '404':
-          description: Card, card funding source, or Embedded Wallet funding account not found
+          description: Card, agent, card funding source, or Embedded Wallet account not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: An `ACTIVE` delegated key already exists for this card funding source. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one.
+          description: An `ACTIVE` delegated key already exists for this card funding source or agent and Embedded Wallet pair. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one.
           content:
             application/json:
               schema:
@@ -7762,6 +7763,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -7857,6 +7870,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer not found when filtering by customerId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -7944,6 +7969,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -7973,6 +8004,286 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/customer:
+    get:
+      summary: Get agent customer
+      description: Retrieve the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      operationId: agentGetCustomer
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndividualCustomer'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update agent customer
+      description: Update identity information for the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent's policy. The customer is inferred from the agent and cannot be selected by the request.
+      operationId: agentUpdateCustomer
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IndividualCustomerUpdateRequest'
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndividualCustomer'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/verifications:
+    post:
+      summary: Submit agent customer for verification
+      description: Submit the authenticated agent's individual customer for KYC verification. The response reports the current status and any identity fields that still need to be supplied. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      operationId: agentCreateVerification
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Verification status returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verification'
+        '400':
+          description: Bad request - Required identity information is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/kyc-link:
+    post:
+      summary: Generate an agent customer KYC link
+      description: Generate a single-use hosted KYC link for the authenticated agent's individual customer. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      operationId: agentCreateKycLink
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KycLinkCreateRequest'
+      responses:
+        '201':
+          description: KYC link generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycLinkResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '409':
+          description: Customer is not ready to begin hosted KYC
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/deposits:
+    post:
+      summary: Create an agent deposit
+      description: Create an Orchestra-backed deposit for the authenticated agent's customer. The returned target is a BOLT11 invoice for Lightning or an address for a supported chain. Requires the RECEIVE_FUNDS permission in the agent's policy.
+      operationId: agentCreateDeposit
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Unique identifier used to return the same deposit for retries.
+          schema:
+            type: string
+            maxLength: 255
+            example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentDepositCreateRequest'
+      responses:
+        '201':
+          description: Deposit created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDeposit'
+        '400':
+          description: Bad request - Unsupported deposit route or invalid amount
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the RECEIVE_FUNDS permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/deposits/{depositId}:
+    parameters:
+      - name: depositId
+        in: path
+        required: true
+        description: System-generated unique deposit identifier
+        schema:
+          type: string
+        example: AgentDeposit:019542f5-b3e7-1d02-0000-000000000001
+    get:
+      summary: Get an agent deposit
+      description: Retrieve an Orchestra-backed deposit created by the authenticated agent. Requires the RECEIVE_FUNDS permission in the agent's policy.
+      operationId: agentGetDeposit
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDeposit'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the RECEIVE_FUNDS permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Deposit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -8008,6 +8319,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8053,6 +8370,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8082,6 +8405,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8105,7 +8434,7 @@ paths:
     patch:
       summary: Update agent policy
       description: |
-        Partially update an agent's policy. Only provided fields will be updated; omitted fields retain their current values. Policy changes take effect immediately.
+        Partially update an agent's policy. Only provided fields will be updated; omitted fields retain their current values. Policy changes take effect immediately. The spending limits currency is immutable; attempting to change it returns a 400 response.
       operationId: updateAgentPolicy
       tags:
         - Agent Management
@@ -8136,6 +8465,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8184,6 +8519,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8246,6 +8587,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent or action not found
           content:
@@ -8313,6 +8660,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent or action not found
           content:
@@ -8331,23 +8684,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /agents/device-codes/{code}/status:
-    parameters:
-      - name: code
-        in: path
-        description: The device code to check
-        required: true
-        schema:
-          type: string
-    get:
+  /agents/device-codes/status:
+    post:
       summary: Get device code status
       description: |
-        Check whether a device code has been redeemed. Use this to poll for agent installation completion after creating an agent.
+        Check the status of a device code. Use this to poll for agent installation completion after creating an agent.
       operationId: getAgentDeviceCodeStatus
       tags:
         - Agent Management
       security:
         - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentDeviceCodeRequest'
       responses:
         '200':
           description: Successful operation
@@ -8361,6 +8713,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Device code not found
           content:
@@ -8373,14 +8731,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /agents/device-codes/{code}/redeem:
-    parameters:
-      - name: code
-        in: path
-        description: The device code to redeem
-        required: true
-        schema:
-          type: string
+  /agents/device-codes/redeem:
     post:
       summary: Redeem device code
       description: |
@@ -8390,6 +8741,12 @@ paths:
       tags:
         - Agent Management
       security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentDeviceCodeRequest'
       responses:
         '200':
           description: Device code redeemed successfully
@@ -8403,6 +8760,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error400'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Device code not found
           content:
@@ -8520,6 +8883,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -8556,6 +8925,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Transaction not found
           content:
@@ -8573,6 +8948,7 @@ paths:
       summary: Create a transfer quote
       description: |
         Generate a quote for a cross-currency transfer on behalf of the authenticated agent's customer. Accounts referenced in the request must belong to the agent's customer. Requires the CREATE_QUOTES permission in the agent's policy.
+        The destination is another embedded wallet (`ACCOUNT`) or an address on another chain (`CHAIN_ADDRESS`). A `CHAIN_ADDRESS` quote sends `USDB` and commits to a `minimumReceivingAmount`; Grid prices the conversion again at execution and fails the action with `PRICE_MOVED` rather than send for less.
         If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount exceeds the agent's approvalThresholds, the resulting transaction will require explicit approval before funds move.
       operationId: agentCreateQuote
       tags:
@@ -8594,14 +8970,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/QuoteRequest'
+              $ref: '#/components/schemas/AgentQuoteRequest'
       responses:
         '201':
           description: Transfer quote created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quote'
+                $ref: '#/components/schemas/AgentQuote'
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -8615,7 +8991,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent policy does not permit this operation
+          description: Forbidden - Agents API is not enabled for the platform or the agent policy does not permit this operation
           content:
             application/json:
               schema:
@@ -8673,13 +9049,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quote'
+                $ref: '#/components/schemas/AgentQuote'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Quote not found
           content:
@@ -8704,8 +9086,8 @@ paths:
     post:
       summary: Execute a quote
       description: |
-        Execute a quote created by the authenticated agent. Requires the EXECUTE_QUOTES permission in the agent's policy.
-        If the agent's policy requires approval for this amount (based on execution mode or approval thresholds), the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
+        Execute a quote created by the authenticated agent. Requires the EXECUTE_QUOTES permission in the agent's policy. When the source is an `EMBEDDED_WALLET`, Grid signs with the agent's active delegated key for that wallet.
+        If the agent's policy requires approval for this amount (based on execution mode or approval thresholds), the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`. The action expires when its quote expires. Approval after expiry fails the action; Grid does not create a replacement quote.
         Once executed, the quote cannot be cancelled.
       operationId: agentExecuteQuote
       tags:
@@ -8722,13 +9104,6 @@ paths:
             type: string
             maxLength: 255
             example: <uuid>
-        - name: Grid-Wallet-Signature
-          in: header
-          required: false
-          description: Full Grid wallet signature over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
-          schema:
-            type: string
-          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
       responses:
         '200':
           description: 'Action submitted successfully. If the agent''s policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated. Note: if approval is required, the underlying quote may expire before the platform approves — in that case the action will transition to `FAILED`.'
@@ -8743,13 +9118,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Also returned when the quote's source is an internal account of type `EMBEDDED_WALLET` and the provided `Grid-Wallet-Signature` header is missing, malformed, or does not match the quote's `payloadToSign`.
+          description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
+          description: Forbidden. The Agents API is not enabled for the platform, the agent policy does not permit this operation, a spending limit was exceeded, or an `EMBEDDED_WALLET` source has no active delegated key for this agent.
           content:
             application/json:
               schema:
@@ -8817,6 +9192,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -8853,6 +9234,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Action not found
           content:
@@ -8916,6 +9303,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -8973,6 +9366,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -9042,6 +9441,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '409':
           description: Conflict - External account already exists
           content:
@@ -9084,6 +9489,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: External account not found
           content:
@@ -9114,12 +9525,350 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: External account not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/cards:
+    get:
+      summary: List agent cards
+      description: 'List the cards that belong to the authenticated agent: standard cards the customer issued for it and purchase cards it issued. Other cards of the customer are not listed. Requires the MANAGE_CARDS permission.'
+      operationId: agentListCards
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: kind
+          in: query
+          description: Filter by card kind
+          required: false
+          schema:
+            $ref: '#/components/schemas/AgentCardKind'
+        - name: status
+          in: query
+          description: Filter by card status
+          required: false
+          schema:
+            $ref: '#/components/schemas/CardStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCardListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, the agent does not have the MANAGE_CARDS permission, or the customer is not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    post:
+      summary: Issue a purchase card
+      description: 'Issue a `SINGLE_USE` or `MERCHANT_LOCKED` purchase card funded from the customer''s Embedded Wallet with the agent''s delegated key. The request is evaluated against the agent''s policy: a `SINGLE_USE` card reserves its amount plus a tolerance, and a `MERCHANT_LOCKED` card is evaluated as an exposure of its monthly cap. When approval is required the response is `202` with a `PENDING_APPROVAL` action that expires after five minutes. Card details are never returned here; request them with `POST /agents/me/cards/{cardId}/reveal`. Requires the MANAGE_CARDS permission, a verified customer, a USD policy, and an active agent delegated key on the source account.'
+      operationId: agentCreatePurchaseCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Unique identifier used to return the same action for retries. Reusing a key with a different request body is a 400.
+          schema:
+            type: string
+            maxLength: 255
+            example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentPurchaseCardCreateRequest'
+      responses:
+        '201':
+          description: Purchase card issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPurchaseCardCreateResponse'
+        '202':
+          description: Purchase card awaiting the customer's approval
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPurchaseCardCreateResponse'
+        '400':
+          description: Bad request - Invalid amount, currency, or source account, the policy denies the card, or the Idempotency-Key was used with a different body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, the agent does not have the MANAGE_CARDS permission, or the customer is not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '409':
+          description: Conflict - The agent already holds the maximum number of open purchase cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/cards/{cardId}:
+    parameters:
+      - name: cardId
+        in: path
+        description: Unique identifier of the card
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get agent card
+      description: Retrieve one of the authenticated agent's cards. A card that does not belong to the agent is not found. Requires the MANAGE_CARDS permission.
+      operationId: agentGetCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCard'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, the agent does not have the MANAGE_CARDS permission, or the customer is not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Tighten or freeze an agent card
+      description: Tighten a card's limits or merchant categories, or freeze it. An agent can never loosen a card or unfreeze it; the platform does that with `PATCH /cards/{id}`. Requires the MANAGE_CARDS permission.
+      operationId: agentUpdateCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentCardUpdateRequest'
+      responses:
+        '200':
+          description: Card updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCard'
+        '400':
+          description: Bad request - A change would loosen the card, sets a spending limit on a purchase card, or the card is closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, the agent does not have the MANAGE_CARDS permission, or the customer is not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Close a purchase card
+      description: Close one of the agent's purchase cards and release any spend still held for it. Standard cards are closed on the platform. Requires the MANAGE_CARDS permission.
+      operationId: agentClosePurchaseCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '204':
+          description: Card closed
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, the agent does not have the MANAGE_CARDS permission, or the customer is not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The card is not an open purchase card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/cards/{cardId}/reveal:
+    parameters:
+      - name: cardId
+        in: path
+        description: Unique identifier of the card
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Reveal a purchase card
+      description: Mint a short-lived signed URL that displays one of the agent's purchase cards. The full card number and CVV never pass through Grid; hand the URL to the customer's client immediately and never store or log it. Each reveal is audit-logged with the agent as the actor. Standard cards are revealed only on the platform. Requires the MANAGE_CARDS permission.
+      operationId: agentRevealPurchaseCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Reveal URL minted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardRevealResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, the agent does not have the MANAGE_CARDS permission, or the customer is not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The card is not an open purchase card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -11879,6 +12628,7 @@ webhooks:
                       feesIncluded: 250
                       platformFeesIncluded: 0
                       transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000099
+                    expiresAt: '2025-10-03T15:00:30Z'
                     createdAt: '2025-10-03T15:00:00Z'
                     updatedAt: '2025-10-03T15:00:00Z'
       responses:
@@ -13770,7 +14520,7 @@ components:
     AgentAuth:
       type: http
       scheme: bearer
-      description: 'Bearer token authentication for agent-scoped endpoints. The token is the `accessToken` returned when redeeming a device code via `POST /agents/device-codes/{code}/redeem`. Agent credentials are user-scoped: all requests are automatically bound to the agent''s associated customer and subject to the agent''s policy.'
+      description: 'Bearer token authentication for agent-scoped endpoints. The token is the `accessToken` returned when redeeming a device code via `POST /agents/device-codes/redeem`. Agent credentials are user-scoped: all requests are automatically bound to the agent''s associated customer and subject to the agent''s policy.'
     WebhookSignature:
       type: apiKey
       in: header
@@ -27935,7 +28685,7 @@ components:
           example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     PasskeyAuthChallenge:
       title: Passkey Auth Challenge
-      description: Extended `AuthMethod` shape returned for `PASSKEY` credentials from `POST /auth/credentials/{id}/challenge`. Includes the WebAuthn `credentialId` needed to target the passkey, plus the Grid-issued `challenge`, corresponding `requestId`, and challenge `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation request body, not a base64url string. The client UTF-8 encodes this string as the WebAuthn challenge and signs it with the passkey to produce the assertion submitted to `POST /auth/credentials/{id}/verify`.
+      description: Extended `AuthMethod` shape returned for `PASSKEY` credentials from `POST /auth/credentials/{id}/challenge`. Includes the WebAuthn `credentialId` needed to target the passkey, plus the Grid-issued `challenge`, corresponding `requestId`, and challenge `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation request body, not a base64url string; that body is returned verbatim as `payloadToSign` so the client can inspect what the passkey authorizes before signing. The client UTF-8 encodes this string as the WebAuthn challenge and signs it with the passkey to produce the assertion submitted to `POST /auth/credentials/{id}/verify`.
       allOf:
         - $ref: '#/components/schemas/AuthMethod'
         - type: object
@@ -27952,7 +28702,11 @@ components:
             challenge:
               type: string
               description: Lowercase hex-encoded SHA-256 digest of the canonical session-creation request body for the pending passkey authentication. Do not base64url-decode this field; pass UTF-8 bytes of the string (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge to `navigator.credentials.get()`. Single-use; a new challenge is issued on the next call to `POST /auth/credentials/{id}/challenge`.
-              example: 6b35a4c41d9aa7a2a0e742f9f9e7a1c2d65a2db33a3fb748f6d4f1ce78d9a729
+              example: b62e5340ab439378d5be0251e2397f7de998121f7abbf57224de7e5d96adfb9b
+            payloadToSign:
+              type: string
+              description: 'The exact canonical JSON of the Turnkey session request the passkey assertion authorizes. `challenge` is the lowercase hex-encoded SHA-256 digest of this string''s UTF-8 bytes, so a client can verify the request before calling `navigator.credentials.get()`: parse it, check its activity type and that it registers the client''s own `clientPublicKey`, and recompute the digest. Pass it back unchanged; Grid forwards the stored request, not this field.'
+              example: '{"organizationId":"5c1e8a3f-7b2d-4e9a-9c41-2f6d8b0a1e37","parameters":{"expirationSeconds":"900","publicKey":"02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"},"timestampMs":"1775662500000","type":"ACTIVITY_TYPE_STAMP_LOGIN"}'
             requestId:
               type: string
               description: Grid-issued `Request:<uuid>` identifier for this pending passkey authentication request. Echo this value exactly as the `Request-Id` header on the subsequent `POST /auth/credentials/{id}/verify` call so Grid can correlate the assertion with the issued challenge.
@@ -28020,15 +28774,13 @@ components:
       type: object
       required:
         - id
-        - cardId
-        - fundingSourceId
         - accountId
         - publicKey
         - nickname
         - status
         - createdAt
         - updatedAt
-      description: A delegated signing key for a card funding source backed by an Embedded Wallet internal account. Returned from `POST /auth/delegated-keys` (on activation), `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`. The keypair is generated and custodied by Grid; the private key is never returned. While `ACTIVE`, Grid may use the key to authorize Spark token-transaction signing for the card funding source's Embedded Wallet funding account in place of a session keypair. `publicKey` is informational metadata identifying the credential.
+      description: A delegated signing key for either a card funding source or an agent, backed by an Embedded Wallet internal account. Card keys include `cardId` and `fundingSourceId`; agent keys include `agentId`. Returned from `POST /auth/delegated-keys` (on activation), `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`. The keypair is generated and custodied by Grid; the private key is never returned. While `ACTIVE`, Grid may use the key to authorize Spark token-transaction signing for the selected card funding source or agent in place of a session keypair. `publicKey` is informational metadata identifying the credential.
       properties:
         id:
           type: string
@@ -28036,15 +28788,19 @@ components:
           example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
         cardId:
           type: string
-          description: The card this key is delegated for.
+          description: The card this key is delegated for. Present only for card keys.
           example: Card:019542f5-b3e7-1d02-0000-000000000010
         fundingSourceId:
           type: string
-          description: The card funding source this key is delegated for.
+          description: The card funding source this key is delegated for. Present only for card keys.
           example: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
+        agentId:
+          type: string
+          description: The agent this key is delegated for. Present only for agent keys.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
         accountId:
           type: string
-          description: The Embedded Wallet internal account this key is delegated for, derived from the card funding source.
+          description: The Embedded Wallet internal account this key is delegated for, derived from the card funding source or the agent's customer.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         publicKey:
           type: string
@@ -28080,25 +28836,29 @@ components:
     DelegatedKeyCreateRequest:
       title: Delegated Key Create Request
       type: object
+      description: Creates a delegated signing key for a card funding source or an agent. Exactly one of `cardId` or `agentId` is required. Requests that provide both fields or neither field return a 400 response.
       required:
-        - cardId
         - internalAccountId
         - nickname
       properties:
         cardId:
           type: string
-          description: The id of the card whose Embedded Wallet funding account will use this delegated signing key.
+          description: The id of the card whose Embedded Wallet funding account will use this delegated signing key. Omit when creating a key for an agent.
           example: Card:019542f5-b3e7-1d02-0000-000000000010
+        agentId:
+          type: string
+          description: The id of the agent that will use this delegated signing key. The agent must belong to the customer that owns the Embedded Wallet internal account. Omit when creating a key for a card.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
         internalAccountId:
           type: string
-          description: The id of the Embedded Wallet internal account funding the card. Grid uses the `(cardId, internalAccountId)` pair to find the active card funding-source binding.
+          description: The id of the Embedded Wallet internal account this key may sign for. For a card key, Grid uses the `(cardId, internalAccountId)` pair to find the active card funding-source binding. For an agent key, the account must belong to the agent's customer.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         nickname:
           type: string
           minLength: 1
           maxLength: 256
           description: Human-readable label for the delegated key.
-          example: Card payments key
+          example: Payments key
     DelegatedKeySignedRequestChallenge:
       title: Delegated Key Signed Request Challenge
       description: 202 response returned from the delegated-key endpoints. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`.
@@ -28111,7 +28871,10 @@ components:
         - CREATE_QUOTES
         - EXECUTE_QUOTES
         - MANAGE_EXTERNAL_ACCOUNTS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.'
+        - RECEIVE_FUNDS
+        - MANAGE_IDENTITY
+        - MANAGE_CARDS
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards, and issue, reveal, and close purchase cards.'
     AgentExecutionMode:
       type: string
       enum:
@@ -28127,7 +28890,7 @@ components:
       properties:
         currency:
           type: string
-          description: ISO 4217 currency code that all amount limits are denominated in.
+          description: ISO 4217 currency code that all amount limits are denominated in. This currency is immutable after the agent is created.
           example: USD
         perTransactionLimit:
           type: integer
@@ -28165,7 +28928,7 @@ components:
           type:
             - integer
             - 'null'
-          description: Per-transaction limit override, in the smallest unit of the relevant currency. Null inherits from the agent's spending limits.
+          description: Per-transaction limit override, in the smallest unit of the policy's `spendingLimits.currency`. Null inherits from the agent's spending limits.
           example: 10000
     AgentAccountRestrictions:
       type: object
@@ -28186,11 +28949,11 @@ components:
             $ref: '#/components/schemas/AgentAccountRule'
     AgentApprovalThresholds:
       type: object
-      description: Thresholds that force approval for high-value transactions, overriding the default execution mode. When a transaction is denominated in a different currency than the threshold, Grid converts using the exchange rate at evaluation time.
+      description: Thresholds that force approval for high-value transactions, overriding the default execution mode. The threshold currency must equal the policy's spending limits currency. When a transaction is denominated in a different currency, Grid converts it to the policy currency at evaluation time.
       properties:
         currency:
           type: string
-          description: ISO 4217 currency code that the amount threshold is denominated in. Required when amount is set.
+          description: ISO 4217 currency code that the amount threshold is denominated in. Required when amount is set and must equal `spendingLimits.currency`.
           example: USD
         amount:
           type:
@@ -28384,220 +29147,117 @@ components:
         | `PENDING_APPROVAL` | Submitted by the agent, awaiting platform approval before execution |
         | `APPROVED` | Approved by the platform; execution is in progress or completed |
         | `REJECTED` | Rejected by the platform; the underlying transaction was not executed |
-        | `FAILED` | Approved but execution failed (e.g. quote expired, insufficient funds) |
+        | `FAILED` | Not executed, or execution failed; see `failureReason` |
     AgentActionType:
       type: string
       enum:
         - EXECUTE_QUOTE
+        - ISSUE_PURCHASE_CARD
       description: |
         The type of action the agent is requesting.
 
         | Type | Description |
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
-    AgentAction:
-      type: object
-      description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
-      required:
-        - id
-        - agentId
-        - customerId
-        - platformCustomerId
-        - status
-        - type
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          type: string
-          description: System-generated unique identifier for this action.
-          example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
-        agentId:
-          type: string
-          description: The agent that submitted this action.
-          example: Agent:019542f5-b3e7-1d02-0000-000000000042
-        customerId:
-          type: string
-          description: The customer on whose behalf the action was submitted.
-          example: Customer:019542f5-b3e7-1d02-0000-000000000010
-        platformCustomerId:
-          type: string
-          description: Platform-specific ID of the customer.
-          example: user-a1b2c3
-        status:
-          $ref: '#/components/schemas/AgentActionStatus'
-        type:
-          $ref: '#/components/schemas/AgentActionType'
-        quote:
-          allOf:
-            - $ref: '#/components/schemas/Quote'
-          description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user.
-        transaction:
-          allOf:
-            - $ref: '#/components/schemas/TransactionOneOf'
-          description: The resulting transaction, populated once the action has been approved and execution has begun. Absent while the action is `PENDING_APPROVAL` or `REJECTED`.
-        rejectionReason:
-          type: string
-          description: Human-readable reason provided by the platform when rejecting the action. Only present when status is `REJECTED`.
-          example: Transaction amount exceeds customer's current risk limit.
-        createdAt:
-          type: string
-          format: date-time
-          description: When the action was submitted by the agent.
-          example: '2025-10-03T15:00:00Z'
-        updatedAt:
-          type: string
-          format: date-time
-          description: When the action was last updated.
-          example: '2025-10-03T15:02:00Z'
-    AgentActionListResponse:
+        | `ISSUE_PURCHASE_CARD` | Issue a purchase card |
+    AgentQuote:
+      title: Agent Quote
+      allOf:
+        - $ref: '#/components/schemas/Quote'
+        - type: object
+          properties:
+            minimumReceivingAmount:
+              type: integer
+              format: int64
+              description: 'Smallest amount the recipient receives, in the smallest unit of `receivingCurrency`. Present for quotes to a `CHAIN_ADDRESS` destination: `totalReceivingAmount` is an estimate, and the quote executes only if a fresh price at execution still delivers at least this amount. Otherwise the action fails with `PRICE_MOVED`.'
+              example: 990000
+      description: A quote created by an agent. For a `CHAIN_ADDRESS` destination, the quote's `destination` names the external account Grid recorded for the address.
+    AgentSingleUseCardCreateRequest:
+      title: Single-Use Card
       type: object
       required:
-        - data
-        - hasMore
+        - kind
+        - currency
+        - amount
+        - sourceAccountId
       properties:
-        data:
-          type: array
-          description: List of agent actions matching the filter criteria.
-          items:
-            $ref: '#/components/schemas/AgentAction'
-        hasMore:
-          type: boolean
-          description: Indicates if more results are available beyond this page.
-        nextCursor:
+        kind:
           type: string
-          description: Cursor to retrieve the next page of results (only present if hasMore is true).
-        totalCount:
-          type: integer
-          description: Total number of actions matching the criteria (excluding pagination).
-    AgentUpdateRequest:
-      type: object
-      description: Partial update to an agent's basic fields. At least one field must be provided.
-      properties:
-        name:
-          type: string
-          description: Updated name for the agent.
-          example: Updated Payroll Agent
-        isPaused:
-          type: boolean
-          description: Set to true to pause the agent or false to resume it.
-          example: true
-    AgentSpendingLimitsUpdate:
-      type: object
-      description: Partial update to spending limits. Only provided fields will be updated; omitted fields retain their current values.
-      properties:
+          enum:
+            - SINGLE_USE
+          description: The purchase card kind.
+          example: SINGLE_USE
         currency:
           type: string
-          description: ISO 4217 currency code that all amount limits are denominated in. Updating this recasts all existing limits into the new currency denomination.
+          enum:
+            - USD
+          description: Card currency. Only `USD` is supported.
           example: USD
-        perTransactionLimit:
+        amount:
           type: integer
-          description: Maximum amount per transaction.
-          example: 50000
-        dailyLimit:
-          type:
-            - integer
-            - 'null'
-          description: Maximum daily spend. Set to null to remove the daily limit.
-          example: 500000
-        dailyTransactionLimit:
-          type: integer
-          description: Maximum number of transactions per day.
-          example: 10
-        monthlyLimit:
-          type:
-            - integer
-            - 'null'
-          description: Maximum monthly spend. Set to null to remove the monthly limit.
-          example: 5000000
-    AgentPolicyUpdateRequest:
-      type: object
-      description: Partial update to an agent's policy. Only provided fields will be updated; omitted fields retain their current values.
-      properties:
-        permissions:
-          type: array
-          description: Updated list of permissions. Replaces the entire permissions list when provided.
-          items:
-            $ref: '#/components/schemas/AgentPermission'
-        defaultExecutionMode:
-          $ref: '#/components/schemas/AgentExecutionMode'
-        spendingLimits:
-          $ref: '#/components/schemas/AgentSpendingLimitsUpdate'
-        accountRestrictions:
-          $ref: '#/components/schemas/AgentAccountRestrictions'
-        approvalThresholds:
-          $ref: '#/components/schemas/AgentApprovalThresholds'
-    AgentActionRejectRequest:
-      type: object
-      properties:
-        reason:
+          format: int64
+          minimum: 1
+          description: The purchase amount in the smallest unit of `currency`. Grid reserves it plus a tolerance for tips and final amounts, and sets the card's spend limit to the same total.
+          example: 2000
+        sourceAccountId:
           type: string
-          description: Optional human-readable reason for the rejection, stored on the action and visible to the platform.
-          example: Transaction amount exceeds customer's current risk limit.
-    AgentDeviceCodeStatusResponse:
+          description: The customer's Embedded Wallet internal account that funds the card.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        memo:
+          type: string
+          maxLength: 255
+          description: A note about the purchase, shown to the customer.
+          example: Concert tickets
+    AgentMerchantLockedCardCreateRequest:
+      title: Merchant-Locked Card
       type: object
       required:
-        - code
-        - redeemed
+        - kind
+        - currency
+        - monthlyCap
+        - sourceAccountId
       properties:
-        code:
+        kind:
           type: string
-          description: The device code.
-          example: GRID-AGENT-X7K9-M2P4
-        redeemed:
-          type: boolean
-          description: Whether this device code has been redeemed.
-          example: false
-    AgentDeviceCodeRedeemResponse:
-      type: object
-      required:
-        - agentId
-        - agentName
-        - accessToken
-        - policy
-      properties:
-        agentId:
+          enum:
+            - MERCHANT_LOCKED
+          description: The purchase card kind.
+          example: MERCHANT_LOCKED
+        currency:
           type: string
-          description: The agent's system-generated ID.
-          example: Agent:019542f5-b3e7-1d02-0000-000000000001
-        agentName:
+          enum:
+            - USD
+          description: Card currency. Only `USD` is supported.
+          example: USD
+        monthlyCap:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The most the card may spend per calendar month, in the smallest unit of `currency`. Issuance needs approval when this exceeds the agent's approval threshold.
+          example: 1500
+        sourceAccountId:
           type: string
-          description: The agent's name.
-          example: Payroll Automation Agent
-        accessToken:
+          description: The customer's Embedded Wallet internal account that funds the card.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        memo:
           type: string
-          description: 'Bearer token used to authenticate all subsequent API calls as this agent. Pass as `Authorization: Bearer <accessToken>`. This token is returned only once and must be stored securely — it cannot be retrieved again.'
-          example: gat_ed0ad25881e234cc28fb2dec0a4fe64e4172a3b9
-        policy:
-          $ref: '#/components/schemas/AgentPolicy'
-    ExternalAccountCreateRequest:
-      allOf:
-        - type: object
-          required:
-            - currency
-            - accountInfo
-          properties:
-            customerId:
-              type: string
-              description: The ID of the customer for whom to create the external account. If not provided, the external account will be created on behalf of the platform.
-              example: Customer:019542f5-b3e7-1d02-0000-000000000001
-            currency:
-              type: string
-              description: The ISO 4217 currency code
-              example: USD
-            platformAccountId:
-              type: string
-              maxLength: 255
-              description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
-              example: ext_acc_123456
-            ownershipType:
-              $ref: '#/components/schemas/OwnershipType'
-            defaultUmaDepositAccount:
-              type: boolean
-              description: Whether to set the external account as the default UMA deposit account. When set to true, incoming payments to this customer's UMA address will be automatically deposited into this external account. False if not provided. Note that only one external account can be set as the default UMA deposit account for a customer, so if there is already a default UMA deposit account, this will override the existing default UMA deposit account. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
-              default: false
-            accountInfo:
-              $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
+          maxLength: 255
+          description: A note about the merchant or subscription, shown to the customer.
+          example: Streaming subscription
+        expiresAt:
+          type: string
+          format: date-time
+          description: When Grid closes the card. Omit to keep it open until closed.
+          example: '2027-10-10T00:00:00Z'
+    AgentPurchaseCardCreateRequest:
+      oneOf:
+        - $ref: '#/components/schemas/AgentSingleUseCardCreateRequest'
+        - $ref: '#/components/schemas/AgentMerchantLockedCardCreateRequest'
+      discriminator:
+        propertyName: kind
+        mapping:
+          SINGLE_USE: '#/components/schemas/AgentSingleUseCardCreateRequest'
+          MERCHANT_LOCKED: '#/components/schemas/AgentMerchantLockedCardCreateRequest'
     CardStatus:
       type: string
       enum:
@@ -28760,6 +29420,31 @@ components:
             - type: 'null'
           description: Card-specific cap on the number of transactions the card may authorize during one UTC calendar day. The window resets at 00:00 UTC. Null means the card has no card-specific daily transaction cap. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values without replacing this configured value. Each approved authorization counts once for the day it was authorized; refunds, reversals, and authorization expiries do not restore capacity during the day. A transaction that brings the day's count exactly to the effective limit is allowed.
           example: 20
+        allowedMccs:
+          type: array
+          minItems: 1
+          description: Merchant category codes the card may spend at. Absent when the card may spend at any category not blocked.
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '5411'
+        blockedMccs:
+          type: array
+          description: 'Merchant category codes the card declines, with `cardDeclinedReason: BLOCKED`. A card issued for an agent also declines Grid''s default agent categories unless `defaultMccBlocksLifted` is true; see `AgentCard.effectiveBlockedMccs`.'
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '7995'
+        agentId:
+          type: string
+          description: The agent the card was issued for, when there is one.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        defaultMccBlocksLifted:
+          type: boolean
+          description: Whether the platform lifted Grid's default agent merchant-category blocks on this card. Present only for a card issued for an agent; always false for a purchase card.
+          example: false
         currency:
           type: string
           description: Currency the card transacts in, fixed at issuance by its card program. USDB-funded cards transact in USD, with funding converted at 1 USDB = 1 USD. Spending limits use the smallest unit of the card's currency (USD cents for USDB-funded cards). Changing the funding source does not change the card's currency or spending-limit units.
@@ -28782,6 +29467,661 @@ components:
           format: date-time
           description: Last update timestamp
           example: '2026-05-08T14:11:00Z'
+    AgentCardKind:
+      type: string
+      enum:
+        - STANDARD
+        - SINGLE_USE
+        - MERCHANT_LOCKED
+      description: |
+        How an agent card is used and funded.
+
+        | Kind | Description |
+        |------|-------------|
+        | `STANDARD` | A card the customer issued for the agent on the platform. The customer holds the card details and its spend is the customer's own; the agent can read it, tighten its limits, and freeze it. |
+        | `SINGLE_USE` | A purchase card the agent issued for one purchase. Its spend is reserved against the agent's policy at issuance and the card closes after its first authorization. |
+        | `MERCHANT_LOCKED` | A purchase card the agent issued for repeated purchases at one merchant, such as a subscription, capped by a monthly limit. Each authorization is checked against the agent's policy. |
+    AgentCardSpendLimit:
+      type: object
+      description: The spend cap the card issuer enforces for a purchase card, in the smallest unit of the card's currency.
+      required:
+        - amount
+        - duration
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The cap. For a `SINGLE_USE` card this is the requested amount plus the tolerance Grid allows for tips and final amounts.
+          example: 2300
+        duration:
+          type: string
+          enum:
+            - TRANSACTION
+            - MONTHLY
+          description: '`TRANSACTION` caps the card''s single purchase; `MONTHLY` caps spend per calendar month.'
+          example: TRANSACTION
+    AgentCard:
+      title: Agent Card
+      type: object
+      description: 'A card that belongs to the authenticated agent: the card itself and how the agent may use it.'
+      required:
+        - card
+        - agentId
+        - agentCardKind
+        - effectiveBlockedMccs
+      properties:
+        card:
+          $ref: '#/components/schemas/Card'
+        agentId:
+          type: string
+          description: The agent the card belongs to.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        agentCardKind:
+          $ref: '#/components/schemas/AgentCardKind'
+        spendLimit:
+          $ref: '#/components/schemas/AgentCardSpendLimit'
+          description: The issuer-enforced cap. Present for purchase cards.
+        reservedAmount:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Amount of the agent's spending limits currently held for this card, in the smallest unit of the card's currency. Present for purchase cards.
+          example: 2300
+        effectiveBlockedMccs:
+          type: array
+          description: 'Every merchant category code the card declines: `blockedMccs` plus the categories Grid blocks for agent cards, unless the platform lifted those defaults on a `STANDARD` card (`defaultMccBlocksLifted`). A purchase card''s defaults cannot be lifted.'
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '7995'
+            - '6051'
+        expiresAt:
+          type: string
+          format: date-time
+          description: When Grid closes the card if it is still open. An unused `SINGLE_USE` card closes at this time and releases its reservation.
+          example: '2026-10-10T15:30:00Z'
+    AgentActionFailureReason:
+      type: string
+      enum:
+        - QUOTE_EXPIRED
+        - POLICY_DENIED
+        - AGENT_INACTIVE
+        - EXECUTION_FAILED
+        - CARD_ISSUANCE_FAILED
+        - APPROVAL_EXPIRED
+        - PRICE_MOVED
+      description: |
+        Why an agent action has status `FAILED`.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `QUOTE_EXPIRED` | The action's quote expired before execution |
+        | `POLICY_DENIED` | The agent policy no longer allowed the action |
+        | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
+        | `EXECUTION_FAILED` | Grid could not execute the approved action |
+        | `CARD_ISSUANCE_FAILED` | Grid could not issue the approved purchase card |
+        | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD` action was not approved before it expired |
+        | `PRICE_MOVED` | A quote to a `CHAIN_ADDRESS` would no longer deliver its `minimumReceivingAmount` when it executed, so Grid did not send |
+    AgentAction:
+      type: object
+      description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
+      required:
+        - id
+        - agentId
+        - customerId
+        - platformCustomerId
+        - status
+        - type
+        - expiresAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier for this action.
+          example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+        agentId:
+          type: string
+          description: The agent that submitted this action.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        customerId:
+          type: string
+          description: The customer on whose behalf the action was submitted.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000010
+        platformCustomerId:
+          type: string
+          description: Platform-specific ID of the customer.
+          example: user-a1b2c3
+        status:
+          $ref: '#/components/schemas/AgentActionStatus'
+        type:
+          $ref: '#/components/schemas/AgentActionType'
+        quote:
+          allOf:
+            - $ref: '#/components/schemas/AgentQuote'
+          description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user. Present for `EXECUTE_QUOTE`.
+        purchaseCard:
+          $ref: '#/components/schemas/AgentPurchaseCardCreateRequest'
+          description: The purchase card requested. Present for `ISSUE_PURCHASE_CARD`, so an approval decision can show its kind, amount or cap, and source account.
+        card:
+          allOf:
+            - $ref: '#/components/schemas/AgentCard'
+          description: The issued purchase card, populated once an `ISSUE_PURCHASE_CARD` action has completed.
+        transaction:
+          allOf:
+            - $ref: '#/components/schemas/TransactionOneOf'
+          description: The resulting transaction, populated once the action has been approved and execution has begun. Absent while the action is `PENDING_APPROVAL` or `REJECTED`.
+        rejectionReason:
+          type: string
+          description: Human-readable reason provided by the platform when rejecting the action. Only present when status is `REJECTED`.
+          example: Transaction amount exceeds customer's current risk limit.
+        failureReason:
+          $ref: '#/components/schemas/AgentActionFailureReason'
+          description: Machine-readable reason the action failed. Only present when status is `FAILED`; `rejectionReason` is used only for `REJECTED` actions.
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the action expires. For `EXECUTE_QUOTE`, this is the quote's own expiry. A `PENDING_APPROVAL` action that reaches this time transitions to `FAILED` with `failureReason` `QUOTE_EXPIRED`; approval never creates a replacement quote. An `ISSUE_PURCHASE_CARD` action expires five minutes after it is submitted and then fails with `APPROVAL_EXPIRED`.
+          example: '2025-10-03T15:05:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: When the action was submitted by the agent.
+          example: '2025-10-03T15:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the action was last updated.
+          example: '2025-10-03T15:02:00Z'
+    AgentActionListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of agent actions matching the filter criteria.
+          items:
+            $ref: '#/components/schemas/AgentAction'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+        totalCount:
+          type: integer
+          description: Total number of actions matching the criteria (excluding pagination).
+    AgentDepositNetwork:
+      type: string
+      enum:
+        - LIGHTNING
+        - BASE
+        - ETHEREUM
+        - SOLANA
+        - POLYGON
+        - ARBITRUM
+        - TRON
+      description: Network from which an agent customer can fund a deposit. `TRON` deposits support `USDT` only.
+    AgentDepositCreateRequest:
+      type: object
+      description: Request for an Orchestra-backed deposit into one of the agent customer's internal accounts. For `LIGHTNING`, set `sourceCurrency` to `USD` and provide `amount`; the user pays that exact USD amount and fees are deducted from the amount received. For chain networks, no amount is required and the returned standing deposit address does not expire.
+      required:
+        - sourceNetwork
+        - sourceCurrency
+        - destinationInternalAccountId
+      properties:
+        sourceNetwork:
+          $ref: '#/components/schemas/AgentDepositNetwork'
+          description: Network from which the customer will send the deposit.
+        sourceCurrency:
+          type: string
+          description: Currency or asset the customer will deposit. Must be `USD` for `LIGHTNING`; for a chain network, use the asset sent on that chain. `TRON` supports `USDT` only.
+          example: USD
+        destinationInternalAccountId:
+          type: string
+          description: Internal account that will receive the converted deposit. It must belong to the agent's associated customer and be allowed by the agent policy.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        amount:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+          maximum: 9000000000000000
+          description: 'Exact USD amount the user pays for a `LIGHTNING` deposit, in cents. Required for `LIGHTNING`; no amount is required for chain networks. This is an exact-in amount: deposit fees are deducted before the destination asset is credited.'
+          example: 2000
+    AgentDepositStatus:
+      type: string
+      enum:
+        - PENDING
+        - PROCESSING
+        - COMPLETED
+        - EXPIRED
+        - FAILED
+        - REFUNDED
+      description: Current state of an agent deposit.
+    AgentDepositTargetType:
+      type: string
+      enum:
+        - LIGHTNING_INVOICE
+        - CHAIN_ADDRESS
+      description: Format of the payment target returned for an agent deposit.
+    AgentDeposit:
+      type: object
+      description: An Orchestra-backed deposit that converts funds from an external network into an internal account belonging to the agent's customer.
+      required:
+        - id
+        - status
+        - sourceNetwork
+        - sourceCurrency
+        - destinationInternalAccountId
+        - destinationCurrency
+        - targetType
+        - target
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique deposit identifier.
+          example: AgentDeposit:019542f5-b3e7-1d02-0000-000000000001
+        status:
+          $ref: '#/components/schemas/AgentDepositStatus'
+          description: Current processing state of the deposit.
+        sourceNetwork:
+          $ref: '#/components/schemas/AgentDepositNetwork'
+          description: Network from which the customer sends the deposit.
+        sourceCurrency:
+          type: string
+          description: Currency or asset the customer sends.
+          example: BTC
+        sourceAmount:
+          type: integer
+          format: int64
+          description: Amount to send in the smallest unit of `sourceCurrency`, when the deposit quote fixes the source amount.
+          example: 31500
+        destinationInternalAccountId:
+          type: string
+          description: Internal account that receives the converted deposit.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        destinationCurrency:
+          type: string
+          description: Currency credited to the destination internal account.
+          example: USDB
+        estimatedReceiveAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: Estimated amount credited to the destination internal account after fees, denominated in the destination asset. Present for `LIGHTNING` deposits.
+        targetType:
+          $ref: '#/components/schemas/AgentDepositTargetType'
+          description: Whether `target` is a Lightning invoice or chain address.
+        target:
+          type: string
+          description: BOLT11 invoice when `targetType` is `LIGHTNING_INVOICE`; otherwise the address on `sourceNetwork` to which the customer sends funds.
+          example: lnbc1pndepositpp5...
+        paymentLinks:
+          type: object
+          description: Payment links for a `LIGHTNING` deposit. Absent for chain deposits.
+          required:
+            - cashApp
+          properties:
+            cashApp:
+              type: string
+              format: uri
+              description: URL that opens the Lightning deposit in Cash App.
+              example: https://cash.app/launch/lightning/lnbc1pndepositpp5...
+            shortUrl:
+              type: string
+              format: uri
+              description: Shortened URL for the Lightning deposit, when available.
+              example: https://link.grid.money/deposit/Ab3dE7
+        depositMemo:
+          type: string
+          description: Memo or tag that must accompany the deposit when the source network requires one.
+          example: '104923'
+        expiresAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Expiration time for a `LIGHTNING` invoice. Omitted or null for standing chain deposit addresses, which do not expire.
+          example: '2026-10-09T18:05:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: Time when the deposit was created.
+          example: '2026-10-09T18:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Time when the deposit was last updated.
+          example: '2026-10-09T18:01:00Z'
+    AgentUpdateRequest:
+      type: object
+      description: Partial update to an agent's basic fields. At least one field must be provided.
+      properties:
+        name:
+          type: string
+          description: Updated name for the agent.
+          example: Updated Payroll Agent
+        isPaused:
+          type: boolean
+          description: Set to true to pause the agent or false to resume it.
+          example: true
+    AgentSpendingLimitsUpdate:
+      type: object
+      description: Partial update to spending limits. Only provided fields will be updated; omitted fields retain their current values.
+      properties:
+        currency:
+          type: string
+          description: ISO 4217 currency code that all amount limits are denominated in. If supplied, it must equal the existing policy currency; changing it returns a 400 response.
+          example: USD
+        perTransactionLimit:
+          type: integer
+          description: Maximum amount per transaction.
+          example: 50000
+        dailyLimit:
+          type:
+            - integer
+            - 'null'
+          description: Maximum daily spend. Set to null to remove the daily limit.
+          example: 500000
+        dailyTransactionLimit:
+          type: integer
+          description: Maximum number of transactions per day.
+          example: 10
+        monthlyLimit:
+          type:
+            - integer
+            - 'null'
+          description: Maximum monthly spend. Set to null to remove the monthly limit.
+          example: 5000000
+    AgentPolicyUpdateRequest:
+      type: object
+      description: Partial update to an agent's policy. Only provided fields will be updated; omitted fields retain their current values.
+      properties:
+        permissions:
+          type: array
+          description: Updated list of permissions. Replaces the entire permissions list when provided.
+          items:
+            $ref: '#/components/schemas/AgentPermission'
+        defaultExecutionMode:
+          $ref: '#/components/schemas/AgentExecutionMode'
+        spendingLimits:
+          $ref: '#/components/schemas/AgentSpendingLimitsUpdate'
+        accountRestrictions:
+          $ref: '#/components/schemas/AgentAccountRestrictions'
+        approvalThresholds:
+          $ref: '#/components/schemas/AgentApprovalThresholds'
+    AgentActionRejectRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Optional human-readable reason for the rejection, stored on the action and visible to the platform.
+          example: Transaction amount exceeds customer's current risk limit.
+    AgentDeviceCodeRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: The device code.
+          example: GRID-AGENT-X7K9-M2P4
+    AgentDeviceCodeStatus:
+      type: string
+      description: |
+        The current status of the device code.
+        - `PENDING`: The code is active and has not been redeemed.
+        - `REDEEMED`: The code was successfully redeemed.
+        - `EXPIRED`: The code expired before it was redeemed.
+        - `INVALIDATED`: The code was superseded or otherwise invalidated before it was redeemed.
+      enum:
+        - PENDING
+        - REDEEMED
+        - EXPIRED
+        - INVALIDATED
+      example: PENDING
+    AgentDeviceCodeStatusResponse:
+      type: object
+      required:
+        - code
+        - status
+        - redeemed
+      properties:
+        code:
+          type: string
+          description: The device code.
+          example: GRID-AGENT-X7K9-M2P4
+        status:
+          $ref: '#/components/schemas/AgentDeviceCodeStatus'
+        redeemed:
+          type: boolean
+          description: Whether this device code was successfully redeemed. This is false for expired or invalidated codes.
+          example: false
+    AgentDeviceCodeRedeemResponse:
+      type: object
+      required:
+        - agentId
+        - agentName
+        - accessToken
+        - policy
+      properties:
+        agentId:
+          type: string
+          description: The agent's system-generated ID.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000001
+        agentName:
+          type: string
+          description: The agent's name.
+          example: Payroll Automation Agent
+        accessToken:
+          type: string
+          description: 'Bearer token used to authenticate all subsequent API calls as this agent. Pass as `Authorization: Bearer <accessToken>`. This token is returned only once and must be stored securely — it cannot be retrieved again.'
+          example: gat_ed0ad25881e234cc28fb2dec0a4fe64e4172a3b9
+        policy:
+          $ref: '#/components/schemas/AgentPolicy'
+    AgentSendNetwork:
+      type: string
+      enum:
+        - BASE
+        - ETHEREUM
+        - SOLANA
+        - POLYGON
+        - ARBITRUM
+        - TRON
+      description: Network an agent can send USDC or USDT to from an embedded wallet. `TRON` supports `USDT` only, and `BASE` supports `USDC` only.
+    AgentChainAddressDestination:
+      title: Chain Address
+      type: object
+      required:
+        - destinationType
+        - network
+        - currency
+        - address
+      properties:
+        destinationType:
+          type: string
+          enum:
+            - CHAIN_ADDRESS
+          description: Marks a destination on another chain.
+          example: CHAIN_ADDRESS
+        network:
+          $ref: '#/components/schemas/AgentSendNetwork'
+          description: Network the recipient receives on.
+          example: BASE
+        currency:
+          type: string
+          description: 'Asset the recipient receives: `USDC` or `USDT`. `TRON` supports `USDT` only, and `BASE` supports `USDC` only.'
+          example: USDC
+        address:
+          type: string
+          maxLength: 128
+          description: Recipient address on `network`.
+          example: '0x1234567890abcdef1234567890abcdef12345678'
+      description: An address on another chain, paid from an `EMBEDDED_WALLET` holding `USDB`. Grid records the address as an external account of the agent's customer, reusing the account when the customer already has one for the same network, currency and address, and screens it before quoting. The quote's `destination` names that account.
+    AgentQuoteDestinationOneOf:
+      description: Destination of an agent quote.
+      oneOf:
+        - $ref: '#/components/schemas/AccountDestination'
+        - $ref: '#/components/schemas/AgentChainAddressDestination'
+      discriminator:
+        propertyName: destinationType
+        mapping:
+          ACCOUNT: '#/components/schemas/AccountDestination'
+          CHAIN_ADDRESS: '#/components/schemas/AgentChainAddressDestination'
+    AgentQuoteRequest:
+      type: object
+      description: |-
+        A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET` internal account of the agent's customer. The destination is either another `EMBEDDED_WALLET` on the platform (`ACCOUNT`), or an address on another chain (`CHAIN_ADDRESS`).
+
+        A `CHAIN_ADDRESS` quote sends `USDB` and requires `lockedCurrencySide` `SENDING`: it commits to the `USDB` amount, the destination, and a `minimumReceivingAmount`. Grid prices the conversion again when the quote executes, after any approval, and sends only if the destination still receives at least that minimum. Otherwise the action fails with `PRICE_MOVED` and no funds move.
+      required:
+        - source
+        - destination
+        - lockedCurrencySide
+        - lockedCurrencyAmount
+      properties:
+        source:
+          $ref: '#/components/schemas/QuoteSourceOneOf'
+        destination:
+          $ref: '#/components/schemas/AgentQuoteDestinationOneOf'
+        lockedCurrencySide:
+          $ref: '#/components/schemas/QuoteLockSide'
+        lockedCurrencyAmount:
+          type: integer
+          format: int64
+          description: The amount to send/receive in the smallest unit of the locked currency (eg. cents). See `lockedCurrencySide` for more information.
+          exclusiveMinimum: 0
+          maximum: 9000000000000000
+          example: 1000
+    ExternalAccountCreateRequest:
+      allOf:
+        - type: object
+          required:
+            - currency
+            - accountInfo
+          properties:
+            customerId:
+              type: string
+              description: The ID of the customer for whom to create the external account. If not provided, the external account will be created on behalf of the platform.
+              example: Customer:019542f5-b3e7-1d02-0000-000000000001
+            currency:
+              type: string
+              description: The ISO 4217 currency code
+              example: USD
+            platformAccountId:
+              type: string
+              maxLength: 255
+              description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
+              example: ext_acc_123456
+            ownershipType:
+              $ref: '#/components/schemas/OwnershipType'
+            defaultUmaDepositAccount:
+              type: boolean
+              description: Whether to set the external account as the default UMA deposit account. When set to true, incoming payments to this customer's UMA address will be automatically deposited into this external account. False if not provided. Note that only one external account can be set as the default UMA deposit account for a customer, so if there is already a default UMA deposit account, this will override the existing default UMA deposit account. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
+              default: false
+            accountInfo:
+              $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
+    AgentCardListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: Cards that belong to the authenticated agent.
+          items:
+            $ref: '#/components/schemas/AgentCard'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+        totalCount:
+          type: integer
+          description: Total number of cards matching the criteria (excluding pagination).
+          example: 3
+    AgentPurchaseCardCreateResponse:
+      type: object
+      required:
+        - action
+      properties:
+        action:
+          $ref: '#/components/schemas/AgentAction'
+          description: The `ISSUE_PURCHASE_CARD` action. `PENDING_APPROVAL` when the customer must approve the card first; poll it or wait for its webhook.
+        card:
+          $ref: '#/components/schemas/AgentCard'
+          description: The issued card. Present when the action completed immediately.
+    AgentCardUpdateRequest:
+      type: object
+      description: 'Update request for `PATCH /agents/me/cards/{cardId}`. At least one field must be supplied. An agent may only tighten a card: a limit may be set or lowered but not raised or removed, `blockedMccs` must contain every code in the card''s `effectiveBlockedMccs`, and `allowedMccs` may only lose codes once set. The only status an agent may set is `FROZEN`; unfreezing and loosening happen on the platform through `PATCH /cards/{id}`. A purchase card''s spending limits are fixed at issuance: supplying `maxSpendPerTransaction`, `maxSpendPerDay` or `maxTransactionsPerDay` for one is a 400, while its merchant categories and status follow the rules above.'
+      properties:
+        status:
+          type: string
+          enum:
+            - FROZEN
+          description: Freeze the card. New authorizations are declined.
+          example: FROZEN
+        maxSpendPerTransaction:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9007199254740991
+          description: A per-transaction limit at or below the current one, in the smallest unit of the card's currency.
+          example: 5000
+        maxSpendPerDay:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9007199254740991
+          description: A UTC-calendar-day spend cap at or below the current one.
+          example: 20000
+        maxTransactionsPerDay:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 2147483647
+          description: A UTC-calendar-day transaction cap at or below the current one.
+          example: 10
+        allowedMccs:
+          type: array
+          minItems: 1
+          description: Merchant category codes the card may spend at. Once set, a replacement must be a subset of the current list.
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '5411'
+        blockedMccs:
+          type: array
+          description: Merchant category codes the card declines. A replacement must contain every code in the card's `effectiveBlockedMccs`, so an agent can never lift a block, Grid's default agent blocks included.
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '5813'
+    CardRevealResponse:
+      type: object
+      required:
+        - panEmbedUrl
+        - expiresAt
+      properties:
+        panEmbedUrl:
+          type: string
+          format: uri
+          description: 'Signed URL of the card processor''s iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid''s servers — render this URL in an iframe in your client to reveal card details. The URL is a short-lived bearer secret: render it immediately and never store, cache, or log it.'
+          example: https://embed.lithic.com/iframe/...?t=...
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
+          example: '2026-05-08T14:16:00Z'
     CardListResponse:
       type: object
       required:
@@ -28848,6 +30188,27 @@ components:
           maximum: 2147483647
           description: Optional card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Omit this field for no card-specific daily transaction cap. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC. Each approved authorization counts once; refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsTransactionCountLimit` is true.
           example: 20
+        allowedMccs:
+          type: array
+          minItems: 1
+          description: Merchant category codes the card may spend at. Omit to allow every category not blocked.
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '5411'
+        blockedMccs:
+          type: array
+          description: Merchant category codes the card declines.
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '7995'
+        agentId:
+          type: string
+          description: 'Issue the card for this agent, which must belong to the same customer. The agent can then read the card, tighten its limits, and freeze it through `/agents/me/cards`. Grid''s default agent merchant-category blocks apply in addition to `blockedMccs` until the platform lifts them with `PATCH /cards/{id}` and `defaultMccBlocksLifted: true`. The card''s spend is the customer''s own and does not count against the agent''s policy.'
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
     CardUpdateStatus:
       type: string
       enum:
@@ -28874,7 +30235,7 @@ components:
       example: SUSPICIOUS_ACTIVITY
     CardUpdateRequest:
       type: object
-      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, or `threeDSecurePassword` must be supplied. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Explicit activation requires completed delegated signing authorization; otherwise it returns `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
+      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, `allowedMccs`, `blockedMccs`, `defaultMccBlocksLifted`, or `threeDSecurePassword` must be supplied. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Explicit activation requires completed delegated signing authorization; otherwise it returns `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
       properties:
         status:
           $ref: '#/components/schemas/CardUpdateStatus'
@@ -28920,6 +30281,31 @@ components:
           type: string
           description: Sets a new static 3-D Secure password on the card. Send it on its own, and only when the card's `cardCapabilities.supports3dSecurePassword` is true.
           example: AbCd1234EfGh5678
+        allowedMccs:
+          anyOf:
+            - type: array
+              minItems: 1
+              items:
+                type: string
+                pattern: ^[0-9]{4}$
+            - type: 'null'
+          description: 'Replacement list of merchant category codes the card may spend at. Supply null to allow every category not blocked, or omit to leave it unchanged. Cannot be supplied alongside `status: CLOSED`.'
+          example:
+            - '5411'
+        blockedMccs:
+          anyOf:
+            - type: array
+              items:
+                type: string
+                pattern: ^[0-9]{4}$
+            - type: 'null'
+          description: 'Replacement list of merchant category codes the card declines. Supply null to clear it, or omit to leave it unchanged. On a card issued for an agent, Grid''s default agent blocks still apply on top of this list; lift them with `defaultMccBlocksLifted`. Cannot be supplied alongside `status: CLOSED`.'
+          example:
+            - '7995'
+        defaultMccBlocksLifted:
+          type: boolean
+          description: 'On a `STANDARD` card issued for an agent, `true` lifts Grid''s default agent merchant-category blocks and `false` restores them. Refused on any other card, including purchase cards, whose defaults cannot be lifted. Cannot be supplied alongside `status: CLOSED`.'
+          example: true
     CardRevealRequest:
       type: object
       description: Optional overrides for one reveal. Omit the body entirely to use your platform's configured settings.
@@ -28933,22 +30319,6 @@ components:
             - type: 'null'
           description: 'HTTPS URL of a stylesheet for this reveal only, overriding `cardConfigs.panRevealCssUrl` for this call without changing your platform config. Use it to style one reveal differently from the rest — to match the cardholder''s light or dark theme, for example. Subject to the same rules as the platform-level setting: it must be reachable over HTTPS without credentials, it styles the same selectors, and it loads into the page rendering the live card details, so host it somewhere you would trust with them. Omit the field, or send `null`, to fall back to your platform config.'
           example: https://acme.com/card-reveal-dark.css
-    CardRevealResponse:
-      type: object
-      required:
-        - panEmbedUrl
-        - expiresAt
-      properties:
-        panEmbedUrl:
-          type: string
-          format: uri
-          description: 'Signed URL of the card processor''s iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid''s servers — render this URL in an iframe in your client to reveal card details. The URL is a short-lived bearer secret: render it immediately and never store, cache, or log it.'
-          example: https://embed.lithic.com/iframe/...?t=...
-        expiresAt:
-          type: string
-          format: date-time
-          description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
-          example: '2026-05-08T14:16:00Z'
     DigitalWallet:
       type: string
       enum:
@@ -30331,6 +31701,9 @@ components:
               type: string
               enum:
                 - AGENT_ACTION.PENDING_APPROVAL
+                - AGENT_ACTION.APPROVED
+                - AGENT_ACTION.REJECTED
+                - AGENT_ACTION.FAILED
     IncomingPaymentWebhookData:
       title: Incoming Payment Webhook Data
       allOf:

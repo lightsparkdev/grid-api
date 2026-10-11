@@ -1,0 +1,154 @@
+get:
+  summary: List agent cards
+  description: >-
+    List the cards that belong to the authenticated agent: standard cards the
+    customer issued for it and purchase cards it issued. Other cards of the
+    customer are not listed. Requires the MANAGE_CARDS permission.
+  operationId: agentListCards
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: kind
+      in: query
+      description: Filter by card kind
+      required: false
+      schema:
+        $ref: ../../components/schemas/agents/AgentCardKind.yaml
+    - name: status
+      in: query
+      description: Filter by card status
+      required: false
+      schema:
+        $ref: ../../components/schemas/cards/CardStatus.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentCardListResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API or agent cards are not enabled for the platform,
+        the agent does not have the MANAGE_CARDS permission, or the customer
+        is not verified
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+post:
+  summary: Issue a purchase card
+  description: >-
+    Issue a `SINGLE_USE` or `MERCHANT_LOCKED` purchase card funded from the
+    customer's Embedded Wallet with the agent's delegated key. The request is
+    evaluated against the agent's policy: a `SINGLE_USE` card reserves its
+    amount plus a tolerance, and a `MERCHANT_LOCKED` card is evaluated as an
+    exposure of its monthly cap. When approval is required the response is
+    `202` with a `PENDING_APPROVAL` action that expires after five minutes.
+    Card details are never returned here; request them with
+    `POST /agents/me/cards/{cardId}/reveal`. Requires the MANAGE_CARDS
+    permission, a verified customer, a USD policy, and an active agent
+    delegated key on the source account.
+  operationId: agentCreatePurchaseCard
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: true
+      description: >-
+        Unique identifier used to return the same action for retries. Reusing a
+        key with a different request body is a 400.
+      schema:
+        type: string
+        maxLength: 255
+        example: 550e8400-e29b-41d4-a716-446655440000
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentPurchaseCardCreateRequest.yaml
+  responses:
+    '201':
+      description: Purchase card issued
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentPurchaseCardCreateResponse.yaml
+    '202':
+      description: Purchase card awaiting the customer's approval
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentPurchaseCardCreateResponse.yaml
+    '400':
+      description: Bad request - Invalid amount, currency, or source account, the policy denies the card, or the Idempotency-Key was used with a different body
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API or agent cards are not enabled for the platform,
+        the agent does not have the MANAGE_CARDS permission, or the customer
+        is not verified
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '409':
+      description: Conflict - The agent already holds the maximum number of open purchase cards
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '429':
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

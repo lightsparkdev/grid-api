@@ -10,11 +10,14 @@ post:
   summary: Execute a quote
   description: >
     Execute a quote created by the authenticated agent. Requires the EXECUTE_QUOTES
-    permission in the agent's policy.
+    permission in the agent's policy. When the source is an `EMBEDDED_WALLET`,
+    Grid signs with the agent's active delegated key for that wallet.
 
     If the agent's policy requires approval for this amount (based on execution mode
     or approval thresholds), the transaction will be created in a pending state and
     must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
+    The action expires when its quote expires. Approval after expiry fails the
+    action; Grid does not create a replacement quote.
 
     Once executed, the quote cannot be cancelled.
   operationId: agentExecuteQuote
@@ -33,19 +36,6 @@ post:
         type: string
         maxLength: 255
         example: <uuid>
-    - name: Grid-Wallet-Signature
-      in: header
-      required: false
-      description: >-
-        Full Grid wallet signature over the `payloadToSign` returned in the
-        quote's `paymentInstructions[].accountOrWalletInfo` entry, produced
-        with the session private key of a verified authentication credential on
-        the source Embedded Wallet. Required when the quote's source is an
-        internal account of type `EMBEDDED_WALLET`; ignored for other source
-        types.
-      schema:
-        type: string
-      example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
   responses:
     '200':
       description: >-
@@ -65,17 +55,16 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error400.yaml
     '401':
-      description: >-
-        Unauthorized. Also returned when the quote's source is an internal
-        account of type `EMBEDDED_WALLET` and the provided
-        `Grid-Wallet-Signature` header is missing, malformed, or does not
-        match the quote's `payloadToSign`.
+      description: Unauthorized
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '403':
-      description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
+      description: >-
+        Forbidden. The Agents API is not enabled for the platform, the agent policy does
+        not permit this operation, a spending limit was exceeded, or an `EMBEDDED_WALLET`
+        source has no active delegated key for this agent.
       content:
         application/json:
           schema:

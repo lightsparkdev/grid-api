@@ -1,0 +1,12 @@
+type: string
+enum:
+  - LIGHTNING
+  - BASE
+  - ETHEREUM
+  - SOLANA
+  - POLYGON
+  - ARBITRUM
+  - TRON
+description: >-
+  Network from which an agent customer can fund a deposit. `TRON` deposits
+  support `USDT` only.

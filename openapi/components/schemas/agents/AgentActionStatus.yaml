@@ -12,4 +12,4 @@ description: |
   | `PENDING_APPROVAL` | Submitted by the agent, awaiting platform approval before execution |
   | `APPROVED` | Approved by the platform; execution is in progress or completed |
   | `REJECTED` | Rejected by the platform; the underlying transaction was not executed |
-  | `FAILED` | Approved but execution failed (e.g. quote expired, insufficient funds) |
+  | `FAILED` | Not executed, or execution failed; see `failureReason` |

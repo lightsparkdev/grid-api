@@ -1,0 +1,51 @@
+parameters:
+  - name: depositId
+    in: path
+    required: true
+    description: System-generated unique deposit identifier
+    schema:
+      type: string
+    example: AgentDeposit:019542f5-b3e7-1d02-0000-000000000001
+get:
+  summary: Get an agent deposit
+  description: >-
+    Retrieve an Orchestra-backed deposit created by the authenticated agent.
+    Requires the RECEIVE_FUNDS permission in the agent's policy.
+  operationId: agentGetDeposit
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentDeposit.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform or the agent does not have
+        the RECEIVE_FUNDS permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Deposit not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

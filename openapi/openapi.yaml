@@ -104,8 +104,8 @@ tags:
       approving or rejecting transactions initiated by agents.
   - name: Agent Operations
     description: >-
-      Endpoints called by the agent itself using its own credentials (obtained via device
-      code redemption). Scoped to the agent's associated customer — all requests
+      Experimental endpoints called by the agent itself using its own credentials
+      (obtained via device code redemption). Scoped to the agent's associated customer — all requests
       automatically operate on behalf of that customer and are subject to the agent's
       policy. When an action requires approval, the resulting transaction enters a pending
       state and must be approved by the platform via
@@ -137,7 +137,7 @@ components:
       description: >-
         Bearer token authentication for agent-scoped endpoints. The token is the
         `accessToken` returned when redeeming a device code via
-        `POST /agents/device-codes/{code}/redeem`. Agent credentials are
+        `POST /agents/device-codes/redeem`. Agent credentials are
         user-scoped: all requests are automatically bound to the agent's
         associated customer and subject to the agent's policy.
     WebhookSignature:
@@ -338,6 +338,16 @@ paths:
     $ref: paths/agents/agents_approvals.yaml
   /agents/me:
     $ref: paths/agents/agents_me.yaml
+  /agents/me/customer:
+    $ref: paths/agents/agents_me_customer.yaml
+  /agents/me/verifications:
+    $ref: paths/agents/agents_me_verifications.yaml
+  /agents/me/kyc-link:
+    $ref: paths/agents/agents_me_kyc-link.yaml
+  /agents/me/deposits:
+    $ref: paths/agents/agents_me_deposits.yaml
+  /agents/me/deposits/{depositId}:
+    $ref: paths/agents/agents_me_deposits_{depositId}.yaml
   /agents/{agentId}:
     $ref: paths/agents/agents_{agentId}.yaml
   /agents/{agentId}/policy:
@@ -348,10 +358,10 @@ paths:
     $ref: paths/agents/agents_{agentId}_actions_{actionId}_approve.yaml
   /agents/{agentId}/actions/{actionId}/reject:
     $ref: paths/agents/agents_{agentId}_actions_{actionId}_reject.yaml
-  /agents/device-codes/{code}/status:
-    $ref: paths/agents/agents_device-codes_{code}_status.yaml
-  /agents/device-codes/{code}/redeem:
-    $ref: paths/agents/agents_device-codes_{code}_redeem.yaml
+  /agents/device-codes/status:
+    $ref: paths/agents/agents_device-codes_status.yaml
+  /agents/device-codes/redeem:
+    $ref: paths/agents/agents_device-codes_redeem.yaml
   /agents/me/transactions:
     $ref: paths/agents/agents_me_transactions.yaml
   /agents/me/transactions/{transactionId}:
@@ -373,6 +383,12 @@ paths:
     $ref: paths/agents/agents_me_external-accounts.yaml
   /agents/me/external-accounts/{externalAccountId}:
     $ref: paths/agents/agents_me_external-accounts_{externalAccountId}.yaml
+  /agents/me/cards:
+    $ref: paths/agents/agents_me_cards.yaml
+  /agents/me/cards/{cardId}:
+    $ref: paths/agents/agents_me_cards_{cardId}.yaml
+  /agents/me/cards/{cardId}/reveal:
+    $ref: paths/agents/agents_me_cards_{cardId}_reveal.yaml
   /cards:
     $ref: paths/cards/cards.yaml
   /cards/{id}:

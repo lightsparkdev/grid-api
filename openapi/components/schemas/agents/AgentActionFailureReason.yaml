@@ -1,0 +1,21 @@
+type: string
+enum:
+  - QUOTE_EXPIRED
+  - POLICY_DENIED
+  - AGENT_INACTIVE
+  - EXECUTION_FAILED
+  - CARD_ISSUANCE_FAILED
+  - APPROVAL_EXPIRED
+  - PRICE_MOVED
+description: |
+  Why an agent action has status `FAILED`.
+
+  | Reason | Description |
+  |--------|-------------|
+  | `QUOTE_EXPIRED` | The action's quote expired before execution |
+  | `POLICY_DENIED` | The agent policy no longer allowed the action |
+  | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
+  | `EXECUTION_FAILED` | Grid could not execute the approved action |
+  | `CARD_ISSUANCE_FAILED` | Grid could not issue the approved purchase card |
+  | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD` action was not approved before it expired |
+  | `PRICE_MOVED` | A quote to a `CHAIN_ADDRESS` would no longer deliver its `minimumReceivingAmount` when it executed, so Grid did not send |

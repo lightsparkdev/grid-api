@@ -1,0 +1,99 @@
+type: object
+description: >-
+  An Orchestra-backed deposit that converts funds from an external network into
+  an internal account belonging to the agent's customer.
+required:
+  - id
+  - status
+  - sourceNetwork
+  - sourceCurrency
+  - destinationInternalAccountId
+  - destinationCurrency
+  - targetType
+  - target
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique deposit identifier.
+    example: AgentDeposit:019542f5-b3e7-1d02-0000-000000000001
+  status:
+    $ref: ./AgentDepositStatus.yaml
+    description: Current processing state of the deposit.
+  sourceNetwork:
+    $ref: ./AgentDepositNetwork.yaml
+    description: Network from which the customer sends the deposit.
+  sourceCurrency:
+    type: string
+    description: Currency or asset the customer sends.
+    example: BTC
+  sourceAmount:
+    type: integer
+    format: int64
+    description: >-
+      Amount to send in the smallest unit of `sourceCurrency`, when the deposit
+      quote fixes the source amount.
+    example: 31500
+  destinationInternalAccountId:
+    type: string
+    description: Internal account that receives the converted deposit.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  destinationCurrency:
+    type: string
+    description: Currency credited to the destination internal account.
+    example: USDB
+  estimatedReceiveAmount:
+    $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      Estimated amount credited to the destination internal account after fees,
+      denominated in the destination asset. Present for `LIGHTNING` deposits.
+  targetType:
+    $ref: ./AgentDepositTargetType.yaml
+    description: Whether `target` is a Lightning invoice or chain address.
+  target:
+    type: string
+    description: >-
+      BOLT11 invoice when `targetType` is `LIGHTNING_INVOICE`; otherwise the
+      address on `sourceNetwork` to which the customer sends funds.
+    example: lnbc1pndepositpp5...
+  paymentLinks:
+    type: object
+    description: >-
+      Payment links for a `LIGHTNING` deposit. Absent for chain deposits.
+    required:
+      - cashApp
+    properties:
+      cashApp:
+        type: string
+        format: uri
+        description: URL that opens the Lightning deposit in Cash App.
+        example: https://cash.app/launch/lightning/lnbc1pndepositpp5...
+      shortUrl:
+        type: string
+        format: uri
+        description: Shortened URL for the Lightning deposit, when available.
+        example: https://link.grid.money/deposit/Ab3dE7
+  depositMemo:
+    type: string
+    description: Memo or tag that must accompany the deposit when the source network requires one.
+    example: '104923'
+  expiresAt:
+    type:
+      - string
+      - 'null'
+    format: date-time
+    description: >-
+      Expiration time for a `LIGHTNING` invoice. Omitted or null for standing
+      chain deposit addresses, which do not expire.
+    example: '2026-10-09T18:05:00Z'
+  createdAt:
+    type: string
+    format: date-time
+    description: Time when the deposit was created.
+    example: '2026-10-09T18:00:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: Time when the deposit was last updated.
+    example: '2026-10-09T18:01:00Z'

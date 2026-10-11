@@ -1,12 +1,15 @@
 type: object
 description: >-
-  Thresholds that force approval for high-value transactions, overriding the default execution mode.
-  When a transaction is denominated in a different currency than the threshold, Grid converts using
-  the exchange rate at evaluation time.
+  Thresholds that force approval for high-value transactions, overriding the
+  default execution mode. The threshold currency must equal the policy's
+  spending limits currency. When a transaction is denominated in a different
+  currency, Grid converts it to the policy currency at evaluation time.
 properties:
   currency:
     type: string
-    description: ISO 4217 currency code that the amount threshold is denominated in. Required when amount is set.
+    description: >-
+      ISO 4217 currency code that the amount threshold is denominated in.
+      Required when amount is set and must equal `spendingLimits.currency`.
     example: USD
   amount:
     type:

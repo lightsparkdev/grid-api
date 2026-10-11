@@ -1,0 +1,60 @@
+post:
+  summary: Create an agent deposit
+  description: >-
+    Create an Orchestra-backed deposit for the authenticated agent's customer.
+    The returned target is a BOLT11 invoice for Lightning or an address for a
+    supported chain. Requires the RECEIVE_FUNDS permission in the agent's
+    policy.
+  operationId: agentCreateDeposit
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: true
+      description: Unique identifier used to return the same deposit for retries.
+      schema:
+        type: string
+        maxLength: 255
+        example: 550e8400-e29b-41d4-a716-446655440000
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentDepositCreateRequest.yaml
+  responses:
+    '201':
+      description: Deposit created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentDeposit.yaml
+    '400':
+      description: Bad request - Unsupported deposit route or invalid amount
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform or the agent does not have
+        the RECEIVE_FUNDS permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
