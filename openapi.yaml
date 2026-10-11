@@ -14688,10 +14688,9 @@ components:
         destinationCurrency:
           $ref: '#/components/schemas/Currency'
         destinationPaymentRail:
-          allOf:
-            - $ref: '#/components/schemas/PaymentRail'
-            - description: The payment rail used for the destination (e.g., UPI, SEPA_INSTANT, MOBILE_MONEY, FASTER_PAYMENTS)
-              example: UPI
+          $ref: '#/components/schemas/PaymentRail'
+          description: The payment rail used for the destination (e.g., UPI, SEPA_INSTANT, MOBILE_MONEY, FASTER_PAYMENTS)
+          example: UPI
         receivingAmount:
           type: integer
           format: int64
@@ -26565,9 +26564,8 @@ components:
               description: Destination account identifier
               example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
             paymentRail:
-              allOf:
-                - $ref: '#/components/schemas/PaymentRail'
-                - description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
+              $ref: '#/components/schemas/PaymentRail'
+              description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
           description: Destination account details
     UmaAddressDestination:
       title: UMA Address

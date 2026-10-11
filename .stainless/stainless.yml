@@ -38,9 +38,13 @@ targets:
   kotlin:
     reverse_domain: com.lightspark.grid
     production_repo: lightsparkdev/grid-kotlin-sdk
+    staging_repo: lightsparkdev/grid-kotlin-sdk
     publish:
       maven:
         sonatype_platform: portal
+      release:
+        branch: main
+        prerelease: false
   python:
     edition: python.2025-11-20
     package_name: grid
@@ -352,7 +356,6 @@ resources:
       base_quote_source: "#/components/schemas/BaseQuoteSource"
       quote_source_one_of: "#/components/schemas/QuoteSourceOneOf"
       base_destination: "#/components/schemas/BaseDestination"
-      quote_request: "#/components/schemas/QuoteRequest"
     methods:
       retrieve: get /quotes/{quoteId}
       create: post /quotes
@@ -421,13 +424,9 @@ resources:
               return: post /sandbox/cards/{id}/simulate/return
             models:
               card_merchant: "#/components/schemas/CardMerchant"
-              card_pull_summary: "#/components/schemas/CardPullSummary"
-              card_refund_summary: "#/components/schemas/CardRefundSummary"
-              card_settlement_summary: "#/components/schemas/CardSettlementSummary"
               authorization_request: "#/components/schemas/SandboxCardAuthorizationRequest"
               clearing_request: "#/components/schemas/SandboxCardClearingRequest"
               refund_request: "#/components/schemas/SandboxCardReturnRequest"
-              refund: "#/components/schemas/Refund"
 
   tokens:
     models:
@@ -842,180 +841,51 @@ openapi:
           - "$.components.schemas.BasePaymentAccountInfo.properties"
         keys: [ "accountType" ]
 
-    # # ── sourceType: remove from base schemas ──
     - command: remove
       reason: >-
-        Remove sourceType $ref from base schemas so the inline single-value
-        enums in each source variant become the sole definition
+        Drop the now-dangling accountType requirement from the same base
+        schemas. If it stays, the V2 normalizer merges it into each variant's
+        allOf and gives every variant its own AccountType enum, so the
+        generated to*AccountInfo() converters no longer compile.
       args:
         target:
-          - "$.components.schemas.BaseTransactionSource.properties"
+          - "$.components.schemas.BaseExternalAccountInfo"
+          - "$.components.schemas.BasePaymentAccountInfo"
+        keys: [ "required" ]
+
+    # ── sourceType / destinationType: remove from base schemas ──
+    - command: remove
+      reason: >-
+        Remove the wide sourceType enum from the source base schemas so each
+        variant's single-value enum is the only definition. The SDK builders
+        then default sourceType for each variant instead of requiring it.
+      args:
+        target:
           - "$.components.schemas.BaseQuoteSource.properties"
+          - "$.components.schemas.BaseTransactionSource.properties"
         keys: [ "sourceType" ]
 
-    # # ── destinationType: remove from base schemas ──
     - command: remove
       reason: >-
-        Remove destinationType $ref from base schemas so the inline
-        single-value enums in each destination variant become the sole definition
+        Remove the wide destinationType enum from the destination base
+        schemas, for the same reason as sourceType.
       args:
         target:
-          - "$.components.schemas.BaseTransactionDestination.properties"
           - "$.components.schemas.BaseDestination.properties"
+          - "$.components.schemas.BaseTransactionDestination.properties"
         keys: [ "destinationType" ]
 
-    # ── Remove $ref to BasePaymentAccountInfo from payment account variants ──
     - command: remove
       reason: >-
-        Remove allOf $ref to BasePaymentAccountInfo from payment account variants
-        because the base schema becomes an empty object (no properties) after
-        stripping the accountType discriminator, which causes TS2312 errors
+        Drop the now-dangling sourceType and destinationType requirements from
+        the same base schemas, for the same reason as accountType above.
       args:
         target:
-          - "$.components.schemas.PaymentAedAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentBdtAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentBrlAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentBwpAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentCadAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentCopAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentDkkAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentEgpAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentEurAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentGbpAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentGhsAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentGtqAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentHkdAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentHtgAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentIdrAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentInrAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentJmdAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentKesAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentMwkAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentMxnAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentMyrAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentNgnAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentPhpAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentPkrAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentRwfAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentSgdAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentThbAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentTzsAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentUgxAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentUsdAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentVndAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentXafAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentXofAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentZarAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentZmwAccountInfo.allOf[0]"
-          - "$.components.schemas.PaymentSparkWalletInfo.allOf[0]"
-          - "$.components.schemas.PaymentLightningInvoiceInfo.allOf[0]"
-          - "$.components.schemas.PaymentSolanaWalletInfo.allOf[0]"
-          - "$.components.schemas.PaymentTronWalletInfo.allOf[0]"
-          - "$.components.schemas.PaymentPlasmaWalletInfo.allOf[0]"
-          - "$.components.schemas.PaymentArbitrumWalletInfo.allOf[0]"
-          - "$.components.schemas.PaymentPolygonWalletInfo.allOf[0]"
-          - "$.components.schemas.PaymentBaseWalletInfo.allOf[0]"
-          - "$.components.schemas.PaymentEthereumWalletInfo.allOf[0]"
-        keys: [ "$ref" ]
-
-    # ── Remove $ref to BaseExternalAccountInfo from external account variants ──
-    - command: remove
-      reason: >-
-        Remove allOf $ref to BaseExternalAccountInfo from external account info
-        variants because the base schema becomes an empty object after stripping
-        the accountType discriminator
-      args:
-        target:
-          - "$.components.schemas.AedExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.BdtExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.BrlExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.BwpExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.CadExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.CopExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.DkkExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.EgpExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.EurExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.GbpExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.GhsExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.GtqExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.HkdExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.HtgExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.IdrExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.InrExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.JmdExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.KesExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.MwkExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.MxnExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.MyrExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.NgnExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.PhpExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.PkrExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.RwfExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.SgdExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.ThbExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.TzsExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.UgxExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.UsdExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.VndExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.XafExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.XofExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.ZarExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.ZmwExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.EthereumWalletExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.SparkWalletExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.LightningExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.SolanaWalletExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.TronWalletExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.PlasmaWalletExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.ArbitrumWalletExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.PolygonWalletExternalAccountInfo.allOf[0]"
-          - "$.components.schemas.BaseWalletExternalAccountInfo.allOf[0]"
-        keys: [ "$ref" ]
-
-    # ── Remove $ref to BaseQuoteSource from quote source variants ──
-    - command: remove
-      reason: >-
-        Remove allOf $ref to BaseQuoteSource from quote source variants
-        because the base schema becomes an empty object after stripping sourceType
-      args:
-        target:
-          - "$.components.schemas.AccountQuoteSource.allOf[0]"
-          - "$.components.schemas.RealtimeFundingQuoteSource.allOf[0]"
-        keys: [ "$ref" ]
-
-    # ── Remove $ref to BaseDestination from destination variants ──
-    - command: remove
-      reason: >-
-        Remove allOf $ref to BaseDestination from destination variants
-        because the base schema becomes an empty object after stripping destinationType
-      args:
-        target:
-          - "$.components.schemas.AccountDestination.allOf[0]"
-          - "$.components.schemas.UmaAddressDestination.allOf[0]"
-        keys: [ "$ref" ]
-
-    # ── Remove $ref to BaseTransactionSource from transaction source variants ──
-    - command: remove
-      reason: >-
-        Remove allOf $ref to BaseTransactionSource from transaction source variants
-        because the base schema becomes an empty object after stripping sourceType
-      args:
-        target:
-          - "$.components.schemas.AccountTransactionSource.allOf[0]"
-          - "$.components.schemas.UmaAddressTransactionSource.allOf[0]"
-          - "$.components.schemas.RealtimeFundingTransactionSource.allOf[0]"
-        keys: [ "$ref" ]
-
-    # ── Remove $ref to BaseTransactionDestination from transaction destination variants ──
-    - command: remove
-      reason: >-
-        Remove allOf $ref to BaseTransactionDestination from transaction destination
-        variants because the base schema becomes an empty object after stripping destinationType
-      args:
-        target:
-          - "$.components.schemas.AccountTransactionDestination.allOf[0]"
-          - "$.components.schemas.UmaAddressTransactionDestination.allOf[0]"
-        keys: [ "$ref" ]
+          - "$.components.schemas.BaseQuoteSource"
+          - "$.components.schemas.BaseTransactionSource"
+          - "$.components.schemas.BaseDestination"
+          - "$.components.schemas.BaseTransactionDestination"
+        keys: [ "required" ]
 
     # ── type: auth credential base schemas ──
     - command: remove
@@ -1031,18 +901,18 @@ openapi:
           - "$.components.schemas.AuthCredentialCreateRequest.properties"
           - "$.components.schemas.AuthCredentialVerifyRequest.properties"
         keys: [ "type" ]
-    # ── Remove $ref to AuthCredentialVerifyRequest from verify variants ──
+
     - command: remove
       reason: >-
-        Remove allOf $ref to AuthCredentialVerifyRequest from verify variants
-        because the base schema becomes an empty object after stripping the
-        type discriminator (no other shared fields on verify)
+        Drop the now-dangling type requirement from the same base schemas, so
+        the V2 normalizer keeps each variant's own type enum. That lets the
+        create and verify unions dispatch on type, and keeps the fields of
+        variants like PasskeyCredentialVerifyRequest.
       args:
         target:
-          - "$.components.schemas.EmailOtpCredentialVerifyRequest.allOf[0]"
-          - "$.components.schemas.OauthCredentialVerifyRequest.allOf[0]"
-          - "$.components.schemas.PasskeyCredentialVerifyRequest.allOf[0]"
-        keys: [ "$ref" ]
+          - "$.components.schemas.AuthCredentialCreateRequest"
+          - "$.components.schemas.AuthCredentialVerifyRequest"
+        keys: [ "required" ]
 
     # ── type: remove from BaseWebhook ──
     - command: remove
