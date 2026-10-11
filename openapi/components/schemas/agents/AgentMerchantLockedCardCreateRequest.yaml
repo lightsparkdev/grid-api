@@ -1,4 +1,8 @@
 title: Merchant-Locked Card
+description: >-
+  The card locks to the first merchant that authorizes a charge on it; later
+  authorizations from any other merchant decline. Use `memo` to tell the
+  customer which merchant the card is for.
 type: object
 required:
   - kind
