@@ -10,6 +10,34 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## Set the ACH statement description with `statementDescriptor`
+
+`POST /quotes` takes a new optional `statementDescriptor`: up to 10 characters that
+label the payment on the counterparty's bank statement, such as `PAYROLL`. It is used
+only on ACH, where it is sent as the NACHA Company Entry Description, for both a
+payout to an external US bank account and a pull from one:
+
+```json
+{
+  "source": { "sourceType": "ACCOUNT", "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965" },
+  "destination": { "destinationType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "paymentRail": "ACH" },
+  "lockedCurrencySide": "SENDING",
+  "lockedCurrencyAmount": 10000,
+  "statementDescriptor": "PAYROLL",
+  "remittanceInformation": "INV-12345"
+}
+```
+
+Grid uses its default when you omit it. Sending it on a quote that moves no ACH entry
+returns `400 INVALID_INPUT`. Longer payment details still belong in
+`remittanceInformation`, which ACH carries in the addenda record. ACH `railDetails` on
+transactions and webhooks reports the value as `statementDescriptor`.
+
+The `remittanceInformation` description now also covers rails beyond ACH, RTP, FedNow,
+and wire. On rails such as SEPA, PIX, SPEI, and Faster Payments it is sent as the payment
+reference on the recipient's bank statement, which is often much shorter than 80
+characters, so put the most important information first.
+
 ## List balance changes for periodic statements
 
 `GET /internal-accounts/{id}/balance-changes` returns every change to an internal account's

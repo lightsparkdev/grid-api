@@ -15,6 +15,14 @@ allOf:
         type: string
         description: 15-digit ACH trace number of the entry.
         example: '021000020123456'
+      statementDescriptor:
+        type: string
+        maxLength: 10
+        description: >-
+          The entry's Company Entry Description, which the receiving bank shows on
+          the account holder's statement. On payments you originate, this is the
+          quote's `statementDescriptor`, or Grid's default.
+        example: PAYROLL
       addenda:
         type: string
         description: >-

@@ -4553,7 +4553,22 @@ paths:
                   lockedCurrencyAmount: 12550
                   immediatelyExecute: true
                   remittanceInformation: INV-12345
+                  statementDescriptor: PAYROLL
                   description: Same-currency payout, no exchange required.
+              achPullToAccount:
+                summary: ACH pull from an external account into an internal account (immediate execution)
+                value:
+                  source:
+                    sourceType: ACCOUNT
+                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                  destination:
+                    destinationType: ACCOUNT
+                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  lockedCurrencySide: SENDING
+                  lockedCurrencyAmount: 50000
+                  immediatelyExecute: true
+                  statementDescriptor: ACMEFUND
+                  description: Top up from linked bank account
               accountToAccount:
                 summary: Account to Account Transfer
                 value:
@@ -13104,6 +13119,7 @@ webhooks:
                           routingNumber: '021000021'
                           accountNumber: '****4321'
                         traceNumber: '021000020123456'
+                        statementDescriptor: INVOICE
                         addenda: INV-2025-0815
                         settledAt: '2025-08-15T14:30:00Z'
                         returnedAt: '2025-08-18T15:00:00Z'
@@ -16014,25 +16030,9 @@ components:
           description: The primary source of funds for the business
           example: Funds derived from customer payments for software services
         expectedMonthlyTransactionCount:
-          type: string
-          enum:
-            - COUNT_UNDER_10
-            - COUNT_10_TO_100
-            - COUNT_100_TO_500
-            - COUNT_500_TO_1000
-            - COUNT_OVER_1000
-          description: Expected number of transactions per month
-          example: COUNT_100_TO_500
+          $ref: '#/components/schemas/ExpectedMonthlyTransactionCount'
         expectedMonthlyTransactionVolume:
-          type: string
-          enum:
-            - VOLUME_UNDER_10K
-            - VOLUME_10K_TO_100K
-            - VOLUME_100K_TO_1M
-            - VOLUME_1M_TO_10M
-            - VOLUME_OVER_10M
-          description: Expected total transaction volume per month in USD equivalent
-          example: VOLUME_100K_TO_1M
+          $ref: '#/components/schemas/ExpectedMonthlyTransactionVolume'
         expectedRecipientJurisdictions:
           type: array
           items:
@@ -16148,25 +16148,9 @@ components:
           description: The primary source of funds for the business
           example: Funds derived from customer payments for software services
         expectedMonthlyTransactionCount:
-          type: string
-          enum:
-            - COUNT_UNDER_10
-            - COUNT_10_TO_100
-            - COUNT_100_TO_500
-            - COUNT_500_TO_1000
-            - COUNT_OVER_1000
-          description: Expected number of transactions per month
-          example: COUNT_100_TO_500
+          $ref: '#/components/schemas/ExpectedMonthlyTransactionCount'
         expectedMonthlyTransactionVolume:
-          type: string
-          enum:
-            - VOLUME_UNDER_10K
-            - VOLUME_10K_TO_100K
-            - VOLUME_100K_TO_1M
-            - VOLUME_1M_TO_10M
-            - VOLUME_OVER_10M
-          description: Expected total transaction volume per month in USD equivalent
-          example: VOLUME_100K_TO_1M
+          $ref: '#/components/schemas/ExpectedMonthlyTransactionVolume'
         expectedRecipientJurisdictions:
           type: array
           items:
@@ -16503,25 +16487,9 @@ components:
           description: The primary source of funds for the business
           example: Funds derived from customer payments for software services
         expectedMonthlyTransactionCount:
-          type: string
-          enum:
-            - COUNT_UNDER_10
-            - COUNT_10_TO_100
-            - COUNT_100_TO_500
-            - COUNT_500_TO_1000
-            - COUNT_OVER_1000
-          description: Expected number of transactions per month
-          example: COUNT_100_TO_500
+          $ref: '#/components/schemas/ExpectedMonthlyTransactionCount'
         expectedMonthlyTransactionVolume:
-          type: string
-          enum:
-            - VOLUME_UNDER_10K
-            - VOLUME_10K_TO_100K
-            - VOLUME_100K_TO_1M
-            - VOLUME_1M_TO_10M
-            - VOLUME_OVER_10M
-          description: Expected total transaction volume per month in USD equivalent
-          example: VOLUME_100K_TO_1M
+          $ref: '#/components/schemas/ExpectedMonthlyTransactionVolume'
         expectedRecipientJurisdictions:
           type: array
           items:
@@ -25969,6 +25937,11 @@ components:
               type: string
               description: 15-digit ACH trace number of the entry.
               example: '021000020123456'
+            statementDescriptor:
+              type: string
+              maxLength: 10
+              description: The entry's Company Entry Description, which the receiving bank shows on the account holder's statement. On payments you originate, this is the quote's `statementDescriptor`, or Grid's default.
+              example: PAYROLL
             addenda:
               type: string
               description: Payment-related text carried in the entry's addenda record. On payments you originate, this is the `remittanceInformation` you provided.
@@ -26203,6 +26176,22 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
+    RefundStatus:
+      type: string
+      enum:
+        - PENDING
+        - COMPLETED
+        - FAILED
+      description: Current status of the refund
+      example: COMPLETED
+    RefundReason:
+      type: string
+      enum:
+        - TRANSACTION_FAILED
+        - USER_CANCELLATION
+        - TIMEOUT
+      description: Reason for the refund
+      example: TRANSACTION_FAILED
     Refund:
       type: object
       required:
@@ -26225,21 +26214,9 @@ components:
           description: When the refund was settled
           example: '2025-08-15T14:35:00Z'
         status:
-          type: string
-          enum:
-            - PENDING
-            - COMPLETED
-            - FAILED
-          description: Current status of the refund
-          example: COMPLETED
+          $ref: '#/components/schemas/RefundStatus'
         reason:
-          type: string
-          enum:
-            - TRANSACTION_FAILED
-            - USER_CANCELLATION
-            - TIMEOUT
-          description: Reason for the refund
-          example: TRANSACTION_FAILED
+          $ref: '#/components/schemas/RefundReason'
     CounterpartyInformation:
       type: object
       description: Additional information about the counterparty, if available and relevant to the transaction and platform.
@@ -27224,6 +27201,17 @@ components:
           format: date-time
           description: When this document was uploaded
           example: '2025-10-03T12:00:00Z'
+    QuoteStatus:
+      type: string
+      enum:
+        - PENDING
+        - PENDING_AUTHORIZATION
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+        - EXPIRED
+      description: 'Current status of the quote. `PENDING_AUTHORIZATION` occurs only for customers in a region where Strong Customer Authentication is required (e.g. EU): the quote carries an `scaChallenge` that must be authorized before execution, and for realtime-funding sources `paymentInstructions` are withheld until it is satisfied.'
+      example: PENDING
     QuoteSourceType:
       type: string
       enum:
@@ -27386,16 +27374,7 @@ components:
           description: Unique identifier for this quote
           example: Quote:019542f5-b3e7-1d02-0000-000000000006
         status:
-          type: string
-          enum:
-            - PENDING
-            - PENDING_AUTHORIZATION
-            - PROCESSING
-            - COMPLETED
-            - FAILED
-            - EXPIRED
-          description: 'Current status of the quote. `PENDING_AUTHORIZATION` occurs only for customers in a region where Strong Customer Authentication is required (e.g. EU): the quote carries an `scaChallenge` that must be authorized before execution, and for realtime-funding sources `paymentInstructions` are withheld until it is satisfied.'
-          example: PENDING
+          $ref: '#/components/schemas/QuoteStatus'
         createdAt:
           type: string
           format: date-time
@@ -27496,6 +27475,17 @@ components:
         - SENDING
         - RECEIVING
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
+    StatementDescriptor:
+      type: string
+      minLength: 1
+      maxLength: 10
+      pattern: ^[ -~]+$
+      not:
+        pattern: ^ *(0*|[Mm][Ii][Ss][Cc]|[Rr][Ee][Vv][Ee][Rr][Ss][Aa][Ll]|[Rr][Ee][Tt][Uu][Rr][Nn] [Ff][Ee][Ee]|[Aa][Uu][Tt][Oo][Ee][Nn][Rr][Oo][Ll][Ll]|[Nn][Oo][Nn][Ss][Ee][Tt][Tt][Ll][Ee][Dd]|[Rr][Ee][Cc][Ll][Aa][Ii][Mm]) *$
+      description: |-
+        Short text that labels this payment on the counterparty's bank statement, such as `PAYROLL` or `INVOICE`. Used only when the quote moves money over ACH, for both an ACH credit to an external bank account and an ACH debit pulling from one, where it is sent as the NACHA Company Entry Description. Sending it on a quote that moves no ACH entry returns `400 INVALID_INPUT`. Free-text payment details belong in `remittanceInformation`, which ACH carries in the addenda record.
+        Printable ASCII, up to 10 characters. Grid uses its default when omitted. Blank values, all zeros, `MISC`, and the values NACHA reserves for system entries (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) are rejected with `400 INVALID_INPUT`, in any letter case and ignoring surrounding spaces.
+      example: PAYROLL
     QuoteRequest:
       type: object
       required:
@@ -27538,8 +27528,17 @@ components:
         remittanceInformation:
           type: string
           maxLength: 80
-          description: 'Free-form information about the payment that travels with it to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information.'
+          description: |-
+            Free-form information about the payment, such as an invoice or reference number, that travels with it to the recipient. Printable ASCII only. Where it goes depends on the payment rail:
+            - **ACH:** the addenda record.
+            - **RTP and FedNow:** the remittance information field.
+            - **Wire:** the OBI (Originator to Beneficiary Information).
+            - **Other rails** (for example SEPA, PIX, SPEI, and Faster Payments): the payment reference shown on the recipient's bank statement. These references are often much shorter than 80 characters and may allow only letters and digits, so the value may be shortened and unsupported characters removed. Put the most important information first.
+
+            To set the short description of the payment's purpose that an ACH recipient sees on their statement, such as `PAYROLL`, use `statementDescriptor`.
           example: '12345'
+        statementDescriptor:
+          $ref: '#/components/schemas/StatementDescriptor'
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
         documentIds:
@@ -31716,6 +31715,16 @@ components:
               items:
                 $ref: '#/components/schemas/CounterpartyFieldDefinition'
               description: Information required by the sender's VASP about the recipient. Platform must provide these in the 200 OK response if approving. Note that this only includes fields which Grid does not already have from initial customer registration.
+    IncomingPaymentWebhookEventType:
+      type: string
+      enum:
+        - INCOMING_PAYMENT.PENDING
+        - INCOMING_PAYMENT.PROCESSING
+        - INCOMING_PAYMENT.COMPLETED
+        - INCOMING_PAYMENT.FAILED
+        - INCOMING_PAYMENT.REFUND_PENDING
+        - INCOMING_PAYMENT.REFUND_COMPLETED
+        - INCOMING_PAYMENT.REFUND_FAILED
     IncomingPaymentWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -31726,15 +31735,7 @@ components:
             data:
               $ref: '#/components/schemas/IncomingPaymentWebhookData'
             type:
-              type: string
-              enum:
-                - INCOMING_PAYMENT.PENDING
-                - INCOMING_PAYMENT.PROCESSING
-                - INCOMING_PAYMENT.COMPLETED
-                - INCOMING_PAYMENT.FAILED
-                - INCOMING_PAYMENT.REFUND_PENDING
-                - INCOMING_PAYMENT.REFUND_COMPLETED
-                - INCOMING_PAYMENT.REFUND_FAILED
+              $ref: '#/components/schemas/IncomingPaymentWebhookEventType'
     IncomingPaymentWebhookResponse:
       type: object
       properties:
@@ -31764,6 +31765,18 @@ components:
               example:
                 - TAX_ID
                 - REGISTRATION_NUMBER
+    OutgoingPaymentWebhookEventType:
+      type: string
+      enum:
+        - OUTGOING_PAYMENT.PENDING
+        - OUTGOING_PAYMENT.PENDING_AUTHORIZATION
+        - OUTGOING_PAYMENT.PROCESSING
+        - OUTGOING_PAYMENT.COMPLETED
+        - OUTGOING_PAYMENT.FAILED
+        - OUTGOING_PAYMENT.EXPIRED
+        - OUTGOING_PAYMENT.REFUND_PENDING
+        - OUTGOING_PAYMENT.REFUND_COMPLETED
+        - OUTGOING_PAYMENT.REFUND_FAILED
     OutgoingPaymentWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -31774,17 +31787,7 @@ components:
             data:
               $ref: '#/components/schemas/OutgoingTransaction'
             type:
-              type: string
-              enum:
-                - OUTGOING_PAYMENT.PENDING
-                - OUTGOING_PAYMENT.PENDING_AUTHORIZATION
-                - OUTGOING_PAYMENT.PROCESSING
-                - OUTGOING_PAYMENT.COMPLETED
-                - OUTGOING_PAYMENT.FAILED
-                - OUTGOING_PAYMENT.EXPIRED
-                - OUTGOING_PAYMENT.REFUND_PENDING
-                - OUTGOING_PAYMENT.REFUND_COMPLETED
-                - OUTGOING_PAYMENT.REFUND_FAILED
+              $ref: '#/components/schemas/OutgoingPaymentWebhookEventType'
     TestWebhookRequest:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -31823,6 +31826,15 @@ components:
               type: string
               enum:
                 - INVITATION.CLAIMED
+    CustomerWebhookEventType:
+      type: string
+      enum:
+        - CUSTOMER.KYC_APPROVED
+        - CUSTOMER.KYC_REJECTED
+        - CUSTOMER.KYC_PENDING
+        - CUSTOMER.KYB_APPROVED
+        - CUSTOMER.KYB_REJECTED
+        - CUSTOMER.KYB_PENDING
     CustomerWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -31833,14 +31845,7 @@ components:
             data:
               $ref: '#/components/schemas/CustomerOneOf'
             type:
-              type: string
-              enum:
-                - CUSTOMER.KYC_APPROVED
-                - CUSTOMER.KYC_REJECTED
-                - CUSTOMER.KYC_PENDING
-                - CUSTOMER.KYB_APPROVED
-                - CUSTOMER.KYB_REJECTED
-                - CUSTOMER.KYB_PENDING
+              $ref: '#/components/schemas/CustomerWebhookEventType'
     InternalAccountStatusWebhookEventType:
       type: string
       enum:

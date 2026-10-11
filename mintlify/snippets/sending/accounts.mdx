@@ -30,6 +30,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000,
     "remittanceInformation": "INV-12345",
+    "statementDescriptor": "INVOICE",
     "description": "Payment for services - Invoice #1234"
   }'
 ```
@@ -72,7 +73,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 </Tip>
 
 <Info>
-  `remittanceInformation` is optional. Use it to send a reference that travels with the payment to the recipient (max 80 characters). This populates the ACH Addenda record, FedNow/RTP remittance information, or wire OBI field depending on the payment rail.
+  `remittanceInformation` is optional. Use it to send a reference that travels with the payment to the recipient (max 80 characters). This populates the ACH Addenda record, FedNow/RTP remittance information, or wire OBI field depending on the payment rail. `statementDescriptor` is optional and used only on ACH: it sets the up-to-10-character Company Entry Description the recipient's bank shows on their statement, such as `PAYROLL`.
 </Info>
 
 <Accordion title="Including purpose of payment">
