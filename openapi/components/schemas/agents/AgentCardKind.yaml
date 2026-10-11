@@ -10,4 +10,4 @@ description: |
   |------|-------------|
   | `STANDARD` | A card the customer issued for the agent on the platform. The customer holds the card details and its spend is the customer's own; the agent can read it, tighten its limits, and freeze it. |
   | `SINGLE_USE` | A purchase card the agent issued for one purchase. Its spend is reserved against the agent's policy at issuance and the card closes after its first authorization. |
-  | `MERCHANT_LOCKED` | A purchase card the agent issued for repeated purchases at one merchant, such as a subscription, capped by a monthly limit. Each authorization is checked against the agent's policy. |
+  | `MERCHANT_LOCKED` | A purchase card the agent issued for repeated purchases at one merchant, such as a subscription, capped by a monthly limit. The card locks to the first merchant that authorizes a charge on it; later authorizations from any other merchant decline. Each authorization is checked against the agent's policy. |
