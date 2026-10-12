@@ -1,0 +1,8 @@
+type: string
+enum:
+  - PENDING
+  - COMPLETED
+description: >-
+  Where the replacement factor's enrollment stands during a 2FA reset.
+  `PENDING` until the customer finishes re-enrolling, then `COMPLETED`.
+example: PENDING
