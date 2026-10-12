@@ -101,6 +101,34 @@ rules:
       field: "$ref"
       function: truthy
 
+  # Enums with more than one value must be their own component schema so that
+  # generated SDKs expose an enum type instead of a plain string. Single-value
+  # enums stay inline: they are the discriminator tags on variant schemas (see
+  # README: Discriminators and Polymorphism). ErrorNNN.code enums are excluded
+  # because SDKs surface error codes through their error type, not as enums.
+  no-inline-enums:
+    description: Enums with more than one value must be a named component schema
+    message: "Inline enum. Declare it as its own file under openapi/components/schemas and $ref it. See openapi/README.md#enums"
+    severity: error
+    resolved: false
+    given:
+      # A property's own enum, or its array items' enum.
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))].properties[?(@.enum && @.enum.length > 1)].enum"
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))].properties[?(@.items && @.items.enum && @.items.enum.length > 1)].items.enum"
+      # The same two shapes on a property declared through a composition, such
+      # as a nullable enum written as anyOf: [{enum: [...]}, {type: "null"}].
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))].properties.*[allOf,oneOf,anyOf][?(@.enum && @.enum.length > 1)].enum"
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))].properties.*.items[allOf,oneOf,anyOf][?(@.enum && @.enum.length > 1)].enum"
+      # Properties declared inside a schema-level allOf, oneOf, or anyOf.
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))][allOf,oneOf,anyOf].*.properties[?(@.enum && @.enum.length > 1)].enum"
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))][allOf,oneOf,anyOf].*.properties[?(@.items && @.items.enum && @.items.enum.length > 1)].items.enum"
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))][allOf,oneOf,anyOf].*.properties.*[allOf,oneOf,anyOf][?(@.enum && @.enum.length > 1)].enum"
+      # ErrorNNN schemas: only `code` may stay inline.
+      - "$.components.schemas[?(/^Error[0-9]{3}$/.test(@property))].properties[?(@property != 'code' && @.enum && @.enum.length > 1)].enum"
+      - "$.components.schemas[?(/^Error[0-9]{3}$/.test(@property))].properties[?(@property != 'code' && @.items && @.items.enum && @.items.enum.length > 1)].items.enum"
+    then:
+      function: falsy
+
   # ============================================================
   # Pagination (README: Pagination)
   # ============================================================
@@ -191,3 +219,44 @@ overrides:
       - "openapi.yaml#/components/schemas/CardUpdateRequest/properties/threeDSecurePassword"
     rules:
       field-names-camelCase: "off"
+
+  # Enum values that cannot become a component schema because they would fail
+  # enum-values-upper-snake-case: WebAuthn transport names, the Bitcoin message
+  # signature scheme names, and the wallet operation names are lowercase by
+  # their own standards.
+  - files:
+      - "openapi.yaml#/components/schemas/OwnershipVerifyRequest/properties/signatureScheme/enum"
+      - "openapi.yaml#/components/schemas/PasskeyAttestation/properties/transports/items/enum"
+      - "openapi.yaml#/components/schemas/WalletOperationCompletedData/properties/operationType/enum"
+      - "openapi.yaml#/components/schemas/WalletOperationFailedData/properties/operationType/enum"
+    rules:
+      no-inline-enums: "off"
+  # Account info enums predate the rule and stay inline. Naming them turns
+  # these fields from string to enum in the typed SDKs, a source-level change
+  # for every consumer that builds external accounts or quote destinations.
+  # Remove an entry here when its field is moved to a named schema.
+  - files:
+      - "openapi.yaml#/components/schemas/UsdAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/UsdAccountInfo/allOf/1/properties/bankAccountType/enum"
+      - "openapi.yaml#/components/schemas/UsdExternalAccountCreateInfo/allOf/2/properties/bankAccountType/enum"
+      - "openapi.yaml#/components/schemas/EurAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/DkkAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/BdtAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/CnyAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/CopAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/EgpAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/GhsAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/InrAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/PkrAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/SgdAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/SlvAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/CopAccountInfoBase/properties/bankAccountType/enum"
+      - "openapi.yaml#/components/schemas/GtqAccountInfoBase/properties/bankAccountType/enum"
+      - "openapi.yaml#/components/schemas/JmdAccountInfoBase/properties/bankAccountType/enum"
+      - "openapi.yaml#/components/schemas/SlvAccountInfoBase/properties/bankAccountType/enum"
+      - "openapi.yaml#/components/schemas/BrlAccountInfoBase/properties/pixKeyType/enum"
+      - "openapi.yaml#/components/schemas/CopBeneficiary/properties/documentType/enum"
+      - "openapi.yaml#/components/schemas/XafAccountInfoBase/properties/region/enum"
+      - "openapi.yaml#/components/schemas/XofAccountInfoBase/properties/region/enum"
+    rules:
+      no-inline-enums: "off"
