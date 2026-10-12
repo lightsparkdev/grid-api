@@ -239,8 +239,8 @@ POST /quotes
 GET /transactions/{transactionId}
 
 # 4. Push to the account: the payout fails with a specific reason
-# Create external account ending in 011
-POST /customers/external-accounts { "accountNumber": "000000011" }
+# Create external account ending in 015
+POST /customers/external-accounts { "accountNumber": "000000015" }
 
 # Pay out to it - the transaction fails with
 # failureReason: ACCOUNT_INVALID
@@ -248,7 +248,7 @@ POST /quotes
 GET /transactions/{transactionId}
 ```
 
-Use suffixes `010` to `013` to test each specific `failureReason`. The table in
+Use suffixes `014` to `017` to test each specific `failureReason`. The table in
 [Testing Cross-Currency Quotes](#testing-cross-currency-quotes) lists them.
 
 ## Global Account magic values
