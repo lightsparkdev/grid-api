@@ -64,7 +64,11 @@ patch:
     `CLOSED` is terminal and irreversible. Activating a card whose USDB funding
     source lacks a usable delegated key returns `409 INVALID_STATE_TRANSITION`.
     `PENDING_AUTH` is managed by Grid and cannot be requested. Completing delegation
-    does not unfreeze or reopen a card.
+    does not unfreeze or reopen a card. Requesting `status: ACTIVE` returns
+    `409 INVALID_STATE_TRANSITION` while the customer is not `ACTIVE`, for a
+    card Grid froze for review, and for a card frozen with substatus
+    `COMPROMISED`. Contact Grid support to have such a card reviewed, or close
+    a compromised card and issue a new one.
 
     - `fundingSource`, when supplied, replaces the card's bound internal
     account. It must belong to the customer and use a currency supported by the
@@ -237,8 +241,10 @@ patch:
         Conflict. Returned with `INVALID_STATE_TRANSITION` when the
         requested `status` transition is not one of
         `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, or
-        `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`, or when activation is requested
-        before delegated signing authorization is complete; with `CARD_ALREADY_CLOSED` when
+        `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`, when activation is requested
+        before delegated signing authorization is complete, or when
+        `status: ACTIVE` is requested while the customer is not `ACTIVE`, for
+        a card Grid froze for review, or for a card frozen as `COMPROMISED`; with `CARD_ALREADY_CLOSED` when
         `status: CLOSED` is requested for a card that is already
         `CLOSED`; and with `CARD_NOT_MUTABLE` when the card is
         `CLOSED`.
