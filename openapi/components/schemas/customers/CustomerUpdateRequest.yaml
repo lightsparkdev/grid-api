@@ -1,12 +1,9 @@
 title: Customer Update Request
 description: >-
-  Request body for `PATCH /customers/{customerId}`. When `email` changes for a
-  customer with tied Embedded Wallet internal accounts, Grid updates the
-  customer email and every tied `EMAIL_OTP` credential through the endpoint's
-  signed-retry flow. When `phoneNumber` changes for a customer with tied
-  Embedded Wallet internal accounts, Grid updates the customer phone number and
-  every tied `SMS_OTP` credential through the same signed-retry flow. Update
-  `email` and `phoneNumber` in separate PATCH calls.
+  Request body for `PATCH /customers/{customerId}`. Changing `email` or
+  `phoneNumber` when the customer's Embedded Wallet signs in with it requires a
+  verified replacement credential and goes through the endpoint's signed-retry
+  flow. Update `email` and `phoneNumber` in separate PATCH calls.
 type: object
 required:
   - customerType
@@ -31,18 +28,20 @@ properties:
     format: email
     maxLength: 255
     description: >-
-      Email address for the customer. For customers with tied Embedded Wallet
-      internal accounts, changing this value also updates every tied
-      `EMAIL_OTP` credential across all tied Embedded Wallets.
+      Email address for the customer. If the customer's Embedded Wallet signs
+      in with an `EMAIL_OTP` credential, the new address must first be
+      registered and verified as a replacement credential, and the change is
+      sent on its own.
     example: john.doe@example.com
   phoneNumber:
     type: string
     pattern: '^\+[1-9]\d{1,14}$'
     description: >-
-      Phone number for the customer in strict E.164 format. For customers with
-      tied Embedded Wallet internal accounts, changing this value also updates
-      every tied `SMS_OTP` credential across all tied Embedded Wallets. Send
-      phone number and email updates as separate PATCH calls.
+      Phone number for the customer in strict E.164 format. If the customer's
+      Embedded Wallet signs in with an `SMS_OTP` credential, the new number
+      must first be registered and verified as a replacement credential, and
+      the change is sent on its own. Send phone number and email updates as
+      separate PATCH calls.
     example: '+14155551234'
   umaAddress:
     type: string

@@ -10,6 +10,21 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## Verify a new sign-in email or phone number before it replaces the old one
+
+Changing a Global Account customer's `email` or `phoneNumber` on
+`PATCH /customers/{customerId}`, when the account signs in with it, now needs a verified
+replacement. Register the new address with `POST /auth/credentials`, verify its code with
+`POST /auth/credentials/{id}/verify`, then send the customer update and its signed retry.
+The signed retry can return `200` with `{ "status": "PROCESSING" }` while the change lands,
+and `409 OPERATION_IN_PROGRESS` while another operation on that contact is in progress.
+
+A change without a verified replacement returns `400 AUTH_CREDENTIAL_VERIFICATION_REQUIRED`
+instead of a signed-retry challenge. The `EMAIL_OTP_CREDENTIAL_SET_CHANGED`,
+`SMS_OTP_CREDENTIAL_SET_CHANGED`, `EMAIL_OTP_CREDENTIAL_SYNC_FAILED`, and
+`SMS_OTP_CREDENTIAL_SYNC_FAILED` codes are retired. See
+[Changing the sign-in email or phone number](/global-accounts/authentication#changing-the-sign-in-email-or-phone-number).
+
 ## Set the ACH statement description with `statementDescriptor`
 
 `POST /quotes` takes a new optional `statementDescriptor`: up to 10 characters that
