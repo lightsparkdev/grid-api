@@ -486,7 +486,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CustomerOneOf'
         '400':
-          description: Bad request
+          description: Bad request. `ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires an accountholder agreement for the customer type and `agreementConsents` does not include it. If the End User Terms are also missing, the response is `403` instead.
           content:
             application/json:
               schema:
@@ -497,6 +497,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. `END_USER_TERMS_NOT_ACCEPTED` when the platform requires the End User Terms and the request does not accept them.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '405':
           description: Method not allowed. Returned (as JSON, not HTML) when the request uses an HTTP method that is not supported on this path.
           content:
@@ -14490,6 +14496,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
             | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
+            | ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED | The customer create request omits an accountholder agreement its accounts require |
             | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
             | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
             | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
@@ -14551,6 +14558,7 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
             - CARDHOLDER_KYC_NOT_APPROVED
+            - ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED
             - TRANSACTION_SIZE_LIMIT_EXCEEDED
             - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
             - INSUFFICIENT_FUNDS
@@ -15674,7 +15682,7 @@ components:
           description: Deprecated; send `agreementConsents` instead. Supplying this records acceptance of the Lightspark End User Terms, equivalent to a single `agreementConsents` entry of type `LIGHTSPARK_END_USER_TERMS`. Supplying both fields in one request is rejected.
         agreementConsents:
           type: array
-          description: Evidence that the customer accepted Grid agreements, at most one entry per type. Unregulated platforms must record acceptance of the Lightspark End User Terms before initiating customer-scoped transactions; those transactions fail until that consent is recorded. Consents can be supplied during customer creation or in a later customer update.
+          description: 'Evidence that the customer accepted Grid agreements, at most one entry per type. Include every agreement the platform requires for the customer''s accounts: the Lightspark End User Terms on unregulated platforms, and the Lead accountholder agreement for the customer type when the platform requires it.'
           items:
             $ref: '#/components/schemas/AgreementConsentRequest'
     IndividualCustomerCreateRequest:
@@ -15808,6 +15816,39 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomerCreateRequest'
           BUSINESS: '#/components/schemas/BusinessCustomerCreateRequest'
+    Error403:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | FORBIDDEN | Insufficient permissions |
+            | USER_NOT_READY | Customer exists but is not ready for operation |
+            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
+            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
+            | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
+            | CUSTOMER_NOT_VERIFIED | The customer is not verified and cannot perform this action |
+            | SANCTION_BLOCKED | Blocked by sanction screening |
+          enum:
+            - FORBIDDEN
+            - USER_NOT_READY
+            - COUNTERPARTY_NOT_ALLOWED
+            - VELOCITY_LIMIT_EXCEEDED
+            - END_USER_TERMS_NOT_ACCEPTED
+            - CUSTOMER_NOT_VERIFIED
+            - SANCTION_BLOCKED
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     Error409:
       type: object
       required:
@@ -17896,39 +17937,6 @@ components:
           format: date-time
           description: Timestamp when the internal account was last updated
           example: '2025-10-03T12:30:00Z'
-    Error403:
-      type: object
-      required:
-        - reason
-        - code
-      properties:
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | FORBIDDEN | Insufficient permissions |
-            | USER_NOT_READY | Customer exists but is not ready for operation |
-            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
-            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
-            | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
-            | CUSTOMER_NOT_VERIFIED | The customer is not verified and cannot perform this action |
-            | SANCTION_BLOCKED | Blocked by sanction screening |
-          enum:
-            - FORBIDDEN
-            - USER_NOT_READY
-            - COUNTERPARTY_NOT_ALLOWED
-            - VELOCITY_LIMIT_EXCEEDED
-            - END_USER_TERMS_NOT_ACCEPTED
-            - CUSTOMER_NOT_VERIFIED
-            - SANCTION_BLOCKED
-        reason:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     InternalAccountListResponse:
       type: object
       required:
