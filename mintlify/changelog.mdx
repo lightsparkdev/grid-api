@@ -12,7 +12,7 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 ## Limit on PIN unblocks per card
 
-`POST /cards/{id}/pin-unblock` now allows one unblock attempt per card in a rolling seven-day
+`POST /cards/{id}/pin/unblock` now allows one unblock attempt per card in a rolling seven-day
 window. When the allowance is used, the endpoint returns `409 PIN_CHANGE_REQUIRED` with
 `details.pinUnblockAvailableAt`, the next time an unblock is allowed. The cardholder can recover
 sooner by changing their PIN, which does not reset the allowance. `Card` also has a read-only
