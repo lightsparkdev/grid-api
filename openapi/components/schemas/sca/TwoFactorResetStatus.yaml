@@ -11,19 +11,11 @@ properties:
     $ref: ./ScaFactor.yaml
     description: The factor being reset.
   enrollmentStatus:
-    type:
-      - string
-      - 'null'
-    enum:
-      - PENDING
-      - COMPLETED
-      - null
+    $ref: ./TwoFactorEnrollmentStatus.yaml
     description: >-
-      The enrollment status of the replacement factor. `PENDING` until the
-      customer finishes re-enrolling, then `COMPLETED`. Null for an `SMS_OTP`
+      The enrollment status of the replacement factor. Absent for an `SMS_OTP`
       reset, where completing the reset enrolls the new number directly with no
       separate enrollment step.
-    example: PENDING
   expiresAt:
     type: string
     format: date-time

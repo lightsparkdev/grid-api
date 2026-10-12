@@ -239,7 +239,7 @@ paths:
             - INR
         - name: sendingAmount
           in: query
-          description: Sending amount in the smallest unit of the source currency (e.g., cents for USD).  If no amount is provided, the default is 10000 in the sending currency smallest unit.
+          description: Sending amount in the smallest unit of the source currency (e.g., cents for USD). If omitted, USD and USD-pegged currencies default to $100 (10000 USD cents, scaled to the source currency's precision; e.g., 100000000 for USDC, which is 100 USDC). Other currencies default to 10000 in the source currency's smallest unit.
           required: false
           schema:
             type: integer
@@ -17454,6 +17454,13 @@ components:
         | Value | Terminal | Meaning | |-------|----------|---------| | `INITIATED` | no | Reset started; liveness not yet submitted. Keep polling. | | `PENDING_REVIEW` | no | Liveness submitted; under review. Keep polling. | | `LIVENESS_PASSED` | no | Liveness passed; call the complete endpoint to finish the reset. | | `COMPLETED` | **yes** | Reset finished; the lost factor is cleared and re-enrollment can begin. | | `REJECTED` | **yes** | Liveness failed. Stop polling; start a new reset. | | `EXPIRED` | **yes** | The reset window closed before it completed. Stop polling; start a new reset. |
         Stop polling on any terminal value.
       example: INITIATED
+    TwoFactorEnrollmentStatus:
+      type: string
+      enum:
+        - PENDING
+        - COMPLETED
+      description: Where the replacement factor's enrollment stands during a 2FA reset. `PENDING` until the customer finishes re-enrolling, then `COMPLETED`.
+      example: PENDING
     TwoFactorResetStatus:
       type: object
       description: The status of an in-progress 2FA reset, polled until it reaches a terminal value.
@@ -17468,15 +17475,8 @@ components:
           $ref: '#/components/schemas/ScaFactor'
           description: The factor being reset.
         enrollmentStatus:
-          type:
-            - string
-            - 'null'
-          enum:
-            - PENDING
-            - COMPLETED
-            - null
-          description: The enrollment status of the replacement factor. `PENDING` until the customer finishes re-enrolling, then `COMPLETED`. Null for an `SMS_OTP` reset, where completing the reset enrolls the new number directly with no separate enrollment step.
-          example: PENDING
+          $ref: '#/components/schemas/TwoFactorEnrollmentStatus'
+          description: The enrollment status of the replacement factor. Absent for an `SMS_OTP` reset, where completing the reset enrolls the new number directly with no separate enrollment step.
         expiresAt:
           type: string
           format: date-time
@@ -27751,6 +27751,13 @@ components:
         response_body:
           type: string
           description: The raw body content returned by the webhook endpoint in response to the request
+    BulkCustomerImportJobAcceptedStatus:
+      type: string
+      enum:
+        - PENDING
+        - PROCESSING
+      description: 'The status a job can have when the upload is accepted: `PENDING` until a worker picks it up, `PROCESSING` once one has. Poll the job for the later states.'
+      example: PENDING
     BulkCustomerImportJobAccepted:
       type: object
       required:
@@ -27762,10 +27769,7 @@ components:
           description: Unique identifier for the bulk import job
           example: Job:019542f5-b3e7-1d02-0000-000000000006
         status:
-          type: string
-          enum:
-            - PENDING
-            - PROCESSING
+          $ref: '#/components/schemas/BulkCustomerImportJobAcceptedStatus'
     BulkCustomerImportJobStatus:
       type: string
       enum:
@@ -30735,6 +30739,16 @@ components:
         - CLOSED
       description: Whether the dispute is still active.
       example: OPEN
+    CardDisputeDisposition:
+      type: string
+      enum:
+        - WON
+        - PARTIALLY_WON
+        - LOST
+        - WITHDRAWN
+        - DENIED
+      description: The outcome the dispute closes with.
+      example: WON
     SandboxCardDisputeResponse:
       type: object
       required:
@@ -30754,18 +30768,8 @@ components:
         status:
           $ref: '#/components/schemas/SandboxCardDisputeStatus'
         disposition:
-          type:
-            - string
-            - 'null'
-          enum:
-            - WON
-            - PARTIALLY_WON
-            - LOST
-            - WITHDRAWN
-            - DENIED
-            - null
-          description: The outcome once the dispute closes. Null while it is open.
-          example: WON
+          $ref: '#/components/schemas/CardDisputeDisposition'
+          description: The outcome once the dispute closes. Absent while it is open.
     SandboxCardDisputeCreditRequest:
       type: object
       required:
@@ -30783,16 +30787,6 @@ components:
           description: The amount to credit, or to take back, in the smallest unit of the transaction's currency. Must not exceed the disputed amount.
           exclusiveMinimum: 0
           example: 1500
-    CardDisputeDisposition:
-      type: string
-      enum:
-        - WON
-        - PARTIALLY_WON
-        - LOST
-        - WITHDRAWN
-        - DENIED
-      description: The outcome the dispute closes with.
-      example: WON
     SandboxCardDisputeCloseRequest:
       type: object
       required:

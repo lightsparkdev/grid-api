@@ -9,6 +9,10 @@ When creating a quote with an external account destination, the account number s
 | **006** | User cancellation |
 | **007** | Payout and refund failed |
 | **008** | User cancellation while processing — the payment is refunded about a minute after execution, before it reaches the destination |
+| **010** | Payout rejected by compliance screening — fails with `failureReason: COMPLIANCE_REJECTED` |
+| **011** | Invalid recipient account details — fails with `failureReason: ACCOUNT_INVALID` |
+| **012** | Recipient account cannot receive the payout — fails with `failureReason: ACCOUNT_CANNOT_RECEIVE` |
+| **013** | Transfer limit exceeded — fails with `failureReason: LIMIT_EXCEEDED` |
 | **Any other** | Successful payment |
 
 One suffix applies to the quote's **source** instead of its destination. Use it
