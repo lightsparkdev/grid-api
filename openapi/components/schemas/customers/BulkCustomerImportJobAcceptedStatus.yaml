@@ -1,0 +1,9 @@
+type: string
+enum:
+  - PENDING
+  - PROCESSING
+description: >-
+  The status a job can have when the upload is accepted: `PENDING` until a
+  worker picks it up, `PROCESSING` once one has. Poll the job for the later
+  states.
+example: PENDING

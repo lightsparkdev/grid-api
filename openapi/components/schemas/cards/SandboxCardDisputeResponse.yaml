@@ -19,15 +19,5 @@ properties:
   status:
     $ref: ./SandboxCardDisputeStatus.yaml
   disposition:
-    type:
-      - string
-      - 'null'
-    enum:
-      - WON
-      - PARTIALLY_WON
-      - LOST
-      - WITHDRAWN
-      - DENIED
-      - null
-    description: The outcome once the dispute closes. Null while it is open.
-    example: WON
+    $ref: ./CardDisputeDisposition.yaml
+    description: The outcome once the dispute closes. Absent while it is open.
