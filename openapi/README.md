@@ -434,7 +434,7 @@ status:
   $ref: ./QuoteStatus.yaml
 ```
 
-Single-value enums stay inline. They are the discriminator tags on variant schemas, and the section on discriminators explains why each variant needs its own. The `code` enums on the `ErrorNNN` schemas also stay inline, since SDKs surface error codes through their error type. The `no-inline-enums` Spectral rule enforces this, with per-field exemptions listed in `.spectral.yaml` for values that cannot be UPPER_SNAKE_CASE or that use `null` as an enum member.
+Single-value enums stay inline. They are the discriminator tags on variant schemas, and the section on discriminators explains why each variant needs its own. The `code` enums on the `ErrorNNN` schemas also stay inline, since SDKs surface error codes through their error type. The `no-inline-enums` Spectral rule enforces this, with per-field exemptions listed in `.spectral.yaml` for values that cannot be UPPER_SNAKE_CASE, for fields that use `null` as an enum member, and for the account info enums that predate the rule.
 
 ### Avoid Inline Schemas in Request and Response Definitions
 

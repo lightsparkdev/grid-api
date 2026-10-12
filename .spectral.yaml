@@ -112,10 +112,20 @@ rules:
     severity: error
     resolved: false
     given:
+      # A property's own enum, or its array items' enum.
       - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))].properties[?(@.enum && @.enum.length > 1)].enum"
       - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))].properties[?(@.items && @.items.enum && @.items.enum.length > 1)].items.enum"
+      # The same two shapes on a property declared through a composition, such
+      # as a nullable enum written as anyOf: [{enum: [...]}, {type: "null"}].
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))].properties.*[allOf,oneOf,anyOf][?(@.enum && @.enum.length > 1)].enum"
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))].properties.*.items[allOf,oneOf,anyOf][?(@.enum && @.enum.length > 1)].enum"
+      # Properties declared inside a schema-level allOf, oneOf, or anyOf.
       - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))][allOf,oneOf,anyOf].*.properties[?(@.enum && @.enum.length > 1)].enum"
       - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))][allOf,oneOf,anyOf].*.properties[?(@.items && @.items.enum && @.items.enum.length > 1)].items.enum"
+      - "$.components.schemas[?(!/^Error[0-9]{3}$/.test(@property))][allOf,oneOf,anyOf].*.properties.*[allOf,oneOf,anyOf][?(@.enum && @.enum.length > 1)].enum"
+      # ErrorNNN schemas: only `code` may stay inline.
+      - "$.components.schemas[?(/^Error[0-9]{3}$/.test(@property))].properties[?(@property != 'code' && @.enum && @.enum.length > 1)].enum"
+      - "$.components.schemas[?(/^Error[0-9]{3}$/.test(@property))].properties[?(@property != 'code' && @.items && @.items.enum && @.items.enum.length > 1)].items.enum"
     then:
       function: falsy
 
@@ -232,5 +242,34 @@ overrides:
   # enum would widen the 202 response contract.
   - files:
       - "openapi.yaml#/components/schemas/BulkCustomerImportJobAccepted/properties/status/enum"
+    rules:
+      no-inline-enums: "off"
+  # Account info enums predate the rule and stay inline. Naming them turns
+  # these fields from string to enum in the typed SDKs, a source-level change
+  # for every consumer that builds external accounts or quote destinations.
+  # Remove an entry here when its field is moved to a named schema.
+  - files:
+      - "openapi.yaml#/components/schemas/UsdAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/UsdAccountInfo/allOf/1/properties/bankAccountType/enum"
+      - "openapi.yaml#/components/schemas/UsdExternalAccountCreateInfo/allOf/2/properties/bankAccountType/enum"
+      - "openapi.yaml#/components/schemas/EurAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/DkkAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/BdtAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/CnyAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/CopAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/EgpAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/GhsAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/InrAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/PkrAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/SgdAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/SlvAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/CopAccountInfoBase/properties/bankAccountType/enum"
+      - "openapi.yaml#/components/schemas/GtqAccountInfoBase/properties/bankAccountType/enum"
+      - "openapi.yaml#/components/schemas/JmdAccountInfoBase/properties/bankAccountType/enum"
+      - "openapi.yaml#/components/schemas/SlvAccountInfoBase/properties/bankAccountType/enum"
+      - "openapi.yaml#/components/schemas/BrlAccountInfoBase/properties/pixKeyType/enum"
+      - "openapi.yaml#/components/schemas/CopBeneficiary/properties/documentType/enum"
+      - "openapi.yaml#/components/schemas/XafAccountInfoBase/properties/region/enum"
+      - "openapi.yaml#/components/schemas/XofAccountInfoBase/properties/region/enum"
     rules:
       no-inline-enums: "off"
