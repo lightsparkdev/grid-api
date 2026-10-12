@@ -5,8 +5,12 @@ post:
     agent's customer. Accounts referenced in the request must belong to the agent's
     customer. Requires the CREATE_QUOTES permission in the agent's policy.
 
-    The destination is another embedded wallet (`ACCOUNT`) or an address on
-    another chain (`CHAIN_ADDRESS`). A `CHAIN_ADDRESS` quote sends `USDB` and
+    The destination is another embedded wallet or one of the customer's Spark
+    addresses saved with `POST /agents/me/external-accounts` (`ACCOUNT`), or an
+    address on another chain (`CHAIN_ADDRESS`). Grid answers
+    `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held
+    for review, on any of the customer's records of it, under either prefix and
+    including removed ones. A `CHAIN_ADDRESS` quote sends `USDB` and
     commits to a `minimumReceivingAmount`; Grid prices the conversion again
     at execution and fails the action with `PRICE_MOVED` rather than send
     for less.
@@ -57,8 +61,9 @@ post:
             $ref: ../../components/schemas/errors/Error401.yaml
     '403':
       description: >-
-        Forbidden - Agents API is not enabled for the platform or the agent policy does
-        not permit this operation
+        Forbidden - Agents API is not enabled for the platform, the agent policy does
+        not permit this operation, or the agent may not pay the destination
+        (`DESTINATION_NOT_ALLOWED`)
       content:
         application/json:
           schema:
