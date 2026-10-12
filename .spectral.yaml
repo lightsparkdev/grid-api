@@ -231,19 +231,6 @@ overrides:
       - "openapi.yaml#/components/schemas/WalletOperationFailedData/properties/operationType/enum"
     rules:
       no-inline-enums: "off"
-  # Nullable enums express null as an enum member, which a shared string enum
-  # cannot carry without restructuring the field.
-  - files:
-      - "openapi.yaml#/components/schemas/SandboxCardDisputeResponse/properties/disposition/enum"
-      - "openapi.yaml#/components/schemas/TwoFactorResetStatus/properties/enrollmentStatus/enum"
-    rules:
-      no-inline-enums: "off"
-  # A two-value subset of BulkCustomerImportJobStatus. Pointing it at the full
-  # enum would widen the 202 response contract.
-  - files:
-      - "openapi.yaml#/components/schemas/BulkCustomerImportJobAccepted/properties/status/enum"
-    rules:
-      no-inline-enums: "off"
   # Account info enums predate the rule and stay inline. Naming them turns
   # these fields from string to enum in the typed SDKs, a source-level change
   # for every consumer that builds external accounts or quote destinations.
