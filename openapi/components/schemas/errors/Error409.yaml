@@ -12,7 +12,6 @@ properties:
       | TRANSACTION_NOT_CANCELLABLE | Transaction has already settled or is otherwise past the point where it can be cancelled |
       | UMA_ADDRESS_EXISTS | UMA address already exists |
       | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
-      | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
       | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
       | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
       | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
@@ -29,7 +28,6 @@ properties:
       | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists. When the conflicting account belongs to your platform, `details.externalAccountId` and `details.platformAccountId` identify it; otherwise `details` is omitted |
       | DUPLICATE_PAY_REQUEST | A pay request with this idempotency key already exists |
       | OPERATION_IN_PROGRESS | A conflicting Embedded Wallet operation is still in progress |
-      | SMS_OTP_CREDENTIAL_SET_CHANGED | The SMS_OTP credential set changed while the request was in flight |
       | SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS | The phone number is already associated with an SMS_OTP credential |
       | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
       | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
@@ -40,7 +38,6 @@ properties:
       - TRANSACTION_NOT_CANCELLABLE
       - UMA_ADDRESS_EXISTS
       - EMAIL_OTP_EMAIL_ALREADY_EXISTS
-      - EMAIL_OTP_CREDENTIAL_SET_CHANGED
       - PASSKEY_ALREADY_ENROLLED
       - SCA_SESSION_REQUIRED
       - BENEFICIARY_TRUSTED
@@ -57,7 +54,6 @@ properties:
       - DUPLICATE_EXTERNAL_ACCOUNT
       - DUPLICATE_PAY_REQUEST
       - OPERATION_IN_PROGRESS
-      - SMS_OTP_CREDENTIAL_SET_CHANGED
       - SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS
       - STABLECOIN_SYMBOL_ALREADY_EXISTS
       - STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS

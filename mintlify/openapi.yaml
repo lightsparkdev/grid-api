@@ -688,15 +688,21 @@ paths:
       description: |
         Update a customer's metadata by their system-generated ID.
 
-        Most customer updates complete synchronously and return `200` with the updated customer. If the request changes `email` for a customer that has one or more tied Embedded Wallet internal accounts with `EMAIL_OTP` credentials, or changes `phoneNumber` for a customer that has one or more tied Embedded Wallet internal accounts with `SMS_OTP` credentials, the contact update uses the two-step signed-retry flow so the customer's wallet session authorizes the authentication credential update. On the signed retry, Grid updates the customer contact field and every tied matching OTP credential across all tied Embedded Wallets as one logical operation. If any tied credential cannot be updated, the customer contact field is not changed.
+        Most customer updates complete synchronously and return `200` with the updated customer.
+
+        Changing `email` for a customer whose Embedded Wallet signs in with an `EMAIL_OTP` credential, or `phoneNumber` for one that signs in with an `SMS_OTP` credential, changes how the customer signs in. The customer must first prove they control the new contact:
+
+        1. Register the new contact with `POST /auth/credentials`, passing `email` or `phoneNumber`. Grid sends a one-time code to it and returns the replacement credential.
+
+        2. Verify that code with `POST /auth/credentials/{id}/verify`. Grid answers `204`. A replacement that is not verified within 24 hours expires.
+
+        3. Call `PATCH /customers/{customerId}` with only `customerType` and the new contact. Grid returns `202` with `payloadToSign`, `requestId`, and `expiresAt`. Send this soon after verifying: if the verification would lapse before the challenge does, Grid returns `AUTH_CREDENTIAL_VERIFICATION_EXPIRED` instead, and the customer must verify again.
+
+        4. Use the session API keypair of an active session on the same Embedded Wallet to build an API-key stamp over `payloadToSign`. Retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `200` with the updated customer, and the replacement becomes the wallet's sign-in credential in place of the old one. If the change is still being applied, the retry returns `200` with a `WalletOperationProcessing` body; re-send the identical signed request until it returns the customer.
+
+        A change to a sign-in contact without a verified replacement returns `400` with `AUTH_CREDENTIAL_VERIFICATION_REQUIRED`. Customers without an Embedded Wallet credential of that type change `email` or `phoneNumber` with a plain update.
 
         Update `email` and `phoneNumber` in separate PATCH calls. A request that includes both fields is rejected.
-
-        For an Embedded Wallet email or SMS auth phone update:
-
-        1. Call `PATCH /customers/{customerId}` with the full update body and no signature headers. Grid returns `202` with `payloadToSign`, `requestId`, and `expiresAt`. The pending challenge binds the submitted update fields and the set of tied Embedded Wallet OTP credentials that must be updated.
-
-        2. Use the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The retry body must carry the same update fields submitted in step 1. The signed retry returns `200` with the updated customer.
       operationId: updateCustomerById
       tags:
         - Customers
@@ -706,14 +712,14 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets. Required on the signed retry for Embedded Wallet email or SMS auth phone updates; ignored on the initial call and on customer updates that complete synchronously.
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of an active session on the Embedded Wallet whose sign-in contact is changing. Required on the signed retry of a sign-in contact change; ignored on the initial call and on customer updates that complete synchronously.
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry for Embedded Wallet email or SMS auth phone updates; must be paired with `Grid-Wallet-Signature`.
+          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry of a sign-in contact change; must be paired with `Grid-Wallet-Signature`.
           schema:
             type: string
           example: Request:019542f5-b3e7-1d02-0000-000000000010
@@ -757,13 +763,13 @@ paths:
                     state: WA
                     postalCode: '98004'
                     country: US
-              embeddedWalletEmailUpdate:
-                summary: Embedded Wallet email update request (both steps)
+              signInEmailChange:
+                summary: Change a sign-in email to its verified replacement (both steps)
                 value:
                   customerType: INDIVIDUAL
                   email: john.smith@example.com
-              embeddedWalletPhoneUpdate:
-                summary: Embedded Wallet SMS auth phone update request (both steps)
+              signInPhoneChange:
+                summary: Change a sign-in phone number to its verified replacement (both steps)
                 value:
                   customerType: INDIVIDUAL
                   phoneNumber: '+14155559876'
@@ -775,38 +781,44 @@ paths:
                   phoneNumber: '+14155559876'
       responses:
         '200':
-          description: Customer updated successfully. For Embedded Wallet email or SMS auth phone updates, this is returned only on the signed retry after the customer contact field and all tied matching OTP credentials have been updated.
+          description: 'Customer updated successfully. For a sign-in contact change, this is returned only on the signed retry: the updated customer once the change has landed, or a `WalletOperationProcessing` body with `status: "PROCESSING"` while it is still being applied. Re-send the identical signed request until it returns the customer.'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CustomerUpdateResponse'
+              examples:
+                processing:
+                  summary: Sign-in contact change still being applied
+                  value:
+                    status: PROCESSING
+                    message: This contact change is still being processed. Retry the same request in a moment.
         '202':
-          description: Challenge issued for an Embedded Wallet email or SMS auth phone update. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair from a verified authentication credential on one of the customer's tied Embedded Wallets, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
+          description: Challenge issued for a sign-in contact change to a verified replacement. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of an active session on the same Embedded Wallet, then retry the same request with `Grid-Wallet-Signature` and `Request-Id` before `expiresAt`.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SignedRequestChallenge'
               examples:
-                embeddedWalletEmailUpdate:
-                  summary: Embedded Wallet customer email update challenge
+                signInEmailChange:
+                  summary: Sign-in email change challenge
                   value:
-                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userEmail":"john.smith@example.com","userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_EMAIL"}'
+                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userEmail":"john.smith@example.com","userId":"user_2m9F...","verificationToken":"eyJhbGciOiJFUzI1NiIs..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_EMAIL"}'
                     requestId: Request:019542f5-b3e7-1d02-0000-000000000010
                     expiresAt: '2026-04-08T15:35:00Z'
-                embeddedWalletPhoneUpdate:
-                  summary: Embedded Wallet customer SMS auth phone update challenge
+                signInPhoneChange:
+                  summary: Sign-in phone number change challenge
                   value:
-                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155559876"},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
+                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155559876","verificationToken":"eyJhbGciOiJFUzI1NiIs..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
                     requestId: Request:019542f5-b3e7-1d02-0000-000000000011
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
-          description: Bad request
+          description: Bad request. A sign-in contact change returns `AUTH_CREDENTIAL_VERIFICATION_REQUIRED` when the new contact has no verified replacement, `AUTH_CREDENTIAL_VERIFICATION_EXPIRED` when its verification would lapse before the signed retry, and `INVALID_INPUT` when the request also changes other customer fields.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Also returned for Embedded Wallet email or SMS auth phone update retries when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match the pending customer update challenge, when the `Request-Id` does not match an unexpired pending challenge, or when the retry body does not match the update fields bound into `payloadToSign` on the initial call.
+          description: Unauthorized. Also returned on the signed retry of a sign-in contact change when the provided `Grid-Wallet-Signature` is missing or malformed, or when the `Request-Id` does not match an unexpired challenge issued for this change.
           content:
             application/json:
               schema:
@@ -818,17 +830,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict. Returned when the supplied email address is already associated with an `EMAIL_OTP` credential, or the supplied phone number is already associated with an `SMS_OTP` credential, on this or another internal account, or when the tied Embedded Wallet OTP credential set changed between the initial `202` challenge and the signed retry.
+          description: Conflict. Returned with `UMA_ADDRESS_EXISTS` when the requested UMA address is taken, or with `OPERATION_IN_PROGRESS` on the signed retry of a sign-in contact change while another operation on that sign-in contact is still in progress. Retry once it finishes.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
-        '424':
-          description: Failed dependency. Returned when Grid cannot update one or more tied Embedded Wallet OTP credentials. The customer contact field is not changed unless all tied credentials are updated successfully.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error424'
         '429':
           description: Too many requests. Returned with `RATE_LIMITED`.
           headers:
@@ -15823,7 +15829,6 @@ components:
             | TRANSACTION_NOT_CANCELLABLE | Transaction has already settled or is otherwise past the point where it can be cancelled |
             | UMA_ADDRESS_EXISTS | UMA address already exists |
             | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
-            | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
             | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
             | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
             | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
@@ -15840,7 +15845,6 @@ components:
             | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists. When the conflicting account belongs to your platform, `details.externalAccountId` and `details.platformAccountId` identify it; otherwise `details` is omitted |
             | DUPLICATE_PAY_REQUEST | A pay request with this idempotency key already exists |
             | OPERATION_IN_PROGRESS | A conflicting Embedded Wallet operation is still in progress |
-            | SMS_OTP_CREDENTIAL_SET_CHANGED | The SMS_OTP credential set changed while the request was in flight |
             | SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS | The phone number is already associated with an SMS_OTP credential |
             | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
             | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
@@ -15851,7 +15855,6 @@ components:
             - TRANSACTION_NOT_CANCELLABLE
             - UMA_ADDRESS_EXISTS
             - EMAIL_OTP_EMAIL_ALREADY_EXISTS
-            - EMAIL_OTP_CREDENTIAL_SET_CHANGED
             - PASSKEY_ALREADY_ENROLLED
             - SCA_SESSION_REQUIRED
             - BENEFICIARY_TRUSTED
@@ -15868,7 +15871,6 @@ components:
             - DUPLICATE_EXTERNAL_ACCOUNT
             - DUPLICATE_PAY_REQUEST
             - OPERATION_IN_PROGRESS
-            - SMS_OTP_CREDENTIAL_SET_CHANGED
             - SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS
             - STABLECOIN_SYMBOL_ALREADY_EXISTS
             - STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS
@@ -15973,7 +15975,7 @@ components:
           additionalProperties: true
     CustomerUpdateRequest:
       title: Customer Update Request
-      description: Request body for `PATCH /customers/{customerId}`. When `email` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer email and every tied `EMAIL_OTP` credential through the endpoint's signed-retry flow. When `phoneNumber` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer phone number and every tied `SMS_OTP` credential through the same signed-retry flow. Update `email` and `phoneNumber` in separate PATCH calls.
+      description: Request body for `PATCH /customers/{customerId}`. Changing `email` or `phoneNumber` when the customer's Embedded Wallet signs in with it requires a verified replacement credential and goes through the endpoint's signed-retry flow. Update `email` and `phoneNumber` in separate PATCH calls.
       type: object
       required:
         - customerType
@@ -15993,12 +15995,12 @@ components:
           type: string
           format: email
           maxLength: 255
-          description: Email address for the customer. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `EMAIL_OTP` credential across all tied Embedded Wallets.
+          description: Email address for the customer. If the customer's Embedded Wallet signs in with an `EMAIL_OTP` credential, the new address must first be registered and verified as a replacement credential, and the change is sent on its own.
           example: john.doe@example.com
         phoneNumber:
           type: string
           pattern: ^\+[1-9]\d{1,14}$
-          description: Phone number for the customer in strict E.164 format. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `SMS_OTP` credential across all tied Embedded Wallets. Send phone number and email updates as separate PATCH calls.
+          description: Phone number for the customer in strict E.164 format. If the customer's Embedded Wallet signs in with an `SMS_OTP` credential, the new number must first be registered and verified as a replacement credential, and the change is sent on its own. Send phone number and email updates as separate PATCH calls.
           example: '+14155551234'
         umaAddress:
           type: string
@@ -16081,39 +16083,6 @@ components:
           format: date-time
           description: Timestamp after which this challenge is no longer valid. The signed retry must be submitted before this time.
           example: '2026-04-08T15:35:00Z'
-    Error424:
-      type: object
-      required:
-        - reason
-        - code
-      properties:
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | PAYREQ_REQUEST_FAILED | Payment request failed |
-            | COUNTERPARTY_PUBKEY_FETCH_ERROR | Error fetching counterparty public key |
-            | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
-            | LNURLP_REQUEST_FAILED | LNURLP request failed |
-            | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
-            | SMS_OTP_CREDENTIAL_SYNC_FAILED | One or more tied SMS_OTP credentials could not be updated |
-            | PAYMENT_DOCUMENT_ATTACHMENT_FAILED | Grid could not attach a supporting document to the payment, so it created no quote. Retry the same request with the same `Idempotency-Key` |
-          enum:
-            - PAYREQ_REQUEST_FAILED
-            - COUNTERPARTY_PUBKEY_FETCH_ERROR
-            - NO_COMPATIBLE_UMA_VERSION
-            - LNURLP_REQUEST_FAILED
-            - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
-            - SMS_OTP_CREDENTIAL_SYNC_FAILED
-            - PAYMENT_DOCUMENT_ATTACHMENT_FAILED
-        reason:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     Error429:
       type: object
       required:
@@ -26280,6 +26249,35 @@ components:
             | UNSUPPORTED_UMA_VERSION | Counterparty doesn't support the Grid UMA version |
           enum:
             - UNSUPPORTED_UMA_VERSION
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    Error424:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | PAYREQ_REQUEST_FAILED | Payment request failed |
+            | COUNTERPARTY_PUBKEY_FETCH_ERROR | Error fetching counterparty public key |
+            | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
+            | LNURLP_REQUEST_FAILED | LNURLP request failed |
+            | PAYMENT_DOCUMENT_ATTACHMENT_FAILED | Grid could not attach a supporting document to the payment, so it created no quote. Retry the same request with the same `Idempotency-Key` |
+          enum:
+            - PAYREQ_REQUEST_FAILED
+            - COUNTERPARTY_PUBKEY_FETCH_ERROR
+            - NO_COMPATIBLE_UMA_VERSION
+            - LNURLP_REQUEST_FAILED
+            - PAYMENT_DOCUMENT_ATTACHMENT_FAILED
         reason:
           type: string
           description: Error message

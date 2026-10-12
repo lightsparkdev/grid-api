@@ -338,7 +338,7 @@ Grid returns `payloadToSign` strings from several endpoints:
 - `POST /quotes` (when the source is a Global Account) — the quote's `paymentInstructions[].accountOrWalletInfo.payloadToSign`.
 - `POST /auth/credentials/{id}/verify` (`EMAIL_OTP` or `SMS_OTP`) — 202 response body; use the TEK private key generated for this login.
 - `POST /auth/credentials` (adding an additional credential) — 202 response body.
-- `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /auth/sessions/{id}/refresh`, `POST /internal-accounts/{id}/export`, `PATCH /internal-accounts/{id}`, `PATCH /customers/{id}` for tied `EMAIL_OTP` email updates — all 202 response bodies.
+- `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /auth/sessions/{id}/refresh`, `POST /internal-accounts/{id}/export`, `PATCH /internal-accounts/{id}`, `PATCH /customers/{id}` for sign-in email or phone number changes — all 202 response bodies.
 
 Stamp the exact UTF-8 bytes of the `payloadToSign` string **as returned** (do not re-parse, re-serialize, or trim whitespace). For OTP verification, use the matching TEK private key; for other signed wallet actions, use an active session signing key. Build a Grid wallet signature: derive its compressed P-256 public key, sign the payload with the private scalar, then base64url-encode the signature envelope:
 
