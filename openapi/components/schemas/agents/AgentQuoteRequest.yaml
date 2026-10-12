@@ -1,9 +1,10 @@
 type: object
 description: >-
   A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET`
-  internal account of the agent's customer. The destination is either another
-  `EMBEDDED_WALLET` on the platform (`ACCOUNT`), or an address on another
-  chain (`CHAIN_ADDRESS`).
+  internal account of the agent's customer. The destination is either an
+  `ACCOUNT`: another `EMBEDDED_WALLET` on the platform, or one of the
+  customer's active `SPARK_WALLET` external accounts in the source's currency;
+  or an address on another chain (`CHAIN_ADDRESS`).
 
 
   A `CHAIN_ADDRESS` quote sends `USDB` and requires `lockedCurrencySide`
