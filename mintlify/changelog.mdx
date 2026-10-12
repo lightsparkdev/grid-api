@@ -10,6 +10,32 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## Limit on PIN unblocks per card
+
+`POST /cards/{id}/pin-unblock` now allows one unblock attempt per card in a rolling seven-day
+window. When the allowance is used, the endpoint returns `409 PIN_CHANGE_REQUIRED` with
+`details.pinUnblockAvailableAt`, the next time an unblock is allowed. The cardholder can recover
+sooner by changing their PIN, which does not reset the allowance. `Card` also has a read-only
+`pinUnblockAvailableAt` timestamp. Call the endpoint only on an explicit, authenticated request
+from the cardholder, and don't retry it in a loop. For details, see [PINs](/cards/card-management/pins).
+
+## Sandbox funding accepts `remittanceInformation` and `description`
+
+`POST /sandbox/internal-accounts/{accountId}/fund` takes two new optional fields.
+`remittanceInformation` (up to 80 printable ASCII characters) simulates the information a
+depositor's bank attaches to a payment, so you can test reconciliation. It appears as
+`source.remittanceInformation` on the resulting transaction. `description` (up to 1,024
+characters) sets the memo on the credit. Sending `description` when you fund a `RULE_BASED`
+account returns `400 INVALID_INPUT`, because the sweep rule sets that transaction's description.
+
+## Document upload requirements are documented
+
+`POST /documents` and `PUT /documents/{documentId}` return `400 INVALID_INPUT` when an identity
+document is missing fields. `PASSPORT` requires `documentNumber` and `issuingAuthority` and does
+not allow `side`. `DRIVERS_LICENSE` and `NATIONAL_ID` require `documentNumber`,
+`issuingAuthority`, and `side`. A Brazilian driver's license is a single image, so omit `side`.
+A `PUT` overwrites every metadata field, so resend all of them even when they haven't changed.
+
 ## Set the ACH statement description with `statementDescriptor`
 
 `POST /quotes` takes a new optional `statementDescriptor`: up to 10 characters that
