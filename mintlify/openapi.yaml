@@ -239,7 +239,7 @@ paths:
             - INR
         - name: sendingAmount
           in: query
-          description: 'Sending amount in the smallest unit of the source currency (e.g., cents for USD). If omitted, defaults to the equivalent of $100: 10000 USD cents, scaled to the source currency''s precision for USD-pegged currencies (e.g., 100000000 for USDC, which is 100 USDC), or 10000 in the source currency''s smallest unit otherwise.'
+          description: Sending amount in the smallest unit of the source currency (e.g., cents for USD). If omitted, USD and USD-pegged currencies default to $100 (10000 USD cents, scaled to the source currency's precision; e.g., 100000000 for USDC, which is 100 USDC). Other currencies default to 10000 in the source currency's smallest unit.
           required: false
           schema:
             type: integer
