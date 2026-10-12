@@ -7,3 +7,7 @@ For UMA-based payments, use these sandbox addresses to simulate different scenar
 | `$success.mxn@sandbox.uma.money` | Payment succeeds (MXN) |
 | `$pending.long.usd@sandbox.uma.money` | Simulates a long-pending payment |
 | `$fail.compliance.usd@sandbox.uma.money` | Simulates a compliance check failure |
+| `$fail.payout.compliance.usd@sandbox.uma.money` | Payout fails with `failureReason: COMPLIANCE_REJECTED` |
+| `$fail.payout.accountinvalid.usd@sandbox.uma.money` | Payout fails with `failureReason: ACCOUNT_INVALID` |
+| `$fail.payout.cannotreceive.usd@sandbox.uma.money` | Payout fails with `failureReason: ACCOUNT_CANNOT_RECEIVE` |
+| `$fail.payout.limitexceeded.usd@sandbox.uma.money` | Payout fails with `failureReason: LIMIT_EXCEEDED` |
