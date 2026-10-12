@@ -29,4 +29,13 @@ properties:
   details:
     type: object
     description: Additional error details
+    properties:
+      missingAgreements:
+        type: array
+        description: >-
+          Each agreement the customer create request did not accept that the
+          customer's accounts require. Present on `END_USER_TERMS_NOT_ACCEPTED`
+          from `POST /customers`.
+        items:
+          $ref: ../customers/AgreementType.yaml
     additionalProperties: true

@@ -486,7 +486,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CustomerOneOf'
         '400':
-          description: Bad request
+          description: Bad request. `ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires an accountholder agreement for the customer type and `agreementConsents` does not include it.
           content:
             application/json:
               schema:
@@ -497,6 +497,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. `END_USER_TERMS_NOT_ACCEPTED` when the platform requires the End User Terms and `agreementConsents` does not include them. `details.missingAgreements` lists every agreement still required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '405':
           description: Method not allowed. Returned (as JSON, not HTML) when the request uses an HTTP method that is not supported on this path.
           content:
@@ -14439,6 +14445,20 @@ components:
 
         Treat the ID as an opaque value, not a member of a fixed list. Grid may add new IDs as requirements change.
       example: SUPPORTING_PROOF
+    AgreementType:
+      type: string
+      description: 'Identifies which Grid agreement a consent record or document refers to. Values are stable identifiers: a document''s hosted URL or version may change, but its type does not. Accepting one agreement never implies acceptance of another, even when two agreements share a hosted page. The cardholder and accountholder agreements differ by customer kind: an `INDIVIDUAL` customer accepts the `_CONSUMER_` variant, and a `BUSINESS` customer accepts the `_COMMERCIAL_` one.'
+      enum:
+        - LIGHTSPARK_END_USER_TERMS
+        - LIGHTSPARK_E_SIGN_CONSENT
+        - LIGHTSPARK_PRIVACY_POLICY
+        - LEAD_E_SIGN_CONSENT
+        - LEAD_ACCOUNTHOLDER_CONSUMER_AGREEMENT
+        - LEAD_ACCOUNTHOLDER_COMMERCIAL_AGREEMENT
+        - LEAD_PRIVACY_POLICY
+        - LEAD_CARDHOLDER_CONSUMER_AGREEMENT
+        - LEAD_CARDHOLDER_COMMERCIAL_AGREEMENT
+      example: LIGHTSPARK_END_USER_TERMS
     Error400:
       type: object
       required:
@@ -14490,6 +14510,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
             | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
+            | ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED | The customer create request omits an accountholder agreement its accounts require. `details.missingAgreements` lists each one |
             | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
             | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
             | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
@@ -14551,6 +14572,7 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
             - CARDHOLDER_KYC_NOT_APPROVED
+            - ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED
             - TRANSACTION_SIZE_LIMIT_EXCEEDED
             - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
             - INSUFFICIENT_FUNDS
@@ -14588,6 +14610,11 @@ components:
               description: The requirement ID of each required document that the quote request did not supply. Present on `DOCUMENTS_REQUIRED`.
               items:
                 $ref: '#/components/schemas/PaymentDocumentRequirementId'
+            missingAgreements:
+              type: array
+              description: Each agreement the customer create request did not accept that the customer's accounts require. Present on `ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED`.
+              items:
+                $ref: '#/components/schemas/AgreementType'
           additionalProperties: true
     Error501:
       type: object
@@ -14786,20 +14813,6 @@ components:
           example: V1
         acceptanceMethod:
           $ref: '#/components/schemas/AgreementAcceptanceMethod'
-    AgreementType:
-      type: string
-      description: 'Identifies which Grid agreement a consent record or document refers to. Values are stable identifiers: a document''s hosted URL or version may change, but its type does not. Accepting one agreement never implies acceptance of another, even when two agreements share a hosted page. The cardholder and accountholder agreements differ by customer kind: an `INDIVIDUAL` customer accepts the `_CONSUMER_` variant, and a `BUSINESS` customer accepts the `_COMMERCIAL_` one.'
-      enum:
-        - LIGHTSPARK_END_USER_TERMS
-        - LIGHTSPARK_E_SIGN_CONSENT
-        - LIGHTSPARK_PRIVACY_POLICY
-        - LEAD_E_SIGN_CONSENT
-        - LEAD_ACCOUNTHOLDER_CONSUMER_AGREEMENT
-        - LEAD_ACCOUNTHOLDER_COMMERCIAL_AGREEMENT
-        - LEAD_PRIVACY_POLICY
-        - LEAD_CARDHOLDER_CONSUMER_AGREEMENT
-        - LEAD_CARDHOLDER_COMMERCIAL_AGREEMENT
-      example: LIGHTSPARK_END_USER_TERMS
     AgreementConsentRequest:
       type: object
       required:
@@ -15674,7 +15687,7 @@ components:
           description: Deprecated; send `agreementConsents` instead. Supplying this records acceptance of the Lightspark End User Terms, equivalent to a single `agreementConsents` entry of type `LIGHTSPARK_END_USER_TERMS`. Supplying both fields in one request is rejected.
         agreementConsents:
           type: array
-          description: Evidence that the customer accepted Grid agreements, at most one entry per type. Unregulated platforms must record acceptance of the Lightspark End User Terms before initiating customer-scoped transactions; those transactions fail until that consent is recorded. Consents can be supplied during customer creation or in a later customer update.
+          description: 'Evidence that the customer accepted Grid agreements, at most one entry per type. Include every agreement the platform requires for the customer''s accounts: the Lightspark End User Terms on unregulated platforms, and the Lead accountholder agreement for the customer type when the platform requires it. Creating a new customer without them fails with `END_USER_TERMS_NOT_ACCEPTED` or `ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED`. Other agreements can be supplied here or in a later customer update.'
           items:
             $ref: '#/components/schemas/AgreementConsentRequest'
     IndividualCustomerCreateRequest:
@@ -15808,6 +15821,45 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomerCreateRequest'
           BUSINESS: '#/components/schemas/BusinessCustomerCreateRequest'
+    Error403:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | FORBIDDEN | Insufficient permissions |
+            | USER_NOT_READY | Customer exists but is not ready for operation |
+            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
+            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
+            | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
+            | CUSTOMER_NOT_VERIFIED | The customer is not verified and cannot perform this action |
+            | SANCTION_BLOCKED | Blocked by sanction screening |
+          enum:
+            - FORBIDDEN
+            - USER_NOT_READY
+            - COUNTERPARTY_NOT_ALLOWED
+            - VELOCITY_LIMIT_EXCEEDED
+            - END_USER_TERMS_NOT_ACCEPTED
+            - CUSTOMER_NOT_VERIFIED
+            - SANCTION_BLOCKED
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          properties:
+            missingAgreements:
+              type: array
+              description: Each agreement the customer create request did not accept that the customer's accounts require. Present on `END_USER_TERMS_NOT_ACCEPTED` from `POST /customers`.
+              items:
+                $ref: '#/components/schemas/AgreementType'
+          additionalProperties: true
     Error409:
       type: object
       required:
@@ -17896,39 +17948,6 @@ components:
           format: date-time
           description: Timestamp when the internal account was last updated
           example: '2025-10-03T12:30:00Z'
-    Error403:
-      type: object
-      required:
-        - reason
-        - code
-      properties:
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | FORBIDDEN | Insufficient permissions |
-            | USER_NOT_READY | Customer exists but is not ready for operation |
-            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
-            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
-            | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
-            | CUSTOMER_NOT_VERIFIED | The customer is not verified and cannot perform this action |
-            | SANCTION_BLOCKED | Blocked by sanction screening |
-          enum:
-            - FORBIDDEN
-            - USER_NOT_READY
-            - COUNTERPARTY_NOT_ALLOWED
-            - VELOCITY_LIMIT_EXCEEDED
-            - END_USER_TERMS_NOT_ACCEPTED
-            - CUSTOMER_NOT_VERIFIED
-            - SANCTION_BLOCKED
-        reason:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     InternalAccountListResponse:
       type: object
       required:

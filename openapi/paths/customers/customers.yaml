@@ -102,7 +102,10 @@ post:
           schema:
             $ref: ../../components/schemas/customers/CustomerOneOf.yaml
     '400':
-      description: Bad request
+      description: >-
+        Bad request. `ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform
+        requires an accountholder agreement for the customer type and
+        `agreementConsents` does not include it.
       content:
         application/json:
           schema:
@@ -113,6 +116,15 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden. `END_USER_TERMS_NOT_ACCEPTED` when the platform requires the
+        End User Terms and `agreementConsents` does not include them.
+        `details.missingAgreements` lists every agreement still required.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '405':
       description: >-
         Method not allowed. Returned (as JSON, not HTML) when the request

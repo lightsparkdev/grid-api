@@ -48,6 +48,7 @@ properties:
       | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
       | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
       | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
+      | ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED | The customer create request omits an accountholder agreement its accounts require. `details.missingAgreements` lists each one |
       | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
       | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
       | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
@@ -109,6 +110,7 @@ properties:
       - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
       - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
       - CARDHOLDER_KYC_NOT_APPROVED
+      - ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED
       - TRANSACTION_SIZE_LIMIT_EXCEEDED
       - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
       - INSUFFICIENT_FUNDS
@@ -154,4 +156,12 @@ properties:
           did not supply. Present on `DOCUMENTS_REQUIRED`.
         items:
           $ref: ../payment_documents/PaymentDocumentRequirementId.yaml
+      missingAgreements:
+        type: array
+        description: >-
+          Each agreement the customer create request did not accept that the
+          customer's accounts require. Present on
+          `ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED`.
+        items:
+          $ref: ../customers/AgreementType.yaml
     additionalProperties: true
