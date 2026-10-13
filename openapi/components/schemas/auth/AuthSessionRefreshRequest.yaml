@@ -11,11 +11,11 @@ required:
 properties:
   clientPublicKey:
     type: string
-    pattern: "^(0[23][0-9a-fA-F]{64}|04[0-9a-fA-F]{128})$"
+    pattern: "^0[23][0-9a-fA-F]{64}$"
     description: >-
       Client-generated P-256 public key. A compressed SEC1 key: the
       `02`/`03` prefix followed by the 32-byte X coordinate, 66 hex
       characters. The client keeps the matching private key as the new
       session signing key. An uncompressed key is rejected with `400
-      INVALID_INPUT` and a message explaining how to compress it.
+      INVALID_INPUT`.
     example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31

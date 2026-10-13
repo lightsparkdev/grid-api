@@ -19,8 +19,7 @@ post:
     the request body. On success, Grid returns a new `AuthSession`. The
     `clientPublicKey` must be a compressed P-256 key. The client keeps the
     matching private key as the new session signing key, and no key material
-    is returned. An uncompressed key is rejected with `400 INVALID_INPUT`
-    and a message explaining how to compress it.
+    is returned. An uncompressed key is rejected with `400 INVALID_INPUT`.
 
 
     The original session must still be active on both steps so it can authorize
