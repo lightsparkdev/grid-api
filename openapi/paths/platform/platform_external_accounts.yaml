@@ -80,7 +80,7 @@ post:
               accountInfo:
                 accountType: USD_ACCOUNT
                 accountNumber: "12345678901"
-                routingNumber: "123456789"
+                routingNumber: "021000021"
                 bankAccountType: CHECKING
                 bankName: Chase Bank
                 platformAccountId: ext_acc_123456
