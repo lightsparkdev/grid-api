@@ -29167,6 +29167,45 @@ components:
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
         | `ISSUE_PURCHASE_CARD` | Issue a purchase card |
+    AgentSendNetwork:
+      type: string
+      enum:
+        - BASE
+        - ETHEREUM
+        - SOLANA
+        - POLYGON
+        - ARBITRUM
+        - TRON
+      description: Network an agent can send USDC or USDT to from an embedded wallet. `TRON` supports `USDT` only, and `BASE` supports `USDC` only.
+    AgentChainAddressDestination:
+      title: Chain Address
+      type: object
+      required:
+        - destinationType
+        - network
+        - currency
+        - address
+      properties:
+        destinationType:
+          type: string
+          enum:
+            - CHAIN_ADDRESS
+          description: Marks a destination on another chain.
+          example: CHAIN_ADDRESS
+        network:
+          $ref: '#/components/schemas/AgentSendNetwork'
+          description: Network the recipient receives on.
+          example: BASE
+        currency:
+          type: string
+          description: 'Asset the recipient receives: `USDC` or `USDT`. `TRON` supports `USDT` only, and `BASE` supports `USDC` only.'
+          example: USDC
+        address:
+          type: string
+          maxLength: 128
+          description: Recipient address on `network`.
+          example: '0x1234567890abcdef1234567890abcdef12345678'
+      description: An address on another chain, paid from an `EMBEDDED_WALLET` holding `USDB`. Grid records the address as an external account of the agent's customer, reusing the account when the customer already has one for the same network, currency and address, and screens it before quoting. The quote's `destination` names that account.
     AgentQuote:
       title: Agent Quote
       allOf:
@@ -29182,7 +29221,10 @@ components:
               type: string
               description: The Spark address this quote pays, when its `destination` is one of the customer's `SPARK_WALLET` external accounts.
               example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
-      description: A quote created by an agent. For a `CHAIN_ADDRESS` destination, the quote's `destination` names the external account Grid recorded for the address.
+            destinationChainAddress:
+              $ref: '#/components/schemas/AgentChainAddressDestination'
+              description: The chain, address and stablecoin this quote pays, when it was created with a `CHAIN_ADDRESS` destination.
+      description: A quote created by an agent. For a `CHAIN_ADDRESS` destination, the quote's `destination` names the external account Grid recorded for the address, and `destinationChainAddress` names the address itself.
     AgentSingleUseCardCreateRequest:
       title: Single-Use Card
       type: object
@@ -29937,45 +29979,6 @@ components:
           example: gat_ed0ad25881e234cc28fb2dec0a4fe64e4172a3b9
         policy:
           $ref: '#/components/schemas/AgentPolicy'
-    AgentSendNetwork:
-      type: string
-      enum:
-        - BASE
-        - ETHEREUM
-        - SOLANA
-        - POLYGON
-        - ARBITRUM
-        - TRON
-      description: Network an agent can send USDC or USDT to from an embedded wallet. `TRON` supports `USDT` only, and `BASE` supports `USDC` only.
-    AgentChainAddressDestination:
-      title: Chain Address
-      type: object
-      required:
-        - destinationType
-        - network
-        - currency
-        - address
-      properties:
-        destinationType:
-          type: string
-          enum:
-            - CHAIN_ADDRESS
-          description: Marks a destination on another chain.
-          example: CHAIN_ADDRESS
-        network:
-          $ref: '#/components/schemas/AgentSendNetwork'
-          description: Network the recipient receives on.
-          example: BASE
-        currency:
-          type: string
-          description: 'Asset the recipient receives: `USDC` or `USDT`. `TRON` supports `USDT` only, and `BASE` supports `USDC` only.'
-          example: USDC
-        address:
-          type: string
-          maxLength: 128
-          description: Recipient address on `network`.
-          example: '0x1234567890abcdef1234567890abcdef12345678'
-      description: An address on another chain, paid from an `EMBEDDED_WALLET` holding `USDB`. Grid records the address as an external account of the agent's customer, reusing the account when the customer already has one for the same network, currency and address, and screens it before quoting. The quote's `destination` names that account.
     AgentQuoteDestinationOneOf:
       description: Destination of an agent quote.
       oneOf:

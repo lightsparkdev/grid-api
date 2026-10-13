@@ -19,6 +19,12 @@ allOf:
           The Spark address this quote pays, when its `destination` is one of
           the customer's `SPARK_WALLET` external accounts.
         example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+      destinationChainAddress:
+        $ref: ./AgentChainAddressDestination.yaml
+        description: >-
+          The chain, address and stablecoin this quote pays, when it was
+          created with a `CHAIN_ADDRESS` destination.
 description: >-
   A quote created by an agent. For a `CHAIN_ADDRESS` destination, the quote's
-  `destination` names the external account Grid recorded for the address.
+  `destination` names the external account Grid recorded for the address, and
+  `destinationChainAddress` names the address itself.
