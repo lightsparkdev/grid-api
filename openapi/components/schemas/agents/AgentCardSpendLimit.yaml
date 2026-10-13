@@ -15,11 +15,4 @@ properties:
       tolerance Grid allows for tips and final amounts.
     example: 2300
   duration:
-    type: string
-    enum:
-      - TRANSACTION
-      - MONTHLY
-    description: >-
-      `TRANSACTION` caps the card's single purchase; `MONTHLY` caps spend per
-      calendar month.
-    example: TRANSACTION
+    $ref: ./AgentCardSpendLimitDuration.yaml

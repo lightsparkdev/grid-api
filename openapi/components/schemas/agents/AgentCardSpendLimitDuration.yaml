@@ -1,0 +1,8 @@
+type: string
+enum:
+  - TRANSACTION
+  - MONTHLY
+description: >-
+  `TRANSACTION` caps the card's single purchase; `MONTHLY` caps spend per
+  calendar month.
+example: TRANSACTION

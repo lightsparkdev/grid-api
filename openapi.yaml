@@ -29548,6 +29548,13 @@ components:
         | `STANDARD` | A card the customer issued for the agent on the platform. The customer holds the card details and its spend is the customer's own; the agent can read it, tighten its limits, and freeze it. |
         | `SINGLE_USE` | A purchase card the agent issued for one purchase. Its spend is reserved against the agent's policy at issuance and the card closes after its first authorization. |
         | `MERCHANT_LOCKED` | A purchase card the agent issued for repeated purchases at one merchant, such as a subscription, capped by a monthly limit. The card locks to the first merchant that authorizes a charge on it; later authorizations from any other merchant decline. Each authorization is checked against the agent's policy. |
+    AgentCardSpendLimitDuration:
+      type: string
+      enum:
+        - TRANSACTION
+        - MONTHLY
+      description: '`TRANSACTION` caps the card''s single purchase; `MONTHLY` caps spend per calendar month.'
+      example: TRANSACTION
     AgentCardSpendLimit:
       type: object
       description: The spend cap the card issuer enforces for a purchase card, in the smallest unit of the card's currency.
@@ -29562,12 +29569,7 @@ components:
           description: The cap. For a `SINGLE_USE` card this is the requested amount plus the tolerance Grid allows for tips and final amounts.
           example: 2300
         duration:
-          type: string
-          enum:
-            - TRANSACTION
-            - MONTHLY
-          description: '`TRANSACTION` caps the card''s single purchase; `MONTHLY` caps spend per calendar month.'
-          example: TRANSACTION
+          $ref: '#/components/schemas/AgentCardSpendLimitDuration'
     AgentCard:
       title: Agent Card
       type: object
@@ -31711,6 +31713,13 @@ components:
           format: date-time
           description: ISO 8601 timestamp of when the webhook was sent
           example: '2025-08-15T14:32:00Z'
+    AgentActionWebhookEventType:
+      type: string
+      enum:
+        - AGENT_ACTION.PENDING_APPROVAL
+        - AGENT_ACTION.APPROVED
+        - AGENT_ACTION.REJECTED
+        - AGENT_ACTION.FAILED
     AgentActionWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -31721,12 +31730,7 @@ components:
             data:
               $ref: '#/components/schemas/AgentAction'
             type:
-              type: string
-              enum:
-                - AGENT_ACTION.PENDING_APPROVAL
-                - AGENT_ACTION.APPROVED
-                - AGENT_ACTION.REJECTED
-                - AGENT_ACTION.FAILED
+              $ref: '#/components/schemas/AgentActionWebhookEventType'
     IncomingPaymentWebhookData:
       title: Incoming Payment Webhook Data
       allOf:

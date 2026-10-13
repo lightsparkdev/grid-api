@@ -7,9 +7,4 @@ allOf:
       data:
         $ref: ../agents/AgentAction.yaml
       type:
-        type: string
-        enum:
-          - AGENT_ACTION.PENDING_APPROVAL
-          - AGENT_ACTION.APPROVED
-          - AGENT_ACTION.REJECTED
-          - AGENT_ACTION.FAILED
+        $ref: ./AgentActionWebhookEventType.yaml
