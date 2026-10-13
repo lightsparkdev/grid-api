@@ -8500,7 +8500,7 @@ paths:
     post:
       summary: Regenerate a device code
       description: |
-        Generate a new device code for an existing agent. Use this when the original device code has expired before being redeemed, or when the agent software needs to be reinstalled. Any previously issued unredeemed device codes for this agent are invalidated.
+        Generate a new device code for an existing agent. Use this when the original device code has expired before being redeemed, or when the agent software needs to be reinstalled. An agent has at most one unredeemed device code, so regenerating invalidates the one issued before it.
       operationId: regenerateAgentDeviceCode
       tags:
         - Agent Management
@@ -8742,7 +8742,8 @@ paths:
       summary: Redeem device code
       description: |
         Redeem a device code to obtain agent credentials. This endpoint is called by the agent software during installation. On success, returns a Bearer access token that the agent uses for all subsequent API calls. The token is returned only once and must be stored securely.
-        This endpoint does not require platform authentication — the device code itself serves as proof of authorization.
+        This endpoint does not require platform authentication — the device code itself serves as proof of authorization. A code can be redeemed only once and only before its `expiresAt`.
+        Redemption is rate limited per client IP address and across all callers, and calls made with platform credentials are limited per platform instead. A caller over a limit receives `429` and should back off before retrying.
       operationId: redeemAgentDeviceCode
       tags:
         - Agent Management
@@ -8778,6 +8779,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -29119,8 +29126,8 @@ components:
       properties:
         code:
           type: string
-          description: Human-readable device code used to install and connect the agent software.
-          example: GRID-AGENT-X7K9-M2P4
+          description: 'Device code used to install and connect the agent software: an opaque 22-character URL-safe base64 string encoding 128 random bits. It is returned only when it is issued, because Grid stores only a hash of it; if it is lost before it is redeemed, regenerate it. It can be redeemed once.'
+          example: jqzJR3AgI9OAwb_enypARw
         agentId:
           type: string
           description: The agent this device code belongs to.
@@ -29128,7 +29135,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: Timestamp when this device code expires.
+          description: Timestamp when this device code expires. Codes expire 15 minutes after they are issued by default; Grid can configure a platform's lifetime between 1 and 60 minutes.
           example: '2025-07-22T17:32:28Z'
         redeemed:
           type: boolean
@@ -29931,7 +29938,7 @@ components:
         code:
           type: string
           description: The device code.
-          example: GRID-AGENT-X7K9-M2P4
+          example: jqzJR3AgI9OAwb_enypARw
     AgentDeviceCodeStatus:
       type: string
       description: |
@@ -29956,7 +29963,7 @@ components:
         code:
           type: string
           description: The device code.
-          example: GRID-AGENT-X7K9-M2P4
+          example: jqzJR3AgI9OAwb_enypARw
         status:
           $ref: '#/components/schemas/AgentDeviceCodeStatus'
         redeemed:

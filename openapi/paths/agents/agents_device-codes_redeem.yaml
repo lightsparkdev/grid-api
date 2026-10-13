@@ -7,7 +7,12 @@ post:
     and must be stored securely.
 
     This endpoint does not require platform authentication — the device code itself
-    serves as proof of authorization.
+    serves as proof of authorization. A code can be redeemed only once and only
+    before its `expiresAt`.
+
+    Redemption is rate limited per client IP address and across all callers, and
+    calls made with platform credentials are limited per platform instead. A
+    caller over a limit receives `429` and should back off before retrying.
   operationId: redeemAgentDeviceCode
   tags:
     - Agent Management
@@ -43,6 +48,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '429':
+      description: Too many requests. Returned with `RATE_LIMITED`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
     '500':
       description: Internal service error
       content:

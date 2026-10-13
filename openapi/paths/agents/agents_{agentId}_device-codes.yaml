@@ -10,8 +10,8 @@ post:
   description: >
     Generate a new device code for an existing agent. Use this when the original
     device code has expired before being redeemed, or when the agent software needs
-    to be reinstalled. Any previously issued unredeemed device codes for this agent
-    are invalidated.
+    to be reinstalled. An agent has at most one unredeemed device code, so
+    regenerating invalidates the one issued before it.
   operationId: regenerateAgentDeviceCode
   tags:
     - Agent Management
