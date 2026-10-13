@@ -7026,7 +7026,7 @@ paths:
 
         For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired. The token identity (`iss`, `aud`, and `sub`) must match the OAuth credential being verified. In sandbox, the token's `nonce` must equal `sha256(clientPublicKey)`. For `PASSKEY` credentials, the client completes a WebAuthn assertion (`navigator.credentials.get()`) against the Grid-issued `challenge` returned from `POST /auth/credentials/{id}/challenge`, and submits the resulting `assertion` with the `Request-Id` header. The `clientPublicKey` for `PASSKEY` credentials is supplied on the challenge call, where it is bound into the pending session-creation request.
 
-        On success for `OAUTH` and `PASSKEY`, and on the signed retry for OTP credentials, the response contains an `AuthSession`. The `clientPublicKey` must be a compressed P-256 key. The client already holds the session signing key, which is the private key it generated before authentication. No key material is returned. An uncompressed `clientPublicKey` is rejected with `400 INVALID_INPUT`. The `expiresAt` timestamp marks when the session expires.
+        On success for `OAUTH` and `PASSKEY`, and on the signed retry for OTP credentials, the response contains an `AuthSession`. The `clientPublicKey` must be a compressed P-256 key. The client already holds the session signing key, which is the private key it generated before authentication. No key material is returned. An uncompressed `clientPublicKey` is rejected with `400 INVALID_INPUT` and a message explaining how to compress it. The `expiresAt` timestamp marks when the session expires.
       operationId: verifyAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -7159,7 +7159,7 @@ paths:
 
         `OAUTH` credentials do not have a challenge step. To authenticate or reauthenticate an OAuth credential, call `POST /auth/credentials/{id}/verify` with a fresh OIDC token and a `clientPublicKey`.
 
-        For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. The key must be a compressed P-256 key. The client keeps the matching private key as the resulting session signing key. An uncompressed key is rejected with `400 INVALID_INPUT`. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation body, not a base64url string. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
+        For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. The key must be a compressed P-256 key. The client keeps the matching private key as the resulting session signing key. An uncompressed key is rejected with `400 INVALID_INPUT` and a message explaining how to compress it. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation body, not a base64url string. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
       operationId: challengeAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -7385,7 +7385,7 @@ paths:
 
         1. Call `POST /auth/sessions/{id}/refresh` with the request body `{ "clientPublicKey": "02..." }` and no signature headers. Send a freshly generated client public key and retain its private key. Grid binds the supplied `clientPublicKey` into the session-refresh payload, persists it as a pending request, and returns `202` with `payloadToSign`, `requestId`, and `expiresAt`.
 
-        2. Sign `payloadToSign` with the current session signing key, then retry the same request with the full API-key stamp as `Grid-Wallet-Signature`, the `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in the request body. On success, Grid returns a new `AuthSession`. The `clientPublicKey` must be a compressed P-256 key. The client keeps the matching private key as the new session signing key, and no key material is returned. An uncompressed key is rejected with `400 INVALID_INPUT`.
+        2. Sign `payloadToSign` with the current session signing key, then retry the same request with the full API-key stamp as `Grid-Wallet-Signature`, the `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in the request body. On success, Grid returns a new `AuthSession`. The `clientPublicKey` must be a compressed P-256 key. The client keeps the matching private key as the new session signing key, and no key material is returned. An uncompressed key is rejected with `400 INVALID_INPUT` and a message explaining how to compress it.
 
         The original session must still be active on both steps so it can authorize the refresh. If the session has already expired, use the credential reauthentication flow instead.
       operationId: refreshAuthSession
@@ -27824,10 +27824,10 @@ components:
           example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.-3_ETmSGOl4wGNLR1QSOMlHk5IvADpX3YdHFmTH9KmRu6sEhM20RsURjKrI4-_EKj7J_HtsdS1tCHm0iw2J0qtoczYFQqEW_U9qJD6QsuvTFx8Fj9rFa3ieYhZKi3kkBu6cADogUiudP50kf9345ATys2GrYm-ba5esgReW1WzGJG3SgCyIDnHFfxmeLjE2YE9EFxT73To3mPYAk0ywPL2MpFFV9F8I3PsnbDAxinaY75GeA8vJXATr8weEIXqHD2lxmXVE95qd2ZlcuyLUaEYyp9GXcOnx7SjhdJG88jl5BZQvxOVgBMo42iGjK674lSwsMiHpzLX98j6C786Rd9Q
         clientPublicKey:
           type: string
-          pattern: ^0[23][0-9a-fA-F]{64}$
+          pattern: ^(0[23][0-9a-fA-F]{64}|04[0-9a-fA-F]{128})$
           minLength: 66
-          maxLength: 66
-          description: 'Client-generated, ephemeral P-256 public key, one per verification request. A compressed SEC1 key: the `02`/`03` prefix followed by the 32-byte X coordinate, 66 hex characters. The client keeps the matching private key as the session signing key. An uncompressed key is rejected with `400 INVALID_INPUT`.'
+          maxLength: 130
+          description: 'Client-generated, ephemeral P-256 public key, one per verification request. A compressed SEC1 key: the `02`/`03` prefix followed by the 32-byte X coordinate, 66 hex characters. The client keeps the matching private key as the session signing key. An uncompressed key is rejected with `400 INVALID_INPUT` and a message explaining how to compress it.'
           example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     OauthCredentialVerifyRequest:
       title: OAuth Credential Verify Request
@@ -27931,10 +27931,10 @@ components:
       properties:
         clientPublicKey:
           type: string
-          pattern: ^0[23][0-9a-fA-F]{64}$
+          pattern: ^(0[23][0-9a-fA-F]{64}|04[0-9a-fA-F]{128})$
           minLength: 66
-          maxLength: 66
-          description: 'Required for `PASSKEY` credentials. A compressed SEC1 P-256 key: the `02`/`03` prefix followed by the 32-byte X coordinate, 66 hex characters. The client keeps the matching private key as the session signing key. An uncompressed key is rejected with `400 INVALID_INPUT`. Grid bakes this public key into the session-creation payload that the returned `challenge` is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`.'
+          maxLength: 130
+          description: 'Required for `PASSKEY` credentials. A compressed SEC1 P-256 key: the `02`/`03` prefix followed by the 32-byte X coordinate, 66 hex characters. The client keeps the matching private key as the session signing key. An uncompressed key is rejected with `400 INVALID_INPUT` and a message explaining how to compress it. Grid bakes this public key into the session-creation payload that the returned `challenge` is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`.'
           example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     PasskeyAuthChallenge:
       title: Passkey Auth Challenge
@@ -28002,8 +28002,8 @@ components:
       properties:
         clientPublicKey:
           type: string
-          pattern: ^0[23][0-9a-fA-F]{64}$
-          description: 'Client-generated P-256 public key. A compressed SEC1 key: the `02`/`03` prefix followed by the 32-byte X coordinate, 66 hex characters. The client keeps the matching private key as the new session signing key. An uncompressed key is rejected with `400 INVALID_INPUT`.'
+          pattern: ^(0[23][0-9a-fA-F]{64}|04[0-9a-fA-F]{128})$
+          description: 'Client-generated P-256 public key. A compressed SEC1 key: the `02`/`03` prefix followed by the 32-byte X coordinate, 66 hex characters. The client keeps the matching private key as the new session signing key. An uncompressed key is rejected with `400 INVALID_INPUT` and a message explaining how to compress it.'
           example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     DelegatedKeyStatus:
       type: string
