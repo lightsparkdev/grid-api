@@ -148,9 +148,10 @@ post:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
       description: >-
-        An `ACTIVE` delegated key already exists for this card funding source
-        or agent and Embedded Wallet pair. Revoke it with
-        `DELETE /auth/delegated-keys/{id}` before creating a new one.
+        An `ACTIVE` delegated key already exists for this card funding source,
+        or an `ACTIVE` or `PENDING` key already exists for this agent and
+        Embedded Wallet pair. Revoke it with `DELETE /auth/delegated-keys/{id}`
+        before creating a new one.
       content:
         application/json:
           schema:
