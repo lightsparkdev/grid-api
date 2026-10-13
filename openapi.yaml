@@ -4200,6 +4200,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. `USER_NOT_READY` when the recipient cannot receive payments yet. `COUNTERPARTY_NOT_ALLOWED` when the recipient's institution is not an allowed counterparty. `FORBIDDEN` when the token lacks the required permission.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: UMA address not found. The address is well-formed but no receiver exists at the counterparty VASP (`UMA_NOT_FOUND`).
           content:
@@ -4293,6 +4299,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. `USER_NOT_READY` when the recipient cannot receive payments yet. `COUNTERPARTY_NOT_ALLOWED` when the recipient's institution is not an allowed counterparty. `FORBIDDEN` when the token lacks the required permission.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: External account not found
           content:
@@ -4690,7 +4702,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden. The token lacks the `TRANSACT` permission, or the customer has not accepted the End User Terms.
+          description: Forbidden. `SANCTION_BLOCKED` when sanctions screening blocks the sender or the destination. `USER_NOT_READY` when the recipient cannot receive payments yet; this can clear later. `COUNTERPARTY_NOT_ALLOWED` when the counterparty is not allowed. `CUSTOMER_NOT_VERIFIED` when the customer's KYC is not approved. `END_USER_TERMS_NOT_ACCEPTED` when the customer has not accepted the End User Terms. `FORBIDDEN` when the token lacks the `TRANSACT` permission. `VELOCITY_LIMIT_EXCEEDED` when the recipient is over a velocity limit.
           content:
             application/json:
               schema:
@@ -14469,7 +14481,7 @@ components:
             | CERT_CHAIN_EXPIRED | Counterparty certificate chain has expired |
             | INVALID_PUBKEY_FORMAT | Counterparty Public key format is invalid |
             | MISSING_REQUIRED_UMA_PARAMETERS | Counterparty required UMA parameters are missing |
-            | SENDER_NOT_ACCEPTED | Sender is not accepted |
+            | SENDER_NOT_ACCEPTED | The receiving institution declined this sender. Final; a retry returns the same answer |
             | AMOUNT_OUT_OF_RANGE | Amount is out of range |
             | INVALID_CURRENCY | Currency is invalid |
             | INVALID_TIMESTAMP | Timestamp is invalid |
