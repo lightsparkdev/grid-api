@@ -8236,6 +8236,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error403'
+        '409':
+          description: 'Conflict - A chain deposit request for the same account, network and currency is still open: it has not been paid and has not expired. The error says when that request closes; create a new one after it does.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
