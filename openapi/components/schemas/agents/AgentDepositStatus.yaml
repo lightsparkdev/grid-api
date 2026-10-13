@@ -1,0 +1,9 @@
+type: string
+enum:
+  - PENDING
+  - PROCESSING
+  - COMPLETED
+  - EXPIRED
+  - FAILED
+  - REFUNDED
+description: Current state of an agent deposit.

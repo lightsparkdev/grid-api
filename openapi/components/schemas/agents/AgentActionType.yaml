@@ -1,9 +1,11 @@
 type: string
 enum:
   - EXECUTE_QUOTE
+  - ISSUE_PURCHASE_CARD
 description: |
   The type of action the agent is requesting.
 
   | Type | Description |
   |------|-------------|
   | `EXECUTE_QUOTE` | Execute a quote |
+  | `ISSUE_PURCHASE_CARD` | Issue a purchase card |

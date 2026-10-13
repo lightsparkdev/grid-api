@@ -1,0 +1,12 @@
+type: object
+required:
+  - action
+properties:
+  action:
+    $ref: ./AgentAction.yaml
+    description: >-
+      The `ISSUE_PURCHASE_CARD` action. `PENDING_APPROVAL` when the customer
+      must approve the card first; poll it or wait for its webhook.
+  card:
+    $ref: ./AgentCard.yaml
+    description: The issued card. Present when the action completed immediately.

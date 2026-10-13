@@ -50,6 +50,12 @@ get:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '500':
       description: Internal service error
       content:
@@ -63,6 +69,11 @@ post:
     Requires the MANAGE_EXTERNAL_ACCOUNTS permission in the agent's policy.
     The `customerId` field is optional and will be inferred from the agent's associated
     customer if omitted.
+
+    Grid saves a Spark address under its network's current prefix (`spark1...`), so
+    a legacy spelling (`sp1...`) of a saved address conflicts with it. Grid refuses
+    to save a Spark address that was refused, or is held for review, on any of the
+    customer's records of it, removed ones included (`DESTINATION_NOT_ALLOWED`).
   operationId: agentCreateExternalAccount
   tags:
     - Agent Operations
@@ -122,6 +133,14 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, or Grid refuses the
+        Spark address (`DESTINATION_NOT_ALLOWED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '409':
       description: Conflict - External account already exists
       content:

@@ -120,6 +120,40 @@ properties:
       during the day. A transaction that brings the day's count exactly to the
       effective limit is allowed.
     example: 20
+  allowedMccs:
+    type: array
+    minItems: 1
+    description: >-
+      Merchant category codes the card may spend at. Absent when the card may
+      spend at any category not blocked.
+    items:
+      type: string
+      pattern: ^[0-9]{4}$
+    example:
+      - '5411'
+  blockedMccs:
+    type: array
+    description: >-
+      Merchant category codes the card declines, with
+      `cardDeclinedReason: BLOCKED`. A card issued for an agent also declines
+      Grid's default agent categories unless `defaultMccBlocksLifted` is true;
+      see `AgentCard.effectiveBlockedMccs`.
+    items:
+      type: string
+      pattern: ^[0-9]{4}$
+    example:
+      - '7995'
+  agentId:
+    type: string
+    description: The agent the card was issued for, when there is one.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000042
+  defaultMccBlocksLifted:
+    type: boolean
+    description: >-
+      Whether the platform lifted Grid's default agent merchant-category blocks
+      on this card. Present only for a card issued for an agent; always false
+      for a purchase card.
+    example: false
   currency:
     type: string
     description: >-

@@ -1,20 +1,19 @@
-parameters:
-  - name: code
-    in: path
-    description: The device code to check
-    required: true
-    schema:
-      type: string
-get:
+post:
   summary: Get device code status
   description: >
-    Check whether a device code has been redeemed. Use this to poll for agent
-    installation completion after creating an agent.
+    Check the status of a device code. Use this to poll for agent installation
+    completion after creating an agent.
   operationId: getAgentDeviceCodeStatus
   tags:
     - Agent Management
   security:
     - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentDeviceCodeRequest.yaml
   responses:
     '200':
       description: Successful operation
@@ -28,6 +27,12 @@ get:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '404':
       description: Device code not found
       content:

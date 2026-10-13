@@ -15,6 +15,7 @@ properties:
       | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
       | CUSTOMER_NOT_VERIFIED | The customer is not verified and cannot perform this action |
       | SANCTION_BLOCKED | Blocked by sanction screening |
+      | DESTINATION_NOT_ALLOWED | The agent may not pay this destination |
     enum:
       - FORBIDDEN
       - USER_NOT_READY
@@ -23,6 +24,7 @@ properties:
       - END_USER_TERMS_NOT_ACCEPTED
       - CUSTOMER_NOT_VERIFIED
       - SANCTION_BLOCKED
+      - DESTINATION_NOT_ALLOWED
   reason:
     type: string
     description: Error message

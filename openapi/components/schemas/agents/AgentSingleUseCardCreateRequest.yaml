@@ -1,0 +1,38 @@
+title: Single-Use Card
+type: object
+required:
+  - kind
+  - currency
+  - amount
+  - sourceAccountId
+properties:
+  kind:
+    type: string
+    enum:
+      - SINGLE_USE
+    description: The purchase card kind.
+    example: SINGLE_USE
+  currency:
+    type: string
+    enum:
+      - USD
+    description: Card currency. Only `USD` is supported.
+    example: USD
+  amount:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      The purchase amount in the smallest unit of `currency`. Grid reserves it
+      plus a tolerance for tips and final amounts, and sets the card's spend
+      limit to the same total.
+    example: 2000
+  sourceAccountId:
+    type: string
+    description: The customer's Embedded Wallet internal account that funds the card.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  memo:
+    type: string
+    maxLength: 255
+    description: A note about the purchase, shown to the customer.
+    example: Concert tickets
