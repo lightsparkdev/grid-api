@@ -659,7 +659,7 @@ resources:
       device_codes:
         methods:
           regenerate: post /agents/{agentId}/device-codes
-          get_status: get /agents/device-codes/{code}/status
+          get_status: post /agents/device-codes/status
           redeem: post /agents/device-codes/{code}/redeem
       transactions:
         methods:

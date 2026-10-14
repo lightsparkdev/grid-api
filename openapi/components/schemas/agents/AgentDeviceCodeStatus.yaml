@@ -1,0 +1,13 @@
+type: string
+description: |
+  The current status of the device code.
+  - `PENDING`: The code is active and has not been redeemed.
+  - `REDEEMED`: The code was successfully redeemed.
+  - `EXPIRED`: The code expired before it was redeemed.
+  - `INVALIDATED`: The code was superseded or otherwise invalidated before it was redeemed.
+enum:
+  - PENDING
+  - REDEEMED
+  - EXPIRED
+  - INVALIDATED
+example: PENDING
