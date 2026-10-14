@@ -211,8 +211,14 @@ post:
             $ref: ../../components/schemas/errors/Error401.yaml
     '403':
       description: >-
-        Forbidden. The token lacks the `TRANSACT` permission, or the customer has
-        not accepted the End User Terms.
+        Forbidden. `SANCTION_BLOCKED` when sanctions screening blocks the
+        sender or the destination. `USER_NOT_READY` when the recipient cannot
+        receive payments yet; this can clear later. `COUNTERPARTY_NOT_ALLOWED`
+        when the counterparty is not allowed. `CUSTOMER_NOT_VERIFIED` when the
+        customer's KYC is not approved. `END_USER_TERMS_NOT_ACCEPTED` when the
+        customer has not accepted the End User Terms. `FORBIDDEN` when the
+        token lacks the `TRANSACT` permission. `VELOCITY_LIMIT_EXCEEDED` when
+        the recipient is over a velocity limit.
       content:
         application/json:
           schema:

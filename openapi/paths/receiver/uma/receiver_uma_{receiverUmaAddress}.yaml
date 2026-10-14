@@ -61,6 +61,16 @@ get:
         application/json:
           schema:
             $ref: ../../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden. `USER_NOT_READY` when the recipient cannot receive payments
+        yet. `COUNTERPARTY_NOT_ALLOWED` when the recipient's institution is not
+        an allowed counterparty. `FORBIDDEN` when the token lacks the required
+        permission.
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error403.yaml
     '404':
       description: >-
         UMA address not found. The address is well-formed but no receiver
