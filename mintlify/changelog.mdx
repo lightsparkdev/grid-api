@@ -10,6 +10,27 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## Two new `cardDeclinedReason` values
+
+A declined card transaction's `cardDeclinedReason` now names two more causes that were
+reported as `OTHER`:
+
+- `INCORRECT_CARD_DETAILS`: the PIN, security code, expiry date, or billing address
+  entered at the merchant did not match the card.
+- `TEMPORARILY_UNAVAILABLE`: a temporary problem at Grid, the card processor, or the
+  card network stopped the authorization. The cardholder can try again.
+
+Production already declines an authorization the funding source cannot cover, but has
+reported it as `OTHER`. It now reports `INSUFFICIENT_FUNDS`, and the reference no longer
+calls that value sandbox-only. `OTHER` now covers only the remaining reasons, including a
+security or fraud decline the card processor made. Transactions declined before this
+change keep their reason.
+
+<Warning>
+If you validate `cardDeclinedReason` against a fixed list, add the two new values, and
+treat any value you don't recognize as `OTHER`.
+</Warning>
+
 ## Sandbox values for each payout `failureReason`
 
 You can now test each specific payout `failureReason` in sandbox. Pay out to an

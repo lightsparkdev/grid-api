@@ -9882,7 +9882,7 @@ paths:
 
         The decisioning outcome is controlled by the last three characters of `merchant.descriptor`:
 
-        | Suffix | Outcome | | ------ | ------- | | `002`  | Declined, `cardDeclinedReason: INSUFFICIENT_FUNDS`. Sandbox only: production approves an underfunded authorization and resolves it as `EXCEPTION` when the pull fails | | `003`  | Declined, `cardDeclinedReason: CARD_NOT_ACTIVE`. Use against a `FROZEN` card to verify it refuses authorizations | | `005`  | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path | | `006`  | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert | | any other | Approved |
+        | Suffix | Outcome | | ------ | ------- | | `002`  | Declined, `cardDeclinedReason: INSUFFICIENT_FUNDS`, as production declines an authorization the funding source cannot cover | | `003`  | Declined, `cardDeclinedReason: CARD_NOT_ACTIVE`. Use against a `FROZEN` card to verify it refuses authorizations | | `005`  | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path | | `006`  | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert | | any other | Approved |
 
         `merchant.descriptor` must be 1–25 characters — the width of the card network's acceptor-name field. A longer one is rejected with `400` `INVALID_INPUT`.
 
@@ -26019,6 +26019,8 @@ components:
         - NO_ELIGIBLE_FUNDING_SOURCE
         - BLOCKED
         - UNSUPPORTED_NETWORK
+        - INCORRECT_CARD_DETAILS
+        - TEMPORARILY_UNAVAILABLE
         - OTHER
       description: |
         Why Grid declined a card authorization. Present only when a card
@@ -26028,11 +26030,13 @@ components:
         |--------|---------------|
         | `CARD_NOT_ACTIVE` | The card is not `ACTIVE`. A `FROZEN`, `PROCESSING`, `PENDING_KYC`, or `CLOSED` card declines every authorization. |
         | `SPEND_LIMIT_EXCEEDED` | The authorization exceeds `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, or the matching platform cap. |
-        | `INSUFFICIENT_FUNDS` | Sandbox only. Production does not check the funding source balance when it decides an authorization, so an underfunded card approves and then resolves as `EXCEPTION` when the pull fails. |
+        | `INSUFFICIENT_FUNDS` | The funding source balance does not cover the authorization. Grid reserves the amount when it decides the authorization, so an underfunded card is declined. |
         | `NO_ELIGIBLE_FUNDING_SOURCE` | The card has no usable funding source, for example an Embedded Wallet source with no active delegated key. |
         | `BLOCKED` | Program rules block the merchant category or the transaction. |
         | `UNSUPPORTED_NETWORK` | Grid does not support the network or the transaction type. |
-        | `OTHER` | Any other reason, including a decline the card processor made on its own. |
+        | `INCORRECT_CARD_DETAILS` | The PIN, security code, expiry date, or billing address entered at the merchant did not match the card. |
+        | `TEMPORARILY_UNAVAILABLE` | A temporary problem at Grid, the card processor, or the card network stopped the authorization. The cardholder can try again. |
+        | `OTHER` | Any other reason, including a security or fraud decline the card processor made. |
     CardMerchant:
       type: object
       required:
