@@ -8450,7 +8450,7 @@ paths:
       description: |
         Redeem a device code to obtain agent credentials. This endpoint is called by the agent software during installation. On success, returns a Bearer access token that the agent uses for all subsequent API calls. The token is returned only once and must be stored securely.
         This endpoint does not require platform authentication — the device code itself serves as proof of authorization. A code can be redeemed only once and only before its `expiresAt`.
-        Redemption is rate limited per client IP address and across all callers, and calls made with platform credentials are limited per platform instead. A caller over a limit receives `429` and should back off before retrying.
+        Redemption is rate limited in fixed 60-second windows. Calls without platform credentials are limited to 10 per client IP address and 1,000 across all such callers; calls made with platform credentials are limited to 600 per platform instead. A caller over a limit receives `429` with `RATE_LIMITED` and should back off until the window resets before retrying. If the limit cannot be checked, the call is also rejected with `429`.
       operationId: redeemAgentDeviceCode
       tags:
         - Agent Management
