@@ -660,7 +660,7 @@ resources:
         methods:
           regenerate: post /agents/{agentId}/device-codes
           get_status: post /agents/device-codes/status
-          redeem: post /agents/device-codes/{code}/redeem
+          redeem: post /agents/device-codes/redeem
       transactions:
         methods:
           approve: post /agents/{agentId}/actions/{actionId}/approve
