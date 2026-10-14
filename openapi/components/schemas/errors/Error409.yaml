@@ -17,7 +17,7 @@ properties:
       | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
       | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
       | BANK_ACCOUNT_VALIDATION_PENDING | The US bank account on this request is still being validated. Grid verifies a newly added ACH account by sending a micro-entry and waiting out the return window, which takes a few banking days. The account is not rejected; retry once validation completes. A permanently failed account returns `400 INVALID_BANK_ACCOUNT` instead |
-      | INVALID_STATE_TRANSITION | The requested card `status` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE \| FROZEN → CLOSED` |
+      | INVALID_STATE_TRANSITION | The requested card `status` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE \| FROZEN → CLOSED`, or the card cannot be unfrozen by the platform because Grid froze it for review, it was frozen as `COMPROMISED`, or its customer is not `ACTIVE` |
       | CARD_ALREADY_CLOSED | `status: CLOSED` was requested for a card that is already `CLOSED` |
       | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
       | PIN_CHANGE_REQUIRED | The card's PIN unblock allowance is consumed for seven days. Change the PIN to recover sooner. `details.pinUnblockAvailableAt` gives the next allowed unblock time |
