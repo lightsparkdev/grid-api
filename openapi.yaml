@@ -7986,6 +7986,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -8324,6 +8330,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent or action not found
           content:
@@ -8391,6 +8403,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent or action not found
           content:
@@ -30555,6 +30573,9 @@ components:
         - BULK_UPLOAD.COMPLETED
         - BULK_UPLOAD.FAILED
         - AGENT_ACTION.PENDING_APPROVAL
+        - AGENT_ACTION.APPROVED
+        - AGENT_ACTION.REJECTED
+        - AGENT_ACTION.FAILED
         - CARD.STATUS_CHANGE
         - CARD.PIN_STATUS_CHANGE
         - CARD_TRANSACTION.AUTHORIZED
@@ -30586,6 +30607,13 @@ components:
           format: date-time
           description: ISO 8601 timestamp of when the webhook was sent
           example: '2025-08-15T14:32:00Z'
+    AgentActionWebhookEventType:
+      type: string
+      enum:
+        - AGENT_ACTION.PENDING_APPROVAL
+        - AGENT_ACTION.APPROVED
+        - AGENT_ACTION.REJECTED
+        - AGENT_ACTION.FAILED
     AgentActionWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -30596,9 +30624,7 @@ components:
             data:
               $ref: '#/components/schemas/AgentAction'
             type:
-              type: string
-              enum:
-                - AGENT_ACTION.PENDING_APPROVAL
+              $ref: '#/components/schemas/AgentActionWebhookEventType'
     IncomingPaymentWebhookData:
       title: Incoming Payment Webhook Data
       allOf:
