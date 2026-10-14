@@ -79,7 +79,7 @@ tags:
   - name: Agent Management
     description: 'Endpoints for creating and managing agents (experimental), called by the partner''s backend using platform credentials. Covers the full agent lifecycle: creation, policy configuration, pausing, deletion, the device code installation flow, and approving or rejecting transactions initiated by agents.'
   - name: Agent Operations
-    description: Endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
+    description: Experimental endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
   - name: Cards
     description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage a card's funding source, and list card transactions.
   - name: Stablecoins
@@ -7768,6 +7768,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -8014,6 +8026,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8165,7 +8183,7 @@ paths:
     post:
       summary: Regenerate a device code
       description: |
-        Generate a new device code for an existing agent. Use this when the original device code has expired before being redeemed, or when the agent software needs to be reinstalled. Any previously issued unredeemed device codes for this agent are invalidated.
+        Generate a new device code for an existing agent. Use this when the original device code has expired before being redeemed, or when the agent software needs to be reinstalled. An agent has at most one unredeemed device code, so regenerating invalidates the one issued before it.
       operationId: regenerateAgentDeviceCode
       tags:
         - Agent Management
@@ -8190,6 +8208,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8337,23 +8361,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /agents/device-codes/{code}/status:
-    parameters:
-      - name: code
-        in: path
-        description: The device code to check
-        required: true
-        schema:
-          type: string
-    get:
+  /agents/device-codes/status:
+    post:
       summary: Get device code status
       description: |
-        Check whether a device code has been redeemed. Use this to poll for agent installation completion after creating an agent.
+        Check the status of a device code. Use this to poll for agent installation completion after creating an agent.
       operationId: getAgentDeviceCodeStatus
       tags:
         - Agent Management
       security:
         - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentDeviceCodeRequest'
       responses:
         '200':
           description: Successful operation
@@ -8367,6 +8390,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Device code not found
           content:
@@ -28143,7 +28172,7 @@ components:
       properties:
         currency:
           type: string
-          description: ISO 4217 currency code that all amount limits are denominated in.
+          description: ISO 4217 currency code that all amount limits are denominated in. This currency is immutable after the agent is created.
           example: USD
         perTransactionLimit:
           type: integer
@@ -28181,7 +28210,7 @@ components:
           type:
             - integer
             - 'null'
-          description: Per-transaction limit override, in the smallest unit of the relevant currency. Null inherits from the agent's spending limits.
+          description: Per-transaction limit override, in the smallest unit of the policy's `spendingLimits.currency`. Null inherits from the agent's spending limits.
           example: 10000
     AgentAccountRestrictions:
       type: object
@@ -28202,11 +28231,11 @@ components:
             $ref: '#/components/schemas/AgentAccountRule'
     AgentApprovalThresholds:
       type: object
-      description: Thresholds that force approval for high-value transactions, overriding the default execution mode. When a transaction is denominated in a different currency than the threshold, Grid converts using the exchange rate at evaluation time.
+      description: Thresholds that force approval for high-value transactions, overriding the default execution mode. The threshold currency must equal the policy's spending limits currency. When a transaction is denominated in a different currency, Grid converts it to the policy currency at evaluation time.
       properties:
         currency:
           type: string
-          description: ISO 4217 currency code that the amount threshold is denominated in. Required when amount is set.
+          description: ISO 4217 currency code that the amount threshold is denominated in. Required when amount is set and must equal `spendingLimits.currency`.
           example: USD
         amount:
           type:
@@ -28359,8 +28388,8 @@ components:
       properties:
         code:
           type: string
-          description: Human-readable device code used to install and connect the agent software.
-          example: GRID-AGENT-X7K9-M2P4
+          description: 'Device code used to install and connect the agent software: an opaque 22-character URL-safe base64 string encoding 128 random bits. It is returned only when it is issued, because Grid stores only a hash of it; if it is lost before it is redeemed, regenerate it. It can be redeemed once.'
+          example: jqzJR3AgI9OAwb_enypARw
         agentId:
           type: string
           description: The agent this device code belongs to.
@@ -28368,7 +28397,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: Timestamp when this device code expires.
+          description: Timestamp when this device code expires. Codes expire 15 minutes after they are issued by default; Grid can configure a platform's lifetime between 1 and 60 minutes.
           example: '2025-07-22T17:32:28Z'
         redeemed:
           type: boolean
@@ -28550,19 +28579,45 @@ components:
           type: string
           description: Optional human-readable reason for the rejection, stored on the action and visible to the platform.
           example: Transaction amount exceeds customer's current risk limit.
+    AgentDeviceCodeRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: The device code.
+          example: jqzJR3AgI9OAwb_enypARw
+    AgentDeviceCodeStatus:
+      type: string
+      description: |
+        The current status of the device code.
+        - `PENDING`: The code is active and has not been redeemed.
+        - `REDEEMED`: The code was successfully redeemed.
+        - `EXPIRED`: The code expired before it was redeemed.
+        - `INVALIDATED`: The code was superseded or otherwise invalidated before it was redeemed.
+      enum:
+        - PENDING
+        - REDEEMED
+        - EXPIRED
+        - INVALIDATED
+      example: PENDING
     AgentDeviceCodeStatusResponse:
       type: object
       required:
         - code
+        - status
         - redeemed
       properties:
         code:
           type: string
           description: The device code.
-          example: GRID-AGENT-X7K9-M2P4
+          example: jqzJR3AgI9OAwb_enypARw
+        status:
+          $ref: '#/components/schemas/AgentDeviceCodeStatus'
         redeemed:
           type: boolean
-          description: Whether this device code has been redeemed.
+          description: Whether this device code was successfully redeemed. This is false for expired or invalidated codes.
           example: false
     AgentDeviceCodeRedeemResponse:
       type: object
