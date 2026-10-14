@@ -338,6 +338,12 @@ paths:
     $ref: paths/agents/agents_approvals.yaml
   /agents/me:
     $ref: paths/agents/agents_me.yaml
+  /agents/me/customer:
+    $ref: paths/agents/agents_me_customer.yaml
+  /agents/me/verifications:
+    $ref: paths/agents/agents_me_verifications.yaml
+  /agents/me/kyc-link:
+    $ref: paths/agents/agents_me_kyc-link.yaml
   /agents/{agentId}:
     $ref: paths/agents/agents_{agentId}.yaml
   /agents/{agentId}/policy:
