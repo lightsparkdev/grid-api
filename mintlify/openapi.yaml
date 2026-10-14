@@ -8701,14 +8701,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/QuoteRequest'
+              $ref: '#/components/schemas/AgentQuoteRequest'
       responses:
         '201':
           description: Transfer quote created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quote'
+                $ref: '#/components/schemas/AgentQuote'
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -8722,7 +8722,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent policy does not permit this operation
+          description: Forbidden - Agents API is not enabled for the platform, or the agent policy does not permit this operation
           content:
             application/json:
               schema:
@@ -8780,13 +8780,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quote'
+                $ref: '#/components/schemas/AgentQuote'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Quote not found
           content:
@@ -28775,6 +28781,41 @@ components:
           example: gat_ed0ad25881e234cc28fb2dec0a4fe64e4172a3b9
         policy:
           $ref: '#/components/schemas/AgentPolicy'
+    AgentQuoteDestinationOneOf:
+      description: Destination of an agent quote.
+      oneOf:
+        - $ref: '#/components/schemas/AccountDestination'
+      discriminator:
+        propertyName: destinationType
+        mapping:
+          ACCOUNT: '#/components/schemas/AccountDestination'
+    AgentQuoteRequest:
+      type: object
+      description: 'A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET` internal account of the agent''s customer, and the destination is an `ACCOUNT`: another `EMBEDDED_WALLET` on the platform.'
+      required:
+        - source
+        - destination
+        - lockedCurrencySide
+        - lockedCurrencyAmount
+      properties:
+        source:
+          $ref: '#/components/schemas/QuoteSourceOneOf'
+        destination:
+          $ref: '#/components/schemas/AgentQuoteDestinationOneOf'
+        lockedCurrencySide:
+          $ref: '#/components/schemas/QuoteLockSide'
+        lockedCurrencyAmount:
+          type: integer
+          format: int64
+          description: The amount to send/receive in the smallest unit of the locked currency (eg. cents). See `lockedCurrencySide` for more information.
+          exclusiveMinimum: 0
+          maximum: 9000000000000000
+          example: 1000
+    AgentQuote:
+      title: Agent Quote
+      allOf:
+        - $ref: '#/components/schemas/Quote'
+      description: A quote created by an agent.
     ExternalAccountCreateRequest:
       allOf:
         - type: object

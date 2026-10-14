@@ -1,0 +1,27 @@
+type: object
+description: >-
+  A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET`
+  internal account of the agent's customer, and the destination is an
+  `ACCOUNT`: another `EMBEDDED_WALLET` on the platform.
+required:
+  - source
+  - destination
+  - lockedCurrencySide
+  - lockedCurrencyAmount
+properties:
+  source:
+    $ref: ../quotes/QuoteSourceOneOf.yaml
+  destination:
+    $ref: ./AgentQuoteDestinationOneOf.yaml
+  lockedCurrencySide:
+    $ref: ../quotes/QuoteLockSide.yaml
+  lockedCurrencyAmount:
+    type: integer
+    format: int64
+    description: >-
+      The amount to send/receive in the smallest unit of the locked
+      currency (eg. cents). See `lockedCurrencySide` for more
+      information.
+    exclusiveMinimum: 0
+    maximum: 9000000000000000
+    example: 1000
