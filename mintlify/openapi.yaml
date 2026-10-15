@@ -7478,7 +7478,7 @@ paths:
                 challenge:
                   summary: Session refresh challenge
                   value:
-                    payloadToSign: '{"organizationId":"org_abc123","parameters":{"targetPublicKey":"02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"},"timestampMs":"1746736509954","type":"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2"}'
+                    payloadToSign: '{"organizationId":"org_abc123","parameters":{"expirationSeconds":"900","publicKey":"02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"},"timestampMs":"1746736509954","type":"ACTIVITY_TYPE_STAMP_LOGIN"}'
                     requestId: Request:019542f5-b3e7-1d02-0000-000000000010
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':

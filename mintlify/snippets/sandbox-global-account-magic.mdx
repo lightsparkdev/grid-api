@@ -52,7 +52,7 @@ For new sandbox integrations, use the same WebAuthn calls you plan to use in pro
     Register the passkey with `POST /auth/credentials`, passing the challenge and attestation returned by the browser.
   </Step>
   <Step title="Request a challenge">
-    Reauthenticate with `POST /auth/credentials/{id}/challenge`, passing the P-256 `clientPublicKey` that Grid should seal the session signing key to.
+    Reauthenticate with `POST /auth/credentials/{id}/challenge`, passing the compressed P-256 `clientPublicKey` (lowercase hex) whose private key becomes the session signing key.
   </Step>
   <Step title="Run the browser assertion">
     Pass the returned `challenge` into `navigator.credentials.get()` using the returned `credentialId` in `allowCredentials`.
@@ -62,7 +62,7 @@ For new sandbox integrations, use the same WebAuthn calls you plan to use in pro
   </Step>
 </Steps>
 
-The sandbox validates the registered credential ID, WebAuthn challenge, origin/RP binding, user-presence bit, assertion signature, and signature counter. A successful verify response includes `encryptedSessionSigningKey`, sealed to the `clientPublicKey`, just like production.
+The sandbox validates the registered credential ID, WebAuthn challenge, origin/RP binding, user-presence bit, assertion signature, and signature counter. A successful verify response returns the session, just like production. The private key matching the `clientPublicKey` is the session signing key.
 
 ```bash
 # 1. /challenge with clientPublicKey
@@ -70,7 +70,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMet
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "clientPublicKey": "04f45f2a..."
+    "clientPublicKey": "02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"
   }'
 
 # 2. /verify with the browser assertion returned by navigator.credentials.get()
@@ -150,7 +150,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMet
 
 ### Wallet signature header
 
-For `PASSKEY` and `OAUTH` credentials, decrypt `encryptedSessionSigningKey` with the private key matching the `clientPublicKey` you supplied on verify or refresh. For `EMAIL_OTP`, the TEK private key you generated for the encrypted OTP flow **is** the session signing key — no decryption step needed. Use the session signing key to build a Grid wallet signature over the exact `payloadToSign` string returned by Grid, then pass that full signature as the `Grid-Wallet-Signature` HTTP header on signed flows:
+For `PASSKEY` and `OAUTH` credentials and session refresh, the private key matching the `clientPublicKey` you supplied is the session signing key. For `EMAIL_OTP`, the TEK private key you generated for the encrypted OTP flow is the session signing key. Use the session signing key to build a Grid wallet signature over the exact `payloadToSign` string returned by Grid, then pass that full signature as the `Grid-Wallet-Signature` HTTP header on signed flows:
 
 - `POST /auth/credentials` (add-additional-credential signed retry)
 - `DELETE /auth/credentials/{id}` (revoke credential)
