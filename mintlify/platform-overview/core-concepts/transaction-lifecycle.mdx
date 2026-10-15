@@ -394,7 +394,7 @@ Payment initially succeeds but the bank returns it:
 1. `OUTGOING_PAYMENT.PENDING`
 2. `OUTGOING_PAYMENT.PROCESSING`
 3. `OUTGOING_PAYMENT.COMPLETED`
-4. `OUTGOING_PAYMENT.FAILED` — `failureReason` is `PAYOUT_RETURNED`, and `destination.railDetails.status` is `RETURNED`, with `returnedAt`
+4. `OUTGOING_PAYMENT.FAILED` — `failureReason` is `PAYOUT_RETURNED`, and `destination.railDetails.status` is `RETURNED`, with `returnedAt` and the NACHA `returnCode`
 5. `OUTGOING_PAYMENT.REFUND_PENDING`
 6. `OUTGOING_PAYMENT.REFUND_COMPLETED`
 
