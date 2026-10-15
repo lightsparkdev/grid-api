@@ -8615,6 +8615,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -8651,6 +8657,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Transaction not found
           content:
@@ -9011,6 +9023,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -9068,6 +9086,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -9137,6 +9161,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '409':
           description: Conflict - External account already exists
           content:
@@ -9179,6 +9209,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: External account not found
           content:
@@ -9209,6 +9245,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: External account not found
           content:
