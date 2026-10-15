@@ -105,14 +105,14 @@ For `POST /auth/credentials` with `type: "OAUTH"`, the sandbox token must includ
 - `iat`: a numeric issued-at timestamp no more than 60 seconds before the request, with 5 seconds of clock skew allowed
 - `exp`: a numeric expiration timestamp later than the request time
 
-Grid stores the OAuth credential's registered identity from `iss`, `aud`, and `sub`. On `POST /auth/credentials/{id}/verify`, the fresh `oidcToken` must carry the same `iss`, `aud`, and `sub` as the credential being verified. It must also include `nonce` equal to `sha256(clientPublicKey)`, where `clientPublicKey` is the exact hex public key sent in the verify request.
+Grid stores the OAuth credential's registered identity from `iss`, `aud`, and `sub`. On `POST /auth/credentials/{id}/verify`, the fresh `oidcToken` must carry the same `iss`, `aud`, and `sub` as the credential being verified. It must also include `nonce` equal to the lowercase hex SHA-256 digest of `clientPublicKey`, hashed as the exact string sent in the verify request. That string is the compressed public key in lowercase hex: 66 characters starting with `02` or `03`.
 
 ```bash
-export PUBLIC_KEY="04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+export PUBLIC_KEY="02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"
 OIDC_TOKEN=$(node - <<'NODE'
 const crypto = require("crypto");
 
-const publicKey = process.env.PUBLIC_KEY || "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2";
+const publicKey = process.env.PUBLIC_KEY || "02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31";
 const now = Math.floor(Date.now() / 1000);
 const b64url = (value) =>
   Buffer.from(JSON.stringify(value)).toString("base64url");

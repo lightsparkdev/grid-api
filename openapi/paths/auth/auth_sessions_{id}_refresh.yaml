@@ -7,7 +7,9 @@ post:
 
     1. Call `POST /auth/sessions/{id}/refresh` with the request body
     `{ "clientPublicKey": "02..." }` and no signature headers. Send a
-    freshly generated client public key and retain its private key. Grid
+    freshly generated P-256 public key as a compressed key in lowercase
+    hex (66 characters, `02` or `03` prefix) and retain its private key.
+    Grid
     binds the supplied `clientPublicKey` into the session-refresh payload,
     persists it as a pending request, and returns `202` with
     `payloadToSign`, `requestId`, and `expiresAt`.
@@ -16,12 +18,9 @@ post:
     2. Sign `payloadToSign` with the current session signing key, then retry the
     same request with the full API-key stamp as `Grid-Wallet-Signature`, the
     `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in
-    the request body. On success, Grid returns a new `AuthSession`. Sending a
-    compressed `clientPublicKey` selects the recommended client-held-key
-    model, where the client retains the new session signing key and no key
-    material is returned; sending an uncompressed key selects the
-    deprecated legacy flow, where the new key is sealed to it and returned
-    as `encryptedSessionSigningKey`.
+    the request body. On success, Grid returns a new `AuthSession`. The
+    client retains the new session signing key, so no key material is
+    returned.
 
 
     The original session must still be active on both steps so it can authorize

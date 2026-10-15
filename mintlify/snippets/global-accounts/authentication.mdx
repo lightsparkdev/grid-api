@@ -441,7 +441,7 @@ sequenceDiagram
 Grid validates the OIDC token signature against the issuer's JWKS on every call and requires `iat` to be no more than **60 seconds** older than the request. Use a fresh token for each `verify` call; cached tokens will fail. The token identity (`iss`, `aud`, and `sub`) must match the OAuth credential being verified.
 
 <Note>
-  In sandbox, OAuth still uses JWT-shaped OIDC tokens. The sandbox skips real IdP signature verification, but it validates the same identity and freshness claims. For `verify`, include `nonce` equal to `sha256(clientPublicKey)`. See [Sandbox testing](/global-accounts/platform-tools/sandbox-testing#oauth-oidc-token).
+  In sandbox, OAuth still uses JWT-shaped OIDC tokens. The sandbox skips real IdP signature verification, but it validates the same identity and freshness claims. For `verify`, include `nonce` equal to the lowercase hex SHA-256 digest of the `clientPublicKey` string exactly as sent: the compressed key in lowercase hex. See [Sandbox testing](/global-accounts/platform-tools/sandbox-testing#oauth-oidc-token).
 </Note>
 
 ```bash
@@ -468,7 +468,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
   -d '{
     "type": "OAUTH",
     "oidcToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9...",
-    "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+    "clientPublicKey": "02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"
   }'
 ```
 
