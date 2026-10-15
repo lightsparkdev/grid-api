@@ -1,10 +1,3 @@
-parameters:
-  - name: code
-    in: path
-    description: The device code to redeem
-    required: true
-    schema:
-      type: string
 post:
   summary: Redeem device code
   description: >
@@ -14,11 +7,25 @@ post:
     and must be stored securely.
 
     This endpoint does not require platform authentication — the device code itself
-    serves as proof of authorization.
+    serves as proof of authorization. A code can be redeemed only once and only
+    before its `expiresAt`.
+
+    Redemption is rate limited in fixed 60-second windows. Calls without
+    platform credentials are limited to 10 per client IP address and 1,000
+    across all such callers; calls made with platform credentials are limited
+    to 600 per platform instead. A caller over a limit receives `429` with
+    `RATE_LIMITED` and should back off until the window resets before retrying.
+    If the limit cannot be checked, the call is also rejected with `429`.
   operationId: redeemAgentDeviceCode
   tags:
     - Agent Management
   security: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentDeviceCodeRequest.yaml
   responses:
     '200':
       description: Device code redeemed successfully
@@ -32,12 +39,24 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error400.yaml
+    '403':
+      description: Forbidden - Agents API is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '404':
       description: Device code not found
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '429':
+      description: Too many requests. Returned with `RATE_LIMITED`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
     '500':
       description: Internal service error
       content:

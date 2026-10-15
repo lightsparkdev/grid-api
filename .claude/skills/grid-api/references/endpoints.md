@@ -267,8 +267,8 @@ Platform-managed agents and their approval workflow.
 | POST | `/agents/{agentId}/device-codes` | Regenerate a device code |
 | POST | `/agents/{agentId}/actions/{actionId}/approve` | Approve an agent action |
 | POST | `/agents/{agentId}/actions/{actionId}/reject` | Reject an agent action |
-| GET | `/agents/device-codes/{code}/status` | Get device code status |
-| POST | `/agents/device-codes/{code}/redeem` | Redeem device code |
+| POST | `/agents/device-codes/status` | Get device code status (`code` in the JSON body) |
+| POST | `/agents/device-codes/redeem` | Redeem device code (`code` in the JSON body) |
 
 ## Agents (Self-Service)
 

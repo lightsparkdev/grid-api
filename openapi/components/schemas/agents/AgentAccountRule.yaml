@@ -13,5 +13,7 @@ properties:
     type:
       - integer
       - 'null'
-    description: Per-transaction limit override, in the smallest unit of the relevant currency. Null inherits from the agent's spending limits.
+    description: >-
+      Per-transaction limit override, in the smallest unit of the policy's
+      `spendingLimits.currency`. Null inherits from the agent's spending limits.
     example: 10000

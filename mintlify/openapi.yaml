@@ -79,7 +79,7 @@ tags:
   - name: Agent Management
     description: 'Endpoints for creating and managing agents (experimental), called by the partner''s backend using platform credentials. Covers the full agent lifecycle: creation, policy configuration, pausing, deletion, the device code installation flow, and approving or rejecting transactions initiated by agents.'
   - name: Agent Operations
-    description: Endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
+    description: Experimental endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
   - name: Cards
     description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage a card's funding source, and list card transactions.
   - name: Stablecoins
@@ -4200,6 +4200,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. `USER_NOT_READY` when the recipient cannot receive payments yet. `COUNTERPARTY_NOT_ALLOWED` when the recipient's institution is not an allowed counterparty. `FORBIDDEN` when the token lacks the required permission.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: UMA address not found. The address is well-formed but no receiver exists at the counterparty VASP (`UMA_NOT_FOUND`).
           content:
@@ -4293,6 +4299,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. `USER_NOT_READY` when the recipient cannot receive payments yet. `COUNTERPARTY_NOT_ALLOWED` when the recipient's institution is not an allowed counterparty. `FORBIDDEN` when the token lacks the required permission.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: External account not found
           content:
@@ -4690,7 +4702,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden. The token lacks the `TRANSACT` permission, or the customer has not accepted the End User Terms.
+          description: Forbidden. `SANCTION_BLOCKED` when sanctions screening blocks the sender or the destination. `USER_NOT_READY` when the recipient cannot receive payments yet; this can clear later. `COUNTERPARTY_NOT_ALLOWED` when the counterparty is not allowed. `CUSTOMER_NOT_VERIFIED` when the customer's KYC is not approved. `END_USER_TERMS_NOT_ACCEPTED` when the customer has not accepted the End User Terms. `FORBIDDEN` when the token lacks the `TRANSACT` permission. `VELOCITY_LIMIT_EXCEEDED` when the recipient is over a velocity limit.
           content:
             application/json:
               schema:
@@ -7768,6 +7780,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -7863,6 +7887,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer not found when filtering by customerId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -7979,6 +8015,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -8014,6 +8056,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8059,6 +8107,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8088,6 +8142,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8111,7 +8171,7 @@ paths:
     patch:
       summary: Update agent policy
       description: |
-        Partially update an agent's policy. Only provided fields will be updated; omitted fields retain their current values. Policy changes take effect immediately.
+        Partially update an agent's policy. Only provided fields will be updated; omitted fields retain their current values. Policy changes take effect immediately. The spending limits currency is immutable; attempting to change it returns a 400 response.
       operationId: updateAgentPolicy
       tags:
         - Agent Management
@@ -8142,6 +8202,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8165,7 +8231,7 @@ paths:
     post:
       summary: Regenerate a device code
       description: |
-        Generate a new device code for an existing agent. Use this when the original device code has expired before being redeemed, or when the agent software needs to be reinstalled. Any previously issued unredeemed device codes for this agent are invalidated.
+        Generate a new device code for an existing agent. Use this when the original device code has expired before being redeemed, or when the agent software needs to be reinstalled. An agent has at most one unredeemed device code, so regenerating invalidates the one issued before it.
       operationId: regenerateAgentDeviceCode
       tags:
         - Agent Management
@@ -8190,6 +8256,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
           content:
@@ -8337,23 +8409,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /agents/device-codes/{code}/status:
-    parameters:
-      - name: code
-        in: path
-        description: The device code to check
-        required: true
-        schema:
-          type: string
-    get:
+  /agents/device-codes/status:
+    post:
       summary: Get device code status
       description: |
-        Check whether a device code has been redeemed. Use this to poll for agent installation completion after creating an agent.
+        Check the status of a device code. Use this to poll for agent installation completion after creating an agent.
       operationId: getAgentDeviceCodeStatus
       tags:
         - Agent Management
       security:
         - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentDeviceCodeRequest'
       responses:
         '200':
           description: Successful operation
@@ -8367,6 +8438,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Device code not found
           content:
@@ -8379,23 +8456,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /agents/device-codes/{code}/redeem:
-    parameters:
-      - name: code
-        in: path
-        description: The device code to redeem
-        required: true
-        schema:
-          type: string
+  /agents/device-codes/redeem:
     post:
       summary: Redeem device code
       description: |
         Redeem a device code to obtain agent credentials. This endpoint is called by the agent software during installation. On success, returns a Bearer access token that the agent uses for all subsequent API calls. The token is returned only once and must be stored securely.
-        This endpoint does not require platform authentication — the device code itself serves as proof of authorization.
+        This endpoint does not require platform authentication — the device code itself serves as proof of authorization. A code can be redeemed only once and only before its `expiresAt`.
+        Redemption is rate limited in fixed 60-second windows. Calls without platform credentials are limited to 10 per client IP address and 1,000 across all such callers; calls made with platform credentials are limited to 600 per platform instead. A caller over a limit receives `429` with `RATE_LIMITED` and should back off until the window resets before retrying. If the limit cannot be checked, the call is also rejected with `429`.
       operationId: redeemAgentDeviceCode
       tags:
         - Agent Management
       security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentDeviceCodeRequest'
       responses:
         '200':
           description: Device code redeemed successfully
@@ -8409,12 +8486,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error400'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Device code not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -9358,7 +9447,7 @@ paths:
       description: |
         Update a card's `status`, bound `fundingSource`, and / or `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`, or set a new `threeDSecurePassword`. At least one field must be supplied.
 
-        - `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Activating a card whose USDB funding source lacks a usable delegated key returns `409 INVALID_STATE_TRANSITION`. `PENDING_AUTH` is managed by Grid and cannot be requested. Completing delegation does not unfreeze or reopen a card.
+        - `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Activating a card whose USDB funding source lacks a usable delegated key returns `409 INVALID_STATE_TRANSITION`. `PENDING_AUTH` is managed by Grid and cannot be requested. Completing delegation does not unfreeze or reopen a card. Requesting `status: ACTIVE` returns `409 INVALID_STATE_TRANSITION` while the customer is not `ACTIVE`, for a card Grid froze for review, and for a card frozen with substatus `COMPROMISED`. Contact Grid support to have such a card reviewed, or close a compromised card and issue a new one.
         - `fundingSource`, when supplied, replaces the card's bound internal account. It must belong to the customer and use a currency supported by the card program, including USDB for USD cards. An active card becomes `PENDING_AUTH` when switched to USDB without an active delegated key. Switching back to USD restores readiness. `fundingSource` cannot be supplied alongside `status: CLOSED`. On card programs where the card issuer makes authorization decisions, `fundingSource` cannot be combined with any `status` change, so send the changes as separate requests. On card programs where Grid makes the authorization decision, the combination remains valid for `status` changes other than `CLOSED`.
         - `maxSpendPerTransaction` sets the largest amount the card can authorize on a single transaction. An authorization for exactly the limit is allowed, and a later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. Send a positive integer in the smallest unit of the card's currency (cents for USD) to set the limit, or null to remove it. If your platform config sets `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. You can only send this when the card's `cardCapabilities.supportsSpendLimits` is true, and not together with `status: CLOSED`.
         - `maxSpendPerDay`, when supplied, replaces the card-specific cap on cumulative new spend during one UTC calendar day. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. If the platform config sets `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the card and platform values. Refunds, reversals, and authorization expiries do not restore capacity during the day. The card's `cardCapabilities.supportsSpendLimits` must be true. `maxSpendPerDay` cannot be supplied alongside `status: CLOSED`.
@@ -9452,7 +9541,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: 'Conflict. Returned with `INVALID_STATE_TRANSITION` when the requested `status` transition is not one of `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, or `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`, or when activation is requested before delegated signing authorization is complete; with `CARD_ALREADY_CLOSED` when `status: CLOSED` is requested for a card that is already `CLOSED`; and with `CARD_NOT_MUTABLE` when the card is `CLOSED`.'
+          description: 'Conflict. Returned with `INVALID_STATE_TRANSITION` when the requested `status` transition is not one of `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, or `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`, when activation is requested before delegated signing authorization is complete, or when `status: ACTIVE` is requested while the customer is not `ACTIVE`, for a card Grid froze for review, or for a card frozen as `COMPROMISED`; with `CARD_ALREADY_CLOSED` when `status: CLOSED` is requested for a card that is already `CLOSED`; and with `CARD_NOT_MUTABLE` when the card is `CLOSED`.'
           content:
             application/json:
               schema:
@@ -9882,7 +9971,7 @@ paths:
 
         The decisioning outcome is controlled by the last three characters of `merchant.descriptor`:
 
-        | Suffix | Outcome | | ------ | ------- | | `002`  | Declined, `cardDeclinedReason: INSUFFICIENT_FUNDS`. Sandbox only: production approves an underfunded authorization and resolves it as `EXCEPTION` when the pull fails | | `003`  | Declined, `cardDeclinedReason: CARD_NOT_ACTIVE`. Use against a `FROZEN` card to verify it refuses authorizations | | `005`  | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path | | `006`  | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert | | any other | Approved |
+        | Suffix | Outcome | | ------ | ------- | | `002`  | Declined, `cardDeclinedReason: INSUFFICIENT_FUNDS`, as production declines an authorization the funding source cannot cover | | `003`  | Declined, `cardDeclinedReason: CARD_NOT_ACTIVE`. Use against a `FROZEN` card to verify it refuses authorizations | | `005`  | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path | | `006`  | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert | | any other | Approved |
 
         `merchant.descriptor` must be 1–25 characters — the width of the card network's acceptor-name field. A longer one is rejected with `400` `INVALID_INPUT`.
 
@@ -13776,7 +13865,7 @@ components:
     AgentAuth:
       type: http
       scheme: bearer
-      description: 'Bearer token authentication for agent-scoped endpoints. The token is the `accessToken` returned when redeeming a device code via `POST /agents/device-codes/{code}/redeem`. Agent credentials are user-scoped: all requests are automatically bound to the agent''s associated customer and subject to the agent''s policy.'
+      description: 'Bearer token authentication for agent-scoped endpoints. The token is the `accessToken` returned when redeeming a device code via `POST /agents/device-codes/redeem`. Agent credentials are user-scoped: all requests are automatically bound to the agent''s associated customer and subject to the agent''s policy.'
     WebhookSignature:
       type: apiKey
       in: header
@@ -14469,7 +14558,7 @@ components:
             | CERT_CHAIN_EXPIRED | Counterparty certificate chain has expired |
             | INVALID_PUBKEY_FORMAT | Counterparty Public key format is invalid |
             | MISSING_REQUIRED_UMA_PARAMETERS | Counterparty required UMA parameters are missing |
-            | SENDER_NOT_ACCEPTED | Sender is not accepted |
+            | SENDER_NOT_ACCEPTED | The receiving institution declined this sender. Final; a retry returns the same answer |
             | AMOUNT_OUT_OF_RANGE | Amount is out of range |
             | INVALID_CURRENCY | Currency is invalid |
             | INVALID_TIMESTAMP | Timestamp is invalid |
@@ -15869,7 +15958,7 @@ components:
             | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
             | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
             | BANK_ACCOUNT_VALIDATION_PENDING | The US bank account on this request is still being validated. Grid verifies a newly added ACH account by sending a micro-entry and waiting out the return window, which takes a few banking days. The account is not rejected; retry once validation completes. A permanently failed account returns `400 INVALID_BANK_ACCOUNT` instead |
-            | INVALID_STATE_TRANSITION | The requested card `status` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE \| FROZEN → CLOSED` |
+            | INVALID_STATE_TRANSITION | The requested card `status` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE \| FROZEN → CLOSED`, or the card cannot be unfrozen by the platform because Grid froze it for review, it was frozen as `COMPROMISED`, or its customer is not `ACTIVE` |
             | CARD_ALREADY_CLOSED | `status: CLOSED` was requested for a card that is already `CLOSED` |
             | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
             | PIN_CHANGE_REQUIRED | The card's PIN unblock allowance is consumed for seven days. Change the PIN to recover sooner. `details.pinUnblockAvailableAt` gives the next allowed unblock time |
@@ -26019,6 +26108,8 @@ components:
         - NO_ELIGIBLE_FUNDING_SOURCE
         - BLOCKED
         - UNSUPPORTED_NETWORK
+        - INCORRECT_CARD_DETAILS
+        - TEMPORARILY_UNAVAILABLE
         - OTHER
       description: |
         Why Grid declined a card authorization. Present only when a card
@@ -26028,11 +26119,13 @@ components:
         |--------|---------------|
         | `CARD_NOT_ACTIVE` | The card is not `ACTIVE`. A `FROZEN`, `PROCESSING`, `PENDING_KYC`, or `CLOSED` card declines every authorization. |
         | `SPEND_LIMIT_EXCEEDED` | The authorization exceeds `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, or the matching platform cap. |
-        | `INSUFFICIENT_FUNDS` | Sandbox only. Production does not check the funding source balance when it decides an authorization, so an underfunded card approves and then resolves as `EXCEPTION` when the pull fails. |
+        | `INSUFFICIENT_FUNDS` | The funding source balance does not cover the authorization. Grid reserves the amount when it decides the authorization, so an underfunded card is declined. |
         | `NO_ELIGIBLE_FUNDING_SOURCE` | The card has no usable funding source, for example an Embedded Wallet source with no active delegated key. |
         | `BLOCKED` | Program rules block the merchant category or the transaction. |
         | `UNSUPPORTED_NETWORK` | Grid does not support the network or the transaction type. |
-        | `OTHER` | Any other reason, including a decline the card processor made on its own. |
+        | `INCORRECT_CARD_DETAILS` | The PIN, security code, expiry date, or billing address entered at the merchant did not match the card. |
+        | `TEMPORARILY_UNAVAILABLE` | A temporary problem at Grid, the card processor, or the card network stopped the authorization. The cardholder can try again. |
+        | `OTHER` | Any other reason, including a security or fraud decline the card processor made. |
     CardMerchant:
       type: object
       required:
@@ -28139,7 +28232,7 @@ components:
       properties:
         currency:
           type: string
-          description: ISO 4217 currency code that all amount limits are denominated in.
+          description: ISO 4217 currency code that all amount limits are denominated in. This currency is immutable after the agent is created.
           example: USD
         perTransactionLimit:
           type: integer
@@ -28177,7 +28270,7 @@ components:
           type:
             - integer
             - 'null'
-          description: Per-transaction limit override, in the smallest unit of the relevant currency. Null inherits from the agent's spending limits.
+          description: Per-transaction limit override, in the smallest unit of the policy's `spendingLimits.currency`. Null inherits from the agent's spending limits.
           example: 10000
     AgentAccountRestrictions:
       type: object
@@ -28198,11 +28291,11 @@ components:
             $ref: '#/components/schemas/AgentAccountRule'
     AgentApprovalThresholds:
       type: object
-      description: Thresholds that force approval for high-value transactions, overriding the default execution mode. When a transaction is denominated in a different currency than the threshold, Grid converts using the exchange rate at evaluation time.
+      description: Thresholds that force approval for high-value transactions, overriding the default execution mode. The threshold currency must equal the policy's spending limits currency. When a transaction is denominated in a different currency, Grid converts it to the policy currency at evaluation time.
       properties:
         currency:
           type: string
-          description: ISO 4217 currency code that the amount threshold is denominated in. Required when amount is set.
+          description: ISO 4217 currency code that the amount threshold is denominated in. Required when amount is set and must equal `spendingLimits.currency`.
           example: USD
         amount:
           type:
@@ -28355,8 +28448,8 @@ components:
       properties:
         code:
           type: string
-          description: Human-readable device code used to install and connect the agent software.
-          example: GRID-AGENT-X7K9-M2P4
+          description: 'Device code used to install and connect the agent software: an opaque 22-character URL-safe base64 string encoding 128 random bits. It is returned only when it is issued, because Grid stores only a hash of it; if it is lost before it is redeemed, regenerate it. It can be redeemed once.'
+          example: jqzJR3AgI9OAwb_enypARw
         agentId:
           type: string
           description: The agent this device code belongs to.
@@ -28364,7 +28457,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: Timestamp when this device code expires.
+          description: Timestamp when this device code expires. Codes expire 15 minutes after they are issued by default; Grid can configure a platform's lifetime between 1 and 60 minutes.
           example: '2025-07-22T17:32:28Z'
         redeemed:
           type: boolean
@@ -28500,7 +28593,7 @@ components:
       properties:
         currency:
           type: string
-          description: ISO 4217 currency code that all amount limits are denominated in. Updating this recasts all existing limits into the new currency denomination.
+          description: ISO 4217 currency code that all amount limits are denominated in. If supplied, it must equal the existing policy currency; changing it returns a 400 response.
           example: USD
         perTransactionLimit:
           type: integer
@@ -28546,19 +28639,45 @@ components:
           type: string
           description: Optional human-readable reason for the rejection, stored on the action and visible to the platform.
           example: Transaction amount exceeds customer's current risk limit.
+    AgentDeviceCodeRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: The device code.
+          example: jqzJR3AgI9OAwb_enypARw
+    AgentDeviceCodeStatus:
+      type: string
+      description: |
+        The current status of the device code.
+        - `PENDING`: The code is active and has not been redeemed.
+        - `REDEEMED`: The code was successfully redeemed.
+        - `EXPIRED`: The code expired before it was redeemed.
+        - `INVALIDATED`: The code was superseded or otherwise invalidated before it was redeemed.
+      enum:
+        - PENDING
+        - REDEEMED
+        - EXPIRED
+        - INVALIDATED
+      example: PENDING
     AgentDeviceCodeStatusResponse:
       type: object
       required:
         - code
+        - status
         - redeemed
       properties:
         code:
           type: string
           description: The device code.
-          example: GRID-AGENT-X7K9-M2P4
+          example: jqzJR3AgI9OAwb_enypARw
+        status:
+          $ref: '#/components/schemas/AgentDeviceCodeStatus'
         redeemed:
           type: boolean
-          description: Whether this device code has been redeemed.
+          description: Whether this device code was successfully redeemed. This is false for expired or invalidated codes.
           example: false
     AgentDeviceCodeRedeemResponse:
       type: object
@@ -28628,7 +28747,7 @@ components:
         | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
         | `PENDING_AUTH` | The issuer has provisioned the card, but its USDB Embedded Wallet funding source lacks an active delegated signing key. Complete `POST /auth/delegated-keys` before using the card. |
         | `ACTIVE` | The card is live and can authorize transactions. |
-        | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing settlements and refunds continue to reconcile. |
+        | `FROZEN` | The card is temporarily disabled by the platform or by Grid. New authorizations are declined with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing settlements and refunds continue to reconcile. A card Grid froze for review, or one frozen as `COMPROMISED`, cannot be unfrozen by the platform. |
         | `CLOSED` | The card is permanently closed. Terminal, irreversible status. |
     CardStatusReason:
       type: string
