@@ -30638,6 +30638,11 @@ components:
               $ref: '#/components/schemas/InternalAccount'
             type:
               $ref: '#/components/schemas/InternalAccountStatusWebhookEventType'
+    ExternalAccountStatusWebhookEventType:
+      type: string
+      enum:
+        - EXTERNAL_ACCOUNT.STATUS_UPDATED
+        - EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED
     ExternalAccountStatusWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -30648,10 +30653,7 @@ components:
             data:
               $ref: '#/components/schemas/ExternalAccount'
             type:
-              type: string
-              enum:
-                - EXTERNAL_ACCOUNT.STATUS_UPDATED
-                - EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED
+              $ref: '#/components/schemas/ExternalAccountStatusWebhookEventType'
     VerificationWebhookEventType:
       type: string
       enum:
