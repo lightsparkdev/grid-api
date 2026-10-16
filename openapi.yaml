@@ -25334,6 +25334,22 @@ components:
         to `FAILED` again. A returned payout stays `FAILED` through a dishonor, since it has
         already been refunded; the rail status still records the dishonor.
       example: SETTLED
+    AchReturnCategory:
+      type: string
+      enum:
+        - ADMINISTRATIVE
+        - UNAUTHORIZED
+      description: |-
+        The Nacha return-rate category an ACH return counts toward.
+
+        | Category | Return codes | Description |
+        |----------|--------------|-------------|
+        | `ADMINISTRATIVE` | `R02`, `R03`, `R04` | The account is closed, can't be found, or its number is invalid. |
+        | `UNAUTHORIZED` | `R05`, `R07`, `R10`, `R11`, `R29`, `R51` | The account holder says they didn't authorize the debit. |
+
+        Nacha sets a separate return-rate threshold for each category. Other return codes,
+        such as `R01` (insufficient funds), belong to neither.
+      example: UNAUTHORIZED
     AchRailDetails:
       title: ACH Transfer
       description: A transfer over the ACH network.
@@ -25369,8 +25385,11 @@ components:
             returnCode:
               type: string
               pattern: ^R[0-9]{2}$
-              description: The NACHA return reason code the receiving bank returned the entry under, such as `R01` (insufficient funds) or `R10` (customer advises unauthorized). Present with `returnedAt`. Group returns by this code to track your return rate for each reason, since Nacha sets separate thresholds for unauthorized and administrative returns. NACHA may add codes, so accept any value matching the pattern.
+              description: The NACHA return reason code the receiving bank returned the entry under, such as `R01` (insufficient funds) or `R10` (customer advises unauthorized). Present with `returnedAt`. Group returns by this code to track your return rate for each reason, or by `returnCategory` for Nacha's threshold categories. NACHA may add codes, so accept any value matching the pattern.
               example: R01
+            returnCategory:
+              $ref: '#/components/schemas/AchReturnCategory'
+              description: The Nacha return-rate category `returnCode` counts toward. Present only when the code is in one, so a return such as `R01` has `returnCode` but no `returnCategory`.
             dishonoredAt:
               type: string
               format: date-time
