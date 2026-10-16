@@ -415,6 +415,8 @@ Payment is cancelled while still processing, and the refund succeeds:
 <Info>
 In the manual cancellation flow, `OUTGOING_PAYMENT.COMPLETED` fires after the refund settles. This indicates the payout provider ultimately delivered the original payment despite the cancellation attempt. Your system should check the transaction's `refund` object to determine whether the payment was refunded or delivered.
 </Info>
+
+To test this flow in sandbox, see [Sandbox Manual Cancellations](/api-reference/sandbox-manual-cancellations).
 </Tab>
 </Tabs>
 
