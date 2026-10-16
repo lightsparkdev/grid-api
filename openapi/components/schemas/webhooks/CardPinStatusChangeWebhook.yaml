@@ -1,0 +1,13 @@
+allOf:
+  - $ref: ./BaseWebhook.yaml
+  - type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: ../cards/Card.yaml
+        description: The updated card, including its new pinStatus.
+      type:
+        type: string
+        enum:
+          - CARD.PIN_STATUS_CHANGE

@@ -2,6 +2,8 @@ package com.grid.sample.routes
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.lightspark.grid.models.sandbox.SandboxSendFundsParams
+import com.lightspark.grid.models.sandbox.SendRequest
+import com.lightspark.grid.models.sandbox.internalaccounts.FundRequest
 import com.lightspark.grid.models.sandbox.internalaccounts.InternalAccountFundParams
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
@@ -32,7 +34,7 @@ fun Route.sandboxRoutes() {
                     ?: throw IllegalArgumentException("amount (or currencyAmount) is required")
                 val params = InternalAccountFundParams.builder()
                     .accountId(accountId)
-                    .amount(amount)
+                    .fundRequest(FundRequest.builder().amount(amount).build())
                     .build()
 
                 Log.gridRequest("sandbox.internalAccounts.fund", body)
@@ -57,7 +59,7 @@ fun Route.sandboxRoutes() {
                 val json = JsonUtils.mapper.readTree(body)
                 Log.incoming("POST", "/api/sandbox/send-funds", body)
 
-                val params = SandboxSendFundsParams.builder()
+                val sendRequest = SendRequest.builder()
                     .quoteId(json.get("quoteId").asText())
                     .currencyCode(json.optText("currencyCode") ?: "USD")
                     .apply {
@@ -66,6 +68,7 @@ fun Route.sandboxRoutes() {
                         }
                     }
                     .build()
+                val params = SandboxSendFundsParams.builder().sendRequest(sendRequest).build()
 
                 Log.gridRequest("sandbox.sendFunds", body)
                 val response = GridClientBuilder.client.sandbox().sendFunds(params)

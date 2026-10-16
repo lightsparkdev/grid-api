@@ -76,7 +76,6 @@ Call `POST /customers/{customerId}/kyc-link` to get a single-use hosted URL.
 curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/Customer:019542f5-b3e7-1d02-0000-000000000001/kyc-link" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
-  -H "Idempotency-Key: $(uuidgen)" \
   -d '{
     "redirectUri": "https://yourapp.com/onboarding-complete"
   }'
@@ -153,7 +152,7 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/internal-account?custome
           "instructionsNotes": "Include the reference code in your ACH transfer memo",
           "accountOrWalletInfo": {
             "reference": "FUND-ABC123",
-            "accountType": "US_ACCOUNT",
+            "accountType": "USD_ACCOUNT",
             "accountNumber": "9876543210",
             "routingNumber": "021000021",
             "accountHolderName": "Lightspark Payments FBO John Doe",
@@ -243,7 +242,7 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-acco
     "currency": "MXN",
     "platformAccountId": "maria_garcia_account",
     "accountInfo": {
-      "accountType": "CLABE",
+      "accountType": "MXN_ACCOUNT",
       "clabeNumber": "123456789012345678",
       "bankName": "BBVA Mexico",
       "beneficiary": {
@@ -272,7 +271,7 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   "currency": "MXN",
   "platformAccountId": "maria_garcia_account",
   "accountInfo": {
-    "accountType": "CLABE",
+    "accountType": "MXN_ACCOUNT",
     "clabeNumber": "123456789012345678",
     "bankName": "BBVA Mexico",
     "beneficiary": {

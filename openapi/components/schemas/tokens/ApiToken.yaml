@@ -33,6 +33,14 @@ properties:
       secret is not stored and will never be available again after creation.
       Platform must keep this secret secure as it grants access to the account.
     example: ed0ad25881e234cc28fb2dec0a4fe64e4172
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      Timestamp after which the token no longer authenticates. Requests made
+      with an expired token return `401`. Omitted when the token does not
+      expire.
+    example: '2026-07-21T17:32:28Z'
   createdAt:
     type: string
     format: date-time

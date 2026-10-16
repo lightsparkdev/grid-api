@@ -1,0 +1,51 @@
+title: ACH Transfer
+description: A transfer over the ACH network.
+allOf:
+  - $ref: ./BaseUsdBankRailDetails.yaml
+  - type: object
+    required:
+      - paymentRail
+      - status
+    properties:
+      paymentRail:
+        $ref: ./AchPaymentRail.yaml
+      status:
+        $ref: ./AchRailStatus.yaml
+      traceNumber:
+        type: string
+        description: 15-digit ACH trace number of the entry.
+        example: '021000020123456'
+      statementDescriptor:
+        type: string
+        maxLength: 10
+        description: >-
+          The entry's Company Entry Description, which the receiving bank shows on
+          the account holder's statement. On payments you originate, this is the
+          quote's `statementDescriptor`, or Grid's default.
+        example: PAYROLL
+      addenda:
+        type: string
+        description: >-
+          Payment-related text carried in the entry's addenda record. On payments you
+          originate, this is the `remittanceInformation` you provided.
+        example: 'INV-12345'
+      returnedAt:
+        type: string
+        format: date-time
+        description: When the receiving bank returned the entry. Present once the entry has been returned, including after a later dishonor or contest.
+        example: '2026-10-01T14:00:00Z'
+      dishonoredAt:
+        type: string
+        format: date-time
+        description: When the originating bank dishonored the return. Present once `status` has reached `RETURN_DISHONORED`.
+        example: '2026-10-04T14:00:00Z'
+      contestedAt:
+        type: string
+        format: date-time
+        description: When the receiving bank contested the dishonor. Present when `status` is `RETURN_CONTESTED`.
+        example: '2026-10-07T14:00:00Z'
+      reversedAt:
+        type: string
+        format: date-time
+        description: When the originator reversed the entry. Present when `status` is `REVERSED`.
+        example: '2026-10-01T14:00:00Z'

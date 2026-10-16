@@ -13,6 +13,10 @@ Every payment goes through `POST /quotes`. What changes is where you are sending
 - **Account**: Pay an internal or external account. Grid converts when the currencies differ and settles over local payment rails (e.g., ACH, RTP, SEPA Instant, PIX, FPS) when they match. Also covers sending to a crypto wallet address when configured.
 - **UMA**: Send using a Universal Money Address. Ideal for global counterparties on networks.
 
+import CheckingLimits from '/snippets/sending/limits.mdx'
+
+<CheckingLimits />
+
 import SendToAccount from '/snippets/sending/accounts.mdx'
 
 <SendToAccount />

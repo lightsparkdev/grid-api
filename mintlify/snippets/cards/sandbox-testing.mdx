@@ -20,8 +20,8 @@ of `accountId`:
 
 | Suffix | Behavior |
 |--------|----------|
-| `002` | `FUNDING_SOURCE_INELIGIBLE` (insufficient balance check) |
-| `003` | `FUNDING_SOURCE_INELIGIBLE` (account closed) |
+| `002` | `INVALID_INPUT` (insufficient balance check) |
+| `003` | `INVALID_INPUT` (account closed) |
 | any other | Success |
 
 ## Authorization simulate
@@ -46,7 +46,7 @@ Outcomes are controlled by the last three characters of
 
 | Suffix | Outcome |
 |--------|---------|
-| `002` | Declined, `cardDeclinedReason: INSUFFICIENT_FUNDS`. Sandbox only: production approves an underfunded authorization and resolves it as `EXCEPTION` when the pull fails |
+| `002` | Declined, `cardDeclinedReason: INSUFFICIENT_FUNDS`, as production declines an authorization the funding source cannot cover |
 | `003` | Declined, `cardDeclinedReason: CARD_NOT_ACTIVE`. Use against a `FROZEN` card to verify it refuses authorizations |
 | `005` | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path |
 | `006` | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert |

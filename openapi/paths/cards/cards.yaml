@@ -40,6 +40,13 @@ post:
     provisions the card. The `card.status_change` webhook fires on each status
     transition, including the transition to `ACTIVE` (or to `CLOSED` with
     `statusReason: "ISSUER_REJECTED"` if provisioning fails).
+    A provisioned card funded by a USDB Embedded Wallet remains `PENDING_AUTH`
+    with `statusReason: "DELEGATION_REQUIRED"`
+    until all signed retries of `POST /auth/delegated-keys` are complete.
+    Replacing USD funding with USDB without an active key, or revoking the
+    required key, also moves an active card to `PENDING_AUTH`. Completing delegation
+    or switching back to USD restores `ACTIVE`; frozen and closed cards keep
+    their status.
   operationId: createCard
   tags:
     - Cards
@@ -89,12 +96,12 @@ post:
     '400':
       description: >-
         Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the
-        cardholder's KYC status is not `APPROVED`, with `INVALID_INPUT` when
-        the `Idempotency-Key` header is missing or exceeds 255 characters or
+        cardholder's KYC status is not `APPROVED`, and with `INVALID_INPUT`
+        when the `Idempotency-Key` header is missing or exceeds 255 characters,
         when a required `threeDSecurePassword` is missing, empty, or
-        whitespace-only, with `FUNDING_SOURCE_INELIGIBLE` when the supplied
-        funding source does not belong to the cardholder or is not denominated
-        in a card-eligible currency, and for general invalid parameters.
+        whitespace-only, when the supplied funding source does not belong to
+        the cardholder or is not denominated in a card-eligible currency, and
+        for general invalid parameters.
       content:
         application/json:
           schema:

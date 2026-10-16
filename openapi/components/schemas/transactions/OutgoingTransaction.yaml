@@ -43,7 +43,7 @@ allOf:
         $ref: ../common/ReconciliationInstructions.yaml
         description: >-
           Reconciliation details for this transaction. For the on-chain hash of a crypto
-          payout to an external wallet, see the destination's `onChainTransaction` instead.
+          payout to an external wallet, see the destination's `railDetails` instead.
       paymentInstructions:
         type: array
         description: Payment instructions for executing the payment.

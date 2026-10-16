@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { currentCredentials, issueCredentials, type CardCredentials } from './cardholder';
 import type { ActivityKind, MerchantCategory, WalletListItemData } from './types';
 
 /** Mirrors the API's `CardState` for an issued card (PENDING_KYC / PROCESSING
@@ -236,7 +237,10 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
   /** A new card is being issued (flows are replayable): it starts ACTIVE, out
    *  of the wallet, unrevealed. State only; POST /cards is the caller's log.
    *  The transactions stay: they are the cardholder's, not the card's. */
+  // The card's details (the PAN, the code): a new set with each card.
+  const [credentials, setCredentials] = useState<CardCredentials>(currentCredentials);
   const reissue = useCallback(() => {
+    setCredentials(issueCredentials());
     setLifecycle('ACTIVE');
     setInWallet(false);
     setWalletPhase('idle');
@@ -435,6 +439,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
 
   return {
     lifecycle,
+    credentials,
     frozen,
     closed,
     limits,

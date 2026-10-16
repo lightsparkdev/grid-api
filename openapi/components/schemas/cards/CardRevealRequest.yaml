@@ -1,0 +1,23 @@
+type: object
+description: >-
+  Optional overrides for one reveal. Omit the body entirely to use your
+  platform's configured settings.
+properties:
+  cssUrl:
+    anyOf:
+      - type: string
+        format: uri
+        pattern: '^https://[^@]*$'
+        maxLength: 512
+      - type: 'null'
+    description: >-
+      HTTPS URL of a stylesheet for this reveal only, overriding
+      `cardConfigs.panRevealCssUrl` for this call without changing your
+      platform config. Use it to style one reveal differently from the rest —
+      to match the cardholder's light or dark theme, for example. Subject to
+      the same rules as the platform-level setting: it must be reachable over
+      HTTPS without credentials, it styles the same selectors, and it loads
+      into the page rendering the live card details, so host it somewhere you
+      would trust with them. Omit the field, or send `null`, to fall back to
+      your platform config.
+    example: https://acme.com/card-reveal-dark.css

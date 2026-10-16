@@ -1,0 +1,228 @@
+import { StatementExample } from '/snippets/cards/statement-example.mdx';
+
+Every account held at Lead Bank gets a periodic statement each month, whether or not it had activity. Your platform agreement sets out what the statement contains and who delivers it. Use this page as a reference for a typical statement and how to build one from Grid data.
+
+This guide covers when to send a statement, what it contains, how to map Grid data to each statement field, and how to build one once the month settles. Consumer accounts carry a few extra items, called out where they apply.
+
+## Sample statement layout
+
+Your statement's visual design is up to you. The layout below shows a consumer account statement with sample data filled in. Check your platform agreement for the fields and disclosures your program requires:
+
+<StatementExample />
+
+The sample is a consumer statement. It carries three items a commercial statement omits: the asterisk on each line the error-resolution notice covers, the notice itself, and the terminal location on card purchases. Your platform agreement sets out which transaction types carry the marker.
+
+## When to send a statement
+
+A statement period is a calendar month in US Central time (`America/Chicago`). Issue a statement for every account each month, with or without activity.
+
+Build the statement once the month's card settlement has closed. Until then, [List balance changes](/api-reference/periodic-statements/list-balance-changes-for-a-period) refuses the month with `409 NOT_YET_AVAILABLE`, because its figures could still change. Retry later.
+
+Send the statement to the account holder by email, in-app notification, or any channel that lets the account holder **retain** it. Then send Grid a receipt with [Send a receipt for a periodic statement](/api-reference/periodic-statements/send-a-receipt-for-a-periodic-statement), once a month for each account. Grid stores it as the delivery record for that account and month. Your platform agreement sets out who delivers the statement.
+
+<Info>
+Once you issue a statement, **freeze its contents**. A refund or return that posts after the month closes appears on a later statement as its own dated line. ACH returns often land in the following month.
+</Info>
+
+## What a statement contains
+
+A statement has two parts: disclosure text, and fields you fill from the account and its transactions.
+
+### Provider disclosures
+
+Every statement carries the provider line. A consumer statement also carries the error-resolution notice, which gives the phone number and mailing address. A commercial statement has no notice, so it carries a contact line instead. The sample uses the wording below; your platform agreement provides the disclosure text for your program.
+
+| Field | Value |
+|-------|-------|
+| Provider line | “This account is held at Lead Bank, the account-holding institution. Lightspark is the program manager and is not a bank.” |
+| Error-resolution notice | Consumer statements. The notice text shown in the sample above. |
+| Phone and address | Consumer statements: inside the error-resolution notice (“Telephone us at … or Write us at …”). Commercial statements: a line reading “Direct inquiries to 8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069 or (855) 516-0103.” |
+
+### Statement fields
+
+| Field | Description | Included when |
+|-------|-------------|---------------|
+| Account holder | Name of the account holder | Always |
+| Account type | Kind of account, for example “Consumer prepaid account” | Always |
+| Account number | Number that identifies the account, masked to the last four digits | Always |
+| Statement period | Start and end date of the period | Always |
+| Issue date | Date the statement is sent | Always |
+| Opening balance | Balance at the start of the period | Always |
+| Closing balance | Balance at the end of the period | Always |
+| Transaction date | Date each transaction posted to the account | Always |
+| Transaction type | Kind of transfer, for example ACH deposit, debit card purchase, wire transfer out | Always |
+| Payee or merchant | Counterparty name, or the merchant descriptor for a card purchase | Always |
+| Terminal location | Merchant city and state | Consumer statements, for card purchases at a merchant terminal, when the card network reports a location |
+| Transaction amount | Signed amount in the account currency | Always |
+| Total fees for the period | Sum of all fees charged in the period | Always |
+
+## Mapping Grid data to statement fields
+
+You build a statement from four calls:
+
+- [Get customer by ID](/api-reference/customers/get-customer-by-id) for the account holder.
+- [List Customer internal accounts](/api-reference/internal-accounts/list-customer-internal-accounts) for the account.
+- [List balance changes](/api-reference/periodic-statements/list-balance-changes-for-a-period) for the month's lines and its opening and closing balances.
+- [Get transaction by ID](/api-reference/transactions/get-transaction-by-id) for each line's type, payee, and merchant.
+
+Pass `startDate` as the first instant of the month and `endDate` as the first instant of the next month, both in US Central time. Page with `cursor` while `hasMore` is `true`. The opening and closing balances describe the whole month, so they are the same on every page. All amounts are integers in the smallest unit of their currency (for example, cents), so format them using the currency's `decimals`.
+
+| Statement field | Grid source |
+|-----------------|-------------|
+| Account holder | `fullName` on the customer (`customerType: INDIVIDUAL`) or `businessInfo.legalName` (`customerType: BUSINESS`) |
+| Account type | `type` on the internal account (`INTERNAL_FIAT` for the platform-managed fiat account), shown as a plain-language label |
+| Account number | `fundingPaymentInstructions[].accountOrWalletInfo.accountNumber` on the internal account, masked to the last four digits |
+| Statement period | The Central-time month you pass as `startDate` and `endDate` |
+| Issue date | You supply it: the date the statement is sent |
+| Opening balance | `openingBalance` from List balance changes |
+| Closing balance | `closingBalance` from List balance changes |
+| Transaction date | `effectiveAt` on each balance change: when the balance moved |
+| Transaction type | `type` (`INCOMING` / `OUTGOING` / `CARD`) and `direction` (`CREDIT` / `DEBIT`) on the change's transaction. On `OUTGOING` transactions, `paymentRail` names the rail |
+| Payee or merchant | `counterpartyInformation` or `description` on `INCOMING` and `OUTGOING` transactions. `merchant.descriptor` on `CARD` transactions |
+| Terminal location | `merchant.city` and `merchant.state` on `CARD` transactions, when present |
+| Transaction amount | `amount` on each balance change, already signed: money out is negative |
+| Total fees for the period | Sum of `fees` across the month's transactions, counting each transaction once. Subtract the fee of a transaction refunded in the month |
+
+**Check before you issue:** `openingBalance + Σ(amount) == closingBalance`, summed over every page. It holds by construction, so a mismatch means a page was missed.
+
+<Note>
+Each balance change is one movement of the balance, so one transaction can produce several lines. An ACH deposit and its later return are two lines. A card purchase that clears in two parts is two lines. A withdrawal's fee can be a line of its own. Several changes can share a `transactionId`, so fetch each transaction once.
+
+`transactionId` is `null` for an adjustment with no transaction behind it. List it with a generic description, such as "Account adjustment".
+</Note>
+
+## Example: build a monthly statement
+
+Once the month has settled, read the account holder and account, list the month's balance changes, look up each line's transaction, render the statement, deliver it, and send Grid the receipt.
+
+```javascript
+// `grid` is your authenticated HTTP client for the Grid base URL.
+// ERROR_RESOLUTION_NOTICE, maskAccountNumber, and the delivery helpers are yours.
+
+// Follow nextCursor until hasMore is false
+async function* listAll(path, params) {
+  let cursor;
+  do {
+    const query = new URLSearchParams({ ...params, limit: '100' });
+    if (cursor) query.set('cursor', cursor);
+    const page = await grid.get(`${path}?${query}`);
+    yield* page.data;
+    cursor = page.hasMore ? page.nextCursor : undefined;
+  } while (cursor);
+}
+
+// The first instant of a month in US Central time, as an ISO string with its offset
+function centralMonthStart(year, month) {
+  const utcMidnight = new Date(Date.UTC(year, month - 1, 1));
+  const offset = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago',
+    timeZoneName: 'longOffset',
+  })
+    .formatToParts(utcMidnight)
+    .find((part) => part.type === 'timeZoneName')
+    .value.replace('GMT', '');
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-01T00:00:00${offset}`;
+}
+
+function describe(transaction) {
+  if (!transaction) return { type: 'ADJUSTMENT', payee: 'Account adjustment' };
+  if (transaction.type === 'CARD') {
+    const { descriptor, city, state } = transaction.merchant;
+    return {
+      type: 'CARD',
+      payee: descriptor,
+      terminalLocation: city && state ? `${city}, ${state}` : undefined,
+    };
+  }
+  return {
+    type: transaction.type,
+    rail: transaction.paymentRail,
+    payee: transaction.description,
+  };
+}
+
+async function buildStatement(customerId, accountId, year, month) {
+  const customer = await grid.get(`/customers/${customerId}`);
+  const commercial = customer.customerType === 'BUSINESS';
+
+  let account;
+  for await (const candidate of listAll('/customers/internal-accounts', { customerId })) {
+    if (candidate.id === accountId) {
+      account = candidate;
+      break;
+    }
+  }
+  if (!account) throw new Error(`Account ${accountId} does not belong to customer ${customerId}`);
+
+  const startDate = centralMonthStart(year, month);
+  const endDate = month === 12 ? centralMonthStart(year + 1, 1) : centralMonthStart(year, month + 1);
+
+  // A 409 NOT_YET_AVAILABLE means the month has not settled yet: retry later
+  const path = `/internal-accounts/${accountId}/balance-changes`;
+  const first = await grid.get(`${path}?${new URLSearchParams({ startDate, endDate, limit: '1' })}`);
+  const { openingBalance, closingBalance } = first;
+
+  const changes = [];
+  for await (const change of listAll(path, { startDate, endDate })) changes.push(change);
+
+  const movement = changes.reduce((sum, change) => sum + change.amount.amount, 0);
+  if (openingBalance.amount + movement !== closingBalance.amount) {
+    throw new Error('Statement does not reconcile: opening balance plus lines is not the closing balance');
+  }
+
+  // Several changes can share one transaction: fetch each once
+  const transactions = new Map();
+  for (const { transactionId } of changes) {
+    if (transactionId && !transactions.has(transactionId)) {
+      transactions.set(transactionId, await grid.get(`/transactions/${transactionId}`));
+    }
+  }
+
+  const lines = [];
+  for (const change of changes) {
+    const detail = describe(transactions.get(change.transactionId));
+    if (commercial) delete detail.terminalLocation;
+    lines.push({ date: change.effectiveAt, ...detail, amount: change.amount.amount });
+  }
+
+  // Count each transaction's fee once; a refund in the month gives it back
+  let totalFees = 0;
+  for (const [transactionId, transaction] of transactions) {
+    if (!transaction.fees || transaction.source?.accountId !== accountId) continue;
+    const own = changes.filter((change) => change.transactionId === transactionId);
+    if (own.some((change) => change.amount.amount < 0)) totalFees += transaction.fees;
+    if (own.some((change) => change.amount.amount > 0)) totalFees -= transaction.fees;
+  }
+
+  const { currency } = closingBalance;
+  const format = (amount) => (amount / 10 ** currency.decimals).toFixed(currency.decimals);
+
+  const statement = {
+    // Disclosures: a consumer statement carries the notice, a commercial statement the contact line
+    providerLine:
+      'This account is held at Lead Bank, the account-holding institution. ' +
+      'Lightspark is the program manager and is not a bank.',
+    ...(commercial
+      ? { contactLine: 'Direct inquiries to 8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069 or (855) 516-0103.' }
+      : { errorResolutionNotice: ERROR_RESOLUTION_NOTICE }), // the notice includes the phone number and mailing address
+    // Account fields
+    accountHolder: commercial ? customer.businessInfo.legalName : customer.fullName,
+    accountType: account.type, // render as a label, for example "Consumer prepaid account"
+    accountNumber: maskAccountNumber(account.fundingPaymentInstructions),
+    period: { startDate, endDate },
+    issueDate: new Date().toISOString(),
+    openingBalance: format(openingBalance.amount),
+    closingBalance: format(closingBalance.amount),
+    lines: lines.map((line) => ({ ...line, amount: format(line.amount) })),
+    totalFees: format(totalFees),
+  };
+
+  await sendStatementEmail(customer.platformCustomerId, statement); // your delivery channel
+
+  // The monthly receipt: Grid's record that this account's statement was issued
+  await grid.post(`/internal-accounts/${accountId}/confirm-statement`, {
+    statementMonth: `${year}-${String(month).padStart(2, '0')}`,
+    statementDeliveredAt: statement.issueDate,
+  });
+}
+```

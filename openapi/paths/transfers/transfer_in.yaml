@@ -55,7 +55,7 @@ post:
                 accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
               amount: 12550
   responses:
-    '201':
+    '200':
       description: Transfer-in request created successfully
       content:
         application/json:

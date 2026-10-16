@@ -30,7 +30,8 @@ External accounts represent crypto wallet destinations:
 
 External accounts represent bank account destinations:
 
-- **Traditional bank accounts**: ACH, wire, SEPA, CLABE, PIX, UPI, etc.
+- **Traditional bank accounts**: `USD_ACCOUNT`, `EUR_ACCOUNT`, `MXN_ACCOUNT`, `BRL_ACCOUNT`,
+  `INR_ACCOUNT`, and `SWIFT_ACCOUNT` for corridors with no local rail
 - **Beneficiary required**: Full compliance information needed for fiat destinations
 - **Multiple currencies**: Support for USD, EUR, MXN, BRL, INR, and more
 
@@ -151,6 +152,48 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
     }
   }'
 ```
+
+### Example: SWIFT account for off-ramp
+
+For destinations where Grid has no local payment rail, use a `SWIFT_ACCOUNT` to pay out over
+international wire. `currency` is the currency the destination account holds, and `country` is
+where the bank account is located:
+
+```bash
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "USD",
+    "platformAccountId": "user_swift_001",
+    "accountInfo": {
+      "accountType": "SWIFT_ACCOUNT",
+      "country": "NG",
+      "swiftCode": "GTBINGLA",
+      "bankName": "Guaranty Trust Bank",
+      "accountNumber": "1234567890",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Adaeze Okafor",
+        "birthDate": "1991-03-22",
+        "nationality": "NG",
+        "address": {
+          "line1": "15 Broad Street",
+          "city": "Lagos",
+          "state": "Lagos",
+          "postalCode": "101233",
+          "country": "NG"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  Provide `accountNumber` for most corridors. For IBAN-only corridors such as GB and BR, provide
+  `iban` instead.
+</Note>
 
 ## Listing external accounts
 

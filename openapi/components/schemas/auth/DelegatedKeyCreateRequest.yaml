@@ -1,7 +1,10 @@
 title: Delegated Key Create Request
 type: object
+description: >-
+  Creates a delegated signing key for a card funding source or an agent.
+  Exactly one of `cardId` or `agentId` is required. Requests that provide both
+  fields or neither field return a 400 response.
 required:
-  - cardId
   - internalAccountId
   - nickname
 properties:
@@ -9,18 +12,26 @@ properties:
     type: string
     description: >-
       The id of the card whose Embedded Wallet funding account will use this
-      delegated signing key.
+      delegated signing key. Omit when creating a key for an agent.
     example: Card:019542f5-b3e7-1d02-0000-000000000010
+  agentId:
+    type: string
+    description: >-
+      The id of the agent that will use this delegated signing key. The agent
+      must belong to the customer that owns the Embedded Wallet internal
+      account. Omit when creating a key for a card.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000042
   internalAccountId:
     type: string
     description: >-
-      The id of the Embedded Wallet internal account funding the card. Grid
-      uses the `(cardId, internalAccountId)` pair to find the active card
-      funding-source binding.
+      The id of the Embedded Wallet internal account this key may sign for. For
+      a card key, Grid uses the `(cardId, internalAccountId)` pair to find the
+      active card funding-source binding. For an agent key, the account must
+      belong to the agent's customer.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   nickname:
     type: string
     minLength: 1
     maxLength: 256
     description: Human-readable label for the delegated key.
-    example: Card payments key
+    example: Payments key

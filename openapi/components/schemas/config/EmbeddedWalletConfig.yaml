@@ -11,8 +11,8 @@ properties:
     example: Acme Wallet
   otpLength:
     type: integer
-    minimum: 4
-    maximum: 12
+    minimum: 6
+    maximum: 9
     description: |
       Number of digits / characters in the OTP code. Defaults to 6 when
       not set.
@@ -26,7 +26,7 @@ properties:
   expirationSeconds:
     type: integer
     minimum: 1
-    maximum: 86400
+    maximum: 600
     description: |
       OTP validity window in seconds. Defaults to 300 when not set.
     example: 300

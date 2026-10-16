@@ -110,6 +110,7 @@ g -X POST -H 'Content-Type: application/json' \
       "paymentRails": ["RTP"],
       "routingNumber": "121042882",
       "accountNumber": "0000000000",
+      "bankAccountType": "CHECKING",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
         "fullName": "Alice Example",
@@ -214,7 +215,6 @@ VERIFY1=$(g -X POST -H 'Content-Type: application/json' \
 VERIFY_PAYLOAD=$(echo "$VERIFY1" | jq -r .payloadToSign)
 VERIFY_REQ_ID=$(echo "$VERIFY1" | jq -r .requestId)
 
-# Sign the verification token with the TEK private key
 VERIFY_STAMP=$($SIGN stamp "$PRIV_HEX" "$VERIFY_PAYLOAD")
 
 # Signed retry — complete login

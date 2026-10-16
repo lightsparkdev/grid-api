@@ -1,0 +1,121 @@
+## Checking limits before you quote
+
+Every corridor accepts amounts only within a range. You can read that range before you
+create a quote, so an out-of-range amount surfaces in your own UI rather than as a
+`400 AMOUNT_OUT_OF_RANGE` on `POST /quotes`.
+
+Which endpoint you use depends on what you know:
+
+| You know | Use | Bounds you get |
+| --- | --- | --- |
+| A currency corridor | `GET /exchange-rates` | `minSendingAmount` / `maxSendingAmount`, in the sending currency |
+| A specific recipient | `GET /receiver/external-account/{accountId}` or `GET /receiver/uma/{address}` | Per-currency `min` / `max` in the receiving currency, plus sending-side bounds where Grid can resolve them |
+
+<Warning>
+  These bounds are approximate. They are priced off a cached rate that refreshes about every
+  five minutes, and only `POST /quotes` locks a rate and a final amount. Treat what you read
+  here as a pre-flight check for your UI, not a guarantee that the quote will succeed.
+</Warning>
+
+### Across a corridor
+
+Use the exchange rates endpoint when you know the currencies but not yet the recipient —
+populating a currency picker, or validating an amount as the sender types it.
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/exchange-rates?sourceCurrency=USD&destinationCurrency=INR' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+```json Success (200 OK)
+{
+  "data": [
+    {
+      "sourceCurrency": { "code": "USD", "name": "US Dollar", "symbol": "$", "decimals": 2 },
+      "sendingAmount": 10000,
+      "minSendingAmount": 100,
+      "maxSendingAmount": 10000000,
+      "destinationCurrency": { "code": "INR", "name": "Indian Rupee", "symbol": "₹", "decimals": 2 },
+      "destinationPaymentRail": "UPI",
+      "receivingAmount": 825000,
+      "exchangeRate": 0.012121,
+      "fees": { "fixed": 100, "total": 150 },
+      "updatedAt": "2025-02-05T12:00:00Z"
+    }
+  ]
+}
+```
+
+`minSendingAmount` and `maxSendingAmount` are in the smallest unit of `sourceCurrency` — on
+this corridor, \$1.00 to \$100,000.00.
+
+Omit `destinationCurrency` to get every corridor available from a source currency, each with
+its own bounds and rail. Repeat the parameter to compare a few:
+`?sourceCurrency=USD&destinationCurrency=INR&destinationCurrency=GBP`.
+
+<Tip>
+  Pass `sendingAmount` to price a specific amount. `fees.total` varies with the amount sent,
+  so the default (`10000`) is only representative.
+</Tip>
+
+### For a specific recipient
+
+Once you have a destination, look it up. The lookup prices the corridor against that
+particular recipient and returns a `lookupId` you can carry into the quote.
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/receiver/external-account/ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001&sendingCurrency=USD' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+```json Success (200 OK)
+{
+  "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+  "lookupId": "Lookup:019542f5-b3e7-1d02-0000-000000000009",
+  "sendingCurrency": { "code": "USD", "name": "United States Dollar", "symbol": "$", "decimals": 2 },
+  "supportedCurrencies": [
+    {
+      "currency": { "code": "MXN", "name": "Mexican Peso", "symbol": "$", "decimals": 2 },
+      "estimatedExchangeRate": 18.5,
+      "min": 2000,
+      "max": 185000000,
+      "minSendingAmount": 109,
+      "maxSendingAmount": 10000000
+    }
+  ],
+  "requiredPayerDataFields": [
+    { "name": "FULL_NAME", "mandatory": true }
+  ]
+}
+```
+
+Each entry carries bounds on both sides of the conversion. `min` and `max` are in the
+smallest unit of that entry's `currency` — here MX\$20.00 to MX\$1,850,000.00.
+`minSendingAmount` and `maxSendingAmount` are in the smallest unit of the response's
+`sendingCurrency` — \$1.09 to \$100,000.00 — which is the pair you want when your UI collects
+an amount in the sender's currency.
+
+Pass `sendingCurrency` when your customer holds more than one currency. Without it the
+bounds are priced against the customer's default currency, which may not be the one they
+intend to send from.
+
+`GET /receiver/uma/{address}` returns the same shape for a UMA recipient, with
+`receiverUmaAddress` in place of `accountId`. A UMA recipient commonly supports several
+currencies, so expect more than one entry in `supportedCurrencies`, each with its own bounds.
+
+<Info>
+  `minSendingAmount` and `maxSendingAmount` are omitted when Grid cannot resolve a
+  sending-side bound for that currency. Fall back to dividing `min` and `max` by
+  `estimatedExchangeRate`, and treat the result as looser than the real limit — the sending
+  leg can impose a bound of its own that the converted receiving bound doesn't reflect.
+</Info>
+
+Reuse the `lookupId` on `POST /quotes` to price against the same lookup. It is required for
+UMA destinations.
+
+<Note>
+  Clearing these bounds doesn't guarantee the quote succeeds. Cumulative limits are enforced
+  at quote time and surface separately as `DAILY_VOLUME_LIMIT_EXCEEDED` (HTTP 429), and a
+  per-transaction ceiling can surface as `TRANSACTION_SIZE_LIMIT_EXCEEDED`. Handle both
+  alongside `AMOUNT_OUT_OF_RANGE`.
+</Note>

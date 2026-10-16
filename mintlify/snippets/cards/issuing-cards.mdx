@@ -28,20 +28,29 @@ curl -X POST "$GRID_BASE_URL/cards" \
 | `maxSpendPerDay` | No | Cumulative new spend allowed per UTC calendar day, in the smallest unit of the card's currency. Refunds, reversals, and expiries do not restore capacity that day. |
 | `maxTransactionsPerDay` | No | Number of transactions the card may authorize per UTC calendar day. Each approved authorization counts once; reversals and expiries do not restore capacity that day. |
 
-The card's `currency` is derived from the funding source at issue time
-and surfaces on the returned `Card` resource.
+The card program fixes the card's `currency` at issuance and returns it on
+the `Card` resource. USDB-funded cards have `currency: "USD"`, with funding
+converted at 1 USDB = 1 USD. Spending limits use the smallest unit of the
+card's currency: for a USDB-funded card, `50000` means $500.00 in USD cents.
+Changing the funding source does not change the card's currency or
+spending-limit units.
 
 ## The lifecycle
 
 ```text
-PROCESSING ──► ACTIVE ◄──► FROZEN
-                 │
-                 └──► CLOSED
+USD:  PROCESSING ──► ACTIVE ◄──► FROZEN
+                        │           │
+                        └───────────┴──► CLOSED
+
+USDB: PROCESSING ──► PENDING_AUTH ◄──► ACTIVE ◄──► FROZEN
+                        │                 │           │
+                        └─────────────────┴───────────┴──► CLOSED
 ```
 
 | State | When you see it |
 |-------|-----------------|
 | `PROCESSING` | Returned synchronously from `POST /cards`. The card cannot transact yet. |
+| `PENDING_AUTH` | The issuer has provisioned the card, but its USDB Embedded Wallet funding source has no active delegated key. Complete delegated-key setup. |
 | `ACTIVE` | Issuer provisioned the card. Reached via `CARD.STATUS_CHANGE` webhook. |
 | `FROZEN` | You called `PATCH /cards/{id}` with `status: "FROZEN"`. |
 | `CLOSED` | You called `PATCH /cards/{id}` with `status: "CLOSED"`. Terminal. |
@@ -55,6 +64,20 @@ issuance is gated on KYC up front.
 issuer provisions the card asynchronously; on success a
 `CARD.STATUS_CHANGE` webhook fires with the activated `Card` resource
 including the populated `last4`, `expMonth`, and `expYear`.
+
+For USDB Embedded Wallet funding without an active delegated key, the
+provisioning webhook reports `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`.
+Complete all three calls to `POST /auth/delegated-keys`, including both signed
+retries. When the final retry returns an `ACTIVE` delegated key, the pending
+card becomes `ACTIVE` automatically and emits `CARD.STATUS_CHANGE`.
+
+USD funding does not require delegation. If delegation completes before
+provisioning, the card can go directly from `PROCESSING` to `ACTIVE`.
+
+Replacing USD funding with USDB lacking an active key can move an active
+card back to `PENDING_AUTH`. Switching back to USD, or completing delegation,
+restores readiness. Revoking the required key also moves an active card to
+`PENDING_AUTH`. Frozen and closed cards retain their status.
 
 ## Revealing the PAN
 
@@ -89,13 +112,73 @@ immediately before rendering the iframe. Never store, cache, or log the
 URL. Every reveal is audit-logged.
 </Note>
 
+### Styling the reveal
+
+By default the iframe renders with Grid's own styling. To carry your
+branding instead, host a stylesheet and point your platform config at it:
+
+```bash
+curl -X PATCH "$GRID_BASE_URL/config" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"cardConfigs": {"panRevealCssUrl": "https://acme.com/card-reveal.css"}}'
+```
+
+Every reveal minted afterwards links your stylesheet. Send `null` to go
+back to the default.
+
+To style one reveal differently — to match the cardholder's light or dark
+theme, say — send `cssUrl` in the reveal request instead. It overrides the
+platform setting for that call only:
+
+```bash
+curl -X POST "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010/reveal" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"cssUrl": "https://acme.com/card-reveal-dark.css"}'
+```
+
+Style these ids and classes; the rest of the page structure is not a
+contract and can change:
+
+| Selector | What it is |
+|----------|------------|
+| `#card` | The wrapper around the whole card |
+| `#pan` | The full card number |
+| `.pan-separator` | The gap between PAN digit groups |
+| `#expiry` | The expiry date |
+| `#cvv` | The security code |
+
+```css
+#card {
+  background: #1a1a1a;
+  border-radius: 16px;
+  padding: 24px;
+  font-family: "Acme Sans", sans-serif;
+}
+
+#pan {
+  font-size: 21px;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+}
+```
+
+<Warning>
+Both settings load a stylesheet into the page that renders the live PAN,
+expiry, and CVV, so host it somewhere you would trust with card details. It
+must be reachable over HTTPS and must not carry credentials in the URL. Grid
+never fetches it — the cardholder's browser does — so a stylesheet that fails
+to load produces an unstyled card rather than a server error. Reveal a
+sandbox card to check yours before you ship it.
+</Warning>
+
 ## Errors to handle
 
 | Status | Code | What it means |
 |--------|------|---------------|
 | 400 | `CARDHOLDER_KYC_NOT_APPROVED` | Cardholder is not `kycStatus: APPROVED`. Drive KYC to completion before retrying. |
-| 400 | `FUNDING_SOURCE_INELIGIBLE` | The supplied internal account doesn't belong to the cardholder or isn't denominated in a card-eligible currency. |
-| 400 | `INVALID_INPUT` | Validation failure on the request body. |
+| 400 | `INVALID_INPUT` | The supplied internal account doesn't belong to the cardholder or isn't denominated in a card-eligible currency, or another field failed validation. |
 | 409 | `CONFLICT` | The card belongs to a program where the card issuer makes authorization decisions. Use the card issuer's challenge-based hosted reveal flow instead; retrying this endpoint will not help. |
 
 ## Changing the funding source later

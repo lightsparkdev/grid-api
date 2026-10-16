@@ -44,10 +44,10 @@ post:
 
 
     The `clientPublicKey` is ephemeral: generate a fresh P-256 keypair
-    for this export and discard the private key after decrypting. Do
-    not reuse the keypair from any prior verify call — that private
-    key was already discarded after decrypting the session signing
-    key it was issued against.
+    for this export and discard the private key after decrypting. Send
+    it as an uncompressed key in lowercase hex (130 characters, `04`
+    prefix). Do not reuse the keypair from a verify or refresh call.
+    That private key is the session signing key.
   operationId: exportInternalAccount
   tags:
     - Internal Accounts

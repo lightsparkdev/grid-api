@@ -103,7 +103,7 @@ export function otpVerifyCall(method: 'email_otp' | 'sms'): ApiCall {
     title: 'Verify OTP',
     reqBody: otpVerifyRequestBody(method),
     status: '202 Accepted',
-    note: 'Returns a verificationToken to sign with the TEK keypair.',
+    note: 'Returns payloadToSign to stamp unchanged with the TEK private key.',
   };
 }
 

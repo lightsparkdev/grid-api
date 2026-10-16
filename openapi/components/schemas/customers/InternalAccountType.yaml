@@ -5,6 +5,7 @@ enum:
   - INTERNAL_CRYPTO
   - EMBEDDED_WALLET
   - RULE_BASED
+  - BULK_SETTLEMENT
 description: >-
   Classification of an internal account.
 
@@ -23,3 +24,8 @@ description: >-
   with a routing rule attached, so incoming payments can be attributed to a
   specific payer and swept automatically. Created with
   `POST /internal-accounts`.
+
+  - `BULK_SETTLEMENT`: An account for receiving bulk payments (for example, a
+  single settlement from a payment processor) that the platform then pays out
+  to its customers. Only a platform can hold one, and funds in it can move only
+  to the platform's customers.

@@ -1,0 +1,11 @@
+title: Base US Bank Rail Details
+type: object
+description: Fields shared by every US bank rail.
+properties:
+  bankAccount:
+    $ref: ./UsdBankAccountDetails.yaml
+  settledAt:
+    type: string
+    format: date-time
+    description: When the transfer settled.
+    example: '2026-09-29T15:04:12Z'

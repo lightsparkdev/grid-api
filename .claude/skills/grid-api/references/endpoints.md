@@ -64,6 +64,7 @@ Rates are cached ~5 minutes and include platform-specific fees.
 | GET | `/beneficial-owners` | List beneficial owners |
 | GET | `/beneficial-owners/{beneficialOwnerId}` | Get a beneficial owner |
 | PATCH | `/beneficial-owners/{beneficialOwnerId}` | Update a beneficial owner |
+| DELETE | `/beneficial-owners/{beneficialOwnerId}` | Delete a beneficial owner |
 
 ## Documents
 
@@ -266,8 +267,8 @@ Platform-managed agents and their approval workflow.
 | POST | `/agents/{agentId}/device-codes` | Regenerate a device code |
 | POST | `/agents/{agentId}/actions/{actionId}/approve` | Approve an agent action |
 | POST | `/agents/{agentId}/actions/{actionId}/reject` | Reject an agent action |
-| GET | `/agents/device-codes/{code}/status` | Get device code status |
-| POST | `/agents/device-codes/{code}/redeem` | Redeem device code |
+| POST | `/agents/device-codes/status` | Get device code status (`code` in the JSON body) |
+| POST | `/agents/device-codes/redeem` | Redeem device code (`code` in the JSON body) |
 
 ## Agents (Self-Service)
 
@@ -316,12 +317,13 @@ Drive card lifecycle events in sandbox to test authorization, clearing, and retu
 | POST | `/stablecoin-provider-accounts` | Link a stablecoin provider account |
 | GET | `/stablecoin-provider-accounts` | List stablecoin provider account links |
 | GET | `/stablecoin-provider-accounts/{stablecoinProviderAccountId}` | Get a stablecoin provider account link |
+| DELETE | `/stablecoin-provider-accounts/{stablecoinProviderAccountId}` | Revoke a stablecoin provider account link |
 
 ## Webhooks
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/sandbox/webhooks/test` | Send a test webhook (sandbox only) |
+| POST | `/webhooks/test` | Send a test webhook to the configured endpoint |
 
 ### Webhook Events
 

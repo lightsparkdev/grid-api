@@ -14,9 +14,12 @@ allOf:
         type: string
         description: Destination account identifier
         example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+      railDetails:
+        $ref: ./RailDetailsOneOf.yaml
       onChainTransaction:
         $ref: ./OnChainTransaction.yaml
+        deprecated: true
         description: >-
-          On-chain transaction that delivered funds to this destination, when the destination
-          is an external crypto wallet. Populated once the crypto transfer has settled.
+          Deprecated. Use `railDetails`, which carries the same hash and network when
+          `paymentRail` is `ONCHAIN`.
     description: Destination account details

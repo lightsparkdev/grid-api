@@ -29,7 +29,7 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../../components/schemas/quotes/QuoteRequest.yaml
+          $ref: ../../components/schemas/agents/AgentQuoteRequest.yaml
   responses:
     '201':
       description: Transfer quote created successfully
@@ -50,7 +50,9 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '403':
-      description: Forbidden - Agent policy does not permit this operation
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, or the agent policy does
+        not permit this operation
       content:
         application/json:
           schema:
@@ -73,3 +75,15 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
+    '502':
+      description: Counterparty returned an error or an invalid response
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error502.yaml
+    '504':
+      description: Counterparty could not be reached or timed out
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error504.yaml

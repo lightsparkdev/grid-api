@@ -125,6 +125,11 @@ resources:
       internal_account_update_request: '#/components/schemas/InternalAccountUpdateRequest'
       internal_account_export_request: '#/components/schemas/InternalAccountExportRequest'
       internal_account_export_response: '#/components/schemas/InternalAccountExportResponse'
+      # Periodic statements
+      balance_change: '#/components/schemas/BalanceChange'
+      balance_change_list_response: '#/components/schemas/BalanceChangeListResponse'
+      confirm_statement_delivery_request: '#/components/schemas/ConfirmStatementDeliveryRequest'
+      statement_delivery: '#/components/schemas/StatementDelivery'
       # KYC link generation
       kyc_link_create_request: '#/components/schemas/KycLinkCreateRequest'
       kyc_link_response: '#/components/schemas/KycLinkResponse'
@@ -143,6 +148,10 @@ resources:
       update_internal_account:
         endpoint: patch /internal-accounts/{id}
         body_param_name: InternalAccountUpdateRequest
+      list_balance_changes: get /internal-accounts/{id}/balance-changes
+      confirm_statement_delivery:
+        endpoint: post /internal-accounts/{id}/confirm-statement
+        body_param_name: ConfirmStatementDeliveryRequest
       create_kyc_link:
         endpoint: post /customers/{customerId}/kyc-link
         body_param_name: KycLinkCreateRequest
@@ -322,6 +331,17 @@ resources:
       lookup_uma: get /receiver/uma/{receiverUmaAddress}
       lookup_external_account: get /receiver/external-account/{accountId}
 
+  payment_documents:
+    models:
+      payment_document: '#/components/schemas/PaymentDocument'
+      payment_document_type: '#/components/schemas/PaymentDocumentType'
+      payment_document_status: '#/components/schemas/PaymentDocumentStatus'
+    methods:
+      upload:
+        endpoint: post /payment-documents
+        body_param_name: PaymentDocumentUploadRequest
+      retrieve: get /payment-documents/{paymentDocumentId}
+
   quotes:
     models:
       currency: '#/components/schemas/Currency'
@@ -391,7 +411,7 @@ resources:
           test_webhook_request: '#/components/schemas/TestWebhookRequest'
           test_webhook_response: '#/components/schemas/TestWebhookResponse'
         methods:
-          send_test: post /sandbox/webhooks/test
+          send_test: post /webhooks/test
       cards:
         subresources:
           simulate:
@@ -636,11 +656,21 @@ resources:
             methods:
               list: get /agents/me/actions
               retrieve: get /agents/me/actions/{actionId}
+          customer:
+            methods:
+              retrieve: get /agents/me/customer
+              update: patch /agents/me/customer
+          verifications:
+            methods:
+              create: post /agents/me/verifications
+          kyc_link:
+            methods:
+              create: post /agents/me/kyc-link
       device_codes:
         methods:
           regenerate: post /agents/{agentId}/device-codes
-          get_status: get /agents/device-codes/{code}/status
-          redeem: post /agents/device-codes/{code}/redeem
+          get_status: post /agents/device-codes/status
+          redeem: post /agents/device-codes/redeem
       transactions:
         methods:
           approve: post /agents/{agentId}/actions/{actionId}/approve

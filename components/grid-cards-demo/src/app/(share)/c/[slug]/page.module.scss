@@ -1,0 +1,68 @@
+/* The share page is its stage (ShareCard); this is the shell and the two
+   buttons in the right column, after lightspark.com's paired CTAs (its
+   `cta` mixin: 32 tall, 12 across, 13px at 450, a 4px radius). */
+
+.page {
+  margin: 0;
+  font-family: var(--font-family-sans);
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+.primary,
+.secondary {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-family: var(--font-family-sans);
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 1;
+  font-feature-settings: 'salt' 1;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* One transition: the hover surface swap and the press scale. */
+  transition:
+    background-color 0.2s ease,
+    opacity 0.2s ease,
+    scale 0.15s ease;
+
+  &:active {
+    scale: 0.97;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+}
+
+/* Filled: black on light, the ink's paper on dark. */
+.primary {
+  background: var(--ink);
+  color: var(--surface);
+
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, var(--ink) 92%, var(--surface));
+  }
+}
+
+/* The quiet one: the secondary surface, fading on hover. */
+.secondary {
+  background: color-mix(in srgb, var(--ink) 4%, var(--surface));
+  color: var(--ink);
+
+  &:hover,
+  &:focus-visible {
+    opacity: 0.7;
+  }
+}

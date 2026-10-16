@@ -14,7 +14,6 @@ import { cubicBezier } from 'motion';
 import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
 import { squirclePath } from '@/components/liquid-glass';
 import { brandDefaultLayout } from '@/data/design';
-import type { SoundName } from '@/lib/sounds';
 import { CARD_R } from './card3d/cardGeometry';
 import { BRAND_CAP, BRAND_TEXT_EM, BRAND_TRACKING } from './card3d/facePaint';
 
@@ -219,52 +218,6 @@ const SCORE_END = Math.max(REVEAL_AT + BLUEPRINT_OUT, REVEAL_AT - CARD_LEAD + CA
 const INTRO_DURATION = 2.8;
 const TIME_SCALE = INTRO_DURATION / SCORE_END;
 export const INTRO_END = INTRO_DURATION;
-
-export interface IntroSound {
-  /** Real seconds on the intro clock. */
-  at: number;
-  name: SoundName;
-  gain?: number;
-  /** Ticks closer together than the cue's own throttle allows. */
-  gap?: number;
-}
-
-/** Cue starts closer than this (score s) share one tick. */
-const TICK_MERGE = 0.02;
-/** The plotter's ticks along the outline start this far apart (score s) and
- *  close up to this by the outline's end, so the run gathers pace. */
-const PLOT_GAP_START = 0.34;
-const PLOT_GAP_END = 0.045;
-/** Labels only tick from here on (score s): the opening stays sparse. */
-const LABEL_TICKS_FROM = 1.4;
-
-/** Sounds on the intro's clock, ramping: sparse at the start (a tick as
- *  each line begins), then plotter ticks along the outline that close up as
- *  it draws, the labels joining in the second half, and the chip pads' run
- *  at the end. Nothing after: the card comes through in silence. */
-function introSounds(): IntroSound[] {
-  const moments: Array<{ at: number; name: SoundName; gain: number }> = [];
-  const add = (at: number, name: SoundName, gain: number) => {
-    if (moments.some((m) => Math.abs(m.at - at) < TICK_MERGE)) return;
-    moments.push({ at, name, gain });
-  };
-  for (const [key, cue] of Object.entries(CUES)) {
-    if (key.startsWith('pad-')) add(cue.at, 'snap', 0.9);
-    else if (cue.kind === 'draw') add(cue.at, 'tick', 0.6);
-    else if (cue.at >= LABEL_TICKS_FROM) add(cue.at, 'tickBright', 0.35);
-  }
-  const outline = CUES.outline;
-  const end = outline.at + outline.dur;
-  for (let t = outline.at + PLOT_GAP_START; t < end; ) {
-    add(t, 'snap', 0.45);
-    const u = (t - outline.at) / outline.dur;
-    t += PLOT_GAP_START + (PLOT_GAP_END - PLOT_GAP_START) * u * u;
-  }
-  return moments
-    .sort((a, b) => a.at - b.at)
-    .map((m) => ({ at: m.at * TIME_SCALE, name: m.name, gain: m.gain, gap: 0 }));
-}
-export const INTRO_SOUNDS: ReadonlyArray<IntroSound> = introSounds();
 
 const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
 

@@ -1,0 +1,29 @@
+type: object
+required:
+  - internalAccountId
+  - statementMonth
+  - statementDeliveredAt
+properties:
+  internalAccountId:
+    type: string
+    description: The account whose statement this is
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  statementMonth:
+    type: string
+    pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+    description: The statement month, as `YYYY-MM`
+    example: '2026-09'
+  fetchedAt:
+    type: string
+    format: date-time
+    description: >-
+      When the statement for this period was first read from Grid. Absent if
+      it never has been
+    example: '2026-10-01T09:00:00Z'
+  statementDeliveredAt:
+    type: string
+    format: date-time
+    description: >-
+      When the statement was issued, from the first receipt for this period.
+      Later receipts do not move it.
+    example: '2026-10-03T14:31:00Z'

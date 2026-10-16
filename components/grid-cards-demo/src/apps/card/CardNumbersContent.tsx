@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CARD_CVV, CARD_EXP, PAN_GROUPS, type CardControls } from '@/apps/shared/card';
+import type { CardControls } from '@/apps/shared/card';
 import NumericText from '@/components/NumericText';
 import styles from './CardNumbersContent.module.scss';
 
@@ -10,7 +10,7 @@ const ROLL_STEP_MS = 140;
 
 /** Digits roll in one group at a time (SwiftUI numericText), like the PAN
  *  arriving from the processor's iframe. */
-function RollingPan({ armed }: { armed: boolean }) {
+function RollingPan({ armed, groups }: { armed: boolean; groups: string[] }) {
   const [shown, setShown] = useState(0);
   useEffect(() => {
     if (!armed) {
@@ -21,14 +21,14 @@ function RollingPan({ armed }: { armed: boolean }) {
     const id = window.setInterval(() => {
       i += 1;
       setShown(i);
-      if (i >= PAN_GROUPS.length) window.clearInterval(id);
+      if (i >= groups.length) window.clearInterval(id);
     }, ROLL_STEP_MS);
     return () => window.clearInterval(id);
-  }, [armed]);
+  }, [armed, groups]);
   return (
-    <span className={styles.pan} aria-label={PAN_GROUPS.join(' ')}>
-      {PAN_GROUPS.map((g, i) => (
-        <span key={g} className={styles.panGroup}>
+    <span className={styles.pan} aria-label={groups.join(' ')}>
+      {groups.map((g, i) => (
+        <span key={i} className={styles.panGroup}>
           <NumericText value={i < shown ? Number(g) : 0} format={{ minimumIntegerDigits: 4, useGrouping: false }} />
         </span>
       ))}
@@ -47,15 +47,15 @@ export function CardNumbersContent({ card }: { card: CardControls }) {
       <div className={styles.group}>
         <div className={styles.row}>
           <span className={styles.label}>Card Number</span>
-          <RollingPan armed={card.revealed} />
+          <RollingPan armed={card.revealed} groups={card.credentials.groups} />
         </div>
         <div className={styles.row}>
           <span className={styles.label}>Expiration</span>
-          <span className={styles.value}>{CARD_EXP}</span>
+          <span className={styles.value}>{card.credentials.exp}</span>
         </div>
         <div className={styles.row}>
           <span className={styles.label}>Security Code</span>
-          <span className={styles.value}>{CARD_CVV}</span>
+          <span className={styles.value}>{card.credentials.cvv}</span>
         </div>
         <div className={styles.row}>
           <span className={styles.label}>Network</span>

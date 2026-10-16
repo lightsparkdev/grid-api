@@ -1,0 +1,8 @@
+title: Customer Update Response
+description: >-
+  Response body for a `200` from `PATCH /customers/{customerId}`: the updated
+  customer, or a `WalletOperationProcessing` body while the update is still
+  in progress.
+anyOf:
+  - $ref: ./CustomerOneOf.yaml
+  - $ref: ../common/WalletOperationProcessing.yaml

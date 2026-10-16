@@ -50,6 +50,12 @@ get:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '500':
       description: Internal service error
       content:
@@ -82,7 +88,7 @@ post:
               accountInfo:
                 accountType: USD_ACCOUNT
                 accountNumber: "12345678901"
-                routingNumber: "123456789"
+                routingNumber: "021000021"
                 bankAccountType: CHECKING
                 bankName: Chase Bank
                 beneficiary:
@@ -122,6 +128,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '409':
       description: Conflict - External account already exists
       content:

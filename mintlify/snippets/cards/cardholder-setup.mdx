@@ -26,7 +26,7 @@ account must:
 
 - Belong to the cardholder (no cross-customer funding in v1).
 - Be denominated in a card-eligible currency. In v1 this is USDB; the
-  request is rejected with `400 FUNDING_SOURCE_INELIGIBLE` otherwise.
+  request is rejected with `400 INVALID_INPUT` otherwise.
 
 If the cardholder doesn't have an internal account yet, internal
 accounts are created automatically when the customer is created based
@@ -39,11 +39,9 @@ curl -X GET "$GRID_BASE_URL/customers/internal-accounts?customerId=Customer:0195
 
 ## Pre-fund before authorizations arrive
 
-Grid does not check the funding source balance when it decides an
-authorization. An authorization against an underfunded source is approved to
-the card network, and the pull against the funding source fails afterwards.
-The transaction resolves as `EXCEPTION` for you to reconcile, and it carries
-no `cardDeclinedReason`, because nothing was declined. Fund the source the same
+Grid reserves the authorized amount from the funding source when it decides
+an authorization. If the source cannot cover it, the authorization is declined
+with `cardDeclinedReason: INSUFFICIENT_FUNDS`. Fund the source the same
 way you would for any other internal account — via the funding
 payment instructions or, in Sandbox, with
 `/sandbox/internal-accounts/{id}/fund`.

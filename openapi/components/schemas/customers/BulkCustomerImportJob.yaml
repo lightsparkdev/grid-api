@@ -9,14 +9,7 @@ properties:
     description: Unique identifier for the bulk import job
     example: Job:019542f5-b3e7-1d02-0000-000000000006
   status:
-    type: string
-    enum:
-      - PENDING
-      - PROCESSING
-      - COMPLETED
-      - FAILED
-    description: Current status of the job
-    example: PROCESSING
+    $ref: ./BulkCustomerImportJobStatus.yaml
   progress:
     type: object
     required:

@@ -1,14 +1,42 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { easingVarsStylesheet } from '@/lib/easing';
 import { CONFIGURE_COL_PX, LAYOUT_WIDE_PX, NAV_COLLAPSED_MAX_PX } from '@/lib/layout';
 import './globals.scss';
 
+/** The files facePaint.loadFaceAssets fetches, preloaded from the head. */
+const CARD_FACE_ASSETS = [
+  '/assets/card/visa-debit-lockup.svg',
+  '/assets/card/visa-dove.svg',
+  '/assets/card/contactless.svg',
+  '/assets/card/grain-normal.png',
+  '/assets/card/grain-rough.png',
+];
+
 const TITLE = 'Lightspark Cards — Playground';
 const DESCRIPTION =
   'Issue a branded Visa debit card and watch the API calls fire as you go.';
 
+/** The browser chrome's color (mobile Safari's bars): the app's surfaces.
+ *  A page whose surface differs (the share page) exports its own. */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F0F0EE' },
+    { media: '(prefers-color-scheme: dark)', color: '#111111' },
+  ],
+};
+
 export const metadata: Metadata = {
+  // lightspark.com's favicons, the files themselves (the website repo's
+  // public/favicons), linked as its Meta component links them.
+  icons: {
+    icon: [
+      { url: '/favicons/favicon.ico', sizes: 'any' },
+      { url: '/favicons/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicons/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+    ],
+    apple: '/favicons/apple-touch-icon.png',
+  },
   // Absolute base for social-card image URLs (scrapers need full URLs).
   // VERCEL_PROJECT_PRODUCTION_URL covers previews; the default is prod.
   metadataBase: new URL(
@@ -35,8 +63,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={GeistSans.variable} suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#F0F0EE" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
         {/* Preload the two variable fonts (every weight of Suisse Intl and of
             its Mono) so the first paint shows the real font sooner.
             crossOrigin is required even though the fonts are same-origin:
@@ -44,6 +70,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             wouldn't match and the font would download twice. */}
         <link rel="preload" href="/fonts/SuisseIntlVF.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/SuisseIntlMonoVF.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        {/* The card's face assets (facePaint.loadFaceAssets). Without these
+            the requests wait for the bundle, hydration, and the mesh's mount,
+            well over a second in; the intro cannot start until they are in.
+            crossOrigin matches the loader's, or the preload would not be
+            used. */}
+        {CARD_FACE_ASSETS.map((href) => (
+          <link key={href} rel="preload" href={href} as="image" crossOrigin="anonymous" />
+        ))}
         {/* Boot attributes, set before first paint to avoid flashes — an
             effect is too late (the SSR HTML paints long before hydration):
             - data-embed / data-theme from the URL (embed) or stored pref

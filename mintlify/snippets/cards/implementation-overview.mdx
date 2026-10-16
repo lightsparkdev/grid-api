@@ -16,7 +16,7 @@ credentials — they reuse what's already configured for the rest of
 Grid. You'll only need to:
 
 - Subscribe to the card webhook types: `CARD.STATUS_CHANGE` for card
-  state, and `CARD_TRANSACTION.AUTHORIZED`,
+  state, `CARD.PIN_STATUS_CHANGE` for PIN status, and `CARD_TRANSACTION.AUTHORIZED`,
   `CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`,
   `CARD_TRANSACTION.DECLINED`, `CARD_TRANSACTION.VOIDED`, and
   `CARD_TRANSACTION.EXCEPTION` for the transaction lifecycle.
@@ -114,3 +114,11 @@ When you're ready to go live:
 Contact your Lightspark representative to enable Production card
 issuance and finalize issuer activations.
 </Check>
+
+## USDB funding authorization
+
+A provisioned card funded by a USDB Embedded Wallet is `PENDING_AUTH` until all
+signed retries of `POST /auth/delegated-keys` are complete. Successful
+delegation restores `ACTIVE`; funding changes or key revocation can return
+an active card to `PENDING_AUTH`. Frozen and closed cards keep their status when
+delegation completes.

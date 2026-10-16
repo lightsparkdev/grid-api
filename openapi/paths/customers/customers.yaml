@@ -87,6 +87,14 @@ post:
                 postalCode: '98101'
                 country: US
   responses:
+    '200':
+      description: >-
+        The customer already created under this `Idempotency-Key`. A repeated
+        request replays the original result and creates nothing.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/CustomerOneOf.yaml
     '201':
       description: Customer created successfully
       content:
@@ -94,7 +102,11 @@ post:
           schema:
             $ref: ../../components/schemas/customers/CustomerOneOf.yaml
     '400':
-      description: Bad request
+      description: >-
+        Bad request. `ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform
+        requires an accountholder agreement for the customer type and
+        `agreementConsents` does not include it. If the End User Terms are also
+        missing, the response is `403` instead.
       content:
         application/json:
           schema:
@@ -105,6 +117,14 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden. `END_USER_TERMS_NOT_ACCEPTED` when the platform requires the
+        End User Terms and the request does not accept them.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '405':
       description: >-
         Method not allowed. Returned (as JSON, not HTML) when the request

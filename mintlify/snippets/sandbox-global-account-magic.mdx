@@ -1,6 +1,6 @@
 The Grid sandbox lets you exercise Global Account auth flows without moving real money. Email OTP and SMS OTP use the fixed sandbox code `000000` — HPKE-encrypt that code in the `encryptedOtpBundle` just like production. Passkey auth can use the same browser WebAuthn ceremony as production, and signed wallet actions can use the same session signing key and `Grid-Wallet-Signature` stamp as production. OAuth uses JWT-shaped sandbox OIDC tokens: sandbox skips real IdP signature verification, but still validates token claims, freshness, credential identity, and verify-time nonce binding.
 
-Sandbox runs real HPKE end-to-end for EMAIL_OTP and SMS_OTP: clients build a real `encryptedOtpBundle` against the sandbox `otpEncryptionTargetBundle` and sign a real `verificationToken` with their TEK keypair. The only sandbox shortcut is the magic OTP code the user "receives" instead of a real email or SMS delivery.
+Sandbox runs real HPKE end-to-end for EMAIL_OTP and SMS_OTP: clients build a real `encryptedOtpBundle` against the sandbox `otpEncryptionTargetBundle` and stamp the exact returned `payloadToSign` string with their TEK keypair. The only sandbox shortcut is the magic OTP code the user "receives" instead of a real email or SMS delivery.
 
 Authentication failures return `401 UNAUTHORIZED` with a `reason` field that names the specific check that failed. A malformed OIDC JWT can return `400 INVALID_INPUT` before authentication starts.
 
@@ -52,7 +52,7 @@ For new sandbox integrations, use the same WebAuthn calls you plan to use in pro
     Register the passkey with `POST /auth/credentials`, passing the challenge and attestation returned by the browser.
   </Step>
   <Step title="Request a challenge">
-    Reauthenticate with `POST /auth/credentials/{id}/challenge`, passing the P-256 `clientPublicKey` that Grid should seal the session signing key to.
+    Reauthenticate with `POST /auth/credentials/{id}/challenge`, passing the compressed P-256 `clientPublicKey` (lowercase hex) whose private key becomes the session signing key.
   </Step>
   <Step title="Run the browser assertion">
     Pass the returned `challenge` into `navigator.credentials.get()` using the returned `credentialId` in `allowCredentials`.
@@ -62,7 +62,7 @@ For new sandbox integrations, use the same WebAuthn calls you plan to use in pro
   </Step>
 </Steps>
 
-The sandbox validates the registered credential ID, WebAuthn challenge, origin/RP binding, user-presence bit, assertion signature, and signature counter. A successful verify response includes `encryptedSessionSigningKey`, sealed to the `clientPublicKey`, just like production.
+The sandbox validates the registered credential ID, WebAuthn challenge, origin/RP binding, user-presence bit, assertion signature, and signature counter. A successful verify response returns the session, just like production. The private key matching the `clientPublicKey` is the session signing key.
 
 ```bash
 # 1. /challenge with clientPublicKey
@@ -70,7 +70,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMet
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "clientPublicKey": "04f45f2a..."
+    "clientPublicKey": "02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"
   }'
 
 # 2. /verify with the browser assertion returned by navigator.credentials.get()
@@ -105,14 +105,14 @@ For `POST /auth/credentials` with `type: "OAUTH"`, the sandbox token must includ
 - `iat`: a numeric issued-at timestamp no more than 60 seconds before the request, with 5 seconds of clock skew allowed
 - `exp`: a numeric expiration timestamp later than the request time
 
-Grid stores the OAuth credential's registered identity from `iss`, `aud`, and `sub`. On `POST /auth/credentials/{id}/verify`, the fresh `oidcToken` must carry the same `iss`, `aud`, and `sub` as the credential being verified. It must also include `nonce` equal to `sha256(clientPublicKey)`, where `clientPublicKey` is the exact hex public key sent in the verify request.
+Grid stores the OAuth credential's registered identity from `iss`, `aud`, and `sub`. On `POST /auth/credentials/{id}/verify`, the fresh `oidcToken` must carry the same `iss`, `aud`, and `sub` as the credential being verified. It must also include `nonce` equal to the lowercase hex SHA-256 digest of `clientPublicKey`, hashed as the exact string sent in the verify request. That string is the compressed public key in lowercase hex: 66 characters starting with `02` or `03`.
 
 ```bash
-export PUBLIC_KEY="04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+export PUBLIC_KEY="02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"
 OIDC_TOKEN=$(node - <<'NODE'
 const crypto = require("crypto");
 
-const publicKey = process.env.PUBLIC_KEY || "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2";
+const publicKey = process.env.PUBLIC_KEY || "02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31";
 const now = Math.floor(Date.now() / 1000);
 const b64url = (value) =>
   Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -150,7 +150,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMet
 
 ### Wallet signature header
 
-For `PASSKEY` and `OAUTH` credentials, decrypt `encryptedSessionSigningKey` with the private key matching the `clientPublicKey` you supplied on verify or refresh. For `EMAIL_OTP`, the TEK private key you generated for the encrypted OTP flow **is** the session signing key — no decryption step needed. Use the session signing key to build a Grid wallet signature over the exact `payloadToSign` string returned by Grid, then pass that full signature as the `Grid-Wallet-Signature` HTTP header on signed flows:
+For `PASSKEY` and `OAUTH` credentials and session refresh, the private key matching the `clientPublicKey` you supplied is the session signing key. For `EMAIL_OTP`, the TEK private key you generated for the encrypted OTP flow is the session signing key. Use the session signing key to build a Grid wallet signature over the exact `payloadToSign` string returned by Grid, then pass that full signature as the `Grid-Wallet-Signature` HTTP header on signed flows:
 
 - `POST /auth/credentials` (add-additional-credential signed retry)
 - `DELETE /auth/credentials/{id}` (revoke credential)

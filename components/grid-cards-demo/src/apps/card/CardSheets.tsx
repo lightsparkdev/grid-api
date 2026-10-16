@@ -146,7 +146,7 @@ export function TransactionSheet({ card }: { card: CardControls }) {
       onDismiss={card.closeSheet}
       icon={<IconArrowUndoUp size={28} />}
       title={row ? (isRefund ? `Refund from ${row.title}` : row.title) : 'Transaction'}
-      sub={row ? `${isRefund ? 'Merchant return' : 'Tap to Pay'} · Card ending 8972` : undefined}
+      sub={row ? `${isRefund ? 'Merchant return' : 'Tap to Pay'} · Card ending ${card.credentials.last4}` : undefined}
     >
       {row ? (
         <div className={styles.txnBody}>

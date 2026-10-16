@@ -1,0 +1,47 @@
+post:
+  summary: Get device code status
+  description: >
+    Check the status of a device code. Use this to poll for agent installation
+    completion after creating an agent.
+  operationId: getAgentDeviceCodeStatus
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentDeviceCodeRequest.yaml
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentDeviceCodeStatusResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Device code not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

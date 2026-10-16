@@ -15,15 +15,13 @@ properties:
       | INVITATIONS_NOT_CONFIGURED | Invitations are not configured |
       | INVALID_UMA_ADDRESS | UMA address format is invalid |
       | INVITATION_CANCELLED | Invitation has been cancelled |
-      | QUOTE_REQUEST_FAILED | An issue occurred during the quote process; this is retryable |
-      | INVALID_PAYREQ_RESPONSE | Counterparty Payreq response was invalid |
       | INVALID_RECEIVER | Receiver is invalid |
       | PARSE_PAYREQ_RESPONSE_ERROR | Error parsing receiver PayReq response |
       | CERT_CHAIN_INVALID | Counterparty certificate chain is invalid |
       | CERT_CHAIN_EXPIRED | Counterparty certificate chain has expired |
       | INVALID_PUBKEY_FORMAT | Counterparty Public key format is invalid |
       | MISSING_REQUIRED_UMA_PARAMETERS | Counterparty required UMA parameters are missing |
-      | SENDER_NOT_ACCEPTED | Sender is not accepted |
+      | SENDER_NOT_ACCEPTED | The receiving institution declined this sender. Final; a retry returns the same answer |
       | AMOUNT_OUT_OF_RANGE | Amount is out of range |
       | INVALID_CURRENCY | Currency is invalid |
       | INVALID_TIMESTAMP | Timestamp is invalid |
@@ -31,7 +29,6 @@ properties:
       | INVALID_REQUEST_FORMAT | Request format is invalid |
       | INVALID_BANK_ACCOUNT | Bank account is invalid |
       | SELF_PAYMENT | Self payment not allowed |
-      | LOOKUP_REQUEST_FAILED | Lookup request failed |
       | PARSE_LNURLP_RESPONSE_ERROR | Error parsing LNURLP response |
       | INVALID_AMOUNT | Amount is invalid |
       | WEBHOOK_ENDPOINT_NOT_SET | Webhook endpoint is not set |
@@ -45,10 +42,13 @@ properties:
       | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
       | SMS_OTP_CREDENTIAL_ALREADY_EXISTS | An SMS_OTP credential is already registered on the target internal account; only one SMS OTP credential is supported per internal account at this time |
       | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential with the same WebAuthn credentialId is already registered on the target internal account |
+      | AUTH_CREDENTIAL_VERIFICATION_REQUIRED | The new email or phone number has no verified replacement credential |
+      | AUTH_CREDENTIAL_VERIFICATION_EXPIRED | The replacement credential's verification has expired |
       | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
       | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
       | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
       | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
+      | ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED | The customer create request omits an accountholder agreement its accounts require |
       | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
       | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
       | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
@@ -68,6 +68,7 @@ properties:
       | STABLECOIN_PROVIDER_ERROR | The stablecoin provider rejected the operation |
       | STABLECOIN_PROVIDER_SOURCE_NOT_LINKED | The provider source account is not linked |
       | STABLECOIN_VERIFICATION_FAILED | The stablecoin could not be verified with the provider |
+      | DOCUMENTS_REQUIRED | The destination requires supporting documents for the quote's `purposeOfPayment` that the request did not supply. `details.missingRequirements` lists the requirement ID of each one |
     enum:
       - INVALID_INPUT
       - END_USER_TERMS_VERSION_NOT_FOUND
@@ -76,8 +77,6 @@ properties:
       - INVITATIONS_NOT_CONFIGURED
       - INVALID_UMA_ADDRESS
       - INVITATION_CANCELLED
-      - QUOTE_REQUEST_FAILED
-      - INVALID_PAYREQ_RESPONSE
       - INVALID_RECEIVER
       - PARSE_PAYREQ_RESPONSE_ERROR
       - CERT_CHAIN_INVALID
@@ -92,7 +91,6 @@ properties:
       - INVALID_REQUEST_FORMAT
       - INVALID_BANK_ACCOUNT
       - SELF_PAYMENT
-      - LOOKUP_REQUEST_FAILED
       - PARSE_LNURLP_RESPONSE_ERROR
       - INVALID_AMOUNT
       - WEBHOOK_ENDPOINT_NOT_SET
@@ -106,10 +104,13 @@ properties:
       - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
       - SMS_OTP_CREDENTIAL_ALREADY_EXISTS
       - PASSKEY_CREDENTIAL_ALREADY_EXISTS
+      - AUTH_CREDENTIAL_VERIFICATION_REQUIRED
+      - AUTH_CREDENTIAL_VERIFICATION_EXPIRED
       - STABLECOIN_PROVIDER_ACCOUNT_INVALID
       - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
       - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
       - CARDHOLDER_KYC_NOT_APPROVED
+      - ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED
       - TRANSACTION_SIZE_LIMIT_EXCEEDED
       - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
       - INSUFFICIENT_FUNDS
@@ -129,6 +130,7 @@ properties:
       - STABLECOIN_PROVIDER_ERROR
       - STABLECOIN_PROVIDER_SOURCE_NOT_LINKED
       - STABLECOIN_VERIFICATION_FAILED
+      - DOCUMENTS_REQUIRED
   reason:
     type: string
     description: Error message
@@ -147,4 +149,11 @@ properties:
           submit endpoints.
         items:
           $ref: ./FieldError.yaml
+      missingRequirements:
+        type: array
+        description: >-
+          The requirement ID of each required document that the quote request
+          did not supply. Present on `DOCUMENTS_REQUIRED`.
+        items:
+          $ref: ../payment_documents/PaymentDocumentRequirementId.yaml
     additionalProperties: true

@@ -4,16 +4,11 @@ description: >-
   the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`,
   or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `factor` being
   completed, the `endUserIpAddress` the login is being performed from, and, for
-  `SMS_OTP`, the `challengeId` returned by the login start.
+  `SMS_OTP`, the `challengeId` returned by the login start. Provide exactly one
+  of `code` or `passkeyAssertion`, with `origin` alongside a `passkeyAssertion`.
 required:
   - factor
   - endUserIpAddress
-anyOf:
-  - required:
-      - code
-  - required:
-      - passkeyAssertion
-      - origin
 properties:
   factor:
     $ref: ./ScaFactor.yaml

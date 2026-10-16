@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { Orientation } from '@/data/design';
 import { canvasTexture } from './canvasTexture';
 import { holoStudioTexture, STUDIO_LIGHTS } from './CardEnv';
+import { deferPaint, placeholderCanvas, repaint } from './deferredPaint';
 import { paintDoveMaps } from './dovePaint';
 import { layerFrame } from './faceFrame';
 import { doveBox, type FaceAssets } from './facePaint';
@@ -183,19 +184,33 @@ export function HoloDove({
       roughness: 1,
       transparent: true,
     });
-    const maps = paintDoveMaps(assets);
-    m.map = canvasTexture(maps.albedo, true);
-    m.alphaMap = canvasTexture(maps.mask);
-    m.roughnessMap = canvasTexture(maps.orm);
-    m.normalMap = canvasTexture(maps.normal);
+    // The five maps are the card's slowest paint; they land after the
+    // intro (deferredPaint). Until then a texel each: the mask black, so
+    // the dove is not there, the others neutral.
+    m.map = canvasTexture(placeholderCanvas('#ffffff'), true);
+    m.alphaMap = canvasTexture(placeholderCanvas('#000000'));
+    m.roughnessMap = canvasTexture(placeholderCanvas('#ffffff'));
+    m.normalMap = canvasTexture(placeholderCanvas('#8080ff'));
     m.normalScale.set(HOLO.normalScale, HOLO.normalScale);
     m.envMap = holoStudioTexture();
     m.envMapIntensity = HOLO.envMapIntensity;
     m.depthWrite = false;
-    uniforms.uGrating.value = canvasTexture(maps.grating);
+    uniforms.uGrating.value = canvasTexture(placeholderCanvas('#000000'));
     patchHoloMaterial(m, uniforms);
     return m;
   }, [assets, uniforms]);
+  useEffect(
+    () =>
+      deferPaint(() => {
+        const maps = paintDoveMaps(assets);
+        repaint(material.map!, maps.albedo);
+        repaint(material.alphaMap!, maps.mask);
+        repaint(material.roughnessMap!, maps.orm);
+        repaint(material.normalMap!, maps.normal);
+        repaint(uniforms.uGrating.value!, maps.grating);
+      }),
+    [assets, material, uniforms],
+  );
   useEffect(() => {
     materialRef.current = material;
     return () => {
@@ -217,16 +232,29 @@ export function HoloDove({
 
   // The camera and the lights in the layer's own frame, each frame: the
   // grating math runs in the plane's tangent space, which for a plane is its
-  // object space.
+  // object space. The same update hangs off the mesh (`userData.updateView`)
+  // for a render from another camera (the export), which runs it itself.
   const inv = useMemo(() => new THREE.Matrix4(), []);
-  useFrame(({ camera }) => {
+  const updateView = useCallback(
+    (camera: THREE.Camera) => {
+      const me = mesh.current;
+      if (!me || !me.visible) return;
+      inv.copy(me.matrixWorld).invert();
+      uniforms.uCamObj.value.copy(camera.position).applyMatrix4(inv);
+      uniforms.uLight0.value.copy(WORLD_LIGHTS[0]).transformDirection(inv);
+      uniforms.uLight1.value.copy(WORLD_LIGHTS[1]).transformDirection(inv);
+    },
+    [inv, uniforms],
+  );
+  useFrame(({ camera }) => updateView(camera));
+  useEffect(() => {
     const me = mesh.current;
-    if (!me || !visible) return;
-    inv.copy(me.matrixWorld).invert();
-    uniforms.uCamObj.value.copy(camera.position).applyMatrix4(inv);
-    uniforms.uLight0.value.copy(WORLD_LIGHTS[0]).transformDirection(inv);
-    uniforms.uLight1.value.copy(WORLD_LIGHTS[1]).transformDirection(inv);
-  });
+    if (!me) return;
+    me.userData.updateView = updateView;
+    return () => {
+      delete me.userData.updateView;
+    };
+  }, [updateView]);
 
   const frame = doveFrame(assets, orientation);
   return (

@@ -135,3 +135,11 @@ event model.
 You've issued a card, watched it activate, and driven an over-auth
 transaction through pull and clearing.
 </Check>
+
+## USDB funding authorization
+
+A provisioned card funded by a USDB Embedded Wallet is `PENDING_AUTH` until all
+signed retries of `POST /auth/delegated-keys` are complete. Successful
+delegation restores `ACTIVE`; funding changes or key revocation can return
+an active card to `PENDING_AUTH`. Frozen and closed cards keep their status when
+delegation completes.

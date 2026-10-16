@@ -7,15 +7,18 @@ import {
   materialOf,
   STOCKS,
   stockOf,
+  type ArtLayout,
   type BrandLayout,
   type CardDesign,
   type CardMaterial,
   type CardStock,
   type Orientation,
 } from '@/data/design';
+import { currentCredentials, type CardCredentials } from '@/apps/shared/card/cardholder';
 import { grain as grainVoice, type Grain } from '@/lib/sounds';
 import { canvasTexture } from './canvasTexture';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
+import { deferPaint, placeholderCanvas, repaint } from './deferredPaint';
 import { blankStudioTexture, foilStudioTexture } from './CardEnv';
 import { layerFrame, texelBounds } from './faceFrame';
 import { doveFrame, HoloDove } from './HoloDove';
@@ -32,11 +35,11 @@ import {
 } from './materialSwap';
 import { MaterialSwarm } from './MaterialSwarm';
 import {
+  artBox,
   backAccountBox,
   brandBox,
   brandRegion,
   loadFaceAssets,
-  loadImage,
   lockupBox,
   makeCanvas,
   paintArtMask,
@@ -51,6 +54,7 @@ import {
   paintFront,
   paintFrontLockupMask,
   paintLockupMask,
+  resolveArtLayout,
   resolveBrandLayout,
   TEX_H,
   TEX_W,
@@ -66,10 +70,13 @@ import {
   surfaceMapsReady,
   type BakeJob,
 } from './surfaceBakeClient';
+import { useLoadedImage } from './useLoadedImage';
 
 export interface CardMeshState {
   design: CardDesign;
   issued: boolean;
+  /** What the personalization prints once issued. Absent, the current card's. */
+  credentials?: CardCredentials;
   frozen: boolean;
   closed: boolean;
 }
@@ -79,6 +86,19 @@ export interface CardMeshState {
 export interface BrandPlacement {
   box: SpecRect;
   layout: BrandLayout;
+}
+
+/** The art's box on the front and the layout it was drawn with. */
+export interface ArtPlacement {
+  box: SpecRect;
+  layout: ArtLayout;
+}
+
+/** Where the front's movable graphics landed on the last paint: the brand
+ *  (null when hidden) and the art (null without any). */
+export interface FacePlacement {
+  brand: BrandPlacement | null;
+  art: ArtPlacement | null;
 }
 
 /** Personalization prints on ACTIVE: this long, in this many repaints. */
@@ -104,31 +124,6 @@ const SURFACE: Record<Surface, { clearcoat: number; clearcoatRoughness: number; 
   'bare-matte': { clearcoat: 0, clearcoatRoughness: 0, specular: 1, sheen: 0, normalScale: 0.6 },
   'bare-gloss': { clearcoat: 0, clearcoatRoughness: 0, specular: 1, sheen: 0, normalScale: 0.4 },
 };
-
-/** The image at `url` once loaded (null on failure or with no url), and
- *  whether it is still on its way: a face is not painted against a missing
- *  logo or art, or the wordmark and the color would flash first. */
-function useLoadedImage(url: string | null): { img: HTMLImageElement | null; pending: boolean } {
-  const [state, setState] = useState<{
-    url: string | null;
-    img: HTMLImageElement | null;
-  }>({ url: null, img: null });
-  useEffect(() => {
-    if (!url) {
-      setState({ url: null, img: null });
-      return;
-    }
-    let alive = true;
-    loadImage(url).then((img) => {
-      if (alive) setState({ url, img });
-    });
-    return () => {
-      alive = false;
-    };
-  }, [url]);
-  const settled = state.url === url;
-  return { img: settled ? state.img : null, pending: !!url && !settled };
-}
 
 /**
  * The Visa mark's silver foil, as the layer it is: a film stamped onto the
@@ -189,7 +184,9 @@ function FoilMark({
     });
     m.map = canvasTexture(paintFoilAlbedo(black), true);
     m.alphaMap = canvasTexture(paintLockupMask(assets));
-    m.normalMap = canvasTexture(paintFoilNormal(assets));
+    // The relief is the slow one (a Sobel over the mark at texel size); it
+    // lands after the intro (deferredPaint), flat until then.
+    m.normalMap = canvasTexture(placeholderCanvas('#8080ff'));
     m.normalScale.set(FOIL.normalScale, FOIL.normalScale);
     m.envMap = foilStudioTexture();
     m.envMapIntensity = FOIL.envMapIntensity;
@@ -198,6 +195,7 @@ function FoilMark({
     // `black` is read once here; the effect below keeps the albedo current.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assets]);
+  useEffect(() => deferPaint(() => repaint(material.normalMap!, paintFoilNormal(assets))), [assets, material]);
   const paintedBlack = useRef(black);
   useEffect(() => {
     if (paintedBlack.current === black) return;
@@ -245,8 +243,8 @@ interface CardMeshProps {
   state: CardMeshState;
   /** Fires once, when the front has first been painted. */
   onReady?: () => void;
-  /** Fires after each front paint with where the brand landed. */
-  onBrandPlacement?: (placement: BrandPlacement) => void;
+  /** Fires after each front paint with where the brand and the art landed. */
+  onPlacement?: (placement: FacePlacement) => void;
   /** Whether a material change may play out (the card is floating, the intro
    *  is over, motion is allowed), and whether the back is showing (the wipe
    *  runs along the card's long axis, left to right on screen for a flat card
@@ -316,10 +314,30 @@ function uploadBackRegion(
  *  (`STOCKS[2]`), a shade cooler and brighter, as mill stainless is. */
 const BLANK_STEEL: CardStock = { ...STOCKS[2], face: '#e0e2e7' };
 
+/** What the export reads off the group's `userData` to know the card is a
+ *  finished picture: its assets are in, no image is loading, and no material
+ *  change is mid-wipe. */
+export interface CardMeshUserData {
+  painted?: boolean;
+  pending?: boolean;
+  swapInFlight?: boolean;
+}
+
 export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh(
-  { state, onReady, onBrandPlacement, swapContext, onChange },
+  { state, onReady, onPlacement, swapContext, onChange },
   ref,
 ) {
+  // The group, for this component too (the forwarded ref may be a callback).
+  const inner = useRef<THREE.Group | null>(null);
+  const setGroup = useCallback(
+    (g: THREE.Group | null) => {
+      inner.current = g;
+      if (typeof ref === 'function') ref(g);
+      else if (ref) ref.current = g;
+    },
+    [ref],
+  );
+  const flags = (): CardMeshUserData | null => (inner.current?.userData as CardMeshUserData | undefined) ?? null;
   const r3fInvalidate = useThree((s) => s.invalidate);
   // Every place the mesh changes what it shows asks for a frame here. R3F's
   // own invalidate is a no-op on a "never" frameloop (the stage steps it);
@@ -356,6 +374,10 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   const { img: art, pending: artPending } = useLoadedImage(state.design.backgroundUrl);
   // The front waits for its images; the last paint stays up meanwhile.
   const frontPending = logoPending || artPending;
+  useEffect(() => {
+    const f = flags();
+    if (f) f.pending = frontPending;
+  });
 
   // One canvas per face for the life of the mesh; repaints upload in place.
   const frontCanvas = useMemo(() => makeCanvas(TEX_W, TEX_H), []);
@@ -653,7 +675,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   // Decoration: spot gloss, foil, or etch on the brand, spot gloss on the
   // art, and the front Visa lockup's ink on bare steel, laid over the
   // front's cached maps per design.
-  const { logoTreatment, artTreatment } = state.design;
+  const { logoTreatment, brandHidden, artTreatment } = state.design;
   const frontInk = !backMark && surface.startsWith('bare');
   const decoTex = useRef<{ orm: THREE.Texture | null; normal: THREE.Texture | null }>({ orm: null, normal: null });
   useEffect(() => {
@@ -665,7 +687,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     decoTex.current.orm?.dispose();
     decoTex.current.normal?.dispose();
     decoTex.current = { orm: null, normal: null };
-    const brandT = logoTreatment === 'print' ? null : logoTreatment;
+    // A hidden brand has no treatment to lay down.
+    const brandT = logoTreatment === 'print' || brandHidden ? null : logoTreatment;
     const artT = art && artTreatment === 'spotGloss';
     const brandMask = brandT ? paintBrandMask(bodyDesign, logo) : null;
     if (!brandT && !artT && !frontInk) {
@@ -677,7 +700,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
           base.orm.image as HTMLCanvasElement, // a canvas, or the worker's bitmap: both draw
           brandMask,
           brandT,
-          artT && art ? paintArtMask(art, orientation) : null,
+          artT && art ? paintArtMask(art, bodyDesign) : null,
           cardMaterial === 'metal',
           frontInk ? paintFrontLockupMask(assets, orientation) : null,
         ),
@@ -706,6 +729,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     orientation,
     cardMaterial,
     logoTreatment,
+    brandHidden,
     artTreatment,
     frontInk,
     logo,
@@ -784,7 +808,14 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     );
     frontMap.needsUpdate = true;
     invalidate();
-    onBrandPlacement?.({ box: brandBox(bodyDesign, logo), layout: resolveBrandLayout(bodyDesign, logo) });
+    onPlacement?.({
+      brand: bodyDesign.brandHidden
+        ? null
+        : { box: brandBox(bodyDesign, logo), layout: resolveBrandLayout(bodyDesign, logo) },
+      art: art ? { box: artBox(bodyDesign, art), layout: resolveArtLayout(bodyDesign) } : null,
+    });
+    const f = flags();
+    if (f) f.painted = true;
     if (!ready.current) {
       ready.current = true;
       // Before the card is shown, its textures go up to the GPU one frame at
@@ -830,7 +861,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     frontMap,
     invalidate,
     onReady,
-    onBrandPlacement,
+    onPlacement,
     three,
     materials,
     swapU,
@@ -854,6 +885,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       {
         design: bodyDesign,
         personalized,
+        credentials: state.credentials ?? currentCredentials(),
         frozen: state.frozen,
         closed: state.closed,
       },
@@ -873,7 +905,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     }
     backMap.needsUpdate = true;
     invalidate();
-  }, [assets, bodyDesign, personalized, state.frozen, state.closed, backCanvas, backMap, backPatch, three, invalidate]);
+  }, [assets, bodyDesign, personalized, state.credentials, state.frozen, state.closed, backCanvas, backMap, backPatch, three, invalidate]);
 
   // ── Material change ────────────────────────────────────────────────────────
   // Three fronts wipe the face left to right, the way a card is made: the
@@ -971,6 +1003,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
 
   useFrame((frame, delta) => {
     const sw = swap.current;
+    const f = flags();
+    if (f) f.swapInFlight = sw !== null;
     if (!sw) return;
     if (!sw.paused) sw.t += Math.min(50, delta * 1000);
     const { shared } = swapU;
@@ -1052,7 +1086,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   );
 
   return (
-    <group ref={ref}>
+    <group ref={setGroup}>
       <mesh geometry={geometry} material={materials} visible={assets !== null} />
       {assets && (
         <>

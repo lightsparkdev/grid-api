@@ -62,12 +62,11 @@ properties:
       both fields in one request is rejected.
   agreementConsents:
     type: array
-    maxItems: 7
     description: >-
       Evidence that the customer accepted Grid agreements, at most
-      one entry per type. Unregulated platforms must record acceptance of the
-      Lightspark End User Terms before initiating customer-scoped transactions;
-      those transactions fail until that consent is recorded. Consents can be
-      supplied during customer creation or in a later customer update.
+      one entry per type. Include every agreement the platform requires for
+      the customer's accounts: the Lightspark End User Terms on unregulated
+      platforms, and the Lead accountholder agreement for the customer type
+      when the platform requires it.
     items:
       $ref: ./AgreementConsentRequest.yaml

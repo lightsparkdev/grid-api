@@ -12,3 +12,5 @@ certs/
 # in src/apps/shared/icons/sfSymbolPaths.ts, not these SVGs.
 public/assets/symbols/
 .tmp-sf-symbols-*/
+# Local share store (dev): cards shared from localhost land here.
+.shares/

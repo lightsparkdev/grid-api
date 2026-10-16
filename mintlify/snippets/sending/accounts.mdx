@@ -30,11 +30,12 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000,
     "remittanceInformation": "INV-12345",
+    "statementDescriptor": "INVOICE",
     "description": "Payment for services - Invoice #1234"
   }'
 ```
 
-```json Success (201 Created)
+```json Success (200 OK)
 {
   "id": "Quote:019542f5-b3e7-1d02-0000-000000000025",
   "status": "PENDING",
@@ -68,11 +69,11 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 </Info>
 
 <Tip>
-  The `paymentRail` field is optional. If omitted, Grid selects a default rail for the destination. Specify a rail (e.g., `ACH`, `WIRE`, `RTP`, `FEDNOW`) when you need to control which payment network processes the transfer.
+  The `paymentRail` field is optional. If omitted, Grid selects a default rail for the destination. Specify a rail (e.g., `ACH`, `ACH_SAME_DAY`, `WIRE`, `RTP`, `FEDNOW`) when you need to control which payment network processes the transfer. `ACH_SAME_DAY` is never selected for you: it requests same-business-day settlement and is priced separately. It is capped at $1,000,000 per entry by the NACHA same-day limit (rising to $10,000,000 on 2027-09-17); a payout above that is rejected, so send it over `ACH` instead.
 </Tip>
 
 <Info>
-  `remittanceInformation` is optional. Use it to send a reference that travels with the payment to the recipient (max 80 characters). This populates the ACH Addenda record, FedNow/RTP remittance information, or wire OBI field depending on the payment rail.
+  `remittanceInformation` is optional. Use it to send a reference that travels with the payment to the recipient (max 80 characters). This populates the ACH Addenda record, FedNow/RTP remittance information, or wire OBI field depending on the payment rail. `statementDescriptor` is optional and used only on ACH: it sets the up-to-10-character Company Entry Description the recipient's bank shows on their statement, such as `PAYROLL`.
 </Info>
 
 <Accordion title="Including purpose of payment">
@@ -102,7 +103,23 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
   - `TRAVEL` - Travel-related expenses
   - `FAMILY_SUPPORT` - Family support or remittance
   - `SALARY_PAYMENT` - Salary or wage payment
+  - `SERVICE_CHARGES` - Service charges
   - `OTHER` - Other purpose (may require additional documentation)
+
+  **For China business payouts:**
+
+  Business payments to China must use one of the purposes below. [Supporting documents](/payouts-and-b2b/payment-flow/send-payment#supporting-documents) lists the documents each one needs.
+
+  - `EXPORTED_GOODS_PREPAYMENT` - Exported goods, paid before shipping
+  - `EXPORTED_GOODS_POSTPAYMENT` - Exported goods, paid after delivery
+  - `COMMISSION_ON_GOODS` - Commission on goods
+  - `COMMISSION_ON_SERVICES` - Commission on services
+  - `ACCOUNTING_SERVICES` - Accounting services
+  - `EXHIBITION_SERVICES` - Exhibition services
+  - `OFFICE_EXPENSES` - Office expenses
+  - `DELIVERY_FEES` - Delivery fees
+  - `HOTEL_ACCOMMODATION` - Hotel accommodation
+  - `TRAVEL` - Travel, listed above and also valid for China
 </Accordion>
 </Step>
 

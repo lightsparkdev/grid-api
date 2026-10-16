@@ -6,8 +6,6 @@ import com.lightspark.grid.models.quotes.QuoteCreateParams.LockedCurrencySide
 import com.lightspark.grid.models.quotes.QuoteCreateParams.PurposeOfPayment
 import com.lightspark.grid.models.quotes.QuoteExecuteParams
 import com.lightspark.grid.models.quotes.QuoteSourceOneOf
-import com.lightspark.grid.models.quotes.QuoteSourceOneOf.AccountQuoteSource
-import com.lightspark.grid.models.quotes.QuoteSourceOneOf.RealtimeFundingQuoteSource
 import com.lightspark.grid.models.quotes.QuoteDestinationOneOf
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
@@ -116,7 +114,7 @@ private fun buildQuoteSource(sourceNode: JsonNode): QuoteSourceOneOf {
     val sourceType = sourceNode.optText("sourceType")
 
     if (sourceType == "REALTIME_FUNDING" || sourceNode.has("currency")) {
-        val realtimeSource = RealtimeFundingQuoteSource.builder()
+        val realtimeSource = QuoteSourceOneOf.RealtimeFunding.builder()
             .currency(sourceNode.get("currency").asText())
             .apply {
                 sourceNode.optText("customerId")?.let { customerId(it) }
@@ -125,33 +123,33 @@ private fun buildQuoteSource(sourceNode: JsonNode): QuoteSourceOneOf {
                 sourceNode.optText("cryptoNetwork")?.let { cryptoNetwork(it) }
             }
             .build()
-        return QuoteSourceOneOf.ofRealtimeFundingQuoteSource(realtimeSource)
+        return QuoteSourceOneOf.ofRealtimeFunding(realtimeSource)
     }
 
-    val accountSource = AccountQuoteSource.builder()
+    val accountSource = QuoteSourceOneOf.Account.builder()
         .accountId(sourceNode.get("accountId").asText())
         .apply {
             sourceNode.optText("customerId")?.let { customerId(it) }
         }
         .build()
-    return QuoteSourceOneOf.ofAccountQuoteSource(accountSource)
+    return QuoteSourceOneOf.ofAccount(accountSource)
 }
 
 private fun buildQuoteDestination(destNode: JsonNode): QuoteDestinationOneOf {
     if (destNode.has("umaAddress")) {
-        val umaDest = QuoteDestinationOneOf.UmaAddressDestination.builder()
+        val umaDest = QuoteDestinationOneOf.UmaAddress.builder()
             .umaAddress(destNode.get("umaAddress").asText())
             .build()
-        return QuoteDestinationOneOf.ofUmaAddressDestination(umaDest)
+        return QuoteDestinationOneOf.ofUmaAddress(umaDest)
     }
 
-    val accountDest = QuoteDestinationOneOf.AccountDestination.builder()
+    val accountDest = QuoteDestinationOneOf.Account.builder()
         .accountId(destNode.get("accountId").asText())
         .apply {
             destNode.optText("paymentRail")?.let {
-                paymentRail(QuoteDestinationOneOf.AccountDestination.PaymentRail.of(it))
+                paymentRail(QuoteDestinationOneOf.Account.PaymentRail.of(it))
             }
         }
         .build()
-    return QuoteDestinationOneOf.ofAccountDestination(accountDest)
+    return QuoteDestinationOneOf.ofAccount(accountDest)
 }

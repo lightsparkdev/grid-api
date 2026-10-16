@@ -10,7 +10,7 @@ export const PX_PER_MM = CARD_W / 85.6;
 export const CARD_DEPTH_MM: Record<CardMaterial, number> = { plastic: 0.76, metal: 0.95 };
 /** Corner: the phone's debit-card squircle (13 px Figma × 1.2, smoothing 0.12). */
 export const CARD_R = 13 * 1.2;
-const CORNER_SMOOTHING = 0.12;
+export const CORNER_SMOOTHING = 0.12;
 const BEVEL = 0.3;
 /** Where a face's plane sits (|z|) for a material: half the depth plus the bevel. */
 export const faceZOf = (material: CardMaterial) => (CARD_DEPTH_MM[material] * PX_PER_MM) / 2 + BEVEL;

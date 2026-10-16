@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import { computeDomeConstants } from '@/components/liquid-glass/displacement';
 import { observeTheme, readDotGridPalette, type DotGridPalette } from '@/lib/dotGridColors';
+import { DOT_SIZE, dotLayout, type DotEdge } from '@/lib/dotLattice';
 import {
   createPointerTracker,
   createPressTracker,
@@ -69,16 +70,16 @@ const DEFAULT_LENS: StageGLLens = {
   designWidth: 434,
 };
 
-// --- dot field (same constants/wave as components/DotGrid) ---
-// Match grid-visualizer's SVG tile: 20×20 repeat, 2.5px dot at (8.75, 8.75), bg offset 8px.
-const DOT_SPACING = 20;
-const DOT_SIZE = 2.5;
+// --- dot field (the lattice is lib/dotLattice, shared with the share template) ---
 // Draw the dot field this far past each visible edge (CSS px) so the click ripple
 // has real dots to pull in from beyond the frame — no "dots only exist inside"
 // boundary mid-wave. At rest these extra dots sit just off-screen (the gutter is a
 // hair under the gap, so the first off-frame dot hides behind the edge). The
 // visible canvas samples the inner window via the shader's toUV.
 const DOT_BLEED = 48;
+/** Without WebGL, when the dot field is a background image: how long a resize
+ *  must hold still before the image is encoded again (ms). */
+const FLAT_SETTLE_MS = 150;
 
 // Stashed: the original behavior fired the ripple immediately on pointer-down.
 // Now the grid presses in on hold and fires the ripple on RELEASE. Flip this to
@@ -89,30 +90,10 @@ const RIPPLE_ON_PRESS = false;
 // start on the backdrop do. The phone is its shell, its content layer above
 // the card's canvas (the screen's buttons, lists, sheets, and the stage chrome
 // beside it), and, while the phone is up, the card itself in its slot.
-const FOREGROUND_SELECTOR = '[class*="AppShell_scaled"], [class*="AppShell_overStage"], [data-phone-up]';
+const FOREGROUND_SELECTOR =
+  '[class*="AppShell_scaled"], [class*="AppShell_overStage"], [data-phone-up], [data-stage-foreground]';
 
-/**
- * Even grid with a clean, symmetric edge gutter that's a hair SMALLER than the gap
- * (by one dot size). Two reasons: (1) it reads as even padding all around, and
- * (2) the first dot just past each edge lands fully off-screen, so when the field
- * is extended into the bleed margin those extra dots stay hidden at rest. Returns
- * the VISIBLE lattice (startX = gutter, step = gap); drawDotField extends it across
- * the bleed-padded buffer.
- */
-function dotLayout(w: number, h: number) {
-  const cols = Math.max(1, Math.round((w + 2 * DOT_SIZE) / DOT_SPACING) - 1);
-  const rows = Math.max(1, Math.round((h + 2 * DOT_SIZE) / DOT_SPACING) - 1);
-  const stepX = (w + 2 * DOT_SIZE) / (cols + 1); // the gap
-  const stepY = (h + 2 * DOT_SIZE) / (rows + 1);
-  return {
-    cols,
-    rows,
-    startX: stepX - DOT_SIZE, // gutter ≈ gap − one dot, so off-frame dots hide
-    startY: stepY - DOT_SIZE,
-    stepX,
-    stepY,
-  };
-}
+export type { DotEdge };
 
 function drawDotField(
   ctx: CanvasRenderingContext2D,
@@ -122,13 +103,14 @@ function drawDotField(
   dpr: number,
   palette: DotGridPalette,
   bgColor: string,
+  edge: DotEdge,
 ) {
   const fullW = w + 2 * bleed;
   const fullH = h + 2 * bleed;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS px on the device-sized buffer
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, fullW, fullH);
-  const { startX, startY, stepX, stepY } = dotLayout(w, h);
+  const { startX, startY, stepX, stepY } = dotLayout(w, h, edge);
   if (stepX <= 0 || stepY <= 0) return;
   // The visible lattice (visible x = startX + n*stepX) extended across the whole
   // bleed-padded buffer (shifted by `bleed`), so the ripple can pull in dots from
@@ -383,6 +365,8 @@ export interface StageGLProps {
   bootMix?: number;
   targetSelector?: string;
   rippleOnClick?: boolean;
+  /** How the dots meet the edges; the stage's gutter by default. */
+  edge?: DotEdge;
 }
 
 export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
@@ -393,6 +377,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
     targetSelector = '[class*="AppShell_shell"]',
     rippleOnClick = true,
     bootMix = 1,
+    edge = 'gutter',
   },
   ref,
 ) {
@@ -624,7 +609,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
       // click ripple is no longer baked here; it's a shader displacement (below), so
       // it costs nothing on this 2D-redraw + upload path.
       if (textureDirty) {
-        drawDotField(offCtx, cssW, cssH, DOT_BLEED, dpr, palette, bg ?? palette.bg);
+        drawDotField(offCtx, cssW, cssH, DOT_BLEED, dpr, palette, bg ?? palette.bg, edge);
         gl.bindTexture(gl.TEXTURE_2D, tex);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, off);
       }
@@ -776,10 +761,15 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
     };
     stage.addEventListener('pointerdown', onDown, { capture: true });
 
+    // Without WebGL the dot field is drawn straight onto the canvas (see below).
+    let paintFlat: (() => void) | null = null;
+    let flatSettle = 0;
+
     // Re-read the palette on theme flip and repaint the dot texture once.
     const stopTheme = observeTheme(() => {
       palette = readDotGridPalette(offCtx);
-      invalidate(true);
+      if (paintFlat) paintFlat();
+      else invalidate(true);
     });
 
     let ro: ResizeObserver | null = null;
@@ -818,11 +808,46 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
         invalidate(true);
       });
       ro.observe(canvas);
+    } else {
+      // No WebGL: the same lattice, still, with no ripple and no lens. A failed
+      // WebGL context leaves the canvas free for a 2D one; a context whose
+      // shaders failed holds the canvas, so the lattice goes on the offscreen
+      // canvas and shows as this one's background instead.
+      const flatCtx = canvas.getContext('2d');
+      paintFlat = () => {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        cssW = canvas.clientWidth;
+        cssH = canvas.clientHeight;
+        if (cssW <= 0 || cssH <= 0) return;
+        const target = flatCtx ? canvas : off;
+        target.width = Math.round(cssW * dpr);
+        target.height = Math.round(cssH * dpr);
+        drawDotField(flatCtx ?? offCtx, cssW, cssH, 0, dpr, palette, bg ?? palette.bg, edge);
+        if (!flatCtx) {
+          canvas.style.backgroundImage = `url(${off.toDataURL()})`;
+          canvas.style.backgroundSize = '100% 100%';
+        }
+      };
+      paintFlat();
+      // Encoding the background is a stage-sized PNG: through a resize it waits
+      // for the size to settle (the last image stretches meanwhile).
+      ro = new ResizeObserver(() => {
+        palette = readDotGridPalette(offCtx);
+        if (flatCtx) {
+          paintFlat?.();
+          return;
+        }
+        clearTimeout(flatSettle);
+        flatSettle = window.setTimeout(() => paintFlat?.(), FLAT_SETTLE_MS);
+      });
+      ro.observe(canvas);
     }
 
     return () => {
       cancelAnimationFrame(raf);
       ro?.disconnect();
+      clearTimeout(flatSettle);
+      canvas.style.backgroundImage = '';
       stopTheme();
       pointer?.dispose();
       press?.dispose();

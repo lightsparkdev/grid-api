@@ -29,6 +29,7 @@ const CRYPTO = new Set([
   'POLYGON_WALLET',
   'BASE_WALLET',
   'ETHEREUM_WALLET',
+  'PLASMA_WALLET',
 ]);
 
 // Handled by the POST builder, not shown as editable account fields:

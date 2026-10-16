@@ -16,8 +16,7 @@ post:
 
     The response carries the account's own `fundingPaymentInstructions` — the
     routable number payers send to. Rule-based accounts are currently available
-    in `USD`, for individual customers, and must be enabled for your platform
-    before this endpoint accepts requests.
+    in `USD`, for a customer or for your platform itself.
 
     Sandbox platforms can create rule-based accounts and exercise the whole
     flow. The account number is generated locally rather than issued by a
@@ -75,6 +74,16 @@ post:
               type: RULE_BASED
               currency: USD
               label: payer-northwind
+              sweepRule:
+                destination:
+                  accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+          onBehalfOfCustomer:
+            summary: A platform account that receives payments for a customer
+            value:
+              onBehalfOfCustomerId: Customer:019542f5-b3e7-1d02-0000-000000000002
+              type: RULE_BASED
+              currency: USD
+              label: customer-0002-collections
               sweepRule:
                 destination:
                   accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123

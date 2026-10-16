@@ -15,6 +15,14 @@ properties:
       endpoint.
     exclusiveMinimum: 0
     example: 1.08
+  exchangeRate:
+    type: number
+    description: >-
+      An estimated number of sending currency units per unit of this currency,
+      in the same direction and units as `exchangeRate` on a quote. This is not
+      a locked rate and is subject to change when calling the quotes endpoint.
+    exclusiveMinimum: 0
+    example: 0.925
   min:
     type: integer
     format: int64

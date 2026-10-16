@@ -1,8 +1,14 @@
 'use client';
 
 import clsx from 'clsx';
+import { useCallback, useState } from 'react';
 import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
-import { CardStage } from '@/components/CardStage/CardStage';
+import { CardStage, type ShareStageState } from '@/components/CardStage/CardStage';
+import { CardStageBoundary } from '@/components/CardStage/CardStageBoundary';
+import { FlatCardStage } from '@/components/CardStage/FlatCardStage';
+import type { CardFrameSource } from '@/components/CardStage/export/exportRenderer';
+import { SharePanel } from '@/components/ShareSheet/SharePanel';
+import type { DesignEditOptions, SharedCard } from '@/hooks/useCardsDemoLogic';
 import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { DEFAULT_OVERLAY_GLASS, GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
@@ -15,7 +21,7 @@ import styles from './AppPanel.module.scss';
 export interface AppPanelProps {
   design: CardDesign;
   /** The stage edits the design too: the brand is moved and resized on the card. */
-  onDesignChange?: (patch: Partial<CardDesign>) => void;
+  onDesignChange?: (patch: Partial<CardDesign>, opts?: DesignEditOptions) => void;
   /** Bumped on reset; remounts the brain so everything starts clean. */
   /** The playground's Reset (see useCardHome). */
   brainReset: { nonce: number; afterMs: number };
@@ -32,6 +38,15 @@ export interface AppPanelProps {
   onTapDeclined?: UseCardHomeOptions['onTapDeclined'];
   cardOptions?: UseCardHomeOptions['card'];
   onSettled?: () => void;
+  /** The card's exporter, filled by the stage (see CardStage). */
+  exportRef?: React.MutableRefObject<CardFrameSource | null>;
+  /** Extra chrome on the stage under the floating card (the Share button). */
+  stageActions?: React.ReactNode;
+  /** Share, on the stage: the card parks in the panel's frame. */
+  shareOpen?: boolean;
+  shared?: SharedCard | null;
+  /** The card's intro has played (see CardStage). */
+  onIntroDone?: () => void;
 }
 
 /** The stage: the card, always; the cardholder's phone comes in with the first flow, the card goes into it, and it stays until sent away. */
@@ -48,7 +63,17 @@ export function AppPanel({
   cardOptions,
   onSettled,
   brainReset,
+  exportRef,
+  stageActions,
+  shareOpen = false,
+  shared = null,
+  onIntroDone,
 }: AppPanelProps) {
+  // What the share panel asks of the stage (the frame's exposure and pose).
+  const [shareStage, setShareStage] = useState<ShareStageState>({ open: false, exposure: 1, pose: null });
+  // Above the stage's canvas, for the share's layers that pass in front of
+  // the card (the hand's fingers). Takes no pointer.
+  const [frontHost, setFrontHost] = useState<HTMLDivElement | null>(null);
   const home = useCardHome({
     entry: walletEntry,
     onCardIssued,
@@ -60,6 +85,23 @@ export function AppPanel({
     phoneUp,
   });
   const theme = useThemeMode();
+  // The 3D card, until it fails (no WebGL, or its GPU gone): then the flat
+  // card takes the stage. One that failed after its intro doesn't play it again.
+  const [introPlayed, setIntroPlayed] = useState(false);
+  const introDone = useCallback(() => {
+    setIntroPlayed(true);
+    onIntroDone?.();
+  }, [onIntroDone]);
+  const flatStage = (
+    <FlatCardStage
+      design={design}
+      home={home}
+      exportRef={exportRef}
+      share={shareStage}
+      introPlayed={introPlayed}
+      onIntroDone={introDone}
+    />
+  );
   // Two states only: the card floats alone, or it is in the phone. The first
   // flow brings the phone in and the card flies into its slot; the phone stays
   // through later flows until the visitor sends it away.
@@ -103,7 +145,28 @@ export function AppPanel({
               externalGlass
               stageChrome={closePhone}
             />
-            <CardStage design={design} home={home} onDesignChange={onDesignChange} />
+            {exportRef && (
+              <SharePanel
+                open={shareOpen && !phoneUp}
+                exporterRef={exportRef}
+                design={design}
+                shared={shared}
+                onStage={setShareStage}
+                frontHost={frontHost}
+              />
+            )}
+            <CardStageBoundary fallback={flatStage}>
+              <CardStage
+                design={design}
+                home={home}
+                onDesignChange={onDesignChange}
+                exportRef={exportRef}
+                share={shareStage}
+                onIntroDone={introDone}
+              />
+            </CardStageBoundary>
+            <div ref={setFrontHost} className={styles.shareFront} aria-hidden />
+            {stageActions}
           </DotGridCanvas>
         </div>
       </div>

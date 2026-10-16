@@ -26,12 +26,23 @@ post:
     iframe and never crosses Grid's or your servers.
 
 
+    Set `cardConfigs.panRevealCssUrl` on your platform config to style the
+    iframe with your own stylesheet, or send `cssUrl` in the body to override
+    it for one reveal.
+
+
     Every reveal is audit-logged with the requesting actor.
   operationId: revealCard
   tags:
     - Cards
   security:
     - BasicAuth: []
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/cards/CardRevealRequest.yaml
   responses:
     '200':
       description: Reveal URL minted.
