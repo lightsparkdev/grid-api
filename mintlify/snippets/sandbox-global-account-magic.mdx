@@ -89,9 +89,9 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMet
   }'
 ```
 
-<Note>
-  The legacy sandbox-only assertion signature `sandbox-valid-passkey-signature` is still accepted for compatibility, but it skips WebAuthn verification and should not be used for production-shaped sandbox tests.
-</Note>
+<Warning>
+  **Deprecated:** the placeholder assertion signature `sandbox-valid-passkey-signature`. Sandbox still accepts it in place of a real WebAuthn assertion for now, but it will be removed. Send the real assertion that `navigator.credentials.get()` returns for the registered passkey, as shown above. Sandbox verifies it the way production does.
+</Warning>
 
 ### OAuth (OIDC) token
 
