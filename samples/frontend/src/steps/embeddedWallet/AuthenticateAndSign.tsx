@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { Aes256Gcm, CipherSuite, DhkemP256HkdfSha256, HkdfSha256 } from '@hpke/core'
 import { p256 } from '@noble/curves/nist.js'
-import bs58check from 'bs58check'
 import ResponsePanel from '../../components/ResponsePanel'
 import { apiPost } from '../../lib/api'
 
@@ -12,38 +10,19 @@ interface Props {
   disabled: boolean
 }
 
-// Toggle between sandbox and production paths. Sandbox accepts magic values
-// for the WebAuthn assertion signature ("sandbox-valid-passkey-signature")
-// and the wallet signature header ("sandbox-valid-signature"); production
-// runs the real WebAuthn assertion + HPKE decrypt + ECDSA sign chain.
-//
-// Set VITE_SANDBOX_PASSKEY=0 in .env to exercise the production path against
-// a sandbox that supports real signatures, or against production credentials.
-const SANDBOX_MODE = (import.meta.env.VITE_SANDBOX_PASSKEY ?? '1') !== '0'
-
-const SANDBOX_PASSKEY_SIGNATURE = 'sandbox-valid-passkey-signature'
-const SANDBOX_WALLET_SIGNATURE = 'sandbox-valid-signature'
-const GRID_HPKE_INFO = new TextEncoder().encode('turnkey_hpke')
-
 // Step 7: Authenticate with the registered passkey and sign payloadToSign.
 //
-// Production flow:
-//   1. Generate ephemeral P-256 client key pair (HPKE recipient key).
-//   2. POST /challenge with clientPublicKey — Grid bakes it into the
-//      session-creation payload and returns a Grid-issued WebAuthn challenge.
+// Sandbox verifies every step the same way production does:
+//   1. Generate a P-256 client key pair. Its private key becomes the session
+//      signing key once the session is issued.
+//   2. POST /challenge with the compressed public key as clientPublicKey —
+//      Grid bakes it into the session-creation payload and returns a
+//      Grid-issued WebAuthn challenge.
 //   3. navigator.credentials.get(challenge) → WebAuthn assertion.
-//   4. POST /verify with the assertion (no clientPublicKey on /verify) →
-//      Grid returns encryptedSessionSigningKey sealed to clientPublicKey.
-//   5. HPKE-decrypt the session signing key with the client private key
-//      (DHKEM-P256 / HKDF-SHA256 / AES-256-GCM, base58check wire format).
-//   6. Build a Grid wallet signature over payloadToSign with the session key
-//      and pass the base64url stamp to step 8 as Grid-Wallet-Signature.
-//
-// Sandbox flow (this is what runs by default):
-//   - Step 3 still triggers the real OS biometric prompt.
-//   - Step 4's wire signature is the magic value sandbox-valid-passkey-signature.
-//   - Step 5 is skipped because this mode intentionally uses sandbox shortcuts.
-//   - Step 6 returns the legacy magic value sandbox-valid-signature for step 8.
+//   4. POST /verify with the assertion (no clientPublicKey on /verify).
+//   5. Build a Grid wallet signature over payloadToSign with the client
+//      private key and pass the base64url stamp to step 8 as
+//      Grid-Wallet-Signature.
 export default function AuthenticateAndSign({
   authMethodId,
   payloadToSign,
@@ -60,28 +39,18 @@ export default function AuthenticateAndSign({
     setError(null)
     setResponse(null)
     try {
-      // 1. Ephemeral keypair. Private key is non-extractable; only the public
-      //    key leaves the device.
-      const keyPair = (await crypto.subtle.generateKey(
-        { name: 'ECDH', namedCurve: 'P-256' },
-        false,
-        ['deriveBits'],
-      )) as CryptoKeyPair
-      const rawPublicKey = new Uint8Array(
-        await crypto.subtle.exportKey('raw', keyPair.publicKey),
-      )
-      const clientPublicKey = bytesToHex(rawPublicKey)
+      // 1. Client keypair. Only the public key leaves the device.
+      const sessionPrivateKey = p256.utils.randomSecretKey()
+      const clientPublicKey = bytesToHex(p256.getPublicKey(sessionPrivateKey, true))
 
-      // 2. Ask Grid for an authentication challenge sealed to this public key.
+      // 2. Ask Grid for an authentication challenge bound to this public key.
       const challenge = await apiPost<{ challenge: string; requestId: string }>(
         `/api/auth/credentials/${encodeURIComponent(authMethodId)}/challenge`,
         { clientPublicKey },
       )
 
       // 3. WebAuthn assertion against the Grid-issued challenge. The challenge
-      //    is a lowercase hex string; UTF-8 encode it exactly as returned. The
-      //    OS shows its biometric prompt regardless of whether we send the real
-      //    signature or the sandbox magic value below.
+      //    is a lowercase hex string; UTF-8 encode it exactly as returned.
       const assertion = (await navigator.credentials.get({
         publicKey: {
           challenge: new TextEncoder().encode(challenge.challenge),
@@ -92,20 +61,15 @@ export default function AuthenticateAndSign({
       if (!assertion) throw new Error('No assertion returned from authenticator')
       const ar = assertion.response as AuthenticatorAssertionResponse
 
-      // 4. Verify with Grid. In sandbox, swap the real WebAuthn signature for
-      //    the magic value Grid will accept.
-      const wireSignature = SANDBOX_MODE
-        ? SANDBOX_PASSKEY_SIGNATURE
-        : bytesToBase64url(new Uint8Array(ar.signature))
-
-      const verify = await apiPost<{ encryptedSessionSigningKey?: string }>(
+      // 4. Verify the assertion with Grid.
+      const verify = await apiPost<unknown>(
         `/api/auth/credentials/${encodeURIComponent(authMethodId)}/verify`,
         {
           assertion: {
             credentialId: assertion.id,
             clientDataJson: bytesToBase64url(new Uint8Array(ar.clientDataJSON)),
             authenticatorData: bytesToBase64url(new Uint8Array(ar.authenticatorData)),
-            signature: wireSignature,
+            signature: bytesToBase64url(new Uint8Array(ar.signature)),
             userHandle: ar.userHandle
               ? bytesToBase64url(new Uint8Array(ar.userHandle))
               : undefined,
@@ -114,28 +78,10 @@ export default function AuthenticateAndSign({
         { 'Request-Id': challenge.requestId },
       )
 
-      // 5 + 6. Decrypt the session signing key and sign payloadToSign. In the
-      //        default sandbox shortcut mode, skip the crypto and use the
-      //        magic wallet-signature header value.
-      let signature: string
-      if (SANDBOX_MODE) {
-        signature = SANDBOX_WALLET_SIGNATURE
-      } else {
-        const sessionKey = await decryptSessionSigningKey(
-          keyPair.privateKey,
-          rawPublicKey,
-          verify.encryptedSessionSigningKey ?? '',
-        )
-        signature = signPayload(sessionKey, payloadToSign)
-      }
+      // 5. Sign payloadToSign with the session signing key.
+      const signature = signPayload(sessionPrivateKey, payloadToSign)
 
-      setResponse(
-        JSON.stringify(
-          { mode: SANDBOX_MODE ? 'sandbox' : 'production', signature, verify },
-          null,
-          2,
-        ),
-      )
+      setResponse(JSON.stringify({ signature, verify }, null, 2))
       onComplete({ signature })
     } catch (e) {
       setError((e as Error).message)
@@ -151,10 +97,8 @@ export default function AuthenticateAndSign({
       </p>
       <p className="text-xs text-gray-500 mb-3">
         Generates a P-256 keypair, sends the public key on <code>/challenge</code>, runs the
-        WebAuthn assertion, and verifies. In <strong>sandbox mode</strong> ({SANDBOX_MODE
-          ? 'on'
-          : 'off'}) the wire signatures use Grid's magic values; turn it off via{' '}
-        <code>VITE_SANDBOX_PASSKEY=0</code> to exercise the real HPKE decrypt + ECDSA sign chain.
+        WebAuthn assertion, verifies, then signs the payload with the keypair's private key.
+        Sandbox checks each signature the same way production does.
       </p>
       <button
         onClick={submit}
@@ -166,37 +110,6 @@ export default function AuthenticateAndSign({
       <ResponsePanel response={response} error={error} />
     </div>
   )
-}
-
-// HPKE-decrypt the encrypted session signing key returned by /verify.
-// Wire format (base58check-decoded): 33-byte compressed encapsulated public
-// key || ciphertext || 16-byte AES-256-GCM auth tag.
-async function decryptSessionSigningKey(
-  recipientPrivateKey: CryptoKey,
-  recipientPublicKey: Uint8Array,
-  encryptedSessionSigningKey: string,
-): Promise<Uint8Array> {
-  if (!encryptedSessionSigningKey) throw new Error('No encrypted session signing key returned')
-  const payload = bs58check.decode(encryptedSessionSigningKey)
-  if (payload.length < 33 + 16) {
-    throw new Error(`encryptedSessionSigningKey too short: ${payload.length} bytes`)
-  }
-  const compressedEnc = payload.slice(0, 33)
-  const enc = p256.Point.fromHex(bytesToHex(compressedEnc)).toBytes(false)
-  const ciphertext = payload.slice(33)
-  const aad = concatBytes(enc, recipientPublicKey)
-  const suite = new CipherSuite({
-    kem: new DhkemP256HkdfSha256(),
-    kdf: new HkdfSha256(),
-    aead: new Aes256Gcm(),
-  })
-  const recipient = await suite.createRecipientContext({
-    recipientKey: recipientPrivateKey,
-    enc,
-    info: GRID_HPKE_INFO,
-  })
-  const plaintext = await recipient.open(ciphertext, aad)
-  return new Uint8Array(plaintext)
 }
 
 // Build the signature expected by Grid-Wallet-Signature.
@@ -219,14 +132,4 @@ function bytesToBase64url(bytes: Uint8Array): string {
 
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
-}
-
-function concatBytes(...chunks: Uint8Array[]): Uint8Array {
-  const out = new Uint8Array(chunks.reduce((len, chunk) => len + chunk.length, 0))
-  let offset = 0
-  for (const chunk of chunks) {
-    out.set(chunk, offset)
-    offset += chunk.length
-  }
-  return out
 }
