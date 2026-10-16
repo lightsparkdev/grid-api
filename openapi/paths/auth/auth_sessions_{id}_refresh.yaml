@@ -16,12 +16,10 @@ post:
     2. Sign `payloadToSign` with the current session signing key, then retry the
     same request with the full API-key stamp as `Grid-Wallet-Signature`, the
     `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in
-    the request body. On success, Grid returns a new `AuthSession`. Sending a
-    compressed `clientPublicKey` selects the recommended client-held-key
-    model, where the client retains the new session signing key and no key
-    material is returned; sending an uncompressed key selects the
-    deprecated legacy flow, where the new key is sealed to it and returned
-    as `encryptedSessionSigningKey`.
+    the request body. On success, Grid returns a new `AuthSession`. The
+    `clientPublicKey` must be a compressed P-256 key. The client keeps the
+    matching private key as the new session signing key, and no key material
+    is returned. An uncompressed key is rejected with `400 INVALID_INPUT`.
 
 
     The original session must still be active on both steps so it can authorize
