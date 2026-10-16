@@ -175,7 +175,7 @@ const verifyRes = await fetch("/my-backend/passkey/verify", {
     },
   }),
 });
-const { id: sessionId, expiresAt } = await verifyRes.json();
+const { sessionId, expiresAt } = await verifyRes.json();
 // privateKey is now the session signing key until expiresAt — see client-keys.mdx.
 ```
 
