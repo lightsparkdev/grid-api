@@ -15,8 +15,8 @@ Global Accounts are initialized with an `EMAIL_OTP` credential tied to the custo
 
 To produce a session:
 
-- **`EMAIL_OTP`** — if you need a fresh OTP or encryption target, first call **`POST /auth/credentials/{id}/challenge`**. Generate a P-256 client key pair, HPKE-encrypt the OTP value plus the public key into `encryptedOtpBundle`, then call **`POST /auth/credentials/{id}/verify`**. Grid returns a `202` signed-retry challenge; stamp its `payloadToSign` with the same private key and retry with `Grid-Wallet-Signature` plus `Request-Id`. The signed retry returns the session; the private key you generated is the session signing key, so `EMAIL_OTP` responses do not include `encryptedSessionSigningKey`.
-- **`OAUTH`** — call **`POST /auth/credentials/{id}/verify`** with a fresh OIDC token plus `clientPublicKey`. The response carries the `encryptedSessionSigningKey`.
+- **`EMAIL_OTP`** — if you need a fresh OTP or encryption target, first call **`POST /auth/credentials/{id}/challenge`**. Generate a P-256 client key pair, HPKE-encrypt the OTP value plus the public key into `encryptedOtpBundle`, then call **`POST /auth/credentials/{id}/verify`**. Grid returns a `202` signed-retry challenge; stamp its `payloadToSign` with the same private key and retry with `Grid-Wallet-Signature` plus `Request-Id`. The signed retry returns the session; the private key you generated is the session signing key.
+- **`OAUTH`** — call **`POST /auth/credentials/{id}/verify`** with a fresh OIDC token plus `clientPublicKey`. The response is the session; the private key matching `clientPublicKey` is the session signing key.
 - **`PASSKEY`** — call **`POST /auth/credentials/{id}/challenge`** with your `clientPublicKey` to receive a Grid-issued `challenge` and `requestId`, UTF-8 encode the challenge string for `navigator.credentials.get()`, then call **`POST /auth/credentials/{id}/verify`** with the resulting assertion and the `Request-Id` header. Grid bakes the `clientPublicKey` from the `/challenge` call into the session-creation payload, so it does **not** appear on the `/verify` body.
 
 To add another credential, call **`POST /auth/credentials`** with the new credential details. Because the account already has an `EMAIL_OTP` credential, Grid returns a `202` signed-retry challenge. Stamp that `payloadToSign` with an active session signing key, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`. The signed retry returns the new `AuthMethod`.
@@ -59,12 +59,12 @@ sequenceDiagram
   A-->>C: assertion (credentialId, clientDataJson, authenticatorData, signature)
   C->>IB: POST /my-backend/passkey/verify (assertion, requestId)
   IB->>G: POST /auth/credentials/{id}/verify<br/>Request-Id: requestId<br/>{ type: PASSKEY, assertion }
-  G-->>IB: 200 AuthSession { encryptedSessionSigningKey, expiresAt }
-  IB-->>C: { encryptedSessionSigningKey, expiresAt }
-  C->>C: decrypt with private key, hold session signing key
+  G-->>IB: 200 AuthSession { id, expiresAt }
+  IB-->>C: { sessionId, expiresAt }
+  C->>C: hold the client private key as the session signing key
 ```
 
-The `challenge` on `POST /auth/credentials` is the one your backend issued for WebAuthn registration. The signed-retry `payloadToSign` is the registration payload that the customer's current session authorizes. The challenge used for the WebAuthn assertion comes later from `POST /auth/credentials/{id}/challenge` — Grid bakes the `clientPublicKey` you send there into the session-creation payload, sealing the resulting session signing key to the device that generated it. Because that key plumbing happens on `/challenge`, the subsequent `/verify` call carries only the assertion (plus the `Request-Id` header).
+The `challenge` on `POST /auth/credentials` is the one your backend issued for WebAuthn registration. The signed-retry `payloadToSign` is the registration payload that the customer's current session authorizes. The challenge used for the WebAuthn assertion comes later from `POST /auth/credentials/{id}/challenge` — Grid bakes the `clientPublicKey` you send there into the session-creation payload, so the resulting session belongs to the key the device generated. Because that key plumbing happens on `/challenge`, the subsequent `/verify` call carries only the assertion (plus the `Request-Id` header).
 
 <Tip>
   Passkeys are domain-bound. Before shipping, set up your `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json` entries so the platform authenticator binds the passkey to your origin and app bundles:
@@ -134,8 +134,8 @@ const registerCompleteRes = await fetch("/my-backend/passkey/register/complete",
 const { credentialId } = await registerCompleteRes.json();
 
 // 5. Generate the client key pair and ask Grid for an authentication challenge
-//    sealed to its public key.
-const { keyPair, publicKeyHex } = await generateClientKeyPair();
+//    bound to its public key.
+const { privateKey, publicKeyHex } = generateClientKeyPair();
 const challengeRes = await fetch("/my-backend/passkey/challenge", {
   method: "POST",
   credentials: "include",
@@ -175,8 +175,8 @@ const verifyRes = await fetch("/my-backend/passkey/verify", {
     },
   }),
 });
-const { encryptedSessionSigningKey, expiresAt } = await verifyRes.json();
-// Decrypt and cache the session signing key — see client-keys.mdx.
+const { sessionId, expiresAt } = await verifyRes.json();
+// privateKey is now the session signing key until expiresAt — see client-keys.mdx.
 ```
 
 ```kotlin Android (Kotlin)
@@ -207,7 +207,7 @@ suspend fun registerPasskey(context: Context, api: MyBackendApi): EmbeddedWallet
 
     // 4. Client stamps the registration payload with an existing session key.
     val gridWalletSignature = buildGridWalletSignature(
-        existingSessionPrivateKeyBytes,
+        existingSessionKeys,
         registerChallenge.payloadToSign,
     )
     val registerResp = api.passkeyRegisterComplete(
@@ -216,7 +216,7 @@ suspend fun registerPasskey(context: Context, api: MyBackendApi): EmbeddedWallet
     )
 
     // 5. Generate client key pair, then ask Grid for an authentication challenge
-    //    sealed to that public key via POST /auth/credentials/{id}/challenge.
+    //    bound to that public key via POST /auth/credentials/{id}/challenge.
     val clientKeys = generateClientKeyPair(alias = "embedded-wallet-${registerResp.credentialId}")
     val challengeResp = api.passkeyChallenge(
         credentialId = registerResp.credentialId,
@@ -240,7 +240,7 @@ suspend fun registerPasskey(context: Context, api: MyBackendApi): EmbeddedWallet
     ).credential as PublicKeyCredential
     val assertionJson = getResp.authenticationResponseJson
 
-    // 7. Backend -> POST /verify with Request-Id. Returns encryptedSessionSigningKey.
+    // 7. Backend -> POST /verify with Request-Id. Returns the AuthSession.
     return api.passkeyVerify(
         credentialId = registerResp.credentialId,
         requestId = challengeResp.requestId,
@@ -293,7 +293,7 @@ final class PasskeyCoordinator: NSObject, ASAuthorizationControllerDelegate {
 
         // 4. Client stamps the registration payload with an existing session key.
         let gridWalletSignature = try buildGridWalletSignature(
-            sessionPrivateScalar: existingSessionPrivateScalar,
+            signingKey: existingSessionSigningKey,
             payloadToSign: registerChallenge.payloadToSign,
         )
         let registered = try await api.passkeyRegisterComplete(
@@ -302,7 +302,7 @@ final class PasskeyCoordinator: NSObject, ASAuthorizationControllerDelegate {
         )
 
         // 5. Generate client key pair, ask Grid for an authentication challenge
-        //    sealed to that public key via POST /auth/credentials/{id}/challenge.
+        //    bound to that public key via POST /auth/credentials/{id}/challenge.
         let keys = generateClientKeyPair()
         let challengeResp = try await api.passkeyChallenge(
             credentialId: registered.credentialId,
@@ -328,7 +328,7 @@ final class PasskeyCoordinator: NSObject, ASAuthorizationControllerDelegate {
             controller.performRequests()
         }
 
-        // 7. Backend -> POST /verify with Request-Id. Returns encryptedSessionSigningKey.
+        // 7. Backend -> POST /verify with Request-Id. Returns the AuthSession.
         return try await api.passkeyVerify(
             credentialId: registered.credentialId,
             requestId: challengeResp.requestId,
@@ -400,8 +400,8 @@ sequenceDiagram
   A-->>C: assertion
   C->>IB: POST /my-backend/passkey/reauth (assertion, requestId)
   IB->>G: POST /auth/credentials/{id}/verify<br/>Request-Id: requestId<br/>{ type: PASSKEY, assertion }
-  G-->>IB: 200 AuthSession { encryptedSessionSigningKey, expiresAt }
-  IB-->>C: { encryptedSessionSigningKey, expiresAt }
+  G-->>IB: 200 AuthSession { id, expiresAt }
+  IB-->>C: { sessionId, expiresAt }
 ```
 
 ## OAuth (OIDC)
@@ -435,13 +435,13 @@ sequenceDiagram
   C->>IB: POST /my-backend/oauth/verify { oidcToken, clientPublicKey }
   IB->>G: POST /auth/credentials/{id}/verify { type: OAUTH, oidcToken, clientPublicKey }
   G-->>IB: 200 AuthSession
-  IB-->>C: { encryptedSessionSigningKey, expiresAt }
+  IB-->>C: { sessionId, expiresAt }
 ```
 
 Grid validates the OIDC token signature against the issuer's JWKS on every call and requires `iat` to be no more than **60 seconds** older than the request. Use a fresh token for each `verify` call; cached tokens will fail. The token identity (`iss`, `aud`, and `sub`) must match the OAuth credential being verified.
 
 <Note>
-  In sandbox, OAuth still uses JWT-shaped OIDC tokens. The sandbox skips real IdP signature verification, but it validates the same identity and freshness claims. For `verify`, include `nonce` equal to `sha256(clientPublicKey)`. See [Sandbox testing](/global-accounts/platform-tools/sandbox-testing#oauth-oidc-token).
+  In sandbox, OAuth still uses JWT-shaped OIDC tokens. The sandbox skips real IdP signature verification, but it validates the same identity and freshness claims. For `verify`, include `nonce` equal to the lowercase hex SHA-256 digest of the `clientPublicKey` string exactly as sent: the compressed key in lowercase hex. See [Sandbox testing](/global-accounts/platform-tools/sandbox-testing#oauth-oidc-token).
 </Note>
 
 ```bash
@@ -468,7 +468,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
   -d '{
     "type": "OAUTH",
     "oidcToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9...",
-    "clientPublicKey": "04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"
+    "clientPublicKey": "02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"
   }'
 ```
 
@@ -580,7 +580,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
 }
 ```
 
-The TEK public key becomes the session API key. Unlike `OAUTH` and `PASSKEY` flows, `EMAIL_OTP` does **not** return `encryptedSessionSigningKey` — the client already holds the session signing key (the TEK private key it generated).
+The TEK public key becomes the session API key. The response carries no key material: the client already holds the session signing key (the TEK private key it generated).
 
 `verify` shares its terminal status code with the still-processing response: a `200` here is only a session if the body isn't `{ "status": "PROCESSING" }`. See <a href="#handling-a-still-processing-response">handling a still-processing response</a> — if you get `PROCESSING`, re-send the identical signed retry (same `encryptedOtpBundle`, `Grid-Wallet-Signature`, and `Request-Id`) until you get the session shown above.
 
@@ -743,7 +743,7 @@ Requires an active session on an *existing* credential on the same account. The 
     ```
   </Step>
   <Step title="Client stamps the payload">
-    Send `payloadToSign` to the client. The client builds a Grid wallet signature with the session signing key from the existing credential's active session — see <a href="client-keys#4-sign-a-payloadtosign">signing payloads</a>.
+    Send `payloadToSign` to the client. The client builds a Grid wallet signature with the session signing key from the existing credential's active session — see <a href="client-keys#2-sign-a-payloadtosign">signing payloads</a>.
   </Step>
   <Step title="Signed retry — credential is created">
     Re-run the same request with the stamp and request id in headers:

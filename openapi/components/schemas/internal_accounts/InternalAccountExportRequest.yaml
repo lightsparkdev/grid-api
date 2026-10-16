@@ -13,9 +13,12 @@ required:
 properties:
   clientPublicKey:
     type: string
+    pattern: '^04[0-9a-f]{128}$'
+    minLength: 130
+    maxLength: 130
     description: >-
-      Fresh P-256 public key, uncompressed SEC1 hex — 130 hex chars
-      where the first two are `04` (the uncompressed-point indicator).
-      Generate a new keypair for each export and discard the private
-      key after decrypting the response.
+      Fresh P-256 public key as an uncompressed SEC1 point in lowercase
+      hex: 130 characters, a `04` prefix followed by the 32-byte X and
+      32-byte Y coordinates. Generate a new key pair for each export and
+      discard the private key after decrypting the response.
     example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
