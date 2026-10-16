@@ -1,0 +1,46 @@
+---
+hidden: true
+title: "Sandbox Manual Cancellations"
+description: "Simulate a payout that is cancelled and refunded on your customer's request"
+icon: "/images/icons/hammer.svg"
+"og:image": "/images/og/og-api-reference.png"
+---
+
+A manual cancellation happens when your customer asks for a payout to be
+cancelled, and the sender is refunded. Use these suffixes on the external
+account a quote pays out to. They work the same way as the
+[quote destination test patterns](/api-reference/sandbox-testing#creating-quotes).
+
+| Suffix | Behavior |
+|--------|----------|
+| **006** | Cancelled after completion — the payment completes, then about two minutes later the sender is refunded |
+| **008** | Cancelled while processing — the sender is refunded about a minute after execution, then the payment completes about two minutes later |
+
+In both cases the refund has `reason: USER_CANCELLATION`, and the transaction
+status stays `COMPLETED`. Check the transaction's `refund` object to see that
+the sender got the money back.
+
+## Webhook order
+
+**006 — cancelled after completion:**
+
+1. `OUTGOING_PAYMENT.PENDING`
+2. `OUTGOING_PAYMENT.PROCESSING`
+3. `OUTGOING_PAYMENT.COMPLETED`
+4. `OUTGOING_PAYMENT.REFUND_PENDING`
+5. `OUTGOING_PAYMENT.REFUND_COMPLETED`
+
+**008 — cancelled while processing:**
+
+1. `OUTGOING_PAYMENT.PENDING`
+2. `OUTGOING_PAYMENT.PROCESSING`
+3. `OUTGOING_PAYMENT.REFUND_PENDING`
+4. `OUTGOING_PAYMENT.REFUND_COMPLETED`
+5. `OUTGOING_PAYMENT.COMPLETED`
+
+<Info>
+With **008**, `OUTGOING_PAYMENT.COMPLETED` arrives after the refund settles.
+This means the payout was delivered even though the sender was refunded. See
+the Manual Cancellation flow in
+[Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle).
+</Info>
