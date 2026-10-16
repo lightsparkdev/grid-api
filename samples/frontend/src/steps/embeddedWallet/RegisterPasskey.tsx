@@ -9,9 +9,6 @@ interface Props {
   disabled: boolean
 }
 
-const SANDBOX_MODE = (import.meta.env.VITE_SANDBOX_PASSKEY ?? '1') !== '0'
-const SANDBOX_WALLET_SIGNATURE = 'sandbox-valid-signature'
-
 // Backend mints a WebAuthn challenge, client runs navigator.credentials.create(),
 // client posts the attestation back, and Grid may require a signed retry before
 // returning the new auth method.
@@ -120,7 +117,6 @@ export default function RegisterPasskey({
 function registrationSignature(payloadToSign: string): string {
   const configured = import.meta.env.VITE_REGISTRATION_GRID_WALLET_SIGNATURE
   if (configured) return configured
-  if (SANDBOX_MODE) return SANDBOX_WALLET_SIGNATURE
   throw new Error(
     `Passkey registration requires a signed retry for payloadToSign: ${payloadToSign}`,
   )
