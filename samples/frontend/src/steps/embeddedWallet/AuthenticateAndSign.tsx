@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { Aes256Gcm, CipherSuite, DhkemP256HkdfSha256, HkdfSha256 } from '@hpke/core'
 import { p256 } from '@noble/curves/nist.js'
-import bs58check from 'bs58check'
 import ResponsePanel from '../../components/ResponsePanel'
 import { apiPost } from '../../lib/api'
 
@@ -12,21 +10,19 @@ interface Props {
   disabled: boolean
 }
 
-const GRID_HPKE_INFO = new TextEncoder().encode('turnkey_hpke')
-
 // Step 7: Authenticate with the registered passkey and sign payloadToSign.
 //
 // Sandbox verifies every step the same way production does:
-//   1. Generate ephemeral P-256 client key pair (HPKE recipient key).
-//   2. POST /challenge with clientPublicKey — Grid bakes it into the
-//      session-creation payload and returns a Grid-issued WebAuthn challenge.
+//   1. Generate a P-256 client key pair. Its private key becomes the session
+//      signing key once the session is issued.
+//   2. POST /challenge with the compressed public key as clientPublicKey —
+//      Grid bakes it into the session-creation payload and returns a
+//      Grid-issued WebAuthn challenge.
 //   3. navigator.credentials.get(challenge) → WebAuthn assertion.
-//   4. POST /verify with the assertion (no clientPublicKey on /verify) →
-//      Grid returns encryptedSessionSigningKey sealed to clientPublicKey.
-//   5. HPKE-decrypt the session signing key with the client private key
-//      (DHKEM-P256 / HKDF-SHA256 / AES-256-GCM, base58check wire format).
-//   6. Build a Grid wallet signature over payloadToSign with the session key
-//      and pass the base64url stamp to step 8 as Grid-Wallet-Signature.
+//   4. POST /verify with the assertion (no clientPublicKey on /verify).
+//   5. Build a Grid wallet signature over payloadToSign with the client
+//      private key and pass the base64url stamp to step 8 as
+//      Grid-Wallet-Signature.
 export default function AuthenticateAndSign({
   authMethodId,
   payloadToSign,
@@ -43,19 +39,11 @@ export default function AuthenticateAndSign({
     setError(null)
     setResponse(null)
     try {
-      // 1. Ephemeral keypair. Private key is non-extractable; only the public
-      //    key leaves the device.
-      const keyPair = (await crypto.subtle.generateKey(
-        { name: 'ECDH', namedCurve: 'P-256' },
-        false,
-        ['deriveBits'],
-      )) as CryptoKeyPair
-      const rawPublicKey = new Uint8Array(
-        await crypto.subtle.exportKey('raw', keyPair.publicKey),
-      )
-      const clientPublicKey = bytesToHex(rawPublicKey)
+      // 1. Client keypair. Only the public key leaves the device.
+      const sessionPrivateKey = p256.utils.randomSecretKey()
+      const clientPublicKey = bytesToHex(p256.getPublicKey(sessionPrivateKey, true))
 
-      // 2. Ask Grid for an authentication challenge sealed to this public key.
+      // 2. Ask Grid for an authentication challenge bound to this public key.
       const challenge = await apiPost<{ challenge: string; requestId: string }>(
         `/api/auth/credentials/${encodeURIComponent(authMethodId)}/challenge`,
         { clientPublicKey },
@@ -74,7 +62,7 @@ export default function AuthenticateAndSign({
       const ar = assertion.response as AuthenticatorAssertionResponse
 
       // 4. Verify the assertion with Grid.
-      const verify = await apiPost<{ encryptedSessionSigningKey?: string }>(
+      const verify = await apiPost<unknown>(
         `/api/auth/credentials/${encodeURIComponent(authMethodId)}/verify`,
         {
           assertion: {
@@ -90,13 +78,8 @@ export default function AuthenticateAndSign({
         { 'Request-Id': challenge.requestId },
       )
 
-      // 5 + 6. Decrypt the session signing key and sign payloadToSign.
-      const sessionKey = await decryptSessionSigningKey(
-        keyPair.privateKey,
-        rawPublicKey,
-        verify.encryptedSessionSigningKey ?? '',
-      )
-      const signature = signPayload(sessionKey, payloadToSign)
+      // 5. Sign payloadToSign with the session signing key.
+      const signature = signPayload(sessionPrivateKey, payloadToSign)
 
       setResponse(JSON.stringify({ signature, verify }, null, 2))
       onComplete({ signature })
@@ -114,7 +97,7 @@ export default function AuthenticateAndSign({
       </p>
       <p className="text-xs text-gray-500 mb-3">
         Generates a P-256 keypair, sends the public key on <code>/challenge</code>, runs the
-        WebAuthn assertion, verifies, then decrypts the session signing key and signs the payload.
+        WebAuthn assertion, verifies, then signs the payload with the keypair's private key.
         Sandbox checks each signature the same way production does.
       </p>
       <button
@@ -127,37 +110,6 @@ export default function AuthenticateAndSign({
       <ResponsePanel response={response} error={error} />
     </div>
   )
-}
-
-// HPKE-decrypt the encrypted session signing key returned by /verify.
-// Wire format (base58check-decoded): 33-byte compressed encapsulated public
-// key || ciphertext || 16-byte AES-256-GCM auth tag.
-async function decryptSessionSigningKey(
-  recipientPrivateKey: CryptoKey,
-  recipientPublicKey: Uint8Array,
-  encryptedSessionSigningKey: string,
-): Promise<Uint8Array> {
-  if (!encryptedSessionSigningKey) throw new Error('No encrypted session signing key returned')
-  const payload = bs58check.decode(encryptedSessionSigningKey)
-  if (payload.length < 33 + 16) {
-    throw new Error(`encryptedSessionSigningKey too short: ${payload.length} bytes`)
-  }
-  const compressedEnc = payload.slice(0, 33)
-  const enc = p256.Point.fromHex(bytesToHex(compressedEnc)).toBytes(false)
-  const ciphertext = payload.slice(33)
-  const aad = concatBytes(enc, recipientPublicKey)
-  const suite = new CipherSuite({
-    kem: new DhkemP256HkdfSha256(),
-    kdf: new HkdfSha256(),
-    aead: new Aes256Gcm(),
-  })
-  const recipient = await suite.createRecipientContext({
-    recipientKey: recipientPrivateKey,
-    enc,
-    info: GRID_HPKE_INFO,
-  })
-  const plaintext = await recipient.open(ciphertext, aad)
-  return new Uint8Array(plaintext)
 }
 
 // Build the signature expected by Grid-Wallet-Signature.
@@ -180,14 +132,4 @@ function bytesToBase64url(bytes: Uint8Array): string {
 
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
-}
-
-function concatBytes(...chunks: Uint8Array[]): Uint8Array {
-  const out = new Uint8Array(chunks.reduce((len, chunk) => len + chunk.length, 0))
-  let offset = 0
-  for (const chunk of chunks) {
-    out.set(chunk, offset)
-    offset += chunk.length
-  }
-  return out
 }
