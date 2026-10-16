@@ -1,4 +1,11 @@
+title: Card
 type: object
+description: >-
+  A debit card issued to a `Customer` against one or more internal accounts.
+  Carries the card's lifecycle `state`, its network identifiers, the funding
+  sources Authorization Decisioning draws on, and the card-specific spend
+  limits. Delivered as the payload of `CARD.STATE_CHANGE` on every lifecycle
+  transition.
 required:
   - id
   - customerId
