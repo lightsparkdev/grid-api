@@ -4,9 +4,11 @@ enum:
   - CREATE_QUOTES
   - EXECUTE_QUOTES
   - MANAGE_EXTERNAL_ACCOUNTS
+  - MANAGE_IDENTITY
 description: >-
   Permission granted to an agent that determines what actions it can perform.
   VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances.
   CREATE_QUOTES: Can create quotes.
   EXECUTE_QUOTES: Can execute quotes.
   MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.
+  MANAGE_IDENTITY: Can read and update customer identity information and start verification.

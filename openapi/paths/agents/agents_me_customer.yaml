@@ -1,0 +1,95 @@
+get:
+  summary: Get agent customer
+  description: >-
+    Retrieve the individual customer associated with the authenticated agent.
+    Requires the MANAGE_IDENTITY permission in the agent's policy.
+  operationId: agentGetCustomer
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/IndividualCustomer.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform or the agent does not have
+        the MANAGE_IDENTITY permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+patch:
+  summary: Update agent customer
+  description: >-
+    Update identity information for the individual customer associated with the
+    authenticated agent. Requires the MANAGE_IDENTITY permission in the agent's
+    policy. The customer is inferred from the agent and cannot be selected by
+    the request. Agents may update only identity fields: `fullName`,
+    `birthDate`, `nationality`, `address`, `idType`, `identifier`,
+    `countryOfIssuance` and the enhanced-due-diligence fields. Any other field,
+    including `email` and `phoneNumber` (sign-in credentials the customer
+    changes through `PATCH /customers/{customerId}`), returns 400.
+  operationId: agentUpdateCustomer
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentCustomerUpdateRequest.yaml
+  responses:
+    '200':
+      description: Customer updated successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/IndividualCustomer.yaml
+    '400':
+      description: >-
+        Bad request - an invalid value, a field agents may not update, or an
+        identity that cannot change while the customer's KYC status is under
+        review
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform or the agent does not have
+        the MANAGE_IDENTITY permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

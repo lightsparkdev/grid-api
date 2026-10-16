@@ -8033,6 +8033,177 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /agents/me/customer:
+    get:
+      summary: Get agent customer
+      description: Retrieve the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      operationId: agentGetCustomer
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndividualCustomer'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update agent customer
+      description: 'Update identity information for the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent''s policy. The customer is inferred from the agent and cannot be selected by the request. Agents may update only identity fields: `fullName`, `birthDate`, `nationality`, `address`, `idType`, `identifier`, `countryOfIssuance` and the enhanced-due-diligence fields. Any other field, including `email` and `phoneNumber` (sign-in credentials the customer changes through `PATCH /customers/{customerId}`), returns 400.'
+      operationId: agentUpdateCustomer
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentCustomerUpdateRequest'
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndividualCustomer'
+        '400':
+          description: Bad request - an invalid value, a field agents may not update, or an identity that cannot change while the customer's KYC status is under review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/verifications:
+    post:
+      summary: Submit agent customer for verification
+      description: Submit the authenticated agent's individual customer for KYC verification. The response reports the current status and any identity fields that still need to be supplied. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      operationId: agentCreateVerification
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Verification status returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verification'
+        '400':
+          description: Bad request - Required identity information is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/kyc-link:
+    post:
+      summary: Generate an agent customer KYC link
+      description: Generate a single-use hosted KYC link for the authenticated agent's individual customer. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      operationId: agentCreateKycLink
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KycLinkCreateRequest'
+      responses:
+        '201':
+          description: KYC link generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycLinkResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '409':
+          description: The customer's payment provider requires contact verification and the customer's email and phone are not both `VERIFIED` yet. The platform must complete contact verification (see `verify-email` and `verify-phone`) before the agent retries.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /agents/{agentId}:
     parameters:
       - name: agentId
@@ -28320,7 +28491,8 @@ components:
         - CREATE_QUOTES
         - EXECUTE_QUOTES
         - MANAGE_EXTERNAL_ACCOUNTS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.'
+        - MANAGE_IDENTITY
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. MANAGE_IDENTITY: Can read and update customer identity information and start verification.'
     AgentExecutionMode:
       type: string
       enum:
@@ -28704,6 +28876,41 @@ components:
         totalCount:
           type: integer
           description: Total number of actions matching the criteria (excluding pagination).
+    AgentCustomerUpdateRequest:
+      title: Agent Customer Update Request
+      description: 'Request body for `PATCH /agents/me/customer`: the identity fields an agent may update on its customer. Any other field, including `email`, `phoneNumber` and `currencies`, returns 400.'
+      allOf:
+        - type: object
+          properties:
+            fullName:
+              type: string
+              maxLength: 250
+              description: Individual's full name
+              example: John Michael Doe
+            birthDate:
+              type: string
+              format: date
+              description: Date of birth in ISO 8601 format (YYYY-MM-DD)
+              example: '1990-01-15'
+            nationality:
+              type: string
+              description: Country code (ISO 3166-1 alpha-2)
+              example: US
+            address:
+              $ref: '#/components/schemas/Address'
+            idType:
+              $ref: '#/components/schemas/IdentificationType'
+            identifier:
+              type: string
+              maxLength: 100
+              writeOnly: true
+              description: The individual's identification number, required to onboard them as a US account holder. Only SSN (format `###-##-####`) and ITIN are currently accepted; other identification types are rejected. Write-only; never returned in customer responses.
+              example: 123-45-6789
+            countryOfIssuance:
+              type: string
+              description: 'Country that issued the identification (ISO 3166-1 alpha-2). Optional for an individual account holder: SSN and ITIN are US-issued, so this defaults to `US` and is rejected if set to anything else.'
+              example: US
+        - $ref: '#/components/schemas/CustomerEdd'
     AgentUpdateRequest:
       type: object
       description: Partial update to an agent's basic fields. At least one field must be provided.
