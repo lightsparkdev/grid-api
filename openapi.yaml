@@ -8708,7 +8708,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quote'
+                $ref: '#/components/schemas/AgentQuote'
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -8780,7 +8780,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quote'
+                $ref: '#/components/schemas/AgentQuote'
         '401':
           description: Unauthorized
           content:
@@ -8817,8 +8817,8 @@ paths:
     post:
       summary: Execute a quote
       description: |
-        Execute a quote created by the authenticated agent. Requires the EXECUTE_QUOTES permission in the agent's policy.
-        If the agent's policy requires approval for this amount (based on execution mode or approval thresholds), the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
+        Execute a quote created by the authenticated agent. Requires the EXECUTE_QUOTES permission in the agent's policy. When the source is an `EMBEDDED_WALLET`, Grid signs with the agent's active delegated key for that wallet.
+        If the agent's policy requires approval for this amount (based on execution mode or approval thresholds), the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`. The action expires when its quote expires. Approval after expiry fails the action; Grid does not create a replacement quote.
         Once executed, the quote cannot be cancelled.
       operationId: agentExecuteQuote
       tags:
@@ -8835,13 +8835,6 @@ paths:
             type: string
             maxLength: 255
             example: <uuid>
-        - name: Grid-Wallet-Signature
-          in: header
-          required: false
-          description: Full Grid wallet signature over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
-          schema:
-            type: string
-          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
       responses:
         '200':
           description: 'Action submitted successfully. If the agent''s policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated. Note: if approval is required, the underlying quote may expire before the platform approves — in that case the action will transition to `FAILED`.'
@@ -8856,13 +8849,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Also returned when the quote's source is an internal account of type `EMBEDDED_WALLET` and the provided `Grid-Wallet-Signature` header is missing, malformed, or does not match the quote's `payloadToSign`.
+          description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
+          description: Forbidden. The Agents API is not enabled for the platform, the agent policy does not permit this operation, a spending limit was exceeded, or an `EMBEDDED_WALLET` source has no active delegated key for this agent.
           content:
             application/json:
               schema:
@@ -8930,6 +8923,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -8966,6 +8965,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Action not found
           content:
@@ -12022,6 +12027,7 @@ webhooks:
                       feesIncluded: 250
                       platformFeesIncluded: 0
                       transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000099
+                    expiresAt: '2025-10-03T15:00:30Z'
                     createdAt: '2025-10-03T15:00:00Z'
                     updatedAt: '2025-10-03T15:00:00Z'
       responses:
@@ -28569,7 +28575,7 @@ components:
         | `PENDING_APPROVAL` | Submitted by the agent, awaiting platform approval before execution |
         | `APPROVED` | Approved by the platform; execution is in progress or completed |
         | `REJECTED` | Rejected by the platform; the underlying transaction was not executed |
-        | `FAILED` | Approved but execution failed (e.g. quote expired, insufficient funds) |
+        | `FAILED` | Not executed, or execution failed; see `failureReason` |
     AgentActionType:
       type: string
       enum:
@@ -28580,6 +28586,27 @@ components:
         | Type | Description |
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
+    AgentQuote:
+      title: Agent Quote
+      allOf:
+        - $ref: '#/components/schemas/Quote'
+      description: A quote created by an agent.
+    AgentActionFailureReason:
+      type: string
+      enum:
+        - QUOTE_EXPIRED
+        - POLICY_DENIED
+        - AGENT_INACTIVE
+        - EXECUTION_FAILED
+      description: |
+        Why an agent action has status `FAILED`.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `QUOTE_EXPIRED` | The action's quote expired before execution |
+        | `POLICY_DENIED` | The agent policy no longer allowed the action |
+        | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
+        | `EXECUTION_FAILED` | Grid could not execute the approved action |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -28590,6 +28617,7 @@ components:
         - platformCustomerId
         - status
         - type
+        - expiresAt
         - createdAt
         - updatedAt
       properties:
@@ -28615,8 +28643,8 @@ components:
           $ref: '#/components/schemas/AgentActionType'
         quote:
           allOf:
-            - $ref: '#/components/schemas/Quote'
-          description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user.
+            - $ref: '#/components/schemas/AgentQuote'
+          description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user. Present for `EXECUTE_QUOTE`.
         transaction:
           allOf:
             - $ref: '#/components/schemas/TransactionOneOf'
@@ -28625,6 +28653,14 @@ components:
           type: string
           description: Human-readable reason provided by the platform when rejecting the action. Only present when status is `REJECTED`.
           example: Transaction amount exceeds customer's current risk limit.
+        failureReason:
+          $ref: '#/components/schemas/AgentActionFailureReason'
+          description: Machine-readable reason the action failed. Only present when status is `FAILED`; `rejectionReason` is used only for `REJECTED` actions.
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the action expires. For `EXECUTE_QUOTE`, this is the quote's own expiry. A `PENDING_APPROVAL` action that reaches this time transitions to `FAILED` with `failureReason` `QUOTE_EXPIRED`; approval never creates a replacement quote.
+          example: '2025-10-03T15:05:00Z'
         createdAt:
           type: string
           format: date-time

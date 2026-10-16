@@ -36,7 +36,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/quotes/Quote.yaml
+            $ref: ../../components/schemas/agents/AgentQuote.yaml
     '400':
       description: Bad request - Missing or invalid parameters
       content:

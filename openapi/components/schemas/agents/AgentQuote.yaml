@@ -1,0 +1,4 @@
+title: Agent Quote
+allOf:
+  - $ref: ../quotes/Quote.yaml
+description: A quote created by an agent.
