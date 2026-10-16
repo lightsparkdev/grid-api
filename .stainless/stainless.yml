@@ -656,6 +656,16 @@ resources:
             methods:
               list: get /agents/me/actions
               retrieve: get /agents/me/actions/{actionId}
+          customer:
+            methods:
+              retrieve: get /agents/me/customer
+              update: patch /agents/me/customer
+          verifications:
+            methods:
+              create: post /agents/me/verifications
+          kyc_link:
+            methods:
+              create: post /agents/me/kyc-link
       device_codes:
         methods:
           regenerate: post /agents/{agentId}/device-codes

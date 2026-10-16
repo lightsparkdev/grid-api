@@ -85,6 +85,7 @@ post:
                   feesIncluded: 250
                   platformFeesIncluded: 0
                   transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000099
+                expiresAt: '2025-10-03T15:00:30Z'
                 createdAt: '2025-10-03T15:00:00Z'
                 updatedAt: '2025-10-03T15:00:00Z'
   responses:

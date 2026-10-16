@@ -6432,7 +6432,7 @@ paths:
 
         The export may not settle within that request: an approval- or consensus-gated wallet-provider activity answers `200` with `status: "PROCESSING"` instead. The credentials are never stored server-side, so collecting them is the client's job — re-send the byte-identical signed retry (same headers, same body) until it returns `encryptedWalletCredentials`. The `Request-Id` challenge stays usable until an attempt actually delivers them, so a `PROCESSING` response never burns it; a delivered export does, and a later re-send is then rejected with `401`. Subscribe to `wallet_operation.completed` to learn when re-sending will succeed rather than polling blind.
 
-        The `clientPublicKey` is ephemeral: generate a fresh P-256 keypair for this export and discard the private key after decrypting. Send it as an uncompressed key in lowercase hex (130 characters, `04` prefix). Do not reuse a session signing key pair.
+        The `clientPublicKey` is ephemeral: generate a fresh P-256 keypair for this export and discard the private key after decrypting. Send it as an uncompressed key in lowercase hex (130 characters, `04` prefix). Do not reuse the keypair from a verify or refresh call. That private key is the session signing key.
       operationId: exportInternalAccount
       tags:
         - Internal Accounts
@@ -7044,7 +7044,7 @@ paths:
 
         For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired. The token identity (`iss`, `aud`, and `sub`) must match the OAuth credential being verified. Send `clientPublicKey` as a compressed P-256 key in lowercase hex (66 characters, `02` or `03` prefix). In sandbox, the token's `nonce` must equal the lowercase hex SHA-256 digest of the `clientPublicKey` string exactly as sent. For `PASSKEY` credentials, the client completes a WebAuthn assertion (`navigator.credentials.get()`) against the Grid-issued `challenge` returned from `POST /auth/credentials/{id}/challenge`, and submits the resulting `assertion` with the `Request-Id` header. The `clientPublicKey` for `PASSKEY` credentials is supplied on the challenge call, where it is bound into the pending session-creation request.
 
-        On success for `OAUTH` and `PASSKEY`, and on the signed retry for OTP credentials, the response contains an `AuthSession`. The client already holds the session signing key, the private key it generated before authentication, so no key material is returned. The `expiresAt` timestamp marks when the session expires.
+        On success for `OAUTH` and `PASSKEY`, and on the signed retry for OTP credentials, the response contains an `AuthSession`. The client already holds the session signing key, which is the private key it generated before authentication. No key material is returned. An uppercase or uncompressed `clientPublicKey` is rejected with `400 INVALID_INPUT`. The `expiresAt` timestamp marks when the session expires.
       operationId: verifyAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -7177,7 +7177,7 @@ paths:
 
         `OAUTH` credentials do not have a challenge step. To authenticate or reauthenticate an OAuth credential, call `POST /auth/credentials/{id}/verify` with a fresh OIDC token and a `clientPublicKey`.
 
-        For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Send it as a compressed P-256 key in lowercase hex (66 characters, `02` or `03` prefix). The client retains the matching private key as the resulting session signing key. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation body, not a base64url string. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
+        For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Send it as a compressed P-256 key in lowercase hex (66 characters, `02` or `03` prefix). The client keeps the matching private key as the resulting session signing key. An uppercase or uncompressed key is rejected with `400 INVALID_INPUT`. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation body, not a base64url string. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
       operationId: challengeAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -7403,7 +7403,7 @@ paths:
 
         1. Call `POST /auth/sessions/{id}/refresh` with the request body `{ "clientPublicKey": "02..." }` and no signature headers. Send a freshly generated P-256 public key as a compressed key in lowercase hex (66 characters, `02` or `03` prefix) and retain its private key. Grid binds the supplied `clientPublicKey` into the session-refresh payload, persists it as a pending request, and returns `202` with `payloadToSign`, `requestId`, and `expiresAt`.
 
-        2. Sign `payloadToSign` with the current session signing key, then retry the same request with the full API-key stamp as `Grid-Wallet-Signature`, the `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in the request body. On success, Grid returns a new `AuthSession`. The client retains the new session signing key, so no key material is returned.
+        2. Sign `payloadToSign` with the current session signing key, then retry the same request with the full API-key stamp as `Grid-Wallet-Signature`, the `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in the request body. On success, Grid returns a new `AuthSession`. The client keeps the private key matching `clientPublicKey` as the new session signing key, and no key material is returned. An uppercase or uncompressed key is rejected with `400 INVALID_INPUT`.
 
         The original session must still be active on both steps so it can authorize the refresh. If the session has already expired, use the credential reauthentication flow instead.
       operationId: refreshAuthSession
@@ -7509,17 +7509,17 @@ paths:
     post:
       summary: Create a delegated signing key
       description: |
-        Delegate Spark token-transaction signing authority for a card funding source backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested card and internal account to identify the wallet funding source, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
+        Delegate Spark token-transaction signing authority for a card funding source or agent backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested owner and internal account to identify the wallet, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
 
         1. Call `POST /auth/delegated-keys` with no signature headers. Grid generates the delegated keypair and the response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
 
         2. Use the session API keypair of a verified credential on the requested Embedded Wallet internal account to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The response is a second `202` with a new `payloadToSign`, `requestId`, and `expiresAt`.
 
-        3. Stamp the new `payloadToSign` with the same session keypair and retry once more with the new `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status. A provisioned `PENDING_AUTH` card using this funding source becomes `ACTIVE` automatically. Cards still provisioning remain `PROCESSING`; frozen and closed cards retain their status.
+        3. Stamp the new `payloadToSign` with the same session keypair and retry once more with the new `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status. For card keys, a provisioned `PENDING_AUTH` card using this funding source becomes `ACTIVE` automatically. Cards still provisioning remain `PROCESSING`; frozen and closed cards retain their status.
 
-        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the signer identity exists but holds no policies, so it cannot sign or revoke itself. Abandoned `PENDING` keys do not block creating another delegated key. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account in place of a session keypair; the platform never handles the key material.
+        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the signer identity exists but holds no policies, so it cannot sign or revoke itself. Abandoned `PENDING` card keys do not block creating another delegated key. For an agent, a `PENDING` key blocks a new one until it is revoked with `DELETE /auth/delegated-keys/{id}`; revoking a `PENDING` key only discards Grid's key material. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account or for policy-approved agent actions in place of a session keypair; the platform never handles the key material.
 
-        Each card funding source may have at most one `ACTIVE` delegated key for its Embedded Wallet funding account; revoke the existing active key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by the public API. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
+        Each card funding source may have at most one `ACTIVE` delegated key, and each agent and Embedded Wallet pair at most one unrevoked (`PENDING` or `ACTIVE`) delegated key; revoke the existing key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by the public API. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
       operationId: createDelegatedKey
       tags:
         - Embedded Wallet Auth
@@ -7555,7 +7555,7 @@ paths:
                   nickname: Card payments key
       responses:
         '201':
-          description: Delegated key created and policy granted. The key is `ACTIVE` and Grid may use it to stamp card-payment quote executions for this card funding source's Embedded Wallet funding account.
+          description: Delegated key created and policy granted. The key is `ACTIVE` and Grid may use it to stamp card-payment quote executions or policy-approved actions for the selected agent.
           content:
             application/json:
               schema:
@@ -7580,7 +7580,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DelegatedKeySignedRequestChallenge'
         '400':
-          description: Bad request
+          description: Bad request. Returned when both `cardId` and `agentId` are provided, or when neither owner id is provided.
           content:
             application/json:
               schema:
@@ -7592,13 +7592,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '404':
-          description: Card, card funding source, or Embedded Wallet funding account not found
+          description: Card, agent, card funding source, or Embedded Wallet account not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: An `ACTIVE` delegated key already exists for this card funding source. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one.
+          description: An `ACTIVE` delegated key already exists for this card funding source, or an `ACTIVE` or `PENDING` key already exists for this agent and Embedded Wallet pair. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one.
           content:
             application/json:
               schema:
@@ -7702,7 +7702,7 @@ paths:
     delete:
       summary: Revoke a delegated signing key
       description: |
-        Revoke an `ACTIVE` delegated signing key. An active card using this funding source becomes `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`. Frozen and closed cards retain their status. Grid uses the custodied delegated key to authorize deleting its own signer identity. Deleting the identity also removes its API key, after which the delegated key can no longer sign. The response is `204` when revocation completes.
+        Revoke an `ACTIVE` delegated signing key, or an agent's `PENDING` key. Revoking a `PENDING` agent key only discards Grid's key material. An active card using this funding source becomes `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`. Frozen and closed cards retain their status. Grid uses the custodied delegated key to authorize deleting its own signer identity. Deleting the identity also removes its API key, after which the delegated key can no longer sign. The response is `204` when revocation completes.
 
         The underlying signing policies are left in place. Their consensus references the now-deleted signer identity, so they can never authorize anything, and deleting them is unnecessary for correctness or security.
       operationId: revokeDelegatedKey
@@ -7722,7 +7722,7 @@ paths:
         '204':
           description: Delegated key revoked. The key can no longer authorize signing.
         '400':
-          description: Bad request. Returned when the delegated key has already been revoked or is not `ACTIVE`.
+          description: Bad request. Returned when the delegated key has already been revoked, or is a card key that is not `ACTIVE`.
           content:
             application/json:
               schema:
@@ -7986,6 +7986,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -8021,6 +8027,177 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/customer:
+    get:
+      summary: Get agent customer
+      description: Retrieve the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      operationId: agentGetCustomer
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndividualCustomer'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update agent customer
+      description: 'Update identity information for the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent''s policy. The customer is inferred from the agent and cannot be selected by the request. Agents may update only identity fields: `fullName`, `birthDate`, `nationality`, `address`, `idType`, `identifier`, `countryOfIssuance` and the enhanced-due-diligence fields. Any other field, including `email` and `phoneNumber` (sign-in credentials the customer changes through `PATCH /customers/{customerId}`), returns 400.'
+      operationId: agentUpdateCustomer
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentCustomerUpdateRequest'
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndividualCustomer'
+        '400':
+          description: Bad request - an invalid value, a field agents may not update, or an identity that cannot change while the customer's KYC status is under review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/verifications:
+    post:
+      summary: Submit agent customer for verification
+      description: Submit the authenticated agent's individual customer for KYC verification. The response reports the current status and any identity fields that still need to be supplied. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      operationId: agentCreateVerification
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Verification status returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verification'
+        '400':
+          description: Bad request - Required identity information is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/kyc-link:
+    post:
+      summary: Generate an agent customer KYC link
+      description: Generate a single-use hosted KYC link for the authenticated agent's individual customer. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      operationId: agentCreateKycLink
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KycLinkCreateRequest'
+      responses:
+        '201':
+          description: KYC link generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycLinkResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the MANAGE_IDENTITY permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '409':
+          description: The customer's payment provider requires contact verification and the customer's email and phone are not both `VERIFIED` yet. The platform must complete contact verification (see `verify-email` and `verify-phone`) before the agent retries.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -8324,6 +8501,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent or action not found
           content:
@@ -8391,6 +8574,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Agent or action not found
           content:
@@ -8701,7 +8890,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/QuoteRequest'
+              $ref: '#/components/schemas/AgentQuoteRequest'
       responses:
         '201':
           description: Transfer quote created successfully
@@ -8722,7 +8911,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent policy does not permit this operation
+          description: Forbidden - Agents API is not enabled for the platform, or the agent policy does not permit this operation
           content:
             application/json:
               schema:
@@ -8787,6 +8976,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Quote not found
           content:
@@ -8811,8 +9006,8 @@ paths:
     post:
       summary: Execute a quote
       description: |
-        Execute a quote created by the authenticated agent. Requires the EXECUTE_QUOTES permission in the agent's policy.
-        If the agent's policy requires approval for this amount (based on execution mode or approval thresholds), the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
+        Execute a quote created by the authenticated agent. Requires the EXECUTE_QUOTES permission in the agent's policy. When the source is an `EMBEDDED_WALLET`, Grid signs with the agent's active delegated key for that wallet.
+        If the agent's policy requires approval for this amount (based on execution mode or approval thresholds), the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`. The action expires when its quote expires. Approval after expiry fails the action; Grid does not create a replacement quote.
         Once executed, the quote cannot be cancelled.
       operationId: agentExecuteQuote
       tags:
@@ -8829,13 +9024,6 @@ paths:
             type: string
             maxLength: 255
             example: <uuid>
-        - name: Grid-Wallet-Signature
-          in: header
-          required: false
-          description: Full Grid wallet signature over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
-          schema:
-            type: string
-          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
       responses:
         '200':
           description: 'Action submitted successfully. If the agent''s policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated. Note: if approval is required, the underlying quote may expire before the platform approves — in that case the action will transition to `FAILED`.'
@@ -8850,13 +9038,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Also returned when the quote's source is an internal account of type `EMBEDDED_WALLET` and the provided `Grid-Wallet-Signature` header is missing, malformed, or does not match the quote's `payloadToSign`.
+          description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
+          description: Forbidden. The Agents API is not enabled for the platform, the agent policy does not permit this operation, a spending limit was exceeded, or an `EMBEDDED_WALLET` source has no active delegated key for this agent.
           content:
             application/json:
               schema:
@@ -8924,6 +9112,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -8960,6 +9154,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Action not found
           content:
@@ -12016,6 +12216,7 @@ webhooks:
                       feesIncluded: 250
                       platformFeesIncluded: 0
                       transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000099
+                    expiresAt: '2025-10-03T15:00:30Z'
                     createdAt: '2025-10-03T15:00:00Z'
                     updatedAt: '2025-10-03T15:00:00Z'
       responses:
@@ -14069,8 +14270,8 @@ components:
           example: Acme Wallet
         otpLength:
           type: integer
-          minimum: 4
-          maximum: 12
+          minimum: 6
+          maximum: 9
           description: |
             Number of digits / characters in the OTP code. Defaults to 6 when
             not set.
@@ -14084,7 +14285,7 @@ components:
         expirationSeconds:
           type: integer
           minimum: 1
-          maximum: 86400
+          maximum: 600
           description: |
             OTP validity window in seconds. Defaults to 300 when not set.
           example: 300
@@ -27999,7 +28200,7 @@ components:
           pattern: ^0[23][0-9a-f]{64}$
           minLength: 66
           maxLength: 66
-          description: 'Client-generated, ephemeral P-256 public key as a compressed SEC1 point in lowercase hex: 66 characters, a `02` or `03` prefix followed by the 32-byte X coordinate. Generate a fresh key pair for each verification request. The client retains the matching private key, which becomes the session signing key.'
+          description: 'Client-generated, ephemeral P-256 public key, one per verification request, as a compressed SEC1 point in lowercase hex: 66 characters, a `02` or `03` prefix followed by the 32-byte X coordinate. The client keeps the matching private key as the session signing key. An uppercase or uncompressed key is rejected with `400 INVALID_INPUT`.'
           example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     OauthCredentialVerifyRequest:
       title: OAuth Credential Verify Request
@@ -28069,7 +28270,7 @@ components:
           PASSKEY: '#/components/schemas/PasskeyCredentialVerifyRequest'
     AuthSession:
       title: Authentication Session
-      description: 'An authentication session on an Embedded Wallet internal account. Returned from `GET /auth/sessions` (list) and `POST /auth/credentials/{id}/verify` (on credential verification) or `POST /auth/sessions/{id}/refresh` (on mid-session refresh). The `clientPublicKey` encoding on the issuing request selects the flow: a compressed key gets the client-held-key model, where the client generates and retains the session signing key and session-issuing responses carry no key material; an uncompressed key gets the deprecated legacy flow, where Grid seals the session signing key to that public key and returns it as `encryptedSessionSigningKey`. Never returned by the list endpoint.'
+      description: An authentication session on an Embedded Wallet internal account. Returned from `GET /auth/sessions` (list) and `POST /auth/credentials/{id}/verify` (on credential verification) or `POST /auth/sessions/{id}/refresh` (on mid-session refresh). The client generates and keeps the session signing key, so session-issuing responses carry no key material.
       allOf:
         - $ref: '#/components/schemas/AuthMethod'
         - type: object
@@ -28084,11 +28285,7 @@ components:
             encryptedSessionSigningKey:
               type: string
               deprecated: true
-              description: |-
-                Deprecated; present only for the legacy flow, selected by sending an uncompressed `clientPublicKey` on the verification or refresh request. Grid seals the session signing key to that public key and returns it here as a base58check string (a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext) for the client to decrypt with its private key.
-
-                The recommended client-held-key flow sends a compressed `clientPublicKey` instead: the client generates and retains the session signing key itself, so this field is omitted — the same way `EMAIL_OTP` and `SMS_OTP` sessions have always worked. See the "Client keys & signing" guide. Always omitted from list responses (`GET /auth/sessions`).
-              example: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
+              description: Deprecated and no longer returned. Every session uses a compressed `clientPublicKey`, and the client keeps the matching private key as the session signing key. See the "Client keys & signing" guide.
             expiresAt:
               type: string
               format: date-time
@@ -28110,7 +28307,7 @@ components:
           pattern: ^0[23][0-9a-f]{64}$
           minLength: 66
           maxLength: 66
-          description: 'Required for `PASSKEY` credentials. Client-generated P-256 public key as a compressed SEC1 point in lowercase hex: 66 characters, a `02` or `03` prefix followed by the 32-byte X coordinate. The client retains the matching private key, which becomes the session signing key. Grid bakes this public key into the session-creation payload that the returned `challenge` is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`.'
+          description: 'Required for `PASSKEY` credentials. Client-generated P-256 public key as a compressed SEC1 point in lowercase hex: 66 characters, a `02` or `03` prefix followed by the 32-byte X coordinate. The client keeps the matching private key as the session signing key. An uppercase or uncompressed key is rejected with `400 INVALID_INPUT`. Grid bakes this public key into the session-creation payload that the returned `challenge` is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`.'
           example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     PasskeyAuthChallenge:
       title: Passkey Auth Challenge
@@ -28171,7 +28368,7 @@ components:
             $ref: '#/components/schemas/AuthSession'
     AuthSessionRefreshRequest:
       title: Auth Session Refresh Request
-      description: Request body for refreshing an active authentication session. The `clientPublicKey` is required on both steps of the signed-retry flow and must match on both. On the initial call, Grid binds the supplied key into the session-creation payload returned as `payloadToSign`.
+      description: Request body for refreshing an active authentication session. The `clientPublicKey` is required on both steps of the signed-retry flow and must match on both. The client keeps the matching private key as the new session signing key. On the initial call, Grid binds the supplied key into the session-creation payload returned as `payloadToSign`.
       type: object
       required:
         - clientPublicKey
@@ -28181,7 +28378,7 @@ components:
           pattern: ^0[23][0-9a-f]{64}$
           minLength: 66
           maxLength: 66
-          description: 'Client-generated P-256 public key as a compressed SEC1 point in lowercase hex: 66 characters, a `02` or `03` prefix followed by the 32-byte X coordinate. The client retains the matching private key, which becomes the new session signing key.'
+          description: 'Client-generated P-256 public key as a compressed SEC1 point in lowercase hex: 66 characters, a `02` or `03` prefix followed by the 32-byte X coordinate. The client keeps the matching private key as the new session signing key. An uppercase or uncompressed key is rejected with `400 INVALID_INPUT`.'
           example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     DelegatedKeyStatus:
       type: string
@@ -28201,15 +28398,13 @@ components:
       type: object
       required:
         - id
-        - cardId
-        - fundingSourceId
         - accountId
         - publicKey
         - nickname
         - status
         - createdAt
         - updatedAt
-      description: A delegated signing key for a card funding source backed by an Embedded Wallet internal account. Returned from `POST /auth/delegated-keys` (on activation), `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`. The keypair is generated and custodied by Grid; the private key is never returned. While `ACTIVE`, Grid may use the key to authorize Spark token-transaction signing for the card funding source's Embedded Wallet funding account in place of a session keypair. `publicKey` is informational metadata identifying the credential.
+      description: A delegated signing key for either a card funding source or an agent, backed by an Embedded Wallet internal account. Card keys include `cardId` and `fundingSourceId`; agent keys include `agentId`. Returned from `POST /auth/delegated-keys` (on activation), `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`. The keypair is generated and custodied by Grid; the private key is never returned. While `ACTIVE`, Grid may use the key to authorize Spark token-transaction signing for the selected card funding source or agent in place of a session keypair. `publicKey` is informational metadata identifying the credential.
       properties:
         id:
           type: string
@@ -28217,15 +28412,19 @@ components:
           example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
         cardId:
           type: string
-          description: The card this key is delegated for.
+          description: The card this key is delegated for. Present only for card keys.
           example: Card:019542f5-b3e7-1d02-0000-000000000010
         fundingSourceId:
           type: string
-          description: The card funding source this key is delegated for.
+          description: The card funding source this key is delegated for. Present only for card keys.
           example: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
+        agentId:
+          type: string
+          description: The agent this key is delegated for. Present only for agent keys.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
         accountId:
           type: string
-          description: The Embedded Wallet internal account this key is delegated for, derived from the card funding source.
+          description: The Embedded Wallet internal account this key is delegated for, derived from the card funding source or the agent's customer.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         publicKey:
           type: string
@@ -28261,25 +28460,29 @@ components:
     DelegatedKeyCreateRequest:
       title: Delegated Key Create Request
       type: object
+      description: Creates a delegated signing key for a card funding source or an agent. Exactly one of `cardId` or `agentId` is required. Requests that provide both fields or neither field return a 400 response.
       required:
-        - cardId
         - internalAccountId
         - nickname
       properties:
         cardId:
           type: string
-          description: The id of the card whose Embedded Wallet funding account will use this delegated signing key.
+          description: The id of the card whose Embedded Wallet funding account will use this delegated signing key. Omit when creating a key for an agent.
           example: Card:019542f5-b3e7-1d02-0000-000000000010
+        agentId:
+          type: string
+          description: The id of the agent that will use this delegated signing key. The agent must belong to the customer that owns the Embedded Wallet internal account. Omit when creating a key for a card.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
         internalAccountId:
           type: string
-          description: The id of the Embedded Wallet internal account funding the card. Grid uses the `(cardId, internalAccountId)` pair to find the active card funding-source binding.
+          description: The id of the Embedded Wallet internal account this key may sign for. For a card key, Grid uses the `(cardId, internalAccountId)` pair to find the active card funding-source binding. For an agent key, the account must belong to the agent's customer.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         nickname:
           type: string
           minLength: 1
           maxLength: 256
           description: Human-readable label for the delegated key.
-          example: Card payments key
+          example: Payments key
     DelegatedKeySignedRequestChallenge:
       title: Delegated Key Signed Request Challenge
       description: 202 response returned from the delegated-key endpoints. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`.
@@ -28292,7 +28495,8 @@ components:
         - CREATE_QUOTES
         - EXECUTE_QUOTES
         - MANAGE_EXTERNAL_ACCOUNTS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.'
+        - MANAGE_IDENTITY
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. MANAGE_IDENTITY: Can read and update customer identity information and start verification.'
     AgentExecutionMode:
       type: string
       enum:
@@ -28565,7 +28769,7 @@ components:
         | `PENDING_APPROVAL` | Submitted by the agent, awaiting platform approval before execution |
         | `APPROVED` | Approved by the platform; execution is in progress or completed |
         | `REJECTED` | Rejected by the platform; the underlying transaction was not executed |
-        | `FAILED` | Approved but execution failed (e.g. quote expired, insufficient funds) |
+        | `FAILED` | Not executed, or execution failed; see `failureReason` |
     AgentActionType:
       type: string
       enum:
@@ -28576,6 +28780,22 @@ components:
         | Type | Description |
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
+    AgentActionFailureReason:
+      type: string
+      enum:
+        - QUOTE_EXPIRED
+        - POLICY_DENIED
+        - AGENT_INACTIVE
+        - EXECUTION_FAILED
+      description: |
+        Why an agent action has status `FAILED`.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `QUOTE_EXPIRED` | The action's quote expired before execution |
+        | `POLICY_DENIED` | The agent policy no longer allowed the action |
+        | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
+        | `EXECUTION_FAILED` | Grid could not execute the approved action |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -28586,6 +28806,7 @@ components:
         - platformCustomerId
         - status
         - type
+        - expiresAt
         - createdAt
         - updatedAt
       properties:
@@ -28612,7 +28833,7 @@ components:
         quote:
           allOf:
             - $ref: '#/components/schemas/Quote'
-          description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user.
+          description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user. Present for `EXECUTE_QUOTE`.
         transaction:
           allOf:
             - $ref: '#/components/schemas/TransactionOneOf'
@@ -28621,6 +28842,14 @@ components:
           type: string
           description: Human-readable reason provided by the platform when rejecting the action. Only present when status is `REJECTED`.
           example: Transaction amount exceeds customer's current risk limit.
+        failureReason:
+          $ref: '#/components/schemas/AgentActionFailureReason'
+          description: Machine-readable reason the action failed. Only present when status is `FAILED`; `rejectionReason` is used only for `REJECTED` actions.
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the action expires. For `EXECUTE_QUOTE`, this is the quote's own expiry. A `PENDING_APPROVAL` action that reaches this time transitions to `FAILED` with `failureReason` `QUOTE_EXPIRED`; approval never creates a replacement quote.
+          example: '2025-10-03T15:05:00Z'
         createdAt:
           type: string
           format: date-time
@@ -28651,6 +28880,41 @@ components:
         totalCount:
           type: integer
           description: Total number of actions matching the criteria (excluding pagination).
+    AgentCustomerUpdateRequest:
+      title: Agent Customer Update Request
+      description: 'Request body for `PATCH /agents/me/customer`: the identity fields an agent may update on its customer. Any other field, including `email`, `phoneNumber` and `currencies`, returns 400.'
+      allOf:
+        - type: object
+          properties:
+            fullName:
+              type: string
+              maxLength: 250
+              description: Individual's full name
+              example: John Michael Doe
+            birthDate:
+              type: string
+              format: date
+              description: Date of birth in ISO 8601 format (YYYY-MM-DD)
+              example: '1990-01-15'
+            nationality:
+              type: string
+              description: Country code (ISO 3166-1 alpha-2)
+              example: US
+            address:
+              $ref: '#/components/schemas/Address'
+            idType:
+              $ref: '#/components/schemas/IdentificationType'
+            identifier:
+              type: string
+              maxLength: 100
+              writeOnly: true
+              description: The individual's identification number, required to onboard them as a US account holder. Only SSN (format `###-##-####`) and ITIN are currently accepted; other identification types are rejected. Write-only; never returned in customer responses.
+              example: 123-45-6789
+            countryOfIssuance:
+              type: string
+              description: 'Country that issued the identification (ISO 3166-1 alpha-2). Optional for an individual account holder: SSN and ITIN are US-issued, so this defaults to `US` and is rejected if set to anything else.'
+              example: US
+        - $ref: '#/components/schemas/CustomerEdd'
     AgentUpdateRequest:
       type: object
       description: Partial update to an agent's basic fields. At least one field must be provided.
@@ -28777,6 +29041,36 @@ components:
           example: gat_ed0ad25881e234cc28fb2dec0a4fe64e4172a3b9
         policy:
           $ref: '#/components/schemas/AgentPolicy'
+    AgentQuoteDestinationOneOf:
+      description: Destination of an agent quote.
+      oneOf:
+        - $ref: '#/components/schemas/AccountDestination'
+      discriminator:
+        propertyName: destinationType
+        mapping:
+          ACCOUNT: '#/components/schemas/AccountDestination'
+    AgentQuoteRequest:
+      type: object
+      description: 'A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET` internal account of the agent''s customer, and the destination is an `ACCOUNT`: another `EMBEDDED_WALLET` on the platform.'
+      required:
+        - source
+        - destination
+        - lockedCurrencySide
+        - lockedCurrencyAmount
+      properties:
+        source:
+          $ref: '#/components/schemas/QuoteSourceOneOf'
+        destination:
+          $ref: '#/components/schemas/AgentQuoteDestinationOneOf'
+        lockedCurrencySide:
+          $ref: '#/components/schemas/QuoteLockSide'
+        lockedCurrencyAmount:
+          type: integer
+          format: int64
+          description: The amount to send/receive in the smallest unit of the locked currency (eg. cents). See `lockedCurrencySide` for more information.
+          exclusiveMinimum: 0
+          maximum: 9000000000000000
+          example: 1000
     ExternalAccountCreateRequest:
       allOf:
         - type: object
@@ -30485,6 +30779,9 @@ components:
         - BULK_UPLOAD.COMPLETED
         - BULK_UPLOAD.FAILED
         - AGENT_ACTION.PENDING_APPROVAL
+        - AGENT_ACTION.APPROVED
+        - AGENT_ACTION.REJECTED
+        - AGENT_ACTION.FAILED
         - CARD.STATUS_CHANGE
         - CARD.PIN_STATUS_CHANGE
         - CARD_TRANSACTION.AUTHORIZED
@@ -30516,6 +30813,13 @@ components:
           format: date-time
           description: ISO 8601 timestamp of when the webhook was sent
           example: '2025-08-15T14:32:00Z'
+    AgentActionWebhookEventType:
+      type: string
+      enum:
+        - AGENT_ACTION.PENDING_APPROVAL
+        - AGENT_ACTION.APPROVED
+        - AGENT_ACTION.REJECTED
+        - AGENT_ACTION.FAILED
     AgentActionWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -30526,9 +30830,7 @@ components:
             data:
               $ref: '#/components/schemas/AgentAction'
             type:
-              type: string
-              enum:
-                - AGENT_ACTION.PENDING_APPROVAL
+              $ref: '#/components/schemas/AgentActionWebhookEventType'
     IncomingPaymentWebhookData:
       title: Incoming Payment Webhook Data
       allOf:

@@ -9,8 +9,7 @@ post:
     `{ "clientPublicKey": "02..." }` and no signature headers. Send a
     freshly generated P-256 public key as a compressed key in lowercase
     hex (66 characters, `02` or `03` prefix) and retain its private key.
-    Grid
-    binds the supplied `clientPublicKey` into the session-refresh payload,
+    Grid binds the supplied `clientPublicKey` into the session-refresh payload,
     persists it as a pending request, and returns `202` with
     `payloadToSign`, `requestId`, and `expiresAt`.
 
@@ -19,8 +18,9 @@ post:
     same request with the full API-key stamp as `Grid-Wallet-Signature`, the
     `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in
     the request body. On success, Grid returns a new `AuthSession`. The
-    client retains the new session signing key, so no key material is
-    returned.
+    client keeps the private key matching `clientPublicKey` as the new
+    session signing key, and no key material is returned. An uppercase or
+    uncompressed key is rejected with `400 INVALID_INPUT`.
 
 
     The original session must still be active on both steps so it can authorize
