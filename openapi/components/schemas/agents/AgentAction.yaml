@@ -37,7 +37,7 @@ properties:
     $ref: ./AgentActionType.yaml
   quote:
     allOf:
-      - $ref: ./AgentQuote.yaml
+      - $ref: ../quotes/Quote.yaml
     description: >-
       The quote being executed. Contains the full amount, currency, destination, and rate
       details needed to present an approval decision to the user. Present for

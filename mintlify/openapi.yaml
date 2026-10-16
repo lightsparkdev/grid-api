@@ -8726,7 +8726,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AgentQuote'
+                $ref: '#/components/schemas/Quote'
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -8798,7 +8798,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AgentQuote'
+                $ref: '#/components/schemas/Quote'
         '401':
           description: Unauthorized
           content:
@@ -28604,11 +28604,6 @@ components:
         | Type | Description |
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
-    AgentQuote:
-      title: Agent Quote
-      allOf:
-        - $ref: '#/components/schemas/Quote'
-      description: A quote created by an agent.
     AgentActionFailureReason:
       type: string
       enum:
@@ -28661,7 +28656,7 @@ components:
           $ref: '#/components/schemas/AgentActionType'
         quote:
           allOf:
-            - $ref: '#/components/schemas/AgentQuote'
+            - $ref: '#/components/schemas/Quote'
           description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user. Present for `EXECUTE_QUOTE`.
         transaction:
           allOf:
