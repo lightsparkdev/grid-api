@@ -21,7 +21,7 @@ get:
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/quotes/Quote.yaml
+            $ref: ../../components/schemas/agents/AgentQuote.yaml
     '401':
       description: Unauthorized
       content:
