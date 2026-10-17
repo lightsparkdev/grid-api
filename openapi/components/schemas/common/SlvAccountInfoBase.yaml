@@ -22,11 +22,8 @@ properties:
     minLength: 1
     maxLength: 34
   bankAccountType:
-    type: string
+    $ref: ./BankAccountType.yaml
     description: The bank account type (BANK_TRANSFER only)
-    enum:
-    - CHECKING
-    - SAVINGS
   phoneNumber:
     type: string
     description: The phone number in international format (MOBILE_MONEY only — e.g.
