@@ -4,6 +4,8 @@ enum:
   - POLICY_DENIED
   - AGENT_INACTIVE
   - EXECUTION_FAILED
+  - PRICE_MOVED
+  - ADDRESS_REFUSED
 description: |
   Why an agent action has status `FAILED`.
 
@@ -13,3 +15,5 @@ description: |
   | `POLICY_DENIED` | The agent policy no longer allowed the action |
   | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
   | `EXECUTION_FAILED` | Grid could not execute the approved action |
+  | `PRICE_MOVED` | A quote to a `CHAIN_ADDRESS` would no longer deliver its `minimumReceivingAmount` when it executed, so Grid did not send |
+  | `ADDRESS_REFUSED` | Grid refused the send's destination before it signed the send: the destination is no longer one the agent may send to (for example, a Spark address removed from the customer's saved addresses), or one of the customer's records of the address was refused or is held for review. A `CHAIN_ADDRESS` that screening refuses fails with `EXECUTION_FAILED` |
