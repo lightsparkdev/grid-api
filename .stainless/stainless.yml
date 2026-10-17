@@ -666,6 +666,15 @@ resources:
           kyc_link:
             methods:
               create: post /agents/me/kyc-link
+          deposits:
+            methods:
+              create: post /agents/me/deposits
+              retrieve: get /agents/me/deposits/{depositId}
+          cards:
+            methods:
+              list: get /agents/me/cards
+              retrieve: get /agents/me/cards/{cardId}
+              update: patch /agents/me/cards/{cardId}
       device_codes:
         methods:
           regenerate: post /agents/{agentId}/device-codes
