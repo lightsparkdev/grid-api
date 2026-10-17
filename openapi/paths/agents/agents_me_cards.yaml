@@ -1,0 +1,67 @@
+get:
+  summary: List agent cards
+  description: >-
+    List the cards the customer issued for the authenticated agent. Other
+    cards of the customer are not listed. Requires the MANAGE_CARDS
+    permission.
+  operationId: agentListCards
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: kind
+      in: query
+      description: Filter by card kind
+      required: false
+      schema:
+        $ref: ../../components/schemas/agents/AgentCardKind.yaml
+    - name: status
+      in: query
+      description: Filter by card status
+      required: false
+      schema:
+        $ref: ../../components/schemas/cards/CardStatus.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentCardListResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API or agent cards are not enabled for the platform,
+        the agent does not have the MANAGE_CARDS permission, or the customer
+        is not verified
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
