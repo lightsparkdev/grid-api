@@ -40,7 +40,7 @@ allOf:
         description: >-
           The NACHA return reason code the receiving bank returned the entry under,
           such as `R01` (insufficient funds) or `R10` (customer advises unauthorized).
-          Present with `returnedAt`. Group returns by this code to track your return
+          Present whenever `returnedAt` is. Group returns by this code to track your return
           rate for each reason, or by `returnCategory` for Nacha's threshold
           categories. NACHA may add codes, so accept any value matching the pattern.
         example: R01
