@@ -2,3 +2,18 @@ title: Individual Customer Create Request
 allOf:
   - $ref: ./CustomerCreateRequest.yaml
   - $ref: ./IndividualCustomerFields.yaml
+  - type: object
+    properties:
+      shareToken:
+        type: string
+        maxLength: 1024
+        description: >-
+          Single-use Sumsub Reusable KYC share token from a partner that already
+          verified this person. When supplied, Grid creates the customer's
+          verification profile from the shared data, including their identity
+          document, so it does not need to be uploaded again. The customer's
+          verification status is unchanged: submit the customer with
+          `POST /verifications` as usual. Only supported for platforms where Grid
+          runs identity verification. A token the provider rejects fails the
+          request with `400 INVALID_INPUT` and no customer is created.
+        example: _act-sbx-jwt-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
