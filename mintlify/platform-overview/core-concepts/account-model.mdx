@@ -215,7 +215,7 @@ PENDING → ACTIVE
 - **INACTIVE**: Disabled (can be reactivated)
 - **UNDER_REVIEW**: Additional review required
 
-You'll receive `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhooks as balance changes, and `INTERNAL_ACCOUNT.STATUS_UPDATED` webhooks when account status changes (e.g., ACTIVE to FROZEN).
+You'll receive `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks when account status changes (e.g., PENDING to ACTIVE, or ACTIVE to UNDER_REVIEW). If the receiving bank corrects the account details via an ACH notification of change (NOC), you'll receive `EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED` with the corrected `accountInfo`.
 
 ### Using External Accounts
 
