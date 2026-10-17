@@ -446,6 +446,10 @@ paths:
     $ref: paths/agents/agents_me_verifications.yaml
   /agents/me/kyc-link:
     $ref: paths/agents/agents_me_kyc-link.yaml
+  /agents/me/deposits:
+    $ref: paths/agents/agents_me_deposits.yaml
+  /agents/me/deposits/{depositId}:
+    $ref: paths/agents/agents_me_deposits_{depositId}.yaml
   /agents/{agentId}:
     $ref: paths/agents/agents_{agentId}.yaml
   /agents/{agentId}/policy:
@@ -481,6 +485,10 @@ paths:
     $ref: paths/agents/agents_me_external-accounts.yaml
   /agents/me/external-accounts/{externalAccountId}:
     $ref: paths/agents/agents_me_external-accounts_{externalAccountId}.yaml
+  /agents/me/cards:
+    $ref: paths/agents/agents_me_cards.yaml
+  /agents/me/cards/{cardId}:
+    $ref: paths/agents/agents_me_cards_{cardId}.yaml
   /cards:
     $ref: paths/cards/cards.yaml
   /cards/{id}:
