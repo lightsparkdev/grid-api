@@ -139,6 +139,7 @@ private fun buildQuoteDestination(destNode: JsonNode): QuoteDestinationOneOf {
     if (destNode.has("umaAddress")) {
         val umaDest = QuoteDestinationOneOf.UmaAddress.builder()
             .umaAddress(destNode.get("umaAddress").asText())
+            .currency(destNode.get("currency").asText())
             .build()
         return QuoteDestinationOneOf.ofUmaAddress(umaDest)
     }
