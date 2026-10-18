@@ -17,7 +17,7 @@ properties:
     description: Network the recipient receives on.
     example: BASE
   currency:
-    type: string
+    $ref: ./AgentSendCurrency.yaml
     description: >-
       Asset the recipient receives: `USDC` or `USDT`. `TRON` supports `USDT`
       only, and `BASE` supports `USDC` only.
