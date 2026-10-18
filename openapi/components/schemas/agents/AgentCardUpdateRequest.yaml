@@ -20,21 +20,27 @@ properties:
     maximum: 9007199254740991
     description: >-
       A per-transaction limit at or below the current one, in the smallest unit
-      of the card's currency.
+      of the card's currency. You can only send this when the card's
+      `cardCapabilities.supportsSpendLimits` is true.
     example: 5000
   maxSpendPerDay:
     type: integer
     format: int64
     minimum: 1
     maximum: 9007199254740991
-    description: A UTC-calendar-day spend cap at or below the current one.
+    description: >-
+      A UTC-calendar-day spend cap at or below the current one. You can only
+      send this when the card's `cardCapabilities.supportsSpendLimits` is true.
     example: 20000
   maxTransactionsPerDay:
     type: integer
     format: int32
     minimum: 1
     maximum: 2147483647
-    description: A UTC-calendar-day transaction cap at or below the current one.
+    description: >-
+      A UTC-calendar-day transaction cap at or below the current one. You can
+      only send this when the card's
+      `cardCapabilities.supportsTransactionCountLimit` is true.
     example: 10
   allowedMccs:
     type: array

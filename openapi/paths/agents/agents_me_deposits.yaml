@@ -61,8 +61,9 @@ post:
     '409':
       description: >-
         Conflict - A chain deposit request for the same account, network and
-        currency is still open: it has not been paid and has not expired. The
-        error says when that request closes; create a new one after it does.
+        currency is still open: it has not been paid, and its 24-hour
+        attribution window has not closed. The error reason gives the time
+        that window closes; create a new request after it.
       content:
         application/json:
           schema:

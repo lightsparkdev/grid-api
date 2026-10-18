@@ -4,7 +4,10 @@ description: >-
   internal accounts. For `LIGHTNING`, set `sourceCurrency` to `USD` and provide
   `amount`; the user pays that exact USD amount and fees are deducted from the
   amount received. For chain networks, no amount is required and the returned
-  standing deposit address does not expire.
+  standing deposit address does not expire. A chain request counts the first
+  order the address receives from that network in that currency within 24
+  hours of the request; while that window is open with nothing paid, a second
+  request for the same account, network and currency is refused.
 required:
   - sourceNetwork
   - sourceCurrency

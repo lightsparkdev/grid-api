@@ -8362,7 +8362,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: 'Conflict - A chain deposit request for the same account, network and currency is still open: it has not been paid and has not expired. The error says when that request closes; create a new one after it does.'
+          description: 'Conflict - A chain deposit request for the same account, network and currency is still open: it has not been paid, and its 24-hour attribution window has not closed. The error reason gives the time that window closes; create a new request after it.'
           content:
             application/json:
               schema:
@@ -29632,7 +29632,7 @@ components:
       description: Network from which an agent customer can fund a deposit. `TRON` deposits support `USDT` only.
     AgentDepositCreateRequest:
       type: object
-      description: Request for a deposit into one of the agent customer's internal accounts. For `LIGHTNING`, set `sourceCurrency` to `USD` and provide `amount`; the user pays that exact USD amount and fees are deducted from the amount received. For chain networks, no amount is required and the returned standing deposit address does not expire.
+      description: Request for a deposit into one of the agent customer's internal accounts. For `LIGHTNING`, set `sourceCurrency` to `USD` and provide `amount`; the user pays that exact USD amount and fees are deducted from the amount received. For chain networks, no amount is required and the returned standing deposit address does not expire. A chain request counts the first order the address receives from that network in that currency within 24 hours of the request; while that window is open with nothing paid, a second request for the same account, network and currency is refused.
       required:
         - sourceNetwork
         - sourceCurrency
@@ -30245,21 +30245,21 @@ components:
           format: int64
           minimum: 1
           maximum: 9007199254740991
-          description: A per-transaction limit at or below the current one, in the smallest unit of the card's currency.
+          description: A per-transaction limit at or below the current one, in the smallest unit of the card's currency. You can only send this when the card's `cardCapabilities.supportsSpendLimits` is true.
           example: 5000
         maxSpendPerDay:
           type: integer
           format: int64
           minimum: 1
           maximum: 9007199254740991
-          description: A UTC-calendar-day spend cap at or below the current one.
+          description: A UTC-calendar-day spend cap at or below the current one. You can only send this when the card's `cardCapabilities.supportsSpendLimits` is true.
           example: 20000
         maxTransactionsPerDay:
           type: integer
           format: int32
           minimum: 1
           maximum: 2147483647
-          description: A UTC-calendar-day transaction cap at or below the current one.
+          description: A UTC-calendar-day transaction cap at or below the current one. You can only send this when the card's `cardCapabilities.supportsTransactionCountLimit` is true.
           example: 10
         allowedMccs:
           type: array
