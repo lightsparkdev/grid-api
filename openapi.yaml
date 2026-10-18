@@ -9092,6 +9092,7 @@ paths:
       summary: Create a transfer quote
       description: |
         Generate a quote for a cross-currency transfer on behalf of the authenticated agent's customer. Accounts referenced in the request must belong to the agent's customer. Requires the CREATE_QUOTES permission in the agent's policy.
+        The destination is another embedded wallet or one of the customer's Spark addresses saved with `POST /agents/me/external-accounts` (`ACCOUNT`), or an address on another chain (`CHAIN_ADDRESS`). Grid answers `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held for review, on any of the customer's records of it, under either prefix and including removed ones. A `CHAIN_ADDRESS` quote sends `USDB` and commits to a `minimumReceivingAmount`; Grid prices the conversion again at execution and fails the action with `PRICE_MOVED` rather than send for less.
         If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount exceeds the agent's approvalThresholds, the resulting transaction will require explicit approval before funds move.
       operationId: agentCreateQuote
       tags:
@@ -9120,7 +9121,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quote'
+                $ref: '#/components/schemas/AgentQuote'
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -9134,7 +9135,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agents API is not enabled for the platform, or the agent policy does not permit this operation
+          description: Forbidden - Agents API is not enabled for the platform, the agent policy does not permit this operation, or the agent may not pay the destination (`DESTINATION_NOT_ALLOWED`)
           content:
             application/json:
               schema:
@@ -9163,6 +9164,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error502'
+        '503':
+          description: Service unavailable - Grid could not screen a `CHAIN_ADDRESS` destination or price the conversion right now. Retry later.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
         '504':
           description: Counterparty could not be reached or timed out
           content:
@@ -9192,7 +9199,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quote'
+                $ref: '#/components/schemas/AgentQuote'
         '401':
           description: Unauthorized
           content:
@@ -9267,7 +9274,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden. The Agents API is not enabled for the platform, the agent policy does not permit this operation, a spending limit was exceeded, or an `EMBEDDED_WALLET` source has no active delegated key for this agent.
+          description: Forbidden. The Agents API is not enabled for the platform, the agent policy does not permit this operation, a spending limit was exceeded, an `EMBEDDED_WALLET` source has no active delegated key for this agent, or the agent may no longer pay the quote's destination (`DESTINATION_NOT_ALLOWED`), for example a Spark address that was removed. Executing a quote that already has an action returns that action instead, even once its destination is refused.
           content:
             application/json:
               schema:
@@ -9525,6 +9532,7 @@ paths:
       summary: Add an external account
       description: |
         Register a new external bank account or wallet for the authenticated agent's customer. Requires the MANAGE_EXTERNAL_ACCOUNTS permission in the agent's policy. The `customerId` field is optional and will be inferred from the agent's associated customer if omitted.
+        Grid saves a Spark address under its network's current prefix (`spark1...`), so a legacy spelling (`sp1...`) of a saved address conflicts with it. Grid refuses to save a Spark address that was refused, or is held for review, on any of the customer's records of it, removed ones included (`DESTINATION_NOT_ALLOWED`).
       operationId: agentCreateExternalAccount
       tags:
         - Agent Operations
@@ -9585,7 +9593,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agents API is not enabled for the platform
+          description: Forbidden - Agents API is not enabled for the platform, or Grid refuses the Spark address (`DESTINATION_NOT_ALLOWED`)
           content:
             application/json:
               schema:
@@ -16894,6 +16902,7 @@ components:
             | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
             | CUSTOMER_NOT_VERIFIED | The customer is not verified and cannot perform this action |
             | SANCTION_BLOCKED | Blocked by sanction screening |
+            | DESTINATION_NOT_ALLOWED | The agent may not pay this destination |
           enum:
             - FORBIDDEN
             - USER_NOT_READY
@@ -16902,6 +16911,7 @@ components:
             - END_USER_TERMS_NOT_ACCEPTED
             - CUSTOMER_NOT_VERIFIED
             - SANCTION_BLOCKED
+            - DESTINATION_NOT_ALLOWED
         reason:
           type: string
           description: Error message
@@ -29484,6 +29494,72 @@ components:
         | Type | Description |
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
+    AgentSendNetwork:
+      type: string
+      enum:
+        - BASE
+        - ETHEREUM
+        - SOLANA
+        - POLYGON
+        - ARBITRUM
+        - TRON
+      description: Network an agent can send USDC or USDT to from an embedded wallet. `TRON` supports `USDT` only, and `BASE` supports `USDC` only.
+    AgentSendCurrency:
+      type: string
+      enum:
+        - USDC
+        - USDT
+      description: Asset an agent can send to an address on another chain. `TRON` supports `USDT` only, and `BASE` supports `USDC` only.
+    AgentChainAddressDestination:
+      title: Chain Address
+      type: object
+      required:
+        - destinationType
+        - network
+        - currency
+        - address
+      properties:
+        destinationType:
+          type: string
+          enum:
+            - CHAIN_ADDRESS
+          description: Marks a destination on another chain.
+          example: CHAIN_ADDRESS
+        network:
+          $ref: '#/components/schemas/AgentSendNetwork'
+          description: Network the recipient receives on.
+          example: BASE
+        currency:
+          $ref: '#/components/schemas/AgentSendCurrency'
+          description: 'Asset the recipient receives: `USDC` or `USDT`. `TRON` supports `USDT` only, and `BASE` supports `USDC` only.'
+          example: USDC
+        address:
+          type: string
+          maxLength: 128
+          description: Recipient address on `network`.
+          example: '0x1234567890abcdef1234567890abcdef12345678'
+      description: An address on another chain, paid from an `EMBEDDED_WALLET` holding `USDB`. Grid records the address as an external account of the agent's customer, reusing the account when the customer already has one for the same network, currency and address, and screens it before quoting. The quote's `destination` names that account.
+    AgentQuote:
+      title: Agent Quote
+      allOf:
+        - $ref: '#/components/schemas/Quote'
+        - type: object
+          properties:
+            minimumReceivingAmount:
+              type:
+                - integer
+                - 'null'
+              format: int64
+              description: 'Smallest amount the recipient receives, in the smallest unit of `receivingCurrency`, for a quote to a `CHAIN_ADDRESS` destination: `totalReceivingAmount` is an estimate, and the quote executes only if a fresh price at execution still delivers at least this amount. Otherwise the action fails with `PRICE_MOVED`. Null for a quote whose destination is not `CHAIN_ADDRESS`.'
+              example: 990000
+            destinationSparkAddress:
+              type: string
+              description: The Spark address this quote pays, when its `destination` is one of the customer's `SPARK_WALLET` external accounts.
+              example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+            destinationChainAddress:
+              $ref: '#/components/schemas/AgentChainAddressDestination'
+              description: The chain, address and stablecoin this quote pays, when it was created with a `CHAIN_ADDRESS` destination.
+      description: A quote created by an agent. For a `CHAIN_ADDRESS` destination, the quote's `destination` names the external account Grid recorded for the address, and `destinationChainAddress` names the address itself.
     AgentActionFailureReason:
       type: string
       enum:
@@ -29491,6 +29567,8 @@ components:
         - POLICY_DENIED
         - AGENT_INACTIVE
         - EXECUTION_FAILED
+        - PRICE_MOVED
+        - ADDRESS_REFUSED
       description: |
         Why an agent action has status `FAILED`.
 
@@ -29500,6 +29578,8 @@ components:
         | `POLICY_DENIED` | The agent policy no longer allowed the action |
         | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
         | `EXECUTION_FAILED` | Grid could not execute the approved action |
+        | `PRICE_MOVED` | A quote to a `CHAIN_ADDRESS` would no longer deliver its `minimumReceivingAmount` when it executed, so Grid did not send |
+        | `ADDRESS_REFUSED` | Grid refused the send's destination before it signed the send: the destination is no longer one the agent may send to (for example, a Spark address removed from the customer's saved addresses), or one of the customer's records of the address was refused or is held for review. A `CHAIN_ADDRESS` that screening refuses fails with `EXECUTION_FAILED` |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -29536,7 +29616,7 @@ components:
           $ref: '#/components/schemas/AgentActionType'
         quote:
           allOf:
-            - $ref: '#/components/schemas/Quote'
+            - $ref: '#/components/schemas/AgentQuote'
           description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user. Present for `EXECUTE_QUOTE`.
         transaction:
           allOf:
@@ -29908,13 +29988,18 @@ components:
       description: Destination of an agent quote.
       oneOf:
         - $ref: '#/components/schemas/AccountDestination'
+        - $ref: '#/components/schemas/AgentChainAddressDestination'
       discriminator:
         propertyName: destinationType
         mapping:
           ACCOUNT: '#/components/schemas/AccountDestination'
+          CHAIN_ADDRESS: '#/components/schemas/AgentChainAddressDestination'
     AgentQuoteRequest:
       type: object
-      description: 'A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET` internal account of the agent''s customer, and the destination is an `ACCOUNT`: another `EMBEDDED_WALLET` on the platform.'
+      description: |-
+        A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET` internal account of the agent's customer. The destination is either an `ACCOUNT`: another `EMBEDDED_WALLET` on the platform, or one of the customer's active `SPARK_WALLET` external accounts in the source's currency; or an address on another chain (`CHAIN_ADDRESS`).
+
+        A `CHAIN_ADDRESS` quote sends `USDB` and requires `lockedCurrencySide` `SENDING`: it commits to the `USDB` amount, the destination, and a `minimumReceivingAmount`. Grid prices the conversion again when the quote executes, after any approval, and sends only if the destination still receives at least that minimum. Otherwise the action fails with `PRICE_MOVED` and no funds move.
       required:
         - source
         - destination
