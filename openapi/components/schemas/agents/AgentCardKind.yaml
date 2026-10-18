@@ -1,0 +1,9 @@
+type: string
+enum:
+  - STANDARD
+description: |
+  How an agent card is used and funded.
+
+  | Kind | Description |
+  |------|-------------|
+  | `STANDARD` | A card the platform issued for the agent with `POST /cards`. The customer holds the card details and its spend is the customer's own; the agent can read it, tighten its limits, and freeze it. |
