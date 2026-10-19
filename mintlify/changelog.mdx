@@ -10,6 +10,50 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## Sandbox placeholder signatures are deprecated
+
+Sandbox still accepts two placeholder signatures in place of real cryptography, but
+they are deprecated and will be removed:
+
+- `Grid-Wallet-Signature: sandbox-valid-signature`, in place of an API-key stamp on a
+  signed retry.
+- `sandbox-valid-passkey-signature`, in place of a WebAuthn assertion signature when
+  you verify a passkey credential.
+
+A client that relies on a placeholder can pass in sandbox and then fail in production.
+To avoid that, sign a `payloadToSign` with the session signing key, and send the
+assertion that `navigator.credentials.get()` returns. Both work in sandbox the same way
+as in production. For the signing steps, see
+[Sign a `payloadToSign`](/global-accounts/client-keys#2-sign-a-payloadtosign). No
+removal date is set.
+
+## `POST /customers` names the missing agreement
+
+`POST /customers` rejects a new customer when `agreementConsents` omits an agreement the
+customer's accounts require. A missing End User Terms returns `403`
+`END_USER_TERMS_NOT_ACCEPTED`. A missing accountholder agreement returns `400`
+`ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED`, which is a new error code.
+
+## Narrower `otpLength` and `expirationSeconds` in the embedded wallet config
+
+In `EmbeddedWalletConfig`, `otpLength` now accepts 6 to 9, and `expirationSeconds` now
+accepts 1 to 600. Previously the ranges were 4 to 12 and 1 to 86400, and a value outside
+the new ranges made every OTP send for the platform fail. `PATCH /config` now rejects
+such a value with a field error.
+
+## Fixed: `refund.settledAt` on `OUTGOING_PAYMENT.REFUND_COMPLETED`
+
+A refund that Grid creates already `COMPLETED` now includes `refund.settledAt` in its
+`OUTGOING_PAYMENT.REFUND_COMPLETED` webhook. Before, the webhook for these refunds
+omitted the field. `GET /transactions` always returned the correct value. Webhooks that
+Grid already sent are not resent.
+
+## Fixed: `Retry-After` on per-client rate limit `429` responses
+
+When the per-client rate limit rejects a request, the `429` now carries a `Retry-After`
+header with the seconds left in the current 60-second window. If Grid cannot check the
+limit, the `429` sends `Retry-After: 60`.
+
 ## `EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED` webhook
 
 Grid now tells you when it corrects an external account's details. When the
