@@ -16779,10 +16779,10 @@ components:
       type: object
       description: A single-use reusable KYC share token from a partner that already verified this person.
       required:
-        - partner
+        - provider
         - token
       properties:
-        partner:
+        provider:
           $ref: '#/components/schemas/KycProvider'
           description: The KYC provider that issued the share token.
         token:
