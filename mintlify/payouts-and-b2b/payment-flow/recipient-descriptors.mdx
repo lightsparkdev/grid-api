@@ -1,0 +1,180 @@
+---
+title: "What Recipients See"
+description: "The sender name and payment reference a recipient sees on their bank statement, by rail and corridor"
+icon: "/images/icons/receipt-check.svg"
+"og:image": "/images/og/og-payouts-b2b.png"
+---
+
+Recipients need to know who paid them and why. What they see on their bank statement depends
+on two things:
+
+- **The sender name.** This comes from the account the money leaves. On US rails and some
+  other corridors that's the account holder, and on others it's a fixed Lightspark entity. You can't set it per payment.
+- **The payment reference.** You set this on each quote with `remittanceInformation`, and on
+  ACH also with `statementDescriptor`. Grid puts it in the right field for the rail.
+
+On every corridor, the recipient gets at least a payment reference or a clearing ID to
+identify the payment.
+
+## Fields you control
+
+Set these on `POST /quotes`. Both are optional, but send them on every payout.
+
+| Field | Rails | Limit | Where it appears |
+|---|---|---|---|
+| `remittanceInformation` | All bank rails | 80 printable ASCII characters. Some rails take fewer (see below) | ACH addenda record; RTP and FedNow remittance information; wire OBI (Originator to Beneficiary Information); the payment reference on other local rails |
+| `statementDescriptor` | ACH only | 10 printable ASCII characters | The ACH Company Entry Description, the short label shown next to the sender name on the recipient's statement |
+
+```json
+{
+  "statementDescriptor": "ABC CORP",
+  "remittanceInformation": "ABC Corp invoice 4471"
+}
+```
+
+<Note>
+  `statementDescriptor` is rejected with `400 INVALID_INPUT` on a quote that moves no ACH entry,
+  so leave it out for non-ACH destinations. When you omit it on ACH, Grid uses its default.
+</Note>
+
+If you leave `remittanceInformation` empty on a cross-border payout, Grid may fill the
+reference with the sending customer's name: the company legal name for a business, or the first
+and last name for an individual. Don't rely on this. Set the reference yourself.
+
+## Sending from US accounts
+
+On US rails, **the recipient sees the account holder name of the account the payout leaves**.
+Depending on how your platform is configured, that's either your platform's own account or an
+account held by your customer:
+
+- **Payouts from your customer's account** show your customer's name as the sender.
+- **Payouts from your platform's account** show your platform's name as the sender. Add your
+  customer's name in the payment reference.
+
+The name you give each internal account in Grid is for your own reconciliation. Recipients
+don't see it.
+
+For example, your platform, Acme Pay Inc, pays Ben from its own account on behalf of your
+customer ABC Corp:
+
+| Rail | Sender shown | Where your customer's name goes | What Ben may see |
+|---|---|---|---|
+| ACH | Account holder name (up to 16 characters) | `statementDescriptor` (10 characters) | `ORIG CO NAME:ACME PAY INC CO ENTRY DESCR:ABC CORP` |
+| RTP / FedNow | Account holder name | `remittanceInformation` (up to 80 characters) | `Acme Pay Inc`, plus `ABC Corp invoice 4471` in full |
+| Wire | Account holder name and address | `remittanceInformation`, sent as the OBI | `Acme Pay Inc`, plus `ABC Corp invoice 4471` |
+
+If the payout leaves an account held by ABC Corp instead, Ben sees `ABC CORP` as the sender, and
+you can use the descriptor and reference for your own invoice details.
+
+Outbound wires aren't enabled for every platform. Contact Lightspark if you need them.
+
+Each bank decides what to display. Some show every field, and others shorten or hide names, so
+treat these examples as the best case. On ACH, the 10-character descriptor is the field banks
+show most reliably, so lead with your customer's name there.
+
+To set references when you pay out from your platform's account on a customer's behalf:
+
+<Steps>
+<Step title="Send from the account tied to that customer">
+  Send each payout from the internal account you use for that customer, so the payment is tied
+  to them in Grid.
+</Step>
+<Step title="Set statementDescriptor on ACH payouts">
+  Set `statementDescriptor` to your customer's name in capitals, 10 characters or fewer.
+  Abbreviate long names yourself so the bank doesn't cut them off. Leave it out on RTP, FedNow,
+  and wire payouts.
+
+  Grid rejects blank values, all zeros, `MISC`, and the values NACHA reserves for system entries
+  (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) with `400 INVALID_INPUT`, in
+  any letter case. If a customer's name matches one of these, use a different abbreviation.
+</Step>
+<Step title="Set remittanceInformation">
+  Set `remittanceInformation` to the customer's name plus your reference, most important words
+  first. Use plain letters, numbers, and punctuation.
+</Step>
+</Steps>
+
+## Sending to other countries
+
+On cross-border payouts, the sender name depends on how the corridor settles locally. Corridors
+fall into three groups:
+
+| Group | Sender name the recipient sees | What to put in `remittanceInformation` |
+|---|---|---|
+| Account holder name shown | The account holder name of the originating account, from the sender details on the quote | Your reference, such as an invoice number |
+| Fixed sender name | A Lightspark entity | Your customer's name first, then your reference |
+| Reference only | Set by the local clearing system, or not shown | Your customer's name first, then your reference |
+
+| Currency | Country | Sender name shown | Reference limit |
+|---|---|---|---|
+| AED | United Arab Emirates | Account holder name | 18 characters |
+| BDT | Bangladesh | Account holder name | 16 characters |
+| BRL | Brazil | Account holder name | 18 characters |
+| CAD | Canada | Account holder name | 18 characters |
+| CNY | China | Account holder name | 16 characters |
+| COP | Colombia | Account holder name | 16 characters |
+| DKK | Denmark | Account holder name | 18 characters |
+| EGP | Egypt | Account holder name | 16 characters |
+| GBP | United Kingdom | Account holder name | 18 characters |
+| GHS | Ghana | Account holder name | 16 characters |
+| GTQ | Guatemala | Account holder name | 16 characters |
+| HKD | Hong Kong | Account holder name | 18 characters |
+| HTG | Haiti | Account holder name | 16 characters |
+| IDR | Indonesia | Account holder name | 18 characters |
+| ILS | Israel | Account holder name | 16 characters |
+| INR | India | Account holder name | 18 characters |
+| JMD | Jamaica | Account holder name | 16 characters |
+| MYR | Malaysia | Account holder name | 18 characters |
+| PHP | Philippines | Account holder name | 18 characters |
+| PKR | Pakistan | Account holder name | 16 characters |
+| SGD | Singapore | Account holder name | 18 characters |
+| THB | Thailand | Account holder name | 18 characters |
+| TRY | Turkey | Account holder name | 16 characters |
+| USD | El Salvador | Account holder name | 16 characters |
+| VND | Vietnam | Account holder name | 18 characters |
+| USD, EUR (SWIFT) | International wires | Account holder name | 18 characters |
+| EUR | SEPA countries | Fixed: Lightspark Payments Europe AS | 15 letters and digits. Spaces and punctuation are removed |
+| MXN | Mexico | Reference only | 40 characters |
+| Other corridors | | Varies by corridor | Varies by corridor |
+
+The payment reference on every row is `remittanceInformation`. Each recipient bank decides how
+much of the sender name and reference to display.
+
+<Tip>
+  Before you go live, contact Lightspark to confirm the sender name on the corridors you plan to
+  use, and send a test payment on each one.
+</Tip>
+
+## Best practices
+
+- **Always send `remittanceInformation`.** On fixed-name and reference-only corridors, it's the
+  only way the recipient can tell who the payment is from.
+- **Put the most important words first.** Many rails shorten the reference, sometimes to 15 or
+  16 characters. `ACMELTD INV4471` survives shortening and `Payment for invoice 4471 from Acme
+  Ltd` doesn't.
+- **Use plain letters and digits.** `remittanceInformation` accepts printable ASCII only, so
+  remove accents before you send it (`Jose`, not `José`). Some rails, such as SEPA, then keep
+  only letters and digits.
+- **Don't promise a sender name you can't control.** Tell your customers that the sender name
+  depends on the corridor, and that the payment reference is the reliable way to identify a
+  payment.
+
+## Common questions
+
+**Can I change the sender name to my brand or my customer's name?**
+Not per payment. On US rails, the sender is the account holder name of the account the payout
+leaves, which is your customer when you send from their account. On fixed-name
+corridors, it's the Lightspark entity that settles the payout.
+
+**What if I leave `remittanceInformation` empty?**
+On cross-border payouts, Grid may use the sending customer's name as the reference. On US rails, the reference is left empty and only the sender name and, on ACH, the
+default descriptor appear.
+
+**Why does the recipient see a shorter reference than I sent?**
+Each rail and bank has its own length and character limits. Grid shortens the value to the
+rail's limit, and the recipient's bank may shorten it further.
+
+## Related
+
+- [Sending payments](/payouts-and-b2b/payment-flow/send-payment)
+- [Reconciliation](/payouts-and-b2b/payment-flow/reconciliation)
