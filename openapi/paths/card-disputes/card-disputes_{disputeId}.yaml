@@ -1,0 +1,46 @@
+parameters:
+  - name: disputeId
+    in: path
+    description: The id of the dispute.
+    required: true
+    schema:
+      type: string
+    example: CardDispute:019542f5-b3e7-1d02-0000-000000000200
+get:
+  summary: Get a card dispute
+  description: >
+    Returns one dispute on a card transaction the platform owns.
+
+
+    A dispute the card processor has not yet attributed to a transaction has
+    no owner to read it, and returns `404` until Grid attributes it.
+  operationId: getCardDispute
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: The dispute.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardDispute.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Dispute not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

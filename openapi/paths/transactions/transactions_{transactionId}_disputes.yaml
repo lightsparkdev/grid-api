@@ -1,0 +1,50 @@
+parameters:
+  - name: transactionId
+    in: path
+    description: The id of the card transaction.
+    required: true
+    schema:
+      type: string
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+get:
+  summary: List the disputes on a card transaction
+  description: >
+    Returns the disputes the card processor has opened against a card
+    transaction, newest first. A dispute is a fact about a settled
+    transaction rather than a lifecycle state of it, so it is its own
+    resource beside the transaction and the transaction's own `status` does
+    not change when a dispute opens.
+
+
+    Most disputed transactions carry exactly one dispute; a transaction the
+    cardholder claims twice carries one per claim.
+  operationId: listCardTransactionDisputes
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: The transaction's disputes, newest first.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardDisputeListResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Transaction not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
