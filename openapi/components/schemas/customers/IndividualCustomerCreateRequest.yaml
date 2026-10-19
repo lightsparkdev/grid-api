@@ -11,8 +11,6 @@ allOf:
           When supplied, Grid creates the customer's verification profile from the
           partner's shared data, including their identity document, so it does not
           need to be uploaded again. Fields sent in this request take priority over
-          the shared data. The customer's verification status is unchanged: submit
-          the customer with `POST /verifications` as usual. Only supported for
-          platforms where Grid runs identity verification. A token the provider
-          rejects fails the request with `400 INVALID_INPUT` and no customer is
-          created.
+          the shared data. Check the customer's verification status to address any
+          KYC gaps and then submit the customer for verification using
+          `POST /verifications`.
