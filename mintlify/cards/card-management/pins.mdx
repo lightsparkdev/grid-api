@@ -34,6 +34,8 @@ Call `GET /cards/{id}/pin-entry-url` from your backend immediately before displa
 
 Grid returns `iframeUrl`, `sessionToken`, `expiresAt`, and `environment`. The URL already contains the temporary token and selects the appropriate environment.
 
+To customize the PIN input, pass the optional `styles` query parameter described below.
+
 Each request creates a fresh, temporary PIN-entry session and returns `Cache-Control: no-store`. Requesting a URL does not set or change the PIN.
 </Step>
 
@@ -61,6 +63,26 @@ Remove your event listener when you remove the iframe. If you stop waiting befor
 </Steps>
 
 The session permits one successful submission and expires at `expiresAt`. Request a new URL for another PIN change or after expiration. Treat both the URL and token as secrets: never persist, cache, log, or send them to analytics.
+
+## Customize the PIN input
+
+Pass CSS declarations as a JSON string in the `styles` query parameter of `GET /cards/{id}/pin-entry-url`. Use CSS property names such as `font-size`, with string values. You can include nested declarations for focus, hover, and other supported pseudo-classes.
+
+For example, request a PIN input with your colors, font size, and border radius:
+
+```bash
+curl --get 'https://api.lightspark.com/grid/2025-10-13/cards/Card:YOUR_CARD_ID/pin-entry-url' \
+  --user "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  --data-urlencode 'styles={"color":"#222222","font-size":"16px","border-radius":"8px",":focus":{"border-color":"#0066ff"}}'
+```
+
+URL-encode the JSON as one query parameter; do not base64-encode it. Grid includes the styles in the returned `iframeUrl`, so you still set your iframe's `src` to that URL unchanged. Styles apply only to that request. Omit `styles` to use the default appearance.
+
+Supported pseudo-classes are `:first-child`, `:last-child`, `:enabled`, `:read-write`, `:read-only`, `:placeholder-shown`, `:valid`, `:invalid`, `:disabled`, `:hover`, `:focus-within`, `:focus`, `:focus-visible`, and `:active`. Each pseudo-class contains CSS declarations with string values; arbitrary selectors and further nesting are not supported.
+
+Styles that load external resources, including external fonts and images, are not supported. The JSON string is limited to 3072 characters. Its compact UTF-8 representation must fit within 4096 characters after base64 encoding; non-ASCII characters can consume more space. Invalid JSON, an invalid structure, or oversized styles return `400 INVALID_INPUT`.
+
+You control the surrounding layout and submit button on your page. Styling the outer iframe controls its size and border; use `styles` to customize the PIN input inside it.
 
 ## Encrypt a PIN in your own UI
 
