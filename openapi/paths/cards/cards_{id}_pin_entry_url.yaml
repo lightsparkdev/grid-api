@@ -40,6 +40,30 @@ get:
 
     Requires permission to manage cards. Every successful URL request is
     audit-logged with the requesting actor.
+  parameters:
+    - name: styles
+      in: query
+      required: false
+      description: >-
+        JSON-encoded CSS declarations for the PIN input, with string values
+        and optional nested declarations for supported pseudo-classes:
+        `:first-child`, `:last-child`, `:enabled`, `:read-write`, `:read-only`,
+        `:placeholder-shown`, `:valid`, `:invalid`, `:disabled`, `:hover`,
+        `:focus-within`, `:focus`, `:focus-visible`, and `:active`.
+        Use CSS property names such as `font-size`. URL-encode the JSON as
+        one query parameter; do not base64-encode it. Grid includes the
+        styles in the returned `iframeUrl`. Omit this parameter to use the
+        default appearance. Each request applies only to its returned URL.
+        Styles that load external resources, including external fonts and
+        images, are not supported. The JSON string is limited to 3072
+        characters, and its compact UTF-8 representation must fit within
+        4096 characters after base64 encoding. Invalid JSON, an invalid
+        structure, or oversized styles return `400 INVALID_INPUT`.
+      schema:
+        type: string
+        minLength: 2
+        maxLength: 3072
+      example: '{"color":"#222222","font-size":"16px",":focus":{"border-color":"#0066ff"}}'
   operationId: getCardPinUrl
   tags:
     - Cards
@@ -59,6 +83,12 @@ get:
         application/json:
           schema:
             $ref: ../../components/schemas/cards/CardPinUrlResponse.yaml
+    '400':
+      description: Invalid or oversized styles.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
     '401':
       description: Unauthorized
       content:
