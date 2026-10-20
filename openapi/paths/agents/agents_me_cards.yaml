@@ -73,14 +73,17 @@ post:
     customer, who must have KYC status `APPROVED` and have accepted the
     cardholder agreement where the platform requires one. Its spend is the
     customer's own and does not count against the agent's policy, and Grid's
-    default agent merchant-category blocks apply. Requires the MANAGE_CARDS
-    permission.
+    default agent merchant-category blocks apply. Requires the ISSUE_CARDS
+    permission; reading the card afterwards needs MANAGE_CARDS. While any of
+    the agent's cards is not `CLOSED`, including one the platform issued for
+    it, the request is rejected with `AGENT_CARD_EXISTS`.
 
 
     Card issuance is fee-bearing and cannot be reversed, so an
     `Idempotency-Key` header is required. Keys are scoped to the agent: a
     retry by the same agent with the same key returns the card the first
-    request created, and another agent's key never matches.
+    request created, even though that card is now live, and another agent's
+    key never matches.
 
 
     New cards start in `status: "PROCESSING"` and follow the same status
@@ -147,14 +150,15 @@ post:
     '403':
       description: >-
         Forbidden - Agents API or agent cards are not enabled for the platform,
-        or the agent does not have the MANAGE_CARDS permission
+        or the agent does not have the ISSUE_CARDS permission
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error403.yaml
     '409':
       description: >-
-        Conflict. Returned with `CARD_LIMIT_REACHED` when the platform has
+        Conflict. Returned with `AGENT_CARD_EXISTS` when the agent already
+        holds a card that is not `CLOSED`, with `CARD_LIMIT_REACHED` when the platform has
         reached the maximum number of live cards it may hold, and with
         `CONFLICT` when the agent already used the `Idempotency-Key` for a
         different card request.

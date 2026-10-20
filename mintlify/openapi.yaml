@@ -9759,9 +9759,9 @@ paths:
     post:
       summary: Issue an agent card
       description: |
-        Issue a virtual card for the authenticated agent, as `POST /cards` with `agentId` does for the platform. The card belongs to the agent's customer, who must have KYC status `APPROVED` and have accepted the cardholder agreement where the platform requires one. Its spend is the customer's own and does not count against the agent's policy, and Grid's default agent merchant-category blocks apply. Requires the MANAGE_CARDS permission.
+        Issue a virtual card for the authenticated agent, as `POST /cards` with `agentId` does for the platform. The card belongs to the agent's customer, who must have KYC status `APPROVED` and have accepted the cardholder agreement where the platform requires one. Its spend is the customer's own and does not count against the agent's policy, and Grid's default agent merchant-category blocks apply. Requires the ISSUE_CARDS permission; reading the card afterwards needs MANAGE_CARDS. While any of the agent's cards is not `CLOSED`, including one the platform issued for it, the request is rejected with `AGENT_CARD_EXISTS`.
 
-        Card issuance is fee-bearing and cannot be reversed, so an `Idempotency-Key` header is required. Keys are scoped to the agent: a retry by the same agent with the same key returns the card the first request created, and another agent's key never matches.
+        Card issuance is fee-bearing and cannot be reversed, so an `Idempotency-Key` header is required. Keys are scoped to the agent: a retry by the same agent with the same key returns the card the first request created, even though that card is now live, and another agent's key never matches.
 
         New cards start in `status: "PROCESSING"` and follow the same status transitions and `card.status_change` webhooks as cards issued with `POST /cards`.
       operationId: agentCreateCard
@@ -9810,13 +9810,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agents API or agent cards are not enabled for the platform, or the agent does not have the MANAGE_CARDS permission
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, or the agent does not have the ISSUE_CARDS permission
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error403'
         '409':
-          description: Conflict. Returned with `CARD_LIMIT_REACHED` when the platform has reached the maximum number of live cards it may hold, and with `CONFLICT` when the agent already used the `Idempotency-Key` for a different card request.
+          description: Conflict. Returned with `AGENT_CARD_EXISTS` when the agent already holds a card that is not `CLOSED`, with `CARD_LIMIT_REACHED` when the platform has reached the maximum number of live cards it may hold, and with `CONFLICT` when the agent already used the `Idempotency-Key` for a different card request.
           content:
             application/json:
               schema:
@@ -17038,6 +17038,7 @@ components:
             | CARD_ALREADY_CLOSED | `status: CLOSED` was requested for a card that is already `CLOSED` |
             | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
             | PIN_CHANGE_REQUIRED | The card's PIN unblock allowance is consumed for seven days. Change the PIN to recover sooner. `details.pinUnblockAvailableAt` gives the next allowed unblock time |
+            | AGENT_CARD_EXISTS | The agent already holds a card that is not `CLOSED`, so it cannot issue another. Close that card first |
             | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
             | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
             | NOT_YET_AVAILABLE | The request is valid, but its result is not available yet because the data it depends on could still change. Retry later. `reason` says what is outstanding. For balance changes, card settlement for a window boundary has not closed |
@@ -17066,6 +17067,7 @@ components:
             - CARD_ALREADY_CLOSED
             - CARD_NOT_MUTABLE
             - PIN_CHANGE_REQUIRED
+            - AGENT_CARD_EXISTS
             - CARD_LIMIT_REACHED
             - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
             - NOT_YET_AVAILABLE
@@ -29305,7 +29307,8 @@ components:
         - RECEIVE_FUNDS
         - MANAGE_IDENTITY
         - MANAGE_CARDS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can issue, read, tighten, and freeze its cards.'
+        - ISSUE_CARDS
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one virtual card for itself while it holds no live card.'
     AgentExecutionMode:
       type: string
       enum:
