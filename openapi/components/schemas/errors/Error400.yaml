@@ -49,6 +49,7 @@ properties:
       | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
       | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
       | ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED | The customer create request omits an accountholder agreement its accounts require |
+      | CARDHOLDER_AGREEMENT_NOT_ACCEPTED | The customer has not accepted the cardholder agreement the platform requires before a card is issued |
       | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
       | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
       | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
@@ -111,6 +112,7 @@ properties:
       - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
       - CARDHOLDER_KYC_NOT_APPROVED
       - ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED
+      - CARDHOLDER_AGREEMENT_NOT_ACCEPTED
       - TRANSACTION_SIZE_LIMIT_EXCEEDED
       - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
       - INSUFFICIENT_FUNDS

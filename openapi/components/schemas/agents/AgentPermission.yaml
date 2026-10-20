@@ -15,4 +15,4 @@ description: >-
   MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.
   RECEIVE_FUNDS: Can create deposit targets for receiving funds.
   MANAGE_IDENTITY: Can read and update customer identity information and start verification.
-  MANAGE_CARDS: Can read, tighten, and freeze its cards.
+  MANAGE_CARDS: Can issue, read, tighten, and freeze its cards.
