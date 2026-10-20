@@ -71,8 +71,8 @@ post:
     Issue a virtual card for the authenticated agent, as `POST /cards` with
     `agentId` does for the platform. The card belongs to the agent's
     customer, who must have KYC status `APPROVED` and have accepted the
-    cardholder agreement where the platform requires one. Its spend is the
-    customer's own and does not count against the agent's policy, and Grid's
+    cardholder agreement where the platform requires one. Its spend counts
+    against the agent's policy limits as the agent's sends do, and Grid's
     default agent merchant-category blocks apply. Requires the ISSUE_CARDS
     permission; reading the card afterwards needs MANAGE_CARDS. While any of
     the agent's cards is not `CLOSED`, including one the platform issued for
