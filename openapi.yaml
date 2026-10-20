@@ -9756,6 +9756,83 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+    post:
+      summary: Issue an agent card
+      description: |
+        Issue a virtual card for the authenticated agent, as `POST /cards` with `agentId` does for the platform. The card belongs to the agent's customer, who must have KYC status `APPROVED` and have accepted the cardholder agreement where the platform requires one. Its spend is the customer's own and does not count against the agent's policy, and Grid's default agent merchant-category blocks apply. Requires the ISSUE_CARDS permission; reading the card afterwards needs MANAGE_CARDS. While any of the agent's cards is not `CLOSED`, including one the platform issued for it, the request is rejected with `AGENT_CARD_EXISTS`.
+
+        Card issuance is fee-bearing and cannot be reversed, so an `Idempotency-Key` header is required. Keys are scoped to the agent: a retry by the same agent with the same key returns the card the first request created, even though that card is now live, and another agent's key never matches.
+
+        New cards start in `status: "PROCESSING"` and follow the same status transitions and `card.status_change` webhooks as cards issued with `POST /cards`.
+      operationId: agentCreateCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: |
+            A unique identifier for the request, up to 255 characters, scoped to the agent. A retry carrying the same key returns the card created by the first request; reusing a key for a different card request is rejected with `409`.
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+            example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentCardCreateRequest'
+            examples:
+              virtualCard:
+                summary: Issue a virtual card funded by the customer's wallet
+                value:
+                  fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+      responses:
+        '201':
+          description: Card created. It starts in `PROCESSING` while the issuer provisions it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCard'
+        '400':
+          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the customer's KYC status is not `APPROVED`, with `CARDHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires a cardholder agreement the customer has not accepted, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or too long, when the funding source does not belong to the customer or is not denominated in a card-eligible currency, and for general invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or agent cards are not enabled for the platform, or the agent does not have the ISSUE_CARDS permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '409':
+          description: Conflict. Returned with `AGENT_CARD_EXISTS` when the agent already holds a card that is not `CLOSED`, with `CARD_LIMIT_REACHED` when the platform has reached the maximum number of live cards it may hold, and with `CONFLICT` when the agent already used the `Idempotency-Key` for a different card request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Environments without a configured card issuer return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /agents/me/cards/{cardId}:
     parameters:
       - name: cardId
@@ -15581,6 +15658,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
             | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
             | ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED | The customer create request omits an accountholder agreement its accounts require |
+            | CARDHOLDER_AGREEMENT_NOT_ACCEPTED | The customer has not accepted the cardholder agreement the platform requires before a card is issued |
             | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
             | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
             | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
@@ -15643,6 +15721,7 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
             - CARDHOLDER_KYC_NOT_APPROVED
             - ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED
+            - CARDHOLDER_AGREEMENT_NOT_ACCEPTED
             - TRANSACTION_SIZE_LIMIT_EXCEEDED
             - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
             - INSUFFICIENT_FUNDS
@@ -16959,6 +17038,7 @@ components:
             | CARD_ALREADY_CLOSED | `status: CLOSED` was requested for a card that is already `CLOSED` |
             | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
             | PIN_CHANGE_REQUIRED | The card's PIN unblock allowance is consumed for seven days. Change the PIN to recover sooner. `details.pinUnblockAvailableAt` gives the next allowed unblock time |
+            | AGENT_CARD_EXISTS | The agent already holds a card that is not `CLOSED`, so it cannot issue another. Close that card first |
             | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
             | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
             | NOT_YET_AVAILABLE | The request is valid, but its result is not available yet because the data it depends on could still change. Retry later. `reason` says what is outstanding. For balance changes, card settlement for a window boundary has not closed |
@@ -16987,6 +17067,7 @@ components:
             - CARD_ALREADY_CLOSED
             - CARD_NOT_MUTABLE
             - PIN_CHANGE_REQUIRED
+            - AGENT_CARD_EXISTS
             - CARD_LIMIT_REACHED
             - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
             - NOT_YET_AVAILABLE
@@ -29226,7 +29307,8 @@ components:
         - RECEIVE_FUNDS
         - MANAGE_IDENTITY
         - MANAGE_CARDS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards.'
+        - ISSUE_CARDS
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one virtual card for itself while it holds no live card.'
     AgentExecutionMode:
       type: string
       enum:
@@ -30072,7 +30154,7 @@ components:
 
         | Kind | Description |
         |------|-------------|
-        | `STANDARD` | A card the platform issued for the agent with `POST /cards`. The customer holds the card details and its spend is the customer's own; the agent can read it, tighten its limits, and freeze it. |
+        | `STANDARD` | A card issued for the agent, by the platform with `POST /cards` or by the agent with `POST /agents/me/cards`. The customer holds the card details and its spend is the customer's own; the agent can read it, tighten its limits, and freeze it. |
     CardStatus:
       type: string
       enum:
@@ -30331,6 +30413,15 @@ components:
           type: integer
           description: Total number of cards matching the criteria (excluding pagination).
           example: 3
+    AgentCardCreateRequest:
+      type: object
+      required:
+        - fundingSource
+      properties:
+        fundingSource:
+          type: string
+          description: Internal account id that funds the card. The account must belong to the agent's customer and be denominated in a card-eligible currency; otherwise the request is rejected with `INVALID_INPUT`.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
     AgentCardUpdateRequest:
       type: object
       description: 'Update request for `PATCH /agents/me/cards/{cardId}`. At least one field must be supplied. An agent may only tighten a card: a limit may be set or lowered but not raised or removed, `blockedMccs` must contain every code in the card''s `effectiveBlockedMccs`, and `allowedMccs` may only lose codes once set. The only status an agent may set is `FROZEN`; unfreezing and loosening happen on the platform through `PATCH /cards/{id}`.'

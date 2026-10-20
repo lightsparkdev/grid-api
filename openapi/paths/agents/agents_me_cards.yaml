@@ -65,3 +65,118 @@ get:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
+post:
+  summary: Issue an agent card
+  description: >
+    Issue a virtual card for the authenticated agent, as `POST /cards` with
+    `agentId` does for the platform. The card belongs to the agent's
+    customer, who must have KYC status `APPROVED` and have accepted the
+    cardholder agreement where the platform requires one. Its spend is the
+    customer's own and does not count against the agent's policy, and Grid's
+    default agent merchant-category blocks apply. Requires the ISSUE_CARDS
+    permission; reading the card afterwards needs MANAGE_CARDS. While any of
+    the agent's cards is not `CLOSED`, including one the platform issued for
+    it, the request is rejected with `AGENT_CARD_EXISTS`.
+
+
+    Card issuance is fee-bearing and cannot be reversed, so an
+    `Idempotency-Key` header is required. Keys are scoped to the agent: a
+    retry by the same agent with the same key returns the card the first
+    request created, even though that card is now live, and another agent's
+    key never matches.
+
+
+    New cards start in `status: "PROCESSING"` and follow the same status
+    transitions and `card.status_change` webhooks as cards issued with
+    `POST /cards`.
+  operationId: agentCreateCard
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      description: >
+        A unique identifier for the request, up to 255 characters, scoped to
+        the agent. A retry carrying the same key returns the card created by
+        the first request; reusing a key for a different card request is
+        rejected with `409`.
+      required: true
+      schema:
+        type: string
+        maxLength: 255
+        example: 550e8400-e29b-41d4-a716-446655440000
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentCardCreateRequest.yaml
+        examples:
+          virtualCard:
+            summary: Issue a virtual card funded by the customer's wallet
+            value:
+              fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  responses:
+    '201':
+      description: >-
+        Card created. It starts in `PROCESSING` while the issuer provisions
+        it.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentCard.yaml
+    '400':
+      description: >-
+        Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the
+        customer's KYC status is not `APPROVED`, with
+        `CARDHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires a
+        cardholder agreement the customer has not accepted, and with
+        `INVALID_INPUT` when the `Idempotency-Key` header is missing or too
+        long, when the funding source does not belong to the customer or is
+        not denominated in a card-eligible currency, and for general invalid
+        parameters.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API or agent cards are not enabled for the platform,
+        or the agent does not have the ISSUE_CARDS permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `AGENT_CARD_EXISTS` when the agent already
+        holds a card that is not `CLOSED`, with `CARD_LIMIT_REACHED` when the platform has
+        reached the maximum number of live cards it may hold, and with
+        `CONFLICT` when the agent already used the `Idempotency-Key` for a
+        different card request.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: >-
+        Not implemented in this environment. Environments without a
+        configured card issuer return `501 NOT_IMPLEMENTED`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml
