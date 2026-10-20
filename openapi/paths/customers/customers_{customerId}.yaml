@@ -260,6 +260,8 @@ patch:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
+    '503':
+      $ref: ../../components/responses/ServiceUnavailable.yaml
 delete:
   summary: Delete customer by ID
   description: Delete a customer by their system-generated ID
