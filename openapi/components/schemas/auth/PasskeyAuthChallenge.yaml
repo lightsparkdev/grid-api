@@ -38,7 +38,7 @@ allOf:
           the WebAuthn challenge to `navigator.credentials.get()`. Single-use;
           a new challenge is issued on the next call to
           `POST /auth/credentials/{id}/challenge`.
-        example: b62e5340ab439378d5be0251e2397f7de998121f7abbf57224de7e5d96adfb9b
+        example: dd114e7a8361e0df9e3d46163f3ecdcc2b22cac0ebae2a95954bb21e6575d020
       payloadToSign:
         type: string
         description: >-
@@ -50,7 +50,7 @@ allOf:
           `clientPublicKey`, and recompute the digest. Inspection only: do not
           send it back. Grid forwards the request it stored when issuing the
           challenge, so changing this string changes nothing.
-        example: '{"organizationId":"5c1e8a3f-7b2d-4e9a-9c41-2f6d8b0a1e37","parameters":{"expirationSeconds":"900","publicKey":"02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"},"timestampMs":"1775662500000","type":"ACTIVITY_TYPE_STAMP_LOGIN"}'
+        example: '{"organizationId":"5c1e8a3f-7b2d-4e9a-9c41-2f6d8b0a1e37","parameters":{"expirationSeconds":"900","publicKey":"02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"},"timestampMs":"1775662500000","type":"ACTIVITY_TYPE_STAMP_LOGIN"}'
       requestId:
         type: string
         description: >-
