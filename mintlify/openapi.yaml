@@ -954,6 +954,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     delete:
       summary: Delete customer by ID
       description: Delete a customer by their system-generated ID
@@ -4990,6 +4992,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /quotes/{quoteId}/authorize:
     parameters:
       - name: quoteId
@@ -6520,6 +6524,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /internal-accounts/{id}/export:
     post:
       summary: Export internal account wallet credentials
@@ -6609,6 +6615,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /internal-accounts/{id}/balance-changes:
     parameters:
       - name: id
@@ -6979,6 +6987,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     get:
       summary: List authentication credentials
       description: |-
@@ -7135,6 +7145,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /auth/credentials/{id}/verify:
     post:
       summary: Verify an authentication credential
@@ -7269,6 +7281,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /auth/credentials/{id}/challenge:
     post:
       summary: Re-issue an authentication credential challenge
@@ -7377,6 +7391,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /auth/sessions:
     get:
       summary: List active sessions
@@ -7498,6 +7514,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /auth/sessions/{id}/refresh:
     post:
       summary: Refresh an authentication session
@@ -7608,6 +7626,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /auth/delegated-keys:
     post:
       summary: Create a delegated signing key
@@ -7712,6 +7732,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     get:
       summary: List delegated signing keys
       description: List delegated signing keys for an Embedded Wallet internal account, a card funding source, or both, including `PENDING` keys (user created but policy leg never completed) and `REVOKED` keys. At least one of `accountId` or `fundingSourceId` must be supplied.
@@ -7848,6 +7870,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /agents:
     post:
       summary: Create an agent
@@ -17339,6 +17363,27 @@ components:
           enum:
             - RATE_LIMITED
             - DAILY_VOLUME_LIMIT_EXCEEDED
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    Error503:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | SERVICE_UNAVAILABLE | Downstream service is temporarily unavailable |
+          enum:
+            - SERVICE_UNAVAILABLE
         reason:
           type: string
           description: Error message
@@ -29940,27 +29985,6 @@ components:
           format: date-time
           description: Time when the deposit was last updated.
           example: '2026-10-09T18:01:00Z'
-    Error503:
-      type: object
-      required:
-        - reason
-        - code
-      properties:
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | SERVICE_UNAVAILABLE | Downstream service is temporarily unavailable |
-          enum:
-            - SERVICE_UNAVAILABLE
-        reason:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     AgentUpdateRequest:
       type: object
       description: Partial update to an agent's basic fields. At least one field must be provided.
@@ -32566,6 +32590,18 @@ components:
               $ref: '#/components/schemas/WalletOperationWebhookData'
             type:
               $ref: '#/components/schemas/WalletOperationWebhookEventType'
+  responses:
+    ServiceUnavailable:
+      description: Service unavailable. Returned with `SERVICE_UNAVAILABLE` when the service could not complete the request right now. Retry the same request, with the same body and any `Grid-Wallet-Signature` header, after the interval in the `Retry-After` response header.
+      headers:
+        Retry-After:
+          description: Number of seconds to wait before retrying the request.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error503'
   requestBodies:
     DocumentUploadRequestBody:
       required: true
