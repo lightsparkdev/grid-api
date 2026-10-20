@@ -328,7 +328,8 @@
           {
             "group": "Transactions",
             "pages": [
-              "cards/transactions/reconciliation"
+              "cards/transactions/reconciliation",
+              "cards/transactions/real-time-authorization"
             ]
           },
           {

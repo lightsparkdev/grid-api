@@ -1,0 +1,73 @@
+title: Card Authorization Request
+type: object
+required:
+  - transactionId
+  - cardId
+  - customerId
+  - platformCustomerId
+  - issuerTransactionToken
+  - transactionType
+  - requestedAmount
+  - amount
+  - merchant
+  - accountId
+description: >-
+  A card authorization that Grid's own checks approved, awaiting your
+  platform's decision. `transactionId` is the id of the `CardTransaction`
+  that later `CARD_TRANSACTION.*` webhooks carry, and it stays the same if
+  Grid sends this request more than once.
+properties:
+  transactionId:
+    type: string
+    description: >-
+      The id of the card transaction this authorization opens or adds to.
+      Return the same decision for the same `transactionId` and
+      `issuerTransactionToken`.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+  cardId:
+    type: string
+    description: The id of the `Card` being used.
+    example: Card:019542f5-b3e7-1d02-0000-000000000010
+  platformCardId:
+    type: string
+    description: Your platform's id for the card, when you set one at issuance.
+    example: card_8f2a1c
+  customerId:
+    type: string
+    description: System ID of the cardholder.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  platformCustomerId:
+    type: string
+    description: Platform-specific ID of the cardholder.
+    example: 18d3e5f7b4a9c2
+  issuerTransactionToken:
+    type: string
+    description: >-
+      Opaque identifier for the transaction on the underlying issuer. It
+      matches `issuerTransactionToken` on the resulting `CardTransaction`.
+    example: lithic_txn_b81c2a4f
+  transactionType:
+    $ref: ./CardAuthorizationTransactionType.yaml
+  requestedAmount:
+    allOf:
+      - $ref: ../common/CurrencyAmount.yaml
+    description: The amount the merchant requested, in the card's currency.
+  amount:
+    allOf:
+      - $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      The amount Grid will authorize if you approve, in the card's currency.
+      It is lower than `requestedAmount` only when Grid partially approves
+      the authorization.
+  merchantAmount:
+    allOf:
+      - $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      The requested amount in the merchant's currency, when it differs from
+      the card's currency.
+  merchant:
+    $ref: ./CardMerchant.yaml
+  accountId:
+    type: string
+    description: The internal account that will fund the authorization.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002

@@ -1,0 +1,6 @@
+type: string
+enum:
+  - APPROVE
+  - DECLINE
+description: Your platform's decision on a card authorization.
+example: APPROVE

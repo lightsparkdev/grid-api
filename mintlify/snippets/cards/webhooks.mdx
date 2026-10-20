@@ -33,6 +33,11 @@ All of them carry the standard envelope:
 
 The `id` identifies an event and stays the same across delivery retries. Use it for idempotency.
 
+If you enroll a card authorization endpoint, Grid also sends it
+`CARD_TRANSACTION.AUTHORIZATION_REQUEST`, a real-time decision request
+rather than a notification. It goes to that endpoint, not your
+`webhookEndpoint`. See [Real-time authorization](/cards/transactions/real-time-authorization).
+
 ## CARD.STATUS_CHANGE
 
 The `data` payload is the post-change `Card` resource. Example —
