@@ -2,15 +2,3 @@ title: Individual Customer Create Request
 allOf:
   - $ref: ./CustomerCreateRequest.yaml
   - $ref: ./IndividualCustomerFields.yaml
-  - type: object
-    properties:
-      shareToken:
-        allOf:
-          - $ref: ./KycShareToken.yaml
-        description: >-
-          When supplied, Grid creates the customer's verification profile from the
-          partner's shared data, including their identity document, so it does not
-          need to be uploaded again. Fields sent in this request take priority over
-          the shared data. Check the customer's verification status to address any
-          KYC gaps and then submit the customer for verification using
-          `POST /verifications`.
