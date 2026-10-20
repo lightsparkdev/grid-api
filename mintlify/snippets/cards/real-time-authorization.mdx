@@ -62,9 +62,29 @@ in `data`:
     "platformCustomerId": "18d3e5f7b4a9c2",
     "issuerTransactionToken": "lithic_txn_b81c2a4f",
     "transactionType": "AUTHORIZATION",
-    "requestedAmount": { "amount": 12550, "currency": { "code": "USD", "name": "United States Dollar", "symbol": "$", "decimals": 2 } },
-    "amount": { "amount": 12550, "currency": { "code": "USD", "name": "United States Dollar", "symbol": "$", "decimals": 2 } },
-    "merchant": { "descriptor": "BLUE BOTTLE COFFEE SF", "mcc": "5814", "country": "US" },
+    "requestedAmount": {
+      "amount": 12550,
+      "currency": {
+        "code": "USD",
+        "name": "United States Dollar",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "amount": {
+      "amount": 12550,
+      "currency": {
+        "code": "USD",
+        "name": "United States Dollar",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "merchant": {
+      "descriptor": "BLUE BOTTLE COFFEE SF",
+      "mcc": "5814",
+      "country": "US"
+    },
     "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
   }
 }
@@ -79,7 +99,10 @@ requests whose `timestamp` is more than a few minutes old. Then return HTTP
 ```
 
 ```json
-{ "decision": "DECLINE", "declineReason": "UNAUTHORIZED_MERCHANT" }
+{
+  "decision": "DECLINE",
+  "declineReason": "UNAUTHORIZED_MERCHANT"
+}
 ```
 
 Grid passes `declineReason` to the card network, so choose the most specific
