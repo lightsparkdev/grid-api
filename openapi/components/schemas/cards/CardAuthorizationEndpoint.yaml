@@ -1,0 +1,22 @@
+title: Card Authorization Endpoint
+type: object
+required:
+  - url
+  - timeoutBehavior
+  - enrolledAt
+description: >-
+  The endpoint Grid calls to ask your platform for a real-time decision on
+  each card authorization that Grid's own checks approve.
+properties:
+  url:
+    type: string
+    format: uri
+    description: HTTPS URL that receives `CARD_TRANSACTION.AUTHORIZATION_REQUEST` requests.
+    example: https://api.mycompany.com/grid/card-authorizations
+  timeoutBehavior:
+    $ref: ./CardAuthorizationTimeoutBehavior.yaml
+  enrolledAt:
+    type: string
+    format: date-time
+    description: When this endpoint was enrolled.
+    example: '2026-10-20T15:04:05Z'

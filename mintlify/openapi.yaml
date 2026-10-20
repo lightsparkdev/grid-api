@@ -11255,6 +11255,134 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
+  /platform/card-authorization-endpoint:
+    get:
+      summary: Get the card authorization endpoint
+      description: Get the endpoint Grid calls for real-time card authorization decisions. Returns `404` when no endpoint is enrolled, in which case Grid's own checks decide every authorization.
+      operationId: getCardAuthorizationEndpoint
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: The enrolled card authorization endpoint.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardAuthorizationEndpoint'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: No card authorization endpoint is enrolled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without card support return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
+    put:
+      summary: Enroll a card authorization endpoint
+      description: |-
+        Enroll the endpoint Grid calls to ask your platform for a real-time decision on each card authorization that Grid's own checks approve. See the `CARD_TRANSACTION.AUTHORIZATION_REQUEST` webhook for the request your endpoint receives and the response it must return.
+
+        Before enrolling, Grid sends your endpoint one signed `CARD_TRANSACTION.AUTHORIZATION_REQUEST` with example data. Enrollment succeeds only if your endpoint returns `200` with a valid `CardAuthorizationResponse` within the response deadline; the decision in that response is ignored. Otherwise this returns `400 WEBHOOK_DELIVERY_ERROR` and the enrolled endpoint, if any, is unchanged.
+
+        Calling this again replaces the enrolled endpoint. The change applies to authorizations that arrive after this call returns.
+      operationId: enrollCardAuthorizationEndpoint
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardAuthorizationEndpointRequest'
+            example:
+              url: https://api.mycompany.com/grid/card-authorizations
+              timeoutBehavior: DECLINE
+      responses:
+        '200':
+          description: The enrolled card authorization endpoint.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardAuthorizationEndpoint'
+        '400':
+          description: Bad request. `INVALID_INPUT` when `url` is not a public HTTPS URL. `WEBHOOK_DELIVERY_ERROR` when the test request did not return a valid response in time.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without card support return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
+    delete:
+      summary: Remove the card authorization endpoint
+      description: Stop sending card authorizations to your platform for a decision. Grid's own checks decide authorizations that arrive after this call returns.
+      operationId: deleteCardAuthorizationEndpoint
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: The endpoint was removed.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: No card authorization endpoint is enrolled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without card support return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /sandbox/cards/{id}/simulate/authorization:
     post:
       summary: Simulate a card authorization
@@ -15390,6 +15518,99 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+  card-authorization-request:
+    post:
+      summary: Card authorization request
+      description: |
+        Real-time decision request for a card authorization. Grid sends it to the endpoint you enrolled through `PUT /platform/card-authorization-endpoint`, not to the `webhookEndpoint` in your platform config. Your response decides whether the authorization proceeds.
+        This endpoint should be implemented by clients of the Grid API that want to make their own authorization decisions.
+
+        ### When Grid sends it
+        Grid runs its own checks first: card status, card and platform spend limits, merchant category rules, and network support. Grid sends this request only for authorizations those checks approve, so a declined authorization never reaches your endpoint. Balance inquiries are never sent. It covers only cards whose authorization decisions Grid makes.
+
+        ### Responding
+        Return HTTP `200` with a `CardAuthorizationResponse` body within 1.5 seconds. `decision: APPROVE` lets the authorization proceed. `decision: DECLINE` declines it, and Grid passes your `declineReason` to the card network.
+        If your endpoint returns any other status or an invalid body, or does not respond in time, Grid applies the endpoint's `timeoutBehavior`. Grid does not retry this request.
+
+        ### After you approve
+        Grid reserves the authorized amount from the funding source after you approve. If the funding source cannot cover it, Grid still declines with `INSUFFICIENT_FUNDS`. The final outcome arrives as a `CARD_TRANSACTION.AUTHORIZED` or `CARD_TRANSACTION.DECLINED` webhook on your `webhookEndpoint`. A decline you return arrives there with `cardDeclinedReason: PLATFORM_DECLINED`.
+
+        ### Duplicates
+        Grid can send the same authorization more than once if the card network retries it. Each delivery has a new `id`, but `data.transactionId` and `data.issuerTransactionToken` stay the same. Return the same decision for each.
+
+        ### Authentication
+        The request includes a signature in the `X-Grid-Signature` header that allows you to verify that the request was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the request is authentic. If not, reject it. Also reject a request whose `timestamp` is more than a few minutes old.
+      operationId: cardAuthorizationRequestWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardAuthorizationRequestWebhook'
+            examples:
+              authorizationRequest:
+                summary: Authorization awaiting your decision
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000050
+                  type: CARD_TRANSACTION.AUTHORIZATION_REQUEST
+                  timestamp: '2026-05-09T10:00:00Z'
+                  data:
+                    transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    platformCardId: card_8f2a1c
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_b81c2a4f
+                    transactionType: AUTHORIZATION
+                    requestedAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    amount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    merchant:
+                      descriptor: BLUE BOTTLE COFFEE SF
+                      mcc: '5814'
+                      city: San Francisco
+                      state: CA
+                      country: US
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+      responses:
+        '200':
+          description: Your decision on the authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardAuthorizationResponse'
+              examples:
+                approve:
+                  summary: Approve
+                  value:
+                    decision: APPROVE
+                decline:
+                  summary: Decline
+                  value:
+                    decision: DECLINE
+                    declineReason: UNAUTHORIZED_MERCHANT
   wallet-operation:
     post:
       summary: Wallet operation completed or failed
@@ -27805,6 +28026,8 @@ components:
         - UNSUPPORTED_NETWORK
         - INCORRECT_CARD_DETAILS
         - TEMPORARILY_UNAVAILABLE
+        - PLATFORM_DECLINED
+        - PLATFORM_UNAVAILABLE
         - OTHER
       description: |
         Why Grid declined a card authorization. Present only when a card
@@ -27820,6 +28043,8 @@ components:
         | `UNSUPPORTED_NETWORK` | Grid does not support the network or the transaction type. |
         | `INCORRECT_CARD_DETAILS` | The PIN, security code, expiry date, or billing address entered at the merchant did not match the card. |
         | `TEMPORARILY_UNAVAILABLE` | A temporary problem at Grid, the card processor, or the card network stopped the authorization. The cardholder can try again. |
+        | `PLATFORM_DECLINED` | Your card authorization endpoint returned `decision: DECLINE`. |
+        | `PLATFORM_UNAVAILABLE` | Your card authorization endpoint did not return a valid decision in time, and its `timeoutBehavior` is `DECLINE`. |
         | `OTHER` | Any other reason, including a security or fraud decline the card processor made. |
     CardMerchant:
       type: object
@@ -31780,6 +32005,61 @@ components:
           example: '2026-05-08T14:16:00Z'
         environment:
           $ref: '#/components/schemas/GridEnvironment'
+    CardAuthorizationTimeoutBehavior:
+      type: string
+      enum:
+        - DECLINE
+        - APPROVE
+      description: |
+        What Grid answers for a card authorization when your authorization
+        endpoint does not return a valid decision in time.
+
+        | Value | Behavior |
+        |-------|----------|
+        | `DECLINE` | Grid declines the authorization with `cardDeclinedReason: PLATFORM_UNAVAILABLE`. |
+        | `APPROVE` | Grid proceeds as though you approved. Grid's own funding check still applies. |
+
+        A non-`200` status, a body that does not match
+        `CardAuthorizationResponse`, a network error, and a timeout all count as no
+        valid decision.
+      example: DECLINE
+    CardAuthorizationEndpoint:
+      title: Card Authorization Endpoint
+      type: object
+      required:
+        - url
+        - timeoutBehavior
+        - enrolledAt
+      description: The endpoint Grid calls to ask your platform for a real-time decision on each card authorization that Grid's own checks approve.
+      properties:
+        url:
+          type: string
+          format: uri
+          description: HTTPS URL that receives `CARD_TRANSACTION.AUTHORIZATION_REQUEST` requests.
+          example: https://api.mycompany.com/grid/card-authorizations
+        timeoutBehavior:
+          $ref: '#/components/schemas/CardAuthorizationTimeoutBehavior'
+        enrolledAt:
+          type: string
+          format: date-time
+          description: When this endpoint was enrolled.
+          example: '2026-10-20T15:04:05Z'
+    CardAuthorizationEndpointRequest:
+      title: Card Authorization Endpoint Request
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          maxLength: 255
+          pattern: ^https://
+          description: HTTPS URL that receives `CARD_TRANSACTION.AUTHORIZATION_REQUEST` requests. It must resolve to a public host. It can differ from the `webhookEndpoint` in your platform config.
+          example: https://api.mycompany.com/grid/card-authorizations
+        timeoutBehavior:
+          $ref: '#/components/schemas/CardAuthorizationTimeoutBehavior'
+          description: What Grid answers when your endpoint does not return a valid decision in time. Defaults to `DECLINE`.
     SandboxCardAuthorizationRequest:
       type: object
       required:
@@ -32930,6 +33210,7 @@ components:
         - CARD_TRANSACTION.DECLINED
         - CARD_TRANSACTION.VOIDED
         - CARD_TRANSACTION.EXCEPTION
+        - CARD_TRANSACTION.AUTHORIZATION_REQUEST
         - WALLET_OPERATION.COMPLETED
         - WALLET_OPERATION.FAILED
         - TEST
@@ -33212,6 +33493,131 @@ components:
               $ref: '#/components/schemas/CardTransaction'
             type:
               $ref: '#/components/schemas/CardTransactionWebhookEventType'
+    CardAuthorizationTransactionType:
+      type: string
+      enum:
+        - AUTHORIZATION
+        - FINANCIAL_AUTHORIZATION
+      description: |
+        The kind of card authorization being decided.
+
+        | Value | Meaning |
+        |-------|---------|
+        | `AUTHORIZATION` | A standard authorization. A clearing settles it later. |
+        | `FINANCIAL_AUTHORIZATION` | A single-message authorization, such as an ATM withdrawal or some debit purchases, that settles without a separate clearing. |
+      example: AUTHORIZATION
+    CardAuthorizationRequest:
+      title: Card Authorization Request
+      type: object
+      required:
+        - transactionId
+        - cardId
+        - customerId
+        - platformCustomerId
+        - issuerTransactionToken
+        - transactionType
+        - requestedAmount
+        - amount
+        - merchant
+        - accountId
+      description: A card authorization that Grid's own checks approved, awaiting your platform's decision. `transactionId` is the id of the `CardTransaction` that later `CARD_TRANSACTION.*` webhooks carry, and it stays the same if Grid sends this request more than once.
+      properties:
+        transactionId:
+          type: string
+          description: The id of the card transaction this authorization opens or adds to. Return the same decision for the same `transactionId` and `issuerTransactionToken`.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+        cardId:
+          type: string
+          description: The id of the `Card` being used.
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+        platformCardId:
+          type: string
+          description: Your platform's id for the card, when you set one at issuance.
+          example: card_8f2a1c
+        customerId:
+          type: string
+          description: System ID of the cardholder.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        platformCustomerId:
+          type: string
+          description: Platform-specific ID of the cardholder.
+          example: 18d3e5f7b4a9c2
+        issuerTransactionToken:
+          type: string
+          description: Opaque identifier for the transaction on the underlying issuer. It matches `issuerTransactionToken` on the resulting `CardTransaction`.
+          example: lithic_txn_b81c2a4f
+        transactionType:
+          $ref: '#/components/schemas/CardAuthorizationTransactionType'
+        requestedAmount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: The amount the merchant requested, in the card's currency.
+        amount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: The amount Grid will authorize if you approve, in the card's currency. It is lower than `requestedAmount` only when Grid partially approves the authorization.
+        merchantAmount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: The requested amount in the merchant's currency, when it differs from the card's currency.
+        merchant:
+          $ref: '#/components/schemas/CardMerchant'
+        accountId:
+          type: string
+          description: The internal account that will fund the authorization.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+    CardAuthorizationRequestWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/CardAuthorizationRequest'
+            type:
+              type: string
+              enum:
+                - CARD_TRANSACTION.AUTHORIZATION_REQUEST
+    CardAuthorizationDecision:
+      type: string
+      enum:
+        - APPROVE
+        - DECLINE
+      description: Your platform's decision on a card authorization.
+      example: APPROVE
+    CardAuthorizationDeclineReason:
+      type: string
+      enum:
+        - SUSPECTED_FRAUD
+        - UNAUTHORIZED_MERCHANT
+        - VELOCITY_EXCEEDED
+        - INSUFFICIENT_FUNDS
+        - CARD_PAUSED
+      description: |
+        Why your platform declined a card authorization. Grid passes it to the
+        card network, so choose the most specific reason.
+
+        | Reason | Use when |
+        |--------|----------|
+        | `SUSPECTED_FRAUD` | The authorization breaks your fraud rules. Use it only when no other reason fits. |
+        | `UNAUTHORIZED_MERCHANT` | The merchant, merchant category, country, or transaction type is not allowed for this card. |
+        | `VELOCITY_EXCEEDED` | The authorization exceeds a velocity limit you set. The merchant may retry later. |
+        | `INSUFFICIENT_FUNDS` | The cardholder lacks funds by your own accounting. The merchant may retry later. |
+        | `CARD_PAUSED` | You track a paused state for the card that Grid's card `status` does not reflect. |
+      example: SUSPECTED_FRAUD
+    CardAuthorizationResponse:
+      title: Card Authorization Response
+      type: object
+      required:
+        - decision
+      description: The body your authorization endpoint returns with HTTP `200`.
+      properties:
+        decision:
+          $ref: '#/components/schemas/CardAuthorizationDecision'
+        declineReason:
+          $ref: '#/components/schemas/CardAuthorizationDeclineReason'
+          description: Why you declined. Used only when `decision` is `DECLINE`. When you omit it, Grid sends the card network a generic decline.
     WalletOperationResourceType:
       type: string
       description: 'The kind of business resource `resourceId` identifies. Determined by `operationType`: `auth_credential.create` and `auth_credential.delete` → `AUTH_METHOD`, `session.revoke` → `SESSION`, `wallet.export` → `INTERNAL_ACCOUNT`, `customer.contact_update` → `CUSTOMER`.'

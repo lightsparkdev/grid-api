@@ -1,0 +1,19 @@
+type: string
+enum:
+  - SUSPECTED_FRAUD
+  - UNAUTHORIZED_MERCHANT
+  - VELOCITY_EXCEEDED
+  - INSUFFICIENT_FUNDS
+  - CARD_PAUSED
+description: |
+  Why your platform declined a card authorization. Grid passes it to the
+  card network, so choose the most specific reason.
+
+  | Reason | Use when |
+  |--------|----------|
+  | `SUSPECTED_FRAUD` | The authorization breaks your fraud rules. Use it only when no other reason fits. |
+  | `UNAUTHORIZED_MERCHANT` | The merchant, merchant category, country, or transaction type is not allowed for this card. |
+  | `VELOCITY_EXCEEDED` | The authorization exceeds a velocity limit you set. The merchant may retry later. |
+  | `INSUFFICIENT_FUNDS` | The cardholder lacks funds by your own accounting. The merchant may retry later. |
+  | `CARD_PAUSED` | You track a paused state for the card that Grid's card `status` does not reflect. |
+example: SUSPECTED_FRAUD
