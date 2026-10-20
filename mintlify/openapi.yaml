@@ -9760,7 +9760,7 @@ paths:
     post:
       summary: Issue an agent card
       description: |
-        Issue a virtual card for the authenticated agent, as `POST /cards` with `agentId` does for the platform. The card belongs to the agent's customer, who must have KYC status `APPROVED` and have accepted the cardholder agreement where the platform requires one. Its spend is the customer's own and does not count against the agent's policy, and Grid's default agent merchant-category blocks apply. Requires the ISSUE_CARDS permission; reading the card afterwards needs MANAGE_CARDS. While any of the agent's cards is not `CLOSED`, including one the platform issued for it, the request is rejected with `AGENT_CARD_EXISTS`.
+        Issue a virtual card for the authenticated agent, as `POST /cards` with `agentId` does for the platform. The card belongs to the agent's customer, who must have KYC status `APPROVED` and have accepted the cardholder agreement where the platform requires one. Its spend counts against the agent's policy limits as the agent's sends do, and Grid's default agent merchant-category blocks apply. Requires the ISSUE_CARDS permission; reading the card afterwards needs MANAGE_CARDS. While any of the agent's cards is not `CLOSED`, including one the platform issued for it, the request is rejected with `AGENT_CARD_EXISTS`.
 
         Card issuance is fee-bearing and cannot be reversed, so an `Idempotency-Key` header is required. Keys are scoped to the agent: a retry by the same agent with the same key returns the card the first request created, even though that card is now live, and another agent's key never matches.
 
@@ -29322,7 +29322,7 @@ components:
       description: 'Execution mode controlling whether agent actions require human approval. AUTO: The agent can execute actions autonomously without explicit approval. APPROVAL_REQUIRED: All agent actions require explicit human approval before execution.'
     AgentSpendingLimits:
       type: object
-      description: Spending limits that cap the agent's transaction amounts and frequency. All amount fields are integers in the smallest unit of the specified currency. When a transaction is denominated in a different currency, Grid converts using the exchange rate at evaluation time.
+      description: Spending limits that cap the agent's transaction amounts and frequency. They cover both the agent's sends and purchases on cards issued for the agent. All amount fields are integers in the smallest unit of the specified currency. When a transaction is denominated in a different currency, Grid converts using the exchange rate at evaluation time.
       required:
         - currency
         - perTransactionLimit
@@ -29333,23 +29333,23 @@ components:
           example: USD
         perTransactionLimit:
           type: integer
-          description: Maximum amount the agent can transfer in a single transaction.
+          description: Maximum amount of a single send or card authorization.
           example: 50000
         dailyLimit:
           type:
             - integer
             - 'null'
-          description: Maximum total amount the agent can transfer per day. Null means no daily limit.
+          description: Maximum total the agent can send and spend on its cards per day. Null means no daily limit.
           example: 500000
         dailyTransactionLimit:
           type: integer
-          description: Maximum number of transactions the agent can initiate per day.
+          description: Maximum number of sends and card authorizations the agent can make per day.
           example: 10
         monthlyLimit:
           type:
             - integer
             - 'null'
-          description: Maximum total amount the agent can transfer per month. Null means no monthly limit.
+          description: Maximum total the agent can send and spend on its cards per month. Null means no monthly limit.
           example: 5000000
     AgentAccountRule:
       type: object
@@ -30159,7 +30159,7 @@ components:
 
         | Kind | Description |
         |------|-------------|
-        | `STANDARD` | A card issued for the agent, by the platform with `POST /cards` or by the agent with `POST /agents/me/cards`. The customer holds the card details and its spend is the customer's own; the agent can read it, tighten its limits, and freeze it. |
+        | `STANDARD` | A card issued for the agent, by the platform with `POST /cards` or by the agent with `POST /agents/me/cards`. The customer holds the card details and its spend comes from the customer's account; that spend counts against the agent's policy limits as the agent's sends do. The agent can read the card, tighten its limits, and freeze it. |
     CardStatus:
       type: string
       enum:
@@ -30560,7 +30560,7 @@ components:
             - '7995'
         agentId:
           type: string
-          description: 'Issue the card for this agent, which must belong to the same customer. The agent can then read the card, tighten its limits, and freeze it through `/agents/me/cards`. Grid''s default agent merchant-category blocks apply in addition to `blockedMccs` until the platform lifts them with `PATCH /cards/{id}` and `defaultMccBlocksLifted: true`. The card''s spend is the customer''s own and does not count against the agent''s policy.'
+          description: 'Issue the card for this agent, which must belong to the same customer. The agent can then read the card, tighten its limits, and freeze it through `/agents/me/cards`. Grid''s default agent merchant-category blocks apply in addition to `blockedMccs` until the platform lifts them with `PATCH /cards/{id}` and `defaultMccBlocksLifted: true`. The card''s spend counts against the agent''s policy as its sends do: each authorization must fit the per-transaction, daily and monthly limits and the daily transaction count, and is declined while the agent is paused.'
           example: Agent:019542f5-b3e7-1d02-0000-000000000042
     CardUpdateStatus:
       type: string
