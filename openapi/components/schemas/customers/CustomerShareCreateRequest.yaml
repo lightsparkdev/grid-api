@@ -1,0 +1,9 @@
+title: Customer Share Create Request
+allOf:
+  - $ref: ./IndividualCustomerCreateRequest.yaml
+  - type: object
+    required:
+      - shareToken
+    properties:
+      shareToken:
+        $ref: ./KycShareToken.yaml
