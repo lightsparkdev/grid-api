@@ -7,8 +7,4 @@ allOf:
     paymentRails:
       type: array
       items:
-        type: string
-        enum:
-        - UPI
-        - NEFT
-        - RTGS
+        $ref: ./InrPaymentRail.yaml

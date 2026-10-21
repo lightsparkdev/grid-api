@@ -1,0 +1,5 @@
+type: string
+enum:
+- PAYNOW
+- FAST
+- BANK_TRANSFER
