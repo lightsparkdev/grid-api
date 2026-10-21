@@ -9093,7 +9093,7 @@ paths:
       summary: Create a transfer quote
       description: |
         Generate a quote for a cross-currency transfer on behalf of the authenticated agent's customer. Accounts referenced in the request must belong to the agent's customer. Requires the CREATE_QUOTES permission in the agent's policy.
-        The destination is another embedded wallet or one of the customer's Spark addresses saved with `POST /agents/me/external-accounts` (`ACCOUNT`), or an address on another chain (`CHAIN_ADDRESS`). Grid answers `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held for review, on any of the customer's records of it, under either prefix and including removed ones. A `CHAIN_ADDRESS` quote sends `USDB` and commits to a `minimumReceivingAmount`; Grid prices the conversion again at execution and fails the action with `PRICE_MOVED` rather than send for less.
+        The destination is another embedded wallet or one of the customer's Spark addresses saved with `POST /agents/me/external-accounts` (`ACCOUNT`), or an address on another chain (`CHAIN_ADDRESS`). Grid answers `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held for review, on any of the customer's records of it, under either prefix and including removed ones. A `CHAIN_ADDRESS` quote sends `USDB`. Grid pays the chain itself at a locked rate, so the amount the recipient receives is fixed when the quote is created and equals the quote's `minimumReceivingAmount`.
         If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount exceeds the agent's approvalThresholds, the resulting transaction will require explicit approval before funds move.
       operationId: agentCreateQuote
       tags:
@@ -29653,7 +29653,7 @@ components:
                 - integer
                 - 'null'
               format: int64
-              description: 'Smallest amount the recipient receives, in the smallest unit of `receivingCurrency`, for a quote to a `CHAIN_ADDRESS` destination: `totalReceivingAmount` is an estimate, and the quote executes only if a fresh price at execution still delivers at least this amount. Otherwise the action fails with `PRICE_MOVED`. Null for a quote whose destination is not `CHAIN_ADDRESS`.'
+              description: Smallest amount the recipient receives, in the smallest unit of `receivingCurrency`, for a quote to a `CHAIN_ADDRESS` destination. Grid pays the chain itself at a locked rate, so this equals `totalReceivingAmount`. Null for a quote whose destination is not `CHAIN_ADDRESS`.
               example: 990000
             destinationSparkAddress:
               type: string
@@ -29681,7 +29681,7 @@ components:
         | `POLICY_DENIED` | The agent policy no longer allowed the action |
         | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
         | `EXECUTION_FAILED` | Grid could not execute the approved action |
-        | `PRICE_MOVED` | A quote to a `CHAIN_ADDRESS` would no longer deliver its `minimumReceivingAmount` when it executed, so Grid did not send |
+        | `PRICE_MOVED` | Reserved and legacy. Quotes to a `CHAIN_ADDRESS` pay out at a locked rate and no longer fail with this reason |
         | `ADDRESS_REFUSED` | Grid refused the send's destination before it signed the send: the destination is no longer one the agent may send to (for example, a Spark address removed from the customer's saved addresses), or one of the customer's records of the address was refused or is held for review. A `CHAIN_ADDRESS` that screening refuses fails with `EXECUTION_FAILED` |
     AgentAction:
       type: object
@@ -30102,7 +30102,7 @@ components:
       description: |-
         A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET` internal account of the agent's customer. The destination is either an `ACCOUNT`: another `EMBEDDED_WALLET` on the platform, or one of the customer's active `SPARK_WALLET` external accounts in the source's currency; or an address on another chain (`CHAIN_ADDRESS`).
 
-        A `CHAIN_ADDRESS` quote sends `USDB` and requires `lockedCurrencySide` `SENDING`: it commits to the `USDB` amount, the destination, and a `minimumReceivingAmount`. Grid prices the conversion again when the quote executes, after any approval, and sends only if the destination still receives at least that minimum. Otherwise the action fails with `PRICE_MOVED` and no funds move.
+        A `CHAIN_ADDRESS` quote sends `USDB` and requires `lockedCurrencySide` `SENDING`: it commits to the `USDB` amount and the destination. Grid pays the chain itself at a locked rate, so the amount the destination receives is fixed when the quote is created and returned as `minimumReceivingAmount`.
       required:
         - source
         - destination

@@ -10,10 +10,10 @@ post:
     address on another chain (`CHAIN_ADDRESS`). Grid answers
     `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held
     for review, on any of the customer's records of it, under either prefix and
-    including removed ones. A `CHAIN_ADDRESS` quote sends `USDB` and
-    commits to a `minimumReceivingAmount`; Grid prices the conversion again
-    at execution and fails the action with `PRICE_MOVED` rather than send
-    for less.
+    including removed ones. A `CHAIN_ADDRESS` quote sends `USDB`. Grid
+    pays the chain itself at a locked rate, so the amount the recipient
+    receives is fixed when the quote is created and equals the quote's
+    `minimumReceivingAmount`.
 
     If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount
     exceeds the agent's approvalThresholds, the resulting transaction will require
