@@ -10,6 +10,20 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## ACH `railDetails.returnCode` and `returnCategory`
+
+A returned ACH entry's `railDetails` now carries `returnCode`, the NACHA return reason
+code the receiving bank sent it back under, such as `R01` (insufficient funds) or `R10`
+(customer advises unauthorized). It is present with `returnedAt` on returned payouts and
+on returned pulls from your customers' bank accounts. Group returns by `returnCode` to
+track your return rate for each reason. NACHA may add codes, so accept any value of the
+form `R` followed by two digits.
+
+`railDetails.returnCategory` names the Nacha return-rate category the code counts
+toward: `ADMINISTRATIVE` (`R02`, `R03`, `R04`) or `UNAUTHORIZED` (`R05`, `R07`, `R10`,
+`R11`, `R29`, `R51`). Nacha sets a separate threshold for each. A code in neither, such as
+`R01`, has no `returnCategory`.
+
 ## `EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED` webhook
 
 Grid now tells you when it corrects an external account's details. When the
