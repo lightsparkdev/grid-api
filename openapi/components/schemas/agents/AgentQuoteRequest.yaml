@@ -8,11 +8,9 @@ description: >-
 
 
   A `CHAIN_ADDRESS` quote sends `USDB` and requires `lockedCurrencySide`
-  `SENDING`: it commits to the `USDB` amount, the destination, and a
-  `minimumReceivingAmount`. Grid prices the conversion again when the quote
-  executes, after any approval, and sends only if the destination still
-  receives at least that minimum. Otherwise the action fails with
-  `PRICE_MOVED` and no funds move.
+  `SENDING`: it commits to the `USDB` amount and the destination. Grid pays
+  the chain itself at a locked rate, so the amount the destination receives is
+  fixed when the quote is created and returned as `minimumReceivingAmount`.
 required:
   - source
   - destination

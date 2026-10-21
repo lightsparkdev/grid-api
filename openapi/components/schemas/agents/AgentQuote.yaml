@@ -10,12 +10,11 @@ allOf:
         format: int64
         description: >-
           Smallest amount the recipient receives, in the smallest unit of
-          `receivingCurrency`, for a quote to a `CHAIN_ADDRESS` destination:
-          `totalReceivingAmount` is an estimate, and the quote executes only if
-          a fresh price at execution still delivers at least this amount.
-          Otherwise the action fails with `PRICE_MOVED`. Null for a quote whose
-          destination is not `CHAIN_ADDRESS`.
-        example: 990000
+          `receivingCurrency`, for a quote to a `CHAIN_ADDRESS` destination. Grid
+          pays the chain itself at a locked rate, so this equals
+          `totalReceivingAmount`. Null for a quote whose destination is not
+          `CHAIN_ADDRESS`.
+        example: 1000
       destinationSparkAddress:
         type: string
         description: >-
