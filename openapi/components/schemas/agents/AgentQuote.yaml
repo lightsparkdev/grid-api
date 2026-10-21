@@ -14,7 +14,7 @@ allOf:
           pays the chain itself at a locked rate, so this equals
           `totalReceivingAmount`. Null for a quote whose destination is not
           `CHAIN_ADDRESS`.
-        example: 990000
+        example: 1000
       destinationSparkAddress:
         type: string
         description: >-

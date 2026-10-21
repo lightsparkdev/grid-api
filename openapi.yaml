@@ -29654,7 +29654,7 @@ components:
                 - 'null'
               format: int64
               description: Smallest amount the recipient receives, in the smallest unit of `receivingCurrency`, for a quote to a `CHAIN_ADDRESS` destination. Grid pays the chain itself at a locked rate, so this equals `totalReceivingAmount`. Null for a quote whose destination is not `CHAIN_ADDRESS`.
-              example: 990000
+              example: 1000
             destinationSparkAddress:
               type: string
               description: The Spark address this quote pays, when its `destination` is one of the customer's `SPARK_WALLET` external accounts.
