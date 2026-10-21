@@ -10577,7 +10577,7 @@ paths:
     parameters:
       - name: disputeId
         in: path
-        description: The id of the dispute.
+        description: The id of the dispute, as returned in `CardDispute.id`. The bare UUID returned as `disputeId` by the sandbox dispute simulators is also accepted.
         required: true
         schema:
           type: string
