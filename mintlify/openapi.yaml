@@ -28374,10 +28374,6 @@ components:
         disposition:
           $ref: '#/components/schemas/CardDisputeDisposition'
           description: How the dispute ended. Absent while it is open.
-        network:
-          type: string
-          description: The card network the dispute was filed with. Absent until the processor reports one.
-          example: VISA
         disputedAmount:
           $ref: '#/components/schemas/CurrencyAmount'
         provisionalCreditAmount:

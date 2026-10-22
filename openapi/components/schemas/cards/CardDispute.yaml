@@ -42,12 +42,6 @@ properties:
   disposition:
     $ref: ./CardDisputeDisposition.yaml
     description: How the dispute ended. Absent while it is open.
-  network:
-    type: string
-    description: >-
-      The card network the dispute was filed with. Absent until the processor
-      reports one.
-    example: VISA
   disputedAmount:
     $ref: ../common/CurrencyAmount.yaml
   provisionalCreditAmount:
