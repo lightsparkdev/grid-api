@@ -49,14 +49,12 @@ properties:
   openedAt:
     type: string
     format: date-time
-    description: When the card processor opened the dispute.
+    description: When the card issuer opened the dispute.
     example: '2026-05-08T14:30:00Z'
-  providerUpdatedAt:
+  issuerUpdatedAt:
     type: string
     format: date-time
-    description: >-
-      When the card processor last changed the dispute, as distinct from when
-      Grid last stored it.
+    description: When the card issuer last changed the dispute.
     example: '2026-05-09T09:12:44Z'
   createdAt:
     type: string

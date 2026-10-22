@@ -11863,7 +11863,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SandboxCardDisputeResponse'
+                $ref: '#/components/schemas/CardDispute'
         '400':
           description: Bad request - Invalid parameters, or the transaction has no settled clearings to dispute
           content:
@@ -11939,7 +11939,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SandboxCardDisputeResponse'
+                $ref: '#/components/schemas/CardDispute'
         '400':
           description: Bad request - Invalid parameters, the transaction has no open dispute, or the amount exceeds the disputed amount
           content:
@@ -12015,7 +12015,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SandboxCardDisputeResponse'
+                $ref: '#/components/schemas/CardDispute'
         '400':
           description: Bad request - Invalid parameters, the transaction has no open dispute, or the amount exceeds the disputed amount
           content:
@@ -12097,7 +12097,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SandboxCardDisputeResponse'
+                $ref: '#/components/schemas/CardDispute'
         '400':
           description: Bad request - Invalid parameters, the transaction has no open dispute, or a `PARTIALLY_WON` close named a `recoveredAmount` that is not strictly between 0 and the disputed amount
           content:
@@ -28381,12 +28381,12 @@ components:
         openedAt:
           type: string
           format: date-time
-          description: When the card processor opened the dispute.
+          description: When the card issuer opened the dispute.
           example: '2026-05-08T14:30:00Z'
-        providerUpdatedAt:
+        issuerUpdatedAt:
           type: string
           format: date-time
-          description: When the card processor last changed the dispute, as distinct from when Grid last stored it.
+          description: When the card issuer last changed the dispute.
           example: '2026-05-09T09:12:44Z'
         createdAt:
           type: string
@@ -31421,27 +31421,6 @@ components:
           type: string
           description: Free-text reason recorded on the opening event.
           example: Merchandise not received
-    SandboxCardDisputeResponse:
-      type: object
-      required:
-        - disputeId
-        - disputeToken
-        - status
-      description: The simulated dispute after the request was applied. The dispute simulators report the resulting dispute in this response; the cardholder money a dispute event moves settles asynchronously.
-      properties:
-        disputeId:
-          type: string
-          description: The id of the dispute, as returned in `CardDispute.id`.
-          example: CardDispute:019542f5-b3e7-1d02-0000-000000000200
-        disputeToken:
-          type: string
-          description: The card issuer's token for the dispute.
-          example: dispute_transaction_sandbox_5f8d2c1a
-        status:
-          $ref: '#/components/schemas/CardDisputeStatus'
-        disposition:
-          $ref: '#/components/schemas/CardDisputeDisposition'
-          description: The outcome once the dispute closes. Absent while it is open.
     SandboxCardDisputeCreditRequest:
       type: object
       required:
