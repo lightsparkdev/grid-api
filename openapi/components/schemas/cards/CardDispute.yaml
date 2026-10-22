@@ -7,22 +7,12 @@ required:
   - createdAt
   - updatedAt
 description: >-
-  A dispute the card processor opened against a settled card transaction,
-  from the cardholder's claim to the network's decision. A dispute is a fact
-  about the transaction rather than a state of it: the transaction's own
-  `status` does not change while a dispute runs, so a dispute is its own
-  resource beside the transaction. Carries what a platform needs in order to
-  tell its cardholder where the claim stands — whether the dispute is still
-  open, how it ended, what was disputed, and what the cardholder has been
-  credited so far.
+  A cardholder's dispute of a settled card transaction.
 
 
-  `disputedAmount` is the amount under dispute as filed, absent until the
-  processor allocates one. `provisionalCreditAmount` is the net provisional
-  credit the processor has instructed on this dispute, credits granted less
-  credits reversed, and is absent until the first credit event; the
-  cardholder money a dispute event moves settles asynchronously, so it can
-  lead the cardholder's balance.
+  `provisionalCreditAmount` is credits granted minus credits reversed. It can
+  change before the cardholder's balance does, because the money settles
+  asynchronously.
 properties:
   id:
     type: string
