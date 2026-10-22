@@ -1,7 +1,7 @@
 type: object
 description: >-
   Update request for `PATCH /cards/{id}`. At least one of `status`,
-  `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`,
+  `fundingSource`, `maxNetworkRiskScore`, `maxSpendPerTransaction`, `maxSpendPerDay`,
   `maxTransactionsPerDay`, `allowedMccs`, `blockedMccs`,
   `defaultMccBlocksLifted`, or `threeDSecurePassword` must be supplied;
   `allowedMccs`, `blockedMccs` and `defaultMccBlocksLifted` count only for a
@@ -13,7 +13,7 @@ description: >-
   delegated signing authorization; otherwise it returns
   `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile
   `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested.
-  `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`,
+  `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxNetworkRiskScore`, `maxSpendPerTransaction`,
   `maxSpendPerDay`, or `maxTransactionsPerDay`.
 properties:
   status:
@@ -37,6 +37,21 @@ properties:
       card's currency or spending-limit units. Cannot be supplied alongside
       `status: CLOSED`. To stop a card from spending, set `status: FROZEN` instead.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  maxNetworkRiskScore:
+    anyOf:
+      - type: integer
+        minimum: 0
+        maximum: 999
+      - type: 'null'
+    description: >-
+      Maximum normalized network risk score allowed for real-time card
+      authorizations. Scores range from 0 (lowest risk) to 999 (highest risk).
+      Visa scores are normalized by multiplying the raw 0–99 score by 10.
+      Scores equal to the ceiling are allowed. Authorizations without a
+      score are also allowed. The lowest configured card or platform ceiling
+      applies.
+      Omit to preserve the current setting or send null to clear this scope.
+    example: 700
   maxSpendPerTransaction:
     anyOf:
       - type: integer

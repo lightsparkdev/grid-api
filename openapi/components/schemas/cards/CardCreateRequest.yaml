@@ -39,6 +39,19 @@ properties:
       customer and be denominated in a card-eligible currency; otherwise the
       request is rejected with `INVALID_INPUT`.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  maxNetworkRiskScore:
+    type: integer
+    minimum: 0
+    maximum: 999
+    description: >-
+      Maximum normalized network risk score allowed for real-time card
+      authorizations. Scores range from 0 (lowest risk) to 999 (highest risk).
+      Visa scores are normalized by multiplying the raw 0–99 score by 10.
+      Scores equal to the ceiling are allowed. Authorizations without a
+      score are also allowed. The lowest configured card or platform ceiling
+      applies.
+      Omit to set no card-specific ceiling.
+    example: 700
   maxSpendPerTransaction:
     type: integer
     format: int64
