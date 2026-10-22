@@ -40,13 +40,8 @@ properties:
   status:
     $ref: ./CardDisputeStatus.yaml
   disposition:
-    type: string
-    description: >-
-      How the dispute ended, present once it closes. The card processor's own
-      outcome, usually one of `WON`, `PARTIALLY_WON`, `LOST`, `WITHDRAWN` or
-      `DENIED`; it is not enum-constrained here because the processor may
-      report an outcome Grid has not seen before.
-    example: WON
+    $ref: ./CardDisputeDisposition.yaml
+    description: How the dispute ended. Absent while it is open.
   network:
     type: string
     description: >-

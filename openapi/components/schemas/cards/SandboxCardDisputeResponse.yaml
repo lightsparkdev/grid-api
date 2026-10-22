@@ -17,7 +17,7 @@ properties:
     description: The card issuer's token for the dispute.
     example: dispute_transaction_sandbox_5f8d2c1a
   status:
-    $ref: ./SandboxCardDisputeStatus.yaml
+    $ref: ./CardDisputeStatus.yaml
   disposition:
     $ref: ./CardDisputeDisposition.yaml
     description: The outcome once the dispute closes. Absent while it is open.

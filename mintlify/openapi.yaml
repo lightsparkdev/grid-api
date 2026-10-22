@@ -28332,6 +28332,16 @@ components:
         - CLOSED
       description: Whether the dispute is still active.
       example: OPEN
+    CardDisputeDisposition:
+      type: string
+      enum:
+        - WON
+        - PARTIALLY_WON
+        - LOST
+        - WITHDRAWN
+        - DENIED
+      description: The outcome the dispute closes with.
+      example: WON
     CardDispute:
       title: Card Dispute
       type: object
@@ -28362,9 +28372,8 @@ components:
         status:
           $ref: '#/components/schemas/CardDisputeStatus'
         disposition:
-          type: string
-          description: How the dispute ended, present once it closes. The card processor's own outcome, usually one of `WON`, `PARTIALLY_WON`, `LOST`, `WITHDRAWN` or `DENIED`; it is not enum-constrained here because the processor may report an outcome Grid has not seen before.
-          example: WON
+          $ref: '#/components/schemas/CardDisputeDisposition'
+          description: How the dispute ended. Absent while it is open.
         network:
           type: string
           description: The card network the dispute was filed with. Absent until the processor reports one.
@@ -31416,23 +31425,6 @@ components:
           type: string
           description: Free-text reason recorded on the opening event.
           example: Merchandise not received
-    SandboxCardDisputeStatus:
-      type: string
-      enum:
-        - OPEN
-        - CLOSED
-      description: Whether the dispute is still active.
-      example: OPEN
-    CardDisputeDisposition:
-      type: string
-      enum:
-        - WON
-        - PARTIALLY_WON
-        - LOST
-        - WITHDRAWN
-        - DENIED
-      description: The outcome the dispute closes with.
-      example: WON
     SandboxCardDisputeResponse:
       type: object
       required:
@@ -31450,7 +31442,7 @@ components:
           description: The card issuer's token for the dispute.
           example: dispute_transaction_sandbox_5f8d2c1a
         status:
-          $ref: '#/components/schemas/SandboxCardDisputeStatus'
+          $ref: '#/components/schemas/CardDisputeStatus'
         disposition:
           $ref: '#/components/schemas/CardDisputeDisposition'
           description: The outcome once the dispute closes. Absent while it is open.
