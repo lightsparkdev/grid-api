@@ -74,7 +74,9 @@ is the network's authorization amount and never includes the fee, and an
 `AUTHORIZED` row has an empty `fees` array. If the authorization is reversed or
 expires, the reservation is released with it. Once the transaction clears and
 `settledAmount` is present, the fee entry appears, computed on the cleared
-amount.
+amount. The fee is recorded shortly after the clearing posts, so the
+`CARD_TRANSACTION.SETTLED` delivery for a purchase or a return can carry an
+empty `fees` array. Read the transaction to get its fees.
 
 For example, a card issued in the US clears for $100.00 at a merchant in
 France. After clearing, the purchase carries a $0.50 fee (other fields

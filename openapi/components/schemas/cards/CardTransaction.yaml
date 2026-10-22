@@ -99,6 +99,8 @@ properties:
       each fee is the fee rate applied to that credit's amount and is what
       Grid returned to the cardholder. A full return refunds the full fee,
       and a partial return refunds it proportionally.
+      The `CARD_TRANSACTION.SETTLED` delivery can precede the fee entry;
+      read the transaction to get its fees.
     items:
       $ref: ./CardTransactionFee.yaml
   accountId:
