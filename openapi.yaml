@@ -15282,6 +15282,14 @@ components:
 
             Required before requesting a PIN-entry URL. Omit this field when updating platform configuration to preserve its value; set it to `null` to clear it. If unset, PIN-entry URL requests return `409 CONFLICT`. Changes apply to newly requested URLs.
           example: https://app.example.com
+        maxNetworkRiskScore:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 999
+            - type: 'null'
+          description: Maximum normalized network risk score allowed for real-time card authorizations. Scores range from 0 (lowest risk) to 999 (highest risk). Visa scores are normalized by multiplying the raw 0–99 score by 10. Scores equal to the ceiling are allowed. Authorizations without a score are also allowed. The lowest configured card or platform ceiling applies. Omit to preserve the current setting or send null to clear this scope.
+          example: 700
         maxSpendPerTransaction:
           anyOf:
             - type: integer
@@ -15614,7 +15622,7 @@ components:
             to subsequent delivery attempts.
         cardConfigs:
           $ref: '#/components/schemas/CardConfig'
-          description: Update platform-level card settings. Fields omitted from the nested object are left unchanged. For any card limit, supply null to clear the platform cap or a positive integer to set it. Set `pinTargetOrigin` to configure the website that hosts PIN-entry iframes, or supply null to clear it. Omit this field at the top level to leave all card settings unchanged.
+          description: Update platform-level card settings. Fields omitted from the nested object are left unchanged. Set each limit within its documented range, or send null to clear it. Set `pinTargetOrigin` to configure the website that hosts PIN-entry iframes, or supply null to clear it. Omit this field at the top level to leave all card settings unchanged.
         feeConfigs:
           type: array
           items:
@@ -30416,6 +30424,14 @@ components:
         cardCapabilities:
           $ref: '#/components/schemas/CardCapabilities'
           description: Actions supported for this card by the issuer selected at issuance. Present for cards whose program has been resolved; absent otherwise. These capabilities are fixed at issuance for the card's lifetime.
+        maxNetworkRiskScore:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 999
+            - type: 'null'
+          description: Maximum normalized network risk score allowed for real-time card authorizations. Scores range from 0 (lowest risk) to 999 (highest risk). Visa scores are normalized by multiplying the raw 0–99 score by 10. Scores equal to the ceiling are allowed. Authorizations without a score are also allowed. The lowest configured card or platform ceiling applies. Null means no card-specific ceiling. Platform controls still apply.
+          example: 700
         maxSpendPerTransaction:
           anyOf:
             - type: integer
@@ -30641,6 +30657,12 @@ components:
           type: string
           description: Internal account id that funds this card. The account must belong to the customer and be denominated in a card-eligible currency; otherwise the request is rejected with `INVALID_INPUT`.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        maxNetworkRiskScore:
+          type: integer
+          minimum: 0
+          maximum: 999
+          description: Maximum normalized network risk score allowed for real-time card authorizations. Scores range from 0 (lowest risk) to 999 (highest risk). Visa scores are normalized by multiplying the raw 0–99 score by 10. Scores equal to the ceiling are allowed. Authorizations without a score are also allowed. The lowest configured card or platform ceiling applies. Omit to set no card-specific ceiling.
+          example: 700
         maxSpendPerTransaction:
           type: integer
           format: int64
@@ -30709,7 +30731,7 @@ components:
       example: SUSPICIOUS_ACTIVITY
     CardUpdateRequest:
       type: object
-      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, `allowedMccs`, `blockedMccs`, `defaultMccBlocksLifted`, or `threeDSecurePassword` must be supplied; `allowedMccs`, `blockedMccs` and `defaultMccBlocksLifted` count only for a card issued for an agent, and are ignored on any other card. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Explicit activation requires completed delegated signing authorization; otherwise it returns `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
+      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxNetworkRiskScore`, `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, `allowedMccs`, `blockedMccs`, `defaultMccBlocksLifted`, or `threeDSecurePassword` must be supplied; `allowedMccs`, `blockedMccs` and `defaultMccBlocksLifted` count only for a card issued for an agent, and are ignored on any other card. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Explicit activation requires completed delegated signing authorization; otherwise it returns `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxNetworkRiskScore`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
       properties:
         status:
           $ref: '#/components/schemas/CardUpdateStatus'
@@ -30724,6 +30746,14 @@ components:
           type: string
           description: 'Replaces the card''s funding source. Must belong to the customer and be denominated in a currency supported by the card''s program, including USDB for USD cards. Changing the funding source does not change the card''s currency or spending-limit units. Cannot be supplied alongside `status: CLOSED`. To stop a card from spending, set `status: FROZEN` instead.'
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        maxNetworkRiskScore:
+          anyOf:
+            - type: integer
+              minimum: 0
+              maximum: 999
+            - type: 'null'
+          description: Maximum normalized network risk score allowed for real-time card authorizations. Scores range from 0 (lowest risk) to 999 (highest risk). Visa scores are normalized by multiplying the raw 0–99 score by 10. Scores equal to the ceiling are allowed. Authorizations without a score are also allowed. The lowest configured card or platform ceiling applies. Omit to preserve the current setting or send null to clear this scope.
+          example: 700
         maxSpendPerTransaction:
           anyOf:
             - type: integer
