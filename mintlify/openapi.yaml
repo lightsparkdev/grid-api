@@ -10577,7 +10577,7 @@ paths:
     parameters:
       - name: disputeId
         in: path
-        description: The id of the dispute, as returned in `CardDispute.id`. The bare UUID returned as `disputeId` by the sandbox dispute simulators is also accepted.
+        description: The id of the dispute.
         required: true
         schema:
           type: string
@@ -31431,8 +31431,8 @@ components:
       properties:
         disputeId:
           type: string
-          description: The id of the dispute record.
-          example: 019542f5-b3e7-1d02-0000-000000000200
+          description: The id of the dispute, as returned in `CardDispute.id`.
+          example: CardDispute:019542f5-b3e7-1d02-0000-000000000200
         disputeToken:
           type: string
           description: The card issuer's token for the dispute.

@@ -10,8 +10,8 @@ description: >-
 properties:
   disputeId:
     type: string
-    description: The id of the dispute record.
-    example: 019542f5-b3e7-1d02-0000-000000000200
+    description: The id of the dispute, as returned in `CardDispute.id`.
+    example: CardDispute:019542f5-b3e7-1d02-0000-000000000200
   disputeToken:
     type: string
     description: The card issuer's token for the dispute.
