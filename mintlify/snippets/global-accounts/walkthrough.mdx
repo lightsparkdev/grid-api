@@ -283,7 +283,7 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
     ```json
     {
       "type": "EMAIL_OTP",
-      "payloadToSign": "eyJhbGciOiJFUzI1NiIsImtpZCI6InR1cm5rZXkifQ...",
+      "payloadToSign": "{\"login\":{\"publicKey\":\"02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31\"},\"tokenId\":\"7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21\",\"type\":\"USAGE_TYPE_LOGIN\"}",
       "requestId": "Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21",
       "expiresAt": "2026-04-19T12:10:00Z"
     }
@@ -291,8 +291,8 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
 
     Return `payloadToSign` and `requestId` to the client.
   </Step>
-  <Step title="Client signs the verification token and completes login">
-    The client <a href="client-keys#4-sign-a-payloadtosign">stamps</a> `payloadToSign` with the TEK private key and sends the stamp back to your backend.
+  <Step title="Client stamps payloadToSign and completes login">
+    The client <a href="client-keys#2-sign-a-payloadtosign">stamps</a> the exact UTF-8 bytes of `payloadToSign`, unchanged, with the TEK private key and sends the stamp back to your backend.
 
     Your backend retries the same request with the stamp:
 
@@ -325,7 +325,7 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
     The TEK public key is now the session API key. The TEK private key **is** the session signing key — the client already has it.
   </Step>
   <Step title="Client stamps the quote payload">
-    The client <a href="client-keys#4-sign-a-payloadtosign">signs the quote's `payloadToSign`</a> with the same TEK private key. Return the full Grid wallet signature to your backend.
+    The client <a href="client-keys#2-sign-a-payloadtosign">signs the quote's `payloadToSign`</a> with the same TEK private key. Return the full Grid wallet signature to your backend.
   </Step>
 </Steps>
 
@@ -366,7 +366,7 @@ The transaction is on its way. You'll receive standard transaction webhooks (`OU
 
 <CardGroup cols={2}>
   <Card title="Client keys & signing" href="./client-keys" icon="key">
-    Generate the P-256 key pair, decrypt the session signing key, and sign payloads on Web, iOS, and Android.
+    Generate the P-256 key pair, hold the session signing key, and sign payloads on Web, iOS, and Android.
   </Card>
   <Card title="Authentication" href="./authentication" icon="shield-check">
     OAuth and Email OTP flows, passkey reauthentication, and the full WebAuthn parameter mapping.

@@ -21,6 +21,21 @@ properties:
       `null` to clear it. If unset, PIN-entry URL requests return
       `409 CONFLICT`. Changes apply to newly requested URLs.
     example: https://app.example.com
+  maxNetworkRiskScore:
+    anyOf:
+      - type: integer
+        minimum: 0
+        maximum: 999
+      - type: 'null'
+    description: >-
+      Maximum normalized network risk score allowed for real-time card
+      authorizations. Scores range from 0 (lowest risk) to 999 (highest risk).
+      Visa scores are normalized by multiplying the raw 0–99 score by 10.
+      Scores equal to the ceiling are allowed. Authorizations without a
+      score are also allowed. The lowest configured card or platform ceiling
+      applies.
+      Omit to preserve the current setting or send null to clear this scope.
+    example: 700
   maxSpendPerTransaction:
     anyOf:
       - type: integer

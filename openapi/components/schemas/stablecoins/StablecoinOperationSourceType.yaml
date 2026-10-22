@@ -1,0 +1,10 @@
+type: string
+enum:
+  - WIRE
+  - ACH_DEBIT
+  - SAME_DAY_ACH_DEBIT
+  - EXTERNAL_ACCOUNT
+  - GRID_INTERNAL_ACCOUNT
+  - PROVIDER_INTERNAL_BALANCE
+description: Source variant. Mint funding uses `WIRE`, `ACH_DEBIT`, or `SAME_DAY_ACH_DEBIT`; burns use `EXTERNAL_ACCOUNT`. `GRID_INTERNAL_ACCOUNT` and `PROVIDER_INTERNAL_BALANCE` are shared across mint and burn.
+example: ACH_DEBIT

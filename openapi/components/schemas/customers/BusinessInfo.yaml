@@ -3,8 +3,6 @@ description: Additional information required for business entities
 required:
   - legalName
   - country
-  - taxId
-  - incorporatedOn
 properties:
   legalName:
     type: string
@@ -28,14 +26,20 @@ properties:
   incorporatedOn:
     type: string
     format: date
-    description: Date of incorporation in ISO 8601 format (YYYY-MM-DD)
+    description: >-
+      Date of incorporation in ISO 8601 format (YYYY-MM-DD). Required when the
+      customer's currency uses direct customer-owned accounts. Can be omitted
+      when the platform funds customers from an omnibus FBO account.
     example: '2018-03-14'
   entityType:
     $ref: ./EntityType.yaml
   taxId:
     type: string
     maxLength: 100
-    description: Tax identification number
+    description: >-
+      Tax identification number. Required when the
+      customer's currency uses direct customer-owned accounts. Can be omitted
+      when the platform funds customers from an omnibus FBO account.
     example: 47-1234567
   countriesOfOperation:
     type: array
@@ -54,25 +58,9 @@ properties:
     description: The primary source of funds for the business
     example: Funds derived from customer payments for software services
   expectedMonthlyTransactionCount:
-    type: string
-    enum:
-      - COUNT_UNDER_10
-      - COUNT_10_TO_100
-      - COUNT_100_TO_500
-      - COUNT_500_TO_1000
-      - COUNT_OVER_1000
-    description: Expected number of transactions per month
-    example: COUNT_100_TO_500
+    $ref: ./ExpectedMonthlyTransactionCount.yaml
   expectedMonthlyTransactionVolume:
-    type: string
-    enum:
-      - VOLUME_UNDER_10K
-      - VOLUME_10K_TO_100K
-      - VOLUME_100K_TO_1M
-      - VOLUME_1M_TO_10M
-      - VOLUME_OVER_10M
-    description: Expected total transaction volume per month in USD equivalent
-    example: VOLUME_100K_TO_1M
+    $ref: ./ExpectedMonthlyTransactionVolume.yaml
   expectedRecipientJurisdictions:
     type: array
     items:

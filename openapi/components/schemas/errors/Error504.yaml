@@ -1,0 +1,22 @@
+type: object
+required:
+  - reason
+  - code
+properties:
+  code:
+    type: string
+    description: |
+      | Error Code | Description |
+      |------------|-------------|
+      | LOOKUP_REQUEST_FAILED | Network error or timeout reaching the counterparty during lookup. Retryable |
+      | QUOTE_REQUEST_FAILED | Network error or timeout sending the quote request to the counterparty. Retryable |
+    enum:
+      - LOOKUP_REQUEST_FAILED
+      - QUOTE_REQUEST_FAILED
+  reason:
+    type: string
+    description: Error message
+  details:
+    type: object
+    description: Additional error details
+    additionalProperties: true

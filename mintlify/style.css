@@ -1096,11 +1096,13 @@ html.dark #navigation-items a[aria-current="page"] img {
   filter: brightness(0) saturate(100%) invert(90%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(105%) contrast(95%) !important;
 }
 
-/* Hide sidebar controls */
+/* Hide sidebar controls. Our own footer collapse button is exempt: the hosted
+   renderer puts w-(--sidebar-width,19rem) on #sidebar-content, so the
+   [class*="sidebar"] ancestor match reaches everything in the footer. */
 button[class*="sidebar-toggle"],
 button[aria-label*="sidebar"],
 button[aria-label*="Collapse"],
-[class*="sidebar"] button[class*="collapse"],
+[class*="sidebar"] button[class*="collapse"]:not(.ls-nav-collapse-btn),
 [class*="sidebar-collapse"],
 #sidebar-toggle,
 button[class*="toggle-sidebar"],

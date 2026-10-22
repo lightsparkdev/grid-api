@@ -59,15 +59,56 @@ properties:
   remittanceInformation:
     type: string
     maxLength: 80
-    description: >-
-      Free-form information about the payment that travels with it to the
-      recipient. The field this populates depends on the payment rail: for ACH
-      it populates the Addenda record, for FedNow and RTP it populates the
-      remittanceInformation field, and for wires it populates the OBI
-      (Originator to Beneficiary Information) / beneficiary information.
+    description: |-
+      Free-form information about the payment, such as an invoice or reference number, that travels with it to the recipient. Printable ASCII only. Where it goes depends on the payment rail:
+      - **ACH:** the addenda record.
+      - **RTP and FedNow:** the remittance information field.
+      - **Wire:** the OBI (Originator to Beneficiary Information).
+      - **Other rails** (for example SEPA, PIX, SPEI, and Faster Payments): the payment reference shown on the recipient's bank statement. These references are often much shorter than 80 characters and may allow only letters and digits, so the value may be shortened and unsupported characters removed. Put the most important information first.
+
+      To set the short description of the payment's purpose that an ACH recipient sees on their statement, such as `PAYROLL`, use `statementDescriptor`.
     example: '12345'
+  statementDescriptor:
+    $ref: ./StatementDescriptor.yaml
   purposeOfPayment:
     $ref: ./PurposeOfPayment.yaml
+  documentIds:
+    type: array
+    minItems: 1
+    maxItems: 3
+    uniqueItems: true
+    description: >-
+      IDs of payment documents from `POST /payment-documents` that support
+      this payment. Required when the destination requires supporting
+      documents. Supply one document for each requirement of your
+      `purposeOfPayment`. [Supporting
+      Documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents)
+      lists which payouts need documents, the requirements for each purpose,
+      and the document types each requirement accepts. Grid matches each
+      document to a requirement by its `documentType`, which must be one of
+      the types that requirement accepts.
+      A request that leaves a requirement unfilled returns
+      `400 DOCUMENTS_REQUIRED`. Each document must belong to the customer
+      sending the payment, or to the platform when the platform itself is the
+      sender. Any other ID returns `404 PAYMENT_DOCUMENT_NOT_FOUND`.
+
+
+      Grid attaches every document to the payment before it returns the
+      quote. With `immediatelyExecute: true`, Grid attaches the documents
+      before it executes the quote. If an attachment fails, Grid creates no
+      quote and returns `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED`. Retry the
+      same request with the same `Idempotency-Key`.
+
+
+      Requires the `Idempotency-Key` header. A destination that does not
+      require supporting documents rejects `documentIds` with
+      `400 INVALID_INPUT`.
+    items:
+      type: string
+    example:
+      - PaymentDocument:019542f5-b3e7-1d02-0000-000000000001
+      - PaymentDocument:019542f5-b3e7-1d02-0000-000000000002
+      - PaymentDocument:019542f5-b3e7-1d02-0000-000000000003
   platformFeeOverride:
     $ref: ./PlatformFeeOverride.yaml
   scaFactor:

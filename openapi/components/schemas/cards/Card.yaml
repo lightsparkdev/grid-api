@@ -30,13 +30,21 @@ properties:
     $ref: ./CardStatusReason.yaml
     description: >-
       Reason associated with the current `status`. Present when the card is
-      `CLOSED` or when provisioning was rejected; absent otherwise.
+      `PENDING_AUTH`, `CLOSED`, or when provisioning was rejected; absent otherwise.
   brand:
     $ref: ./CardBrand.yaml
   form:
     $ref: ./CardForm.yaml
   pinStatus:
     $ref: ./CardPinStatus.yaml
+  pinUnblockAvailableAt:
+    type: string
+    format: date-time
+    readOnly: true
+    description: >-
+      Earliest time another PIN unblock attempt is allowed. Absent until the
+      unblock allowance is used. Changing the PIN does not reset this time.
+    example: '2026-10-15T15:00:00Z'
   last4:
     type: string
     description: Last four digits of the card PAN.
@@ -61,6 +69,21 @@ properties:
       Actions supported for this card by the issuer selected at issuance.
       Present for cards whose program has been resolved; absent otherwise.
       These capabilities are fixed at issuance for the card's lifetime.
+  maxNetworkRiskScore:
+    anyOf:
+      - type: integer
+        minimum: 0
+        maximum: 999
+      - type: 'null'
+    description: >-
+      Maximum normalized network risk score allowed for real-time card
+      authorizations. Scores range from 0 (lowest risk) to 999 (highest risk).
+      Visa scores are normalized by multiplying the raw 0–99 score by 10.
+      Scores equal to the ceiling are allowed. Authorizations without a
+      score are also allowed. The lowest configured card or platform ceiling
+      applies.
+      Null means no card-specific ceiling. Platform controls still apply.
+    example: 700
   maxSpendPerTransaction:
     anyOf:
       - type: integer
@@ -112,6 +135,40 @@ properties:
       during the day. A transaction that brings the day's count exactly to the
       effective limit is allowed.
     example: 20
+  allowedMccs:
+    type: array
+    minItems: 1
+    description: >-
+      Merchant category codes the card may spend at. Present only on a card
+      issued for an agent; absent when that card may spend at any category not
+      blocked.
+    items:
+      type: string
+      pattern: ^[0-9]{4}$
+    example:
+      - '5411'
+  blockedMccs:
+    type: array
+    description: >-
+      Merchant category codes a card issued for an agent declines, with
+      `cardDeclinedReason: BLOCKED`. Present only on such a card, which also
+      declines Grid's default agent categories unless `defaultMccBlocksLifted`
+      is true.
+    items:
+      type: string
+      pattern: ^[0-9]{4}$
+    example:
+      - '7995'
+  agentId:
+    type: string
+    description: The agent the card was issued for, when there is one.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000042
+  defaultMccBlocksLifted:
+    type: boolean
+    description: >-
+      Whether the platform lifted Grid's default agent merchant-category blocks
+      on this card. Present only for a card issued for an agent.
+    example: false
   currency:
     type: string
     description: >-

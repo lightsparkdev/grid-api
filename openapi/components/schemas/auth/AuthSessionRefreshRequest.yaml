@@ -2,28 +2,22 @@ title: Auth Session Refresh Request
 description: >-
   Request body for refreshing an active authentication session. The
   `clientPublicKey` is required on both steps of the signed-retry flow and
-  must match on both. Its SEC1 encoding selects how the refreshed session
-  signing key is delivered: a compressed key gets the recommended
-  client-held-key model, where the client retains the new signing key
-  itself; an uncompressed key gets the deprecated legacy flow, where Grid
-  returns the new key as `encryptedSessionSigningKey` sealed to it. On the
-  initial call, Grid binds the supplied key into the session-creation
-  payload returned as `payloadToSign`.
+  must match on both. The client keeps the matching private key as the new
+  session signing key. On the initial call, Grid binds the supplied key into
+  the session-creation payload returned as `payloadToSign`.
 type: object
 required:
   - clientPublicKey
 properties:
   clientPublicKey:
     type: string
-    pattern: "^(0[23][0-9a-fA-F]{64}|04[0-9a-fA-F]{128})$"
+    pattern: '^0[23][0-9a-f]{64}$'
+    minLength: 66
+    maxLength: 66
     description: >-
-      Client-generated P-256 public key; the matching private key is
-      retained on the client. Send a compressed SEC1 key (`02`/`03` prefix
-      followed by the 32-byte X coordinate; 66 hex characters) for the
-      recommended client-held-key model, where that private key becomes the
-      new session signing key. Send an uncompressed SEC1 key (`04` prefix
-      followed by the 32-byte X and 32-byte Y coordinates; 130 hex
-      characters) for the deprecated legacy flow, where Grid seals the new
-      session signing key to it and returns it as
-      `encryptedSessionSigningKey` on the signed retry.
+      Client-generated P-256 public key as a compressed SEC1 point in
+      lowercase hex: 66 characters, a `02` or `03` prefix followed by the
+      32-byte X coordinate. The client keeps the matching private key as
+      the new session signing key. An uppercase or uncompressed key is
+      rejected with `400 INVALID_INPUT`.
     example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31

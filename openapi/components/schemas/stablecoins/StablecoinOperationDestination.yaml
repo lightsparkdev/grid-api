@@ -18,10 +18,4 @@ properties:
       destinations.
     example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
   rail:
-    type: string
-    enum:
-      - WIRE
-      - ACH_CREDIT
-      - SAME_DAY_ACH_CREDIT
-      - RTP_CREDIT
-    description: Fiat payout rail, present for burn (fiat redemption) destinations.
+    $ref: ./StablecoinOperationDestinationRail.yaml

@@ -1,10 +1,12 @@
 package com.grid.sample.routes
 
+import com.lightspark.grid.models.auth.credentials.AuthCredentialChallengeRequest
+import com.lightspark.grid.models.auth.credentials.CredentialChallengeParams
 import com.lightspark.grid.models.auth.credentials.CredentialCreateParams
-import com.lightspark.grid.models.auth.credentials.CredentialCreateParams.AuthCredentialCreateRequest.PasskeyCredentialCreateRequest
-import com.lightspark.grid.models.auth.credentials.CredentialResendChallengeParams
 import com.lightspark.grid.models.auth.credentials.CredentialVerifyParams
-import com.lightspark.grid.models.auth.credentials.CredentialVerifyParams.AuthCredentialVerifyRequest.PasskeyCredentialVerifyRequest
+import com.lightspark.grid.models.auth.credentials.PasskeyAssertion
+import com.lightspark.grid.models.auth.credentials.PasskeyAttestation
+import com.lightspark.grid.models.auth.credentials.PasskeyCredentialCreateRequest
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
@@ -105,14 +107,13 @@ fun Route.authCredentialRoutes() {
 
                 val attestationNode = json.get("attestation")
                     ?: throw IllegalArgumentException("attestation is required")
-                val attestation = PasskeyCredentialCreateRequest.Attestation.builder()
+                val attestation = PasskeyAttestation.builder()
                     .credentialId(attestationNode.get("credentialId").asText())
                     .clientDataJson(attestationNode.get("clientDataJson").asText())
                     .attestationObject(attestationNode.get("attestationObject").asText())
                     .build()
 
                 val request = PasskeyCredentialCreateRequest.builder()
-                    .type(PasskeyCredentialCreateRequest.Type.PASSKEY)
                     .accountId(json.get("accountId").asText())
                     .challenge(challenge)
                     .attestation(attestation)
@@ -176,22 +177,28 @@ fun Route.authCredentialRoutes() {
                     ?.let { JsonUtils.mapper.readTree(it).optText("clientPublicKey") }
                 Log.incoming("POST", "/api/auth/credentials/$authMethodId/challenge", body)
 
-                val params = CredentialResendChallengeParams.builder()
+                val params = CredentialChallengeParams.builder()
                     .id(authMethodId)
-                    .apply { clientPublicKey?.let { clientPublicKey(it) } }
+                    .apply {
+                        clientPublicKey?.let {
+                            authCredentialChallengeRequest(
+                                AuthCredentialChallengeRequest.builder().clientPublicKey(it).build()
+                            )
+                        }
+                    }
                     .build()
 
                 Log.gridRequest(
-                    "auth.credentials.resendChallenge",
+                    "auth.credentials.challenge",
                     "id=$authMethodId clientPublicKey=${clientPublicKey != null}",
                 )
-                val response = GridClientBuilder.client.auth().credentials().resendChallenge(params)
+                val response = GridClientBuilder.client.auth().credentials().challenge(params)
                 val responseJson = JsonUtils.prettyPrint(response)
-                Log.gridResponse("auth.credentials.resendChallenge", responseJson)
+                Log.gridResponse("auth.credentials.challenge", responseJson)
 
                 call.respondText(responseJson, ContentType.Application.Json, HttpStatusCode.OK)
             } catch (e: Exception) {
-                Log.gridError("auth.credentials.resendChallenge", e)
+                Log.gridError("auth.credentials.challenge", e)
                 call.respondText(
                     """{"error": "${e.message}"}""",
                     ContentType.Application.Json,
@@ -223,7 +230,7 @@ fun Route.authCredentialRoutes() {
 
                 val assertionNode = json.get("assertion")
                     ?: throw IllegalArgumentException("assertion is required")
-                val assertion = PasskeyCredentialVerifyRequest.Assertion.builder()
+                val assertion = PasskeyAssertion.builder()
                     .credentialId(assertionNode.get("credentialId").asText())
                     .clientDataJson(assertionNode.get("clientDataJson").asText())
                     .authenticatorData(assertionNode.get("authenticatorData").asText())
@@ -233,17 +240,11 @@ fun Route.authCredentialRoutes() {
                     }
                     .build()
 
-                // clientPublicKey moved to /challenge in SDK 1.7.x; verify carries
-                // the assertion only.
-                val verifyRequest = PasskeyCredentialVerifyRequest.builder()
-                    .type(PasskeyCredentialVerifyRequest.Type.PASSKEY)
-                    .assertion(assertion)
-                    .build()
-
+                // clientPublicKey goes to /challenge; verify carries the assertion only.
                 val params = CredentialVerifyParams.builder()
                     .id(authMethodId)
                     .requestId(requestId)
-                    .authCredentialVerifyRequest(verifyRequest)
+                    .passkeyAuthCredentialVerifyRequest(assertion)
                     .build()
 
                 Log.gridRequest("auth.credentials.verify", "id=$authMethodId requestId=$requestId")

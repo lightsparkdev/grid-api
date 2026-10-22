@@ -16,12 +16,14 @@ properties:
   documentType:
     $ref: ./DocumentType.yaml
   side:
-    type: string
-    enum:
-      - FRONT
-      - BACK
-    description: Which side of the document (for two-sided documents like driver's licenses)
-    example: FRONT
+    $ref: ./DocumentSide.yaml
+    description: |
+      Which side of the document this image shows. Required when
+      `documentType` is `DRIVERS_LICENSE` or `NATIONAL_ID`: upload the
+      `FRONT` and `BACK` as two separate documents. A `PASSPORT`, or a
+      `DRIVERS_LICENSE` issued in Brazil (`country` is `BR`), is a single
+      image: sending `side` for either returns `400 INVALID_INPUT`. Optional
+      for all other document types.
   country:
     type: string
     description: Country that issued the document (ISO 3166-1 alpha-2)
@@ -29,10 +31,16 @@ properties:
   documentNumber:
     type: string
     maxLength: 100
-    description: Document identification number (e.g., passport number)
+    description: |
+      Identification number printed on the document, such as a passport
+      number. Required when `documentType` is `PASSPORT`,
+      `DRIVERS_LICENSE`, or `NATIONAL_ID`.
     example: A12345678
   issuingAuthority:
     type: string
     maxLength: 255
-    description: Name of the government agency or organization that issued the document
+    description: |
+      Name of the government agency or organization that issued the
+      document. Required when `documentType` is `PASSPORT`,
+      `DRIVERS_LICENSE`, or `NATIONAL_ID`.
     example: U.S. Department of State

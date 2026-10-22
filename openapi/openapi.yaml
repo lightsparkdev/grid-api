@@ -38,6 +38,29 @@ tags:
       and beneficial owners. Supports KYC and KYB document requirements.
   - name: Internal Accounts
     description: Internal account management endpoints for creating and managing internal accounts
+  - name: Periodic Statements
+    description: |
+      Build, deliver, and evidence a Regulation E periodic statement for a customer's internal account. A statement period is a calendar month in US Central time (`America/Chicago`).
+
+      A statement is issued for each customer's own USD internal account and covers their whole balance. Money received through a rule-based account appears on its owner's statement; rule-based, bulk settlement and platform-owned accounts have no statement of their own.
+
+      **1. The statement — `GET /internal-accounts/{id}/balance-changes?startDate=&endDate=`**
+
+      One row per change to the balance, in the order the money moved, with the opening and closing balances for the window in the same response. Page until `hasMore` is false, then assert this identity across every page before you render anything:
+
+      ```
+      openingBalance + Σ(data[].amount) == closingBalance
+      ```
+
+      If it does not hold, do not send the statement; contact support instead. `startDate` and `endDate` bound a half-open window `[startDate, endDate)`: for a monthly statement, pass the first instant of the month and the first instant of the following month, both in US Central time (for August 2026, `2026-08-01T00:00:00-05:00` and `2026-09-01T00:00:00-05:00`). Grid records a statement as fetched only for a window that is exactly one such month.
+
+      **2. The receipt — `POST /internal-accounts/{id}/confirm-statement`**
+
+      Once a month, after you have pulled and issued a period's statement, send a receipt with the `statementMonth` it covers. Grid stores it as the delivery record for that account and period. Sending it again is harmless: the first receipt's time is kept.
+
+      **Timing**
+
+      A window whose card settlement has not closed is refused with `409 NOT_YET_AVAILABLE` rather than answered with figures that could still change; retry once it has settled.
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
   - name: Same-Currency Transfers
@@ -81,8 +104,8 @@ tags:
       approving or rejecting transactions initiated by agents.
   - name: Agent Operations
     description: >-
-      Endpoints called by the agent itself using its own credentials (obtained via device
-      code redemption). Scoped to the agent's associated customer — all requests
+      Experimental endpoints called by the agent itself using its own credentials
+      (obtained via device code redemption). Scoped to the agent's associated customer — all requests
       automatically operate on behalf of that customer and are subject to the agent's
       policy. When an action requires approval, the resulting transaction enters a pending
       state and must be approved by the platform via
@@ -97,6 +120,108 @@ tags:
       Stablecoin issuance endpoints. Link provider accounts, register
       provider-created stablecoins, create direct mint/burn issuer operations,
       and track operation status.
+  - name: Embedded Care
+    description: |
+      A support chat between the cardholder and Lightspark's care agent, driven
+      from the partner's own app. The platform calls with its ordinary Grid
+      credential, but the person typing is the cardholder rather than the
+      caller, so reaching that cardholder's account takes a second proof: an
+      SMS code they send into the chat, after which the partner carries a
+      session token in the `X-Ls-Care-Session` header.
+
+      **The surface is two routes, and verification happens inside the
+      conversation.**
+
+      1. **Open the chat.** `POST /care/chats/{chatId}/messages` with an empty
+         `message`, addressed to the cardholder as `Customer:<uuid>`. Returns
+         the chat's id and the agent's opening line in `reply`, which is what
+         a chat window renders before anybody has typed. Sends no SMS, needs
+         no `Idempotency-Key` and consumes none, and is safe to call again: a
+         widget that reloaded gets the same chat back, this time without a
+         `reply`.
+      2. **Send the cardholder's first message.** The same route with their
+         text and an `Idempotency-Key` header. One turn runs synchronously and
+         the agent's answer comes back in `reply`. On a chat that cannot yet
+         reach the account this call also texts the cardholder a code, and the
+         agent's `reply` asks for it.
+      3. **The cardholder sends the code as an ordinary message.** When it is
+         correct, the response to that turn carries `sessionToken` and
+         `expiresAt`. Send that token as the `X-Ls-Care-Session` header on
+         every message from then on. A code that does not match is answered in
+         `reply`, and the cardholder can simply send it again.
+      4. **Close the chat** with `DELETE /care/chats/{chatId}` when the
+         cardholder is done. Every response also carries `chatEnded`, and the
+         agent can end the chat itself: when `chatEnded` is true, the closing
+         line is in `reply` and the chat takes no further messages, so stop
+         sending to it. An opening addressed to that `CareChat:<id>` answers
+         `409 CARE_CHAT_ENDED`; address the cardholder as `Customer:<uuid>`
+         to open a new chat.
+
+      **Render `redactedCustomerMessage` if present, then `reply` if
+      present.** That one rule covers an opening, a resume and a turn.
+
+      **A cardholder whose code never arrived asks the agent for another
+      one.** The agent sends a new code to the number on file and says so in
+      its `reply`. There is no separate route for it.
+
+      **The verification fields are optional hints.** `verificationRequired`
+      and `codeLength` let an app show a dedicated one-time-code input of the
+      right length, marked as a one-time code so iOS and Android offer to fill
+      it from the SMS. A partner can ignore them, since the agent asks for the
+      code in its reply and says where it went, and the app still sends the
+      code as an ordinary message.
+
+      Step 1 is optional. A message addressed to a `Customer:` id opens that
+      cardholder's chat if they have none, so a partner whose cardholder has
+      just typed something spends one call rather than two.
+
+      A cardholder who has not verified yet is never a `401`, because the
+      first message from every new cardholder is unverified and a `401` there
+      would be indistinguishable from a bad credential. On these endpoints a
+      `401` means the platform's Grid credential is wrong, the session token
+      presented is malformed, or a replay lacks the session token its original
+      request required.
+
+      **Verification expires, and a lost session is recoverable in the
+      chat.** A chat reaches the cardholder's account only while its
+      verification is newer than the session lifetime, fifteen minutes in the
+      default deployment, which is also how long a session token lives. Past
+      that window a message gets a fresh code, and the agent asks the
+      cardholder to send it back inside the conversation, which hands the
+      partner the next session token. A new message sent with no
+      `X-Ls-Care-Session` header, or with a token past its expiry, on a chat
+      whose verification is still current is treated the same way: the
+      verification is cancelled before the turn runs, a new code is sent, and
+      the agent asks for it. So a client that lost its token, or held one too
+      long, simply keeps sending messages. Only a token that is malformed, or
+      that was minted for another platform, chat or cardholder, is refused.
+
+      Two things an integration has to get right:
+
+      - **Render `redactedCustomerMessage`, never your own copy of what was
+        typed.** Grid masks card numbers and other sensitive digit strings in
+        it. A UI that renders its own copy of the input instead puts a card
+        number the cardholder pasted back on their screen unmasked, and into
+        your logs.
+      - **The session token is returned once and is never re-readable.** No
+        endpoint hands it back, it cannot be revoked, and it is short-lived by
+        design. Hold it for the life of the cardholder's session. It arrives
+        on the message response to the turn in which the cardholder sent their
+        code, and on no other. Losing it costs the cardholder a new code, never
+        access to the chat.
+
+      Some things are absent by construction, so no integration can come to
+      depend on them: nothing returns a transcript or an earlier turn's reply
+      (retrying under the original `Idempotency-Key` is how an answer that was
+      produced but not delivered is recovered; a replay requires the same
+      session token its original request required and never carries a
+      `sessionToken`, so a lost token is recovered by sending the cardholder's
+      next message as a new message, which verifies them again), nothing sets
+      a verification state, and nothing changes the number a code is sent to.
+
+      Errors from these endpoints carry `code` and `reason` only (see the
+      `CareError` schema), unlike the `Error4xx` schemas used elsewhere in this
+      specification.
 servers:
   - url: https://api.lightspark.com/grid/2025-10-13
     description: Production server
@@ -114,7 +239,7 @@ components:
       description: >-
         Bearer token authentication for agent-scoped endpoints. The token is the
         `accessToken` returned when redeeming a device code via
-        `POST /agents/device-codes/{code}/redeem`. Agent credentials are
+        `POST /agents/device-codes/redeem`. Agent credentials are
         user-scoped: all requests are automatically bound to the agent's
         associated customer and subject to the agent's policy.
     WebhookSignature:
@@ -149,6 +274,8 @@ paths:
     $ref: paths/customers/customers.yaml
   /customers/{customerId}:
     $ref: paths/customers/customers_{customerId}.yaml
+  /customers/share:
+    $ref: paths/customers/customers_share.yaml
   /customers/agreements:
     $ref: paths/customers/customers_agreements.yaml
   /customers/end-user-terms:
@@ -231,6 +358,10 @@ paths:
     $ref: paths/receiver/uma/receiver_uma_{receiverUmaAddress}.yaml
   /receiver/external-account/{accountId}:
     $ref: paths/receiver/external-account/receiver_external-account_{accountId}.yaml
+  /payment-documents:
+    $ref: paths/payment-documents/payment_documents.yaml
+  /payment-documents/{paymentDocumentId}:
+    $ref: paths/payment-documents/payment_documents_{paymentDocumentId}.yaml
   /quotes/{quoteId}:
     $ref: paths/quotes/quotes_{quoteId}.yaml
   /quotes:
@@ -283,6 +414,10 @@ paths:
     $ref: paths/internal_accounts/internal_accounts_{id}.yaml
   /internal-accounts/{id}/export:
     $ref: paths/internal_accounts/internal_accounts_{id}_export.yaml
+  /internal-accounts/{id}/balance-changes:
+    $ref: paths/internal_accounts/internal_accounts_{id}_balance-changes.yaml
+  /internal-accounts/{id}/confirm-statement:
+    $ref: paths/internal_accounts/internal_accounts_{id}_confirm-statement.yaml
   /auth/credentials:
     $ref: paths/auth/auth_credentials.yaml
   /auth/credentials/{id}:
@@ -307,6 +442,16 @@ paths:
     $ref: paths/agents/agents_approvals.yaml
   /agents/me:
     $ref: paths/agents/agents_me.yaml
+  /agents/me/customer:
+    $ref: paths/agents/agents_me_customer.yaml
+  /agents/me/verifications:
+    $ref: paths/agents/agents_me_verifications.yaml
+  /agents/me/kyc-link:
+    $ref: paths/agents/agents_me_kyc-link.yaml
+  /agents/me/deposits:
+    $ref: paths/agents/agents_me_deposits.yaml
+  /agents/me/deposits/{depositId}:
+    $ref: paths/agents/agents_me_deposits_{depositId}.yaml
   /agents/{agentId}:
     $ref: paths/agents/agents_{agentId}.yaml
   /agents/{agentId}/policy:
@@ -317,10 +462,10 @@ paths:
     $ref: paths/agents/agents_{agentId}_actions_{actionId}_approve.yaml
   /agents/{agentId}/actions/{actionId}/reject:
     $ref: paths/agents/agents_{agentId}_actions_{actionId}_reject.yaml
-  /agents/device-codes/{code}/status:
-    $ref: paths/agents/agents_device-codes_{code}_status.yaml
-  /agents/device-codes/{code}/redeem:
-    $ref: paths/agents/agents_device-codes_{code}_redeem.yaml
+  /agents/device-codes/status:
+    $ref: paths/agents/agents_device-codes_status.yaml
+  /agents/device-codes/redeem:
+    $ref: paths/agents/agents_device-codes_redeem.yaml
   /agents/me/transactions:
     $ref: paths/agents/agents_me_transactions.yaml
   /agents/me/transactions/{transactionId}:
@@ -342,6 +487,10 @@ paths:
     $ref: paths/agents/agents_me_external-accounts.yaml
   /agents/me/external-accounts/{externalAccountId}:
     $ref: paths/agents/agents_me_external-accounts_{externalAccountId}.yaml
+  /agents/me/cards:
+    $ref: paths/agents/agents_me_cards.yaml
+  /agents/me/cards/{cardId}:
+    $ref: paths/agents/agents_me_cards_{cardId}.yaml
   /cards:
     $ref: paths/cards/cards.yaml
   /cards/{id}:
@@ -406,6 +555,10 @@ paths:
     $ref: paths/stablecoins/stablecoin-provider-accounts.yaml
   /stablecoin-provider-accounts/{stablecoinProviderAccountId}:
     $ref: paths/stablecoins/stablecoin-provider-accounts_{stablecoinProviderAccountId}.yaml
+  /care/chats/{chatId}/messages:
+    $ref: paths/care/care_chats_{chatId}_messages.yaml
+  /care/chats/{chatId}:
+    $ref: paths/care/care_chats_{chatId}.yaml
 webhooks:
   agent-action:
     $ref: webhooks/agent-action.yaml

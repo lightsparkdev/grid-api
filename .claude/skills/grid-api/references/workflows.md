@@ -295,7 +295,7 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
     "currency": "USD",
     "accountInfo": {
       "accountType": "USD_ACCOUNT",
-      "routingNumber": "123456789",
+      "routingNumber": "021000021",
       "accountNumber": "12345678901",
       "bankAccountType": "CHECKING",
       "beneficiary": {

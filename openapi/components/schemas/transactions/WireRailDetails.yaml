@@ -1,0 +1,25 @@
+title: Wire Transfer
+description: A domestic wire over Fedwire.
+allOf:
+  - $ref: ./BaseUsdBankRailDetails.yaml
+  - type: object
+    required:
+      - paymentRail
+      - status
+    properties:
+      bankAccount:
+        $ref: ./WireBankAccountDetails.yaml
+      paymentRail:
+        type: string
+        enum:
+          - WIRE
+      status:
+        $ref: ./WireRailStatus.yaml
+      imad:
+        type: string
+        description: Fedwire Input Message Accountability Data assigned when the wire was sent.
+        example: 20260929MMQFMP9C000123
+      originatorToBeneficiaryInformation:
+        type: string
+        description: Free-form originator-to-beneficiary information (OBI) sent with the wire.
+        example: 'INV-12345'

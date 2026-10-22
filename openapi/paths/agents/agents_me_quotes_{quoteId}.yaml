@@ -21,13 +21,19 @@ get:
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/quotes/Quote.yaml
+            $ref: ../../components/schemas/agents/AgentQuote.yaml
     '401':
       description: Unauthorized
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '404':
       description: Quote not found
       content:

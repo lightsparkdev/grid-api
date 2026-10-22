@@ -4,10 +4,6 @@ required:
   - rail
 properties:
   type:
-    type: string
-    enum:
-      - EXTERNAL_ACCOUNT
-      - GRID_INTERNAL_ACCOUNT
-    description: Burn destination variant.
+    $ref: ./StablecoinBurnDestinationType.yaml
   rail:
     $ref: ./StablecoinBurnDestinationRail.yaml

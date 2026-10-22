@@ -215,7 +215,6 @@ VERIFY1=$(g -X POST -H 'Content-Type: application/json' \
 VERIFY_PAYLOAD=$(echo "$VERIFY1" | jq -r .payloadToSign)
 VERIFY_REQ_ID=$(echo "$VERIFY1" | jq -r .requestId)
 
-# Sign the verification token with the TEK private key
 VERIFY_STAMP=$($SIGN stamp "$PRIV_HEX" "$VERIFY_PAYLOAD")
 
 # Signed retry — complete login
@@ -291,10 +290,14 @@ g -X POST -H 'Content-Type: application/json' \
    "$GRID_BASE_URL/quotes/$QUOTE_ID/execute" | jq '.status'
 ```
 
-> **Sandbox tip**: sandbox accepts the same decrypted session signing key and
-> `Grid-Wallet-Signature` stamp shape as production. The legacy fixed value
-> `Grid-Wallet-Signature: sandbox-valid-signature` is still accepted for
-> compatibility, but it does not exercise the production-shaped client path.
+> **Sandbox tip**: sandbox verifies the `Grid-Wallet-Signature` stamp exactly
+> as production does: a real API-key stamp over `payloadToSign`, signed with
+> the session signing key, as built above.
+>
+> **Deprecated:** the placeholder `Grid-Wallet-Signature: sandbox-valid-signature`.
+> Sandbox still accepts it in place of a real stamp for now, but it will be
+> removed. See
+> [Sign a `payloadToSign`](../mintlify/snippets/global-accounts/client-keys.mdx#2-sign-a-payloadtosign).
 
 ```bash
 # Poll — typically 60–180s for the full chain to reach COMPLETED.

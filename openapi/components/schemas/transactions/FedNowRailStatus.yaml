@@ -1,0 +1,14 @@
+type: string
+enum:
+  - PENDING
+  - SETTLED
+  - FAILED
+description: |-
+  Status of the payment on FedNow.
+
+  | Status | Description |
+  |--------|-------------|
+  | `PENDING` | Submitted and awaiting the receiving bank's response. |
+  | `SETTLED` | The receiving bank accepted the payment and the funds settled. |
+  | `FAILED` | The receiving bank or the network rejected the payment and no funds moved. |
+example: SETTLED

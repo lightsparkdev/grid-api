@@ -27,6 +27,7 @@ class EndToEndTest {
             setBody("""
                 {
                     "platformCustomerId": "test_${System.currentTimeMillis()}",
+                    "email": "test.${System.currentTimeMillis()}@lightspark.com",
                     "customerType": "INDIVIDUAL",
                     "fullName": "Test User",
                     "nationality": "US",
@@ -58,6 +59,7 @@ class EndToEndTest {
             setBody("""
                 {
                     "platformCustomerId": "test_mxn_${System.currentTimeMillis()}",
+                    "email": "test.mxn.${System.currentTimeMillis()}@lightspark.com",
                     "customerType": "INDIVIDUAL",
                     "fullName": "Carlos Test",
                     "nationality": "MX",
@@ -103,6 +105,7 @@ class EndToEndTest {
             setBody("""
                 {
                     "platformCustomerId": "test_inr_${System.currentTimeMillis()}",
+                    "email": "test.inr.${System.currentTimeMillis()}@lightspark.com",
                     "customerType": "INDIVIDUAL",
                     "fullName": "Priya Test",
                     "nationality": "IN",
@@ -176,6 +179,7 @@ class EndToEndTest {
             setBody("""
                 {
                     "platformCustomerId": "test_quote_${System.currentTimeMillis()}",
+                    "email": "test.quote.${System.currentTimeMillis()}@lightspark.com",
                     "customerType": "INDIVIDUAL",
                     "fullName": "Quote Test",
                     "nationality": "MX",
@@ -244,6 +248,7 @@ class EndToEndTest {
             setBody("""
                 {
                     "platformCustomerId": "test_e2e_${System.currentTimeMillis()}",
+                    "email": "test.e2e.${System.currentTimeMillis()}@lightspark.com",
                     "customerType": "INDIVIDUAL",
                     "fullName": "E2E Test User",
                     "nationality": "MX",

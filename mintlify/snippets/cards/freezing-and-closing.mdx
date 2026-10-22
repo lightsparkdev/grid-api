@@ -21,6 +21,17 @@ funding-source-only flow.
 Any other transition returns `409 INVALID_STATE_TRANSITION`. In
 particular, you cannot un-freeze a `CLOSED` card — close is terminal.
 
+`{ "status": "ACTIVE" }` also returns `409 INVALID_STATE_TRANSITION` when:
+
+- the customer is not `ACTIVE`;
+- Grid froze the card for review; or
+- the card was frozen with substatus `COMPROMISED`, including by you.
+
+Contact Grid support to have a card reviewed. A compromised card cannot be
+unfrozen: close it and issue a new one. Once a suspended customer is
+`ACTIVE` again, you can unfreeze cards that were frozen only because of the
+suspension.
+
 
 You can also combine a status change with a funding source replacement
 in one PATCH — just include both fields in the body.

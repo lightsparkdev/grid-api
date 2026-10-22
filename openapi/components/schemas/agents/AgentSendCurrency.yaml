@@ -1,0 +1,7 @@
+type: string
+enum:
+  - USDC
+  - USDT
+description: >-
+  Asset an agent can send to an address on another chain. `TRON` supports
+  `USDT` only, and `BASE` supports `USDC` only.

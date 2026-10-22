@@ -7,7 +7,4 @@ allOf:
       data:
         $ref: ../customers/BulkCustomerImportJob.yaml
       type:
-        type: string
-        enum:
-          - BULK_UPLOAD.COMPLETED
-          - BULK_UPLOAD.FAILED
+        $ref: ./BulkUploadWebhookEventType.yaml

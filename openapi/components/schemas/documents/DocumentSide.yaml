@@ -1,0 +1,6 @@
+type: string
+enum:
+  - FRONT
+  - BACK
+description: Which side of a two-sided document, such as a driver's license or national ID, an image shows.
+example: FRONT

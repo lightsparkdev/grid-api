@@ -18,6 +18,17 @@ post:
     `409` — set a PIN with `POST /cards/{id}/set-pin` instead.
 
 
+    Each card permits one unblock attempt per rolling seven days. Further attempts
+    return `409 PIN_CHANGE_REQUIRED` with `details.pinUnblockAvailableAt`.
+    Change the PIN through either PIN-entry flow to recover sooner; changing
+    the PIN does not reset the unblock allowance.
+
+
+    Only request an unblock after authenticating the cardholder and receiving
+    their explicit request. Do not automatically unblock after a declined
+    transaction.
+
+
     Grid supports online PINs only. Offline PIN cards
     are not supported. Read `GET /cards/{id}` to check `pinStatus`.
 
@@ -54,7 +65,9 @@ post:
     '409':
       description: >-
         Conflict. Returned with `CONFLICT` for a closed card, a card with no PIN to
-        unblock, or a card that does not support PIN management.
+        unblock, or a card that does not support PIN management. Returned with
+        `PIN_CHANGE_REQUIRED` when the card's seven-day unblock allowance is
+        consumed. Change the PIN or wait until `details.pinUnblockAvailableAt`.
       content:
         application/json:
           schema:

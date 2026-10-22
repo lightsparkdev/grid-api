@@ -1,0 +1,4 @@
+type: string
+enum:
+  - WALLET_OPERATION.COMPLETED
+  - WALLET_OPERATION.FAILED

@@ -9,8 +9,10 @@ properties:
       | Error Code | Description |
       |------------|-------------|
       | CUSTOMER_DELETED | Customer has been permanently deleted |
+      | PAYMENT_DOCUMENT_EXPIRED | The payment document passed its `expiresAt` without being attached to a quote. Upload the file again |
     enum:
       - CUSTOMER_DELETED
+      - PAYMENT_DOCUMENT_EXPIRED
   reason:
     type: string
     description: Error message

@@ -2,7 +2,7 @@ Exporting a wallet returns the wallet's mnemonic seed, encrypted to the client's
 
 Export uses the same <a href="authentication#the-signed-retry-pattern">signed-retry pattern</a> as credential and session revocation — the initial `POST` returns a `payloadToSign`, and the signed retry returns the encrypted seed.
 
-Generate a fresh P-256 client key pair specifically for the export. Send its `clientPublicKey` on both export requests, then decrypt `encryptedWalletCredentials` with the matching private key after the signed retry succeeds.
+Generate a fresh P-256 key agreement key pair specifically for the export (see <a href="client-keys#wallet-export-key-pair">Wallet export key pair</a>). Send its public key as `clientPublicKey` on both export requests, as an uncompressed key in lowercase hex (130 characters, `04` prefix), then decrypt `encryptedWalletCredentials` with the matching private key after the signed retry succeeds.
 
 ```mermaid
 sequenceDiagram
@@ -73,7 +73,7 @@ sequenceDiagram
     Export shares its terminal status code with the still-processing response: a `200` here is only the encrypted seed if the body isn't `{ "status": "PROCESSING" }`. See <a href="authentication#handling-a-still-processing-response">handling a still-processing response</a> — if you get `PROCESSING`, re-send the identical signed retry (same `clientPublicKey`, `Grid-Wallet-Signature`, and `Request-Id`) until you get the credentials. Because Grid never stores them, the re-send is the only way to receive them; subscribe to `wallet_operation.completed` to know when it will succeed. The `Request-Id` challenge is consumed only by the attempt that actually returns credentials, so a `PROCESSING` response leaves it usable.
   </Step>
   <Step title="Decrypt on the client">
-    `encryptedWalletCredentials` is a signed wallet export envelope, not the base58check session-bundle format used by `encryptedSessionSigningKey`. Parse the envelope, verify `dataSignature` against `enclaveQuorumPublic`, decode the hex `data` JSON to get `encappedPublic` and `ciphertext`, then decrypt with the export private key that matches the `clientPublicKey` you sent on both export requests.
+    `encryptedWalletCredentials` is a signed wallet export envelope. Parse the envelope, verify `dataSignature` against `enclaveQuorumPublic`, decode the hex `data` JSON to get `encappedPublic` and `ciphertext`, then decrypt with the export private key that matches the `clientPublicKey` you sent on both export requests.
 
     The plaintext is a BIP-39 mnemonic (the wallet's master seed).
   </Step>

@@ -1,0 +1,15 @@
+type: string
+enum:
+  - ADMINISTRATIVE
+  - UNAUTHORIZED
+description: |-
+  The Nacha return-rate category an ACH return counts toward.
+
+  | Category | Return codes | Description |
+  |----------|--------------|-------------|
+  | `ADMINISTRATIVE` | `R02`, `R03`, `R04` | The account is closed, can't be found, or its number is invalid. |
+  | `UNAUTHORIZED` | `R05`, `R07`, `R10`, `R11`, `R29`, `R51` | The account holder says they didn't authorize the debit. |
+
+  Nacha sets a separate return-rate threshold for each category. Other return codes,
+  such as `R01` (insufficient funds), belong to neither.
+example: UNAUTHORIZED

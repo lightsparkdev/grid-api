@@ -51,7 +51,7 @@ dependencies {
     implementation("io.ktor:ktor-server-config-yaml:3.1.3")
 
     // Grid Kotlin SDK
-    implementation("com.lightspark.grid:lightspark-grid-kotlin:1.7.1")
+    implementation("com.lightspark.grid:lightspark-grid-kotlin:2.0.0")
 
     // JSON
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.2")

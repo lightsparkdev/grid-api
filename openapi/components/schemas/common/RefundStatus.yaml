@@ -1,0 +1,7 @@
+type: string
+enum:
+  - PENDING
+  - COMPLETED
+  - FAILED
+description: Current status of the refund
+example: COMPLETED

@@ -1,0 +1,21 @@
+type: string
+minLength: 1
+maxLength: 10
+pattern: '^[ -~]+$'
+not:
+  pattern: '^ *(0*|[Mm][Ii][Ss][Cc]|[Rr][Ee][Vv][Ee][Rr][Ss][Aa][Ll]|[Rr][Ee][Tt][Uu][Rr][Nn] [Ff][Ee][Ee]|[Aa][Uu][Tt][Oo][Ee][Nn][Rr][Oo][Ll][Ll]|[Nn][Oo][Nn][Ss][Ee][Tt][Tt][Ll][Ee][Dd]|[Rr][Ee][Cc][Ll][Aa][Ii][Mm]) *$'
+description: >-
+  Short text that labels this payment on the counterparty's bank statement,
+  such as `PAYROLL` or `INVOICE`. Used only when the quote moves money over
+  ACH, for both an ACH credit to an external bank account and an ACH debit
+  pulling from one, where it is sent as the NACHA Company Entry Description.
+  Sending it on a quote that moves no ACH entry returns `400 INVALID_INPUT`.
+  Free-text payment details belong in `remittanceInformation`, which ACH
+  carries in the addenda record.
+
+  Printable ASCII, up to 10 characters. Grid uses its default when omitted.
+  Blank values, all zeros, `MISC`, and the values NACHA reserves for system
+  entries (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) are
+  rejected with `400 INVALID_INPUT`, in any letter case and ignoring
+  surrounding spaces.
+example: PAYROLL

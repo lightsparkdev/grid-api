@@ -74,3 +74,11 @@ curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
 
 To permanently retire a card, close it with `PATCH /cards/{id}` and
 `status: "CLOSED"`.
+
+## Funding authorization and readiness
+
+Replacing USD funding with a USDB Embedded Wallet without an active
+delegated key moves an active card to `PENDING_AUTH`. Complete all signed retries
+of `POST /auth/delegated-keys` to restore `ACTIVE`. A key for another card or
+funding source does not authorize this binding. Frozen and closed cards
+retain their status.

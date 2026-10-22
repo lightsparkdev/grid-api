@@ -1,0 +1,9 @@
+type: string
+enum:
+  - GRID
+  - EXTERNAL
+description: >-
+  Who originated the movement over the rail. An ACH OUT where Grid is the originator means Grid is
+  pushing out the funds, while an ACH OUT with an EXTERNAL originator indicates Grid received an
+  ACH pull request from an external source.
+example: GRID

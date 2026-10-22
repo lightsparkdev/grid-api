@@ -1,0 +1,26 @@
+type: object
+description: |
+  The error body returned by every endpoint under **Embedded Care**.
+
+  It carries `code` and `reason`, and nothing else. This differs from the
+  `Error4xx` / `Error5xx` schemas the rest of this specification uses, which
+  declare `status` and `message`: the care endpoints do not send those two
+  fields. Read the HTTP status from the response line and the human-readable
+  text from `reason`.
+
+  Branch on `code`, never on `reason`: the text is written for a human
+  reading a log and may be reworded at any time.
+required:
+  - code
+  - reason
+properties:
+  code:
+    $ref: ./CareErrorCode.yaml
+  reason:
+    type: string
+    description: >-
+      Human-readable explanation, for a log or a support ticket. Not for
+      branching, and not always safe to show a cardholder verbatim. The
+      exception is `CARE_MESSAGE_REJECTED`, whose `reason` is written to be
+      shown.
+    example: The care session token is not valid.

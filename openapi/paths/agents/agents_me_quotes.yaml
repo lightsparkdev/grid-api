@@ -5,6 +5,16 @@ post:
     agent's customer. Accounts referenced in the request must belong to the agent's
     customer. Requires the CREATE_QUOTES permission in the agent's policy.
 
+    The destination is another embedded wallet or one of the customer's Spark
+    addresses saved with `POST /agents/me/external-accounts` (`ACCOUNT`), or an
+    address on another chain (`CHAIN_ADDRESS`). Grid answers
+    `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held
+    for review, on any of the customer's records of it, under either prefix and
+    including removed ones. A `CHAIN_ADDRESS` quote sends `USDB`. Grid
+    pays the chain itself at a locked rate, so the amount the recipient
+    receives is fixed when the quote is created and equals the quote's
+    `minimumReceivingAmount`.
+
     If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount
     exceeds the agent's approvalThresholds, the resulting transaction will require
     explicit approval before funds move.
@@ -29,14 +39,14 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../../components/schemas/quotes/QuoteRequest.yaml
+          $ref: ../../components/schemas/agents/AgentQuoteRequest.yaml
   responses:
     '201':
       description: Transfer quote created successfully
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/quotes/Quote.yaml
+            $ref: ../../components/schemas/agents/AgentQuote.yaml
     '400':
       description: Bad request - Missing or invalid parameters
       content:
@@ -50,7 +60,10 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '403':
-      description: Forbidden - Agent policy does not permit this operation
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, the agent policy does
+        not permit this operation, or the agent may not pay the destination
+        (`DESTINATION_NOT_ALLOWED`)
       content:
         application/json:
           schema:
@@ -73,3 +86,23 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
+    '502':
+      description: Counterparty returned an error or an invalid response
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error502.yaml
+    '503':
+      description: >-
+        Service unavailable - Grid could not screen a `CHAIN_ADDRESS`
+        destination or price the conversion right now. Retry later.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error503.yaml
+    '504':
+      description: Counterparty could not be reached or timed out
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error504.yaml

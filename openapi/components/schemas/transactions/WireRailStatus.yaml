@@ -1,0 +1,14 @@
+type: string
+enum:
+  - PENDING
+  - SETTLED
+  - FAILED
+description: |-
+  Status of the wire on Fedwire.
+
+  | Status | Description |
+  |--------|-------------|
+  | `PENDING` | Submitted to Fedwire and not yet delivered. |
+  | `SETTLED` | Fedwire delivered the wire. |
+  | `FAILED` | Fedwire or the receiving bank rejected the wire and no funds moved. |
+example: SETTLED

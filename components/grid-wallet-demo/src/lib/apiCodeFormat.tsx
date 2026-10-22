@@ -354,7 +354,7 @@ export function stubResponseBody(entry: ApiCall): Record<string, unknown> {
       return {
         type,
         payloadToSign:
-          'eyJhbGciOiJFUzI1NiIsImtpZCI6InR1cm5rZXkifQ.eyJzdWIiOiJUWnk2NkVPa1RGYTd2NkpXZ0VxaVgyZGFXOENXc2pMQzVDVU9aRUlGY3hzIiwiaWF0IjoxNzc5NDA3MjIxLCJleHAiOjE3Nzk0MTA4MjF9.gKX9MWYGkw8Y55bgzsgrRftvUHFruIe8yu0w9Kpjp5qnrZnXcTV71WVoltGPsr015IY_oRTOkIFLHmiGNG9zBw',
+          '{"login":{"publicKey":"02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"},"tokenId":"7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21","type":"USAGE_TYPE_LOGIN"}',
         requestId: 'Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21',
         expiresAt: '2026-06-05T12:05:00Z',
       };

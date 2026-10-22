@@ -1,0 +1,23 @@
+title: RTP Transfer
+description: An instant payment over The Clearing House RTP network.
+allOf:
+  - $ref: ./BaseUsdBankRailDetails.yaml
+  - type: object
+    required:
+      - paymentRail
+      - status
+    properties:
+      paymentRail:
+        type: string
+        enum:
+          - RTP
+      status:
+        $ref: ./RtpRailStatus.yaml
+      endToEndId:
+        type: string
+        description: The originator's end-to-end reference for the payment.
+        example: E2E-9f2c6b6f
+      remittanceInformation:
+        type: string
+        description: Unstructured remittance information sent with the payment.
+        example: 'INV-12345'

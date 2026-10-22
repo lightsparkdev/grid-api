@@ -1,8 +1,9 @@
 post:
-  summary: External account status webhook
+  summary: External account webhook
   description: >
-    Webhook that is called whenever the status of an external account changes,
-    for any transition between statuses (`PENDING`, `ACTIVE`, `UNDER_REVIEW`,
+    Webhook that is called whenever the status or the account details of an
+    external account change. Status changes cover any transition between
+    statuses (`PENDING`, `ACTIVE`, `UNDER_REVIEW`,
     `INACTIVE`, `PENDING_OWNERSHIP_VERIFICATION`, `UNVERIFIED`) — for example
     when an account under review becomes active, when ownership verification
     completes (`PENDING_OWNERSHIP_VERIFICATION` → `ACTIVE`), or when a
@@ -37,6 +38,20 @@ post:
     - `EXTERNAL_ACCOUNT.STATUS_UPDATED` — Fired when the status of an external
     account changes. The `data` payload contains the full external account
     object.
+
+    - `EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED` — Fired when Grid corrects an
+    external account's `accountInfo`. Today this happens when the receiving
+    bank sends an ACH notification of change (NOC) with corrected details, such
+    as a new routing number, account number or bank account type. The account
+    keeps its `id`, and later payments to it use the corrected details. The
+    `data` payload contains the full external account object with the corrected
+    `accountInfo`.
+
+    Deliveries can arrive out of order, and the external account has no version
+    field, so an older `STATUS_UPDATED` payload can carry the pre-correction
+    details. Before you replace a stored copy of the account details, fetch the
+    current account with `GET /customers/external-accounts/{externalAccountId}`
+    (or the platform equivalent) and store that response.
 
 
   operationId: externalAccountStatusWebhook
@@ -81,6 +96,30 @@ post:
                 accountInfo:
                   accountType: ARBITRUM_WALLET
                   address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+          accountInfoCorrected:
+            summary: The receiving bank corrected a US account's routing number
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000045
+              type: EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: ExternalAccount:a75dcbd6-dced-4ec4-b756-3c3a9ea3d967
+                customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+                status: ACTIVE
+                currency: USD
+                ownershipType: FIRST_PARTY
+                accountInfo:
+                  accountType: USD_ACCOUNT
+                  accountNumber: '12345678901'
+                  routingNumber: '061000227'
+                  bankAccountType: CHECKING
+                  bankName: Chase Bank
+                  paymentRails:
+                    - ACH
+                    - WIRE
+                  beneficiary:
+                    beneficiaryType: INDIVIDUAL
+                    fullName: John Doe
           verificationFailed:
             summary: A liveness check failed; a new challenge is needed to retry
             value:

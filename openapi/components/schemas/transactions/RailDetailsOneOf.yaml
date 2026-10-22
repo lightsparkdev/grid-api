@@ -1,0 +1,19 @@
+description: >-
+  The rail transfer that moved funds for this side of the transaction. `paymentRail`
+  determines the shape: each rail carries its own identifiers. Absent until a rail
+  transfer exists for this side, and on sides whose funds move within Grid.
+oneOf:
+  - $ref: ./OnChainRailDetails.yaml
+  - $ref: ./AchRailDetails.yaml
+  - $ref: ./WireRailDetails.yaml
+  - $ref: ./FedNowRailDetails.yaml
+  - $ref: ./RtpRailDetails.yaml
+discriminator:
+  propertyName: paymentRail
+  mapping:
+    ONCHAIN: ./OnChainRailDetails.yaml
+    ACH: ./AchRailDetails.yaml
+    ACH_SAME_DAY: ./AchRailDetails.yaml
+    WIRE: ./WireRailDetails.yaml
+    FEDNOW: ./FedNowRailDetails.yaml
+    RTP: ./RtpRailDetails.yaml

@@ -1,0 +1,4 @@
+type: string
+enum:
+  - ACH
+  - ACH_SAME_DAY

@@ -1,0 +1,9 @@
+type: string
+enum:
+  - WON
+  - PARTIALLY_WON
+  - LOST
+  - WITHDRAWN
+  - DENIED
+description: The outcome the dispute closes with.
+example: WON

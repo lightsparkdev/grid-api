@@ -14,6 +14,7 @@ properties:
       | LNURLP_REQUEST_FAILED | LNURLP request failed |
       | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
       | SMS_OTP_CREDENTIAL_SYNC_FAILED | One or more tied SMS_OTP credentials could not be updated |
+      | PAYMENT_DOCUMENT_ATTACHMENT_FAILED | Grid could not attach a supporting document to the payment, so it created no quote. Retry the same request with the same `Idempotency-Key` |
     enum:
       - PAYREQ_REQUEST_FAILED
       - COUNTERPARTY_PUBKEY_FETCH_ERROR
@@ -21,6 +22,7 @@ properties:
       - LNURLP_REQUEST_FAILED
       - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
       - SMS_OTP_CREDENTIAL_SYNC_FAILED
+      - PAYMENT_DOCUMENT_ATTACHMENT_FAILED
   reason:
     type: string
     description: Error message

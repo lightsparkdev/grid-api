@@ -1,47 +1,25 @@
 type: object
 description: >-
   Update request for `PATCH /cards/{id}`. At least one of `status`,
-  `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`,
-  `maxTransactionsPerDay`, or `threeDSecurePassword` must be supplied. Supplying `status` also requires
+  `fundingSource`, `maxNetworkRiskScore`, `maxSpendPerTransaction`, `maxSpendPerDay`,
+  `maxTransactionsPerDay`, `allowedMccs`, `blockedMccs`,
+  `defaultMccBlocksLifted`, or `threeDSecurePassword` must be supplied;
+  `allowedMccs`, `blockedMccs` and `defaultMccBlocksLifted` count only for a
+  card issued for an agent, and are ignored on any other card. Supplying `status` also requires
   `substatus` and `reason`, so every card state change carries why it
   happened. `status`
-  transitions are limited to `ACTIVE ⇄ FROZEN` and
-  `ACTIVE | FROZEN → CLOSED`; any other transition returns
-  `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and
-  cannot be combined with `fundingSource`, `maxSpendPerTransaction`,
+  transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and
+  `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Explicit activation requires completed
+  delegated signing authorization; otherwise it returns
+  `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile
+  `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested.
+  `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxNetworkRiskScore`, `maxSpendPerTransaction`,
   `maxSpendPerDay`, or `maxTransactionsPerDay`.
 properties:
   status:
-    type: string
-    enum:
-      - ACTIVE
-      - FROZEN
-      - CLOSED
-    description: >-
-      Target status for the card. Permitted transitions are
-      `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is
-      terminal and irreversible; once closed, the card stays in the
-      system for audit and reconciliation but cannot transact again.
-    example: FROZEN
+    $ref: ./CardUpdateStatus.yaml
   substatus:
-    type: string
-    enum:
-      - LOST
-      - COMPROMISED
-      - DAMAGED
-      - END_USER_REQUEST
-      - ISSUER_REQUEST
-      - NOT_ACTIVE
-      - SUSPICIOUS_ACTIVITY
-      - INTERNAL_REVIEW
-      - EXPIRED
-      - UNDELIVERABLE
-      - OTHER
-    description: >-
-      Why the card is moving, in the card issuer's vocabulary. Required
-      whenever `status` is supplied, and forwarded to the issuer. Pick
-      `OTHER` when none of the named values fit and say why in `reason`.
-    example: SUSPICIOUS_ACTIVITY
+    $ref: ./CardUpdateSubstatus.yaml
   reason:
     type: string
     minLength: 1
@@ -59,6 +37,21 @@ properties:
       card's currency or spending-limit units. Cannot be supplied alongside
       `status: CLOSED`. To stop a card from spending, set `status: FROZEN` instead.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  maxNetworkRiskScore:
+    anyOf:
+      - type: integer
+        minimum: 0
+        maximum: 999
+      - type: 'null'
+    description: >-
+      Maximum normalized network risk score allowed for real-time card
+      authorizations. Scores range from 0 (lowest risk) to 999 (highest risk).
+      Visa scores are normalized by multiplying the raw 0–99 score by 10.
+      Scores equal to the ceiling are allowed. Authorizations without a
+      score are also allowed. The lowest configured card or platform ceiling
+      applies.
+      Omit to preserve the current setting or send null to clear this scope.
+    example: 700
   maxSpendPerTransaction:
     anyOf:
       - type: integer
@@ -121,3 +114,41 @@ properties:
       and only when the card's `cardCapabilities.supports3dSecurePassword` is
       true.
     example: AbCd1234EfGh5678
+  allowedMccs:
+    anyOf:
+      - type: array
+        minItems: 1
+        items:
+          type: string
+          pattern: ^[0-9]{4}$
+      - type: 'null'
+    description: >-
+      Replacement list of merchant category codes the card may spend at.
+      Applies only to a card issued for an agent, and is ignored otherwise.
+      Supply null to allow every category not blocked, or omit to leave it
+      unchanged. Cannot be supplied alongside `status: CLOSED`.
+    example:
+      - '5411'
+  blockedMccs:
+    anyOf:
+      - type: array
+        items:
+          type: string
+          pattern: ^[0-9]{4}$
+      - type: 'null'
+    description: >-
+      Replacement list of merchant category codes the card declines. Applies
+      only to a card issued for an agent, and is ignored otherwise. Supply
+      null to clear it, or omit to leave it unchanged. Grid's default agent
+      blocks still apply on top of this list; lift them with
+      `defaultMccBlocksLifted`. Cannot be supplied alongside
+      `status: CLOSED`.
+    example:
+      - '7995'
+  defaultMccBlocksLifted:
+    type: boolean
+    description: >-
+      On a card issued for an agent, `true` lifts Grid's default agent
+      merchant-category blocks and `false` restores them. Ignored on a card
+      with no agent. Cannot be supplied alongside `status: CLOSED`.
+    example: true
