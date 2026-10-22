@@ -28406,7 +28406,7 @@ components:
       type: object
       required:
         - data
-      description: The disputes on one card transaction, newest first. A transaction carries few disputes, so the list is not paginated; at most 50 are returned.
+      description: Every dispute on one card transaction, newest first. A transaction carries few disputes, so the list is not paginated.
       properties:
         data:
           type: array
