@@ -6,13 +6,7 @@ required:
   - status
   - createdAt
   - updatedAt
-description: >-
-  A cardholder's dispute of a settled card transaction.
-
-
-  `provisionalCreditAmount` is credits granted minus credits reversed. It can
-  change before the cardholder's balance does, because the money settles
-  asynchronously.
+description: A cardholder's dispute of a settled card transaction.
 properties:
   id:
     type: string
@@ -34,8 +28,15 @@ properties:
     description: How the dispute ended. Absent while it is open.
   disputedAmount:
     $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      The amount under dispute, as filed. Absent until the card issuer
+      allocates one.
   provisionalCreditAmount:
     $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      Credits granted minus credits reversed. Absent until the first credit
+      event. The money settles asynchronously, so this amount can change
+      before the cardholder's balance does.
   openedAt:
     type: string
     format: date-time

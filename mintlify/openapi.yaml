@@ -5644,7 +5644,7 @@ paths:
         - BasicAuth: []
       responses:
         '200':
-          description: The transaction's disputes, newest first.
+          description: The transaction's disputes.
           content:
             application/json:
               schema:
@@ -28345,10 +28345,7 @@ components:
         - status
         - createdAt
         - updatedAt
-      description: |-
-        A cardholder's dispute of a settled card transaction.
-
-        `provisionalCreditAmount` is credits granted minus credits reversed. It can change before the cardholder's balance does, because the money settles asynchronously.
+      description: A cardholder's dispute of a settled card transaction.
       properties:
         id:
           type: string
@@ -28370,8 +28367,10 @@ components:
           description: How the dispute ended. Absent while it is open.
         disputedAmount:
           $ref: '#/components/schemas/CurrencyAmount'
+          description: The amount under dispute, as filed. Absent until the card issuer allocates one.
         provisionalCreditAmount:
           $ref: '#/components/schemas/CurrencyAmount'
+          description: Credits granted minus credits reversed. Absent until the first credit event. The money settles asynchronously, so this amount can change before the cardholder's balance does.
         openedAt:
           type: string
           format: date-time
@@ -28396,11 +28395,11 @@ components:
       type: object
       required:
         - data
-      description: Every dispute on one card transaction, newest first. A transaction carries few disputes, so the list is not paginated.
+      description: The disputes on one card transaction. The list is not paginated.
       properties:
         data:
           type: array
-          description: The transaction's disputes, newest first.
+          description: The transaction's disputes.
           items:
             $ref: '#/components/schemas/CardDispute'
     EstimateCryptoWithdrawalFeeRequest:

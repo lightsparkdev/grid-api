@@ -18,7 +18,7 @@ get:
     - BasicAuth: []
   responses:
     '200':
-      description: The transaction's disputes, newest first.
+      description: The transaction's disputes.
       content:
         application/json:
           schema:
