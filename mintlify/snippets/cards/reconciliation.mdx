@@ -57,6 +57,72 @@ tip). The auth comes in at $12.50, but the merchant clears for $15.00.
 The post-settlement parent carries `authorizedAmount: 1250` and
 `settledAmount: 1500`.
 
+## Fees
+
+A card transaction lists the fees charged on it in `fees`. Each entry has a
+`type` and an `amount`. The array is empty when the transaction carries no
+fees.
+
+The only fee type today is `FOREIGN_TRANSACTION`. It applies when the
+merchant's country (`merchant.country`) differs from the country the card was
+issued in. The default rate is 0.5% of the cleared amount, and the rate is set
+per platform.
+
+At authorization, Grid reserves the fee against the funding source alongside
+the purchase amount. The reservation is internal to Grid. `authorizedAmount`
+is the network's authorization amount and never includes the fee, and an
+`AUTHORIZED` row has an empty `fees` array. If the authorization is reversed or
+expires, the reservation is released with it. Once the transaction clears and
+`settledAmount` is present, the fee entry appears, computed on the cleared
+amount. The fee is recorded shortly after the clearing posts, so the
+`CARD_TRANSACTION.SETTLED` delivery for a purchase or a return can carry an
+empty `fees` array. Read the transaction to get its fees.
+
+For example, a card issued in the US clears for $100.00 at a merchant in
+France. After clearing, the purchase carries a $0.50 fee (other fields
+omitted):
+
+```json
+{
+  "status": "SETTLED",
+  "direction": "DEBIT",
+  "merchant": {
+    "descriptor": "CAFE DE FLORE PARIS",
+    "mcc": "5814",
+    "country": "FR"
+  },
+  "settledAmount": {
+    "amount": 10000,
+    "currency": {
+      "code": "USD",
+      "name": "United States Dollar",
+      "symbol": "$",
+      "decimals": 2
+    }
+  },
+  "fees": [
+    {
+      "type": "FOREIGN_TRANSACTION",
+      "amount": {
+        "amount": 50,
+        "currency": {
+          "code": "USD",
+          "name": "United States Dollar",
+          "symbol": "$",
+          "decimals": 2
+        }
+      }
+    }
+  ]
+}
+```
+
+A merchant return refunds the fee on the returned amount. The return's
+`CREDIT` row lists a fee equal to the fee rate applied to that credit's amount,
+and that `amount` is what goes back to the cardholder. A full return of the
+purchase above refunds the full $0.50, and a $40.00 partial return refunds
+$0.20.
+
 ## The EXCEPTION path
 
 An exception happens when the card network has already moved funds for

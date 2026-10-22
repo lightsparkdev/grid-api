@@ -1,0 +1,9 @@
+type: string
+enum:
+  - FOREIGN_TRANSACTION
+description: |
+  The kind of fee Grid charged on a card transaction.
+
+  - `FOREIGN_TRANSACTION` — a fee charged when the merchant's country differs
+    from the country the card was issued in
+example: FOREIGN_TRANSACTION
