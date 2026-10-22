@@ -505,6 +505,8 @@ paths:
     $ref: paths/cards/cards_{id}_pin_entry_url.yaml
   /cards/{id}/pin/unblock:
     $ref: paths/cards/cards_{id}_pin_unblock.yaml
+  /platform/card-authorization-endpoint:
+    $ref: paths/platform/platform_card_authorization_endpoint.yaml
   /sandbox/cards/{id}/simulate/authorization:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_authorization.yaml
   /sandbox/cards/{id}/simulate/clearing:
@@ -586,6 +588,8 @@ webhooks:
     $ref: webhooks/card-pin-status-change.yaml
   card-transaction:
     $ref: webhooks/card-transaction.yaml
+  card-authorization-request:
+    $ref: webhooks/card-authorization-request.yaml
   wallet-operation:
     $ref: webhooks/wallet-operation.yaml
 security:
