@@ -1,8 +1,8 @@
 title: Agent Customer Update Request
 description: >-
   Request body for `PATCH /agents/me/customer`: the identity fields an agent
-  may update on its customer. Any other field, including `email`,
-  `phoneNumber` and `currencies`, returns 400.
+  may update on its customer. Any other field, including `email` and
+  `currencies`, returns 400.
 allOf:
   - type: object
     properties:
@@ -41,4 +41,13 @@ allOf:
           for an individual account holder: SSN and ITIN are US-issued, so this
           defaults to `US` and is rejected if set to anything else.
         example: US
+      phoneNumber:
+        type: string
+        pattern: '^\+[1-9]\d{1,14}$'
+        description: >-
+          The customer's phone number in strict E.164 format. Like the other
+          fields, accepted only while the customer's identity can still be
+          edited, and only when no phone number is on file; repeating the number
+          on file changes nothing, and changing it returns 400.
+        example: '+14155551234'
   - $ref: ../customers/CustomerEdd.yaml
