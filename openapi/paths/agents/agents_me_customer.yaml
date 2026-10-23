@@ -43,9 +43,11 @@ patch:
     policy. The customer is inferred from the agent and cannot be selected by
     the request. Agents may update only identity fields: `fullName`,
     `birthDate`, `nationality`, `address`, `idType`, `identifier`,
-    `countryOfIssuance` and the enhanced-due-diligence fields. Any other field,
-    including `email` and `phoneNumber` (sign-in credentials the customer
-    changes through `PATCH /customers/{customerId}`), returns 400.
+    `countryOfIssuance` and the enhanced-due-diligence fields, plus a
+    `phoneNumber` when the customer has none on file. Any other field,
+    including `email` and a change to a phone number on file (sign-in
+    credentials the customer changes through `PATCH /customers/{customerId}`),
+    returns 400.
   operationId: agentUpdateCustomer
   tags:
     - Agent Operations

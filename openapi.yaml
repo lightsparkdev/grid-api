@@ -8286,7 +8286,7 @@ paths:
                 $ref: '#/components/schemas/Error500'
     patch:
       summary: Update agent customer
-      description: 'Update identity information for the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent''s policy. The customer is inferred from the agent and cannot be selected by the request. Agents may update only identity fields: `fullName`, `birthDate`, `nationality`, `address`, `idType`, `identifier`, `countryOfIssuance` and the enhanced-due-diligence fields. Any other field, including `email` and `phoneNumber` (sign-in credentials the customer changes through `PATCH /customers/{customerId}`), returns 400.'
+      description: 'Update identity information for the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent''s policy. The customer is inferred from the agent and cannot be selected by the request. Agents may update only identity fields: `fullName`, `birthDate`, `nationality`, `address`, `idType`, `identifier`, `countryOfIssuance` and the enhanced-due-diligence fields, plus a `phoneNumber` when the customer has none on file. Any other field, including `email` and a change to a phone number on file (sign-in credentials the customer changes through `PATCH /customers/{customerId}`), returns 400.'
       operationId: agentUpdateCustomer
       tags:
         - Agent Operations
@@ -30065,7 +30065,7 @@ components:
           description: Total number of actions matching the criteria (excluding pagination).
     AgentCustomerUpdateRequest:
       title: Agent Customer Update Request
-      description: 'Request body for `PATCH /agents/me/customer`: the identity fields an agent may update on its customer. Any other field, including `email`, `phoneNumber` and `currencies`, returns 400.'
+      description: 'Request body for `PATCH /agents/me/customer`: the identity fields an agent may update on its customer. Any other field, including `email` and `currencies`, returns 400.'
       allOf:
         - type: object
           properties:
@@ -30097,6 +30097,11 @@ components:
               type: string
               description: 'Country that issued the identification (ISO 3166-1 alpha-2). Optional for an individual account holder: SSN and ITIN are US-issued, so this defaults to `US` and is rejected if set to anything else.'
               example: US
+            phoneNumber:
+              type: string
+              pattern: ^\+[1-9]\d{1,14}$
+              description: The customer's phone number in strict E.164 format. Accepted only when the customer has no phone number on file, or repeats the one on file; changing a phone number on file returns 400. Unlike the other fields, it can be added after the customer's KYC is approved, when it is the only field sent.
+              example: '+14155551234'
         - $ref: '#/components/schemas/CustomerEdd'
     AgentDepositNetwork:
       type: string
