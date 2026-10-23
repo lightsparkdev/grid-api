@@ -16,7 +16,7 @@ description: |
   | Reason | Returned when |
   |--------|---------------|
   | `CARD_NOT_ACTIVE` | The card is not `ACTIVE`. A `FROZEN`, `PROCESSING`, `PENDING_KYC`, or `CLOSED` card declines every authorization. |
-  | `SPEND_LIMIT_EXCEEDED` | The authorization exceeds `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, or the matching platform cap. |
+  | `SPEND_LIMIT_EXCEEDED` | The authorization exceeds a configured card velocity limit or an applicable agent spending-policy cap. |
   | `INSUFFICIENT_FUNDS` | The funding source balance does not cover the authorization. Grid reserves the amount when it decides the authorization, so an underfunded card is declined. |
   | `NO_ELIGIBLE_FUNDING_SOURCE` | The card has no usable funding source, for example an Embedded Wallet source with no active delegated key. |
   | `BLOCKED` | Program rules block the merchant category or the transaction. |

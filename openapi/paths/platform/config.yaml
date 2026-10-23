@@ -28,13 +28,9 @@ get:
 patch:
   summary: Update platform configuration
   description: >-
-    Update platform configuration settings. `cardConfigs` can establish
-    platform-level caps on a single card transaction, on spend during one UTC
-    calendar day, and on the number of transactions during one UTC calendar
-    day. Grid
-    enforces the lower of each platform cap and its corresponding card-specific
-    value without replacing the card-specific value. Daily limits reset at
-    00:00 UTC.
+    Update platform configuration settings. Configure platform-wide card
+    velocity limits through `POST /card-velocity-limits` without cardId.
+    cardConfigs contains card presentation, authentication, and risk settings.
 
 
     Set `cardConfigs.pinTargetOrigin` to the canonical HTTPS origin of your
@@ -88,9 +84,6 @@ patch:
               bodyText: Use this code to finish adding your Acme card to your digital wallet.
           cardConfigs:
             pinTargetOrigin: https://app.example.com
-            maxSpendPerTransaction: 10000
-            maxSpendPerDay: 50000
-            maxTransactionsPerDay: 50
   responses:
     '200':
       description: Configuration updated successfully

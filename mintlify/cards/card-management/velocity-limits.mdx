@@ -1,0 +1,163 @@
+---
+title: "Velocity Limits"
+description: "Manage card and platform amount and transaction-count limits"
+icon: "/images/icons/credit-card1.svg"
+---
+
+Use `/card-velocity-limits` to manage card authorization amount and count
+caps. Card issuance, card updates, and platform configuration do not configure
+velocity limits.
+
+## Before you start
+
+Set `GRID_BASE_URL` to your versioned Grid API base URL and authenticate with
+your platform's `GRID_CLIENT_ID` and `GRID_CLIENT_SECRET`. Writes require
+`UMA_MANAGE`; reads require `UMA_VIEW`.
+
+Check `cardCapabilities.supportsVelocityLimits` on the card or funding account.
+These limits apply where Grid makes authorization decisions. Cards where the
+issuer makes the decision do not support this API. Issuer-enforced caps remain
+independent constraints.
+
+## Choose a scope
+
+Omit `cardId`, or send `null`, to create a platform default. It applies
+separately to every eligible card, including cards issued later; usage is never
+pooled across cards. Configure platform defaults before issuing cards.
+
+Supply `cardId` to configure one card. Only your platform's cards and rules are
+accessible. Lightspark-managed rules are not returned by this API.
+
+For each metric and window, the first configured scope applies: card, then
+platform, then program.
+Amount and count inherit separately; different rolling durations are distinct
+windows. An unset cap inherits, while zero is configured and blocks.
+
+## Create an amount or count limit
+
+Each rule selects one metric and one window, with `maxAmount`, `maxCount`, or
+both. At least one cap is required. Omit a cap, or send `null`, to leave it
+unset on that rule. Zero is a configured cap that blocks applicable new
+authorizations, including zero-amount checks.
+
+Amounts use the smallest unit of each card's currency, without currency
+conversion. USD- and USDB-funded USD cards both use USD cents: `50000` means
+$500. Do not supply a `currency` field.
+
+| Control | Metric | Window | Cap |
+|---------|--------|--------|-----|
+| Per-authorization amount | `APPROVED` | `AUTHORIZATION` | `maxAmount` |
+| Daily amount | `APPROVED` | `DAY` | `maxAmount` |
+| Daily approved count | `APPROVED` | `DAY` | `maxCount` |
+| Attempts in a trailing interval | `ATTEMPTS` | `ROLLING` | `maxCount` |
+
+`APPROVED` counts distinct approved authorizations, including zero-amount
+approvals. Amount usage is holds less releases: reversals and expiries restore
+amount capacity, while clearing against a hold does not. Releases do not remove
+an approved authorization from the count. `ATTEMPTS` counts real-time requests,
+including declined requests, and supports count caps only.
+
+Calendar windows are UTC: `DAY` begins at midnight, `WEEK` on Monday, `MONTH`
+on the first, `QUARTER` in January/April/July/October, and `YEAR` on January 1.
+`ROLLING` requires `windowSeconds` between 1 and 2678400 (31 days).
+`AUTHORIZATION` accepts an amount cap only.
+
+### Platform daily default
+
+```bash
+curl -X POST "$GRID_BASE_URL/card-velocity-limits" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Daily card budget",
+    "metric": "APPROVED",
+    "window": "DAY",
+    "maxAmount": 50000,
+    "maxCount": 20
+  }'
+```
+
+The response is `201 Created`:
+
+```json
+{
+  "id": "CardVelocityRule:019542f5-b3e7-1d02-0000-000000000004",
+  "name": "Daily card budget",
+  "metric": "APPROVED",
+  "window": "DAY",
+  "maxAmount": 50000,
+  "maxCount": 20
+}
+```
+
+### Card-specific authorization cap
+
+```bash
+curl -X POST "$GRID_BASE_URL/card-velocity-limits" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cardId": "Card:019542f5-b3e7-1d02-0000-000000000010",
+    "name": "Single authorization budget",
+    "metric": "APPROVED",
+    "window": "AUTHORIZATION",
+    "maxAmount": 10000
+  }'
+```
+
+An authorization exactly equal to the cap is allowed. Later settlement of a
+previously authorized transaction can still complete above it, such as a
+restaurant tip. Authorization amount caps also apply to asynchronous
+authorizations; attempt counts apply to real-time requests only.
+
+## List and retrieve limits
+
+`GET /card-velocity-limits` lists platform defaults. Add `cardId` to list only
+rules configured directly on that card. A card list does not include inherited
+platform or Lightspark limits. Use `limit` and `cursor` for pagination.
+
+```bash
+curl "$GRID_BASE_URL/card-velocity-limits?cardId=Card:019542f5-b3e7-1d02-0000-000000000010&limit=50" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+```bash
+curl "$GRID_BASE_URL/card-velocity-limits/CardVelocityRule:019542f5-b3e7-1d02-0000-000000000004" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+## Replace or remove a limit
+
+Creating a rule with the same target, metric, window, and rolling duration
+returns `409 CONFLICT`, even if its name or caps differ. The existing rule stays
+unchanged. Different windows, durations, metrics, and card/platform scopes may
+coexist. Each target can hold at most 50 rules.
+
+```json
+{
+  "code": "CONFLICT",
+  "reason": "Rule CardVelocityRule:019542f5-b3e7-1d02-0000-000000000004 already exists for this card/platform, metric, window, and rolling duration. Delete it before creating a replacement."
+}
+```
+
+Delete the existing rule, then create its replacement:
+
+```bash
+curl -X DELETE "$GRID_BASE_URL/card-velocity-limits/CardVelocityRule:019542f5-b3e7-1d02-0000-000000000004" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+Deletion returns `204 No Content`. Delete and create are separate operations:
+other applicable limits govern authorizations between requests, and failed
+creation does not restore the deleted rule. No update endpoint is available.
+Deleting a rule does not change decisions already recorded for earlier
+authorization requests.
+
+## Other card controls
+
+Card freezing, merchant-category restrictions, risk-score ceilings, and
+agent-wide spending policies remain separate controls. Agent policy budgets
+cover sends and purchases across an agent's cards; these velocity rules track
+each card separately. The platform manages velocity limits with platform
+credentials. Agents can freeze their cards or tighten merchant categories
+through `PATCH /agents/me/cards/{cardId}`.

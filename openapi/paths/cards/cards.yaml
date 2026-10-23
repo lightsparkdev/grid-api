@@ -11,15 +11,10 @@ post:
     `Idempotency-Key` header is required. Retries must carry the same key.
 
 
-    Optional `maxSpendPerTransaction`, `maxSpendPerDay`, and
-    `maxTransactionsPerDay` values set the card-specific caps on one
-    transaction, on spend during one UTC calendar day, and on the number of
-    transactions during one UTC calendar day. Check the funding-source internal
-    account's `cardCapabilities.supportsSpendLimitsAtIssuance` before supplying
-    either spend limit, and `cardCapabilities.supportsTransactionCountLimit`
-    before supplying the transaction count limit. If the platform config sets
-    the corresponding `cardConfigs` value, Grid enforces the lower of the card
-    and platform caps. Amounts use the smallest unit of the card's currency.
+    Configure card velocity limits through `POST /card-velocity-limits`.
+    Omit cardId to set platform defaults before issuance, or supply the returned
+    card id to set card-specific limits after issuance. Limits use the smallest
+    unit of the card's currency, including USD cents for USDB-funded USD cards.
 
 
     If the funding source is an Embedded Wallet internal account, the
@@ -79,9 +74,6 @@ post:
               platformCardId: card-emp-001
               form: VIRTUAL
               fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-              maxSpendPerTransaction: 5000
-              maxSpendPerDay: 25000
-              maxTransactionsPerDay: 20
   responses:
     '201':
       description: >-

@@ -50,9 +50,6 @@ post:
                 expMonth: 12
                 expYear: 2029
                 fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                maxSpendPerTransaction: null
-                maxSpendPerDay: null
-                maxTransactionsPerDay: null
                 currency: USD
                 createdAt: '2026-05-08T14:10:00Z'
                 updatedAt: '2026-05-09T10:00:00Z'

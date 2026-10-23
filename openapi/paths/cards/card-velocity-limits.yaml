@@ -1,0 +1,176 @@
+get:
+  summary: List card velocity limits
+  operationId: listCardVelocityRules
+  description: >-
+    List the rules your platform manages. Without cardId, lists platform-wide
+    rules; with cardId, lists only rules configured directly on that card.
+    Lightspark-managed controls are enforced independently and are not exposed
+    by this endpoint. Rules apply to cards whose authorization decisions are
+    made by Grid; provider-decided cards are unaffected.
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: cardId
+      in: query
+      description: List rules configured directly on this card instead of platform-wide rules.
+      schema:
+        type: string
+    - name: limit
+      in: query
+      description: Maximum number of rules to return.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+    - name: cursor
+      in: query
+      description: Pagination cursor from the preceding response.
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Rules ordered from newest to oldest.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardVelocityRuleListResponse.yaml
+    '400':
+      description: Invalid rule or query parameters.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Insufficient permission.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card or rule not found.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: Cards are not enabled in this environment.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml
+post:
+  summary: Create a card velocity limit
+  operationId: createCardVelocityRule
+  description: >-
+    Create a rule for one card or for every eligible card on your platform.
+    A rule with the same cardId, metric, window, and windowSeconds returns
+    409 CONFLICT, even if its name or caps differ. The error identifies the
+    existing rule. Delete that rule before creating its replacement; these
+    requests are separate operations, so other applicable limits govern
+    authorizations between them. Different windows, rolling durations, and
+    card/platform scopes may coexist. At least one cap is required. A target
+    can hold at most 50 rules. Amounts use the smallest unit of each card's
+    currency; USD- and USDB-funded USD cards both use USD cents.
+
+
+    Manage per-authorization amount, UTC calendar amount/count, and rolling
+    amount/count caps through this collection. Limits are not configured on
+    card issuance/update requests or platform cardConfigs. APPROVED counts
+    approved authorizations, including zero-amount approvals; ATTEMPTS counts
+    real-time authorization requests, including declines. Reversals and expiries
+    restore held-amount capacity but do not remove an approved authorization
+    from the count. Clearing against a hold does not restore amount capacity.
+    Resolve each cap at the most specific configured scope: card, then
+    platform, then program. Amount and count inherit
+    separately for each metric/window; rolling durations are distinct windows.
+    Deleting the last cap at a scope restores the next configured scope.
+
+
+    Applies only where Grid makes authorization decisions. A cardId naming a
+    provider-decided card is rejected. Platform-wide rules apply separately to
+    each eligible card. AUTHORIZATION caps also protect asynchronous
+    authorizations; ATTEMPTS counts real-time requests only. Settlement of
+    previously authorized transactions continues even if a rule is tightened.
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/cards/CreateCardVelocityRuleRequest.yaml
+        example:
+          name: Five attempts in ten minutes
+          metric: ATTEMPTS
+          window: ROLLING
+          windowSeconds: 600
+          maxCount: 5
+  responses:
+    '201':
+      description: The created rule.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardVelocityRule.yaml
+    '400':
+      description: Invalid rule or query parameters.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Insufficient permission.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card or rule not found.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        CONFLICT - A rule already exists for this card/platform, metric,
+        window, and rolling duration. The reason identifies the existing
+        rule to delete before creating a replacement.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: Cards are not enabled in this environment.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml

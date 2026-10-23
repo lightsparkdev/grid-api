@@ -52,9 +52,7 @@ curl -X POST "$GRID_BASE_URL/cards" \
   -d '{
     "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
     "form": "VIRTUAL",
-    "fundingSource": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
-    "maxSpendPerTransaction": 5000,
-    "maxSpendPerDay": 25000
+    "fundingSource": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
   }'
 ```
 
@@ -67,11 +65,10 @@ The card comes back in `status: "PROCESSING"` and moves to `PENDING_AUTH` throug
 section to authorize funding and activate the card before you show it to
 the cardholder.
 
-Set `maxSpendPerTransaction` and `maxSpendPerDay`. Spend controls work the same
-way for a wallet-funded card as for any other card: the values on the card cap
-what that card can authorize, and `cardConfigs` in your platform config can set
-platform-wide caps that apply to every card you issue. When both are set, Grid
-enforces the lower of the two.
+Manage transaction amount, daily amount, and daily count caps through
+[Velocity limits](/cards/card-management/velocity-limits). Omit `cardId` for
+platform defaults or supply the issued card's id for a card-specific limit.
+USD- and USDB-funded USD cards both use USD cents for amount caps.
 
 ## Create the delegated key
 
@@ -202,7 +199,7 @@ is not needed for anything else.
 When the network asks Grid to authorize a purchase on the card:
 
 1. Grid applies the same checks as for any card: the card is `ACTIVE`, the
-   amount is within the card's and the platform's spend limits, and program
+   amount fits the effective card velocity limits, and program
    rules allow the merchant.
 2. Grid builds a USDB transfer from the wallet for the authorized amount,
    signs it with the delegated key, and broadcasts it on Spark. The wallet's
