@@ -66,8 +66,10 @@ properties:
       still settle above it — a restaurant tip, for example — so this caps the
       authorization, not the final settled amount. Send a positive integer to
       set the limit, `null` to remove it, or omit the field to leave it
-      unchanged. If your platform config also sets
-      `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. You
+      unchanged. A configured card cap supersedes corresponding platform and
+      program caps. Clearing it restores inheritance from the most specific
+      configured broader scope. The lower API or Lightspark-managed cap at
+      the selected scope applies. You
       can only send this when the card's
       `cardCapabilities.supportsSpendLimits` is true, and not together with
       `status: CLOSED`.
@@ -82,9 +84,10 @@ properties:
     description: >-
       Replacement card-specific UTC-calendar-day cap, in the smallest unit of
       the card's currency. Omit this field to leave the current cap unchanged,
-      supply null to clear it, or supply a positive integer to set it. When the
-      platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces
-      the lower of the two values. Refunds, reversals, and authorization
+      supply null to clear it, or supply a positive integer to set it. A configured card cap supersedes corresponding platform and program
+      caps. Clearing it restores inheritance from the most specific configured
+      broader scope. The lower API or Lightspark-managed cap at the selected
+      scope applies. Refunds, reversals, and authorization
       expiries do not restore capacity during the day. Accepted only when the
       card's `cardCapabilities.supportsSpendLimits` is true. Cannot be supplied
       alongside `status: CLOSED`.
@@ -100,9 +103,10 @@ properties:
       Replacement card-specific cap on the number of transactions the card may
       authorize during one UTC calendar day. Omit this field to leave the
       current cap unchanged, supply null to clear it, or supply a positive
-      integer to set it. When the platform config also supplies
-      `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two
-      values. Refunds, reversals, and authorization expiries do not restore
+      integer to set it. A configured card cap supersedes corresponding platform and program
+      caps. Clearing it restores inheritance from the most specific configured
+      broader scope. The lower API or Lightspark-managed cap at the selected
+      scope applies. Refunds, reversals, and authorization expiries do not restore
       capacity during the day. Accepted only when the card's
       `cardCapabilities.supportsTransactionCountLimit` is true. Cannot be
       supplied alongside `status: CLOSED`.

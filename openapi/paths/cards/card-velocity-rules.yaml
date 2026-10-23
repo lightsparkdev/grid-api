@@ -4,8 +4,7 @@ get:
   description: >-
     List the rules your platform manages. Without cardId, lists platform-wide
     rules; with cardId, lists only rules configured directly on that card.
-    Lightspark-managed controls are enforced independently and are not exposed
-    by this endpoint. Rules apply to cards whose authorization decisions are
+    Lightspark-managed rules are not exposed by this endpoint. Rules apply to cards whose authorization decisions are
     made by Grid; provider-decided cards are unaffected.
   tags:
     - Cards
@@ -80,13 +79,19 @@ post:
     Create a rule or replace the caps and name of the rule with the same
     cardId, metric, window, windowSeconds, and currency. Setting an existing
     rule preserves its id and replaces both caps; omitted caps become
-    uncapped. At least one cap is required. A target can hold at most 50 rules.
+    unset at this scope. At least one cap is required. A target can hold at most 50 rules.
 
 
-    All applicable platform, card, and Lightspark controls restrict spending
-    independently. These rules also apply alongside the existing
-    maxSpendPerTransaction, maxSpendPerDay, and maxTransactionsPerDay fields;
-    updating a rule cannot raise or clear another control. New rules use the
+    Resolve each cap at the most specific configured scope: card, then
+    platform, then program. At that scope, API and Lightspark-managed caps
+    apply together, so the lower value wins. The existing maxSpendPerTransaction,
+    maxSpendPerDay, and maxTransactionsPerDay fields participate in the same
+    hierarchy. Amount and count caps inherit separately for each metric and
+    window; rolling durations are distinct windows, and amount caps are
+    currency-specific. Clearing the last cap at a scope restores inheritance
+    from the next configured scope. A zero cap is configured and blocks.
+    These rules do not pool usage across cards or override provider-enforced
+    account limits. New rules use the
     APPROVED/ATTEMPTS semantics described in metric, while the existing daily
     transaction field retains its funded-transaction semantics.
 
