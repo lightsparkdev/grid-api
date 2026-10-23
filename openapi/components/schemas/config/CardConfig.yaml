@@ -51,8 +51,10 @@ properties:
       the authorization, not the final settled amount. It covers every card
       Grid makes authorization decisions for, both those you have already
       issued and any you issue later, and does not apply to cards whose issuer
-      makes the decisions. Where a card sets its own `maxSpendPerTransaction`,
-      the lower of the two applies. `null` means no platform-wide limit.
+      makes the decisions. A corresponding configured card cap supersedes this platform cap.
+      Without a card cap, the lower API or Lightspark-managed platform cap
+      applies; without a platform cap, the program cap is inherited. `null`
+      means this API field sets no platform cap.
     example: 10000
   maxSpendPerDay:
     anyOf:
@@ -64,9 +66,10 @@ properties:
     description: >-
       Platform-level cap on cumulative new spend during one UTC calendar day
       for every card whose authorization decisions are made by Grid. The value
-      is interpreted in the smallest unit of each card's currency. Grid
-      enforces the lower of this cap and the card's configured
-      `maxSpendPerDay`; null means no platform-level daily cap. The window
+      is interpreted in the smallest unit of each card's currency. A corresponding configured card cap supersedes this platform cap.
+      Without a card cap, the lower API or Lightspark-managed platform cap
+      applies; without a platform cap, the program cap is inherited. Null
+      means this API field sets no platform cap. The window
       resets at 00:00 UTC. Refunds, reversals, and authorization expiries do not
       restore capacity during the day. The cap applies to existing cards and
       cards issued later. Provider-decided card programs are unaffected.
@@ -81,9 +84,10 @@ properties:
     description: >-
       Platform-level cap on the number of transactions each card may authorize
       during one UTC calendar day, for every card whose authorization
-      decisions are made by Grid. Grid enforces the lower of this cap and the
-      card's configured `maxTransactionsPerDay`; null means no platform-level
-      daily transaction cap. The window resets at 00:00 UTC. Each approved
+      decisions are made by Grid. A corresponding configured card cap supersedes this platform cap.
+      Without a card cap, the lower API or Lightspark-managed platform cap
+      applies; without a platform cap, the program cap is inherited. Null
+      means this API field sets no platform cap. The window resets at 00:00 UTC. Each approved
       authorization counts once; refunds, reversals, and authorization
       expiries do not restore capacity during the day. The cap applies to
       existing cards and cards issued later. Provider-decided card programs

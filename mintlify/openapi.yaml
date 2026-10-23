@@ -10050,7 +10050,7 @@ paths:
     get:
       summary: List card velocity rules
       operationId: listCardVelocityRules
-      description: List the rules your platform manages. Without cardId, lists platform-wide rules; with cardId, lists only rules configured directly on that card. Lightspark-managed controls are enforced independently and are not exposed by this endpoint. Rules apply to cards whose authorization decisions are made by Grid; provider-decided cards are unaffected.
+      description: List the rules your platform manages. Without cardId, lists platform-wide rules; with cardId, lists only rules configured directly on that card. Lightspark-managed rules are not exposed by this endpoint. Rules apply to cards whose authorization decisions are made by Grid; provider-decided cards are unaffected.
       tags:
         - Cards
       security:
@@ -10121,9 +10121,9 @@ paths:
       summary: Set a card velocity rule
       operationId: setCardVelocityRule
       description: |-
-        Create a rule or replace the caps and name of the rule with the same cardId, metric, window, windowSeconds, and currency. Setting an existing rule preserves its id and replaces both caps; omitted caps become uncapped. At least one cap is required. A target can hold at most 50 rules.
+        Create a rule or replace the caps and name of the rule with the same cardId, metric, window, windowSeconds, and currency. Setting an existing rule preserves its id and replaces both caps; omitted caps become unset at this scope. At least one cap is required. A target can hold at most 50 rules.
 
-        All applicable platform, card, and Lightspark controls restrict spending independently. These rules also apply alongside the existing maxSpendPerTransaction, maxSpendPerDay, and maxTransactionsPerDay fields; updating a rule cannot raise or clear another control. New rules use the APPROVED/ATTEMPTS semantics described in metric, while the existing daily transaction field retains its funded-transaction semantics.
+        Resolve each cap at the most specific configured scope: card, then platform, then program. At that scope, API and Lightspark-managed caps apply together, so the lower value wins. The existing maxSpendPerTransaction, maxSpendPerDay, and maxTransactionsPerDay fields participate in the same hierarchy. Amount and count caps inherit separately for each metric and window; rolling durations are distinct windows, and amount caps are currency-specific. Clearing the last cap at a scope restores inheritance from the next configured scope. A zero cap is configured and blocks. These rules do not pool usage across cards or override provider-enforced account limits. New rules use the APPROVED/ATTEMPTS semantics described in metric, while the existing daily transaction field retains its funded-transaction semantics.
 
         Applies only where Grid makes authorization decisions. A cardId naming a provider-decided card is rejected. Platform-wide rules apply separately to each eligible card. AUTHORIZATION caps also protect asynchronous authorizations; ATTEMPTS counts real-time requests only. Settlement of previously authorized transactions continues even if a rule is tightened.
       tags:
@@ -15626,7 +15626,7 @@ components:
               minimum: 1
               maximum: 9007199254740991
             - type: 'null'
-          description: The largest amount any of your cards can authorize on a single transaction, in the smallest unit of each card's currency (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. It covers every card Grid makes authorization decisions for, both those you have already issued and any you issue later, and does not apply to cards whose issuer makes the decisions. Where a card sets its own `maxSpendPerTransaction`, the lower of the two applies. `null` means no platform-wide limit.
+          description: The largest amount any of your cards can authorize on a single transaction, in the smallest unit of each card's currency (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. It covers every card Grid makes authorization decisions for, both those you have already issued and any you issue later, and does not apply to cards whose issuer makes the decisions. A corresponding configured card cap supersedes this platform cap. Without a card cap, the lower API or Lightspark-managed platform cap applies; without a platform cap, the program cap is inherited. `null` means this API field sets no platform cap.
           example: 10000
         maxSpendPerDay:
           anyOf:
@@ -15635,7 +15635,7 @@ components:
               minimum: 1
               maximum: 9007199254740991
             - type: 'null'
-          description: Platform-level cap on cumulative new spend during one UTC calendar day for every card whose authorization decisions are made by Grid. The value is interpreted in the smallest unit of each card's currency. Grid enforces the lower of this cap and the card's configured `maxSpendPerDay`; null means no platform-level daily cap. The window resets at 00:00 UTC. Refunds, reversals, and authorization expiries do not restore capacity during the day. The cap applies to existing cards and cards issued later. Provider-decided card programs are unaffected.
+          description: Platform-level cap on cumulative new spend during one UTC calendar day for every card whose authorization decisions are made by Grid. The value is interpreted in the smallest unit of each card's currency. A corresponding configured card cap supersedes this platform cap. Without a card cap, the lower API or Lightspark-managed platform cap applies; without a platform cap, the program cap is inherited. Null means this API field sets no platform cap. The window resets at 00:00 UTC. Refunds, reversals, and authorization expiries do not restore capacity during the day. The cap applies to existing cards and cards issued later. Provider-decided card programs are unaffected.
           example: 50000
         maxTransactionsPerDay:
           anyOf:
@@ -15644,7 +15644,7 @@ components:
               minimum: 1
               maximum: 2147483647
             - type: 'null'
-          description: Platform-level cap on the number of transactions each card may authorize during one UTC calendar day, for every card whose authorization decisions are made by Grid. Grid enforces the lower of this cap and the card's configured `maxTransactionsPerDay`; null means no platform-level daily transaction cap. The window resets at 00:00 UTC. Each approved authorization counts once; refunds, reversals, and authorization expiries do not restore capacity during the day. The cap applies to existing cards and cards issued later. Provider-decided card programs are unaffected.
+          description: Platform-level cap on the number of transactions each card may authorize during one UTC calendar day, for every card whose authorization decisions are made by Grid. A corresponding configured card cap supersedes this platform cap. Without a card cap, the lower API or Lightspark-managed platform cap applies; without a platform cap, the program cap is inherited. Null means this API field sets no platform cap. The window resets at 00:00 UTC. Each approved authorization counts once; refunds, reversals, and authorization expiries do not restore capacity during the day. The cap applies to existing cards and cards issued later. Provider-decided card programs are unaffected.
           example: 50
         panRevealCssUrl:
           anyOf:
@@ -30856,7 +30856,7 @@ components:
               minimum: 1
               maximum: 9007199254740991
             - type: 'null'
-          description: The largest amount this card can authorize on a single transaction, in the smallest unit of its `currency` (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. `null` means the card sets no limit of its own. If your platform config also sets `cardConfigs.maxSpendPerTransaction` (the platform-level limit), the lower of the two applies and this value stays as you set it.
+          description: The largest amount this card can authorize on a single transaction, in the smallest unit of its `currency` (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. `null` means the card sets no limit of its own. A configured card cap supersedes corresponding platform and program caps; an unset cap inherits the most specific configured broader scope. The lower API or Lightspark-managed cap at that scope applies. This field reports the configured card value.
           example: 5000
         maxSpendPerDay:
           anyOf:
@@ -30865,7 +30865,7 @@ components:
               minimum: 1
               maximum: 9007199254740991
             - type: 'null'
-          description: Card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card's `currency`. The window resets at 00:00 UTC. Null means the card has no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values without replacing this configured value. Refunds, reversals, and authorization expiries do not restore capacity during the day. Spend exactly equal to the effective limit is allowed.
+          description: Card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card's `currency`. The window resets at 00:00 UTC. Null means the card has no card-specific daily cap. A configured card cap supersedes corresponding platform and program caps; an unset cap inherits the most specific configured broader scope. The lower API or Lightspark-managed cap at that scope applies. This field reports the configured card value. Refunds, reversals, and authorization expiries do not restore capacity during the day. Spend exactly equal to the effective limit is allowed.
           example: 25000
         maxTransactionsPerDay:
           anyOf:
@@ -30874,7 +30874,7 @@ components:
               minimum: 1
               maximum: 2147483647
             - type: 'null'
-          description: Card-specific cap on the number of transactions the card may authorize during one UTC calendar day. The window resets at 00:00 UTC. Null means the card has no card-specific daily transaction cap. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values without replacing this configured value. Each approved authorization counts once for the day it was authorized; refunds, reversals, and authorization expiries do not restore capacity during the day. A transaction that brings the day's count exactly to the effective limit is allowed.
+          description: Card-specific cap on the number of transactions the card may authorize during one UTC calendar day. The window resets at 00:00 UTC. Null means the card has no card-specific daily transaction cap. A configured card cap supersedes corresponding platform and program caps; an unset cap inherits the most specific configured broader scope. The lower API or Lightspark-managed cap at that scope applies. This field reports the configured card value. Each approved authorization counts once for the day it was authorized; refunds, reversals, and authorization expiries do not restore capacity during the day. A transaction that brings the day's count exactly to the effective limit is allowed.
           example: 20
         allowedMccs:
           type: array
@@ -31083,7 +31083,7 @@ components:
               minimum: 0
               maximum: 100000
             - type: 'null'
-          description: Maximum count within the window. Required for ATTEMPTS. Cannot be set for AUTHORIZATION. Omit or send null to leave the count uncapped.
+          description: Maximum count within the window. Required for ATTEMPTS. Cannot be set for AUTHORIZATION. Omit or send null to unset this rule's count cap. A matching broader-scope cap is inherited if no count cap remains at this scope.
           example: 5
         maxAmount:
           anyOf:
@@ -31092,7 +31092,7 @@ components:
               minimum: 0
               maximum: 9007199254740991
             - type: 'null'
-          description: Maximum amount in the smallest unit of currency. Supported for APPROVED only and requires currency. The amount is holds less releases for transactions opened within the window. Releases restore capacity; clearing against a hold does not. Omit or send null to leave the amount uncapped. At least one of maxCount or maxAmount must be set. A zero cap blocks applicable new authorizations, including zero-amount checks.
+          description: Maximum amount in the smallest unit of currency. Supported for APPROVED only and requires currency. The amount is holds less releases for transactions opened within the window. Releases restore capacity; clearing against a hold does not. Omit or send null to unset this rule's amount cap. A matching broader-scope cap is inherited if no amount cap remains at this scope. At least one of maxCount or maxAmount must be set. A zero cap blocks applicable new authorizations, including zero-amount checks.
           example: 50000
         currency:
           anyOf:
@@ -31186,21 +31186,21 @@ components:
           format: int64
           minimum: 1
           maximum: 9007199254740991
-          description: The largest amount this card can authorize on a single transaction, in the smallest unit of its currency (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. Omit the field to set no limit. If your platform config also sets `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. You can only send this when the funding-source internal account's `cardCapabilities.supportsSpendLimitsAtIssuance` is true.
+          description: The largest amount this card can authorize on a single transaction, in the smallest unit of its currency (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. A configured card cap supersedes the corresponding platform and program caps. Omit to inherit the most specific configured platform or program cap. At the selected scope, the lower API or Lightspark-managed cap applies. You can only send this when the funding-source internal account's `cardCapabilities.supportsSpendLimitsAtIssuance` is true.
           example: 5000
         maxSpendPerDay:
           type: integer
           format: int64
           minimum: 1
           maximum: 9007199254740991
-          description: Optional card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card's currency (USD cents for USDB-funded cards). Omit this field for no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC, and refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimitsAtIssuance` is true. Spend exactly equal to the effective limit is allowed.
+          description: Optional card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card's currency (USD cents for USDB-funded cards). Omit this field for no card-specific daily cap. A configured card cap supersedes the corresponding platform and program caps; an unset cap inherits the most specific configured broader scope. At the selected scope, the lower API or Lightspark-managed cap applies. The window resets at 00:00 UTC, and refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimitsAtIssuance` is true. Spend exactly equal to the effective limit is allowed.
           example: 25000
         maxTransactionsPerDay:
           type: integer
           format: int32
           minimum: 1
           maximum: 2147483647
-          description: Optional card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Omit this field for no card-specific daily transaction cap. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC. Each approved authorization counts once; refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsTransactionCountLimit` is true.
+          description: Optional card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Omit this field for no card-specific daily transaction cap. A configured card cap supersedes the corresponding platform and program caps; an unset cap inherits the most specific configured broader scope. At the selected scope, the lower API or Lightspark-managed cap applies. The window resets at 00:00 UTC. Each approved authorization counts once; refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsTransactionCountLimit` is true.
           example: 20
         allowedMccs:
           type: array
@@ -31279,7 +31279,7 @@ components:
               minimum: 1
               maximum: 9007199254740991
             - type: 'null'
-          description: 'A new limit on the largest amount this card can authorize on a single transaction, in the smallest unit of its currency (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. Send a positive integer to set the limit, `null` to remove it, or omit the field to leave it unchanged. If your platform config also sets `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. You can only send this when the card''s `cardCapabilities.supportsSpendLimits` is true, and not together with `status: CLOSED`.'
+          description: 'A new limit on the largest amount this card can authorize on a single transaction, in the smallest unit of its currency (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. Send a positive integer to set the limit, `null` to remove it, or omit the field to leave it unchanged. A configured card cap supersedes corresponding platform and program caps. Clearing it restores inheritance from the most specific configured broader scope. The lower API or Lightspark-managed cap at the selected scope applies. You can only send this when the card''s `cardCapabilities.supportsSpendLimits` is true, and not together with `status: CLOSED`.'
           example: 10000
         maxSpendPerDay:
           anyOf:
@@ -31288,7 +31288,7 @@ components:
               minimum: 1
               maximum: 9007199254740991
             - type: 'null'
-          description: 'Replacement card-specific UTC-calendar-day cap, in the smallest unit of the card''s currency. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. Refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the card''s `cardCapabilities.supportsSpendLimits` is true. Cannot be supplied alongside `status: CLOSED`.'
+          description: 'Replacement card-specific UTC-calendar-day cap, in the smallest unit of the card''s currency. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. A configured card cap supersedes corresponding platform and program caps. Clearing it restores inheritance from the most specific configured broader scope. The lower API or Lightspark-managed cap at the selected scope applies. Refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the card''s `cardCapabilities.supportsSpendLimits` is true. Cannot be supplied alongside `status: CLOSED`.'
           example: 25000
         maxTransactionsPerDay:
           anyOf:
@@ -31297,7 +31297,7 @@ components:
               minimum: 1
               maximum: 2147483647
             - type: 'null'
-          description: 'Replacement card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values. Refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the card''s `cardCapabilities.supportsTransactionCountLimit` is true. Cannot be supplied alongside `status: CLOSED`.'
+          description: 'Replacement card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. A configured card cap supersedes corresponding platform and program caps. Clearing it restores inheritance from the most specific configured broader scope. The lower API or Lightspark-managed cap at the selected scope applies. Refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the card''s `cardCapabilities.supportsTransactionCountLimit` is true. Cannot be supplied alongside `status: CLOSED`.'
           example: 20
         threeDSecurePassword:
           type: string

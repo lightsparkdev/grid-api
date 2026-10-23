@@ -62,9 +62,10 @@ properties:
       the smallest unit of its currency (cents for USD). An authorization for
       exactly the limit is allowed. A later clearing can still settle above it
       — a restaurant tip, for example — so this caps the authorization, not the
-      final settled amount. Omit the field to set no limit. If your platform
-      config also sets `cardConfigs.maxSpendPerTransaction`, the lower of the
-      two applies. You can only send this when the funding-source internal
+      final settled amount. A configured card cap supersedes the corresponding
+      platform and program caps. Omit to inherit the most specific configured
+      platform or program cap. At the selected scope, the lower API or
+      Lightspark-managed cap applies. You can only send this when the funding-source internal
       account's `cardCapabilities.supportsSpendLimitsAtIssuance` is true.
     example: 5000
   maxSpendPerDay:
@@ -75,9 +76,9 @@ properties:
     description: >-
       Optional card-specific cap on cumulative new spend during one UTC
       calendar day, in the smallest unit of the card's currency (USD cents for
-      USDB-funded cards). Omit this field for no card-specific daily cap. When the
-      platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces
-      the lower of the two values. The window resets at 00:00 UTC, and refunds,
+      USDB-funded cards). Omit this field for no card-specific daily cap. A configured card cap supersedes the corresponding platform and program
+      caps; an unset cap inherits the most specific configured broader scope.
+      At the selected scope, the lower API or Lightspark-managed cap applies. The window resets at 00:00 UTC, and refunds,
       reversals, and authorization expiries do not restore capacity during the
       day. Accepted only when the funding-source internal account's
       `cardCapabilities.supportsSpendLimitsAtIssuance` is true. Spend exactly
@@ -91,9 +92,9 @@ properties:
     description: >-
       Optional card-specific cap on the number of transactions the card may
       authorize during one UTC calendar day. Omit this field for no
-      card-specific daily transaction cap. When the platform config also
-      supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of
-      the two values. The window resets at 00:00 UTC. Each approved
+      card-specific daily transaction cap. A configured card cap supersedes the corresponding platform and program
+      caps; an unset cap inherits the most specific configured broader scope.
+      At the selected scope, the lower API or Lightspark-managed cap applies. The window resets at 00:00 UTC. Each approved
       authorization counts once; refunds, reversals, and authorization
       expiries do not restore capacity during the day. Accepted only when the
       funding-source internal account's
