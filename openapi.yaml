@@ -10227,7 +10227,7 @@ paths:
     get:
       summary: List card velocity limits
       operationId: listCardVelocityRules
-      description: List the rules your platform manages. Without cardId, lists platform-wide rules; with cardId, lists only rules configured directly on that card. Lightspark-managed controls are enforced independently and are not exposed by this endpoint. Rules apply to cards whose authorization decisions are made by Grid; provider-decided cards are unaffected.
+      description: List the rules your platform manages. Without cardId, lists platform-wide rules; with cardId, lists only rules configured directly on that card. Lightspark-managed rules are not exposed by this endpoint. Rules apply to cards whose authorization decisions are made by Grid; provider-decided cards are unaffected.
       tags:
         - Cards
       security:
@@ -10430,7 +10430,7 @@ paths:
     delete:
       summary: Delete a card velocity limit
       operationId: deleteCardVelocityRule
-      description: Remove a rule managed by your platform. Other applicable controls remain in effect. Rules owned by other platforms or Lightspark return 404. Removing a rule does not change answers already recorded for earlier authorization requests. Delete and recreate are separate operations; authorizations between them use the other applicable limits, and a failed replacement does not restore the deleted rule.
+      description: Remove a rule managed by your platform. Other applicable controls remain in effect. Rules owned by other platforms or Lightspark return 404. Removing a rule does not change answers already recorded for earlier authorization requests. Delete and recreate are separate operations; authorizations between them use the other applicable limits, and a failed replacement does not restore the deleted rule. Removing the last amount or count cap at this scope restores inheritance from the next configured broader scope until a replacement is created.
       tags:
         - Cards
       security:
@@ -31548,7 +31548,7 @@ components:
               minimum: 0
               maximum: 100000
             - type: 'null'
-          description: Maximum count within the window. Required for ATTEMPTS. Cannot be set for AUTHORIZATION. Omit or send null to leave the count uncapped.
+          description: Maximum count within the window. Required for ATTEMPTS. Cannot be set for AUTHORIZATION. Omit or send null for no count cap on this rule. A matching broader-scope cap is inherited if no count cap remains at this scope.
           example: 5
         maxAmount:
           anyOf:
@@ -31557,7 +31557,7 @@ components:
               minimum: 0
               maximum: 9007199254740991
             - type: 'null'
-          description: Maximum amount in the smallest unit of the card's currency. Supported for APPROVED only. Platform rules apply this amount separately to each eligible card in that card's currency, without foreign-exchange conversion. USD- and USDB-funded USD cards both use USD cents. The amount is holds less releases for transactions opened within the window. Releases restore capacity; clearing against a hold does not. Omit or send null to leave the amount uncapped. At least one of maxCount or maxAmount must be set. A zero cap blocks applicable new authorizations, including zero-amount checks.
+          description: Maximum amount in the smallest unit of the card's currency. Supported for APPROVED only. Platform rules apply this amount separately to each eligible card in that card's currency, without foreign-exchange conversion. USD- and USDB-funded USD cards both use USD cents. The amount is holds less releases for transactions opened within the window. Releases restore capacity; clearing against a hold does not. Omit or send null for no amount cap on this rule. A matching broader-scope cap is inherited if no amount cap remains at this scope. At least one of maxCount or maxAmount must be set. A zero cap blocks applicable new authorizations, including zero-amount checks.
           example: 50000
     CardVelocityRule:
       description: A platform-managed card velocity rule.

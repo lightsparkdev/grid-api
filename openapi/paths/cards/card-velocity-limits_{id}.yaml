@@ -65,7 +65,9 @@ delete:
     Removing a rule does not change answers already recorded for earlier
     authorization requests. Delete and recreate are separate operations;
     authorizations between them use the other applicable limits, and a failed
-    replacement does not restore the deleted rule.
+    replacement does not restore the deleted rule. Removing the last amount
+    or count cap at this scope restores inheritance from the next configured
+    broader scope until a replacement is created.
   tags:
     - Cards
   security:
