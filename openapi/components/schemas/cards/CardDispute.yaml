@@ -1,0 +1,59 @@
+title: Card Dispute
+type: object
+required:
+  - id
+  - cardTransactionId
+  - status
+  - createdAt
+  - updatedAt
+description: A cardholder's dispute of a settled card transaction.
+properties:
+  id:
+    type: string
+    description: System-generated unique dispute identifier.
+    readOnly: true
+    example: CardDispute:019542f5-b3e7-1d02-0000-000000000200
+  cardTransactionId:
+    type: string
+    description: The id of the disputed `CardTransaction`.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+  cardId:
+    type: string
+    description: The id of the `Card` the disputed transaction was made on.
+    example: Card:019542f5-b3e7-1d02-0000-000000000010
+  status:
+    $ref: ./CardDisputeStatus.yaml
+  disposition:
+    $ref: ./CardDisputeDisposition.yaml
+    description: How the dispute ended. Absent while it is open.
+  disputedAmount:
+    $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      The amount under dispute, as filed. Absent until the card issuer
+      allocates one.
+  provisionalCreditAmount:
+    $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      Credits granted minus credits reversed. Absent until the first credit
+      event. The money settles asynchronously, so this amount can change
+      before the cardholder's balance does.
+  openedAt:
+    type: string
+    format: date-time
+    description: When the card issuer opened the dispute.
+    example: '2026-05-08T14:30:00Z'
+  issuerUpdatedAt:
+    type: string
+    format: date-time
+    description: When the card issuer last changed the dispute.
+    example: '2026-05-09T09:12:44Z'
+  createdAt:
+    type: string
+    format: date-time
+    description: When Grid first recorded the dispute.
+    example: '2026-05-08T14:30:05Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When Grid last updated the dispute.
+    example: '2026-05-09T09:12:46Z'

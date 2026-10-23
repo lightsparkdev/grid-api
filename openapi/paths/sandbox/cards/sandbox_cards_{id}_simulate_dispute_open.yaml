@@ -47,7 +47,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../../../components/schemas/cards/SandboxCardDisputeResponse.yaml
+            $ref: ../../../components/schemas/cards/CardDispute.yaml
     '400':
       description: >-
         Bad request - Invalid parameters, or the transaction has no settled
