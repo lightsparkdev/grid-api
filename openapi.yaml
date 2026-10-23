@@ -23275,6 +23275,7 @@ components:
     UsdBeneficiary:
       title: Individual Beneficiary
       type: object
+      description: Wires to this account may require `address.city`, at most 35 characters, depending on the bank that sends them for your platform. When they do, creating the account with an address that has no `city`, or a longer one, fails with `INVALID_INPUT`.
       required:
         - beneficiaryType
         - fullName
@@ -23309,6 +23310,7 @@ components:
     UsdBusinessBeneficiary:
       title: Business Beneficiary
       type: object
+      description: Wires to this account may require `address.city`, at most 35 characters, depending on the bank that sends them for your platform. When they do, creating the account with an address that has no `city`, or a longer one, fails with `INVALID_INPUT`.
       required:
         - beneficiaryType
         - legalName
