@@ -1,0 +1,157 @@
+get:
+  summary: List card velocity rules
+  operationId: listCardVelocityRules
+  description: >-
+    List the rules your platform manages. Without cardId, lists platform-wide
+    rules; with cardId, lists only rules configured directly on that card.
+    Lightspark-managed controls are enforced independently and are not exposed
+    by this endpoint. Rules apply to cards whose authorization decisions are
+    made by Grid; provider-decided cards are unaffected.
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: cardId
+      in: query
+      description: List rules configured directly on this card instead of platform-wide rules.
+      schema:
+        type: string
+    - name: limit
+      in: query
+      description: Maximum number of rules to return.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+    - name: cursor
+      in: query
+      description: Pagination cursor from the preceding response.
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Rules ordered from newest to oldest.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardVelocityRuleListResponse.yaml
+    '400':
+      description: Invalid rule or query parameters.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Insufficient permission.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card or rule not found.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: Cards are not enabled in this environment.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml
+post:
+  summary: Set a card velocity rule
+  operationId: setCardVelocityRule
+  description: >-
+    Create a rule or replace the caps and name of the rule with the same
+    cardId, metric, window, windowSeconds, and currency. Setting an existing
+    rule preserves its id and replaces both caps; omitted caps become
+    uncapped. At least one cap is required. A target can hold at most 50 rules.
+
+
+    All applicable platform, card, and Lightspark controls restrict spending
+    independently. These rules also apply alongside the existing
+    maxSpendPerTransaction, maxSpendPerDay, and maxTransactionsPerDay fields;
+    updating a rule cannot raise or clear another control. New rules use the
+    APPROVED/ATTEMPTS semantics described in metric, while the existing daily
+    transaction field retains its funded-transaction semantics.
+
+
+    Applies only where Grid makes authorization decisions. A cardId naming a
+    provider-decided card is rejected. Platform-wide rules apply separately to
+    each eligible card. AUTHORIZATION caps also protect asynchronous
+    authorizations; ATTEMPTS counts real-time requests only. Settlement of
+    previously authorized transactions continues even if a rule is tightened.
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/cards/SetCardVelocityRuleRequest.yaml
+        example:
+          name: Five attempts in ten minutes
+          metric: ATTEMPTS
+          window: ROLLING
+          windowSeconds: 600
+          maxCount: 5
+  responses:
+    '200':
+      description: The created or updated rule.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardVelocityRule.yaml
+    '400':
+      description: Invalid rule or query parameters.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Insufficient permission.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card or rule not found.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: Cards are not enabled in this environment.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml

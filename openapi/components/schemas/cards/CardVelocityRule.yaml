@@ -1,0 +1,11 @@
+description: A platform-managed card velocity rule.
+allOf:
+  - $ref: ./SetCardVelocityRuleRequest.yaml
+  - type: object
+    required:
+      - id
+    properties:
+      id:
+        type: string
+        description: System-generated identifier for the rule.
+        example: CardVelocityRule:019542f5-b3e7-1d02-0000-000000000004

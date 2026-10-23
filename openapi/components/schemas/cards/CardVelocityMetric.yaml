@@ -1,0 +1,8 @@
+type: string
+description: >-
+  ATTEMPTS counts every real-time authorization request, including declined
+  requests. APPROVED counts distinct approved authorizations, including
+  zero-amount authorizations, and can also cap the amount they hold.
+enum:
+  - ATTEMPTS
+  - APPROVED

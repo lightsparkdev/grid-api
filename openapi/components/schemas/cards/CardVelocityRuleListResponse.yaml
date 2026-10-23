@@ -1,0 +1,16 @@
+type: object
+required:
+  - data
+  - hasMore
+properties:
+  data:
+    type: array
+    description: Platform-managed rules for the requested scope.
+    items:
+      $ref: ./CardVelocityRule.yaml
+  hasMore:
+    type: boolean
+    description: Whether more rules are available beyond this page.
+  nextCursor:
+    type: string
+    description: Cursor for the next page, present only when hasMore is true.

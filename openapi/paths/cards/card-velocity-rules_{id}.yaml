@@ -1,0 +1,109 @@
+parameters:
+  - name: id
+    in: path
+    required: true
+    description: System-generated card velocity rule identifier.
+    schema:
+      type: string
+get:
+  summary: Get a card velocity rule
+  operationId: getCardVelocityRule
+  description: Retrieve a rule managed by your platform. Rules owned by other platforms or Lightspark return 404.
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: The requested rule.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardVelocityRule.yaml
+    '400':
+      description: Invalid rule or query parameters.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Insufficient permission.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card or rule not found.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: Cards are not enabled in this environment.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml
+delete:
+  summary: Delete a card velocity rule
+  operationId: deleteCardVelocityRule
+  description: >-
+    Remove a rule managed by your platform. Other applicable controls remain
+    in effect. Rules owned by other platforms or Lightspark return 404.
+    Removing a rule does not change answers already recorded for earlier
+    authorization requests.
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: Rule deleted.
+    '400':
+      description: Invalid rule or query parameters.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Insufficient permission.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card or rule not found.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: Cards are not enabled in this environment.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml
