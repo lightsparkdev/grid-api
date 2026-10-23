@@ -30100,7 +30100,7 @@ components:
             phoneNumber:
               type: string
               pattern: ^\+[1-9]\d{1,14}$
-              description: The customer's phone number in strict E.164 format. Accepted only when the customer has no phone number on file, or repeats the one on file; changing a phone number on file returns 400. Unlike the other fields, it can be added after the customer's KYC is approved, when it is the only field sent.
+              description: The customer's phone number in strict E.164 format. Like the other fields, accepted only while the customer's identity can still be edited, and only when no phone number is on file; repeating the number on file changes nothing, and changing it returns 400.
               example: '+14155551234'
         - $ref: '#/components/schemas/CustomerEdd'
     AgentDepositNetwork:
