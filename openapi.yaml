@@ -4410,6 +4410,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error502'
+        '503':
+          description: '`CORRIDOR_UNAVAILABLE` when payments to the receiving corridor are temporarily switched off, for example for maintenance. Retry later.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
         '504':
           description: Counterparty could not be reached or timed out
           content:
@@ -4509,6 +4515,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error502'
+        '503':
+          description: '`CORRIDOR_UNAVAILABLE` when payments to the receiving corridor are temporarily switched off, for example for maintenance. Retry later.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
         '504':
           description: Counterparty could not be reached or timed out
           content:
@@ -4943,6 +4955,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error502'
+        '503':
+          description: '`CORRIDOR_UNAVAILABLE` when payments to the receiving corridor are temporarily switched off, for example for maintenance. Retry later.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
         '504':
           description: Counterparty could not be reached or timed out
           content:
@@ -27703,6 +27721,29 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    Error503:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | SERVICE_UNAVAILABLE | Downstream service is temporarily unavailable |
+            | CORRIDOR_UNAVAILABLE | Payments to this corridor are temporarily switched off, for example for maintenance. Retry later |
+          enum:
+            - SERVICE_UNAVAILABLE
+            - CORRIDOR_UNAVAILABLE
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     Error504:
       type: object
       required:
@@ -30236,27 +30277,6 @@ components:
           format: date-time
           description: Time when the deposit was last updated.
           example: '2026-10-09T18:01:00Z'
-    Error503:
-      type: object
-      required:
-        - reason
-        - code
-      properties:
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | SERVICE_UNAVAILABLE | Downstream service is temporarily unavailable |
-          enum:
-            - SERVICE_UNAVAILABLE
-        reason:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     AgentUpdateRequest:
       type: object
       description: Partial update to an agent's basic fields. At least one field must be provided.
