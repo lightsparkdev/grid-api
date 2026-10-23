@@ -3,7 +3,8 @@ Freeze, close, and other card updates use a single authenticated
 
 
 `PATCH /cards/{id}` covers freeze / unfreeze (`status`), funding source
-updates (`fundingSource`), per-transaction spending limits
+updates (`fundingSource`), network risk score ceilings
+(`maxNetworkRiskScore`), per-transaction spending limits
 (`maxSpendPerTransaction`), UTC-calendar-day spending limits
 (`maxSpendPerDay`), and UTC-calendar-day transaction limits
 (`maxTransactionsPerDay`). See
@@ -131,6 +132,26 @@ curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
   -H "Content-Type: application/json" \
   -d '{ "maxTransactionsPerDay": 20 }'
 ```
+
+## Updating the network risk score ceiling
+
+Set `maxNetworkRiskScore` to an integer from 0 to 999 to cap the normalized
+network risk score allowed for real-time authorizations. Visa scores are
+normalized by multiplying the raw 0–99 score by 10. Scores equal to the
+ceiling are allowed; authorizations without a score are also allowed.
+
+When both card and platform ceilings are set, Grid enforces the lower of the
+two. Send `null` to clear the card-specific ceiling and rely on platform
+controls only, or omit the field to leave the current setting unchanged.
+
+```bash
+curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "maxNetworkRiskScore": 700 }'
+```
+
+You cannot send `maxNetworkRiskScore` together with `status: CLOSED`.
 
 ## Sandbox behavior
 
