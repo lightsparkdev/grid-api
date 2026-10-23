@@ -308,6 +308,14 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error502.yaml
+    '503':
+      description: >-
+        `CORRIDOR_UNAVAILABLE` when payments to the receiving corridor are
+        temporarily switched off, for example for maintenance. Retry later.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error503.yaml
     '504':
       description: Counterparty could not be reached or timed out
       content:
