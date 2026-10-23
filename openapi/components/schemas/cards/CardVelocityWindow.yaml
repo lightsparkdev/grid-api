@@ -1,0 +1,14 @@
+type: string
+description: >-
+  AUTHORIZATION caps one authorization amount. ROLLING covers the trailing
+  windowSeconds. Calendar windows use UTC: DAY starts at midnight, WEEK on
+  Monday, MONTH on the first, QUARTER in January/April/July/October, and YEAR
+  on January 1.
+enum:
+  - AUTHORIZATION
+  - ROLLING
+  - DAY
+  - WEEK
+  - MONTH
+  - QUARTER
+  - YEAR

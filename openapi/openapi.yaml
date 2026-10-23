@@ -493,6 +493,10 @@ paths:
     $ref: paths/agents/agents_me_cards.yaml
   /agents/me/cards/{cardId}:
     $ref: paths/agents/agents_me_cards_{cardId}.yaml
+  /card-velocity-rules:
+    $ref: paths/cards/card-velocity-rules.yaml
+  /card-velocity-rules/{id}:
+    $ref: paths/cards/card-velocity-rules_{id}.yaml
   /cards:
     $ref: paths/cards/cards.yaml
   /cards/{id}:
