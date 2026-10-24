@@ -9,6 +9,7 @@ post:
     - **Account to Account**: Transfer between internal/external accounts, with or without currency exchange.
     - **Account to UMA**: Transfer from an internal account to an UMA address.
     - **UMA to Account or UMA to UMA**: This transfer type will only be funded by payment instructions, not from an internal account.
+    - **Account or real-time funding to a Lightning invoice**: Pay a BOLT11 invoice saved as a `LIGHTNING` external account with `invoice`. Available on platforms with Lightning invoice sends enabled; see "Paying a Lightning invoice" below.
 
     **Key Features:**
     - **Flexible Amount Locking**: Always specify whether you want to lock the sending amount or receiving amount
@@ -22,6 +23,22 @@ post:
     Requires a token with the `TRANSACT` permission; `VIEW` alone is not
     sufficient. A quote is the instrument a later execute draws on, and
     `immediatelyExecute` moves funds within this same request.
+
+    **Paying a Lightning invoice:** Save the invoice as a `LIGHTNING`
+    external account (`currency` `BTC`, `invoice` set) and quote it as an
+    `ACCOUNT` destination. Set `lockedCurrencySide` to `RECEIVING` and
+    `lockedCurrencyAmount` to the invoice's amount in satoshis; the fees
+    are added to what the source sends. The source may be a USD internal
+    account, a USDC internal account, a USDB embedded wallet, or real-time
+    funding in USD or USDC. The invoice must name an amount in whole
+    satoshis, be for the platform's Bitcoin network, and not expire within
+    the next minute, and the quote expires no later than a minute before
+    the invoice. An invoice has one live quote at a time: another quote for
+    it is refused with `409 INVOICE_ALREADY_USED` while an earlier quote can
+    still be executed, or once one was executed. A quote that expired
+    without executing frees the invoice. Grid pays the invoice once the
+    quote is funded, and the transaction completes when the payment does; a
+    payment that fails is refunded to the source.
   operationId: createQuote
   tags:
     - Cross-Currency Transfers
@@ -251,6 +268,10 @@ post:
         `documentIds` is already attached to a quote. A document can be used
         on one quote only. Upload the file again and retry with the new ID.
         Grid created no quote, so you can reuse the same `Idempotency-Key`.
+
+        Returned with `INVOICE_ALREADY_USED` when another quote for the same
+        Lightning invoice can still be executed, or was executed. Ask the
+        recipient for a new invoice, or wait for the earlier quote to expire.
       content:
         application/json:
           schema:

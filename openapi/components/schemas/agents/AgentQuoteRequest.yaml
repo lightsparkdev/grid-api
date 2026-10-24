@@ -21,10 +21,11 @@ description: >-
   A `LIGHTNING_INVOICE` quote sends `USDB` and pays exactly the invoice's
   amount. Its `lockedCurrencySide` must be `RECEIVING` and its
   `lockedCurrencyAmount` the invoice's amount in satoshis; the fees are added
-  to the `USDB` sent. The quote expires no later than one minute before the
-  invoice does. An invoice can be quoted once: another quote for it is refused
-  with 409 `INVOICE_ALREADY_USED`, except a repeat of the same request with the
-  same `Idempotency-Key`.
+  to the `USDB` sent. It is the platform's own Lightning invoice quote (see
+  `POST /quotes`), so the same invoice rules and the one-live-quote rule
+  apply: another quote for an invoice is refused with 409
+  `INVOICE_ALREADY_USED` while an earlier one can still be executed, except a
+  repeat of the same request with the same `Idempotency-Key`.
 required:
   - source
   - destination

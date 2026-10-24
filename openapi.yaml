@@ -4695,6 +4695,7 @@ paths:
         - **Account to Account**: Transfer between internal/external accounts, with or without currency exchange.
         - **Account to UMA**: Transfer from an internal account to an UMA address.
         - **UMA to Account or UMA to UMA**: This transfer type will only be funded by payment instructions, not from an internal account.
+        - **Account or real-time funding to a Lightning invoice**: Pay a BOLT11 invoice saved as a `LIGHTNING` external account with `invoice`. Available on platforms with Lightning invoice sends enabled; see "Paying a Lightning invoice" below.
 
         **Key Features:**
         - **Flexible Amount Locking**: Always specify whether you want to lock the sending amount or receiving amount
@@ -4708,6 +4709,22 @@ paths:
         Requires a token with the `TRANSACT` permission; `VIEW` alone is not
         sufficient. A quote is the instrument a later execute draws on, and
         `immediatelyExecute` moves funds within this same request.
+
+        **Paying a Lightning invoice:** Save the invoice as a `LIGHTNING`
+        external account (`currency` `BTC`, `invoice` set) and quote it as an
+        `ACCOUNT` destination. Set `lockedCurrencySide` to `RECEIVING` and
+        `lockedCurrencyAmount` to the invoice's amount in satoshis; the fees
+        are added to what the source sends. The source may be a USD internal
+        account, a USDC internal account, a USDB embedded wallet, or real-time
+        funding in USD or USDC. The invoice must name an amount in whole
+        satoshis, be for the platform's Bitcoin network, and not expire within
+        the next minute, and the quote expires no later than a minute before
+        the invoice. An invoice has one live quote at a time: another quote for
+        it is refused with `409 INVOICE_ALREADY_USED` while an earlier quote can
+        still be executed, or once one was executed. A quote that expired
+        without executing frees the invoice. Grid pays the invoice once the
+        quote is funded, and the transaction completes when the payment does; a
+        payment that fails is refunded to the source.
       operationId: createQuote
       tags:
         - Cross-Currency Transfers
@@ -4897,6 +4914,7 @@ paths:
           description: |-
             Conflict. Returned with `BANK_ACCOUNT_VALIDATION_PENDING` when the US bank account on the request is still being validated. Grid verifies a newly added ACH account by sending a micro-entry and waiting out the return window, which takes a few banking days. The account is not rejected, so retry once validation completes. An account that failed validation outright returns `400` with `INVALID_BANK_ACCOUNT`.
             Returned with `PAYMENT_DOCUMENT_ALREADY_USED` when a document in `documentIds` is already attached to a quote. A document can be used on one quote only. Upload the file again and retry with the new ID. Grid created no quote, so you can reuse the same `Idempotency-Key`.
+            Returned with `INVOICE_ALREADY_USED` when another quote for the same Lightning invoice can still be executed, or was executed. Ask the recipient for a new invoice, or wait for the earlier quote to expire.
           content:
             application/json:
               schema:
@@ -9207,7 +9225,7 @@ paths:
       summary: Create a transfer quote
       description: |
         Generate a quote for a cross-currency transfer on behalf of the authenticated agent's customer. Accounts referenced in the request must belong to the agent's customer. Requires the CREATE_QUOTES permission in the agent's policy.
-        The destination is another embedded wallet or one of the customer's Spark addresses saved with `POST /agents/me/external-accounts` (`ACCOUNT`), an address on another chain (`CHAIN_ADDRESS`), or a BOLT11 Lightning invoice (`LIGHTNING_INVOICE`). Grid answers `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held for review, on any of the customer's records of it, under either prefix and including removed ones. A `CHAIN_ADDRESS` quote sends `USDB`. Grid pays the chain itself at a locked rate, so the amount the recipient receives is fixed when the quote is created and equals the quote's `minimumReceivingAmount`. A `LIGHTNING_INVOICE` quote sends `USDB` and pays exactly the invoice's amount, which it locks on the receiving side in satoshis. Grid pays the invoice once the send executes and refunds the `USDB` if the payment fails.
+        The destination is another embedded wallet or one of the customer's Spark addresses saved with `POST /agents/me/external-accounts` (`ACCOUNT`), an address on another chain (`CHAIN_ADDRESS`), or a BOLT11 Lightning invoice (`LIGHTNING_INVOICE`). Grid answers `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held for review, on any of the customer's records of it, under either prefix and including removed ones. A `CHAIN_ADDRESS` quote sends `USDB`. Grid pays the chain itself at a locked rate, so the amount the recipient receives is fixed when the quote is created and equals the quote's `minimumReceivingAmount`. A `LIGHTNING_INVOICE` quote sends `USDB` and pays exactly the invoice's amount, which it locks on the receiving side in satoshis, through the platform's Lightning invoice quote (`POST /quotes`). Grid pays the invoice once the send executes and refunds the `USDB` if the payment fails.
         If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount exceeds the agent's approvalThresholds, the resulting transaction will require explicit approval before funds move.
       operationId: agentCreateQuote
       tags:
@@ -9256,7 +9274,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error403'
         '409':
-          description: Conflict - The `LIGHTNING_INVOICE` was already quoted (`INVOICE_ALREADY_USED`). Ask the recipient for a new invoice.
+          description: Conflict - Another quote for the `LIGHTNING_INVOICE` can still be executed, or was executed (`INVOICE_ALREADY_USED`).
           content:
             application/json:
               schema:
@@ -17226,7 +17244,7 @@ components:
             | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
             | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
             | PAYMENT_DOCUMENT_ALREADY_USED | The payment document is already attached to a quote. A document can be used on one quote only, so upload the file again to use it on another quote |
-            | INVOICE_ALREADY_USED | The Lightning invoice was already quoted. An invoice can be quoted once, so ask the recipient for a new one |
+            | INVOICE_ALREADY_USED | Another quote for the Lightning invoice can still be executed, or was executed. An invoice has one live quote at a time; ask the recipient for a new one, or wait for the earlier quote to expire |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
             - TRANSACTION_NOT_CANCELLABLE
@@ -24191,7 +24209,7 @@ components:
             - LIGHTNING
         invoice:
           type: string
-          description: 1-time use lightning bolt11 invoice payout destination
+          description: 1-time use lightning bolt11 invoice payout destination. Quote it as an `ACCOUNT` destination, locked on the `RECEIVING` side at the invoice's amount in satoshis; see `POST /quotes`.
           example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
         bolt12:
           type: string
@@ -30439,7 +30457,7 @@ components:
 
         A `CHAIN_ADDRESS` quote sends `USDB`. With `lockedCurrencySide` `SENDING` it commits to the `USDB` amount; with `RECEIVING` it commits to exactly the amount the destination receives, in the smallest unit of the destination's `currency`, and the fees are added to the `USDB` sent. Grid pays the chain itself at a locked rate, so the amount the destination receives is fixed when the quote is created and returned as `minimumReceivingAmount`. When Grid cannot deliver a `RECEIVING` amount exactly, it refuses the quote with 400 `EXACT_AMOUNT_UNAVAILABLE`.
 
-        A `LIGHTNING_INVOICE` quote sends `USDB` and pays exactly the invoice's amount. Its `lockedCurrencySide` must be `RECEIVING` and its `lockedCurrencyAmount` the invoice's amount in satoshis; the fees are added to the `USDB` sent. The quote expires no later than one minute before the invoice does. An invoice can be quoted once: another quote for it is refused with 409 `INVOICE_ALREADY_USED`, except a repeat of the same request with the same `Idempotency-Key`.
+        A `LIGHTNING_INVOICE` quote sends `USDB` and pays exactly the invoice's amount. Its `lockedCurrencySide` must be `RECEIVING` and its `lockedCurrencyAmount` the invoice's amount in satoshis; the fees are added to the `USDB` sent. It is the platform's own Lightning invoice quote (see `POST /quotes`), so the same invoice rules and the one-live-quote rule apply: another quote for an invoice is refused with 409 `INVOICE_ALREADY_USED` while an earlier one can still be executed, except a repeat of the same request with the same `Idempotency-Key`.
       required:
         - source
         - destination

@@ -16,8 +16,9 @@ post:
     receives is fixed when the quote is created and equals the quote's
     `minimumReceivingAmount`. A `LIGHTNING_INVOICE` quote sends `USDB` and
     pays exactly the invoice's amount, which it locks on the receiving side in
-    satoshis. Grid pays the invoice once the send executes and refunds the
-    `USDB` if the payment fails.
+    satoshis, through the platform's Lightning invoice quote (`POST /quotes`).
+    Grid pays the invoice once the send executes and refunds the `USDB` if the
+    payment fails.
 
     If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount
     exceeds the agent's approvalThresholds, the resulting transaction will require
@@ -75,8 +76,8 @@ post:
             $ref: ../../components/schemas/errors/Error403.yaml
     '409':
       description: >-
-        Conflict - The `LIGHTNING_INVOICE` was already quoted
-        (`INVOICE_ALREADY_USED`). Ask the recipient for a new invoice.
+        Conflict - Another quote for the `LIGHTNING_INVOICE` can still be
+        executed, or was executed (`INVOICE_ALREADY_USED`).
       content:
         application/json:
           schema:
