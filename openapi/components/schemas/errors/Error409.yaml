@@ -36,7 +36,7 @@ properties:
       | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
       | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
       | PAYMENT_DOCUMENT_ALREADY_USED | The payment document is already attached to a quote. A document can be used on one quote only, so upload the file again to use it on another quote |
-      | INVOICE_ALREADY_USED | Another quote for the Lightning invoice can still be executed, or was executed. An invoice has one live quote at a time; ask the recipient for a new one, or wait for the earlier quote to expire |
+      | INVOICE_ALREADY_USED | Another quote for the Lightning invoice can still be executed or funded, or was executed. An invoice has one live quote at a time; ask the recipient for a new one, or retry once Grid has closed the earlier quote as expired |
     enum:
       - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
       - TRANSACTION_NOT_CANCELLABLE

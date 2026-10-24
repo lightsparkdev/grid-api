@@ -4719,12 +4719,23 @@ paths:
         funding in USD or USDC. The invoice must name an amount in whole
         satoshis, be for the platform's Bitcoin network, and not expire within
         the next minute, and the quote expires no later than a minute before
-        the invoice. An invoice has one live quote at a time: another quote for
-        it is refused with `409 INVOICE_ALREADY_USED` while an earlier quote can
-        still be executed, or once one was executed. A quote that expired
-        without executing frees the invoice. Grid pays the invoice once the
-        quote is funded, and the transaction completes when the payment does; a
-        payment that fails is refunded to the source.
+        the invoice. Other sources are refused with `400 INVALID_INPUT`, and so
+        is an invoice Lightspark issued for a Lightning deposit.
+
+        An invoice has one live quote at a time: another quote for it is refused
+        with `409 INVOICE_ALREADY_USED` while an earlier quote can still be
+        executed or funded, or once one was executed. An earlier quote frees the
+        invoice only once Grid has closed it as expired, a few minutes after its
+        `expiresAt`; for an embedded wallet, only once Spark shows its transfer
+        was never sent.
+
+        Grid pays the invoice once the quote is funded, and the transaction
+        completes when the payment does. A payment that fails is refunded to an
+        account source or to real-time USD funding. Real-time USD funds that
+        arrive after the quote expired are returned without paying the invoice.
+        Real-time USDC that arrives after expiry stays in the customer's USDC
+        balance, and a failed payment funded in real-time USDC is held for
+        Lightspark operations to return rather than refunded automatically.
       operationId: createQuote
       tags:
         - Cross-Currency Transfers
@@ -4914,7 +4925,7 @@ paths:
           description: |-
             Conflict. Returned with `BANK_ACCOUNT_VALIDATION_PENDING` when the US bank account on the request is still being validated. Grid verifies a newly added ACH account by sending a micro-entry and waiting out the return window, which takes a few banking days. The account is not rejected, so retry once validation completes. An account that failed validation outright returns `400` with `INVALID_BANK_ACCOUNT`.
             Returned with `PAYMENT_DOCUMENT_ALREADY_USED` when a document in `documentIds` is already attached to a quote. A document can be used on one quote only. Upload the file again and retry with the new ID. Grid created no quote, so you can reuse the same `Idempotency-Key`.
-            Returned with `INVOICE_ALREADY_USED` when another quote for the same Lightning invoice can still be executed, or was executed. Ask the recipient for a new invoice, or wait for the earlier quote to expire.
+            Returned with `INVOICE_ALREADY_USED` when another quote for the same Lightning invoice can still be executed or funded, or was executed. Ask the recipient for a new invoice, or retry once Grid has closed the earlier quote as expired.
           content:
             application/json:
               schema:
@@ -9274,7 +9285,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error403'
         '409':
-          description: Conflict - Another quote for the `LIGHTNING_INVOICE` can still be executed, or was executed (`INVOICE_ALREADY_USED`).
+          description: Conflict - Another quote for the `LIGHTNING_INVOICE` can still be executed or funded, or was executed (`INVOICE_ALREADY_USED`).
           content:
             application/json:
               schema:
@@ -17244,7 +17255,7 @@ components:
             | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
             | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
             | PAYMENT_DOCUMENT_ALREADY_USED | The payment document is already attached to a quote. A document can be used on one quote only, so upload the file again to use it on another quote |
-            | INVOICE_ALREADY_USED | Another quote for the Lightning invoice can still be executed, or was executed. An invoice has one live quote at a time; ask the recipient for a new one, or wait for the earlier quote to expire |
+            | INVOICE_ALREADY_USED | Another quote for the Lightning invoice can still be executed or funded, or was executed. An invoice has one live quote at a time; ask the recipient for a new one, or retry once Grid has closed the earlier quote as expired |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
             - TRANSACTION_NOT_CANCELLABLE

@@ -77,7 +77,7 @@ post:
     '409':
       description: >-
         Conflict - Another quote for the `LIGHTNING_INVOICE` can still be
-        executed, or was executed (`INVOICE_ALREADY_USED`).
+        executed or funded, or was executed (`INVOICE_ALREADY_USED`).
       content:
         application/json:
           schema:
