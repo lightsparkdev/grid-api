@@ -70,6 +70,7 @@ properties:
       | STABLECOIN_PROVIDER_SOURCE_NOT_LINKED | The provider source account is not linked |
       | STABLECOIN_VERIFICATION_FAILED | The stablecoin could not be verified with the provider |
       | DOCUMENTS_REQUIRED | The destination requires supporting documents for the quote's `purposeOfPayment` that the request did not supply. `details.missingRequirements` lists the requirement ID of each one |
+      | EXACT_AMOUNT_UNAVAILABLE | The quote cannot deliver exactly the requested receiving amount at the current rate; quote again shortly or lock the sending amount |
     enum:
       - INVALID_INPUT
       - END_USER_TERMS_VERSION_NOT_FOUND
@@ -133,6 +134,7 @@ properties:
       - STABLECOIN_PROVIDER_SOURCE_NOT_LINKED
       - STABLECOIN_VERIFICATION_FAILED
       - DOCUMENTS_REQUIRED
+      - EXACT_AMOUNT_UNAVAILABLE
   reason:
     type: string
     description: Error message
