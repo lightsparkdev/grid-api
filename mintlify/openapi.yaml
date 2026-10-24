@@ -4733,12 +4733,16 @@ paths:
         completes when the payment does. A payment that fails is refunded to an
         account source or to real-time USD funding. Funds that are ready only
         after the quote expired, or while Lightning invoice sends are turned off
-        for the platform, never pay the invoice: the transaction fails (or stays
-        `EXPIRED`), the funds are returned to an account source or real-time USD
-        funding, and the invoice can be quoted again. Real-time USDC is not
-        returned automatically: USDC that arrives after expiry stays in the
-        customer's USDC balance, and USDC already traded, like any funds Grid
-        cannot return at once, is held for Lightspark operations to return.
+        for the platform, never pay the invoice. The funds are returned to an
+        account source or real-time USD funding, the transaction fails (or stays
+        `EXPIRED`) with `failureReason` `QUOTE_EXPIRED` or
+        `QUOTE_EXECUTION_FAILED`, and the invoice can be quoted again. While a
+        real-time USD deposit is still settling, the return waits for it: the
+        transaction stays pending and the invoice stays taken until the funds
+        start back, for up to several hours before Lightspark operations step in.
+        Real-time USDC is not returned automatically: USDC that arrives after
+        expiry stays in the customer's USDC balance, and USDC already traded is
+        held for Lightspark operations to return.
       operationId: createQuote
       tags:
         - Cross-Currency Transfers
