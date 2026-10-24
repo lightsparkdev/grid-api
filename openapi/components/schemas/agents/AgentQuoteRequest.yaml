@@ -4,7 +4,8 @@ description: >-
   internal account of the agent's customer. The destination is either an
   `ACCOUNT`: another `EMBEDDED_WALLET` on the platform, or one of the
   customer's active `SPARK_WALLET` external accounts in the source's currency;
-  or an address on another chain (`CHAIN_ADDRESS`).
+  an address on another chain (`CHAIN_ADDRESS`); or a BOLT11 Lightning
+  invoice (`LIGHTNING_INVOICE`).
 
 
   A `CHAIN_ADDRESS` quote sends `USDB`. With `lockedCurrencySide` `SENDING`
@@ -15,6 +16,15 @@ description: >-
   when the quote is created and returned as `minimumReceivingAmount`. When
   Grid cannot deliver a `RECEIVING` amount exactly, it refuses the quote with
   400 `EXACT_AMOUNT_UNAVAILABLE`.
+
+
+  A `LIGHTNING_INVOICE` quote sends `USDB` and pays exactly the invoice's
+  amount. Its `lockedCurrencySide` must be `RECEIVING` and its
+  `lockedCurrencyAmount` the invoice's amount in satoshis; the fees are added
+  to the `USDB` sent. The quote expires no later than one minute before the
+  invoice does. An invoice can be quoted once: another quote for it is refused
+  with 409 `INVOICE_ALREADY_USED`, except a repeat of the same request with the
+  same `Idempotency-Key`.
 required:
   - source
   - destination

@@ -2,8 +2,10 @@ description: Destination of an agent quote.
 oneOf:
   - $ref: ../quotes/AccountDestination.yaml
   - $ref: ./AgentChainAddressDestination.yaml
+  - $ref: ./AgentLightningInvoiceDestination.yaml
 discriminator:
   propertyName: destinationType
   mapping:
     ACCOUNT: ../quotes/AccountDestination.yaml
     CHAIN_ADDRESS: ./AgentChainAddressDestination.yaml
+    LIGHTNING_INVOICE: ./AgentLightningInvoiceDestination.yaml

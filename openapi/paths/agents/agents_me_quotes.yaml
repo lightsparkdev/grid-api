@@ -6,14 +6,18 @@ post:
     customer. Requires the CREATE_QUOTES permission in the agent's policy.
 
     The destination is another embedded wallet or one of the customer's Spark
-    addresses saved with `POST /agents/me/external-accounts` (`ACCOUNT`), or an
-    address on another chain (`CHAIN_ADDRESS`). Grid answers
+    addresses saved with `POST /agents/me/external-accounts` (`ACCOUNT`), an
+    address on another chain (`CHAIN_ADDRESS`), or a BOLT11 Lightning invoice
+    (`LIGHTNING_INVOICE`). Grid answers
     `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held
     for review, on any of the customer's records of it, under either prefix and
     including removed ones. A `CHAIN_ADDRESS` quote sends `USDB`. Grid
     pays the chain itself at a locked rate, so the amount the recipient
     receives is fixed when the quote is created and equals the quote's
-    `minimumReceivingAmount`.
+    `minimumReceivingAmount`. A `LIGHTNING_INVOICE` quote sends `USDB` and
+    pays exactly the invoice's amount, which it locks on the receiving side in
+    satoshis. Grid pays the invoice once the send executes and refunds the
+    `USDB` if the payment fails.
 
     If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount
     exceeds the agent's approvalThresholds, the resulting transaction will require
@@ -62,12 +66,21 @@ post:
     '403':
       description: >-
         Forbidden - Agents API is not enabled for the platform, the agent policy does
-        not permit this operation, or the agent may not pay the destination
-        (`DESTINATION_NOT_ALLOWED`)
+        not permit this operation, the agent may not pay the destination
+        (`DESTINATION_NOT_ALLOWED`), or the platform does not pay Lightning
+        invoices for agents (`FORBIDDEN`)
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error403.yaml
+    '409':
+      description: >-
+        Conflict - The `LIGHTNING_INVOICE` was already quoted
+        (`INVOICE_ALREADY_USED`). Ask the recipient for a new invoice.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
     '412':
       description: Counterparty doesn't support UMA version
       content:
