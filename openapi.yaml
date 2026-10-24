@@ -4731,11 +4731,14 @@ paths:
 
         Grid pays the invoice once the quote is funded, and the transaction
         completes when the payment does. A payment that fails is refunded to an
-        account source or to real-time USD funding. Real-time USD funds that
-        arrive after the quote expired are returned without paying the invoice.
-        Real-time USDC that arrives after expiry stays in the customer's USDC
-        balance, and a failed payment funded in real-time USDC is held for
-        Lightspark operations to return rather than refunded automatically.
+        account source or to real-time USD funding. Funds that are ready only
+        after the quote expired, or while Lightning invoice sends are turned off
+        for the platform, never pay the invoice: the transaction fails (or stays
+        `EXPIRED`), the funds are returned to an account source or real-time USD
+        funding, and the invoice can be quoted again. Real-time USDC is not
+        returned automatically: USDC that arrives after expiry stays in the
+        customer's USDC balance, and USDC already traded, like any funds Grid
+        cannot return at once, is held for Lightspark operations to return.
       operationId: createQuote
       tags:
         - Cross-Currency Transfers
