@@ -30403,7 +30403,7 @@ components:
       description: |-
         A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET` internal account of the agent's customer. The destination is either an `ACCOUNT`: another `EMBEDDED_WALLET` on the platform, or one of the customer's active `SPARK_WALLET` external accounts in the source's currency; or an address on another chain (`CHAIN_ADDRESS`).
 
-        A `CHAIN_ADDRESS` quote sends `USDB` and requires `lockedCurrencySide` `SENDING`: it commits to the `USDB` amount and the destination. Grid pays the chain itself at a locked rate, so the amount the destination receives is fixed when the quote is created and returned as `minimumReceivingAmount`.
+        A `CHAIN_ADDRESS` quote sends `USDB`. With `lockedCurrencySide` `SENDING` it commits to the `USDB` amount; with `RECEIVING` it commits to exactly the amount the destination receives, in the smallest unit of the destination's `currency`, and the fees are added to the `USDB` sent. Grid pays the chain itself at a locked rate, so the amount the destination receives is fixed when the quote is created and returned as `minimumReceivingAmount`.
       required:
         - source
         - destination
