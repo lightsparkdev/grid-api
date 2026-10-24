@@ -12,7 +12,9 @@ description: >-
   amount the destination receives, in the smallest unit of the destination's
   `currency`, and the fees are added to the `USDB` sent. Grid pays the chain
   itself at a locked rate, so the amount the destination receives is fixed
-  when the quote is created and returned as `minimumReceivingAmount`.
+  when the quote is created and returned as `minimumReceivingAmount`. When
+  Grid cannot deliver a `RECEIVING` amount exactly, it refuses the quote with
+  400 `EXACT_AMOUNT_UNAVAILABLE`.
 required:
   - source
   - destination

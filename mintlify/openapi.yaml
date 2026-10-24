@@ -15844,6 +15844,7 @@ components:
             | STABLECOIN_PROVIDER_SOURCE_NOT_LINKED | The provider source account is not linked |
             | STABLECOIN_VERIFICATION_FAILED | The stablecoin could not be verified with the provider |
             | DOCUMENTS_REQUIRED | The destination requires supporting documents for the quote's `purposeOfPayment` that the request did not supply. `details.missingRequirements` lists the requirement ID of each one |
+            | EXACT_AMOUNT_UNAVAILABLE | The quote cannot deliver exactly the requested receiving amount at the current rate; quote again shortly or lock the sending amount |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -15907,6 +15908,7 @@ components:
             - STABLECOIN_PROVIDER_SOURCE_NOT_LINKED
             - STABLECOIN_VERIFICATION_FAILED
             - DOCUMENTS_REQUIRED
+            - EXACT_AMOUNT_UNAVAILABLE
         reason:
           type: string
           description: Error message
@@ -30403,7 +30405,7 @@ components:
       description: |-
         A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET` internal account of the agent's customer. The destination is either an `ACCOUNT`: another `EMBEDDED_WALLET` on the platform, or one of the customer's active `SPARK_WALLET` external accounts in the source's currency; or an address on another chain (`CHAIN_ADDRESS`).
 
-        A `CHAIN_ADDRESS` quote sends `USDB`. With `lockedCurrencySide` `SENDING` it commits to the `USDB` amount; with `RECEIVING` it commits to exactly the amount the destination receives, in the smallest unit of the destination's `currency`, and the fees are added to the `USDB` sent. Grid pays the chain itself at a locked rate, so the amount the destination receives is fixed when the quote is created and returned as `minimumReceivingAmount`.
+        A `CHAIN_ADDRESS` quote sends `USDB`. With `lockedCurrencySide` `SENDING` it commits to the `USDB` amount; with `RECEIVING` it commits to exactly the amount the destination receives, in the smallest unit of the destination's `currency`, and the fees are added to the `USDB` sent. Grid pays the chain itself at a locked rate, so the amount the destination receives is fixed when the quote is created and returned as `minimumReceivingAmount`. When Grid cannot deliver a `RECEIVING` amount exactly, it refuses the quote with 400 `EXACT_AMOUNT_UNAVAILABLE`.
       required:
         - source
         - destination
