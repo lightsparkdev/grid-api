@@ -12,6 +12,17 @@ properties:
     description: Indicates whether the account is a platform account or a customer
       account.
     example: true
+  paymentUri:
+    type: string
+    format: uri
+    description: >-
+      A payment link carrying the address, token and exact amount of these
+      instructions, which a wallet on the chain can open to pay them: a Solana
+      Pay transfer request on Solana and an EIP-681 token transfer on the EVM
+      chains. Present on real-time funded quotes paid in a stablecoin to a
+      chain wallet; absent where the chain has no widely supported link
+      format, such as Tron.
+    example: solana:9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM?amount=50.25&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
   accountOrWalletInfo:
     description: >-
       Where to send the funds. Quotes can carry any of these types. Internal

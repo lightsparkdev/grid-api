@@ -19102,6 +19102,11 @@ components:
           type: boolean
           description: Indicates whether the account is a platform account or a customer account.
           example: true
+        paymentUri:
+          type: string
+          format: uri
+          description: 'A payment link carrying the address, token and exact amount of these instructions, which a wallet on the chain can open to pay them: a Solana Pay transfer request on Solana and an EIP-681 token transfer on the EVM chains. Present on real-time funded quotes paid in a stablecoin to a chain wallet; absent where the chain has no widely supported link format, such as Tron.'
+          example: solana:9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM?amount=50.25&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
         accountOrWalletInfo:
           description: Where to send the funds. Quotes can carry any of these types. Internal accounts return only `USD_ACCOUNT`, `EUR_ACCOUNT`, `SWIFT_ACCOUNT`, and the network wallet types; MXN, BRL, COP, ARS, Lightning, and Bitcoin L1 instructions appear only on real-time funded quotes.
           oneOf:
@@ -30210,6 +30215,11 @@ components:
           type: string
           description: BOLT11 invoice when `targetType` is `LIGHTNING_INVOICE`; otherwise the address on `sourceNetwork` to which the customer sends funds.
           example: lnbc1pndepositpp5...
+        paymentUri:
+          type: string
+          format: uri
+          description: 'A payment link for a chain deposit carrying `target`, the token and `sourceAmount`, which a wallet on `sourceNetwork` can open to pay it: a Solana Pay transfer request on Solana and an EIP-681 token transfer on the EVM chains. Present while the deposit is `PENDING`; absent for Lightning deposits and where the chain has no widely supported link format, such as Tron.'
+          example: ethereum:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913@8453/transfer?address=0x1234567890abcdef1234567890abcdef12345678&uint256=50250000
         paymentLinks:
           type: object
           description: Payment links for a `LIGHTNING` deposit. Absent for chain deposits.
