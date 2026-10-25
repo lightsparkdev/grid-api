@@ -1,22 +1,10 @@
 type: string
-enum:
-  - AGENT_API_DISABLED
-  - AGENT_CUSTOMER_INACTIVE
-  - AGENT_INACTIVE
-  - AGENT_NO_DELEGATED_KEY
-  - AGENT_PERMISSION_REQUIRED
-  - AGENT_ACCOUNT_NOT_ALLOWED
-  - AGENT_DEPOSIT_ACCOUNT_NOT_ALLOWED
-  - AGENT_POLICY_DENIED
-  - AGENT_QUOTE_HELD
-  - AGENT_CARDS_DISABLED
-  - AGENT_CARDS_CUSTOMER_NOT_VERIFIED
-  - CARDHOLDER_INFO_MISSING
 description: |
   Why Grid refused the request, as `details.refusalReason`. Several refusals
   share one `code`, and `reason` is a message that may be reworded, so branch
-  on this value rather than on `reason`. New values may be added; treat an
-  unknown value as a refusal without a known cause.
+  on this value rather than on `reason`. Treat it as an open set, not a fixed
+  list: Grid may add values, and an unknown one is a refusal without a known
+  cause.
 
   | Refusal reason | Status | Description |
   |----------------|--------|-------------|

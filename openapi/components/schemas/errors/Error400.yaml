@@ -165,8 +165,11 @@ properties:
       missingFields:
         type: array
         description: >-
-          Each customer field the request needs but the customer record lacks.
-          Present with refusal reason `CARDHOLDER_INFO_MISSING`.
+          Each customer field the request needs but the customer record lacks,
+          named as in `CustomerInfoFieldName` (for example `PHONE_NUMBER`).
+          Present with refusal reason `CARDHOLDER_INFO_MISSING`. Grid may name
+          fields not yet listed there.
         items:
-          $ref: ../customers/CustomerInfoFieldName.yaml
+          type: string
+          example: PHONE_NUMBER
     additionalProperties: true

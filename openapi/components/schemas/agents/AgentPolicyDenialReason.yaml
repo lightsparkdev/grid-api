@@ -1,17 +1,8 @@
 type: string
-enum:
-  - INVALID_AMOUNT
-  - AGENT_PAUSED
-  - PERMISSION_MISSING
-  - ACCOUNT_NOT_ALLOWED
-  - PER_TRANSACTION_LIMIT_EXCEEDED
-  - DAILY_LIMIT_EXCEEDED
-  - MONTHLY_LIMIT_EXCEEDED
-  - DAILY_TRANSACTION_LIMIT_EXCEEDED
 description: |
   Which agent policy rule denied executing a quote. Sent as
-  `details.policyDenialReason` with refusal reason `AGENT_POLICY_DENIED`. New
-  values may be added.
+  `details.policyDenialReason` with refusal reason `AGENT_POLICY_DENIED`. Treat
+  it as an open set, not a fixed list: Grid may add values.
 
   | Reason | Description |
   |--------|-------------|

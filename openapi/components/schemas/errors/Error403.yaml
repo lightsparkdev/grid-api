@@ -40,10 +40,12 @@ properties:
       refusalReason:
         $ref: ./RefusalReason.yaml
       permission:
-        $ref: ../agents/AgentPermission.yaml
+        type: string
         description: >-
-          The permission the agent's policy lacks. Present with refusal reason
-          `AGENT_PERMISSION_REQUIRED`.
+          The `AgentPermission` the agent's policy lacks. Present with refusal
+          reason `AGENT_PERMISSION_REQUIRED`. Grid may add permissions, so
+          accept a value not yet listed there.
+        example: ISSUE_CARDS
       policyDenialReason:
         $ref: ../agents/AgentPolicyDenialReason.yaml
         description: >-

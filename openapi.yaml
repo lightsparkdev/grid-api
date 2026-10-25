@@ -16384,24 +16384,12 @@ components:
       example: SUPPORTING_PROOF
     RefusalReason:
       type: string
-      enum:
-        - AGENT_API_DISABLED
-        - AGENT_CUSTOMER_INACTIVE
-        - AGENT_INACTIVE
-        - AGENT_NO_DELEGATED_KEY
-        - AGENT_PERMISSION_REQUIRED
-        - AGENT_ACCOUNT_NOT_ALLOWED
-        - AGENT_DEPOSIT_ACCOUNT_NOT_ALLOWED
-        - AGENT_POLICY_DENIED
-        - AGENT_QUOTE_HELD
-        - AGENT_CARDS_DISABLED
-        - AGENT_CARDS_CUSTOMER_NOT_VERIFIED
-        - CARDHOLDER_INFO_MISSING
       description: |
         Why Grid refused the request, as `details.refusalReason`. Several refusals
         share one `code`, and `reason` is a message that may be reworded, so branch
-        on this value rather than on `reason`. New values may be added; treat an
-        unknown value as a refusal without a known cause.
+        on this value rather than on `reason`. Treat it as an open set, not a fixed
+        list: Grid may add values, and an unknown one is a refusal without a known
+        cause.
 
         | Refusal reason | Status | Description |
         |----------------|--------|-------------|
@@ -16577,9 +16565,10 @@ components:
               $ref: '#/components/schemas/RefusalReason'
             missingFields:
               type: array
-              description: Each customer field the request needs but the customer record lacks. Present with refusal reason `CARDHOLDER_INFO_MISSING`.
+              description: Each customer field the request needs but the customer record lacks, named as in `CustomerInfoFieldName` (for example `PHONE_NUMBER`). Present with refusal reason `CARDHOLDER_INFO_MISSING`. Grid may name fields not yet listed there.
               items:
-                $ref: '#/components/schemas/CustomerInfoFieldName'
+                type: string
+                example: PHONE_NUMBER
           additionalProperties: true
     Error501:
       type: object
@@ -17805,33 +17794,12 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomerCreateRequest'
           BUSINESS: '#/components/schemas/BusinessCustomerCreateRequest'
-    AgentPermission:
-      type: string
-      enum:
-        - VIEW_TRANSACTIONS
-        - CREATE_QUOTES
-        - EXECUTE_QUOTES
-        - MANAGE_EXTERNAL_ACCOUNTS
-        - RECEIVE_FUNDS
-        - MANAGE_IDENTITY
-        - MANAGE_CARDS
-        - ISSUE_CARDS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one standard virtual card for itself while it holds no live standard card, and single-use purchase cards where the platform enables them.'
     AgentPolicyDenialReason:
       type: string
-      enum:
-        - INVALID_AMOUNT
-        - AGENT_PAUSED
-        - PERMISSION_MISSING
-        - ACCOUNT_NOT_ALLOWED
-        - PER_TRANSACTION_LIMIT_EXCEEDED
-        - DAILY_LIMIT_EXCEEDED
-        - MONTHLY_LIMIT_EXCEEDED
-        - DAILY_TRANSACTION_LIMIT_EXCEEDED
       description: |
         Which agent policy rule denied executing a quote. Sent as
-        `details.policyDenialReason` with refusal reason `AGENT_POLICY_DENIED`. New
-        values may be added.
+        `details.policyDenialReason` with refusal reason `AGENT_POLICY_DENIED`. Treat
+        it as an open set, not a fixed list: Grid may add values.
 
         | Reason | Description |
         |--------|-------------|
@@ -17884,8 +17852,9 @@ components:
             refusalReason:
               $ref: '#/components/schemas/RefusalReason'
             permission:
-              $ref: '#/components/schemas/AgentPermission'
-              description: The permission the agent's policy lacks. Present with refusal reason `AGENT_PERMISSION_REQUIRED`.
+              type: string
+              description: The `AgentPermission` the agent's policy lacks. Present with refusal reason `AGENT_PERMISSION_REQUIRED`. Grid may add permissions, so accept a value not yet listed there.
+              example: ISSUE_CARDS
             policyDenialReason:
               $ref: '#/components/schemas/AgentPolicyDenialReason'
               description: The policy rule that denied the quote. Present with refusal reason `AGENT_POLICY_DENIED`.
@@ -30349,6 +30318,18 @@ components:
       description: 202 response returned from the delegated-key endpoints. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`.
       allOf:
         - $ref: '#/components/schemas/SignedRequestChallenge'
+    AgentPermission:
+      type: string
+      enum:
+        - VIEW_TRANSACTIONS
+        - CREATE_QUOTES
+        - EXECUTE_QUOTES
+        - MANAGE_EXTERNAL_ACCOUNTS
+        - RECEIVE_FUNDS
+        - MANAGE_IDENTITY
+        - MANAGE_CARDS
+        - ISSUE_CARDS
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one standard virtual card for itself while it holds no live standard card, and single-use purchase cards where the platform enables them.'
     AgentExecutionMode:
       type: string
       enum:
