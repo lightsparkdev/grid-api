@@ -23,6 +23,10 @@ To add another credential, call **`POST /auth/credentials`** with the new creden
 
 Re-authentication after a session expires skips the original `POST /auth/credentials` create call but otherwise follows the same per-type pattern. `EMAIL_OTP` re-auth needs a fresh OTP email, so call `POST /auth/credentials/{id}/challenge` first; `PASSKEY` re-auth uses the same `/challenge` (with `clientPublicKey`) → `/verify` two-step as the first authentication; `OAUTH` is the exception — since proof of control is a fresh OIDC token, there's nothing to pre-issue, so `/verify` alone suffices.
 
+### Confirming which wallet a session belongs to
+
+Every session-issuing response (`POST /auth/credentials/{id}/verify` and `POST /auth/sessions/{id}/refresh`) carries a `sessionJwt`: the wallet provider's signed record of the session, whose claims name the wallet (`organization_id`), the authenticated user (`user_id`) and the session public key (`public_key`). A client that does not want to trust its backend about which wallet it is signing for can check the signature (a 64-byte P-256 `r || s` over SHA-256 of SHA-256 of `header.payload`, with the key given in the `AuthSession` reference; `verifySessionJwtSignature` in `@turnkey/crypto` implements it), confirm `public_key` is its own client public key, and then refuse any `payloadToSign` whose `organizationId` differs from `organization_id`.
+
 ## Passkey
 
 ### Passkey registration

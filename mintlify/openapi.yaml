@@ -29394,6 +29394,10 @@ components:
               type: string
               deprecated: true
               description: Deprecated and no longer returned. Every session uses a compressed `clientPublicKey`, and the client keeps the matching private key as the session signing key. See the "Client keys & signing" guide.
+            sessionJwt:
+              type: string
+              description: The session token the embedded wallet provider issued for this session, as a compact JWT. Its claims name the wallet's `organization_id`, the authenticated `user_id`, the session `public_key` (the `clientPublicKey` this session was created for) and the expiry `exp`. A client that holds the session signing key can verify the token itself and then trust which wallet and user the session belongs to, instead of learning them from the payloads it is later asked to sign. The signature is a 64-byte P-256 `r || s` (base64url) over SHA-256 of SHA-256 of the ASCII `header.payload`, made with the provider's signing key `04d498aa87ac3bf982ac2b5dd9604d0074905cfbda5d62727c5a237b895e6749205e9f7cd566909c4387f6ca25c308445c60884b788560b785f4a96ac33702a469` (uncompressed SEC1, hex). Sandbox sessions are signed the same way with `04939a627d64644baf012cf6cbaaebfe0ed8b401e1bc801254251fd9d0ce3c04c84345eec219b259b4aae266d728703c53b13ab86cfbb05d5163b8395c7525a3e8`. Returned only on session-issuing responses (`POST /auth/credentials/{id}/verify` and `POST /auth/sessions/{id}/refresh`), never from `GET /auth/sessions`.
+              example: eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzU3NDg2MDEsInB1YmxpY19rZXkiOiIwMmY0NWYyYTIyYzkwOGI5Y2UwOWE3MTUwZTUxNGFmZDI0NjI3YzQwMWMzOGE0YWZjMTY0ZTFlYTc4M2FkYWFhMzEiLCJzZXNzaW9uX3R5cGUiOiJTRVNTSU9OX1RZUEVfUkVBRF9XUklURSIsInVzZXJfaWQiOiI1YzJkZDk3Yy0xYmE4LTQ3YmYtOTBlNi0yN2EzOGMyYzI0NjIiLCJvcmdhbml6YXRpb25faWQiOiI4ZTJiYzVmMi04ZGEyLTQ3MTMtOGQ4Yy00ZDljMmEyZGU1N2IifQ.c2lnbmF0dXJl
             expiresAt:
               type: string
               format: date-time
