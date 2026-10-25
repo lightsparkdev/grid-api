@@ -3,8 +3,10 @@ description: >-
   Update request for `PATCH /cards/{id}`. At least one of `status`,
   `fundingSource`, `maxNetworkRiskScore`, `allowedMccs`, `blockedMccs`,
   `defaultMccBlocksLifted`, or `threeDSecurePassword` must be supplied;
-  `allowedMccs`, `blockedMccs` and `defaultMccBlocksLifted` count only for a
-  card issued for an agent, and are ignored on any other card. Supplying `status` also requires
+  `allowedMccs` and `blockedMccs` count on a card issued for an agent, and on
+  any other card once merchant category controls are enabled for your
+  platform; `defaultMccBlocksLifted` counts only on a card issued for an
+  agent. Fields that do not count are ignored. Supplying `status` also requires
   `substatus` and `reason`, so every card state change carries why it
   happened. `status`
   transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and
@@ -69,9 +71,12 @@ properties:
       - type: 'null'
     description: >-
       Replacement list of merchant category codes the card may spend at.
-      Applies only to a card issued for an agent, and is ignored otherwise.
-      Supply null to allow every category not blocked, or omit to leave it
-      unchanged. Cannot be supplied alongside `status: CLOSED`.
+      Applies to a card issued for an agent, and to any other card once
+      merchant category controls are enabled for your platform; until then
+      it is ignored on a card without an agent. Supply null to allow every
+      category not blocked, or omit to leave it unchanged. Rejected with
+      `INVALID_INPUT` on a card whose issuer makes authorization decisions.
+      Cannot be supplied alongside `status: CLOSED`.
     example:
       - '5411'
   blockedMccs:
@@ -83,10 +88,13 @@ properties:
       - type: 'null'
     description: >-
       Replacement list of merchant category codes the card declines. Applies
-      only to a card issued for an agent, and is ignored otherwise. Supply
-      null to clear it, or omit to leave it unchanged. Grid's default agent
+      to a card issued for an agent, and to any other card once merchant
+      category controls are enabled for your platform; until then it is
+      ignored on a card without an agent. Supply null to clear it, or omit to
+      leave it unchanged. On a card issued for an agent, Grid's default agent
       blocks still apply on top of this list; lift them with
-      `defaultMccBlocksLifted`. Cannot be supplied alongside
+      `defaultMccBlocksLifted`. Rejected with `INVALID_INPUT` on a card whose
+      issuer makes authorization decisions. Cannot be supplied alongside
       `status: CLOSED`.
     example:
       - '7995'

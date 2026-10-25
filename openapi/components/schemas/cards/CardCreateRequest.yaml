@@ -56,9 +56,12 @@ properties:
     type: array
     minItems: 1
     description: >-
-      Merchant category codes the card may spend at. Applies only to a card
-      issued with `agentId`, and is ignored otherwise. Omit to allow every
-      category not blocked.
+      Merchant category codes the card may spend at. Omit to allow every
+      category not blocked. Applies to a card issued with `agentId`, and to
+      any other card once merchant category controls are enabled for your
+      platform; until then it is ignored on a card without `agentId`. Rejected
+      with `INVALID_INPUT` on a card program where the card issuer makes
+      authorization decisions.
     items:
       type: string
       pattern: ^[0-9]{4}$
@@ -67,8 +70,11 @@ properties:
   blockedMccs:
     type: array
     description: >-
-      Merchant category codes the card declines. Applies only to a card
-      issued with `agentId`, and is ignored otherwise.
+      Merchant category codes the card declines. Applies to a card issued
+      with `agentId`, and to any other card once merchant category controls
+      are enabled for your platform; until then it is ignored on a card
+      without `agentId`. Rejected with `INVALID_INPUT` on a card program where
+      the card issuer makes authorization decisions.
     items:
       type: string
       pattern: ^[0-9]{4}$

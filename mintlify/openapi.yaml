@@ -31194,7 +31194,7 @@ components:
         allowedMccs:
           type: array
           minItems: 1
-          description: Merchant category codes the card may spend at. Present only on a card issued for an agent; absent when that card may spend at any category not blocked.
+          description: Merchant category codes the card may spend at. Absent when the card may spend at any category not blocked.
           items:
             type: string
             pattern: ^[0-9]{4}$
@@ -31202,7 +31202,7 @@ components:
             - '5411'
         blockedMccs:
           type: array
-          description: 'Merchant category codes a card issued for an agent declines, with `cardDeclinedReason: BLOCKED`. Present only on such a card, which also declines Grid''s default agent categories unless `defaultMccBlocksLifted` is true.'
+          description: 'Merchant category codes the card declines, with `cardDeclinedReason: BLOCKED`. Absent when the card blocks no category of its own. A card issued for an agent also declines Grid''s default agent categories unless `defaultMccBlocksLifted` is true.'
           items:
             type: string
             pattern: ^[0-9]{4}$
@@ -31653,7 +31653,7 @@ components:
         allowedMccs:
           type: array
           minItems: 1
-          description: Merchant category codes the card may spend at. Applies only to a card issued with `agentId`, and is ignored otherwise. Omit to allow every category not blocked.
+          description: Merchant category codes the card may spend at. Omit to allow every category not blocked. Applies to a card issued with `agentId`, and to any other card once merchant category controls are enabled for your platform; until then it is ignored on a card without `agentId`. Rejected with `INVALID_INPUT` on a card program where the card issuer makes authorization decisions.
           items:
             type: string
             pattern: ^[0-9]{4}$
@@ -31661,7 +31661,7 @@ components:
             - '5411'
         blockedMccs:
           type: array
-          description: Merchant category codes the card declines. Applies only to a card issued with `agentId`, and is ignored otherwise.
+          description: Merchant category codes the card declines. Applies to a card issued with `agentId`, and to any other card once merchant category controls are enabled for your platform; until then it is ignored on a card without `agentId`. Rejected with `INVALID_INPUT` on a card program where the card issuer makes authorization decisions.
           items:
             type: string
             pattern: ^[0-9]{4}$
@@ -31697,7 +31697,7 @@ components:
       example: SUSPICIOUS_ACTIVITY
     CardUpdateRequest:
       type: object
-      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxNetworkRiskScore`, `allowedMccs`, `blockedMccs`, `defaultMccBlocksLifted`, or `threeDSecurePassword` must be supplied; `allowedMccs`, `blockedMccs` and `defaultMccBlocksLifted` count only for a card issued for an agent, and are ignored on any other card. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Explicit activation requires completed delegated signing authorization; otherwise it returns `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource` or `maxNetworkRiskScore`. Manage velocity limits through `/card-velocity-limits`.
+      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxNetworkRiskScore`, `allowedMccs`, `blockedMccs`, `defaultMccBlocksLifted`, or `threeDSecurePassword` must be supplied; `allowedMccs` and `blockedMccs` count on a card issued for an agent, and on any other card once merchant category controls are enabled for your platform; `defaultMccBlocksLifted` counts only on a card issued for an agent. Fields that do not count are ignored. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions include `ACTIVE ⇄ FROZEN`, `PENDING_AUTH → ACTIVE | FROZEN`, and `ACTIVE | PENDING_AUTH | FROZEN → CLOSED`. Explicit activation requires completed delegated signing authorization; otherwise it returns `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource` or `maxNetworkRiskScore`. Manage velocity limits through `/card-velocity-limits`.
       properties:
         status:
           $ref: '#/components/schemas/CardUpdateStatus'
@@ -31732,7 +31732,7 @@ components:
                 type: string
                 pattern: ^[0-9]{4}$
             - type: 'null'
-          description: 'Replacement list of merchant category codes the card may spend at. Applies only to a card issued for an agent, and is ignored otherwise. Supply null to allow every category not blocked, or omit to leave it unchanged. Cannot be supplied alongside `status: CLOSED`.'
+          description: 'Replacement list of merchant category codes the card may spend at. Applies to a card issued for an agent, and to any other card once merchant category controls are enabled for your platform; until then it is ignored on a card without an agent. Supply null to allow every category not blocked, or omit to leave it unchanged. Rejected with `INVALID_INPUT` on a card whose issuer makes authorization decisions. Cannot be supplied alongside `status: CLOSED`.'
           example:
             - '5411'
         blockedMccs:
@@ -31742,7 +31742,7 @@ components:
                 type: string
                 pattern: ^[0-9]{4}$
             - type: 'null'
-          description: 'Replacement list of merchant category codes the card declines. Applies only to a card issued for an agent, and is ignored otherwise. Supply null to clear it, or omit to leave it unchanged. Grid''s default agent blocks still apply on top of this list; lift them with `defaultMccBlocksLifted`. Cannot be supplied alongside `status: CLOSED`.'
+          description: 'Replacement list of merchant category codes the card declines. Applies to a card issued for an agent, and to any other card once merchant category controls are enabled for your platform; until then it is ignored on a card without an agent. Supply null to clear it, or omit to leave it unchanged. On a card issued for an agent, Grid''s default agent blocks still apply on top of this list; lift them with `defaultMccBlocksLifted`. Rejected with `INVALID_INPUT` on a card whose issuer makes authorization decisions. Cannot be supplied alongside `status: CLOSED`.'
           example:
             - '7995'
         defaultMccBlocksLifted:
