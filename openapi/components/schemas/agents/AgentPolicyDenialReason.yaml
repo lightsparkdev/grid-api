@@ -1,0 +1,26 @@
+type: string
+enum:
+  - INVALID_AMOUNT
+  - AGENT_PAUSED
+  - PERMISSION_MISSING
+  - ACCOUNT_NOT_ALLOWED
+  - PER_TRANSACTION_LIMIT_EXCEEDED
+  - DAILY_LIMIT_EXCEEDED
+  - MONTHLY_LIMIT_EXCEEDED
+  - DAILY_TRANSACTION_LIMIT_EXCEEDED
+description: |
+  Which agent policy rule denied executing a quote. Sent as
+  `details.policyDenialReason` with refusal reason `AGENT_POLICY_DENIED`. New
+  values may be added.
+
+  | Reason | Description |
+  |--------|-------------|
+  | `INVALID_AMOUNT` | The amount is not one the policy can evaluate |
+  | `AGENT_PAUSED` | The agent is paused |
+  | `PERMISSION_MISSING` | The policy lacks `EXECUTE_QUOTES` |
+  | `ACCOUNT_NOT_ALLOWED` | The policy does not allow the source account |
+  | `PER_TRANSACTION_LIMIT_EXCEEDED` | The amount exceeds the per-transaction limit |
+  | `DAILY_LIMIT_EXCEEDED` | The amount would exceed the daily spending limit |
+  | `MONTHLY_LIMIT_EXCEEDED` | The amount would exceed the monthly spending limit |
+  | `DAILY_TRANSACTION_LIMIT_EXCEEDED` | The agent has made its daily number of transactions |
+example: DAILY_LIMIT_EXCEEDED

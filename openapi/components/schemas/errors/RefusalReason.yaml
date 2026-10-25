@@ -1,0 +1,35 @@
+type: string
+enum:
+  - AGENT_API_DISABLED
+  - AGENT_CUSTOMER_INACTIVE
+  - AGENT_INACTIVE
+  - AGENT_NO_DELEGATED_KEY
+  - AGENT_PERMISSION_REQUIRED
+  - AGENT_ACCOUNT_NOT_ALLOWED
+  - AGENT_DEPOSIT_ACCOUNT_NOT_ALLOWED
+  - AGENT_POLICY_DENIED
+  - AGENT_QUOTE_HELD
+  - AGENT_CARDS_DISABLED
+  - AGENT_CARDS_CUSTOMER_NOT_VERIFIED
+  - CARDHOLDER_INFO_MISSING
+description: |
+  Why Grid refused the request, as `details.refusalReason`. Several refusals
+  share one `code`, and `reason` is a message that may be reworded, so branch
+  on this value rather than on `reason`. New values may be added; treat an
+  unknown value as a refusal without a known cause.
+
+  | Refusal reason | Status | Description |
+  |----------------|--------|-------------|
+  | `AGENT_API_DISABLED` | 403 | The agent API is not enabled for the platform |
+  | `AGENT_CUSTOMER_INACTIVE` | 403 | The agent's customer is not active |
+  | `AGENT_INACTIVE` | 403 | The agent is paused or deleted |
+  | `AGENT_NO_DELEGATED_KEY` | 403 | The agent holds no active delegated key for the source wallet |
+  | `AGENT_PERMISSION_REQUIRED` | 403 | The agent's policy lacks a permission this call needs. `details.permission` names it |
+  | `AGENT_ACCOUNT_NOT_ALLOWED` | 403 | The agent's policy does not allow the source account or funding source |
+  | `AGENT_DEPOSIT_ACCOUNT_NOT_ALLOWED` | 403 | The agent's policy does not allow deposits to this account |
+  | `AGENT_POLICY_DENIED` | 403 | The agent's policy denied executing the quote. `details.policyDenialReason` says which rule |
+  | `AGENT_QUOTE_HELD` | 403 | The quote cannot be sent and is held for manual follow-up |
+  | `AGENT_CARDS_DISABLED` | 403 | Agent cards are not enabled for the platform |
+  | `AGENT_CARDS_CUSTOMER_NOT_VERIFIED` | 403 | Agent cards need a verified individual customer |
+  | `CARDHOLDER_INFO_MISSING` | 400 | The cardholder record lacks fields a card needs. `details.missingFields` lists them; supply them through the customers API |
+example: AGENT_POLICY_DENIED

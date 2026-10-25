@@ -16382,6 +16382,42 @@ components:
 
         Treat the ID as an opaque value, not a member of a fixed list. Grid may add new IDs as requirements change.
       example: SUPPORTING_PROOF
+    RefusalReason:
+      type: string
+      enum:
+        - AGENT_API_DISABLED
+        - AGENT_CUSTOMER_INACTIVE
+        - AGENT_INACTIVE
+        - AGENT_NO_DELEGATED_KEY
+        - AGENT_PERMISSION_REQUIRED
+        - AGENT_ACCOUNT_NOT_ALLOWED
+        - AGENT_DEPOSIT_ACCOUNT_NOT_ALLOWED
+        - AGENT_POLICY_DENIED
+        - AGENT_QUOTE_HELD
+        - AGENT_CARDS_DISABLED
+        - AGENT_CARDS_CUSTOMER_NOT_VERIFIED
+        - CARDHOLDER_INFO_MISSING
+      description: |
+        Why Grid refused the request, as `details.refusalReason`. Several refusals
+        share one `code`, and `reason` is a message that may be reworded, so branch
+        on this value rather than on `reason`. New values may be added; treat an
+        unknown value as a refusal without a known cause.
+
+        | Refusal reason | Status | Description |
+        |----------------|--------|-------------|
+        | `AGENT_API_DISABLED` | 403 | The agent API is not enabled for the platform |
+        | `AGENT_CUSTOMER_INACTIVE` | 403 | The agent's customer is not active |
+        | `AGENT_INACTIVE` | 403 | The agent is paused or deleted |
+        | `AGENT_NO_DELEGATED_KEY` | 403 | The agent holds no active delegated key for the source wallet |
+        | `AGENT_PERMISSION_REQUIRED` | 403 | The agent's policy lacks a permission this call needs. `details.permission` names it |
+        | `AGENT_ACCOUNT_NOT_ALLOWED` | 403 | The agent's policy does not allow the source account or funding source |
+        | `AGENT_DEPOSIT_ACCOUNT_NOT_ALLOWED` | 403 | The agent's policy does not allow deposits to this account |
+        | `AGENT_POLICY_DENIED` | 403 | The agent's policy denied executing the quote. `details.policyDenialReason` says which rule |
+        | `AGENT_QUOTE_HELD` | 403 | The quote cannot be sent and is held for manual follow-up |
+        | `AGENT_CARDS_DISABLED` | 403 | Agent cards are not enabled for the platform |
+        | `AGENT_CARDS_CUSTOMER_NOT_VERIFIED` | 403 | Agent cards need a verified individual customer |
+        | `CARDHOLDER_INFO_MISSING` | 400 | The cardholder record lacks fields a card needs. `details.missingFields` lists them; supply them through the customers API |
+      example: AGENT_POLICY_DENIED
     Error400:
       type: object
       required:
@@ -16393,7 +16429,7 @@ components:
           description: |
             | Error Code | Description |
             |------------|-------------|
-            | INVALID_INPUT | Invalid input provided |
+            | INVALID_INPUT | Invalid input provided. When a card cannot be issued because the customer record lacks fields, `details.refusalReason` is `CARDHOLDER_INFO_MISSING` and `details.missingFields` lists them |
             | END_USER_TERMS_VERSION_NOT_FOUND | The submitted version is not supported for the agreement it was sent for |
             | MISSING_MANDATORY_USER_INFO | Required customer information is missing |
             | INVITATION_ALREADY_CLAIMED | Invitation has already been claimed |
@@ -16537,6 +16573,13 @@ components:
               description: The requirement ID of each required document that the quote request did not supply. Present on `DOCUMENTS_REQUIRED`.
               items:
                 $ref: '#/components/schemas/PaymentDocumentRequirementId'
+            refusalReason:
+              $ref: '#/components/schemas/RefusalReason'
+            missingFields:
+              type: array
+              description: Each customer field the request needs but the customer record lacks. Present with refusal reason `CARDHOLDER_INFO_MISSING`.
+              items:
+                $ref: '#/components/schemas/CustomerInfoFieldName'
           additionalProperties: true
     Error501:
       type: object
@@ -17762,6 +17805,45 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomerCreateRequest'
           BUSINESS: '#/components/schemas/BusinessCustomerCreateRequest'
+    AgentPermission:
+      type: string
+      enum:
+        - VIEW_TRANSACTIONS
+        - CREATE_QUOTES
+        - EXECUTE_QUOTES
+        - MANAGE_EXTERNAL_ACCOUNTS
+        - RECEIVE_FUNDS
+        - MANAGE_IDENTITY
+        - MANAGE_CARDS
+        - ISSUE_CARDS
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one standard virtual card for itself while it holds no live standard card, and single-use purchase cards where the platform enables them.'
+    AgentPolicyDenialReason:
+      type: string
+      enum:
+        - INVALID_AMOUNT
+        - AGENT_PAUSED
+        - PERMISSION_MISSING
+        - ACCOUNT_NOT_ALLOWED
+        - PER_TRANSACTION_LIMIT_EXCEEDED
+        - DAILY_LIMIT_EXCEEDED
+        - MONTHLY_LIMIT_EXCEEDED
+        - DAILY_TRANSACTION_LIMIT_EXCEEDED
+      description: |
+        Which agent policy rule denied executing a quote. Sent as
+        `details.policyDenialReason` with refusal reason `AGENT_POLICY_DENIED`. New
+        values may be added.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `INVALID_AMOUNT` | The amount is not one the policy can evaluate |
+        | `AGENT_PAUSED` | The agent is paused |
+        | `PERMISSION_MISSING` | The policy lacks `EXECUTE_QUOTES` |
+        | `ACCOUNT_NOT_ALLOWED` | The policy does not allow the source account |
+        | `PER_TRANSACTION_LIMIT_EXCEEDED` | The amount exceeds the per-transaction limit |
+        | `DAILY_LIMIT_EXCEEDED` | The amount would exceed the daily spending limit |
+        | `MONTHLY_LIMIT_EXCEEDED` | The amount would exceed the monthly spending limit |
+        | `DAILY_TRANSACTION_LIMIT_EXCEEDED` | The agent has made its daily number of transactions |
+      example: DAILY_LIMIT_EXCEEDED
     Error403:
       type: object
       required:
@@ -17773,7 +17855,7 @@ components:
           description: |
             | Error Code | Description |
             |------------|-------------|
-            | FORBIDDEN | Insufficient permissions |
+            | FORBIDDEN | Insufficient permissions. `details.refusalReason` names the cause when Grid knows it |
             | USER_NOT_READY | Customer exists but is not ready for operation |
             | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
             | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
@@ -17797,7 +17879,16 @@ components:
           description: Error message
         details:
           type: object
-          description: Additional error details
+          description: Additional error details. Shape varies by `code`. A `FORBIDDEN` refusal with a known cause carries `refusalReason`, plus the fields that reason names.
+          properties:
+            refusalReason:
+              $ref: '#/components/schemas/RefusalReason'
+            permission:
+              $ref: '#/components/schemas/AgentPermission'
+              description: The permission the agent's policy lacks. Present with refusal reason `AGENT_PERMISSION_REQUIRED`.
+            policyDenialReason:
+              $ref: '#/components/schemas/AgentPolicyDenialReason'
+              description: The policy rule that denied the quote. Present with refusal reason `AGENT_POLICY_DENIED`.
           additionalProperties: true
     Error409:
       type: object
@@ -30258,18 +30349,6 @@ components:
       description: 202 response returned from the delegated-key endpoints. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`.
       allOf:
         - $ref: '#/components/schemas/SignedRequestChallenge'
-    AgentPermission:
-      type: string
-      enum:
-        - VIEW_TRANSACTIONS
-        - CREATE_QUOTES
-        - EXECUTE_QUOTES
-        - MANAGE_EXTERNAL_ACCOUNTS
-        - RECEIVE_FUNDS
-        - MANAGE_IDENTITY
-        - MANAGE_CARDS
-        - ISSUE_CARDS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one standard virtual card for itself while it holds no live standard card, and single-use purchase cards where the platform enables them.'
     AgentExecutionMode:
       type: string
       enum:
