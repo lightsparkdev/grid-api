@@ -27997,6 +27997,13 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressDestination'
+    MinimumReceivingAmount:
+      type:
+        - integer
+        - 'null'
+      format: int64
+      description: Smallest amount the recipient receives, in the smallest unit of `receivingCurrency`, for a send to an address on another chain. Grid pays the chain itself at a locked rate, so this equals `totalReceivingAmount`. Omitted or null for any other quote.
+      example: 1000
     Quote:
       type: object
       required:
@@ -28052,6 +28059,8 @@ components:
           description: The total amount that will be received in the smallest unit of the receiving currency (eg. cents).
           exclusiveMinimum: 0
           example: 1000
+        minimumReceivingAmount:
+          $ref: '#/components/schemas/MinimumReceivingAmount'
         exchangeRate:
           type: number
           description: 'Number of sending currency units per receiving currency unit. The rate is fee-exclusive: Grid deducts `feesIncluded` from `totalSendingAmount` first, then converts the remainder at this rate to reach `totalReceivingAmount`.'
@@ -29947,12 +29956,7 @@ components:
         - type: object
           properties:
             minimumReceivingAmount:
-              type:
-                - integer
-                - 'null'
-              format: int64
-              description: Smallest amount the recipient receives, in the smallest unit of `receivingCurrency`, for a quote to a `CHAIN_ADDRESS` destination. Grid pays the chain itself at a locked rate, so this equals `totalReceivingAmount`. Null for a quote whose destination is not `CHAIN_ADDRESS`.
-              example: 1000
+              $ref: '#/components/schemas/MinimumReceivingAmount'
             destinationSparkAddress:
               type: string
               description: The Spark address this quote pays, when its `destination` is one of the customer's `SPARK_WALLET` external accounts.
