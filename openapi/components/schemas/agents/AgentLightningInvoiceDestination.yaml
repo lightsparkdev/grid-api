@@ -1,0 +1,23 @@
+title: Lightning Invoice
+type: object
+required:
+  - destinationType
+  - invoice
+properties:
+  destinationType:
+    type: string
+    enum:
+      - LIGHTNING_INVOICE
+    description: Marks a BOLT11 Lightning invoice destination.
+    example: LIGHTNING_INVOICE
+  invoice:
+    type: string
+    maxLength: 4096
+    description: >-
+      The BOLT11 invoice to pay. It must name an amount in whole satoshis, be
+      for the platform's Bitcoin network, and not expire within the next
+      minute.
+    example: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
+description: >-
+  A BOLT11 Lightning invoice, paid from the quote's source. Grid records the invoice as a `LIGHTNING` external account of the agent's
+  customer, and the quote's `destination` names that account.

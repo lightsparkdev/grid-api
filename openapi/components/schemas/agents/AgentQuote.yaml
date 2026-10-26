@@ -26,7 +26,15 @@ allOf:
         description: >-
           The chain, address and stablecoin this quote pays, when it was
           created with a `CHAIN_ADDRESS` destination.
+      destinationLightningInvoice:
+        $ref: ./AgentLightningInvoiceDestination.yaml
+        description: >-
+          The invoice this quote pays, when it was created with a
+          `LIGHTNING_INVOICE` destination.
 description: >-
   A quote created by an agent. For a `CHAIN_ADDRESS` destination, the quote's
   `destination` names the external account Grid recorded for the address, and
-  `destinationChainAddress` names the address itself.
+  `destinationChainAddress` names the address itself. For a
+  `LIGHTNING_INVOICE` destination, `destination` names the external account
+  Grid recorded for the invoice, and `destinationLightningInvoice` names the
+  invoice itself.
