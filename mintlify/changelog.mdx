@@ -10,6 +10,61 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## Create an individual customer from a reusable KYC share token
+
+`POST /customers/share` creates an individual customer from a single-use share token
+that a partner who already verified the person gives you. The body is the same as
+`POST /customers`, plus a required `shareToken` with the `provider` that issued it
+(today `SUMSUB`) and the `token`:
+
+```json
+{
+  "customerType": "INDIVIDUAL",
+  "platformCustomerId": "ind-9f84e0c2",
+  "email": "jane.smith@example.com",
+  "shareToken": { "provider": "SUMSUB", "token": "_act-sbx-jwt-..." }
+}
+```
+
+Grid builds the customer's verification profile from the shared data, including the
+identity document, so you don't upload it again. Fields you send take priority over the
+shared data. Check the customer's verification status for any gaps, then call
+`POST /verifications` as usual. The response is the same `IndividualCustomer` that
+`POST /customers` returns, with `201`. It works only on platforms where Grid runs
+identity verification. A token the provider rejects returns `400 INVALID_INPUT`, and no
+customer is created.
+
+## Set a network risk score ceiling on cards
+
+`maxNetworkRiskScore` is a new optional field on `POST /cards`, `PATCH /cards/{id}`, the
+`Card` response, and platform `cardConfigs`. It is an integer from `0` (lowest risk) to
+`999` (highest risk). Grid declines a real-time authorization whose normalized network
+risk score is above the ceiling. A score equal to the ceiling is allowed, and so is an
+authorization that arrives without a score. When you set a ceiling on both a card and
+the platform, the lower one applies.
+
+On `PATCH`, omit the field to keep the current setting, or send `null` to clear the
+ceiling for that card or platform. For details, see
+[issuing cards](/cards/card-management/issuing-cards).
+
+## Customize the hosted PIN input
+
+`GET /cards/{id}/pin-entry-url` takes an optional `styles` query parameter: a
+URL-encoded JSON object of CSS declarations, with nested objects for pseudo-classes such
+as `:focus`. Grid applies them to the hosted PIN input, so it can match your app.
+Omit `styles` for the default appearance. Invalid or oversized styles return
+`400 INVALID_INPUT`. For the format and limits, see
+[Customize the PIN input](/cards/card-management/pins#customize-the-pin-input).
+
+## Passkey challenges include `payloadToSign`
+
+The response from `POST /auth/credentials/{id}/challenge` for a passkey now carries an
+optional `payloadToSign`: the exact JSON of the session request the passkey assertion
+authorizes. `challenge` is the SHA-256 digest of its UTF-8 bytes, so before you call
+`navigator.credentials.get()` you can check the activity type and your own
+`clientPublicKey`, and recompute the digest. It is for inspection only. Don't send it
+back to `POST /auth/credentials/{id}/verify`.
+
 ## ACH `railDetails.returnCode` and `returnCategory`
 
 A returned ACH entry's `railDetails` now carries `returnCode`, the NACHA return reason
