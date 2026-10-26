@@ -3,14 +3,11 @@ description: An international wire over the SWIFT network. Present on payout des
 type: object
 required:
   - paymentRail
-  - status
 properties:
   paymentRail:
     type: string
     enum:
       - SWIFT
-  status:
-    $ref: ./SwiftRailStatus.yaml
   uetr:
     type: string
     format: uuid
