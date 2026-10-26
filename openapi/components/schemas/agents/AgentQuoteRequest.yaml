@@ -18,10 +18,10 @@ description: >-
   400 `EXACT_AMOUNT_UNAVAILABLE`.
 
 
-  A `LIGHTNING_INVOICE` quote sends `USDB` and pays exactly the invoice's
-  amount. Its `lockedCurrencySide` must be `RECEIVING` and its
+  A `LIGHTNING_INVOICE` quote debits the source wallet and pays exactly the
+  invoice's amount. Its `lockedCurrencySide` must be `RECEIVING` and its
   `lockedCurrencyAmount` the invoice's amount in satoshis; the fees are added
-  to the `USDB` sent. It is the platform's own Lightning invoice quote (see
+  to the amount debited. It is the platform's own Lightning invoice quote (see
   `POST /quotes`), so the same invoice rules and the one-live-quote rule
   apply: another quote for an invoice is refused with 409
   `INVOICE_ALREADY_USED` while an earlier one can still be executed, except a

@@ -14,11 +14,10 @@ post:
     including removed ones. A `CHAIN_ADDRESS` quote sends `USDB`. Grid
     pays the chain itself at a locked rate, so the amount the recipient
     receives is fixed when the quote is created and equals the quote's
-    `minimumReceivingAmount`. A `LIGHTNING_INVOICE` quote sends `USDB` and
-    pays exactly the invoice's amount, which it locks on the receiving side in
-    satoshis, through the platform's Lightning invoice quote (`POST /quotes`).
-    Grid pays the invoice once the send executes and refunds the `USDB` if the
-    payment fails.
+    `minimumReceivingAmount`. A `LIGHTNING_INVOICE` quote debits the source
+    wallet and pays exactly the invoice's amount, which it locks on the
+    receiving side in satoshis, through the platform's Lightning invoice quote
+    (`POST /quotes`).
 
     If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount
     exceeds the agent's approvalThresholds, the resulting transaction will require

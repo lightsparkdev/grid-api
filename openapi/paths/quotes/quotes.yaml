@@ -24,38 +24,12 @@ post:
     sufficient. A quote is the instrument a later execute draws on, and
     `immediatelyExecute` moves funds within this same request.
 
-    **Paying a Lightning invoice:** Save the invoice as a `LIGHTNING`
-    external account (`currency` `BTC`, `invoice` set) and quote it as an
-    `ACCOUNT` destination. Set `lockedCurrencySide` to `RECEIVING` and
-    `lockedCurrencyAmount` to the invoice's amount in satoshis; the fees
-    are added to what the source sends. The source may be a USD internal
-    account, a USDC internal account, a USDB embedded wallet, or real-time
-    funding in USD or USDC. The invoice must name an amount in whole
-    satoshis, be for the platform's Bitcoin network, and not expire within
-    the next minute, and the quote expires no later than a minute before
-    the invoice. Other sources are refused with `400 INVALID_INPUT`, and so
-    is an invoice Lightspark issued for a Lightning deposit.
-
-    An invoice has one live quote at a time: another quote for it is refused
-    with `409 INVOICE_ALREADY_USED` while an earlier quote can still be
-    executed or funded, or once one was executed. An earlier quote frees the
-    invoice only once Grid has closed it as expired, a few minutes after its
-    `expiresAt`; for an embedded wallet, only once Spark shows its transfer
-    was never sent.
-
-    Grid pays the invoice once the quote is funded, and the transaction
-    completes when the payment does. A payment that fails is refunded to an
-    account source or to real-time USD funding. Funds that are ready only
-    after the quote expired, or while Lightning invoice sends are turned off
-    for the platform, never pay the invoice. The funds are returned, the
-    transaction fails (or stays `EXPIRED`) with `failureReason`
-    `QUOTE_EXPIRED` or `QUOTE_EXECUTION_FAILED`, and the invoice can be
-    quoted again. An account source and real-time USD funding get the funds
-    back; real-time USDC goes to the customer's USDC internal account, not
-    to the address it came from. While a real-time USD deposit is still
-    settling, the return waits for it: the transaction stays pending (or
-    `EXPIRED`) and the invoice stays taken until the funds start back, for up
-    to several hours before Lightspark operations step in.
+    **Paying a Lightning invoice:** Quote a `LIGHTNING` account that has an
+    `invoice` set, with `lockedCurrencySide` `RECEIVING` and
+    `lockedCurrencyAmount` the invoice's amount in satoshis. The invoice must
+    name an amount in whole satoshis, be for the platform's Bitcoin network,
+    and not expire within the next minute. An invoice has one live quote at a
+    time.
   operationId: createQuote
   tags:
     - Cross-Currency Transfers
