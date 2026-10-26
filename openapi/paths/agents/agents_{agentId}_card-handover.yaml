@@ -24,10 +24,24 @@ post:
     qualify, the most recently issued one is handed over.
 
 
-    The card is unfrozen as a platform `status: ACTIVE` update is, so the
-    platform receives the same card status webhook. Responds `204` when the
-    customer has no card to hand over.
+    The customer must still meet what issuing a card requires: an individual
+    customer with approved KYC who has accepted the cardholder agreement. The
+    card is unfrozen as a platform `status: ACTIVE` update is, so the platform
+    receives the same card status webhook; a card whose funding authorization
+    is missing comes back `PENDING_AUTH`. A card that was still being
+    provisioned when its agent was deleted is not handed over. Responds `204`
+    when the customer has no card to hand over.
   operationId: handOverAgentCard
+  parameters:
+    - name: previousAgentId
+      in: query
+      description: >-
+        Hand over only a card issued for this deleted agent, such as the one
+        the customer's previous connection of the same agent software held.
+        Omit it to consider every deleted agent of the customer.
+      required: false
+      schema:
+        type: string
   tags:
     - Agent Management
   security:
@@ -42,7 +56,11 @@ post:
     '204':
       description: The customer has no card to hand over
     '400':
-      description: Bad request - The agent is paused or its policy does not grant `MANAGE_CARDS`
+      description: >-
+        Bad request - The agent is paused or its policy does not grant
+        `MANAGE_CARDS`, the customer is not an individual with approved KYC, or
+        the customer has not accepted the cardholder agreement
+        (`CARDHOLDER_AGREEMENT_NOT_ACCEPTED`)
       content:
         application/json:
           schema:
