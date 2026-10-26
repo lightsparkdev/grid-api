@@ -1,0 +1,100 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Hand a deleted agent's card to an agent
+  description: >
+    Move the customer's standard agent card that Grid froze when the agent it
+    was issued for was deleted to this agent, and unfreeze it. Use this when a
+    customer reconnects agent software whose agent the platform deleted: a
+    frozen card still counts against the customer's card limit, so without a
+    hand-over the customer can neither use it nor be issued another.
+
+
+    A card qualifies only while the freeze Grid placed on its agent's deletion
+    is the only reason it is frozen. A card frozen by the platform, the
+    customer, an agent or Lightspark is left as it is, and purchase cards are
+    never handed over. The agent must belong to the card's customer, must be
+    neither paused nor deleted, must have a policy granting `MANAGE_CARDS`,
+    and must hold no standard card that is not `CLOSED`. When several cards
+    qualify, the most recently issued one is handed over.
+
+
+    The customer must still meet what issuing a card requires: an individual
+    customer with approved KYC who has accepted the cardholder agreement. The
+    card is unfrozen as a platform `status: ACTIVE` update is, so the platform
+    receives the same card status webhook; a card whose funding authorization
+    is missing comes back `PENDING_AUTH`. A card that was still being
+    provisioned when its agent was deleted is not handed over. Responds `204`
+    when the customer has no card to hand over.
+  operationId: handOverAgentCard
+  parameters:
+    - name: previousAgentId
+      in: query
+      description: >-
+        Hand over only a card issued for this deleted agent, such as the one
+        the customer's previous connection of the same agent software held.
+        Omit it to consider every deleted agent of the customer.
+      required: false
+      schema:
+        type: string
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: The card now belongs to the agent and is no longer frozen
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/Card.yaml
+    '204':
+      description: The customer has no card to hand over
+    '400':
+      description: >-
+        Bad request - The agent is paused or its policy does not grant
+        `MANAGE_CARDS`, the customer is not an individual with approved KYC, or
+        the customer has not accepted the cardholder agreement
+        (`CARDHOLDER_AGREEMENT_NOT_ACCEPTED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agent card hand-over is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Agent not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict - The agent already holds a standard card that is not `CLOSED`
+        (`AGENT_CARD_EXISTS`), or the card cannot be unfrozen
+        (`INVALID_STATE_TRANSITION`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

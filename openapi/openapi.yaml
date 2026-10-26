@@ -460,6 +460,8 @@ paths:
     $ref: paths/agents/agents_{agentId}_policy.yaml
   /agents/{agentId}/device-codes:
     $ref: paths/agents/agents_{agentId}_device-codes.yaml
+  /agents/{agentId}/card-handover:
+    $ref: paths/agents/agents_{agentId}_card-handover.yaml
   /agents/{agentId}/actions/{actionId}/approve:
     $ref: paths/agents/agents_{agentId}_actions_{actionId}_approve.yaml
   /agents/{agentId}/actions/{actionId}/reject:
