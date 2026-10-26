@@ -1,0 +1,17 @@
+title: SWIFT Transfer
+description: An international wire over the SWIFT network. Present on payout destinations.
+type: object
+required:
+  - paymentRail
+properties:
+  paymentRail:
+    type: string
+    enum:
+      - SWIFT
+  uetr:
+    type: string
+    format: uuid
+    description: >-
+      Unique End-to-end Transaction Reference of the wire. Give it to the
+      beneficiary's bank to trace the payment.
+    example: f47bbdd1-3d90-44c4-998d-a02bd814d5d3

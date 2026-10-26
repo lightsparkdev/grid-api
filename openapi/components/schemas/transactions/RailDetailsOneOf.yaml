@@ -8,6 +8,7 @@ oneOf:
   - $ref: ./WireRailDetails.yaml
   - $ref: ./FedNowRailDetails.yaml
   - $ref: ./RtpRailDetails.yaml
+  - $ref: ./SwiftRailDetails.yaml
 discriminator:
   propertyName: paymentRail
   mapping:
@@ -17,3 +18,4 @@ discriminator:
     WIRE: ./WireRailDetails.yaml
     FEDNOW: ./FedNowRailDetails.yaml
     RTP: ./RtpRailDetails.yaml
+    SWIFT: ./SwiftRailDetails.yaml
