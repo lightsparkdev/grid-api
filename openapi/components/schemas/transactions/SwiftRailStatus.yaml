@@ -1,0 +1,14 @@
+type: string
+enum:
+  - PENDING
+  - SETTLED
+  - FAILED
+description: |-
+  Status of the wire on the SWIFT network.
+
+  | Status | Description |
+  |--------|-------------|
+  | `PENDING` | Sent and moving between banks. The beneficiary's account is not credited yet. |
+  | `SETTLED` | The beneficiary's bank credited the beneficiary's account. |
+  | `FAILED` | A bank in the chain rejected the wire. |
+example: PENDING

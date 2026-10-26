@@ -26869,6 +26869,40 @@ components:
               type: string
               description: Unstructured remittance information sent with the payment.
               example: INV-12345
+    SwiftRailStatus:
+      type: string
+      enum:
+        - PENDING
+        - SETTLED
+        - FAILED
+      description: |-
+        Status of the wire on the SWIFT network.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING` | Sent and moving between banks. The beneficiary's account is not credited yet. |
+        | `SETTLED` | The beneficiary's bank credited the beneficiary's account. |
+        | `FAILED` | A bank in the chain rejected the wire. |
+      example: PENDING
+    SwiftRailDetails:
+      title: SWIFT Transfer
+      description: An international wire over the SWIFT network.
+      type: object
+      required:
+        - paymentRail
+        - status
+      properties:
+        paymentRail:
+          type: string
+          enum:
+            - SWIFT
+        status:
+          $ref: '#/components/schemas/SwiftRailStatus'
+        uetr:
+          type: string
+          format: uuid
+          description: Unique End-to-end Transaction Reference of the wire. Give it to the beneficiary's bank to trace the payment.
+          example: f47bbdd1-3d90-44c4-998d-a02bd814d5d3
     RailDetailsOneOf:
       description: 'The rail transfer that moved funds for this side of the transaction. `paymentRail` determines the shape: each rail carries its own identifiers. Absent until a rail transfer exists for this side, and on sides whose funds move within Grid.'
       oneOf:
@@ -26877,6 +26911,7 @@ components:
         - $ref: '#/components/schemas/WireRailDetails'
         - $ref: '#/components/schemas/FedNowRailDetails'
         - $ref: '#/components/schemas/RtpRailDetails'
+        - $ref: '#/components/schemas/SwiftRailDetails'
       discriminator:
         propertyName: paymentRail
         mapping:
@@ -26886,6 +26921,7 @@ components:
           WIRE: '#/components/schemas/WireRailDetails'
           FEDNOW: '#/components/schemas/FedNowRailDetails'
           RTP: '#/components/schemas/RtpRailDetails'
+          SWIFT: '#/components/schemas/SwiftRailDetails'
     OnChainTransaction:
       type: object
       required:
