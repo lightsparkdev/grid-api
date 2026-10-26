@@ -28,9 +28,9 @@ post:
     should be rejected.
 
 
-    The payload contains the full `AgentAction` — including the embedded quote
-    or transfer details — so you can render the approval UI without a second
-    API call. Approve or reject via
+    The payload contains the full `AgentAction` — including the embedded quote,
+    or the requested purchase card for `ISSUE_PURCHASE_CARD` — so you can
+    render the approval UI without a second API call. Approve or reject via
     `POST /agents/{agentId}/actions/{actionId}/approve` or
     `POST /agents/{agentId}/actions/{actionId}/reject`.
   operationId: agentActionWebhook
@@ -88,6 +88,28 @@ post:
                 expiresAt: '2025-10-03T15:00:30Z'
                 createdAt: '2025-10-03T15:00:00Z'
                 updatedAt: '2025-10-03T15:00:00Z'
+          purchaseCardPendingApproval:
+            summary: Purchase card pending approval
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000021
+              type: AGENT_ACTION.PENDING_APPROVAL
+              timestamp: '2026-10-26T15:00:00Z'
+              data:
+                id: AgentAction:019542f5-b3e7-1d02-0000-000000000098
+                agentId: Agent:019542f5-b3e7-1d02-0000-000000000042
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000010
+                platformCustomerId: user-a1b2c3
+                status: PENDING_APPROVAL
+                type: ISSUE_PURCHASE_CARD
+                purchaseCard:
+                  amount: 12000
+                  spendLimit: 13000
+                  currency: USD
+                  description: Concert tickets from example-tickets.com
+                  fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                expiresAt: '2026-10-26T15:15:00Z'
+                createdAt: '2026-10-26T15:00:00Z'
+                updatedAt: '2026-10-26T15:00:00Z'
   responses:
     '200':
       description: Webhook received and acknowledged.

@@ -21,6 +21,12 @@ post:
     For `EXECUTE_QUOTE` actions, note that the underlying quote may have expired between
     submission and approval — in that case the action will transition to `FAILED` instead.
 
+    For `ISSUE_PURCHASE_CARD` actions, approval issues the purchase card and the action
+    carries its `cardId`. The card's limit is checked against the agent's policy again
+    first; an action past its `expiresAt` fails with `APPROVAL_EXPIRED`, one the policy now
+    denies with `POLICY_DENIED`, a paused or deleted agent with `AGENT_INACTIVE`, and one
+    the card issuer refuses with `EXECUTION_FAILED`.
+
     This endpoint is called by the platform's backend using platform credentials,
     not by the agent itself.
   operationId: approveAgentAction

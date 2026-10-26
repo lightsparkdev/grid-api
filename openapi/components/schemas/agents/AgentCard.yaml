@@ -29,3 +29,6 @@ properties:
     example:
       - '7995'
       - '6051'
+  purchase:
+    $ref: ./AgentPurchaseCardDetails.yaml
+    description: The purchase the card was issued for. Present for `PURCHASE` cards.

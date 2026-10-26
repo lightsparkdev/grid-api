@@ -1,0 +1,73 @@
+parameters:
+  - name: cardId
+    in: path
+    description: Unique identifier of the card
+    required: true
+    schema:
+      type: string
+post:
+  summary: Reveal a purchase card
+  description: >
+    Mint a short-lived signed URL of the card processor's page that displays
+    one of the agent's open `PURCHASE` cards: its full number, expiry and CVV.
+    The card details never pass through Grid; open the URL where the purchase
+    is being made, right away, and never store or log it. Standard cards are
+    revealed only by the platform with `POST /cards/{id}/reveal`.
+
+
+    Every reveal is audit-logged with the agent as the actor. Reveals are rate
+    limited per agent and per card; beyond the limit the request is rejected
+    with `429 RATE_LIMITED`. Requires the MANAGE_CARDS permission.
+  operationId: agentRevealCard
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Reveal URL minted
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardRevealResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API, agent cards or agent purchase cards are not
+        enabled for the platform, the agent is paused, the agent does not have
+        the MANAGE_CARDS permission, or the customer is not verified
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `CONFLICT` when the card is not a `PURCHASE`
+        card, and with `CARD_NOT_MUTABLE` when it is closed or expired.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '429':
+      description: Too many reveals for this agent or card; retry later
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

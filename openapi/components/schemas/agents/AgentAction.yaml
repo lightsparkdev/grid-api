@@ -42,6 +42,19 @@ properties:
       The quote being executed. Contains the full amount, currency, destination, and rate
       details needed to present an approval decision to the user. Present for
       `EXECUTE_QUOTE`.
+  purchaseCard:
+    $ref: ./AgentPurchaseCardDetails.yaml
+    description: >-
+      The purchase card the agent asked for, so an approval decision can show
+      its amount, limit, description and funding account. Present for
+      `ISSUE_PURCHASE_CARD`.
+  cardId:
+    type: string
+    description: >-
+      The purchase card the action issued. Present for an `ISSUE_PURCHASE_CARD`
+      action once it is `APPROVED` and the card is issued; read it with
+      `GET /agents/me/cards/{cardId}`.
+    example: Card:019542f5-b3e7-1d02-0000-000000000011
   transaction:
     allOf:
       - $ref: ../transactions/TransactionOneOf.yaml
@@ -66,7 +79,9 @@ properties:
       When the action expires. For `EXECUTE_QUOTE`, this is the quote's own
       expiry. A `PENDING_APPROVAL` action that reaches this time transitions to
       `FAILED` with `failureReason` `QUOTE_EXPIRED`; approval never creates a
-      replacement quote.
+      replacement quote. For `ISSUE_PURCHASE_CARD`, this is the end of the
+      approval window, after which a pending action fails with
+      `APPROVAL_EXPIRED`.
     example: '2025-10-03T15:05:00Z'
   createdAt:
     type: string
