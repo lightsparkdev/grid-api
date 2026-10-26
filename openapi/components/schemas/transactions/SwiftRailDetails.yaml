@@ -1,5 +1,5 @@
 title: SWIFT Transfer
-description: An international wire over the SWIFT network.
+description: An international wire over the SWIFT network. Present on payout destinations.
 type: object
 required:
   - paymentRail

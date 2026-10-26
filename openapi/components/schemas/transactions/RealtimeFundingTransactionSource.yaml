@@ -23,8 +23,7 @@ allOf:
         deprecated: true
         description: >-
           Deprecated. Use `railDetails.bankAccount.accountHolderName`. The name of
-          the originator (sender) of the payment. Still populated on rails without a
-          `railDetails` variant, such as SWIFT.
+          the originator (sender) of the payment. Still populated on SWIFT deposits, which have no `railDetails`.
         example: John Sender
       accountIdentifier:
         type: string
@@ -32,31 +31,27 @@ allOf:
         description: >-
           Deprecated. Use `railDetails.bankAccount.accountNumber`. The
           originator's account number or IBAN. May be masked or partial depending on
-          the rail. Still populated on rails without a `railDetails` variant, such as
-          SWIFT.
+          the rail. Still populated on SWIFT deposits, which have no `railDetails`.
         example: '****6789'
       bankName:
         type: string
         deprecated: true
         description: >-
           Deprecated. Use `railDetails.bankAccount.bankName` on wires. The name of the
-          originating bank. Still populated on rails without a `railDetails`
-          variant, such as SWIFT.
+          originating bank. Still populated on SWIFT deposits, which have no `railDetails`.
         example: Chase Bank
       bankIdentifier:
         type: string
         deprecated: true
         description: >-
           Deprecated. Use `railDetails.bankAccount.routingNumber`. The identifier
-          of the originating bank, such as a routing number, BIC, or SWIFT code. Still
-          populated on rails without a `railDetails` variant, such as SWIFT.
+          of the originating bank, such as a routing number, BIC, or SWIFT code. Still populated on SWIFT deposits, which have no `railDetails`.
         example: '021000021'
       paymentRail:
         deprecated: true
         description: >-
           Deprecated. Use `railDetails.paymentRail`. The payment rail the funds
-          arrived on. Still populated on rails without a `railDetails` variant, such
-          as SWIFT.
+          arrived on. Still populated on SWIFT deposits, which have no `railDetails`.
         allOf:
           - $ref: ../common/PaymentRail.yaml
       remittanceInformation:
@@ -66,16 +61,14 @@ allOf:
           Deprecated. Use `railDetails.addenda` for ACH,
           `railDetails.originatorToBeneficiaryInformation` for wires and
           `railDetails.remittanceInformation` for RTP and FedNow. Free-form
-          information about the payment provided by the originator. Still populated on
-          rails without a `railDetails` variant, such as SWIFT.
+          information about the payment provided by the originator. Still populated on SWIFT deposits, which have no `railDetails`.
         example: '12345'
       endToEndId:
         type: string
         deprecated: true
         description: >-
           Deprecated. Use `railDetails.endToEndId`. The originator's own
-          end-to-end reference for the payment. Still populated on rails without a
-          `railDetails` variant, such as SWIFT.
+          end-to-end reference for the payment. Still populated on SWIFT deposits, which have no `railDetails`.
         example: E2E-9f2c6b6f
       traceNumber:
         type: string
@@ -83,8 +76,7 @@ allOf:
         description: >-
           Deprecated. Use `railDetails.traceNumber` for ACH and
           `railDetails.imad` for wires. Rail-level
-          tracking identifier for the payment. Still populated on rails without a
-          `railDetails` variant, such as SWIFT.
+          tracking identifier for the payment. Still populated on SWIFT deposits, which have no `railDetails`.
         example: '021000020123456'
       railDetails:
         $ref: ./RailDetailsOneOf.yaml
@@ -97,6 +89,5 @@ allOf:
     description: >-
       Transaction was funded using an external funding source. `railDetails`
       describes the transfer that delivered the funds; its fields are populated on a
-      best-effort basis depending on what the funding source provides. Rails without a
-      `railDetails` variant, such as SWIFT, carry the originator's details in the
-      deprecated flat fields only.
+      best-effort basis depending on what the funding source provides. SWIFT deposits have no `railDetails` and carry the originator's details in the
+      deprecated flat fields only. SWIFT rail details describe payouts only.
