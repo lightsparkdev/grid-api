@@ -44,8 +44,7 @@ authorization that arrives without a score. When you set a ceiling on both a car
 the platform, the lower one applies.
 
 On `PATCH`, omit the field to keep the current setting, or send `null` to clear the
-ceiling for that card or platform. For details, see
-[issuing cards](/cards/card-management/issuing-cards).
+ceiling for that card or platform.
 
 ## Customize the hosted PIN input
 
@@ -60,8 +59,8 @@ Omit `styles` for the default appearance. Invalid or oversized styles return
 
 The response from `POST /auth/credentials/{id}/challenge` for a passkey now carries an
 optional `payloadToSign`: the exact JSON of the session request the passkey assertion
-authorizes. `challenge` is the SHA-256 digest of its UTF-8 bytes, so before you call
-`navigator.credentials.get()` you can check the activity type and your own
+authorizes. `challenge` is the lowercase hex-encoded SHA-256 digest of its UTF-8
+bytes, so before you call `navigator.credentials.get()` you can check the activity type and your own
 `clientPublicKey`, and recompute the digest. It is for inspection only. Don't send it
 back to `POST /auth/credentials/{id}/verify`.
 
