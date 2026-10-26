@@ -1,9 +1,11 @@
 type: string
 enum:
   - STANDARD
+  - PURCHASE
 description: |
   How an agent card is used and funded.
 
   | Kind | Description |
   |------|-------------|
   | `STANDARD` | A card issued for the agent, by the platform with `POST /cards` or by the agent with `POST /agents/me/cards`. The customer holds the card details and its spend comes from the customer's account; that spend counts against the agent's policy limits as the agent's sends do. The agent can read the card, tighten its limits, and freeze it. |
+  | `PURCHASE` | A single-use virtual card the agent issued for one online purchase with `POST /agents/me/cards`. It is funded from the customer's Embedded Wallet, its spend counts against the agent's policy limits, and it closes after its first approved authorization or when it expires unused. The agent reads its number, expiry and CVV through `POST /agents/me/cards/{cardId}/reveal`. |

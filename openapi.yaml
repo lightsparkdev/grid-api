@@ -8823,6 +8823,7 @@ paths:
       description: |
         Approve a pending agent action, allowing Grid to proceed with execution. The action must have status `PENDING_APPROVAL`. Once approved, Grid executes the underlying operation (quote execution or transfer) and the action transitions to `APPROVED`.
         For `EXECUTE_QUOTE` actions, note that the underlying quote may have expired between submission and approval — in that case the action will transition to `FAILED` instead.
+        For `ISSUE_PURCHASE_CARD` actions, approval issues the purchase card and the action carries its `cardId`. The card's limit is checked against the agent's policy again first; an action past its `expiresAt` fails with `APPROVAL_EXPIRED`, one the policy now denies with `POLICY_DENIED`, a paused or deleted agent with `AGENT_INACTIVE`, and one the card issuer refuses with `EXECUTION_FAILED`.
         This endpoint is called by the platform's backend using platform credentials, not by the agent itself.
       operationId: approveAgentAction
       tags:
@@ -9827,7 +9828,7 @@ paths:
   /agents/me/cards:
     get:
       summary: List agent cards
-      description: List the cards the customer issued for the authenticated agent. Other cards of the customer are not listed. Requires the MANAGE_CARDS permission.
+      description: 'List the authenticated agent''s cards: standard cards issued for it and purchase cards it issued. Filter with `kind=PURCHASE` for purchase cards only. Other cards of the customer are not listed. Requires the MANAGE_CARDS permission.'
       operationId: agentListCards
       tags:
         - Agent Operations
@@ -9889,11 +9890,27 @@ paths:
     post:
       summary: Issue an agent card
       description: |
-        Issue a virtual card for the authenticated agent, as `POST /cards` with `agentId` does for the platform. The card belongs to the agent's customer, who must have KYC status `APPROVED` and have accepted the cardholder agreement where the platform requires one. Its spend counts against the agent's policy limits as the agent's sends do, and Grid's default agent merchant-category blocks apply. Requires the ISSUE_CARDS permission; reading the card afterwards needs MANAGE_CARDS. While any of the agent's cards is not `CLOSED`, including one the platform issued for it, the request is rejected with `AGENT_CARD_EXISTS`.
+        Issue a virtual card for the authenticated agent. The card belongs to the agent's customer, who must have KYC status `APPROVED` and have accepted the cardholder agreement where the platform requires one. Its spend counts against the agent's policy limits as the agent's sends do, and Grid's default agent merchant-category blocks apply. Requires the ISSUE_CARDS permission; reading the card afterwards needs MANAGE_CARDS.
 
-        Card issuance is fee-bearing and cannot be reversed, so an `Idempotency-Key` header is required. Keys are scoped to the agent: a retry by the same agent with the same key returns the card the first request created, even though that card is now live, and another agent's key never matches.
+        **Standard card** (`kind` omitted or `STANDARD`): as `POST /cards` with `agentId` does for the platform. While any of the agent's standard cards is not `CLOSED`, including one the platform issued for it, the request is rejected with `AGENT_CARD_EXISTS`. New cards start in `status: "PROCESSING"` and follow the same status transitions and `card.status_change` webhooks as cards issued with `POST /cards`.
 
-        New cards start in `status: "PROCESSING"` and follow the same status transitions and `card.status_change` webhooks as cards issued with `POST /cards`.
+        **Purchase card** (`kind: PURCHASE`): a single-use card for one online purchase of `amount`, paid from the customer's Embedded Wallet with the agent's delegated key. Available only where the platform enables agent purchase cards. Its limit (`purchase.spendLimit`) is `amount` plus an allowance for tax and shipping, and that limit is evaluated against the agent's policy as a send of the same amount would be:
+        - Under the policy's approval threshold, and with `defaultExecutionMode`
+          `AUTO`, the card is issued at once and returned with `201`.
+
+        - Otherwise the request becomes an `ISSUE_PURCHASE_CARD` agent action in
+          `PENDING_APPROVAL`, returned with `202`, and the
+          `AGENT_ACTION.PENDING_APPROVAL` webhook fires. The card is issued when
+          the action is approved with `POST /agents/{agentId}/actions/{actionId}/approve`;
+          the action then carries `cardId`. Poll `GET /agents/me/actions/{actionId}`
+          for the outcome.
+
+        - A request the policy denies outright (over a spending limit, or a
+          funding account the policy does not allow) is rejected with `403`.
+
+        The card is closed by its first approved authorization, and Grid closes it if it is still unused at `purchase.expiresAt`. Purchase cards are not counted by the one-standard-card rule, but an agent may hold only a limited number of open purchase cards, counting those awaiting approval; beyond that the request is rejected with `PURCHASE_CARD_LIMIT_REACHED`. Card details are never returned here; request them with `POST /agents/me/cards/{cardId}/reveal`.
+
+        Card issuance cannot be reversed, so an `Idempotency-Key` header is required. Keys are scoped to the agent: a retry by the same agent with the same key returns what the first request created, whatever has changed since, and another agent's key never matches. For a purchase card, a retry returns the issued card with `201`, or the action with `202` while it is pending, rejected or failed.
       operationId: agentCreateCard
       tags:
         - Agent Operations
@@ -9920,15 +9937,28 @@ paths:
                 summary: Issue a virtual card funded by the customer's wallet
                 value:
                   fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+              purchaseCard:
+                summary: Request a single-use card for one purchase
+                value:
+                  kind: PURCHASE
+                  fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  amount: 4999
+                  description: Running shoes from example-store.com
       responses:
         '201':
-          description: Card created. It starts in `PROCESSING` while the issuer provisions it.
+          description: Card created. A standard card starts in `PROCESSING` while the issuer provisions it. A purchase card is returned with `purchase` set.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AgentCard'
+        '202':
+          description: The purchase card needs the customer's approval. Returns the `ISSUE_PURCHASE_CARD` agent action, in `PENDING_APPROVAL` on the first request; a retry with the same `Idempotency-Key` returns it in its current status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
         '400':
-          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the customer's KYC status is not `APPROVED`, with `CARDHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires a cardholder agreement the customer has not accepted, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or too long, when the funding source does not belong to the customer or is not denominated in a card-eligible currency, and for general invalid parameters.
+          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the customer's KYC status is not `APPROVED`, with `CARDHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires a cardholder agreement the customer has not accepted, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or too long, when the funding source does not belong to the customer or is not denominated in a card-eligible currency, when `amount` is missing for a purchase card or supplied for a standard one, when a purchase card's funding source is not an Embedded Wallet the agent holds an active delegated key on or the agent's policy is not in USD, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -9940,13 +9970,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agents API or agent cards are not enabled for the platform, or the agent does not have the ISSUE_CARDS permission
+          description: 'Forbidden - Agents API or agent cards are not enabled for the platform, agent purchase cards are not enabled for a `kind: PURCHASE` request, the agent is paused, the agent does not have the ISSUE_CARDS permission, or the agent''s policy denies the purchase card (its `reason` starts with `Agent policy denied the purchase card:` followed by the denial, such as `DAILY_LIMIT_EXCEEDED`)'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error403'
         '409':
-          description: Conflict. Returned with `AGENT_CARD_EXISTS` when the agent already holds a card that is not `CLOSED`, with `CARD_LIMIT_REACHED` when the platform has reached the maximum number of live cards it may hold, and with `CONFLICT` when the agent already used the `Idempotency-Key` for a different card request.
+          description: Conflict. Returned with `AGENT_CARD_EXISTS` when the agent already holds a standard card that is not `CLOSED`, with `PURCHASE_CARD_LIMIT_REACHED` when it holds the most open purchase cards allowed, with `CARD_LIMIT_REACHED` when the platform has reached the maximum number of live cards it may hold, and with `CONFLICT` when the agent already used the `Idempotency-Key` for a different card request.
           content:
             application/json:
               schema:
@@ -10055,6 +10085,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/cards/{cardId}/reveal:
+    parameters:
+      - name: cardId
+        in: path
+        description: Unique identifier of the card
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Reveal a purchase card
+      description: |
+        Mint a short-lived signed URL of the card processor's page that displays one of the agent's open `PURCHASE` cards: its full number, expiry and CVV. The card details never pass through Grid; open the URL where the purchase is being made, right away, and never store or log it. Standard cards are revealed only by the platform with `POST /cards/{id}/reveal`.
+
+        Every reveal is audit-logged with the agent as the actor. Reveals are rate limited per agent and per card; beyond the limit the request is rejected with `429 RATE_LIMITED`. Requires the MANAGE_CARDS permission.
+      operationId: agentRevealCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Reveal URL minted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardRevealResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API, agent cards or agent purchase cards are not enabled for the platform, the agent is paused, the agent does not have the MANAGE_CARDS permission, or the customer is not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. Returned with `CONFLICT` when the card is not a `PURCHASE` card, and with `CARD_NOT_MUTABLE` when it is closed or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many reveals for this agent or card; retry later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -13138,7 +13230,7 @@ webhooks:
 
         If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
 
-        The payload contains the full `AgentAction` — including the embedded quote or transfer details — so you can render the approval UI without a second API call. Approve or reject via `POST /agents/{agentId}/actions/{actionId}/approve` or `POST /agents/{agentId}/actions/{actionId}/reject`.
+        The payload contains the full `AgentAction` — including the embedded quote, or the requested purchase card for `ISSUE_PURCHASE_CARD` — so you can render the approval UI without a second API call. Approve or reject via `POST /agents/{agentId}/actions/{actionId}/approve` or `POST /agents/{agentId}/actions/{actionId}/reject`.
       operationId: agentActionWebhook
       tags:
         - Webhooks
@@ -13194,6 +13286,28 @@ webhooks:
                     expiresAt: '2025-10-03T15:00:30Z'
                     createdAt: '2025-10-03T15:00:00Z'
                     updatedAt: '2025-10-03T15:00:00Z'
+              purchaseCardPendingApproval:
+                summary: Purchase card pending approval
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000021
+                  type: AGENT_ACTION.PENDING_APPROVAL
+                  timestamp: '2026-10-26T15:00:00Z'
+                  data:
+                    id: AgentAction:019542f5-b3e7-1d02-0000-000000000098
+                    agentId: Agent:019542f5-b3e7-1d02-0000-000000000042
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000010
+                    platformCustomerId: user-a1b2c3
+                    status: PENDING_APPROVAL
+                    type: ISSUE_PURCHASE_CARD
+                    purchaseCard:
+                      amount: 12000
+                      spendLimit: 13000
+                      currency: USD
+                      description: Concert tickets from example-tickets.com
+                      fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    expiresAt: '2026-10-26T15:15:00Z'
+                    createdAt: '2026-10-26T15:00:00Z'
+                    updatedAt: '2026-10-26T15:00:00Z'
       responses:
         '200':
           description: Webhook received and acknowledged.
@@ -17221,6 +17335,7 @@ components:
             | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
             | PIN_CHANGE_REQUIRED | The card's PIN unblock allowance is consumed for seven days. Change the PIN to recover sooner. `details.pinUnblockAvailableAt` gives the next allowed unblock time |
             | AGENT_CARD_EXISTS | The agent already holds a card that is not `CLOSED`, so it cannot issue another. Close that card first |
+            | PURCHASE_CARD_LIMIT_REACHED | The agent already holds the most open purchase cards allowed, counting purchase cards awaiting approval. Use or close one first |
             | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
             | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
             | NOT_YET_AVAILABLE | The request is valid, but its result is not available yet because the data it depends on could still change. Retry later. `reason` says what is outstanding. For balance changes, card settlement for a window boundary has not closed |
@@ -17251,6 +17366,7 @@ components:
             - CARD_NOT_MUTABLE
             - PIN_CHANGE_REQUIRED
             - AGENT_CARD_EXISTS
+            - PURCHASE_CARD_LIMIT_REACHED
             - CARD_LIMIT_REACHED
             - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
             - NOT_YET_AVAILABLE
@@ -29628,7 +29744,7 @@ components:
         - MANAGE_IDENTITY
         - MANAGE_CARDS
         - ISSUE_CARDS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one virtual card for itself while it holds no live card.'
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one standard virtual card for itself while it holds no live standard card, and single-use purchase cards where the platform enables them.'
     AgentExecutionMode:
       type: string
       enum:
@@ -29906,12 +30022,14 @@ components:
       type: string
       enum:
         - EXECUTE_QUOTE
+        - ISSUE_PURCHASE_CARD
       description: |
         The type of action the agent is requesting.
 
         | Type | Description |
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
+        | `ISSUE_PURCHASE_CARD` | Issue a single-use purchase card. See `purchaseCard` |
     AgentSendNetwork:
       type: string
       enum:
@@ -30000,6 +30118,45 @@ components:
               $ref: '#/components/schemas/AgentLightningInvoiceDestination'
               description: The invoice this quote pays, when it was created with a `LIGHTNING_INVOICE` destination.
       description: A quote created by an agent. For a `CHAIN_ADDRESS` destination, the quote's `destination` names the external account Grid recorded for the address, and `destinationChainAddress` names the address itself. For a `LIGHTNING_INVOICE` destination, `destination` names the external account Grid recorded for the invoice, and `destinationLightningInvoice` names the invoice itself.
+    AgentPurchaseCardDetails:
+      type: object
+      description: 'The purchase a `PURCHASE` card was requested for. The card''s issuer-enforced limit is `spendLimit`: the purchase amount plus an allowance for tax and shipping.'
+      required:
+        - amount
+        - spendLimit
+        - currency
+        - fundingSource
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The purchase amount the agent asked for, in the smallest unit of `currency`.
+          example: 4999
+        spendLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          description: 'The most the card can be charged in its one purchase, in the smallest unit of `currency`: `amount` plus an allowance for tax and shipping of 15% of `amount`, at most 1000 (USD 10.00). The card issuer declines a charge above it, and it is the amount checked against the agent''s policy when the card is requested.'
+          example: 5749
+        currency:
+          type: string
+          description: 'ISO 4217 code of the purchase currency. Known values: `USD`. Treat an unrecognized value as a currency you cannot display rather than an error.'
+          example: USD
+        description:
+          type: string
+          maxLength: 255
+          description: What the agent said the card is for, such as the merchant and item. Shown to the customer when they approve the card. Supplied by the agent and not verified by Grid.
+          example: Running shoes from example-store.com
+        fundingSource:
+          type: string
+          description: The customer's Embedded Wallet internal account that pays for the purchase.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        expiresAt:
+          type: string
+          format: date-time
+          description: When Grid closes the card if it has not been used. Present once the card is issued.
+          example: '2026-10-26T15:30:00Z'
     AgentActionFailureReason:
       type: string
       enum:
@@ -30009,6 +30166,7 @@ components:
         - EXECUTION_FAILED
         - PRICE_MOVED
         - ADDRESS_REFUSED
+        - APPROVAL_EXPIRED
       description: |
         Why an agent action has status `FAILED`.
 
@@ -30017,9 +30175,10 @@ components:
         | `QUOTE_EXPIRED` | The action's quote expired before execution |
         | `POLICY_DENIED` | The agent policy no longer allowed the action |
         | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
-        | `EXECUTION_FAILED` | Grid could not execute the approved action |
+        | `EXECUTION_FAILED` | Grid could not execute the approved action. For `ISSUE_PURCHASE_CARD`, the card issuer did not issue the card |
         | `PRICE_MOVED` | Reserved and legacy. Quotes to a `CHAIN_ADDRESS` pay out at a locked rate and no longer fail with this reason |
         | `ADDRESS_REFUSED` | Grid refused the send's destination before it signed the send: the destination is no longer one the agent may send to (for example, a Spark address removed from the customer's saved addresses), or one of the customer's records of the address was refused or is held for review. A `CHAIN_ADDRESS` that screening refuses fails with `EXECUTION_FAILED` |
+        | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD` action was not approved before its `expiresAt` |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -30058,6 +30217,13 @@ components:
           allOf:
             - $ref: '#/components/schemas/AgentQuote'
           description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user. Present for `EXECUTE_QUOTE`.
+        purchaseCard:
+          $ref: '#/components/schemas/AgentPurchaseCardDetails'
+          description: The purchase card the agent asked for, so an approval decision can show its amount, limit, description and funding account. Present for `ISSUE_PURCHASE_CARD`.
+        cardId:
+          type: string
+          description: The purchase card the action issued. Present for an `ISSUE_PURCHASE_CARD` action once it is `APPROVED` and the card is issued; read it with `GET /agents/me/cards/{cardId}`.
+          example: Card:019542f5-b3e7-1d02-0000-000000000011
         transaction:
           allOf:
             - $ref: '#/components/schemas/TransactionOneOf'
@@ -30072,7 +30238,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: When the action expires. For `EXECUTE_QUOTE`, this is the quote's own expiry. A `PENDING_APPROVAL` action that reaches this time transitions to `FAILED` with `failureReason` `QUOTE_EXPIRED`; approval never creates a replacement quote.
+          description: When the action expires. For `EXECUTE_QUOTE`, this is the quote's own expiry. A `PENDING_APPROVAL` action that reaches this time transitions to `FAILED` with `failureReason` `QUOTE_EXPIRED`; approval never creates a replacement quote. For `ISSUE_PURCHASE_CARD`, this is the end of the approval window, after which a pending action fails with `APPROVAL_EXPIRED`.
           example: '2025-10-03T15:05:00Z'
         createdAt:
           type: string
@@ -30500,12 +30666,14 @@ components:
       type: string
       enum:
         - STANDARD
+        - PURCHASE
       description: |
         How an agent card is used and funded.
 
         | Kind | Description |
         |------|-------------|
         | `STANDARD` | A card issued for the agent, by the platform with `POST /cards` or by the agent with `POST /agents/me/cards`. The customer holds the card details and its spend comes from the customer's account; that spend counts against the agent's policy limits as the agent's sends do. The agent can read the card, tighten its limits, and freeze it. |
+        | `PURCHASE` | A single-use virtual card the agent issued for one online purchase with `POST /agents/me/cards`. It is funded from the customer's Embedded Wallet, its spend counts against the agent's policy limits, and it closes after its first approved authorization or when it expires unused. The agent reads its number, expiry and CVV through `POST /agents/me/cards/{cardId}/reveal`. |
     CardStatus:
       type: string
       enum:
@@ -30750,6 +30918,9 @@ components:
           example:
             - '7995'
             - '6051'
+        purchase:
+          $ref: '#/components/schemas/AgentPurchaseCardDetails'
+          description: The purchase the card was issued for. Present for `PURCHASE` cards.
     AgentCardListResponse:
       type: object
       required:
@@ -30774,13 +30945,28 @@ components:
           example: 3
     AgentCardCreateRequest:
       type: object
+      description: 'Request body for `POST /agents/me/cards`. Without `kind`, or with `kind: STANDARD`, it issues the agent''s standard card. With `kind: PURCHASE` it requests a single-use purchase card for one online purchase of `amount`.'
       required:
         - fundingSource
       properties:
         fundingSource:
           type: string
-          description: Internal account id that funds the card. The account must belong to the agent's customer and be denominated in a card-eligible currency; otherwise the request is rejected with `INVALID_INPUT`.
+          description: Internal account id that funds the card. The account must belong to the agent's customer and be denominated in a card-eligible currency; otherwise the request is rejected with `INVALID_INPUT`. A `PURCHASE` card must be funded from an Embedded Wallet on which the agent holds an active delegated key.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        kind:
+          $ref: '#/components/schemas/AgentCardKind'
+          description: The kind of card to issue. Defaults to `STANDARD`.
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: 'The purchase amount in the smallest unit of USD. Required for `kind: PURCHASE` and rejected otherwise. Grid adds an allowance for tax and shipping to set the card''s limit; see `AgentPurchaseCardDetails`.'
+          example: 4999
+        description:
+          type: string
+          maxLength: 255
+          description: 'What the card is for, such as the merchant and item, shown to the customer when they approve it. Allowed only with `kind: PURCHASE`.'
+          example: Running shoes from example-store.com
     AgentCardUpdateRequest:
       type: object
       description: 'Update request for `PATCH /agents/me/cards/{cardId}`. At least one field must be supplied. An agent may only tighten a card: a limit may be set or lowered but not raised or removed, `blockedMccs` must contain every code in the card''s `effectiveBlockedMccs`, and `allowedMccs` may only lose codes once set. The only status an agent may set is `FROZEN`; unfreezing and loosening happen on the platform through `PATCH /cards/{id}`.'
@@ -30829,6 +31015,22 @@ components:
             pattern: ^[0-9]{4}$
           example:
             - '5813'
+    CardRevealResponse:
+      type: object
+      required:
+        - panEmbedUrl
+        - expiresAt
+      properties:
+        panEmbedUrl:
+          type: string
+          format: uri
+          description: 'Signed URL of the card processor''s iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid''s servers — render this URL in an iframe in your client to reveal card details. The URL is a short-lived bearer secret: render it immediately and never store, cache, or log it.'
+          example: https://embed.lithic.com/iframe/...?t=...
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
+          example: '2026-05-08T14:16:00Z'
     CardListResponse:
       type: object
       required:
@@ -31040,22 +31242,6 @@ components:
             - type: 'null'
           description: 'HTTPS URL of a stylesheet for this reveal only, overriding `cardConfigs.panRevealCssUrl` for this call without changing your platform config. Use it to style one reveal differently from the rest — to match the cardholder''s light or dark theme, for example. Subject to the same rules as the platform-level setting: it must be reachable over HTTPS without credentials, it styles the same selectors, and it loads into the page rendering the live card details, so host it somewhere you would trust with them. Omit the field, or send `null`, to fall back to your platform config.'
           example: https://acme.com/card-reveal-dark.css
-    CardRevealResponse:
-      type: object
-      required:
-        - panEmbedUrl
-        - expiresAt
-      properties:
-        panEmbedUrl:
-          type: string
-          format: uri
-          description: 'Signed URL of the card processor''s iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid''s servers — render this URL in an iframe in your client to reveal card details. The URL is a short-lived bearer secret: render it immediately and never store, cache, or log it.'
-          example: https://embed.lithic.com/iframe/...?t=...
-        expiresAt:
-          type: string
-          format: date-time
-          description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
-          example: '2026-05-08T14:16:00Z'
     DigitalWallet:
       type: string
       enum:

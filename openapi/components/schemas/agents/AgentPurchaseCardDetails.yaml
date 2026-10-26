@@ -1,0 +1,56 @@
+type: object
+description: >-
+  The purchase a `PURCHASE` card was requested for. The card's issuer-enforced
+  limit is `spendLimit`: the purchase amount plus an allowance for tax and
+  shipping.
+required:
+  - amount
+  - spendLimit
+  - currency
+  - fundingSource
+properties:
+  amount:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      The purchase amount the agent asked for, in the smallest unit of
+      `currency`.
+    example: 4999
+  spendLimit:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      The most the card can be charged in its one purchase, in the smallest
+      unit of `currency`: `amount` plus an allowance for tax and shipping of
+      15% of `amount`, at most 1000 (USD 10.00). The card issuer declines a
+      charge above it, and it is the amount checked against the agent's
+      policy when the card is requested.
+    example: 5749
+  currency:
+    type: string
+    description: >-
+      ISO 4217 code of the purchase currency. Known values: `USD`. Treat an
+      unrecognized value as a currency you cannot display rather than an
+      error.
+    example: USD
+  description:
+    type: string
+    maxLength: 255
+    description: >-
+      What the agent said the card is for, such as the merchant and item.
+      Shown to the customer when they approve the card. Supplied by the agent
+      and not verified by Grid.
+    example: Running shoes from example-store.com
+  fundingSource:
+    type: string
+    description: The customer's Embedded Wallet internal account that pays for the purchase.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      When Grid closes the card if it has not been used. Present once the card
+      is issued.
+    example: '2026-10-26T15:30:00Z'

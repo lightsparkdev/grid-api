@@ -1,9 +1,10 @@
 get:
   summary: List agent cards
   description: >-
-    List the cards the customer issued for the authenticated agent. Other
-    cards of the customer are not listed. Requires the MANAGE_CARDS
-    permission.
+    List the authenticated agent's cards: standard cards issued for it and
+    purchase cards it issued. Filter with `kind=PURCHASE` for purchase cards
+    only. Other cards of the customer are not listed. Requires the
+    MANAGE_CARDS permission.
   operationId: agentListCards
   tags:
     - Agent Operations
@@ -68,27 +69,57 @@ get:
 post:
   summary: Issue an agent card
   description: >
-    Issue a virtual card for the authenticated agent, as `POST /cards` with
-    `agentId` does for the platform. The card belongs to the agent's
-    customer, who must have KYC status `APPROVED` and have accepted the
-    cardholder agreement where the platform requires one. Its spend counts
+    Issue a virtual card for the authenticated agent. The card belongs to the
+    agent's customer, who must have KYC status `APPROVED` and have accepted
+    the cardholder agreement where the platform requires one. Its spend counts
     against the agent's policy limits as the agent's sends do, and Grid's
     default agent merchant-category blocks apply. Requires the ISSUE_CARDS
-    permission; reading the card afterwards needs MANAGE_CARDS. While any of
-    the agent's cards is not `CLOSED`, including one the platform issued for
-    it, the request is rejected with `AGENT_CARD_EXISTS`.
+    permission; reading the card afterwards needs MANAGE_CARDS.
 
 
-    Card issuance is fee-bearing and cannot be reversed, so an
-    `Idempotency-Key` header is required. Keys are scoped to the agent: a
-    retry by the same agent with the same key returns the card the first
-    request created, even though that card is now live, and another agent's
-    key never matches.
+    **Standard card** (`kind` omitted or `STANDARD`): as `POST /cards` with
+    `agentId` does for the platform. While any of the agent's standard cards
+    is not `CLOSED`, including one the platform issued for it, the request is
+    rejected with `AGENT_CARD_EXISTS`. New cards start in
+    `status: "PROCESSING"` and follow the same status transitions and
+    `card.status_change` webhooks as cards issued with `POST /cards`.
 
 
-    New cards start in `status: "PROCESSING"` and follow the same status
-    transitions and `card.status_change` webhooks as cards issued with
-    `POST /cards`.
+    **Purchase card** (`kind: PURCHASE`): a single-use card for one online
+    purchase of `amount`, paid from the customer's Embedded Wallet with the
+    agent's delegated key. Available only where the platform enables agent
+    purchase cards. Its limit (`purchase.spendLimit`) is `amount` plus an
+    allowance for tax and shipping, and that limit is evaluated against the
+    agent's policy as a send of the same amount would be:
+
+    - Under the policy's approval threshold, and with `defaultExecutionMode`
+      `AUTO`, the card is issued at once and returned with `201`.
+
+    - Otherwise the request becomes an `ISSUE_PURCHASE_CARD` agent action in
+      `PENDING_APPROVAL`, returned with `202`, and the
+      `AGENT_ACTION.PENDING_APPROVAL` webhook fires. The card is issued when
+      the action is approved with `POST /agents/{agentId}/actions/{actionId}/approve`;
+      the action then carries `cardId`. Poll `GET /agents/me/actions/{actionId}`
+      for the outcome.
+
+    - A request the policy denies outright (over a spending limit, or a
+      funding account the policy does not allow) is rejected with `403`.
+
+    The card is closed by its first approved authorization, and Grid closes
+    it if it is still unused at `purchase.expiresAt`. Purchase cards are not
+    counted by the one-standard-card rule, but an agent may hold only a
+    limited number of open purchase cards, counting those awaiting approval;
+    beyond that the request is rejected with `PURCHASE_CARD_LIMIT_REACHED`.
+    Card details are never returned here; request them with
+    `POST /agents/me/cards/{cardId}/reveal`.
+
+
+    Card issuance cannot be reversed, so an `Idempotency-Key` header is
+    required. Keys are scoped to the agent: a retry by the same agent with the
+    same key returns what the first request created, whatever has changed
+    since, and another agent's key never matches. For a purchase card, a
+    retry returns the issued card with `201`, or the action with `202` while
+    it is pending, rejected or failed.
   operationId: agentCreateCard
   tags:
     - Agent Operations
@@ -118,15 +149,32 @@ post:
             summary: Issue a virtual card funded by the customer's wallet
             value:
               fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+          purchaseCard:
+            summary: Request a single-use card for one purchase
+            value:
+              kind: PURCHASE
+              fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+              amount: 4999
+              description: Running shoes from example-store.com
   responses:
     '201':
       description: >-
-        Card created. It starts in `PROCESSING` while the issuer provisions
-        it.
+        Card created. A standard card starts in `PROCESSING` while the issuer
+        provisions it. A purchase card is returned with `purchase` set.
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/agents/AgentCard.yaml
+    '202':
+      description: >-
+        The purchase card needs the customer's approval. Returns the
+        `ISSUE_PURCHASE_CARD` agent action, in `PENDING_APPROVAL` on the first
+        request; a retry with the same `Idempotency-Key` returns it in its
+        current status.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentAction.yaml
     '400':
       description: >-
         Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the
@@ -135,8 +183,11 @@ post:
         cardholder agreement the customer has not accepted, and with
         `INVALID_INPUT` when the `Idempotency-Key` header is missing or too
         long, when the funding source does not belong to the customer or is
-        not denominated in a card-eligible currency, and for general invalid
-        parameters.
+        not denominated in a card-eligible currency, when `amount` is missing
+        for a purchase card or supplied for a standard one, when a purchase
+        card's funding source is not an Embedded Wallet the agent holds an
+        active delegated key on or the agent's policy is not in USD, and for
+        general invalid parameters.
       content:
         application/json:
           schema:
@@ -150,7 +201,11 @@ post:
     '403':
       description: >-
         Forbidden - Agents API or agent cards are not enabled for the platform,
-        or the agent does not have the ISSUE_CARDS permission
+        agent purchase cards are not enabled for a `kind: PURCHASE` request,
+        the agent is paused, the agent does not have the ISSUE_CARDS
+        permission, or the agent's policy denies the purchase card (its
+        `reason` starts with `Agent policy denied the purchase card:` followed
+        by the denial, such as `DAILY_LIMIT_EXCEEDED`)
       content:
         application/json:
           schema:
@@ -158,7 +213,9 @@ post:
     '409':
       description: >-
         Conflict. Returned with `AGENT_CARD_EXISTS` when the agent already
-        holds a card that is not `CLOSED`, with `CARD_LIMIT_REACHED` when the platform has
+        holds a standard card that is not `CLOSED`, with
+        `PURCHASE_CARD_LIMIT_REACHED` when it holds the most open purchase
+        cards allowed, with `CARD_LIMIT_REACHED` when the platform has
         reached the maximum number of live cards it may hold, and with
         `CONFLICT` when the agent already used the `Idempotency-Key` for a
         different card request.
