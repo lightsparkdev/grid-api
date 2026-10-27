@@ -27,8 +27,10 @@ properties:
   currency:
     type: string
     description: >-
-      Currency code the account is denominated in (ISO 4217). Rule-based
-      accounts are currently available in `USD` only.
+      Currency code the account is denominated in. Rule-based accounts are
+      currently available in `USD` and `USDC`. A `USD` account is issued its
+      own bank account number; a `USDC` account is issued its own deposit
+      address on each network your platform supports.
     example: USD
   onBehalfOfCustomerId:
     type: string
