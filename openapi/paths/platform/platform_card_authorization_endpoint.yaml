@@ -2,8 +2,8 @@ get:
   summary: Get the card authorization endpoint
   description: >-
     Get the endpoint Grid calls for real-time card authorization decisions.
-    Returns `404` when no endpoint is enrolled, in which case Grid's own
-    checks decide every authorization.
+    `404` is the normal response for a platform that has not enrolled an
+    endpoint, and means Grid's own checks decide every authorization.
   operationId: getCardAuthorizationEndpoint
   tags:
     - Cards
@@ -23,7 +23,9 @@ get:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '404':
-      description: No card authorization endpoint is enrolled.
+      description: >-
+        No card authorization endpoint is enrolled. This is the normal state
+        for a platform that has not enrolled one.
       content:
         application/json:
           schema:
@@ -48,17 +50,22 @@ put:
   description: >-
     Enroll the endpoint Grid calls to ask your platform for a real-time
     decision on each card authorization that Grid's own checks approve. See
-    the `CARD_TRANSACTION.AUTHORIZATION_REQUEST` webhook for the request
-    your endpoint receives and the response it must return.
+    the `CARD_AUTHORIZATION.REQUEST` webhook for the request your endpoint
+    receives and the decision it must return.
 
 
     Before enrolling, Grid sends your endpoint one signed
-    `CARD_TRANSACTION.AUTHORIZATION_REQUEST` with example data. Enrollment
-    succeeds only if your endpoint returns `200` with a valid
-    `CardAuthorizationResponse` within the response deadline; the decision
-    in that response is ignored. Otherwise this returns
+    `CARD_AUTHORIZATION.REQUEST` with `data.isTest: true` and example data.
+    Answer it without running your business checks. Enrollment succeeds
+    only if your endpoint returns `200` with a valid
+    `CardAuthorizationDecision` within `responseTimeoutMs`; the decision in
+    that response is ignored. Otherwise this returns
     `400 WEBHOOK_DELIVERY_ERROR` and the enrolled endpoint, if any, is
     unchanged.
+
+
+    This setting has its own resource, outside `PATCH /platform/config`,
+    because enrolling calls your endpoint and can fail on that call alone.
 
 
     Calling this again replaces the enrolled endpoint. The change applies to
@@ -119,6 +126,7 @@ delete:
   description: >-
     Stop sending card authorizations to your platform for a decision. Grid's
     own checks decide authorizations that arrive after this call returns.
+    Returns `204` whether or not an endpoint was enrolled.
   operationId: deleteCardAuthorizationEndpoint
   tags:
     - Cards
@@ -126,19 +134,13 @@ delete:
     - BasicAuth: []
   responses:
     '204':
-      description: The endpoint was removed.
+      description: The endpoint was removed, or none was enrolled.
     '401':
       description: Unauthorized
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
-    '404':
-      description: No card authorization endpoint is enrolled.
-      content:
-        application/json:
-          schema:
-            $ref: ../../components/schemas/errors/Error404.yaml
     '500':
       description: Internal service error
       content:

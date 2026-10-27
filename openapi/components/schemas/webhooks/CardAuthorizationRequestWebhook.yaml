@@ -9,4 +9,4 @@ allOf:
       type:
         type: string
         enum:
-          - CARD_TRANSACTION.AUTHORIZATION_REQUEST
+          - CARD_AUTHORIZATION.REQUEST

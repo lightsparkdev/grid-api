@@ -1,6 +1,14 @@
-type: string
-enum:
-  - APPROVE
-  - DECLINE
-description: Your platform's decision on a card authorization.
-example: APPROVE
+title: Card Authorization Decision
+type: object
+required:
+  - decision
+description: >-
+  The body your authorization endpoint returns with HTTP `200`.
+properties:
+  decision:
+    $ref: ./CardAuthorizationDecisionType.yaml
+  declineReason:
+    $ref: ./CardAuthorizationDeclineReason.yaml
+    description: >-
+      Why you declined. Used only when `decision` is `DECLINE`. When you
+      omit it, Grid sends the card network a generic decline.

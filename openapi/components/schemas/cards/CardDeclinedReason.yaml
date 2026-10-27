@@ -25,6 +25,6 @@ description: |
   | `UNSUPPORTED_NETWORK` | Grid does not support the network or the transaction type. |
   | `INCORRECT_CARD_DETAILS` | The PIN, security code, expiry date, or billing address entered at the merchant did not match the card. |
   | `TEMPORARILY_UNAVAILABLE` | A temporary problem at Grid, the card processor, or the card network stopped the authorization. The cardholder can try again. |
-  | `PLATFORM_DECLINED` | Your card authorization endpoint returned `decision: DECLINE`. |
+  | `PLATFORM_DECLINED` | Your card authorization endpoint returned `decision: DECLINE`. `platformDeclineReason` carries the reason it gave. |
   | `PLATFORM_UNAVAILABLE` | Your card authorization endpoint did not return a valid decision in time, and its `timeoutBehavior` is `DECLINE`. |
   | `OTHER` | Any other reason, including a security or fraud decline the card processor made. |

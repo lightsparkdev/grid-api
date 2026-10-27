@@ -2,9 +2,9 @@ post:
   summary: Card authorization request
   description: >
     Real-time decision request for a card authorization. Grid sends it to the
-    endpoint you enrolled through `PUT /platform/card-authorization-endpoint`,
-    not to the `webhookEndpoint` in your platform config. Your response
-    decides whether the authorization proceeds.
+    endpoint you enrolled through `PUT /platform/card-authorization-endpoint`.
+    It never goes to the `webhookEndpoint` in your platform config. Your
+    response decides whether the authorization proceeds.
 
     This endpoint should be implemented by clients of the Grid API that want
     to make their own authorization decisions.
@@ -21,8 +21,8 @@ post:
 
     ### Responding
 
-    Return HTTP `200` with a `CardAuthorizationResponse` body within 1.5
-    seconds. `decision: APPROVE` lets the authorization proceed.
+    Return HTTP `200` with a `CardAuthorizationDecision` body within the
+    endpoint's `responseTimeoutMs` (1.5 seconds). `decision: APPROVE` lets the authorization proceed.
     `decision: DECLINE` declines it, and Grid passes your `declineReason` to
     the card network.
 
@@ -38,7 +38,8 @@ post:
     `INSUFFICIENT_FUNDS`. The final outcome arrives as a
     `CARD_TRANSACTION.AUTHORIZED` or `CARD_TRANSACTION.DECLINED` webhook on
     your `webhookEndpoint`. A decline you return arrives there with
-    `cardDeclinedReason: PLATFORM_DECLINED`.
+    `cardDeclinedReason: PLATFORM_DECLINED` and your `declineReason` in
+    `platformDeclineReason`.
 
 
     ### Duplicates
@@ -84,7 +85,7 @@ post:
             summary: Authorization awaiting your decision
             value:
               id: Webhook:019542f5-b3e7-1d02-0000-000000000050
-              type: CARD_TRANSACTION.AUTHORIZATION_REQUEST
+              type: CARD_AUTHORIZATION.REQUEST
               timestamp: '2026-05-09T10:00:00Z'
               data:
                 transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
@@ -101,7 +102,7 @@ post:
                     name: United States Dollar
                     symbol: $
                     decimals: 2
-                amount:
+                approvedAmount:
                   amount: 12550
                   currency:
                     code: USD
@@ -115,13 +116,14 @@ post:
                   state: CA
                   country: US
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                isTest: false
   responses:
     '200':
       description: Your decision on the authorization.
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/cards/CardAuthorizationResponse.yaml
+            $ref: ../components/schemas/cards/CardAuthorizationDecision.yaml
           examples:
             approve:
               summary: Approve

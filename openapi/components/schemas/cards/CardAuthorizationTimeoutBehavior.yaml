@@ -12,6 +12,6 @@ description: |
   | `APPROVE` | Grid proceeds as though you approved. Grid's own funding check still applies. |
 
   A non-`200` status, a body that does not match
-  `CardAuthorizationResponse`, a network error, and a timeout all count as no
+  `CardAuthorizationDecision`, a network error, and a timeout all count as no
   valid decision.
 example: DECLINE

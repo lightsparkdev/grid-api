@@ -9,7 +9,7 @@ properties:
     maxLength: 255
     pattern: ^https://
     description: >-
-      HTTPS URL that receives `CARD_TRANSACTION.AUTHORIZATION_REQUEST`
+      HTTPS URL that receives `CARD_AUTHORIZATION.REQUEST`
       requests. It must resolve to a public host. It can differ from the
       `webhookEndpoint` in your platform config.
     example: https://api.mycompany.com/grid/card-authorizations

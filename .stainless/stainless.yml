@@ -308,10 +308,10 @@ resources:
           card_authorization_endpoint: "#/components/schemas/CardAuthorizationEndpoint"
           card_authorization_endpoint_request: "#/components/schemas/CardAuthorizationEndpointRequest"
           card_authorization_request: "#/components/schemas/CardAuthorizationRequest"
-          card_authorization_response: "#/components/schemas/CardAuthorizationResponse"
+          card_authorization_decision: "#/components/schemas/CardAuthorizationDecision"
         methods:
           retrieve: get /platform/card-authorization-endpoint
-          enroll: put /platform/card-authorization-endpoint
+          update: put /platform/card-authorization-endpoint
           delete: delete /platform/card-authorization-endpoint
 
   transfer_in:

@@ -1,11 +1,12 @@
 By default, Grid decides every card authorization with its own checks. With
-real-time authorization, you also get a say: Grid calls an endpoint you
-host for each authorization its checks approve, and your response decides
-whether the authorization proceeds. Use it to apply your own fraud rules,
+real-time authorization, Grid also calls an endpoint you host for each
+authorization its checks approve, and your response decides whether the
+authorization proceeds. Use it to apply your own fraud rules,
 merchant restrictions, or velocity limits.
 
 Real-time authorization covers cards whose authorization decisions Grid
-makes. It never loosens Grid's own checks.
+makes: those whose `cardCapabilities.supportsSpendLimitsAtIssuance` is true.
+It never loosens Grid's own checks.
 
 ## How it works
 
@@ -13,7 +14,7 @@ makes. It never loosens Grid's own checks.
 2. Grid runs its checks: card status, card and platform spend limits,
    merchant category rules, and network support. If any check declines, Grid
    declines the authorization and does not call your endpoint.
-3. Grid sends your endpoint a signed `CARD_TRANSACTION.AUTHORIZATION_REQUEST`.
+3. Grid sends your endpoint a signed `CARD_AUTHORIZATION.REQUEST`.
 4. Your endpoint returns `APPROVE` or `DECLINE` within 1.5 seconds.
 5. If you approve, Grid reserves the amount from the funding source. If the
    funding source cannot cover it, Grid declines with `INSUFFICIENT_FUNDS`.
@@ -38,12 +39,25 @@ curl -X PUT "$GRID_BASE_URL/platform/card-authorization-endpoint" \
   }'
 ```
 
-Before enrolling, Grid sends your endpoint one test request. Enrollment
-succeeds only if your endpoint returns a valid response in time, so a broken
-endpoint never starts declining real authorizations.
+Before enrolling, Grid sends your endpoint one test request with
+`data.isTest: true` and example data that matches no real card. Return `200`
+with any valid decision without looking up the card or recording the
+request. Enrollment succeeds only if your endpoint returns a valid response
+in time, so a broken endpoint never starts declining real authorizations.
+
+The endpoint has its own resource, outside `PATCH /platform/config`, because
+enrolling calls your endpoint and can fail on that call alone.
 
 To stop, call `DELETE /platform/card-authorization-endpoint`. Grid's own checks
-then decide every authorization.
+then decide every authorization. `GET` returns `404` while no endpoint is
+enrolled.
+
+## Test in sandbox
+
+In sandbox, an enrolled endpoint receives the requests that the
+`POST /sandbox/cards/{id}/simulate/authorization` simulator produces, as long
+as Grid's own checks approve them. To test `timeoutBehavior`, have your
+endpoint return a non-`200` status or wait past `responseTimeoutMs`.
 
 ## Respond to requests
 
@@ -53,7 +67,7 @@ in `data`:
 ```json
 {
   "id": "Webhook:019542f5-b3e7-1d02-0000-000000000050",
-  "type": "CARD_TRANSACTION.AUTHORIZATION_REQUEST",
+  "type": "CARD_AUTHORIZATION.REQUEST",
   "timestamp": "2026-05-09T10:00:00Z",
   "data": {
     "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000100",
@@ -71,7 +85,7 @@ in `data`:
         "decimals": 2
       }
     },
-    "amount": {
+    "approvedAmount": {
       "amount": 12550,
       "currency": {
         "code": "USD",
@@ -85,7 +99,8 @@ in `data`:
       "mcc": "5814",
       "country": "US"
     },
-    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+    "isTest": false
   }
 }
 ```
@@ -117,13 +132,17 @@ one:
 | `CARD_PAUSED` | You track a paused state for the card that its Grid `status` does not reflect. To pause a card everywhere, freeze it instead. |
 
 A decline you return reaches your `webhookEndpoint` as
-`CARD_TRANSACTION.DECLINED` with `cardDeclinedReason: PLATFORM_DECLINED`.
+`CARD_TRANSACTION.DECLINED` with `cardDeclinedReason: PLATFORM_DECLINED` and
+your `declineReason` in `platformDeclineReason`.
+
+`approvedAmount` is the amount Grid authorizes if you approve. It becomes
+`authorizedAmount` on the resulting `CardTransaction`.
 
 ## Timeouts and errors
 
-Respond within 1.5 seconds. The card network holds the cardholder at the
-terminal while Grid waits, so keep the decision path fast and avoid calls to
-slow dependencies.
+Respond within the endpoint's `responseTimeoutMs`, which is 1.5 seconds. The
+card network holds the cardholder at the terminal while Grid waits, so keep
+the decision path fast and avoid calls to slow dependencies.
 
 If your endpoint times out, returns a status other than `200`, or returns an
 invalid body, Grid applies the `timeoutBehavior` you set at enrollment:
