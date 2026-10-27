@@ -145,6 +145,7 @@
             "group": "Managing accounts",
             "pages": [
               "payouts-and-b2b/depositing-funds/internal-accounts",
+              "payouts-and-b2b/depositing-funds/rule-based-accounts",
               "payouts-and-b2b/depositing-funds/external-accounts",
               "payouts-and-b2b/depositing-funds/required-fields"
             ]
