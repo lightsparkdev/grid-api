@@ -1,8 +1,7 @@
 type: object
 description: >-
   Update request for `PATCH /cards/{id}`. At least one of `status`,
-  `fundingSource`, `maxNetworkRiskScore`, `maxSpendPerTransaction`, `maxSpendPerDay`,
-  `maxTransactionsPerDay`, `allowedMccs`, `blockedMccs`,
+  `fundingSource`, `maxNetworkRiskScore`, `allowedMccs`, `blockedMccs`,
   `defaultMccBlocksLifted`, or `threeDSecurePassword` must be supplied;
   `allowedMccs`, `blockedMccs` and `defaultMccBlocksLifted` count only for a
   card issued for an agent, and are ignored on any other card. Supplying `status` also requires
@@ -13,8 +12,9 @@ description: >-
   delegated signing authorization; otherwise it returns
   `409 INVALID_STATE_TRANSITION`. Funding-source changes reconcile
   `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested.
-  `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxNetworkRiskScore`, `maxSpendPerTransaction`,
-  `maxSpendPerDay`, or `maxTransactionsPerDay`.
+  `CLOSED` is terminal and irreversible and cannot be combined with
+  `fundingSource` or `maxNetworkRiskScore`. Manage velocity limits through
+  `/card-velocity-limits`.
 properties:
   status:
     $ref: ./CardUpdateStatus.yaml
@@ -52,61 +52,6 @@ properties:
       applies.
       Omit to preserve the current setting or send null to clear this scope.
     example: 700
-  maxSpendPerTransaction:
-    anyOf:
-      - type: integer
-        format: int64
-        minimum: 1
-        maximum: 9007199254740991
-      - type: 'null'
-    description: >-
-      A new limit on the largest amount this card can authorize on a single
-      transaction, in the smallest unit of its currency (cents for USD). An
-      authorization for exactly the limit is allowed. A later clearing can
-      still settle above it — a restaurant tip, for example — so this caps the
-      authorization, not the final settled amount. Send a positive integer to
-      set the limit, `null` to remove it, or omit the field to leave it
-      unchanged. If your platform config also sets
-      `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. You
-      can only send this when the card's
-      `cardCapabilities.supportsSpendLimits` is true, and not together with
-      `status: CLOSED`.
-    example: 10000
-  maxSpendPerDay:
-    anyOf:
-      - type: integer
-        format: int64
-        minimum: 1
-        maximum: 9007199254740991
-      - type: 'null'
-    description: >-
-      Replacement card-specific UTC-calendar-day cap, in the smallest unit of
-      the card's currency. Omit this field to leave the current cap unchanged,
-      supply null to clear it, or supply a positive integer to set it. When the
-      platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces
-      the lower of the two values. Refunds, reversals, and authorization
-      expiries do not restore capacity during the day. Accepted only when the
-      card's `cardCapabilities.supportsSpendLimits` is true. Cannot be supplied
-      alongside `status: CLOSED`.
-    example: 25000
-  maxTransactionsPerDay:
-    anyOf:
-      - type: integer
-        format: int32
-        minimum: 1
-        maximum: 2147483647
-      - type: 'null'
-    description: >-
-      Replacement card-specific cap on the number of transactions the card may
-      authorize during one UTC calendar day. Omit this field to leave the
-      current cap unchanged, supply null to clear it, or supply a positive
-      integer to set it. When the platform config also supplies
-      `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two
-      values. Refunds, reversals, and authorization expiries do not restore
-      capacity during the day. Accepted only when the card's
-      `cardCapabilities.supportsTransactionCountLimit` is true. Cannot be
-      supplied alongside `status: CLOSED`.
-    example: 20
   threeDSecurePassword:
     type: string
     description: >-

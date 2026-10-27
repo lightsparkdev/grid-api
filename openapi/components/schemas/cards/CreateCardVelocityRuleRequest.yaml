@@ -1,0 +1,62 @@
+type: object
+required:
+  - name
+  - metric
+  - window
+properties:
+  cardId:
+    anyOf:
+      - type: string
+      - type: 'null'
+    description: >-
+      Card to restrict. Omit or send null to apply the rule separately to every
+      eligible card on your platform, including cards issued later. A
+      platform rule does not pool usage across cards.
+    example: Card:019542f5-b3e7-1d02-0000-000000000003
+  name:
+    type: string
+    minLength: 1
+    maxLength: 255
+    description: A descriptive label for this rule. Whitespace-only names are rejected.
+    example: Weekly card spending cap
+  metric:
+    $ref: ./CardVelocityMetric.yaml
+  window:
+    $ref: ./CardVelocityWindow.yaml
+  windowSeconds:
+    anyOf:
+      - type: integer
+        minimum: 1
+        maximum: 2678400
+      - type: 'null'
+    description: >-
+      Required for ROLLING and absent or null for other windows. The maximum
+      rolling window is 31 days.
+    example: 600
+  maxCount:
+    anyOf:
+      - type: integer
+        minimum: 0
+        maximum: 100000
+      - type: 'null'
+    description: >-
+      Maximum count within the window. Required for ATTEMPTS. Cannot be set
+      for AUTHORIZATION. Omit or send null to leave the count uncapped.
+    example: 5
+  maxAmount:
+    anyOf:
+      - type: integer
+        format: int64
+        minimum: 0
+        maximum: 9007199254740991
+      - type: 'null'
+    description: >-
+      Maximum amount in the smallest unit of the card's currency. Supported for
+      APPROVED only. Platform rules apply this amount separately to each eligible
+      card in that card's currency, without foreign-exchange conversion. USD- and
+      USDB-funded USD cards both use USD cents. The amount is holds less releases for
+      transactions opened within the window. Releases restore capacity;
+      clearing against a hold does not. Omit or send null to leave the amount
+      uncapped. At least one of maxCount or maxAmount must be set. A zero cap
+      blocks applicable new authorizations, including zero-amount checks.
+    example: 50000

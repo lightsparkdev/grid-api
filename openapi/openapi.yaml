@@ -497,6 +497,10 @@ paths:
     $ref: paths/agents/agents_me_cards_{cardId}.yaml
   /agents/me/cards/{cardId}/reveal:
     $ref: paths/agents/agents_me_cards_{cardId}_reveal.yaml
+  /card-velocity-limits:
+    $ref: paths/cards/card-velocity-limits.yaml
+  /card-velocity-limits/{id}:
+    $ref: paths/cards/card-velocity-limits_{id}.yaml
   /cards:
     $ref: paths/cards/cards.yaml
   /cards/{id}:

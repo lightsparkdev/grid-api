@@ -5,9 +5,6 @@ required:
   - status
   - form
   - fundingSource
-  - maxSpendPerTransaction
-  - maxSpendPerDay
-  - maxTransactionsPerDay
   - createdAt
   - updatedAt
 properties:
@@ -84,57 +81,6 @@ properties:
       applies.
       Null means no card-specific ceiling. Platform controls still apply.
     example: 700
-  maxSpendPerTransaction:
-    anyOf:
-      - type: integer
-        format: int64
-        minimum: 1
-        maximum: 9007199254740991
-      - type: 'null'
-    description: >-
-      The largest amount this card can authorize on a single transaction, in
-      the smallest unit of its `currency` (cents for USD). An authorization for
-      exactly the limit is allowed. A later clearing can still settle above it
-      — a restaurant tip, for example — so this caps the authorization, not the
-      final settled amount. `null` means the card sets no limit of its own. If
-      your platform config also sets `cardConfigs.maxSpendPerTransaction` (the
-      platform-level limit), the lower of the two applies and this value stays
-      as you set it.
-    example: 5000
-  maxSpendPerDay:
-    anyOf:
-      - type: integer
-        format: int64
-        minimum: 1
-        maximum: 9007199254740991
-      - type: 'null'
-    description: >-
-      Card-specific cap on cumulative new spend during one UTC calendar day,
-      in the smallest unit of the card's `currency`. The window resets at
-      00:00 UTC. Null means the card has no card-specific daily cap. When the
-      platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces
-      the lower of the two values without replacing this configured value.
-      Refunds, reversals, and authorization expiries do not restore capacity
-      during the day. Spend exactly equal to the effective limit is allowed.
-    example: 25000
-  maxTransactionsPerDay:
-    anyOf:
-      - type: integer
-        format: int32
-        minimum: 1
-        maximum: 2147483647
-      - type: 'null'
-    description: >-
-      Card-specific cap on the number of transactions the card may authorize
-      during one UTC calendar day. The window resets at 00:00 UTC. Null means
-      the card has no card-specific daily transaction cap. When the platform
-      config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces
-      the lower of the two values without replacing this configured value.
-      Each approved authorization counts once for the day it was authorized;
-      refunds, reversals, and authorization expiries do not restore capacity
-      during the day. A transaction that brings the day's count exactly to the
-      effective limit is allowed.
-    example: 20
   allowedMccs:
     type: array
     minItems: 1

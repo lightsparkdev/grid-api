@@ -52,7 +52,7 @@ get:
 patch:
   summary: Tighten or freeze an agent card
   description: >-
-    Tighten a card's limits or merchant categories, or freeze it. An agent can
+    Tighten a card's merchant categories, or freeze it. An agent can
     never loosen a card or unfreeze it; the platform does that with
     `PATCH /cards/{id}`. Requires the MANAGE_CARDS permission.
   operationId: agentUpdateCard
