@@ -1,0 +1,162 @@
+By default, Grid decides every card authorization with its own checks. With
+real-time authorization, Grid also calls an endpoint you host for each
+authorization its checks approve, and your response decides whether the
+authorization proceeds. Use it to apply your own fraud rules,
+merchant restrictions, or velocity limits.
+
+Real-time authorization covers cards whose authorization decisions Grid
+makes: those whose `cardCapabilities.supportsSpendLimitsAtIssuance` is true.
+It never loosens Grid's own checks.
+
+## How it works
+
+1. A cardholder uses the card, and the card network asks Grid to authorize it.
+2. Grid runs its checks: card status, card and platform spend limits,
+   merchant category rules, and network support. If any check declines, Grid
+   declines the authorization and does not call your endpoint.
+3. Grid sends your endpoint a signed `CARD_AUTHORIZATION.REQUEST`.
+4. Your endpoint returns `APPROVE` or `DECLINE` within 1.5 seconds.
+5. If you approve, Grid reserves the amount from the funding source. If the
+   funding source cannot cover it, Grid declines with `INSUFFICIENT_FUNDS`.
+6. Grid sends the final outcome to your `webhookEndpoint` as
+   `CARD_TRANSACTION.AUTHORIZED` or `CARD_TRANSACTION.DECLINED`.
+
+Balance inquiries are never sent to your endpoint.
+
+## Enroll your endpoint
+
+Enroll an HTTPS endpoint with `PUT /platform/card-authorization-endpoint`. It
+can differ from your `webhookEndpoint`, and hosting it separately keeps a slow
+webhook handler from delaying card decisions.
+
+```bash cURL
+curl -X PUT "$GRID_BASE_URL/platform/card-authorization-endpoint" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://api.mycompany.com/grid/card-authorizations",
+    "timeoutBehavior": "DECLINE"
+  }'
+```
+
+Before enrolling, Grid sends your endpoint one test request with
+`data.isTest: true` and example data that matches no real card. Return `200`
+with any valid decision without looking up the card or recording the
+request. Enrollment succeeds only if your endpoint returns a valid response
+in time, so a broken endpoint never starts declining real authorizations.
+
+The endpoint has its own resource, outside `PATCH /platform/config`, because
+enrolling calls your endpoint and can fail on that call alone.
+
+To stop, call `DELETE /platform/card-authorization-endpoint`. Grid's own checks
+then decide every authorization. `GET` returns `404` while no endpoint is
+enrolled.
+
+## Test in sandbox
+
+In sandbox, an enrolled endpoint receives the requests that the
+`POST /sandbox/cards/{id}/simulate/authorization` simulator produces, as long
+as Grid's own checks approve them. To test `timeoutBehavior`, have your
+endpoint return a non-`200` status or wait past `responseTimeoutMs`.
+
+## Respond to requests
+
+Each request uses the standard webhook envelope and carries the authorization
+in `data`:
+
+```json
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000050",
+  "type": "CARD_AUTHORIZATION.REQUEST",
+  "timestamp": "2026-05-09T10:00:00Z",
+  "data": {
+    "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000100",
+    "cardId": "Card:019542f5-b3e7-1d02-0000-000000000010",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCustomerId": "18d3e5f7b4a9c2",
+    "issuerTransactionToken": "lithic_txn_b81c2a4f",
+    "transactionType": "AUTHORIZATION",
+    "requestedAmount": {
+      "amount": 12550,
+      "currency": {
+        "code": "USD",
+        "name": "United States Dollar",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "approvedAmount": {
+      "amount": 12550,
+      "currency": {
+        "code": "USD",
+        "name": "United States Dollar",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "merchant": {
+      "descriptor": "BLUE BOTTLE COFFEE SF",
+      "mcc": "5814",
+      "country": "US"
+    },
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+    "isTest": false
+  }
+}
+```
+
+Verify the `X-Grid-Signature` header as you do for other webhooks, and reject
+requests whose `timestamp` is more than a few minutes old. Then return HTTP
+`200` with your decision:
+
+```json
+{ "decision": "APPROVE" }
+```
+
+```json
+{
+  "decision": "DECLINE",
+  "declineReason": "UNAUTHORIZED_MERCHANT"
+}
+```
+
+Grid passes `declineReason` to the card network, so choose the most specific
+one:
+
+| Reason | Use when |
+|--------|----------|
+| `SUSPECTED_FRAUD` | The authorization breaks your fraud rules, and no other reason fits. |
+| `UNAUTHORIZED_MERCHANT` | The merchant, merchant category, country, or transaction type is not allowed for this card. |
+| `VELOCITY_EXCEEDED` | The authorization exceeds a velocity limit you set. |
+| `INSUFFICIENT_FUNDS` | The cardholder lacks funds by your own accounting. |
+| `CARD_PAUSED` | You track a paused state for the card that its Grid `status` does not reflect. To pause a card everywhere, freeze it instead. |
+
+A decline you return reaches your `webhookEndpoint` as
+`CARD_TRANSACTION.DECLINED` with `cardDeclinedReason: PLATFORM_DECLINED` and
+your `declineReason` in `platformDeclineReason`.
+
+`approvedAmount` is the amount Grid authorizes if you approve. It becomes
+`authorizedAmount` on the resulting `CardTransaction`.
+
+## Timeouts and errors
+
+Respond within the endpoint's `responseTimeoutMs`, which is 1.5 seconds. The
+card network holds the cardholder at the terminal while Grid waits, so keep
+the decision path fast and avoid calls to slow dependencies.
+
+If your endpoint times out, returns a status other than `200`, or returns an
+invalid body, Grid applies the `timeoutBehavior` you set at enrollment:
+
+| `timeoutBehavior` | Result |
+|-------------------|--------|
+| `DECLINE` (default) | Grid declines with `cardDeclinedReason: PLATFORM_UNAVAILABLE`. |
+| `APPROVE` | Grid proceeds as though you approved. Its funding check still applies. |
+
+Grid does not retry an authorization request.
+
+## Duplicate requests
+
+The card network can retry an authorization, so your endpoint can receive the
+same authorization more than once. Each delivery has a new `id`, but
+`data.transactionId` and `data.issuerTransactionToken` stay the same. Return
+the same decision each time.

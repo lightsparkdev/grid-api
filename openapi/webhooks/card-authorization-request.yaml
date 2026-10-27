@@ -1,0 +1,136 @@
+post:
+  summary: Card authorization request
+  description: >
+    Real-time decision request for a card authorization. Grid sends it to the
+    endpoint you enrolled through `PUT /platform/card-authorization-endpoint`.
+    It never goes to the `webhookEndpoint` in your platform config. Your
+    response decides whether the authorization proceeds.
+
+    This endpoint should be implemented by clients of the Grid API that want
+    to make their own authorization decisions.
+
+
+    ### When Grid sends it
+
+    Grid runs its own checks first: card status, card and platform spend
+    limits, merchant category rules, and network support. Grid sends this
+    request only for authorizations those checks approve, so a declined
+    authorization never reaches your endpoint. Balance inquiries are never
+    sent. It covers only cards whose authorization decisions Grid makes.
+
+
+    ### Responding
+
+    Return HTTP `200` with a `CardAuthorizationDecision` body within the
+    endpoint's `responseTimeoutMs` (1.5 seconds). `decision: APPROVE` lets the authorization proceed.
+    `decision: DECLINE` declines it, and Grid passes your `declineReason` to
+    the card network.
+
+    If your endpoint returns any other status or an invalid body, or does not
+    respond in time, Grid applies the endpoint's `timeoutBehavior`. Grid does
+    not retry this request.
+
+
+    ### After you approve
+
+    Grid reserves the authorized amount from the funding source after you
+    approve. If the funding source cannot cover it, Grid still declines with
+    `INSUFFICIENT_FUNDS`. The final outcome arrives as a
+    `CARD_TRANSACTION.AUTHORIZED` or `CARD_TRANSACTION.DECLINED` webhook on
+    your `webhookEndpoint`. A decline you return arrives there with
+    `cardDeclinedReason: PLATFORM_DECLINED` and your `declineReason` in
+    `platformDeclineReason`.
+
+
+    ### Duplicates
+
+    Grid can send the same authorization more than once if the card network
+    retries it. Each delivery has a new `id`, but `data.transactionId` and
+    `data.issuerTransactionToken` stay the same. Return the same decision for
+    each.
+
+
+    ### Authentication
+
+    The request includes a signature in the `X-Grid-Signature` header that
+    allows you to verify that the request was sent by Grid.
+
+    To verify the signature:
+
+    1. Get the Grid public key provided to you during integration
+
+    2. Decode the base64 signature from the header
+
+    3. Create a SHA-256 hash of the request body
+
+    4. Verify the signature using the public key and the hash
+
+
+    If the signature verification succeeds, the request is authentic. If not,
+    reject it. Also reject a request whose `timestamp` is more than a few
+    minutes old.
+  operationId: cardAuthorizationRequestWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/webhooks/CardAuthorizationRequestWebhook.yaml
+        examples:
+          authorizationRequest:
+            summary: Authorization awaiting your decision
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000050
+              type: CARD_AUTHORIZATION.REQUEST
+              timestamp: '2026-05-09T10:00:00Z'
+              data:
+                transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                platformCardId: card_8f2a1c
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                issuerTransactionToken: lithic_txn_b81c2a4f
+                transactionType: AUTHORIZATION
+                requestedAmount:
+                  amount: 12550
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                approvedAmount:
+                  amount: 12550
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                merchant:
+                  descriptor: BLUE BOTTLE COFFEE SF
+                  mcc: '5814'
+                  city: San Francisco
+                  state: CA
+                  country: US
+                accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                isTest: false
+  responses:
+    '200':
+      description: Your decision on the authorization.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/cards/CardAuthorizationDecision.yaml
+          examples:
+            approve:
+              summary: Approve
+              value:
+                decision: APPROVE
+            decline:
+              summary: Decline
+              value:
+                decision: DECLINE
+                declineReason: UNAUTHORIZED_MERCHANT

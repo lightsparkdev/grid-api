@@ -1,0 +1,20 @@
+title: Card Authorization Endpoint Request
+type: object
+required:
+  - url
+properties:
+  url:
+    type: string
+    format: uri
+    maxLength: 255
+    pattern: ^https://
+    description: >-
+      HTTPS URL that receives `CARD_AUTHORIZATION.REQUEST`
+      requests. It must resolve to a public host. It can differ from the
+      `webhookEndpoint` in your platform config.
+    example: https://api.mycompany.com/grid/card-authorizations
+  timeoutBehavior:
+    $ref: ./CardAuthorizationTimeoutBehavior.yaml
+    description: >-
+      What Grid answers when your endpoint does not return a valid decision
+      in time. Defaults to `DECLINE`.

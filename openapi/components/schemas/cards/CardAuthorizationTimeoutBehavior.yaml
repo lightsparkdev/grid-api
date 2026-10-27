@@ -1,0 +1,17 @@
+type: string
+enum:
+  - DECLINE
+  - APPROVE
+description: |
+  What Grid answers for a card authorization when your authorization
+  endpoint does not return a valid decision in time.
+
+  | Value | Behavior |
+  |-------|----------|
+  | `DECLINE` | Grid declines the authorization with `cardDeclinedReason: PLATFORM_UNAVAILABLE`. |
+  | `APPROVE` | Grid proceeds as though you approved. Grid's own funding check still applies. |
+
+  A non-`200` status, a body that does not match
+  `CardAuthorizationDecision`, a network error, and a timeout all count as no
+  valid decision.
+example: DECLINE

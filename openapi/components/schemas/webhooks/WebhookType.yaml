@@ -48,6 +48,7 @@ enum:
   - CARD_TRANSACTION.DECLINED
   - CARD_TRANSACTION.VOIDED
   - CARD_TRANSACTION.EXCEPTION
+  - CARD_AUTHORIZATION.REQUEST
   - WALLET_OPERATION.COMPLETED
   - WALLET_OPERATION.FAILED
   - TEST
@@ -55,3 +56,5 @@ description: >-
   Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot
   identifies the resource, the part after identifies the event. This lets
   consumers route purely on type without inspecting data.status.
+  `CARD_AUTHORIZATION.REQUEST` is a synchronous decision request that Grid
+  sends only to your card authorization endpoint.

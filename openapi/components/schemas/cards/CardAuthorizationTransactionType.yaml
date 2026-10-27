@@ -1,0 +1,12 @@
+type: string
+enum:
+  - AUTHORIZATION
+  - FINANCIAL_AUTHORIZATION
+description: |
+  The kind of card authorization being decided.
+
+  | Value | Meaning |
+  |-------|---------|
+  | `AUTHORIZATION` | A standard authorization. A clearing settles it later. |
+  | `FINANCIAL_AUTHORIZATION` | A single-message authorization, such as an ATM withdrawal or some debit purchases, that settles without a separate clearing. |
+example: AUTHORIZATION

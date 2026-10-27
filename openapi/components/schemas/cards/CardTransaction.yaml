@@ -55,6 +55,13 @@ properties:
     $ref: ./CardDeclinedReason.yaml
     description: Present only when `status` is `DECLINED`.
     example: INSUFFICIENT_FUNDS
+  platformDeclineReason:
+    $ref: ./CardAuthorizationDeclineReason.yaml
+    description: >-
+      The `declineReason` your card authorization endpoint returned. Present
+      only when `cardDeclinedReason` is `PLATFORM_DECLINED` and your
+      endpoint supplied a reason.
+    example: UNAUTHORIZED_MERCHANT
   direction:
     $ref: ../transactions/TransactionDirection.yaml
     description: >-
