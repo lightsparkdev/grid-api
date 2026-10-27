@@ -60,7 +60,8 @@
             ]
           },
           {
-            "group": "Strong Customer Authentication",
+            "group": "Strong Customer Authentication (EU only)",
+            "expanded": false,
             "pages": [
               "platform-overview/sca/overview",
               "platform-overview/sca/per-transaction-authorization",
