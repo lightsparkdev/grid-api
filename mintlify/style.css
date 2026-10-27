@@ -1462,6 +1462,18 @@ ul.sidebar-group > li[data-title="Stablecoins"] > button::before {
   background-image: url('/images/icons/coins.svg') !important;
 }
 
+/* Periodic Statements - statement */
+.sidebar-group > li[data-title="Periodic Statements"] > button::before,
+ul.sidebar-group > li[data-title="Periodic Statements"] > button::before {
+  background-image: url('/images/icons/statement.svg') !important;
+}
+
+/* Embedded Care - chat bubble */
+.sidebar-group > li[data-title="Embedded Care"] > button::before,
+ul.sidebar-group > li[data-title="Embedded Care"] > button::before {
+  background-image: url('/images/icons/bubble-annotation5.svg') !important;
+}
+
 
 /* ===========================================
    Main Content Area
