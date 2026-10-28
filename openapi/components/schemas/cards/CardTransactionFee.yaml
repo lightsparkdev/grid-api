@@ -1,10 +1,15 @@
 type: object
 required:
   - type
+  - collector
   - amount
-description: A fee Grid charged on a card transaction.
+description: >-
+  A fee charged on a card transaction. Grid's fee and your platform's markup
+  on it are separate entries.
 properties:
   type:
     $ref: ./CardFeeType.yaml
+  collector:
+    $ref: ./CardFeeCollector.yaml
   amount:
     $ref: ../common/CurrencyAmount.yaml

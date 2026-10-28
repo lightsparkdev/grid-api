@@ -88,18 +88,23 @@ properties:
   fees:
     type: array
     description: >-
-      Fees Grid charged on this transaction. Empty when the transaction
-      carries no fees. Older transactions may omit the field, which means no
-      fees. A `DEBIT_CARD_FOREIGN_TRANSACTION` fee applies when the merchant's country
-      differs from the country the card was issued in. Grid reserves it
-      against the funding source at authorization, but the entry appears only
-      once the transaction clears and `settledAmount` is present, so an
-      `AUTHORIZED` row has none. Its amount is a percentage of the cleared
-      amount. `authorizedAmount` never includes the fee. On a `CREDIT` row,
-      each fee is the fee rate applied to that credit's amount and is what
-      Grid returned to the cardholder. A full return refunds the full fee,
-      and a partial return refunds it proportionally.
-      The `CARD_TRANSACTION.SETTLED` delivery can precede the fee entry;
+      Fees charged on this transaction, one entry per type and collector.
+      Empty when the transaction carries no fees. Older transactions may omit
+      the field, which means no fees. A `DEBIT_CARD_FOREIGN_TRANSACTION` fee
+      applies when the merchant's country differs from the country the card
+      was issued in. Grid's fee has `collector: GRID`. Your platform's markup
+      on it, when you configure one, is a separate entry with
+      `collector: PLATFORM`. Grid reserves both against the funding source at
+      authorization, but the entries appear only once the transaction clears
+      and `settledAmount` is present, so an `AUTHORIZED` row has none. Each
+      amount is its own rate applied to the cleared amount.
+      `authorizedAmount` never includes a fee. On a `CREDIT` row, each fee is
+      its rate applied to that credit's amount and is what was returned to
+      the cardholder. A full return refunds the full fee, and a partial
+      return refunds it proportionally. Every foreign return refunds the
+      markup and recovers it from your platform's USD internal account,
+      whether or not the purchase it returns is known.
+      The `CARD_TRANSACTION.SETTLED` delivery can precede the fee entries;
       read the transaction to get its fees.
     items:
       $ref: ./CardTransactionFee.yaml

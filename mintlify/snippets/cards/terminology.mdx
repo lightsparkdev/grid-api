@@ -56,11 +56,13 @@ status.
 ## Foreign transaction fee
 
 A fee charged when the merchant's country differs from the country the card
-was issued in. It is 0.5% of the cleared amount by default, and the rate is set
-per platform. The fee is held at authorization and collected when the purchase
-settles. A return refunds the fee on the returned amount. It appears in the
-card transaction's `fees` with `type: "DEBIT_CARD_FOREIGN_TRANSACTION"`. See
-[Reconciliation](/cards/transactions/reconciliation#fees).
+was issued in. Grid's fee is 0.5% of the cleared amount by default, and the
+rate is set per platform. Your platform can add its own markup on top, which
+Grid pays to your platform's USD internal account. The fees are held at
+authorization and collected when the purchase settles. A return refunds the
+fees on the returned amount. They appear in the card transaction's `fees` with
+`type: "DEBIT_CARD_FOREIGN_TRANSACTION"`, one entry per `collector` (`GRID` or
+`PLATFORM`). See [Reconciliation](/cards/transactions/reconciliation#fees).
 
 ## Exception
 

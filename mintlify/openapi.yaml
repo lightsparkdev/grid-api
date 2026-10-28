@@ -15323,12 +15323,16 @@ components:
       enum:
         - CROSS_CURRENCY_TRANSACTION
         - RAIL
+        - DEBIT_CARD_FOREIGN_TRANSACTION
       description: |
         The kind of activity this fee applies to.
 
         - `CROSS_CURRENCY_TRANSACTION` — a fee charged on transactions where the sending
           currency differs from the receiving currency
         - `RAIL` — a fee charged on any transaction that uses the specified payment rail
+        - `DEBIT_CARD_FOREIGN_TRANSACTION` — a markup on the foreign transaction fee
+          charged on a card purchase whose merchant is outside the country the card
+          was issued in
       example: CROSS_CURRENCY_TRANSACTION
     FixedFee:
       type: object
@@ -15350,7 +15354,7 @@ components:
           example: USD
     FeeConfig:
       type: object
-      description: A platform-configured fee collected by Grid and settled to the platform internal account. These fields are shared by every platform fee config.
+      description: A platform-configured fee collected by Grid and settled to the platform internal account. These fields are shared by the cross-currency and rail fee configs.
       properties:
         feeType:
           $ref: '#/components/schemas/FeeType'
@@ -15449,15 +15453,41 @@ components:
             - direction
             - originator
       description: 'A fee charged when a transaction uses the specified rail. There can be at most one for a given rail, direction and originator. For example, a config with rail: ACH, direction: OUT, originator: GRID will charge a fee on all outgoing ACH transactions. `ACH` and `ACH_SAME_DAY` are separate rails, so price each one with its own config.'
+    DebitCardForeignTransactionFeeConfig:
+      type: object
+      properties:
+        feeType:
+          type: string
+          enum:
+            - DEBIT_CARD_FOREIGN_TRANSACTION
+          description: The fee type this config sets.
+          example: DEBIT_CARD_FOREIGN_TRANSACTION
+        sourceCurrency:
+          type: string
+          description: Currency code of the card's funding. Only `USD` is accepted.
+          example: USD
+        variableFeeBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Markup in basis points (1 bps = 0.01%) of a foreign purchase's cleared amount. `0` removes the markup.
+          example: 100
+      required:
+        - feeType
+        - sourceCurrency
+        - variableFeeBps
+      description: Your markup on the foreign transaction fee charged on a card purchase whose merchant is outside the country the card was issued in. It is charged to the cardholder on top of Grid's own foreign transaction fee, priced on the cleared amount, and paid to your platform's USD internal account when the purchase settles. Every foreign return refunds it to the cardholder and recovers it from that account. There is at most one per source currency, and it has no fixed fee. Your platform must hold a USD platform internal account at Lead Bank to set one.
     FeeConfigOneOf:
       oneOf:
         - $ref: '#/components/schemas/CrossCurrencyTransactionFeeConfig'
         - $ref: '#/components/schemas/RailFeeConfig'
+        - $ref: '#/components/schemas/DebitCardForeignTransactionFeeConfig'
       discriminator:
         propertyName: feeType
         mapping:
           CROSS_CURRENCY_TRANSACTION: '#/components/schemas/CrossCurrencyTransactionFeeConfig'
           RAIL: '#/components/schemas/RailFeeConfig'
+          DEBIT_CARD_FOREIGN_TRANSACTION: '#/components/schemas/DebitCardForeignTransactionFeeConfig'
     PlatformConfig:
       type: object
       properties:
@@ -15621,10 +15651,12 @@ components:
             $ref: '#/components/schemas/FeeConfigOneOf'
           description: |
             Merge-by-key upsert of platform fee configs. A cross-currency transaction
-            fee config is keyed by `(feeType, sourceCurrency)` and a rail fee config by
+            fee config and a debit card foreign transaction fee config are keyed by
+            `(feeType, sourceCurrency)`, and a rail fee config by
             `(feeType, rail, direction, originator)`. Setting variable and fixed fees
-            to 0 for an existing config deactivates it. Omit this field to leave fee
-            configs unchanged.
+            to 0 for an existing config deactivates it; a debit card foreign
+            transaction fee config has no fixed fee, so a `variableFeeBps` of 0
+            deactivates it. Omit this field to leave fee configs unchanged.
     FieldConstraint:
       type: object
       description: Machine-readable validator hint accompanying a 400 `INVALID_INPUT` error. Consumers use it to drive form UI (input types, dropdowns, masking, length limits) and to pre-validate the field client-side before re-submitting. Fields are additive.
@@ -27361,15 +27393,30 @@ components:
         - `DEBIT_CARD_FOREIGN_TRANSACTION` — a fee charged when the merchant's country differs
           from the country the card was issued in
       example: DEBIT_CARD_FOREIGN_TRANSACTION
+    CardFeeCollector:
+      type: string
+      enum:
+        - GRID
+        - PLATFORM
+      description: |
+        Who collects a card transaction fee.
+
+        - `GRID` — Grid's fee
+        - `PLATFORM` — your platform's markup, paid to your platform's USD internal
+          account
+      example: GRID
     CardTransactionFee:
       type: object
       required:
         - type
+        - collector
         - amount
-      description: A fee Grid charged on a card transaction.
+      description: A fee charged on a card transaction. Grid's fee and your platform's markup on it are separate entries.
       properties:
         type:
           $ref: '#/components/schemas/CardFeeType'
+        collector:
+          $ref: '#/components/schemas/CardFeeCollector'
         amount:
           $ref: '#/components/schemas/CurrencyAmount'
     CardTransaction:
@@ -27443,7 +27490,7 @@ components:
           $ref: '#/components/schemas/CurrencyAmount'
         fees:
           type: array
-          description: Fees Grid charged on this transaction. Empty when the transaction carries no fees. Older transactions may omit the field, which means no fees. A `DEBIT_CARD_FOREIGN_TRANSACTION` fee applies when the merchant's country differs from the country the card was issued in. Grid reserves it against the funding source at authorization, but the entry appears only once the transaction clears and `settledAmount` is present, so an `AUTHORIZED` row has none. Its amount is a percentage of the cleared amount. `authorizedAmount` never includes the fee. On a `CREDIT` row, each fee is the fee rate applied to that credit's amount and is what Grid returned to the cardholder. A full return refunds the full fee, and a partial return refunds it proportionally. The `CARD_TRANSACTION.SETTLED` delivery can precede the fee entry; read the transaction to get its fees.
+          description: 'Fees charged on this transaction, one entry per type and collector. Empty when the transaction carries no fees. Older transactions may omit the field, which means no fees. A `DEBIT_CARD_FOREIGN_TRANSACTION` fee applies when the merchant''s country differs from the country the card was issued in. Grid''s fee has `collector: GRID`. Your platform''s markup on it, when you configure one, is a separate entry with `collector: PLATFORM`. Grid reserves both against the funding source at authorization, but the entries appear only once the transaction clears and `settledAmount` is present, so an `AUTHORIZED` row has none. Each amount is its own rate applied to the cleared amount. `authorizedAmount` never includes a fee. On a `CREDIT` row, each fee is its rate applied to that credit''s amount and is what was returned to the cardholder. A full return refunds the full fee, and a partial return refunds it proportionally. Every foreign return refunds the markup and recovers it from your platform''s USD internal account, whether or not the purchase it returns is known. The `CARD_TRANSACTION.SETTLED` delivery can precede the fee entries; read the transaction to get its fees.'
           items:
             $ref: '#/components/schemas/CardTransactionFee'
         accountId:

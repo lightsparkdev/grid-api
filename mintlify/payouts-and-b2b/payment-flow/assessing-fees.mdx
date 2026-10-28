@@ -41,8 +41,10 @@ Fees are configured per **fee type**, which identifies the activity being charge
 
 - `CROSS_CURRENCY_TRANSACTION` — a fee charged on transactions where the sending currency differs from the receiving currency
 - `RAIL` — a fee charged on any transaction that uses this payment rail
+- `DEBIT_CARD_FOREIGN_TRANSACTION` — a markup on the foreign transaction fee charged on a
+  card purchase. See [Card foreign transaction fee markup](#card-foreign-transaction-fee-markup).
 
-Both fee types may apply to the same transaction, e.g. a cross-currency payment that goes out over ACH. Your platform will receive the sum of all applied fees.
+Both payment fee types may apply to the same transaction, e.g. a cross-currency payment that goes out over ACH. Your platform will receive the sum of all applied fees.
 
 <Info>
 **Current limits.** Cross-currency fees are supported for a **USD** sending currency
@@ -402,6 +404,68 @@ pricing model without moving any money.
 
 To test an override, add `platformFeeOverride` to step 4 and confirm
 `platformFeesIncluded` reflects the override rather than your standing config.
+
+## Card foreign transaction fee markup
+
+When one of your cards makes a purchase at a merchant outside the country the card was
+issued in, Grid charges the cardholder a foreign transaction fee, 0.5% of the cleared
+amount by default. You can add your own markup on top of it with a
+`DEBIT_CARD_FOREIGN_TRANSACTION` fee config:
+
+```bash Set a card foreign transaction fee markup
+curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/config' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "feeConfigs": [
+      {
+        "feeType": "DEBIT_CARD_FOREIGN_TRANSACTION",
+        "sourceCurrency": "USD",
+        "variableFeeBps": 100
+      }
+    ]
+  }'
+```
+
+- The markup is a rate on the cleared amount. It has no fixed fee, and `sourceCurrency`
+  must be `USD`.
+- It is keyed by `(feeType, sourceCurrency)`. Sending a new rate replaces the active one,
+  and `variableFeeBps: 0` removes it. `GET /config` lists it in `feeConfigs`.
+- Your platform must hold a USD platform internal account at Lead Bank, which is where the
+  markup is paid. Without one, the request is rejected with a `400 INVALID_INPUT`.
+
+How the markup moves:
+
+<Steps>
+  <Step title="Reserved at authorization">
+    Grid reserves its fee and your markup on top of the purchase amount, against the
+    cardholder's funding source.
+  </Step>
+  <Step title="Charged at clearing">
+    Grid prices its fee and your markup separately, each at its own rate on the cleared
+    amount, and the cardholder pays both. If the reservation does not cover both, for
+    example after a rate change, your markup is reduced first.
+  </Step>
+  <Step title="Paid at settlement">
+    When the purchase settles, Grid pays your markup to your platform's USD internal
+    account, one payment per transaction.
+  </Step>
+</Steps>
+
+A foreign return refunds both fees to the cardholder at the rates in effect when the
+return settles, and Grid recovers your markup from your platform's USD internal account.
+The network rarely links a return to its purchase, so every foreign return does this
+whether or not the purchase it returns is known. Keep enough balance in that account to
+cover returns.
+
+The card transaction's `fees` lists your markup as its own entry with
+`collector: PLATFORM`, beside Grid's fee with `collector: GRID`. See
+[Reconciliation](/cards/transactions/reconciliation#fees).
+
+<Note>
+In sandbox, card transactions list your markup in `fees`, but it is not credited to your
+platform internal account.
+</Note>
 
 ## Next steps
 
