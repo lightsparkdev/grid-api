@@ -2,7 +2,8 @@ type: object
 description: >-
   The purchase a `PURCHASE` card was requested for. The card's issuer-enforced
   limit is `spendLimit`: the purchase amount plus an allowance for tax and
-  shipping, or for a recurring card the amount itself, each calendar month.
+  shipping, or for a recurring card the amount itself, over any trailing
+  month.
 required:
   - amount
   - spendLimit
@@ -25,8 +26,8 @@ properties:
       The most the card can be charged in its one purchase, in the smallest
       unit of `currency`: `amount` plus an allowance for tax and shipping of
       15% of `amount`, at most 1000 (USD 10.00). For a recurring card it is
-      `amount`, and it caps what the card can be charged in each calendar
-      month (UTC). The card issuer declines a charge above it, and it is the
+      `amount`, and it caps what the card can be charged in any trailing
+      month: from a charge back to the same date a month earlier. The card issuer declines a charge above it, and it is the
       amount checked against the agent's policy when the card is requested.
     example: 5749
   currency:
@@ -53,7 +54,7 @@ properties:
     description: >-
       Whether the card is a recurring purchase card: locked to the first
       merchant that charges it and reusable there, up to `spendLimit` each
-      calendar month, until it is closed. Absent or `false` for a single-use
+      trailing month, until it is closed. Absent or `false` for a single-use
       card.
     example: false
   expiresAt:

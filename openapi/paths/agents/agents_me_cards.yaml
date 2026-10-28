@@ -117,7 +117,8 @@ post:
     order that ships in parts. Available only where the platform enables
     recurring purchase cards. The card locks to the first merchant that
     charges it and declines every other merchant; that merchant may charge it
-    again, up to `amount` in each calendar month (UTC), with no allowance
+    again, up to `amount` in any trailing month (from a charge back to the
+    same date a month earlier), with no allowance
     added. It always becomes an `ISSUE_PURCHASE_CARD` action awaiting the
     customer's approval and is returned with `202`, whatever the policy's
     approval threshold or execution mode, though a request the policy denies
@@ -213,7 +214,7 @@ post:
         long, when the funding source does not belong to the customer or is
         not denominated in a card-eligible currency, when `amount` is missing
         for a purchase card or supplied for a standard one, when `recurring`
-        is supplied for a standard card, when a purchase
+        is `true` for a standard card, when a purchase
         card's funding source is not an Embedded Wallet the agent holds an
         active delegated key on or the agent's policy is not in USD, and for
         general invalid parameters.

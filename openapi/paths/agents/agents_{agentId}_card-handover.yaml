@@ -26,11 +26,16 @@ post:
     available only where the platform enables recurring purchase cards. The
     agent must also hold an active delegated key on the Embedded Wallet that
     funds the card, which pays for the card from then on; a card on a wallet
-    where it holds none is not handed over. The one-standard-card rule does
-    not apply. The agent must belong to the card's customer, must be
-    neither paused nor deleted, must have a policy granting `MANAGE_CARDS`,
-    and must hold no standard card that is not `CLOSED`. When several cards
-    qualify, the most recently issued one is handed over.
+    where it holds none is not handed over. The agent may hold a standard
+    card, but must have room under the platform's limit on open recurring
+    purchase cards, counting those awaiting approval; otherwise the request
+    is rejected with `PURCHASE_CARD_LIMIT_REACHED`.
+
+
+    The agent must belong to the card's customer, must be neither paused nor
+    deleted, and must have a policy granting `MANAGE_CARDS`. For a standard
+    card it must also hold no standard card that is not `CLOSED`. When
+    several cards qualify, the most recently issued one is handed over.
 
 
     The customer must still meet what issuing a card requires: an individual
@@ -106,7 +111,9 @@ post:
     '409':
       description: >-
         Conflict - The agent already holds a standard card that is not `CLOSED`
-        (`AGENT_CARD_EXISTS`, standard cards only), or the card cannot be unfrozen
+        (`AGENT_CARD_EXISTS`, standard cards only), already holds the most
+        open recurring purchase cards allowed (`PURCHASE_CARD_LIMIT_REACHED`,
+        `kind=PURCHASE` only), or the card cannot be unfrozen
         (`INVALID_STATE_TRANSITION`)
       content:
         application/json:

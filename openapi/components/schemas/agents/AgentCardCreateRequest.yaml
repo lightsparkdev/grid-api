@@ -4,7 +4,7 @@ description: >-
   `kind: STANDARD`, it issues the agent's standard card. With
   `kind: PURCHASE` it requests a single-use purchase card for one online
   purchase of `amount`, or with `recurring: true` a recurring purchase card
-  that may spend up to `amount` each month at one merchant.
+  that may spend up to `amount` a month at one merchant.
 required:
   - fundingSource
 properties:
@@ -44,10 +44,12 @@ properties:
     default: false
     description: >-
       Request a recurring purchase card: one that locks to the first merchant
-      that charges it and may be charged there again, up to `amount` each
-      calendar month, until it is closed. Use it for a subscription, a card
+      that charges it and may be charged there again, up to `amount` in any
+      trailing month (from a charge back to the same date a month earlier),
+      until it is closed. Use it for a subscription, a card
       saved with a merchant, a hotel or car rental, or an order that ships in
       parts. It always needs the customer's approval, whatever the agent's
       policy says, and is available only where the platform enables
-      recurring purchase cards. Allowed only with `kind: PURCHASE`.
+      recurring purchase cards. `true` is allowed only with
+      `kind: PURCHASE`; `false` is accepted with any kind.
     example: false
