@@ -60,7 +60,7 @@ then decide every authorization.
 In sandbox, your endpoint receives the requests that the
 `POST /sandbox/cards/{id}/simulate/authorization` simulator produces, as long
 as Grid's own checks approve them. To test `timeoutBehavior`, have your
-endpoint return a non-`200` status or wait past `responseTimeoutMs`.
+endpoint return a non-`200` status or wait longer than 1.5 seconds.
 
 ## Respond to requests
 
@@ -143,7 +143,7 @@ your `declineReason` in `platformDeclineReason`.
 
 ## Timeouts and errors
 
-Respond within the endpoint's `responseTimeoutMs`, which is 1.5 seconds. The
+Respond within 1.5 seconds. The
 card network holds the cardholder at the terminal while Grid waits, so keep
 the decision path fast and avoid calls to slow dependencies.
 

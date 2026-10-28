@@ -73,7 +73,7 @@ properties:
       `CARD_AUTHORIZATION.REQUEST` with `data.isTest: true` and example data.
       The endpoint should answer it without running its business checks. The
       update succeeds only if the endpoint returns `200` with a valid
-      `CardAuthorizationDecision` within `responseTimeoutMs`. The decision in
+      `CardAuthorizationDecision` within 1.5 seconds. The decision in
       that response is ignored. Otherwise the update returns
       `400 WEBHOOK_DELIVERY_ERROR` and none of its changes apply.
 
@@ -84,4 +84,3 @@ properties:
     example:
       url: https://api.mycompany.com/grid/card-authorizations
       timeoutBehavior: DECLINE
-      responseTimeoutMs: 1500

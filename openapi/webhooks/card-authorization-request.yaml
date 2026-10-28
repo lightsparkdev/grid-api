@@ -21,8 +21,8 @@ post:
 
     ### Responding
 
-    Return HTTP `200` with a `CardAuthorizationDecision` body within the
-    endpoint's `responseTimeoutMs` (1.5 seconds). `decision: APPROVE` lets the authorization proceed.
+    Return HTTP `200` with a `CardAuthorizationDecision` body within 1.5
+    seconds. `decision: APPROVE` lets the authorization proceed.
     `decision: DECLINE` declines it, and Grid passes your `declineReason` to
     the card network.
 

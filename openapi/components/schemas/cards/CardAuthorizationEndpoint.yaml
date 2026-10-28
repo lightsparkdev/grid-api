@@ -4,7 +4,8 @@ required:
   - url
 description: >-
   The endpoint Grid calls to ask your platform for a real-time decision on
-  each card authorization that Grid's own checks approve.
+  each card authorization that Grid's own checks approve. It must answer
+  within 1.5 seconds.
 properties:
   url:
     type: string
@@ -22,12 +23,3 @@ properties:
       What Grid answers when your endpoint does not return a valid decision
       in time. Defaults to `DECLINE` when omitted from an update. Always
       returned when reading the config.
-  responseTimeoutMs:
-    type: integer
-    format: int32
-    readOnly: true
-    description: >-
-      How long Grid waits for your endpoint's decision, in milliseconds,
-      before applying `timeoutBehavior`. Grid sets this value and always
-      returns it when reading the config.
-    example: 1500

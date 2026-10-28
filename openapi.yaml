@@ -15410,7 +15410,7 @@ webhooks:
         Grid runs its own checks first: card status, card and platform spend limits, merchant category rules, and network support. Grid sends this request only for authorizations those checks approve, so a declined authorization never reaches your endpoint. Balance inquiries are never sent. It covers only cards whose authorization decisions Grid makes.
 
         ### Responding
-        Return HTTP `200` with a `CardAuthorizationDecision` body within the endpoint's `responseTimeoutMs` (1.5 seconds). `decision: APPROVE` lets the authorization proceed. `decision: DECLINE` declines it, and Grid passes your `declineReason` to the card network.
+        Return HTTP `200` with a `CardAuthorizationDecision` body within 1.5 seconds. `decision: APPROVE` lets the authorization proceed. `decision: DECLINE` declines it, and Grid passes your `declineReason` to the card network.
         If your endpoint returns any other status or an invalid body, or does not respond in time, Grid applies the endpoint's `timeoutBehavior`. Grid does not retry this request.
 
         ### After you approve
@@ -15893,7 +15893,7 @@ components:
       type: object
       required:
         - url
-      description: The endpoint Grid calls to ask your platform for a real-time decision on each card authorization that Grid's own checks approve.
+      description: The endpoint Grid calls to ask your platform for a real-time decision on each card authorization that Grid's own checks approve. It must answer within 1.5 seconds.
       properties:
         url:
           type: string
@@ -15905,12 +15905,6 @@ components:
         timeoutBehavior:
           $ref: '#/components/schemas/CardAuthorizationTimeoutBehavior'
           description: What Grid answers when your endpoint does not return a valid decision in time. Defaults to `DECLINE` when omitted from an update. Always returned when reading the config.
-        responseTimeoutMs:
-          type: integer
-          format: int32
-          readOnly: true
-          description: How long Grid waits for your endpoint's decision, in milliseconds, before applying `timeoutBehavior`. Grid sets this value and always returns it when reading the config.
-          example: 1500
     CardConfig:
       type: object
       description: Platform-level settings that apply to cards issued by the platform.
@@ -15950,13 +15944,12 @@ components:
           description: |-
             The endpoint Grid calls for a real-time decision on each card authorization that Grid's own checks approve. See the `CARD_AUTHORIZATION.REQUEST` webhook for the request it receives and the decision it must return. `null` while no endpoint is set, in which case Grid's own checks decide every authorization.
 
-            When an update sets this field, Grid first sends the endpoint one signed `CARD_AUTHORIZATION.REQUEST` with `data.isTest: true` and example data. The endpoint should answer it without running its business checks. The update succeeds only if the endpoint returns `200` with a valid `CardAuthorizationDecision` within `responseTimeoutMs`. The decision in that response is ignored. Otherwise the update returns `400 WEBHOOK_DELIVERY_ERROR` and none of its changes apply.
+            When an update sets this field, Grid first sends the endpoint one signed `CARD_AUTHORIZATION.REQUEST` with `data.isTest: true` and example data. The endpoint should answer it without running its business checks. The update succeeds only if the endpoint returns `200` with a valid `CardAuthorizationDecision` within 1.5 seconds. The decision in that response is ignored. Otherwise the update returns `400 WEBHOOK_DELIVERY_ERROR` and none of its changes apply.
 
             Omit this field to preserve the endpoint. Send an object to set or replace it, or send `null` to remove it. Changes apply to authorizations that arrive after the update returns.
           example:
             url: https://api.mycompany.com/grid/card-authorizations
             timeoutBehavior: DECLINE
-            responseTimeoutMs: 1500
     FeeType:
       type: string
       enum:
