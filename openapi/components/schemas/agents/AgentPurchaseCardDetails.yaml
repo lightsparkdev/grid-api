@@ -2,7 +2,7 @@ type: object
 description: >-
   The purchase a `PURCHASE` card was requested for. The card's issuer-enforced
   limit is `spendLimit`: the purchase amount plus an allowance for tax and
-  shipping.
+  shipping, or for a recurring card the amount itself, each calendar month.
 required:
   - amount
   - spendLimit
@@ -24,9 +24,10 @@ properties:
     description: >-
       The most the card can be charged in its one purchase, in the smallest
       unit of `currency`: `amount` plus an allowance for tax and shipping of
-      15% of `amount`, at most 1000 (USD 10.00). The card issuer declines a
-      charge above it, and it is the amount checked against the agent's
-      policy when the card is requested.
+      15% of `amount`, at most 1000 (USD 10.00). For a recurring card it is
+      `amount`, and it caps what the card can be charged in each calendar
+      month (UTC). The card issuer declines a charge above it, and it is the
+      amount checked against the agent's policy when the card is requested.
     example: 5749
   currency:
     type: string
@@ -47,10 +48,18 @@ properties:
     type: string
     description: The customer's Embedded Wallet internal account that pays for the purchase.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  recurring:
+    type: boolean
+    description: >-
+      Whether the card is a recurring purchase card: locked to the first
+      merchant that charges it and reusable there, up to `spendLimit` each
+      calendar month, until it is closed. Absent or `false` for a single-use
+      card.
+    example: false
   expiresAt:
     type: string
     format: date-time
     description: >-
-      When Grid closes the card if it has not been used. Present once the card
-      is issued.
+      When Grid closes the card if it has not been used. Present once a
+      single-use card is issued; a recurring card has none.
     example: '2026-10-26T15:30:00Z'

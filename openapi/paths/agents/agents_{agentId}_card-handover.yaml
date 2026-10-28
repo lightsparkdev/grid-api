@@ -17,8 +17,17 @@ post:
 
     A card qualifies only while the freeze Grid placed on its agent's deletion
     is the only reason it is frozen. A card frozen by the platform, the
-    customer, an agent or Lightspark is left as it is, and purchase cards are
-    never handed over. The agent must belong to the card's customer, must be
+    customer, an agent or Lightspark is left as it is, and single-use
+    purchase cards are never handed over.
+
+
+    With `kind=PURCHASE`, the newest qualifying recurring purchase card is
+    handed over instead; call again until `204` to move each of them. It is
+    available only where the platform enables recurring purchase cards. The
+    agent must also hold an active delegated key on the Embedded Wallet that
+    funds the card, which pays for the card from then on; a card on a wallet
+    where it holds none is not handed over. The one-standard-card rule does
+    not apply. The agent must belong to the card's customer, must be
     neither paused nor deleted, must have a policy granting `MANAGE_CARDS`,
     and must hold no standard card that is not `CLOSED`. When several cards
     qualify, the most recently issued one is handed over.
@@ -42,6 +51,14 @@ post:
       required: false
       schema:
         type: string
+    - name: kind
+      in: query
+      description: >-
+        The kind of card to hand over: `STANDARD` (the default) or
+        `PURCHASE` for a recurring purchase card.
+      required: false
+      schema:
+        $ref: ../../components/schemas/agents/AgentCardKind.yaml
   tags:
     - Agent Management
   security:
@@ -72,7 +89,10 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '403':
-      description: Forbidden - Agent card hand-over is not enabled for the platform
+      description: >-
+        Forbidden - Agent card hand-over is not enabled for the platform, or
+        recurring purchase cards are not enabled for a `kind=PURCHASE`
+        request
       content:
         application/json:
           schema:
@@ -86,7 +106,7 @@ post:
     '409':
       description: >-
         Conflict - The agent already holds a standard card that is not `CLOSED`
-        (`AGENT_CARD_EXISTS`), or the card cannot be unfrozen
+        (`AGENT_CARD_EXISTS`, standard cards only), or the card cannot be unfrozen
         (`INVALID_STATE_TRANSITION`)
       content:
         application/json:

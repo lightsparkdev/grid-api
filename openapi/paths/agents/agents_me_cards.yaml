@@ -110,6 +110,26 @@ post:
     counted by the one-standard-card rule, but an agent may hold only a
     limited number of open purchase cards, counting those awaiting approval;
     beyond that the request is rejected with `PURCHASE_CARD_LIMIT_REACHED`.
+
+
+    **Recurring purchase card** (`kind: PURCHASE`, `recurring: true`): for a
+    subscription, a card saved with a merchant, a hotel or car rental, or an
+    order that ships in parts. Available only where the platform enables
+    recurring purchase cards. The card locks to the first merchant that
+    charges it and declines every other merchant; that merchant may charge it
+    again, up to `amount` in each calendar month (UTC), with no allowance
+    added. It always becomes an `ISSUE_PURCHASE_CARD` action awaiting the
+    customer's approval and is returned with `202`, whatever the policy's
+    approval threshold or execution mode, though a request the policy denies
+    is still rejected with `403`. Its charges count against the agent's
+    policy limits as they are authorized. It has no `purchase.expiresAt` and
+    stays open until the customer or platform closes it (`PATCH /cards/{id}`
+    with `status: CLOSED`). Pausing the agent does not close it, but its
+    charges are declined while the agent is paused; deleting the agent
+    freezes it, and `POST /agents/{agentId}/card-handover` with
+    `kind=PURCHASE` can move it to the customer's next agent. Recurring cards
+    have their own, smaller limit on open cards, counting those awaiting
+    approval, and do not use up the room for single-use cards.
     Card details are never returned here; request them with
     `POST /agents/me/cards/{cardId}/reveal`.
 
@@ -156,6 +176,14 @@ post:
               fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
               amount: 4999
               description: Running shoes from example-store.com
+          recurringPurchaseCard:
+            summary: Request a recurring card for a subscription
+            value:
+              kind: PURCHASE
+              recurring: true
+              fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+              amount: 1599
+              description: Monthly music subscription at example-music.com
   responses:
     '201':
       description: >-
@@ -184,7 +212,8 @@ post:
         `INVALID_INPUT` when the `Idempotency-Key` header is missing or too
         long, when the funding source does not belong to the customer or is
         not denominated in a card-eligible currency, when `amount` is missing
-        for a purchase card or supplied for a standard one, when a purchase
+        for a purchase card or supplied for a standard one, when `recurring`
+        is supplied for a standard card, when a purchase
         card's funding source is not an Embedded Wallet the agent holds an
         active delegated key on or the agent's policy is not in USD, and for
         general invalid parameters.
@@ -202,7 +231,8 @@ post:
       description: >-
         Forbidden - Agents API or agent cards are not enabled for the platform,
         agent purchase cards are not enabled for a `kind: PURCHASE` request,
-        the agent is paused, the agent does not have the ISSUE_CARDS
+        recurring purchase cards are not enabled for a `recurring: true`
+        request, the agent is paused, the agent does not have the ISSUE_CARDS
         permission, or the agent's policy denies the purchase card (its
         `reason` starts with `Agent policy denied the purchase card:` followed
         by the denial, such as `DAILY_LIMIT_EXCEEDED`)
@@ -215,7 +245,7 @@ post:
         Conflict. Returned with `AGENT_CARD_EXISTS` when the agent already
         holds a standard card that is not `CLOSED`, with
         `PURCHASE_CARD_LIMIT_REACHED` when it holds the most open purchase
-        cards allowed, with `CARD_LIMIT_REACHED` when the platform has
+        cards (or recurring purchase cards) allowed, with `CARD_LIMIT_REACHED` when the platform has
         reached the maximum number of live cards it may hold, and with
         `CONFLICT` when the agent already used the `Idempotency-Key` for a
         different card request.
