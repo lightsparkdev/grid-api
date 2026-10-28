@@ -221,7 +221,9 @@ post:
       description: >-
         Forbidden. `SANCTION_BLOCKED` when sanctions screening blocks the
         sender or the destination. `USER_NOT_READY` when the recipient cannot
-        receive payments yet; this can clear later. `COUNTERPARTY_NOT_ALLOWED`
+        receive payments yet; this can clear later.
+        `CORRIDOR_UNDER_MAINTENANCE` when payments to the recipient are paused for
+        maintenance; retry later. `COUNTERPARTY_NOT_ALLOWED`
         when the counterparty is not allowed. `CUSTOMER_NOT_VERIFIED` when the
         customer's KYC is not approved. `END_USER_TERMS_NOT_ACCEPTED` when the
         customer has not accepted the End User Terms. `FORBIDDEN` when the

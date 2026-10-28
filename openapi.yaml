@@ -4376,7 +4376,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden. `USER_NOT_READY` when the recipient cannot receive payments yet. `COUNTERPARTY_NOT_ALLOWED` when the recipient's institution is not an allowed counterparty. `FORBIDDEN` when the token lacks the required permission.
+          description: Forbidden. `USER_NOT_READY` when the recipient cannot receive payments yet. `CORRIDOR_UNDER_MAINTENANCE` when payments to the recipient are paused for maintenance; retry later. `COUNTERPARTY_NOT_ALLOWED` when the recipient's institution is not an allowed counterparty. `FORBIDDEN` when the token lacks the required permission.
           content:
             application/json:
               schema:
@@ -4475,7 +4475,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden. `USER_NOT_READY` when the recipient cannot receive payments yet. `COUNTERPARTY_NOT_ALLOWED` when the recipient's institution is not an allowed counterparty. `FORBIDDEN` when the token lacks the required permission.
+          description: Forbidden. `USER_NOT_READY` when the recipient cannot receive payments yet. `CORRIDOR_UNDER_MAINTENANCE` when payments to the recipient are paused for maintenance; retry later. `COUNTERPARTY_NOT_ALLOWED` when the recipient's institution is not an allowed counterparty. `FORBIDDEN` when the token lacks the required permission.
           content:
             application/json:
               schema:
@@ -4885,7 +4885,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden. `SANCTION_BLOCKED` when sanctions screening blocks the sender or the destination. `USER_NOT_READY` when the recipient cannot receive payments yet; this can clear later. `COUNTERPARTY_NOT_ALLOWED` when the counterparty is not allowed. `CUSTOMER_NOT_VERIFIED` when the customer's KYC is not approved. `END_USER_TERMS_NOT_ACCEPTED` when the customer has not accepted the End User Terms. `FORBIDDEN` when the token lacks the `TRANSACT` permission. `VELOCITY_LIMIT_EXCEEDED` when the recipient is over a velocity limit.
+          description: Forbidden. `SANCTION_BLOCKED` when sanctions screening blocks the sender or the destination. `USER_NOT_READY` when the recipient cannot receive payments yet; this can clear later. `CORRIDOR_UNDER_MAINTENANCE` when payments to the recipient are paused for maintenance; retry later. `COUNTERPARTY_NOT_ALLOWED` when the counterparty is not allowed. `CUSTOMER_NOT_VERIFIED` when the customer's KYC is not approved. `END_USER_TERMS_NOT_ACCEPTED` when the customer has not accepted the End User Terms. `FORBIDDEN` when the token lacks the `TRANSACT` permission. `VELOCITY_LIMIT_EXCEEDED` when the recipient is over a velocity limit.
           content:
             application/json:
               schema:
@@ -17781,6 +17781,7 @@ components:
             | CUSTOMER_NOT_VERIFIED | The customer is not verified and cannot perform this action |
             | SANCTION_BLOCKED | Blocked by sanction screening |
             | DESTINATION_NOT_ALLOWED | The agent may not pay this destination |
+            | CORRIDOR_UNDER_MAINTENANCE | Payments to this corridor are paused for maintenance. |
           enum:
             - FORBIDDEN
             - USER_NOT_READY
@@ -17790,6 +17791,7 @@ components:
             - CUSTOMER_NOT_VERIFIED
             - SANCTION_BLOCKED
             - DESTINATION_NOT_ALLOWED
+            - CORRIDOR_UNDER_MAINTENANCE
         reason:
           type: string
           description: Error message
