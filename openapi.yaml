@@ -3608,6 +3608,7 @@ paths:
         | `PASSPORT` | `documentNumber`, `issuingAuthority` | Not allowed |
         | `DRIVERS_LICENSE` | `documentNumber`, `issuingAuthority` | Required |
         | `NATIONAL_ID` | `documentNumber`, `issuingAuthority` | Required |
+        | `RESIDENCE_PERMIT` | `documentNumber`, `issuingAuthority` | Required |
         | Any other type | None | Optional |
 
         Where `side` is required, upload the `FRONT` and `BACK` as two separate
@@ -26529,6 +26530,7 @@ components:
         - PASSPORT
         - DRIVERS_LICENSE
         - NATIONAL_ID
+        - RESIDENCE_PERMIT
         - PROOF_OF_ADDRESS
         - BANK_STATEMENT
         - TAX_RETURN
@@ -26554,7 +26556,7 @@ components:
         - OTHER
       description: |-
         Type of identity or business verification document. Document types are grouped by verification category:
-        **Identity** — PASSPORT, DRIVERS_LICENSE, NATIONAL_ID
+        **Identity** — PASSPORT, DRIVERS_LICENSE, NATIONAL_ID, RESIDENCE_PERMIT
         **Business — Legal presence** — CERTIFICATE_OF_INCORPORATION, ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION, STATE_REGISTRY_EXCERPT
         **Business — Control structure** — DIRECTOR_REGISTRY, TRUST_AGREEMENT, STATE_COMPANY_REGISTRY, PARTNERSHIP_CONTROL_AGREEMENT
         **Business — Ownership structure** — SHAREHOLDER_REGISTER, TRUST_AGREEMENT, PARTNERSHIP_AGREEMENT
@@ -26658,8 +26660,9 @@ components:
           $ref: '#/components/schemas/DocumentSide'
           description: |
             Which side of the document this image shows. Required when
-            `documentType` is `DRIVERS_LICENSE` or `NATIONAL_ID`: upload the
-            `FRONT` and `BACK` as two separate documents. A `PASSPORT`, or a
+            `documentType` is `DRIVERS_LICENSE`, `NATIONAL_ID`, or
+            `RESIDENCE_PERMIT`: upload the `FRONT` and `BACK` as two separate
+            documents. A `PASSPORT`, or a
             `DRIVERS_LICENSE` issued in Brazil (`country` is `BR`), is a single
             image: sending `side` for either returns `400 INVALID_INPUT`. Optional
             for all other document types.
@@ -26673,7 +26676,7 @@ components:
           description: |
             Identification number printed on the document, such as a passport
             number. Required when `documentType` is `PASSPORT`,
-            `DRIVERS_LICENSE`, or `NATIONAL_ID`.
+            `DRIVERS_LICENSE`, `NATIONAL_ID`, or `RESIDENCE_PERMIT`.
           example: A12345678
         issuingAuthority:
           type: string
@@ -26681,7 +26684,7 @@ components:
           description: |
             Name of the government agency or organization that issued the
             document. Required when `documentType` is `PASSPORT`,
-            `DRIVERS_LICENSE`, or `NATIONAL_ID`.
+            `DRIVERS_LICENSE`, `NATIONAL_ID`, or `RESIDENCE_PERMIT`.
           example: U.S. Department of State
     DocumentUploadRequest:
       title: Document Upload Request
@@ -26795,7 +26798,7 @@ components:
             | MISSING_CONTROL_STRUCTURE_DOCUMENT | DIRECTOR_REGISTRY, TRUST_AGREEMENT, STATE_COMPANY_REGISTRY, PARTNERSHIP_CONTROL_AGREEMENT |
             | MISSING_OWNERSHIP_STRUCTURE_DOCUMENT | SHAREHOLDER_REGISTER, TRUST_AGREEMENT, PARTNERSHIP_AGREEMENT |
             | MISSING_PROOF_OF_ADDRESS_DOCUMENT | UTILITY_BILL, RENT_OR_LEASE_AGREEMENT, ELECTRICITY_BILL, BANK_STATEMENT, TAX_RETURN |
-            | MISSING_IDENTITY_DOCUMENT | PASSPORT, DRIVERS_LICENSE, NATIONAL_ID |
+            | MISSING_IDENTITY_DOCUMENT | PASSPORT, DRIVERS_LICENSE, NATIONAL_ID, RESIDENCE_PERMIT |
         reason:
           type: string
           description: Human-readable description of the issue
