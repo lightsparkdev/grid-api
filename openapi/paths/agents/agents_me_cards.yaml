@@ -125,7 +125,7 @@ post:
     is still rejected with `403`. Its charges count against the agent's
     policy limits as they are authorized. It has no `purchase.expiresAt` and
     stays open until the customer or platform closes it (`PATCH /cards/{id}`
-    with `status: CLOSED`). Pausing the agent does not close it, but its
+    with `status: CLOSED`, a `substatus` and a `reason`). Pausing the agent does not close it, but its
     charges are declined while the agent is paused; deleting the agent
     freezes it, and `POST /agents/{agentId}/card-handover` with
     `kind=PURCHASE` can move it to the customer's next agent. Recurring cards
