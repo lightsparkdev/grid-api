@@ -305,7 +305,7 @@ resources:
           zmw_account_info: "#/components/schemas/ZmwAccountInfo"
       card_authorization_endpoint:
         models:
-          card_authorization_endpoint: "#/components/schemas/CardAuthorizationEndpoint"
+          card_real_time_authorization: "#/components/schemas/CardRealTimeAuthorization"
           card_authorization_request: "#/components/schemas/CardAuthorizationRequest"
           card_authorization_decision: "#/components/schemas/CardAuthorizationDecision"
 

@@ -57,4 +57,4 @@ description: >-
   identifies the resource, the part after identifies the event. This lets
   consumers route purely on type without inspecting data.status.
   `CARD_AUTHORIZATION.REQUEST` is a synchronous decision request that Grid
-  sends only to your card authorization endpoint.
+  sends only while `cardConfigs.realTimeAuthorization` is set.

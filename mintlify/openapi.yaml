@@ -222,7 +222,7 @@ paths:
 
         Set `cardConfigs.pinTargetOrigin` to the canonical HTTPS origin of your frontend before calling `GET /cards/{id}/pin-entry-url`. Omit the field to preserve its value or set it to `null` to clear it.
 
-        Set `cardConfigs.authorizationEndpoint` to have Grid ask your platform for a real-time decision on card authorizations. Grid sends that endpoint a test request before saving it. If the test request fails, the update returns `400 WEBHOOK_DELIVERY_ERROR` and none of its changes apply.
+        Set `cardConfigs.realTimeAuthorization` to have Grid ask your `webhookEndpoint` for a real-time decision on card authorizations.
       operationId: updatePlatformConfig
       tags:
         - Platform Configuration
@@ -271,8 +271,7 @@ paths:
                   bodyText: Use this code to finish adding your Acme card to your digital wallet.
               cardConfigs:
                 pinTargetOrigin: https://app.example.com
-                authorizationEndpoint:
-                  url: https://api.mycompany.com/grid/card-authorizations
+                realTimeAuthorization:
                   timeoutBehavior: DECLINE
       responses:
         '200':
@@ -282,7 +281,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PlatformConfig'
         '400':
-          description: Bad request. Includes `INVALID_INPUT` when `cardConfigs.pinTargetOrigin` is supplied but is neither null nor a canonical HTTPS origin, or when `cardConfigs.authorizationEndpoint.url` is not a public HTTPS URL. Includes `WEBHOOK_DELIVERY_ERROR` when the test request to `cardConfigs.authorizationEndpoint` did not return a valid response in time.
+          description: Bad request. Includes `INVALID_INPUT` when `cardConfigs.pinTargetOrigin` is supplied but is neither null nor a canonical HTTPS origin.
           content:
             application/json:
               schema:
@@ -15403,7 +15402,7 @@ webhooks:
     post:
       summary: Card authorization request
       description: |
-        Real-time decision request for a card authorization. Grid sends it to the `cardConfigs.authorizationEndpoint` in your platform config. It never goes to the `webhookEndpoint` in your platform config. Your response decides whether the authorization proceeds.
+        Real-time decision request for a card authorization. Grid sends it to the `webhookEndpoint` in your platform config while `cardConfigs.realTimeAuthorization` is set. Your response decides whether the authorization proceeds.
         This endpoint should be implemented by clients of the Grid API that want to make their own authorization decisions.
 
         ### When Grid sends it
@@ -15411,10 +15410,10 @@ webhooks:
 
         ### Responding
         Return HTTP `200` with a `CardAuthorizationDecision` body within 1.5 seconds. `decision: APPROVE` lets the authorization proceed. `decision: DECLINE` declines it, and Grid passes your `declineReason` to the card network.
-        If your endpoint returns any other status or an invalid body, or does not respond in time, Grid applies the endpoint's `timeoutBehavior`. Grid does not retry this request.
+        If your endpoint returns any other status or an invalid body, or does not respond in time, Grid applies the `timeoutBehavior` in `cardConfigs.realTimeAuthorization`. Grid does not retry this request.
 
         ### After you approve
-        Grid reserves the authorized amount from the funding source after you approve. If the funding source cannot cover it, Grid still declines with `INSUFFICIENT_FUNDS`. The final outcome arrives as a `CARD_TRANSACTION.AUTHORIZED` or `CARD_TRANSACTION.DECLINED` webhook on your `webhookEndpoint`. A decline you return arrives there with `cardDeclinedReason: PLATFORM_DECLINED` and your `declineReason` in `platformDeclineReason`.
+        Grid reserves the authorized amount from the funding source after you approve. If the funding source cannot cover it, Grid still declines with `INSUFFICIENT_FUNDS`. The final outcome arrives as a `CARD_TRANSACTION.AUTHORIZED` or `CARD_TRANSACTION.DECLINED` webhook. A decline you return arrives there with `cardDeclinedReason: PLATFORM_DECLINED` and your `declineReason` in `platformDeclineReason`.
 
         ### Duplicates
         Grid can send the same authorization more than once if the card network retries it. Each delivery has a new `id`, but `data.transactionId` and `data.issuerTransactionToken` stay the same. Return the same decision for each.
@@ -15475,7 +15474,6 @@ webhooks:
                       state: CA
                       country: US
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    isTest: false
       responses:
         '200':
           description: Your decision on the authorization.
@@ -15876,8 +15874,8 @@ components:
         - DECLINE
         - APPROVE
       description: |
-        What Grid answers for a card authorization when your authorization
-        endpoint does not return a valid decision in time.
+        What Grid answers for a card authorization when your `webhookEndpoint`
+        does not return a valid decision to a `CARD_AUTHORIZATION.REQUEST` in time.
 
         | Value | Behavior |
         |-------|----------|
@@ -15888,23 +15886,14 @@ components:
         `CardAuthorizationDecision`, a network error, and a timeout all count as no
         valid decision.
       example: DECLINE
-    CardAuthorizationEndpoint:
-      title: Card Authorization Endpoint
+    CardRealTimeAuthorization:
+      title: Card Real-Time Authorization
       type: object
-      required:
-        - url
-      description: The endpoint Grid calls to ask your platform for a real-time decision on each card authorization that Grid's own checks approve. It must answer within 1.5 seconds.
+      description: Real-time authorization settings. While set, Grid sends a `CARD_AUTHORIZATION.REQUEST` to your `webhookEndpoint` for each card authorization that Grid's own checks approve, and your response decides whether it proceeds. Your endpoint must answer within 1.5 seconds.
       properties:
-        url:
-          type: string
-          format: uri
-          maxLength: 255
-          pattern: ^https://
-          description: HTTPS URL that receives `CARD_AUTHORIZATION.REQUEST` requests. It must resolve to a public host. It can differ from the `webhookEndpoint` in your platform config.
-          example: https://api.mycompany.com/grid/card-authorizations
         timeoutBehavior:
           $ref: '#/components/schemas/CardAuthorizationTimeoutBehavior'
-          description: What Grid answers when your endpoint does not return a valid decision in time. Defaults to `DECLINE` when omitted from an update. Always returned when reading the config.
+          description: What Grid answers when your `webhookEndpoint` does not return a valid decision in time. Defaults to `DECLINE` when omitted from an update. Always returned when reading the config.
     CardConfig:
       type: object
       description: Platform-level settings that apply to cards issued by the platform.
@@ -15937,18 +15926,15 @@ components:
             - type: 'null'
           description: HTTPS URL of a stylesheet that styles the card-details iframe returned by `POST /cards/{id}/reveal`, so the revealed PAN, expiry, and CVV carry your branding instead of the default. The card processor's page links the stylesheet and the cardholder's browser fetches it, so it must be reachable over HTTPS without credentials. Style the `card`, `pan`, `expiry`, and `cvv` ids and the `pan-separator` class; the rest of the page structure is not a contract. The stylesheet loads into the page rendering the live card details, so host it somewhere you would trust with them. `null` restores the default styling. A `cssUrl` in the body of `POST /cards/{id}/reveal` overrides this for one reveal. Applies to cards whose `cardCapabilities.supportsPanReveal` is true; cards revealed through the card issuer's own hosted flow are styled by that issuer.
           example: https://acme.com/card-reveal.css
-        authorizationEndpoint:
+        realTimeAuthorization:
           anyOf:
-            - $ref: '#/components/schemas/CardAuthorizationEndpoint'
+            - $ref: '#/components/schemas/CardRealTimeAuthorization'
             - type: 'null'
           description: |-
-            The endpoint Grid calls for a real-time decision on each card authorization that Grid's own checks approve. See the `CARD_AUTHORIZATION.REQUEST` webhook for the request it receives and the decision it must return. `null` while no endpoint is set, in which case Grid's own checks decide every authorization.
+            Real-time authorization settings. While set, Grid sends a `CARD_AUTHORIZATION.REQUEST` to your `webhookEndpoint` for each card authorization that Grid's own checks approve, and your response decides whether it proceeds. See the `CARD_AUTHORIZATION.REQUEST` webhook for the request and the decision it must return. `null` while real-time authorization is off, in which case Grid's own checks decide every authorization.
 
-            When an update sets this field, Grid first sends the endpoint one signed `CARD_AUTHORIZATION.REQUEST` with `data.isTest: true` and example data. The endpoint should answer it without running its business checks. The update succeeds only if the endpoint returns `200` with a valid `CardAuthorizationDecision` within 1.5 seconds. The decision in that response is ignored. Otherwise the update returns `400 WEBHOOK_DELIVERY_ERROR` and none of its changes apply.
-
-            Omit this field to preserve the endpoint. Send an object to set or replace it, or send `null` to remove it. Changes apply to authorizations that arrive after the update returns.
+            Omit this field to preserve the setting. Send an object to turn real-time authorization on or change its settings, or send `null` to turn it off. Changes apply to authorizations that arrive after the update returns.
           example:
-            url: https://api.mycompany.com/grid/card-authorizations
             timeoutBehavior: DECLINE
     FeeType:
       type: string
@@ -27980,8 +27966,8 @@ components:
         | `UNSUPPORTED_NETWORK` | Grid does not support the network or the transaction type. |
         | `INCORRECT_CARD_DETAILS` | The PIN, security code, expiry date, or billing address entered at the merchant did not match the card. |
         | `TEMPORARILY_UNAVAILABLE` | A temporary problem at Grid, the card processor, or the card network stopped the authorization. The cardholder can try again. |
-        | `PLATFORM_DECLINED` | Your card authorization endpoint returned `decision: DECLINE`. `platformDeclineReason` carries the reason it gave. |
-        | `PLATFORM_UNAVAILABLE` | Your card authorization endpoint did not return a valid decision in time, and its `timeoutBehavior` is `DECLINE`. |
+        | `PLATFORM_DECLINED` | Your platform returned `decision: DECLINE`. `platformDeclineReason` carries the reason it gave. |
+        | `PLATFORM_UNAVAILABLE` | Your platform did not return a valid decision to a `CARD_AUTHORIZATION.REQUEST` in time, and `cardConfigs.realTimeAuthorization.timeoutBehavior` is `DECLINE`. |
         | `OTHER` | Any other reason, including a security or fraud decline the card processor made. |
     CardAuthorizationDeclineReason:
       type: string
@@ -28079,7 +28065,7 @@ components:
           example: INSUFFICIENT_FUNDS
         platformDeclineReason:
           $ref: '#/components/schemas/CardAuthorizationDeclineReason'
-          description: The `declineReason` your card authorization endpoint returned. Present only when `cardDeclinedReason` is `PLATFORM_DECLINED` and your endpoint supplied a reason.
+          description: The `declineReason` your platform returned for a `CARD_AUTHORIZATION.REQUEST`. Present only when `cardDeclinedReason` is `PLATFORM_DECLINED` and your endpoint supplied a reason.
           example: UNAUTHORIZED_MERCHANT
         direction:
           $ref: '#/components/schemas/TransactionDirection'
@@ -33120,7 +33106,7 @@ components:
         - WALLET_OPERATION.COMPLETED
         - WALLET_OPERATION.FAILED
         - TEST
-      description: Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot identifies the resource, the part after identifies the event. This lets consumers route purely on type without inspecting data.status. `CARD_AUTHORIZATION.REQUEST` is a synchronous decision request that Grid sends only to your card authorization endpoint.
+      description: Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot identifies the resource, the part after identifies the event. This lets consumers route purely on type without inspecting data.status. `CARD_AUTHORIZATION.REQUEST` is a synchronous decision request that Grid sends only while `cardConfigs.realTimeAuthorization` is set.
     BaseWebhook:
       type: object
       required:
@@ -33426,7 +33412,6 @@ components:
         - approvedAmount
         - merchant
         - accountId
-        - isTest
       description: A card authorization that Grid's own checks approved, awaiting your platform's decision. `transactionId` is the id of the `CardTransaction` that later `CARD_TRANSACTION.*` webhooks carry, and it stays the same if Grid sends this request more than once.
       properties:
         transactionId:
@@ -33470,10 +33455,6 @@ components:
           type: string
           description: The internal account that will fund the authorization.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-        isTest:
-          type: boolean
-          description: '`true` on the test request Grid sends before saving your endpoint. Its ids and amounts are example data that match no real card or transaction. Return `200` with any valid `CardAuthorizationDecision` without looking up the card or recording the request. `false` on every real authorization.'
-          example: false
     CardAuthorizationRequestWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -33499,7 +33480,7 @@ components:
       type: object
       required:
         - decision
-      description: The body your authorization endpoint returns with HTTP `200`.
+      description: The body your `webhookEndpoint` returns with HTTP `200` for a `CARD_AUTHORIZATION.REQUEST`.
       properties:
         decision:
           $ref: '#/components/schemas/CardAuthorizationDecisionType'

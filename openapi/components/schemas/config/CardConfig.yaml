@@ -57,30 +57,23 @@ properties:
       whose `cardCapabilities.supportsPanReveal` is true; cards revealed through
       the card issuer's own hosted flow are styled by that issuer.
     example: https://acme.com/card-reveal.css
-  authorizationEndpoint:
+  realTimeAuthorization:
     anyOf:
-      - $ref: ../cards/CardAuthorizationEndpoint.yaml
+      - $ref: ../cards/CardRealTimeAuthorization.yaml
       - type: 'null'
     description: >-
-      The endpoint Grid calls for a real-time decision on each card
-      authorization that Grid's own checks approve. See the
-      `CARD_AUTHORIZATION.REQUEST` webhook for the request it receives and
-      the decision it must return. `null` while no endpoint is set, in which
-      case Grid's own checks decide every authorization.
+      Real-time authorization settings. While set, Grid sends a
+      `CARD_AUTHORIZATION.REQUEST` to your `webhookEndpoint` for each card
+      authorization that Grid's own checks approve, and your response decides
+      whether it proceeds. See the `CARD_AUTHORIZATION.REQUEST` webhook for
+      the request and the decision it must return. `null` while real-time
+      authorization is off, in which case Grid's own checks decide every
+      authorization.
 
 
-      When an update sets this field, Grid first sends the endpoint one signed
-      `CARD_AUTHORIZATION.REQUEST` with `data.isTest: true` and example data.
-      The endpoint should answer it without running its business checks. The
-      update succeeds only if the endpoint returns `200` with a valid
-      `CardAuthorizationDecision` within 1.5 seconds. The decision in
-      that response is ignored. Otherwise the update returns
-      `400 WEBHOOK_DELIVERY_ERROR` and none of its changes apply.
-
-
-      Omit this field to preserve the endpoint. Send an object to set or
-      replace it, or send `null` to remove it. Changes apply to authorizations
-      that arrive after the update returns.
+      Omit this field to preserve the setting. Send an object to turn
+      real-time authorization on or change its settings, or send `null` to
+      turn it off. Changes apply to authorizations that arrive after the
+      update returns.
     example:
-      url: https://api.mycompany.com/grid/card-authorizations
       timeoutBehavior: DECLINE

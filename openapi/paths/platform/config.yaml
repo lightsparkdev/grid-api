@@ -38,10 +38,8 @@ patch:
     preserve its value or set it to `null` to clear it.
 
 
-    Set `cardConfigs.authorizationEndpoint` to have Grid ask your platform for
-    a real-time decision on card authorizations. Grid sends that endpoint a
-    test request before saving it. If the test request fails, the update
-    returns `400 WEBHOOK_DELIVERY_ERROR` and none of its changes apply.
+    Set `cardConfigs.realTimeAuthorization` to have Grid ask your
+    `webhookEndpoint` for a real-time decision on card authorizations.
   operationId: updatePlatformConfig
   tags:
     - Platform Configuration
@@ -90,8 +88,7 @@ patch:
               bodyText: Use this code to finish adding your Acme card to your digital wallet.
           cardConfigs:
             pinTargetOrigin: https://app.example.com
-            authorizationEndpoint:
-              url: https://api.mycompany.com/grid/card-authorizations
+            realTimeAuthorization:
               timeoutBehavior: DECLINE
   responses:
     '200':
@@ -103,11 +100,7 @@ patch:
     '400':
       description: >-
         Bad request. Includes `INVALID_INPUT` when `cardConfigs.pinTargetOrigin`
-        is supplied but is neither null nor a canonical HTTPS origin, or when
-        `cardConfigs.authorizationEndpoint.url` is not a public HTTPS URL.
-        Includes `WEBHOOK_DELIVERY_ERROR` when the test request to
-        `cardConfigs.authorizationEndpoint` did not return a valid response
-        in time.
+        is supplied but is neither null nor a canonical HTTPS origin.
       content:
         application/json:
           schema:

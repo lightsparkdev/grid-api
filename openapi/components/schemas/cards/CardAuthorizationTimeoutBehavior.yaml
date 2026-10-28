@@ -3,8 +3,8 @@ enum:
   - DECLINE
   - APPROVE
 description: |
-  What Grid answers for a card authorization when your authorization
-  endpoint does not return a valid decision in time.
+  What Grid answers for a card authorization when your `webhookEndpoint`
+  does not return a valid decision to a `CARD_AUTHORIZATION.REQUEST` in time.
 
   | Value | Behavior |
   |-------|----------|

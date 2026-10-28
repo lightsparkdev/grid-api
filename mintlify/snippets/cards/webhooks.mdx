@@ -33,9 +33,9 @@ All of them carry the standard envelope:
 
 The `id` identifies an event and stays the same across delivery retries. Use it for idempotency.
 
-If you set a card authorization endpoint, Grid also sends it
-`CARD_AUTHORIZATION.REQUEST`, a real-time decision request. It goes only to
-that endpoint, never to your `webhookEndpoint`. See [Real-time authorization](/cards/transactions/real-time-authorization).
+If you turn on real-time authorization, Grid also sends
+`CARD_AUTHORIZATION.REQUEST`, a real-time decision request that your handler
+must answer with a decision body. See [Real-time authorization](/cards/transactions/real-time-authorization).
 
 ## CARD.STATUS_CHANGE
 

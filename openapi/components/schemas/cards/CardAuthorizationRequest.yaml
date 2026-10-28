@@ -11,7 +11,6 @@ required:
   - approvedAmount
   - merchant
   - accountId
-  - isTest
 description: >-
   A card authorization that Grid's own checks approved, awaiting your
   platform's decision. `transactionId` is the id of the `CardTransaction`
@@ -70,12 +69,3 @@ properties:
     type: string
     description: The internal account that will fund the authorization.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-  isTest:
-    type: boolean
-    description: >-
-      `true` on the test request Grid sends before saving your endpoint.
-      Its ids and amounts are example data that match no real card or
-      transaction. Return `200` with any valid `CardAuthorizationDecision`
-      without looking up the card or recording the request. `false` on
-      every real authorization.
-    example: false

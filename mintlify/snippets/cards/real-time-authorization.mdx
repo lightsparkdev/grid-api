@@ -1,6 +1,6 @@
 By default, Grid decides every card authorization with its own checks. With
-real-time authorization, Grid also calls an endpoint you host for each
-authorization its checks approve, and your response decides whether the
+real-time authorization, Grid also sends your `webhookEndpoint` a decision
+request for each authorization its checks approve, and your response decides whether the
 authorization proceeds. Use it to apply your own fraud rules,
 merchant restrictions, or velocity limits.
 
@@ -13,22 +13,19 @@ It never loosens Grid's own checks.
 1. A cardholder uses the card, and the card network asks Grid to authorize it.
 2. Grid runs its checks: card status, card and platform spend limits,
    merchant category rules, and network support. If any check declines, Grid
-   declines the authorization and does not call your endpoint.
-3. Grid sends your endpoint a signed `CARD_AUTHORIZATION.REQUEST`.
-4. Your endpoint returns `APPROVE` or `DECLINE` within 1.5 seconds.
+   declines the authorization and does not send a decision request.
+3. Grid sends your `webhookEndpoint` a signed `CARD_AUTHORIZATION.REQUEST`.
+4. Your handler returns `APPROVE` or `DECLINE` within 1.5 seconds.
 5. If you approve, Grid reserves the amount from the funding source. If the
    funding source cannot cover it, Grid declines with `INSUFFICIENT_FUNDS`.
 6. Grid sends the final outcome to your `webhookEndpoint` as
    `CARD_TRANSACTION.AUTHORIZED` or `CARD_TRANSACTION.DECLINED`.
 
-Balance inquiries are never sent to your endpoint.
+Balance inquiries are never sent for a decision.
 
-## Set your endpoint
+## Turn it on
 
-Set an HTTPS endpoint in `cardConfigs.authorizationEndpoint` with
-`PATCH /platform/config`. It can differ from your `webhookEndpoint`, and
-hosting it separately keeps a slow webhook handler from delaying card
-decisions.
+Set `cardConfigs.realTimeAuthorization` with `PATCH /platform/config`.
 
 ```bash cURL
 curl -X PATCH "$GRID_BASE_URL/platform/config" \
@@ -36,31 +33,27 @@ curl -X PATCH "$GRID_BASE_URL/platform/config" \
   -H "Content-Type: application/json" \
   -d '{
     "cardConfigs": {
-      "authorizationEndpoint": {
-        "url": "https://api.mycompany.com/grid/card-authorizations",
+      "realTimeAuthorization": {
         "timeoutBehavior": "DECLINE"
       }
     }
   }'
 ```
 
-Before saving the endpoint, Grid sends it one test request with
-`data.isTest: true` and example data that matches no real card. Return `200`
-with any valid decision without looking up the card or recording the
-request. The update succeeds only if your endpoint returns a valid response
-in time, so a broken endpoint never starts declining real authorizations. If
-the test request fails, the update returns `400 WEBHOOK_DELIVERY_ERROR` and
-none of its changes apply.
+Deploy a `webhookEndpoint` handler that answers `CARD_AUTHORIZATION.REQUEST`
+with a decision before you turn it on. A handler that returns an empty `200`
+is not a valid decision, so Grid applies `timeoutBehavior` to every
+authorization.
 
-To stop, set `cardConfigs.authorizationEndpoint` to `null`. Grid's own checks
+To stop, set `cardConfigs.realTimeAuthorization` to `null`. Grid's own checks
 then decide every authorization.
 
 ## Test in sandbox
 
-In sandbox, your endpoint receives the requests that the
+In sandbox, your `webhookEndpoint` receives the requests that the
 `POST /sandbox/cards/{id}/simulate/authorization` simulator produces, as long
 as Grid's own checks approve them. To test `timeoutBehavior`, have your
-endpoint return a non-`200` status or wait longer than 1.5 seconds.
+handler return a non-`200` status or wait longer than 1.5 seconds.
 
 ## Respond to requests
 
@@ -102,8 +95,7 @@ in `data`:
       "mcc": "5814",
       "country": "US"
     },
-    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
-    "isTest": false
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
   }
 }
 ```
@@ -147,8 +139,8 @@ Respond within 1.5 seconds. The
 card network holds the cardholder at the terminal while Grid waits, so keep
 the decision path fast and avoid calls to slow dependencies.
 
-If your endpoint times out, returns a status other than `200`, or returns an
-invalid body, Grid applies the endpoint's `timeoutBehavior`:
+If your handler times out, returns a status other than `200`, or returns an
+invalid body, Grid applies `cardConfigs.realTimeAuthorization.timeoutBehavior`:
 
 | `timeoutBehavior` | Result |
 |-------------------|--------|
@@ -159,7 +151,7 @@ Grid does not retry an authorization request.
 
 ## Duplicate requests
 
-The card network can retry an authorization, so your endpoint can receive the
+The card network can retry an authorization, so you can receive the
 same authorization more than once. Each delivery has a new `id`, but
 `data.transactionId` and `data.issuerTransactionToken` stay the same. Return
 the same decision each time.
