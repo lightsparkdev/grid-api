@@ -16296,6 +16296,39 @@ components:
 
         Treat the ID as an opaque value, not a member of a fixed list. Grid may add new IDs as requirements change.
       example: SUPPORTING_PROOF
+    RefusalReason:
+      type: string
+      description: |
+        Why Grid refused the request, as `details.refusalReason`. Several refusals
+        share one `code`, and `reason` is a message that may be reworded, so branch
+        on this value rather than on `reason`. Treat it as an open set, not a fixed
+        list: Grid may add values, and an unknown one is a refusal without a known
+        cause.
+
+        | Refusal reason | Status | Description |
+        |----------------|--------|-------------|
+        | `AGENT_API_DISABLED` | 403 | The agent API is not enabled for the platform |
+        | `AGENT_CUSTOMER_INACTIVE` | 403 | The agent's customer is not active |
+        | `AGENT_INACTIVE` | 403 | The agent is paused or deleted |
+        | `AGENT_NO_DELEGATED_KEY` | 403 | The agent holds no active delegated key for the source wallet |
+        | `AGENT_PERMISSION_REQUIRED` | 403 | The agent's policy lacks a permission this call needs. `details.permission` names it |
+        | `AGENT_ACCOUNT_NOT_ALLOWED` | 403 | The agent's policy does not allow the source account or funding source |
+        | `AGENT_DEPOSIT_ACCOUNT_NOT_ALLOWED` | 403 | The agent's policy does not allow deposits to this account |
+        | `AGENT_POLICY_DENIED` | 403 | The agent's policy denied executing the quote. `details.policyDenialReason` says which rule |
+        | `AGENT_QUOTE_HELD` | 403 | The quote cannot be sent and is held for manual follow-up |
+        | `AGENT_CARDS_DISABLED` | 403 | Agent cards are not enabled for the platform |
+        | `AGENT_CARDS_CUSTOMER_NOT_VERIFIED` | 403 | Agent cards need a verified individual customer |
+        | `AGENT_CARD_HANDOVER_DISABLED` | 403 | Handing an agent's card over to its customer is not enabled for the platform |
+        | `AGENT_PURCHASE_CARDS_DISABLED` | 403 | Agent purchase cards are not enabled for the platform |
+        | `AGENT_PURCHASE_CARD_POLICY_DENIED` | 403 | The agent's policy denied the purchase card. `details.policyDenialReason` says which rule |
+        | `CARDS_DISABLED` | 403 | Cards are not enabled for the platform |
+        | `CARDHOLDER_INFO_MISSING` | 400 | The cardholder record lacks fields a card needs. `details.missingFields` lists them; supply them through the customers API |
+        | `CARDHOLDER_BANK_ACCOUNT_NOT_OPEN` | 400 | The cardholder's USD bank account is not open yet, so no card can be issued until it is |
+        | `CARDHOLDER_HOLDS_CARD` | 409 | The cardholder already holds a card and the platform allows one per cardholder. Close it before issuing another |
+        | `INVOICE_SUB_SAT_AMOUNT` | 400 | The Lightning invoice's amount is not a whole number of satoshis |
+        | `INVOICE_FUNDS_DEPOSIT` | 400 | The Lightning invoice was issued by Lightspark to fund a deposit and cannot be paid with a send |
+        | `INVOICE_FUNDS_OWN_DEPOSIT` | 400 | The Lightning invoice funds a deposit of the sender's own. Quote a transfer between the customer's accounts instead |
+      example: AGENT_POLICY_DENIED
     Error400:
       type: object
       required:
@@ -16307,7 +16340,7 @@ components:
           description: |
             | Error Code | Description |
             |------------|-------------|
-            | INVALID_INPUT | Invalid input provided |
+            | INVALID_INPUT | Invalid input provided. When Grid knows the cause, `details.refusalReason` names it. When a card cannot be issued because the customer record lacks fields, it is `CARDHOLDER_INFO_MISSING` and `details.missingFields` lists them |
             | END_USER_TERMS_VERSION_NOT_FOUND | The submitted version is not supported for the agreement it was sent for |
             | MISSING_MANDATORY_USER_INFO | Required customer information is missing |
             | INVITATION_ALREADY_CLAIMED | Invitation has already been claimed |
@@ -16451,6 +16484,14 @@ components:
               description: The requirement ID of each required document that the quote request did not supply. Present on `DOCUMENTS_REQUIRED`.
               items:
                 $ref: '#/components/schemas/PaymentDocumentRequirementId'
+            refusalReason:
+              $ref: '#/components/schemas/RefusalReason'
+            missingFields:
+              type: array
+              description: Each customer field the request needs but the customer record lacks, named as in `CustomerInfoFieldName` (for example `PHONE_NUMBER`). Present with refusal reason `CARDHOLDER_INFO_MISSING`. Grid may name fields not yet listed there.
+              items:
+                type: string
+                example: PHONE_NUMBER
           additionalProperties: true
     Error501:
       type: object
@@ -17676,6 +17717,25 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomerCreateRequest'
           BUSINESS: '#/components/schemas/BusinessCustomerCreateRequest'
+    AgentPolicyDenialReason:
+      type: string
+      description: |
+        Which agent policy rule denied executing a quote or issuing a purchase card.
+        Sent as `details.policyDenialReason` with refusal reason
+        `AGENT_POLICY_DENIED` or `AGENT_PURCHASE_CARD_POLICY_DENIED`. Treat it as an
+        open set, not a fixed list: Grid may add values.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `INVALID_AMOUNT` | The amount is not one the policy can evaluate |
+        | `AGENT_PAUSED` | The agent is paused |
+        | `PERMISSION_MISSING` | The policy lacks `EXECUTE_QUOTES` |
+        | `ACCOUNT_NOT_ALLOWED` | The policy does not allow the source account |
+        | `PER_TRANSACTION_LIMIT_EXCEEDED` | The amount exceeds the per-transaction limit |
+        | `DAILY_LIMIT_EXCEEDED` | The amount would exceed the daily spending limit |
+        | `MONTHLY_LIMIT_EXCEEDED` | The amount would exceed the monthly spending limit |
+        | `DAILY_TRANSACTION_LIMIT_EXCEEDED` | The agent has made its daily number of transactions |
+      example: DAILY_LIMIT_EXCEEDED
     Error403:
       type: object
       required:
@@ -17687,7 +17747,7 @@ components:
           description: |
             | Error Code | Description |
             |------------|-------------|
-            | FORBIDDEN | Insufficient permissions |
+            | FORBIDDEN | Insufficient permissions. `details.refusalReason` names the cause when Grid knows it |
             | USER_NOT_READY | Customer exists but is not ready for operation |
             | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
             | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
@@ -17711,7 +17771,17 @@ components:
           description: Error message
         details:
           type: object
-          description: Additional error details
+          description: Additional error details. Shape varies by `code`. A `FORBIDDEN` refusal with a known cause carries `refusalReason`, plus the fields that reason names.
+          properties:
+            refusalReason:
+              $ref: '#/components/schemas/RefusalReason'
+            permission:
+              type: string
+              description: The `AgentPermission` the agent's policy lacks. Present with refusal reason `AGENT_PERMISSION_REQUIRED`. Grid may add permissions, so accept a value not yet listed there.
+              example: ISSUE_CARDS
+            policyDenialReason:
+              $ref: '#/components/schemas/AgentPolicyDenialReason'
+              description: The policy rule that denied the quote or purchase card. Present with refusal reason `AGENT_POLICY_DENIED` or `AGENT_PURCHASE_CARD_POLICY_DENIED`.
           additionalProperties: true
     Error409:
       type: object
@@ -17742,7 +17812,7 @@ components:
             | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
             | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
             | NOT_YET_AVAILABLE | The request is valid, but its result is not available yet because the data it depends on could still change. Retry later. `reason` says what is outstanding. For balance changes, card settlement for a window boundary has not closed |
-            | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
+            | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform. When the cardholder already holds the one card the platform allows, `details.refusalReason` is `CARDHOLDER_HOLDS_CARD` |
             | DOCUMENT_ALREADY_EXISTS | A document of this type already exists for the holder; replace it with PUT |
             | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists. When the conflicting account belongs to your platform, `details.externalAccountId` and `details.platformAccountId` identify it; otherwise `details` is omitted |
             | DUPLICATE_PAY_REQUEST | A pay request with this idempotency key already exists |

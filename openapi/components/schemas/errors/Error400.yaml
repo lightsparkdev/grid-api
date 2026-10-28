@@ -8,7 +8,7 @@ properties:
     description: |
       | Error Code | Description |
       |------------|-------------|
-      | INVALID_INPUT | Invalid input provided |
+      | INVALID_INPUT | Invalid input provided. When Grid knows the cause, `details.refusalReason` names it. When a card cannot be issued because the customer record lacks fields, it is `CARDHOLDER_INFO_MISSING` and `details.missingFields` lists them |
       | END_USER_TERMS_VERSION_NOT_FOUND | The submitted version is not supported for the agreement it was sent for |
       | MISSING_MANDATORY_USER_INFO | Required customer information is missing |
       | INVITATION_ALREADY_CLAIMED | Invitation has already been claimed |
@@ -160,4 +160,16 @@ properties:
           did not supply. Present on `DOCUMENTS_REQUIRED`.
         items:
           $ref: ../payment_documents/PaymentDocumentRequirementId.yaml
+      refusalReason:
+        $ref: ./RefusalReason.yaml
+      missingFields:
+        type: array
+        description: >-
+          Each customer field the request needs but the customer record lacks,
+          named as in `CustomerInfoFieldName` (for example `PHONE_NUMBER`).
+          Present with refusal reason `CARDHOLDER_INFO_MISSING`. Grid may name
+          fields not yet listed there.
+        items:
+          type: string
+          example: PHONE_NUMBER
     additionalProperties: true

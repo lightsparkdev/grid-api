@@ -1,0 +1,32 @@
+type: string
+description: |
+  Why Grid refused the request, as `details.refusalReason`. Several refusals
+  share one `code`, and `reason` is a message that may be reworded, so branch
+  on this value rather than on `reason`. Treat it as an open set, not a fixed
+  list: Grid may add values, and an unknown one is a refusal without a known
+  cause.
+
+  | Refusal reason | Status | Description |
+  |----------------|--------|-------------|
+  | `AGENT_API_DISABLED` | 403 | The agent API is not enabled for the platform |
+  | `AGENT_CUSTOMER_INACTIVE` | 403 | The agent's customer is not active |
+  | `AGENT_INACTIVE` | 403 | The agent is paused or deleted |
+  | `AGENT_NO_DELEGATED_KEY` | 403 | The agent holds no active delegated key for the source wallet |
+  | `AGENT_PERMISSION_REQUIRED` | 403 | The agent's policy lacks a permission this call needs. `details.permission` names it |
+  | `AGENT_ACCOUNT_NOT_ALLOWED` | 403 | The agent's policy does not allow the source account or funding source |
+  | `AGENT_DEPOSIT_ACCOUNT_NOT_ALLOWED` | 403 | The agent's policy does not allow deposits to this account |
+  | `AGENT_POLICY_DENIED` | 403 | The agent's policy denied executing the quote. `details.policyDenialReason` says which rule |
+  | `AGENT_QUOTE_HELD` | 403 | The quote cannot be sent and is held for manual follow-up |
+  | `AGENT_CARDS_DISABLED` | 403 | Agent cards are not enabled for the platform |
+  | `AGENT_CARDS_CUSTOMER_NOT_VERIFIED` | 403 | Agent cards need a verified individual customer |
+  | `AGENT_CARD_HANDOVER_DISABLED` | 403 | Handing an agent's card over to its customer is not enabled for the platform |
+  | `AGENT_PURCHASE_CARDS_DISABLED` | 403 | Agent purchase cards are not enabled for the platform |
+  | `AGENT_PURCHASE_CARD_POLICY_DENIED` | 403 | The agent's policy denied the purchase card. `details.policyDenialReason` says which rule |
+  | `CARDS_DISABLED` | 403 | Cards are not enabled for the platform |
+  | `CARDHOLDER_INFO_MISSING` | 400 | The cardholder record lacks fields a card needs. `details.missingFields` lists them; supply them through the customers API |
+  | `CARDHOLDER_BANK_ACCOUNT_NOT_OPEN` | 400 | The cardholder's USD bank account is not open yet, so no card can be issued until it is |
+  | `CARDHOLDER_HOLDS_CARD` | 409 | The cardholder already holds a card and the platform allows one per cardholder. Close it before issuing another |
+  | `INVOICE_SUB_SAT_AMOUNT` | 400 | The Lightning invoice's amount is not a whole number of satoshis |
+  | `INVOICE_FUNDS_DEPOSIT` | 400 | The Lightning invoice was issued by Lightspark to fund a deposit and cannot be paid with a send |
+  | `INVOICE_FUNDS_OWN_DEPOSIT` | 400 | The Lightning invoice funds a deposit of the sender's own. Quote a transfer between the customer's accounts instead |
+example: AGENT_POLICY_DENIED

@@ -8,7 +8,7 @@ properties:
     description: |
       | Error Code | Description |
       |------------|-------------|
-      | FORBIDDEN | Insufficient permissions |
+      | FORBIDDEN | Insufficient permissions. `details.refusalReason` names the cause when Grid knows it |
       | USER_NOT_READY | Customer exists but is not ready for operation |
       | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
       | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
@@ -32,5 +32,24 @@ properties:
     description: Error message
   details:
     type: object
-    description: Additional error details
+    description: >-
+      Additional error details. Shape varies by `code`. A `FORBIDDEN` refusal
+      with a known cause carries `refusalReason`, plus the fields that reason
+      names.
+    properties:
+      refusalReason:
+        $ref: ./RefusalReason.yaml
+      permission:
+        type: string
+        description: >-
+          The `AgentPermission` the agent's policy lacks. Present with refusal
+          reason `AGENT_PERMISSION_REQUIRED`. Grid may add permissions, so
+          accept a value not yet listed there.
+        example: ISSUE_CARDS
+      policyDenialReason:
+        $ref: ../agents/AgentPolicyDenialReason.yaml
+        description: >-
+          The policy rule that denied the quote or purchase card. Present with
+          refusal reason `AGENT_POLICY_DENIED` or
+          `AGENT_PURCHASE_CARD_POLICY_DENIED`.
     additionalProperties: true
