@@ -23,38 +23,41 @@ It never loosens Grid's own checks.
 
 Balance inquiries are never sent to your endpoint.
 
-## Enroll your endpoint
+## Set your endpoint
 
-Enroll an HTTPS endpoint with `PUT /platform/card-authorization-endpoint`. It
-can differ from your `webhookEndpoint`, and hosting it separately keeps a slow
-webhook handler from delaying card decisions.
+Set an HTTPS endpoint in `cardConfigs.authorizationEndpoint` with
+`PATCH /platform/config`. It can differ from your `webhookEndpoint`, and
+hosting it separately keeps a slow webhook handler from delaying card
+decisions.
 
 ```bash cURL
-curl -X PUT "$GRID_BASE_URL/platform/card-authorization-endpoint" \
+curl -X PATCH "$GRID_BASE_URL/platform/config" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://api.mycompany.com/grid/card-authorizations",
-    "timeoutBehavior": "DECLINE"
+    "cardConfigs": {
+      "authorizationEndpoint": {
+        "url": "https://api.mycompany.com/grid/card-authorizations",
+        "timeoutBehavior": "DECLINE"
+      }
+    }
   }'
 ```
 
-Before enrolling, Grid sends your endpoint one test request with
+Before saving the endpoint, Grid sends it one test request with
 `data.isTest: true` and example data that matches no real card. Return `200`
 with any valid decision without looking up the card or recording the
-request. Enrollment succeeds only if your endpoint returns a valid response
-in time, so a broken endpoint never starts declining real authorizations.
+request. The update succeeds only if your endpoint returns a valid response
+in time, so a broken endpoint never starts declining real authorizations. If
+the test request fails, the update returns `400 WEBHOOK_DELIVERY_ERROR` and
+none of its changes apply.
 
-The endpoint has its own resource, outside `PATCH /platform/config`, because
-enrolling calls your endpoint and can fail on that call alone.
-
-To stop, call `DELETE /platform/card-authorization-endpoint`. Grid's own checks
-then decide every authorization. `GET` returns `404` while no endpoint is
-enrolled.
+To stop, set `cardConfigs.authorizationEndpoint` to `null`. Grid's own checks
+then decide every authorization.
 
 ## Test in sandbox
 
-In sandbox, an enrolled endpoint receives the requests that the
+In sandbox, your endpoint receives the requests that the
 `POST /sandbox/cards/{id}/simulate/authorization` simulator produces, as long
 as Grid's own checks approve them. To test `timeoutBehavior`, have your
 endpoint return a non-`200` status or wait past `responseTimeoutMs`.
@@ -145,7 +148,7 @@ card network holds the cardholder at the terminal while Grid waits, so keep
 the decision path fast and avoid calls to slow dependencies.
 
 If your endpoint times out, returns a status other than `200`, or returns an
-invalid body, Grid applies the `timeoutBehavior` you set at enrollment:
+invalid body, Grid applies the endpoint's `timeoutBehavior`:
 
 | `timeoutBehavior` | Result |
 |-------------------|--------|

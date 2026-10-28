@@ -2,7 +2,7 @@ post:
   summary: Card authorization request
   description: >
     Real-time decision request for a card authorization. Grid sends it to the
-    endpoint you enrolled through `PUT /platform/card-authorization-endpoint`.
+    `cardConfigs.authorizationEndpoint` in your platform config.
     It never goes to the `webhookEndpoint` in your platform config. Your
     response decides whether the authorization proceeds.
 

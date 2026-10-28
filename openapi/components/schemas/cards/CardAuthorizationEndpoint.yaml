@@ -2,10 +2,6 @@ title: Card Authorization Endpoint
 type: object
 required:
   - url
-  - timeoutBehavior
-  - responseTimeoutMs
-  - createdAt
-  - updatedAt
 description: >-
   The endpoint Grid calls to ask your platform for a real-time decision on
   each card authorization that Grid's own checks approve.
@@ -13,25 +9,25 @@ properties:
   url:
     type: string
     format: uri
-    description: HTTPS URL that receives `CARD_AUTHORIZATION.REQUEST` requests.
+    maxLength: 255
+    pattern: ^https://
+    description: >-
+      HTTPS URL that receives `CARD_AUTHORIZATION.REQUEST` requests. It must
+      resolve to a public host. It can differ from the `webhookEndpoint` in
+      your platform config.
     example: https://api.mycompany.com/grid/card-authorizations
   timeoutBehavior:
     $ref: ./CardAuthorizationTimeoutBehavior.yaml
+    description: >-
+      What Grid answers when your endpoint does not return a valid decision
+      in time. Defaults to `DECLINE` when omitted from an update. Always
+      returned when reading the config.
   responseTimeoutMs:
     type: integer
     format: int32
     readOnly: true
     description: >-
       How long Grid waits for your endpoint's decision, in milliseconds,
-      before applying `timeoutBehavior`. Grid sets this value.
+      before applying `timeoutBehavior`. Grid sets this value and always
+      returns it when reading the config.
     example: 1500
-  createdAt:
-    type: string
-    format: date-time
-    description: When an endpoint was first enrolled.
-    example: '2026-10-20T15:04:05Z'
-  updatedAt:
-    type: string
-    format: date-time
-    description: When the endpoint was last enrolled or replaced.
-    example: '2026-10-20T15:04:05Z'

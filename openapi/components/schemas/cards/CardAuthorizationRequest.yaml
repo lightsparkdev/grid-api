@@ -73,7 +73,7 @@ properties:
   isTest:
     type: boolean
     description: >-
-      `true` on the test request Grid sends while enrolling your endpoint.
+      `true` on the test request Grid sends before saving your endpoint.
       Its ids and amounts are example data that match no real card or
       transaction. Return `200` with any valid `CardAuthorizationDecision`
       without looking up the card or recording the request. `false` on
