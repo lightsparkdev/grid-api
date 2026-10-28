@@ -58,7 +58,8 @@ properties:
   platformDeclineReason:
     $ref: ./CardAuthorizationDeclineReason.yaml
     description: >-
-      The `declineReason` your card authorization endpoint returned. Present
+      The `declineReason` your platform returned for a
+      `CARD_AUTHORIZATION.REQUEST`. Present
       only when `cardDeclinedReason` is `PLATFORM_DECLINED` and your
       endpoint supplied a reason.
     example: UNAUTHORIZED_MERCHANT

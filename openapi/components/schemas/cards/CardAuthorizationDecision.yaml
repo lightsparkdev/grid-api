@@ -3,7 +3,8 @@ type: object
 required:
   - decision
 description: >-
-  The body your authorization endpoint returns with HTTP `200`.
+  The body your `webhookEndpoint` returns with HTTP `200` for a
+  `CARD_AUTHORIZATION.REQUEST`.
 properties:
   decision:
     $ref: ./CardAuthorizationDecisionType.yaml

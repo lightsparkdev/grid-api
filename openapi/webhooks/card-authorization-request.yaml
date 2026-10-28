@@ -2,9 +2,9 @@ post:
   summary: Card authorization request
   description: >
     Real-time decision request for a card authorization. Grid sends it to the
-    endpoint you enrolled through `PUT /platform/card-authorization-endpoint`.
-    It never goes to the `webhookEndpoint` in your platform config. Your
-    response decides whether the authorization proceeds.
+    `webhookEndpoint` in your platform config while
+    `cardConfigs.realTimeAuthorization` is set. Your response decides whether
+    the authorization proceeds.
 
     This endpoint should be implemented by clients of the Grid API that want
     to make their own authorization decisions.
@@ -21,14 +21,14 @@ post:
 
     ### Responding
 
-    Return HTTP `200` with a `CardAuthorizationDecision` body within the
-    endpoint's `responseTimeoutMs` (1.5 seconds). `decision: APPROVE` lets the authorization proceed.
+    Return HTTP `200` with a `CardAuthorizationDecision` body within 1.5
+    seconds. `decision: APPROVE` lets the authorization proceed.
     `decision: DECLINE` declines it, and Grid passes your `declineReason` to
     the card network.
 
     If your endpoint returns any other status or an invalid body, or does not
-    respond in time, Grid applies the endpoint's `timeoutBehavior`. Grid does
-    not retry this request.
+    respond in time, Grid applies the `timeoutBehavior` in
+    `cardConfigs.realTimeAuthorization`. Grid does not retry this request.
 
 
     ### After you approve
@@ -36,8 +36,7 @@ post:
     Grid reserves the authorized amount from the funding source after you
     approve. If the funding source cannot cover it, Grid still declines with
     `INSUFFICIENT_FUNDS`. The final outcome arrives as a
-    `CARD_TRANSACTION.AUTHORIZED` or `CARD_TRANSACTION.DECLINED` webhook on
-    your `webhookEndpoint`. A decline you return arrives there with
+    `CARD_TRANSACTION.AUTHORIZED` or `CARD_TRANSACTION.DECLINED` webhook. A decline you return arrives there with
     `cardDeclinedReason: PLATFORM_DECLINED` and your `declineReason` in
     `platformDeclineReason`.
 
@@ -116,7 +115,6 @@ post:
                   state: CA
                   country: US
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                isTest: false
   responses:
     '200':
       description: Your decision on the authorization.

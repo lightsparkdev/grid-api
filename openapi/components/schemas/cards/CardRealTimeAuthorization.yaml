@@ -1,0 +1,9 @@
+title: Card Real-Time Authorization
+type: object
+properties:
+  timeoutBehavior:
+    $ref: ./CardAuthorizationTimeoutBehavior.yaml
+    description: >-
+      What Grid answers when your `webhookEndpoint` does not return a valid
+      decision in time. Defaults to `DECLINE` when omitted from an update.
+      Always returned when reading the config.
