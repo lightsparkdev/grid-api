@@ -38,8 +38,9 @@ patch:
     preserve its value or set it to `null` to clear it.
 
 
-    Set `cardConfigs.realTimeAuthorization` to have Grid ask your
-    `webhookEndpoint` for a real-time decision on card authorizations.
+    Set `cardConfigs.realTimeAuthorization` to enable real-time card
+    authorization: Grid sends a `CARD_AUTHORIZATION.REQUEST` decision request
+    to your `webhookEndpoint` for each card authorization.
   operationId: updatePlatformConfig
   tags:
     - Platform Configuration

@@ -97,6 +97,7 @@ resources:
       platform_config: '#/components/schemas/PlatformConfig'
       embedded_wallet_config: "#/components/schemas/EmbeddedWalletConfig"
       platform_config_update_request: '#/components/schemas/PlatformConfigUpdateRequest'
+      card_real_time_authorization: "#/components/schemas/CardRealTimeAuthorization"
     methods:
       retrieve: get /config
       update: patch /config
@@ -305,7 +306,6 @@ resources:
           zmw_account_info: "#/components/schemas/ZmwAccountInfo"
       card_authorization_endpoint:
         models:
-          card_real_time_authorization: "#/components/schemas/CardRealTimeAuthorization"
           card_authorization_request: "#/components/schemas/CardAuthorizationRequest"
           card_authorization_decision: "#/components/schemas/CardAuthorizationDecision"
 
