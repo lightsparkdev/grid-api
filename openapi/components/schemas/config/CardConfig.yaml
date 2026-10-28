@@ -65,7 +65,7 @@ properties:
       The endpoint Grid calls for a real-time decision on each card
       authorization that Grid's own checks approve. See the
       `CARD_AUTHORIZATION.REQUEST` webhook for the request it receives and
-      the decision it must return. Absent while no endpoint is set, in which
+      the decision it must return. `null` while no endpoint is set, in which
       case Grid's own checks decide every authorization.
 
 
