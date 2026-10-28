@@ -11,6 +11,7 @@ required:
   - exchangeRate
   - fees
   - updatedAt
+  - isAvailable
 properties:
   sourceCurrency:
     $ref: ../common/Currency.yaml
@@ -60,3 +61,10 @@ properties:
     format: date-time
     description: Timestamp when this exchange rate was last refreshed
     example: "2025-02-05T12:00:00Z"
+  isAvailable:
+    type: boolean
+    description: >-
+      Whether Grid is currently paying out on this corridor. False while the
+      corridor is paused, including during scheduled maintenance. A quote for
+      an unavailable corridor fails with `503 CORRIDOR_UNAVAILABLE`.
+    example: true

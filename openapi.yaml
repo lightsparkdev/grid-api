@@ -311,6 +311,8 @@ paths:
         - Filter by source currency to get all available destination corridors
         - Filter by specific destination currency or currencies
         - Provide a sending amount to get calculated receiving amounts
+
+        Each rate reports whether its corridor is paying out now (`isAvailable`).
       operationId: getExchangeRates
       tags:
         - Exchange Rates
@@ -378,6 +380,7 @@ paths:
                           fixed: 100
                           total: 150
                         updatedAt: '2025-02-05T12:00:00Z'
+                        isAvailable: true
                       - sourceCurrency:
                           code: USD
                           decimals: 2
@@ -398,6 +401,7 @@ paths:
                           fixed: 10
                           total: 15
                         updatedAt: '2025-02-05T12:00:00Z'
+                        isAvailable: false
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -16609,6 +16613,7 @@ components:
         - exchangeRate
         - fees
         - updatedAt
+        - isAvailable
       properties:
         sourceCurrency:
           $ref: '#/components/schemas/Currency'
@@ -16655,6 +16660,10 @@ components:
           format: date-time
           description: Timestamp when this exchange rate was last refreshed
           example: '2025-02-05T12:00:00Z'
+        isAvailable:
+          type: boolean
+          description: Whether Grid is currently paying out on this corridor. False while the corridor is paused, including during scheduled maintenance. A quote for an unavailable corridor fails with `503 CORRIDOR_UNAVAILABLE`.
+          example: true
     ExchangeRateListResponse:
       type: object
       required:
