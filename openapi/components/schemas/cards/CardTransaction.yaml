@@ -90,7 +90,7 @@ properties:
     description: >-
       Fees Grid charged on this transaction. Empty when the transaction
       carries no fees. Older transactions may omit the field, which means no
-      fees. A `FOREIGN_TRANSACTION` fee applies when the merchant's country
+      fees. A `DEBIT_CARD_FOREIGN_TRANSACTION` fee applies when the merchant's country
       differs from the country the card was issued in. Grid reserves it
       against the funding source at authorization, but the entry appears only
       once the transaction clears and `settledAmount` is present, so an

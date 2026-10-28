@@ -63,7 +63,7 @@ A card transaction lists the fees charged on it in `fees`. Each entry has a
 `type` and an `amount`. The array is empty when the transaction carries no
 fees.
 
-The only fee type today is `FOREIGN_TRANSACTION`. It applies when the
+The only fee type today is `DEBIT_CARD_FOREIGN_TRANSACTION`. It applies when the
 merchant's country (`merchant.country`) differs from the country the card was
 issued in. The default rate is 0.5% of the cleared amount, and the rate is set
 per platform.
@@ -102,7 +102,7 @@ omitted):
   },
   "fees": [
     {
-      "type": "FOREIGN_TRANSACTION",
+      "type": "DEBIT_CARD_FOREIGN_TRANSACTION",
       "amount": {
         "amount": 50,
         "currency": {
