@@ -30,7 +30,9 @@ properties:
       `kind: PURCHASE` and rejected otherwise. Grid adds an allowance for tax
       and shipping to set the card's limit; see `AgentPurchaseCardDetails`.
       For a recurring card it is the monthly limit itself, with no allowance
-      added, so include tax and shipping in it.
+      added, so include tax and shipping in it. Each platform sets the largest
+      amount an agent may ask for, separately for single-use and recurring
+      cards; a larger one is rejected with `INVALID_INPUT`.
     example: 4999
   description:
     type: string

@@ -10057,7 +10057,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AgentAction'
         '400':
-          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the customer's KYC status is not `APPROVED`, with `CARDHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires a cardholder agreement the customer has not accepted, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or too long, when the funding source does not belong to the customer or is not denominated in a card-eligible currency, when `amount` is missing for a purchase card or supplied for a standard one, when `recurring` is `true` for a standard card, when a purchase card's funding source is not an Embedded Wallet the agent holds an active delegated key on or the agent's policy is not in USD, and for general invalid parameters.
+          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the customer's KYC status is not `APPROVED`, with `CARDHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires a cardholder agreement the customer has not accepted, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or too long, when the funding source does not belong to the customer or is not denominated in a card-eligible currency, when `amount` is missing for a purchase card or supplied for a standard one, when `recurring` is `true` for a standard card, when `amount` is over the largest purchase (or, for a recurring card, monthly limit) the platform allows agents to ask for, when a purchase card's funding source is not an Embedded Wallet the agent holds an active delegated key on or the agent's policy is not in USD, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -31466,7 +31466,7 @@ components:
           type: integer
           format: int64
           minimum: 1
-          description: 'The purchase amount in the smallest unit of USD. Required for `kind: PURCHASE` and rejected otherwise. Grid adds an allowance for tax and shipping to set the card''s limit; see `AgentPurchaseCardDetails`. For a recurring card it is the monthly limit itself, with no allowance added, so include tax and shipping in it.'
+          description: 'The purchase amount in the smallest unit of USD. Required for `kind: PURCHASE` and rejected otherwise. Grid adds an allowance for tax and shipping to set the card''s limit; see `AgentPurchaseCardDetails`. For a recurring card it is the monthly limit itself, with no allowance added, so include tax and shipping in it. Each platform sets the largest amount an agent may ask for, separately for single-use and recurring cards; a larger one is rejected with `INVALID_INPUT`.'
           example: 4999
         description:
           type: string

@@ -214,7 +214,9 @@ post:
         long, when the funding source does not belong to the customer or is
         not denominated in a card-eligible currency, when `amount` is missing
         for a purchase card or supplied for a standard one, when `recurring`
-        is `true` for a standard card, when a purchase
+        is `true` for a standard card, when `amount` is over the largest
+        purchase (or, for a recurring card, monthly limit) the platform allows
+        agents to ask for, when a purchase
         card's funding source is not an Embedded Wallet the agent holds an
         active delegated key on or the agent's policy is not in USD, and for
         general invalid parameters.
