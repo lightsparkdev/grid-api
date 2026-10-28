@@ -3,6 +3,7 @@ enum:
   - PASSPORT
   - DRIVERS_LICENSE
   - NATIONAL_ID
+  - RESIDENCE_PERMIT
   - PROOF_OF_ADDRESS
   - BANK_STATEMENT
   - TAX_RETURN
@@ -30,7 +31,7 @@ description: >-
   Type of identity or business verification document. Document types are
   grouped by verification category:
 
-  **Identity** — PASSPORT, DRIVERS_LICENSE, NATIONAL_ID
+  **Identity** — PASSPORT, DRIVERS_LICENSE, NATIONAL_ID, RESIDENCE_PERMIT
 
   **Business — Legal presence** — CERTIFICATE_OF_INCORPORATION,
   ARTICLES_OF_INCORPORATION, ARTICLES_OF_ASSOCIATION,

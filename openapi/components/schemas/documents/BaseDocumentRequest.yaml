@@ -19,8 +19,9 @@ properties:
     $ref: ./DocumentSide.yaml
     description: |
       Which side of the document this image shows. Required when
-      `documentType` is `DRIVERS_LICENSE` or `NATIONAL_ID`: upload the
-      `FRONT` and `BACK` as two separate documents. A `PASSPORT`, or a
+      `documentType` is `DRIVERS_LICENSE`, `NATIONAL_ID`, or
+      `RESIDENCE_PERMIT`: upload the `FRONT` and `BACK` as two separate
+      documents. A `PASSPORT`, or a
       `DRIVERS_LICENSE` issued in Brazil (`country` is `BR`), is a single
       image: sending `side` for either returns `400 INVALID_INPUT`. Optional
       for all other document types.
@@ -34,7 +35,7 @@ properties:
     description: |
       Identification number printed on the document, such as a passport
       number. Required when `documentType` is `PASSPORT`,
-      `DRIVERS_LICENSE`, or `NATIONAL_ID`.
+      `DRIVERS_LICENSE`, `NATIONAL_ID`, or `RESIDENCE_PERMIT`.
     example: A12345678
   issuingAuthority:
     type: string
@@ -42,5 +43,5 @@ properties:
     description: |
       Name of the government agency or organization that issued the
       document. Required when `documentType` is `PASSPORT`,
-      `DRIVERS_LICENSE`, or `NATIONAL_ID`.
+      `DRIVERS_LICENSE`, `NATIONAL_ID`, or `RESIDENCE_PERMIT`.
     example: U.S. Department of State
