@@ -65,6 +65,5 @@ properties:
     type: boolean
     description: >-
       Whether Grid is currently paying out on this corridor. False while the
-      corridor is paused, including during scheduled maintenance. A quote for
-      an unavailable corridor fails with `503 CORRIDOR_UNAVAILABLE`.
+      corridor is paused, including during scheduled maintenance.
     example: true
