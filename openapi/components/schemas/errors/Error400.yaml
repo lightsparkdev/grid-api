@@ -8,7 +8,7 @@ properties:
     description: |
       | Error Code | Description |
       |------------|-------------|
-      | INVALID_INPUT | Invalid input provided. When a card cannot be issued because the customer record lacks fields, `details.refusalReason` is `CARDHOLDER_INFO_MISSING` and `details.missingFields` lists them |
+      | INVALID_INPUT | Invalid input provided. When Grid knows the cause, `details.refusalReason` names it. When a card cannot be issued because the customer record lacks fields, it is `CARDHOLDER_INFO_MISSING` and `details.missingFields` lists them |
       | END_USER_TERMS_VERSION_NOT_FOUND | The submitted version is not supported for the agreement it was sent for |
       | MISSING_MANDATORY_USER_INFO | Required customer information is missing |
       | INVITATION_ALREADY_CLAIMED | Invitation has already been claimed |

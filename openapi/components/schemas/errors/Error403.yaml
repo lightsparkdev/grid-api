@@ -49,6 +49,7 @@ properties:
       policyDenialReason:
         $ref: ../agents/AgentPolicyDenialReason.yaml
         description: >-
-          The policy rule that denied the quote. Present with refusal reason
-          `AGENT_POLICY_DENIED`.
+          The policy rule that denied the quote or purchase card. Present with
+          refusal reason `AGENT_POLICY_DENIED` or
+          `AGENT_PURCHASE_CARD_POLICY_DENIED`.
     additionalProperties: true

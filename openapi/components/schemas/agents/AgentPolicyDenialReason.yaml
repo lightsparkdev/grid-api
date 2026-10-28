@@ -1,8 +1,9 @@
 type: string
 description: |
-  Which agent policy rule denied executing a quote. Sent as
-  `details.policyDenialReason` with refusal reason `AGENT_POLICY_DENIED`. Treat
-  it as an open set, not a fixed list: Grid may add values.
+  Which agent policy rule denied executing a quote or issuing a purchase card.
+  Sent as `details.policyDenialReason` with refusal reason
+  `AGENT_POLICY_DENIED` or `AGENT_PURCHASE_CARD_POLICY_DENIED`. Treat it as an
+  open set, not a fixed list: Grid may add values.
 
   | Reason | Description |
   |--------|-------------|
