@@ -28,9 +28,11 @@ properties:
     type: string
     description: >-
       Currency code the account is denominated in. Rule-based accounts are
-      currently available in `USD` and `USDC`. A `USD` account is issued its
-      own bank account number; a `USDC` account is issued its own deposit
-      address on each network your platform supports.
+      currently available in `USD`, `USDC`, and `USDT`. A `USD` account is
+      issued its own bank account number; a `USDC` or `USDT` account is issued
+      its own deposit address on each network your platform supports. A `USDT`
+      account can only sweep to a `USD` account or to the account holder's own
+      `USDT` internal account.
     example: USD
   onBehalfOfCustomerId:
     type: string
