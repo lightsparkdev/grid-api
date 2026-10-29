@@ -10,6 +10,16 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## Sandbox no longer accepts placeholder signatures
+
+The sandbox placeholders `Grid-Wallet-Signature: sandbox-valid-signature` and the passkey
+assertion signature `sandbox-valid-passkey-signature`, deprecated earlier this month, are
+no longer accepted. Sandbox rejects each as a malformed stamp or assertion with `401
+UNAUTHORIZED`, as production always has. Send a real API-key stamp over `payloadToSign`
+on every signed action and the real WebAuthn assertion on passkey verify. See
+[Sign a `payloadToSign`](/global-accounts/client-keys#2-sign-a-payloadtosign) and
+[sandbox testing](/global-accounts/platform-tools/sandbox-testing).
+
 ## ACH `railDetails.returnCode` and `returnCategory`
 
 A returned ACH entry's `railDetails` now carries `returnCode`, the NACHA return reason

@@ -89,9 +89,9 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMet
   }'
 ```
 
-<Warning>
-  **Deprecated:** the placeholder assertion signature `sandbox-valid-passkey-signature`. Sandbox still accepts it in place of a real WebAuthn assertion for now, but it will be removed. Send the real assertion that `navigator.credentials.get()` returns for the registered passkey, as shown above. Sandbox verifies it the way production does.
-</Warning>
+<Note>
+  The placeholder assertion signature `sandbox-valid-passkey-signature` is no longer accepted. Send the real assertion that `navigator.credentials.get()` returns for the registered passkey, as shown above. Sandbox verifies it the way production does.
+</Note>
 
 ### OAuth (OIDC) token
 
@@ -176,6 +176,6 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/exec
 
 Sandbox validates that the signature is a P-256 signature over the exact pending Grid payload and that the public key belongs to an active sandbox session for the wallet.
 
-<Warning>
-  **Deprecated:** the placeholder `Grid-Wallet-Signature: sandbox-valid-signature`. Sandbox still accepts it in place of a real stamp for now, but it will be removed. Send a real API-key stamp over `payloadToSign`, signed with the session signing key, as shown above. It works in sandbox exactly as in production. See [Sign a `payloadToSign`](/global-accounts/client-keys#2-sign-a-payloadtosign).
-</Warning>
+<Note>
+  The placeholder `Grid-Wallet-Signature: sandbox-valid-signature` is no longer accepted; sandbox rejects it as a malformed stamp. Send a real API-key stamp over `payloadToSign`, signed with the session signing key, as shown above. It works in sandbox exactly as in production. See [Sign a `payloadToSign`](/global-accounts/client-keys#2-sign-a-payloadtosign).
+</Note>

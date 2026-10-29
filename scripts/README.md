@@ -294,9 +294,8 @@ g -X POST -H 'Content-Type: application/json' \
 > as production does: a real API-key stamp over `payloadToSign`, signed with
 > the session signing key, as built above.
 >
-> **Deprecated:** the placeholder `Grid-Wallet-Signature: sandbox-valid-signature`.
-> Sandbox still accepts it in place of a real stamp for now, but it will be
-> removed. See
+> The placeholder `Grid-Wallet-Signature: sandbox-valid-signature` is no
+> longer accepted. See
 > [Sign a `payloadToSign`](../mintlify/snippets/global-accounts/client-keys.mdx#2-sign-a-payloadtosign).
 
 ```bash

@@ -278,7 +278,7 @@ Stamp the exact UTF-8 bytes of the `payloadToSign` string **as returned** (do no
 Pass that full stamp as the `Grid-Wallet-Signature` header on the retry (and, for endpoints that use it, echo the 202 `requestId` as `Request-Id`).
 
 <Note>
-  Sign with real stamps in sandbox too. Sandbox verifies them exactly as production does. OTP verification requires a stamp over the returned `payloadToSign` with the TEK private key. **Deprecated:** the placeholder `Grid-Wallet-Signature: sandbox-valid-signature`, which some other signed wallet actions still accept in sandbox in place of a real stamp. It will be removed, so send a real stamp on every signed action.
+  Sign with real stamps in sandbox too. Sandbox verifies them exactly as production does. OTP verification requires a stamp over the returned `payloadToSign` with the TEK private key. The placeholder `Grid-Wallet-Signature: sandbox-valid-signature` is no longer accepted on any signed action; sandbox rejects it as a malformed stamp.
 </Note>
 
 <CodeGroup>
