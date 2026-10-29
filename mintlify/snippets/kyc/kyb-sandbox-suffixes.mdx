@@ -1,19 +1,18 @@
-Business customers are always created with `kybStatus: UNVERIFIED`. The **last 3 characters** of `businessInfo.registrationNumber` decide what happens when the business is verified — whether you submit with `POST /verifications` or send the business through a hosted KYB link:
+The **last 3 characters** of `businessInfo.registrationNumber` decide the business's `kybStatus`. The same suffix applies whether you submit with `POST /verifications` or the applicant completes the hosted flow. When that outcome applies depends on your platform:
 
-| Suffix | Outcome |
-|--------|---------|
-| **003** | No auto-decision. Document and UBO verification run for real — the hosted flow asks for company documents and beneficial owners, and `POST /verifications` applies normal validation (`RESOLVE_ERRORS` until the data is complete). **Use this to test the link flow.** |
-| **001** | Same as `003` — no auto-decision, normal validation applies |
-| **002** | `kybStatus: REJECTED` (`verificationStatus: REJECTED`). Data and document validation is skipped only on a regulated platform or with **Skip verification paperwork** on; by default the packet is validated first |
-| **Any other** | `kybStatus: APPROVED` (`verificationStatus: APPROVED`). Data and document validation is skipped only on a regulated platform or with **Skip verification paperwork** on; by default the packet is validated first |
+- **Regulated platforms** — the business is `APPROVED` at creation. The suffix is not read, and **Skip verification paperwork** does not apply.
+- **Unregulated platforms** (the default, with **Skip verification paperwork** off) — the business is created `UNVERIFIED` and stays there until you submit with `POST /verifications`. The packet is validated first. An incomplete submission returns `RESOLVE_ERRORS` whatever the suffix; the suffix decides the result once the submission is complete.
+- **Unregulated platforms with Skip verification paperwork** turned on in the sandbox dashboard's Configuration — the suffix resolves the business at creation. No documents, beneficial owners, or `POST /verifications` call are needed. Creation emits the matching `CUSTOMER.KYB_*` webhook only; it creates no verification and emits no `VERIFICATION.*` event. Before the first `POST /verifications`, a `PATCH` that changes `registrationNumber` re-derives the status from the new suffix while the business is not final. On `POST /verifications`, the suffix is read before the packet check.
 
-Business customers never resolve at creation — the outcome lands on the first verification submission, whether you make it with `POST /verifications` or the applicant completes the hosted flow. What happens on that submission depends on your platform:
+| Suffix | Resolved `kybStatus` | Behavior on `POST /verifications` |
+|--------|----------------------|-----------------------------------|
+| **001** | `PENDING` | With a complete packet: `verificationStatus: IN_PROGRESS`, `kybStatus: PENDING`, and every beneficial owner `PENDING` — simulates a business waiting on review |
+| **002** | `REJECTED` | Returns `400` once resolved — the business is terminally rejected |
+| **003** | `UNVERIFIED` | `verificationStatus: RESOLVE_ERRORS` with a `POOR_QUALITY_DOCUMENT` error — simulates a correctable provider rejection. Change the suffix and resubmit to reach a final outcome |
+| **Any other** | `APPROVED` | Returns `400` once resolved — the business is approved |
 
-- **Unregulated platforms** (the default, with **Skip verification paperwork** off) — the packet is validated first. A business with incomplete data returns `RESOLVE_ERRORS` whatever its suffix, and the suffix resolves only once the submission is complete.
-- **Regulated platforms**, and unregulated platforms with **Skip verification paperwork** on — a final suffix (`002` or any non-`001`/`003` value) resolves before the packet is validated, so it lands even on an incomplete submission. `001` and `003` still require a complete packet.
+Once a business customer reaches `APPROVED` or `REJECTED`, that status is final: further `POST /verifications` calls return `400`, and changing `registrationNumber` does not re-derive it. Create a new business customer when you want to exercise a different outcome.
 
 <Warning>
-Where a final suffix resolves without packet validation — a regulated platform, or **Skip verification paperwork** on — a registration number that doesn't end in `001`, `002`, or `003` is **auto-approved at its first submission**. The hosted flow then has nothing left to verify, so it asks for no documents and no beneficial owners — which looks exactly like a broken KYB flow but isn't. Always use a `003` suffix when you want to exercise document and UBO collection.
+With **Skip verification paperwork** on, a registration number that doesn't end in `001`, `002`, or `003` is **approved at creation**. The hosted flow then has nothing left to verify, so it asks for no documents and no beneficial owners — which looks exactly like a broken KYB flow but isn't. Always use a `003` suffix when you want to exercise document and UBO collection with the switch on.
 </Warning>
-
-Once a business customer is approved or rejected, further `POST /verifications` calls return `400`.

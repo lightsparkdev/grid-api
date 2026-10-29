@@ -2,12 +2,15 @@ import KybSandboxSuffixes from '/snippets/kyc/kyb-sandbox-suffixes.mdx'
 
 In sandbox, you can trigger specific KYC/KYB verification outcomes using magic suffixes in customer and beneficial owner fields. These let you test different verification flows without waiting for real review.
 
+On `POST /verifications`, the first submission emits `VERIFICATION.IN_PROGRESS` and then one `VERIFICATION.<STATUS>` event for the outcome. A later submission emits one `VERIFICATION.<STATUS>` event when its status or `errors` change. The matching `CUSTOMER.KYC_*` or `CUSTOMER.KYB_*` event fires when `kycStatus` or `kybStatus` changes.
+
 ### Individual customer verification (KYC)
 
 The **last 3 characters** of the `fullName` on `POST /customers` (with `customerType: INDIVIDUAL`) decide the customer's `kycStatus`. When that outcome applies depends on your platform:
 
 - **Unregulated platforms** (the default, with **Skip verification paperwork** off) — the customer is created `UNVERIFIED` and stays there until you submit with `POST /verifications`. An incomplete submission returns `RESOLVE_ERRORS`; the suffix decides the result once the submission is complete.
-- **Regulated platforms**, and unregulated platforms with **Skip verification paperwork** turned on in the sandbox dashboard's Configuration — the suffix resolves the customer at creation, with no documents required. `002` and any value other than `001`/`003` are terminal there. `001` and `003` land at `PENDING` and `UNVERIFIED`, which you can still submit for verification — and that submission carries the full data and document requirements below.
+- **Unregulated platforms with Skip verification paperwork** turned on in the sandbox dashboard's Configuration — the suffix resolves the customer at creation, with no documents required. Creation emits the matching `CUSTOMER.KYC_*` webhook only; it creates no verification and emits no `VERIFICATION.*` event. `002` and any value other than `001`/`003` are terminal there. `001` and `003` land at `PENDING` and `UNVERIFIED`, which you can still submit for verification — and that submission carries the full data and document requirements below. Before the first `POST /verifications`, a `PATCH` that changes `fullName` re-derives the status from the new suffix while the customer is not final.
+- **Regulated platforms** — the customer is `APPROVED` at creation. The suffix is not read, and **Skip verification paperwork** does not apply.
 
 | Suffix | Resolved `kycStatus` | Behavior on `POST /verifications` |
 |--------|----------------------|-----------------------------------|
@@ -18,9 +21,9 @@ The **last 3 characters** of the `fullName` on `POST /customers` (with `customer
 
 Once a customer reaches `APPROVED` or `REJECTED`, that status is final: further `POST /verifications` calls return `400`, and renaming the customer does not re-derive it. Create a new customer when you want to exercise a different outcome.
 
-Where the suffix resolves at creation, only `001` and `003` customers can be submitted for verification. Use any non-suffixed name to mint ready-to-transact approved customers, and a `001` name to exercise the full submission flow.
+With **Skip verification paperwork** on, only `001` and `003` customers can be submitted for verification. Use any non-suffixed name to mint ready-to-transact approved customers, and a `001` name to exercise the full submission flow.
 
-Where a submission is required — the default unregulated path, and `001`/`003` on any path — it carries the same data requirements as production: full name, birth date, nationality, `idType` + `identifier`, address, and an identity document uploaded via `POST /documents`. Anything missing comes back as `verificationStatus: RESOLVE_ERRORS` with one entry per problem in `errors`:
+Where a submission is required — the default unregulated path, and `001`/`003` with the switch on — it carries the same data requirements as production: full name, birth date, nationality, `idType` + `identifier`, address, and an identity document uploaded via `POST /documents`. Anything missing comes back as `verificationStatus: RESOLVE_ERRORS` with one entry per problem in `errors`:
 
 ```json
 {
@@ -42,11 +45,11 @@ Where a submission is required — the default unregulated path, and `001`/`003`
 }
 ```
 
-Fix-and-resubmit example — the standard integration loop on the default unregulated path, with **Skip verification paperwork** off. A `001` suffix behaves the same way where the suffix resolves at creation, since `001` and `003` always require a complete packet; a terminal suffix on that path resolves without one, and `POST /verifications` then returns `400`.
+Fix-and-resubmit example — the standard integration loop on the default unregulated path, with **Skip verification paperwork** off. A `001` suffix behaves the same way with **Skip verification paperwork** on, since `001` and `003` always require a complete packet; a terminal suffix on that path resolves at creation, and `POST /verifications` then returns `400`.
 
 <Steps>
 <Step title="Create a customer with a 001 suffix">
-  A `fullName` ending in `001` leaves the customer submittable rather than resolving it terminally — `UNVERIFIED` on an unregulated platform, `PENDING` where the suffix resolves at creation. Persist the returned `id` for the following steps.
+  A `fullName` ending in `001` leaves the customer submittable rather than resolving it terminally — `UNVERIFIED` on an unregulated platform, `PENDING` with **Skip verification paperwork** on. Persist the returned `id` for the following steps.
 
   ```bash
   curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
@@ -113,14 +116,17 @@ Fix-and-resubmit example — the standard integration loop on the default unregu
 
 <KybSandboxSuffixes />
 
-For direct API onboarding, `001` and `003` both require complete business information, business documents, and at least one beneficial owner before `POST /verifications` moves past `RESOLVE_ERRORS`. On an unregulated platform every suffix goes through that check first, so an incomplete `002` business reports its missing data before it rejects. For the hosted flow, see [Configuring customers](/payouts-and-b2b/onboarding/configuring-customers#hosted-kyc-and-kyb-link-flow).
+For direct API onboarding with **Skip verification paperwork** off, every suffix requires complete business information, business documents, and at least one beneficial owner before `POST /verifications` moves past `RESOLVE_ERRORS` — an incomplete `002` business reports its missing data before it rejects. With the switch on, `POST /verifications` reads the suffix before the packet check: a `003` business returns `RESOLVE_ERRORS` with a `POOR_QUALITY_DOCUMENT` error with no packet, and a `001` business still needs the complete packet before `POST /verifications` moves past `RESOLVE_ERRORS`. For the hosted flow, see [Configuring customers](/payouts-and-b2b/onboarding/configuring-customers#hosted-kyc-and-kyb-link-flow).
 
 ### Beneficial owner KYC
 
-When a business customer resolves terminally through its registration-number suffix, each of its beneficial owners is resolved at the same moment using the **last 3 characters** of the `lastName` in that owner's `personalInfo`:
+When `POST /verifications` resolves a business from its registration-number suffix, each of its beneficial owners is resolved at the same moment using the **last 3 characters** of the `lastName` in that owner's `personalInfo`:
 
 | Suffix | `kycStatus` | Behavior |
 |--------|------------|----------|
 | **001** | `PENDING` | KYC verification remains pending |
-| **002** | `REJECTED` | KYC verification is rejected |
+| **002** | `REJECTED` | KYC verification is rejected, and the business is `REJECTED` with it |
+| **003** | `UNVERIFIED` | KYC verification can be retried |
 | **Any other** | `APPROVED` | KYC verification is approved |
+
+A `001` registration number does not read owner suffixes: the business and every owner go to `PENDING`. On a `003` business, owners with an approving suffix keep their current status until the business reaches a final outcome. With **Skip verification paperwork** on, a business with a final suffix resolves at creation before any owner exists, so use a `003` registration number when you want to test owners.
