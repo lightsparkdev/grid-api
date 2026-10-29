@@ -1,3 +1,4 @@
+title: Cross-Currency Transaction Fee Config
 allOf:
   - $ref: ./FeeConfig.yaml
   - type: object
@@ -8,8 +9,9 @@ allOf:
       sourceCurrency:
         type: string
         description: >-
-          Currency code of the sending side this fee applies to. Only `USD` is
-          accepted today; other currencies return a `NOT_IMPLEMENTED` error.
+          Currency code of the sending side this fee applies to. `USD` and
+          crypto currencies such as `USDC` and `USDT` are accepted; other fiat
+          currencies return a `NOT_IMPLEMENTED` error.
         example: USD
     required:
       - sourceCurrency
