@@ -32,15 +32,7 @@ properties:
   address:
     $ref: ./Address.yaml
   documentType:
-    type: string
-    maxLength: 32
-    description: Identity document type (Colombia)
-    enum:
-    - CC
-    - CE
-    - TI
-    - NIT
-    - PP
+    $ref: ./CopDocumentType.yaml
   documentNumber:
     type: string
     maxLength: 50
