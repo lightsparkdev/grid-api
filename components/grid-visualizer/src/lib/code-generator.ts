@@ -104,12 +104,6 @@ export function generateSteps(
   const destIsExternal = !destIsInternal;
   const sourceIsExternal = !sourceIsInternal;
 
-  const canUseTransferOut =
-    isSameCurrency && sourceIsInternal && destIsExternal && !jitFunding;
-  const canUseTransferIn =
-    isSameCurrency && sourceIsExternal && destIsInternal && !jitFunding;
-  const needsQuote = !canUseTransferOut && !canUseTransferIn;
-
   // Step 1: Create customer (always)
   steps.push({
     step: stepNum++,
@@ -129,7 +123,6 @@ export function generateSteps(
 
   // Register external accounts as needed
   if (destIsExternal) {
-    const spec = accountTypeSpecs[destination.accountType];
     const accountInfo = buildAccountInfoBody(destination);
     const extAccountBody: Record<string, unknown> = {
       customerId: 'Customer:<customer_id>',
@@ -151,7 +144,6 @@ export function generateSteps(
   // Only register source for fiat pull-based (External mode).
   // JIT and crypto sources don't need registration — Grid provides a deposit address.
   if (sourceIsExternal && !jitFunding && source.type === 'fiat') {
-    const spec = accountTypeSpecs[source.accountType];
     const accountInfo = buildAccountInfoBody(source);
     const extAccountBody: Record<string, unknown> = {
       customerId: 'Customer:<customer_id>',
@@ -170,67 +162,8 @@ export function generateSteps(
     });
   }
 
-  // Transfer-out: same currency, internal → external, pre-funded
-  if (canUseTransferOut) {
-    steps.push({
-      step: stepNum++,
-      title: 'List internal accounts',
-      description: `${source.code} internal accounts`,
-      method: 'GET',
-      endpoint: `${BASE_URL}/platform/internal-accounts?currency=${source.code}`,
-      headers: { Authorization: AUTH_HEADER },
-      note: `Ensure the internal account has sufficient ${source.code} balance before transferring.`,
-    });
-
-    steps.push({
-      step: stepNum++,
-      title: 'Transfer out',
-      description: `Send ${source.code} to destination`,
-      method: 'POST',
-      endpoint: `${BASE_URL}/transfer-out`,
-      headers,
-      body: {
-        source: {
-          accountId: 'InternalAccount:<internal_account_id>',
-        },
-        destination: {
-          accountId: 'ExternalAccount:<external_account_id>',
-        },
-        amount: 100,
-        remittanceInformation: 'INV-12345',
-      },
-      note: `Amount is in the smallest unit of ${source.code} (e.g., cents for USD). The remittanceInformation field (max 80 chars) is optional — it carries a reference that travels with the payment to the recipient.`,
-    });
-
-    return steps;
-  }
-
-  // Transfer-in: same currency, external → internal
-  if (canUseTransferIn) {
-    steps.push({
-      step: stepNum++,
-      title: 'Transfer in',
-      description: `Pull ${source.code} from source`,
-      method: 'POST',
-      endpoint: `${BASE_URL}/transfer-in`,
-      headers,
-      body: {
-        source: {
-          accountId: 'ExternalAccount:<external_account_id>',
-        },
-        destination: {
-          accountId: 'InternalAccount:<internal_account_id>',
-        },
-        amount: 100,
-      },
-      note: `Transfer-in pulls funds from the external source. Only available for pull-capable payment methods (e.g., ACH Pull). Amount is in smallest currency unit.`,
-    });
-
-    return steps;
-  }
-
-  // Quote path: cross-currency, JIT, or other combinations
-  if (needsQuote) {
+  // All transfers go through the quote endpoint
+  {
     if (sourceIsInternal && !jitFunding) {
       steps.push({
         step: stepNum++,
@@ -283,6 +216,10 @@ export function generateSteps(
       };
     }
 
+    // For same-currency, non-JIT transfers, use immediatelyExecute to combine
+    // quote creation and execution in a single request.
+    const useImmediateExecute = isSameCurrency && !jitFunding;
+
     const quoteBody: Record<string, unknown> = {
       source: quoteSource,
       destination: quoteDest,
@@ -291,21 +228,32 @@ export function generateSteps(
       purposeOfPayment: 'GIFT',
     };
 
+    if (useImmediateExecute) {
+      quoteBody.immediatelyExecute = true;
+    }
+
     const quoteDesc = isSameCurrency
       ? `${source.code} transfer`
       : `${source.code} \u2192 ${destination.code} conversion`;
 
+    let quoteNote: string;
+    if (jitFunding) {
+      quoteNote = `The response includes paymentInstructions with details for real-time funding. Send ${source.code} to the provided destination to complete the transfer automatically.`;
+    } else if (useImmediateExecute) {
+      quoteNote = `With immediatelyExecute: true, the quote is created and executed in a single request. Amount is in smallest currency unit (e.g., cents for USD).`;
+    } else {
+      quoteNote = `lockedCurrencyAmount is in the smallest unit (e.g., cents). The quote locks the exchange rate for a short window.`;
+    }
+
     steps.push({
       step: stepNum++,
-      title: 'Create quote',
+      title: useImmediateExecute ? 'Create and execute transfer' : 'Create quote',
       description: quoteDesc,
       method: 'POST',
       endpoint: `${BASE_URL}/quotes`,
       headers,
       body: quoteBody,
-      note: jitFunding
-        ? `The response includes paymentInstructions with details for real-time funding. Send ${source.code} to the provided destination to complete the transfer automatically.`
-        : `lockedCurrencyAmount is in the smallest unit (e.g., cents). The quote locks the exchange rate for a short window.`,
+      note: quoteNote,
     });
 
     if (jitFunding) {
@@ -320,7 +268,7 @@ export function generateSteps(
         isInstructional: true,
         note: `Trigger the payment by sending a ${paymentMethod} to the deposit address listed on the quote's \`paymentInstructions\`.`,
       });
-    } else {
+    } else if (!useImmediateExecute) {
       steps.push({
         step: stepNum++,
         title: 'Execute quote',
