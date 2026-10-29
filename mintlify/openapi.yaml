@@ -2376,8 +2376,7 @@ paths:
         per supported network for a `USDC` or `USDT` account. Rule-based accounts
         are currently available in `USD`, `USDC`, and `USDT`, for a customer or
         for your platform itself. `USDC` and `USDT` rule-based accounts are enabled
-        per platform. A `USDT` account can only sweep to a `USD` account, internal
-        or external, or to the account holder's own `USDT` internal account.
+        per platform.
 
         Sandbox platforms can create rule-based accounts and exercise the whole
         flow. The account number is generated locally rather than issued by a
@@ -2470,7 +2469,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalAccount'
         '400':
-          description: Bad request. Returned when `type` is not `RULE_BASED`, when `sweepRule` is missing, when the currency is not supported for rule-based accounts, when the account holder has no account in that currency yet, when the destination cannot accept the requested payment rail, when a `USDT` account's destination is not one it can sweep to, and for general invalid parameters.
+          description: Bad request. Returned when `type` is not `RULE_BASED`, when `sweepRule` is missing, when the currency is not supported for rule-based accounts, when the account holder has no account in that currency yet, when the destination cannot accept the requested payment rail, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -19015,7 +19014,7 @@ components:
           example: RULE_BASED
         currency:
           type: string
-          description: Currency code the account is denominated in. Rule-based accounts are currently available in `USD`, `USDC`, and `USDT`. A `USD` account is issued its own bank account number; a `USDC` or `USDT` account is issued its own deposit address on each network your platform supports. A `USDT` account can only sweep to a `USD` account or to the account holder's own `USDT` internal account.
+          description: Currency code the account is denominated in. Rule-based accounts are currently available in `USD`, `USDC`, and `USDT`. A `USD` account is issued its own bank account number; a `USDC` or `USDT` account is issued its own deposit address on each network your platform supports.
           example: USD
         onBehalfOfCustomerId:
           type: string
