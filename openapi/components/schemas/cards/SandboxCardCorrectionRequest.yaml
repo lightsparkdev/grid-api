@@ -1,0 +1,34 @@
+type: object
+required:
+  - cardTransactionId
+  - amount
+  - direction
+description: >-
+  Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/correction`.
+  Posts a network correction against an existing settled `CardTransaction` — an
+  adjustment the card network makes to money it has already moved.
+properties:
+  cardTransactionId:
+    type: string
+    description: >-
+      The id of the settled `CardTransaction` to correct. Must have at least one
+      settled clearing.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+  amount:
+    type: integer
+    format: int64
+    description: >-
+      Correction amount in the smallest unit of the transaction's currency
+      (cents for USD). Must not exceed the transaction's settled amount.
+    exclusiveMinimum: 0
+    example: 250
+  direction:
+    type: string
+    enum:
+      - DEBIT
+      - CREDIT
+    description: >-
+      Which way the correction moves money. `DEBIT` takes further funds from the
+      cardholder and is permanent — nothing releases it. `CREDIT` returns funds
+      to the cardholder, the way a return does.
+    example: DEBIT
