@@ -221,6 +221,7 @@ work. See
 `CustomerExternalAccountCreateRequest`, in which `customerId` is required. Use
 `POST /platform/external-accounts` to create an external account owned by the
 platform itself.
+
 ## Same-day ACH is its own payment rail
 
 `ACH_SAME_DAY` joins `ACH` in `PaymentRail`. Pin it on a quote's destination to request
@@ -277,6 +278,7 @@ Three card-statement corrections to `CardTransaction`:
 - `GET /transactions` accepts a `cardId` filter (`Card:` LSID or UUID) for listing one
   card of a multi-card cardholder, and rejects `status` combined with `type=CARD` with a
   400—`status` applies to payment transactions only.
+
 ## Record consent for each agreement by type
 
 `agreementConsents` supersedes `endUserTermsConsent`: a list with one entry per agreement,
