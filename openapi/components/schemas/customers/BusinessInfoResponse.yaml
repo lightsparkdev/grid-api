@@ -2,7 +2,8 @@ type: object
 description: |
   Business information returned on a customer. `taxId` and `incorporatedOn` are
   required on creation only when the customer's currency uses direct
-  customer-owned accounts, so both are optional in responses.
+  customer-owned accounts or Grid performs KYB for the platform, so both are
+  optional in responses.
 required:
   - legalName
 properties:
