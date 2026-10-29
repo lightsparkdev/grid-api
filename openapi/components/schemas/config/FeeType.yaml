@@ -2,10 +2,14 @@ type: string
 enum:
   - CROSS_CURRENCY_TRANSACTION
   - RAIL
+  - DEBIT_CARD_FOREIGN_TRANSACTION
 description: |
   The kind of activity this fee applies to.
 
   - `CROSS_CURRENCY_TRANSACTION` — a fee charged on transactions where the sending
     currency differs from the receiving currency
   - `RAIL` — a fee charged on any transaction that uses the specified payment rail
+  - `DEBIT_CARD_FOREIGN_TRANSACTION` — a markup on the foreign transaction fee
+    charged on a card purchase whose merchant is outside the country the card
+    was issued in
 example: CROSS_CURRENCY_TRANSACTION

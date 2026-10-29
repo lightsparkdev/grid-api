@@ -1,0 +1,35 @@
+type: object
+properties:
+  feeType:
+    type: string
+    enum:
+      - DEBIT_CARD_FOREIGN_TRANSACTION
+    description: The fee type this config sets.
+    example: DEBIT_CARD_FOREIGN_TRANSACTION
+  sourceCurrency:
+    type: string
+    description: >-
+      Currency code of the card's funding. Only `USD` is accepted.
+    example: USD
+  variableFeeBps:
+    type: integer
+    minimum: 0
+    maximum: 10000
+    description: >-
+      Markup in basis points (1 bps = 0.01%) of a foreign purchase's cleared
+      amount. `0` removes the markup.
+    example: 100
+required:
+  - feeType
+  - sourceCurrency
+  - variableFeeBps
+description: >-
+  Your markup on the foreign transaction fee charged on a card purchase whose
+  merchant is outside the country the card was issued in. It is charged to
+  the cardholder on top of Grid's own foreign transaction fee, priced on the
+  cleared amount, and paid to your platform's USD internal account when the
+  purchase settles. Every foreign return refunds it to the cardholder. Grid
+  fronts that refund and bills it to you in arrears on your monthly Grid
+  invoice. There is at most one per source currency, and it has no fixed
+  fee. Your platform must hold a USD platform internal account at Lead Bank
+  to set one.

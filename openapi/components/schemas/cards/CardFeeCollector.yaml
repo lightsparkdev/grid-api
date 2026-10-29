@@ -1,0 +1,11 @@
+type: string
+enum:
+  - GRID
+  - PLATFORM
+description: |
+  Who collects a card transaction fee.
+
+  - `GRID` — Grid's fee
+  - `PLATFORM` — your platform's markup, paid to your platform's USD internal
+    account
+example: GRID

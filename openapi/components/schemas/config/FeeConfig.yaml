@@ -1,6 +1,6 @@
 type: object
 description: >-
-  A platform-configured fee collected by Grid and settled to the platform internal account. These fields are shared by every platform fee config.
+  A platform-configured fee collected by Grid and settled to the platform internal account. These fields are shared by the cross-currency and rail fee configs.
 properties:
   feeType:
     $ref: ./FeeType.yaml
