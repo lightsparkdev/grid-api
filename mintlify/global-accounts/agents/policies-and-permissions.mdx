@@ -40,6 +40,10 @@ Grid exposes explicit allowlists instead of broad agent access. Available permis
 | `CREATE_QUOTES` | Create quotes |
 | `EXECUTE_QUOTES` | Execute quotes |
 | `MANAGE_EXTERNAL_ACCOUNTS` | Create and manage external accounts |
+| `RECEIVE_FUNDS` | Create deposit targets for receiving funds |
+| `MANAGE_IDENTITY` | Read and update customer identity information and start verification |
+| `MANAGE_CARDS` | Read, tighten, and freeze the agent's cards |
+| `ISSUE_CARDS` | Issue a standard virtual card for the agent, and single-use purchase cards where the platform enables them |
 
 These permissions are intentionally narrow and map to concrete Grid-backed actions rather than broad scopes such as "manage wallet."
 

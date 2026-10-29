@@ -10,6 +10,13 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## SWIFT `railDetails` with `uetr`
+
+SWIFT payouts now carry `railDetails` with `paymentRail: "SWIFT"` and a `uetr` field: the
+Unique End-to-end Transaction Reference that identifies the wire across correspondent
+banks. Give the UETR to the beneficiary's bank when they need to trace the payment. The
+`uetr` is present once the wire is submitted to the SWIFT network.
+
 ## ACH `railDetails.returnCode` and `returnCategory`
 
 A returned ACH entry's `railDetails` now carries `returnCode`, the NACHA return reason
@@ -156,6 +163,7 @@ details.
 | `WIRE` | `WireRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `imad`, `originatorToBeneficiaryInformation` |
 | `FEDNOW` | `FedNowRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `endToEndId`, `remittanceInformation` |
 | `RTP` | `RtpRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `endToEndId`, `remittanceInformation` |
+| `SWIFT` | `SwiftRailDetails` | `PENDING`, `SETTLED`, `FAILED` | `uetr` |
 
 `railDetails.status` reports the transfer on its rail; the transaction's top-level
 `status` reports where the funds are now, and its webhook events are unchanged. A returned
@@ -175,8 +183,8 @@ is deprecated: a refund is reported on the transaction's `refund` object.
 The flat originator fields on the external funding source (`accountHolderName`, `accountIdentifier`,
 `bankName`, `bankIdentifier`, `paymentRail`, `remittanceInformation`, `endToEndId`,
 `traceNumber`) are deprecated, as is `onChainTransaction`. They remain populated alongside
-`railDetails`, and on rails without a `railDetails` variant, such as SWIFT, they are the only
-source of the originator's details.
+`railDetails`, and on rails without a `railDetails` variant they are the only source of the
+originator's details.
 
 </Update>
 
