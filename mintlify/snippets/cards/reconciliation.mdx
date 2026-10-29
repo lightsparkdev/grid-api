@@ -143,10 +143,10 @@ A merchant return refunds the fees on the returned amount. The return's
 `CREDIT` row lists each fee at its rate applied to that credit's amount, and
 each `amount` is what goes back to the cardholder. A full return of the
 purchase above refunds the full $0.50 and $1.00, and a $40.00 partial return
-refunds $0.20 and $0.40. Grid recovers the markup refund from your platform's
-USD internal account. Every foreign return refunds and recovers the markup,
-whether or not the purchase it returns is known, because the network rarely
-links a return to its purchase.
+refunds $0.20 and $0.40. Grid fronts the markup refund and bills the return's
+`PLATFORM` amount to your platform in arrears on its monthly Grid invoice.
+Every foreign return refunds the markup, whether or not the purchase it returns
+is known, because the network rarely links a return to its purchase.
 
 ## The EXCEPTION path
 

@@ -102,8 +102,9 @@ properties:
       its rate applied to that credit's amount and is what was returned to
       the cardholder. A full return refunds the full fee, and a partial
       return refunds it proportionally. Every foreign return refunds the
-      markup and recovers it from your platform's USD internal account,
-      whether or not the purchase it returns is known.
+      markup, whether or not the purchase it returns is known. Grid fronts
+      that refund and bills it to your platform in arrears on its monthly
+      Grid invoice.
       The `CARD_TRANSACTION.SETTLED` delivery can precede the fee entries;
       read the transaction to get its fees.
     items:

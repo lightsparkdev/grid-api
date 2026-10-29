@@ -453,10 +453,10 @@ How the markup moves:
 </Steps>
 
 A foreign return refunds both fees to the cardholder at the rates in effect when the
-return settles, and Grid recovers your markup from your platform's USD internal account.
-The network rarely links a return to its purchase, so every foreign return does this
-whether or not the purchase it returns is known. Keep enough balance in that account to
-cover returns.
+return settles. Grid fronts the refund of your markup and bills it to you in arrears on
+your monthly Grid invoice; nothing is taken from your platform internal account. The
+network rarely links a return to its purchase, so every foreign return refunds your markup
+whether or not the purchase it returns is known.
 
 The card transaction's `fees` lists your markup as its own entry with
 `collector: PLATFORM`, beside Grid's fee with `collector: GRID`. See
