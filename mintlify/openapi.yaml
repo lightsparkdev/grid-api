@@ -2372,8 +2372,11 @@ paths:
         automatically when an account holder is created or approved.
 
         The response carries the account's own `fundingPaymentInstructions` — the
-        routable number payers send to. Rule-based accounts are currently available
-        in `USD`, for a customer or for your platform itself.
+        routable number payers send to for a `USD` account, or one deposit address
+        per supported network for a `USDC` or `USDT` account. Rule-based accounts
+        are currently available in `USD`, `USDC`, and `USDT`, for a customer or
+        for your platform itself. `USDC` and `USDT` rule-based accounts are enabled
+        per platform.
 
         Sandbox platforms can create rule-based accounts and exercise the whole
         flow. The account number is generated locally rather than issued by a
@@ -2428,6 +2431,16 @@ paths:
                   customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                   type: RULE_BASED
                   currency: USD
+                  label: payer-northwind
+                  sweepRule:
+                    destination:
+                      accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+              usdcDepositAddress:
+                summary: Issue USDC deposit addresses that sweep into a USD account
+                value:
+                  customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                  type: RULE_BASED
+                  currency: USDC
                   label: payer-northwind
                   sweepRule:
                     destination:
@@ -19001,7 +19014,7 @@ components:
           example: RULE_BASED
         currency:
           type: string
-          description: Currency code the account is denominated in (ISO 4217). Rule-based accounts are currently available in `USD` only.
+          description: Currency code the account is denominated in. Rule-based accounts are currently available in `USD`, `USDC`, and `USDT`. A `USD` account is issued its own bank account number; a `USDC` or `USDT` account is issued its own deposit address on each network your platform supports.
           example: USD
         onBehalfOfCustomerId:
           type: string

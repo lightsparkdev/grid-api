@@ -1,0 +1,165 @@
+---
+title: "Rule-Based Accounts"
+description: "Issue dedicated USD account numbers or USDC and USDT deposit addresses that forward every incoming payment to a destination you choose"
+icon: "/images/icons/arrow-path-right.svg"
+"og:image": "/images/og/og-payouts-b2b.png"
+---
+
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
+A rule-based account is an additional account number for an account holder, with a routing rule attached. Every payment that settles into it is attributed to that account and then swept to the rule's destination. Issue one account per payer, invoice, or use case, and you can reconcile incoming payments by the account they arrived at instead of matching on remittance text.
+
+Rule-based accounts never hold a balance. Funds that land in one are always moved on, either to the rule's destination or, if the sweep can't complete, to the account holder's own internal account in the same currency.
+
+## Supported currencies
+
+| Currency | What payers send to |
+|----------|---------------------|
+| `USD` | A dedicated US bank account and routing number |
+| `USDC` | A dedicated deposit address on each supported network for your platform (for example, Solana or Base) |
+| `USDT` | A dedicated deposit address on each supported network for your platform (for example, Tron or Ethereum) |
+
+## Prerequisites
+
+- The account holder already has an internal account in the same currency. Funds go there when a sweep can't be completed.
+- The account holder is verified. For a platform-owned account, your platform's own customer record must be verified.
+- The sweep destination exists. It can be an external account or another internal account, but not another rule-based account.
+
+## Create a rule-based account
+
+Call `POST /internal-accounts` with `type: RULE_BASED`, the currency, and a `sweepRule`. Omit `customerId` to create an account owned by your platform.
+
+<Tip>
+  Always send an `Idempotency-Key`. Each request issues a new account number or address that can't be reversed, so the key is what keeps a retry from creating a second one.
+</Tip>
+
+<Tabs>
+  <Tab title="USD">
+    Sweep every incoming dollar payment to the customer's external bank account over ACH:
+
+    ```bash
+    curl -X POST 'https://api.lightspark.com/grid/2025-10-13/internal-accounts' \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H 'Content-Type: application/json' \
+      -H 'Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000' \
+      -d '{
+        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+        "type": "RULE_BASED",
+        "currency": "USD",
+        "label": "invoice-4417",
+        "sweepRule": {
+          "destination": {
+            "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+            "paymentRail": "ACH"
+          },
+          "purposeOfPayment": "SELF",
+          "description": "Rent sweep",
+          "remittanceInformation": "Unit 4B March"
+        }
+      }'
+    ```
+  </Tab>
+  <Tab title="USDC">
+    Sweep every incoming USDC deposit to the customer's USD internal account. The sweep is converted at the prevailing rate:
+
+    ```bash
+    curl -X POST 'https://api.lightspark.com/grid/2025-10-13/internal-accounts' \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H 'Content-Type: application/json' \
+      -H 'Idempotency-Key: 7c9e6679-7425-40de-944b-e07fc1f90ae7' \
+      -d '{
+        "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+        "type": "RULE_BASED",
+        "currency": "USDC",
+        "label": "payer-northwind",
+        "sweepRule": {
+          "destination": {
+            "accountId": "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+          }
+        }
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+The response is the new internal account. Share its `fundingPaymentInstructions` with the payer: a bank account number for USD, or one wallet address per network for USDC and USDT. If the account's `status` is `PENDING`, wait for `ACTIVE` before sharing them.
+
+<Accordion title="USDC response">
+```json
+{
+  "id": "InternalAccount:3f1c9a2e-7b4d-4e8a-9c21-5d6e7f8a9b0c",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "type": "RULE_BASED",
+  "status": "ACTIVE",
+  "label": "payer-northwind",
+  "balance": {
+    "amount": 0,
+    "currency": { "code": "USDC", "name": "USD Coin", "symbol": "USDC", "decimals": 6 }
+  },
+  "totalBalance": {
+    "amount": 0,
+    "currency": { "code": "USDC", "name": "USD Coin", "symbol": "USDC", "decimals": 6 }
+  },
+  "fundingPaymentInstructions": [
+    {
+      "accountOrWalletInfo": {
+        "accountType": "SOLANA_WALLET",
+        "assetType": "USDC",
+        "address": "8Hq2vWkN5mJtXcR3pL7yBdF9sA4eG6uZ1oKiT2nV3wQx"
+      }
+    }
+  ],
+  "sweepRule": {
+    "destination": {
+      "accountId": "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+    }
+  },
+  "createdAt": "2026-10-27T12:00:00Z",
+  "updatedAt": "2026-10-27T12:00:00Z"
+}
+```
+</Accordion>
+
+## Configure the sweep rule
+
+| Field | Description |
+|-------|-------------|
+| `destination.accountId` | Where funds are swept. It can be in a different currency, in which case each sweep is converted at the prevailing rate. |
+| `destination.paymentRail` | The rail used for an external destination. Omit it to pick a rail automatically for each sweep. Not accepted for internal destinations. |
+| `purposeOfPayment` | Applied to each sweep. Some destination countries require it. |
+| `description` | Recorded on each sweep for your own records. Not sent to the recipient. |
+| `remittanceInformation` | Sent with each sweep to the recipient, for example in the ACH addenda or wire OBI. Printable ASCII only. |
+| `platformFeeOverride` | Fee terms for every sweep this rule drives. Omit it to use your platform's configured fees. |
+
+When you read the account, `sweepRule.minimumAmount` and `sweepRule.maximumAmount` show the range the route to the destination can carry, in the rule-based account's currency.
+
+## Track sweeps
+
+Each sweep appears as a transaction with `ruleBasedAccountId` set to the rule-based account that received the deposit. Its `source` describes the depositor when it's known.
+
+A sweep that can't be completed fails with one of these reasons, and the funds move to the account holder's own internal account in the same currency:
+
+- `SWEEP_AMOUNT_OUT_OF_RANGE`: The amount is below `minimumAmount` or above `maximumAmount`.
+- `SWEEP_QUOTE_FAILED`: Grid couldn't price the sweep.
+
+A sweep that was priced and then failed on the way to settlement reports `QUOTE_EXECUTION_FAILED`, the same as any other payment. Include it alongside the `SWEEP_*` reasons when you monitor for failed sweeps.
+
+To list an account holder's rule-based accounts, filter internal accounts with `type=RULE_BASED`.
+
+## Test in sandbox
+
+In sandbox, account numbers and addresses are generated locally. Call `POST /sandbox/internal-accounts/{accountId}/fund` on a rule-based account to simulate a settled deposit. It triggers the sweep exactly as a real deposit would. Fund a very small amount to test the `SWEEP_AMOUNT_OUT_OF_RANGE` path.
+
+## Next steps
+
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/wallet1.svg" title="Internal accounts" href="/payouts-and-b2b/depositing-funds/internal-accounts">
+    Learn about the accounts that receive failed sweeps
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bank.svg" title="External accounts" href="/payouts-and-b2b/depositing-funds/external-accounts">
+    Add the bank accounts and wallets that sweeps pay out to
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/code.svg" title="API Reference" href="/api-reference">
+    View complete API documentation for creating internal accounts
+  </FeatureCard>
+</FeatureCardGrid>
