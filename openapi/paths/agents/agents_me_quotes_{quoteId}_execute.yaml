@@ -16,8 +16,11 @@ post:
     If the agent's policy requires approval for this amount (based on execution mode
     or approval thresholds), the transaction will be created in a pending state and
     must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
-    The action expires when its quote expires. Approval after expiry fails the
-    action; Grid does not create a replacement quote.
+    The action expires when its quote expires, and approval after expiry fails the
+    action, unless the action has `priceTolerance`: it then waits for approval until
+    its own `expiresAt`, and approval quotes the send again (see
+    `POST /agents/{agentId}/actions/{actionId}/approve`). A retry with the first
+    quote's id still returns the action after approval replaced its quote.
 
     Once executed, the quote cannot be cancelled.
   operationId: agentExecuteQuote

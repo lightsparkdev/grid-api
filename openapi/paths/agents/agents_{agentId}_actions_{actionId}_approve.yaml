@@ -21,6 +21,16 @@ post:
     For `EXECUTE_QUOTE` actions, note that the underlying quote may have expired between
     submission and approval — in that case the action will transition to `FAILED` instead.
 
+    An `EXECUTE_QUOTE` action with `priceTolerance` is quoted again on approval, and
+    approval runs every check against the new quote and its amount. When the new
+    price is no worse for the customer than `priceTolerance` allows, Grid executes
+    the new quote and the action transitions to `APPROVED` with it as `quote`. When
+    it is worse by more, nothing is sent: the response is `200` with status still
+    `PENDING_APPROVAL`, the new `quote`, and `previousQuote` set to the quote the
+    customer was shown, so they can be asked again; approving again repeats the
+    check against the new quote. A send Grid can no longer quote fails with the
+    matching `failureReason`, and one past its `expiresAt` with `APPROVAL_EXPIRED`.
+
     For `ISSUE_PURCHASE_CARD` actions, approval issues the purchase card and the action
     carries its `cardId`. The card's limit is checked against the agent's policy again
     first; an action past its `expiresAt` fails with `APPROVAL_EXPIRED`, one the policy now
@@ -36,7 +46,10 @@ post:
     - BasicAuth: []
   responses:
     '200':
-      description: Action approved successfully. Returns the updated AgentAction.
+      description: >-
+        Action approved, or, for an action whose new quote moved past
+        `priceTolerance`, still `PENDING_APPROVAL` with `previousQuote` set.
+        Returns the updated AgentAction.
       content:
         application/json:
           schema:

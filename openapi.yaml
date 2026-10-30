@@ -8915,6 +8915,7 @@ paths:
       description: |
         Approve a pending agent action, allowing Grid to proceed with execution. The action must have status `PENDING_APPROVAL`. Once approved, Grid executes the underlying operation (quote execution or transfer) and the action transitions to `APPROVED`.
         For `EXECUTE_QUOTE` actions, note that the underlying quote may have expired between submission and approval — in that case the action will transition to `FAILED` instead.
+        An `EXECUTE_QUOTE` action with `priceTolerance` is quoted again on approval, and approval runs every check against the new quote and its amount. When the new price is no worse for the customer than `priceTolerance` allows, Grid executes the new quote and the action transitions to `APPROVED` with it as `quote`. When it is worse by more, nothing is sent: the response is `200` with status still `PENDING_APPROVAL`, the new `quote`, and `previousQuote` set to the quote the customer was shown, so they can be asked again; approving again repeats the check against the new quote. A send Grid can no longer quote fails with the matching `failureReason`, and one past its `expiresAt` with `APPROVAL_EXPIRED`.
         For `ISSUE_PURCHASE_CARD` actions, approval issues the purchase card and the action carries its `cardId`. The card's limit is checked against the agent's policy again first; an action past its `expiresAt` fails with `APPROVAL_EXPIRED`, one the policy now denies with `POLICY_DENIED`, a paused or deleted agent with `AGENT_INACTIVE`, and one the card issuer refuses with `EXECUTION_FAILED`.
         This endpoint is called by the platform's backend using platform credentials, not by the agent itself.
       operationId: approveAgentAction
@@ -8924,7 +8925,7 @@ paths:
         - BasicAuth: []
       responses:
         '200':
-          description: Action approved successfully. Returns the updated AgentAction.
+          description: Action approved, or, for an action whose new quote moved past `priceTolerance`, still `PENDING_APPROVAL` with `previousQuote` set. Returns the updated AgentAction.
           content:
             application/json:
               schema:
@@ -9460,7 +9461,7 @@ paths:
       summary: Execute a quote
       description: |
         Execute a quote created by the authenticated agent. Requires the EXECUTE_QUOTES permission in the agent's policy. When the source is an `EMBEDDED_WALLET`, Grid signs with the agent's active delegated key for that wallet.
-        If the agent's policy requires approval for this amount (based on execution mode or approval thresholds), the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`. The action expires when its quote expires. Approval after expiry fails the action; Grid does not create a replacement quote.
+        If the agent's policy requires approval for this amount (based on execution mode or approval thresholds), the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`. The action expires when its quote expires, and approval after expiry fails the action, unless the action has `priceTolerance`: it then waits for approval until its own `expiresAt`, and approval quotes the send again (see `POST /agents/{agentId}/actions/{actionId}/approve`). A retry with the first quote's id still returns the action after approval replaced its quote.
         Once executed, the quote cannot be cancelled.
       operationId: agentExecuteQuote
       tags:
@@ -30643,6 +30644,29 @@ components:
               $ref: '#/components/schemas/AgentLightningInvoiceDestination'
               description: The invoice this quote pays, when it was created with a `LIGHTNING_INVOICE` destination.
       description: A quote created by an agent. For a `CHAIN_ADDRESS` destination, the quote's `destination` names the external account Grid recorded for the address, and `destinationChainAddress` names the address itself. For a `LIGHTNING_INVOICE` destination, `destination` names the external account Grid recorded for the invoice, and `destinationLightningInvoice` names the invoice itself.
+    AgentApprovalPriceTolerance:
+      type: object
+      description: 'How far a send''s price may move against the customer before they approve it and Grid still sends it. Grid quotes the send again when it is approved. If the new quote is worse for the customer by more than the larger of `basisPoints` of the amount they were shown and `minimumAmount`, Grid does not send it: the action stays `PENDING_APPROVAL` with the new `quote`, and `previousQuote` names the one they were shown. A price that moved in the customer''s favor never asks again. For a quote that locks what the recipient receives, worse means the customer sends more, measured in the sending currency; for one that locks what the customer sends, it means the recipient receives less, measured in the receiving currency. `minimumAmount` is converted to that currency at the current rate.'
+      required:
+        - basisPoints
+        - minimumAmount
+        - currency
+      properties:
+        basisPoints:
+          type: integer
+          minimum: 0
+          description: The share of the amount shown, in basis points. 100 is 1%.
+          example: 100
+        minimumAmount:
+          type: integer
+          format: int64
+          minimum: 0
+          description: The least the price may move by, in the smallest unit of `currency`.
+          example: 100
+        currency:
+          type: string
+          description: ISO 4217 code of `minimumAmount`. Known values are `USD`.
+          example: USD
     AgentPurchaseCardDetails:
       type: object
       description: 'The purchase a `PURCHASE` card was requested for. The card''s issuer-enforced limit is `spendLimit`: the purchase amount plus an allowance for tax and shipping.'
@@ -30697,13 +30721,13 @@ components:
 
         | Reason | Description |
         |--------|-------------|
-        | `QUOTE_EXPIRED` | The action's quote expired before execution |
+        | `QUOTE_EXPIRED` | The action's quote expired before execution, or, for an action Grid quotes again on approval, Grid could no longer quote the send |
         | `POLICY_DENIED` | The agent policy no longer allowed the action |
         | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
         | `EXECUTION_FAILED` | Grid could not execute the approved action. For `ISSUE_PURCHASE_CARD`, the card issuer did not issue the card |
         | `PRICE_MOVED` | Reserved and legacy. Quotes to a `CHAIN_ADDRESS` pay out at a locked rate and no longer fail with this reason |
         | `ADDRESS_REFUSED` | Grid refused the send's destination before it signed the send: the destination is no longer one the agent may send to (for example, a Spark address removed from the customer's saved addresses), or one of the customer's records of the address was refused or is held for review. A `CHAIN_ADDRESS` that screening refuses fails with `EXECUTION_FAILED` |
-        | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD` action was not approved before its `expiresAt` |
+        | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD` action, or an `EXECUTE_QUOTE` action with `priceTolerance`, was not approved before its `expiresAt` |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -30742,6 +30766,13 @@ components:
           allOf:
             - $ref: '#/components/schemas/AgentQuote'
           description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user. Present for `EXECUTE_QUOTE`.
+        previousQuote:
+          allOf:
+            - $ref: '#/components/schemas/AgentQuote'
+          description: The quote the customer was shown before an approval found that the price had moved past `priceTolerance`. Present only while the action is `PENDING_APPROVAL` after such an approval; `quote` is then the new quote to show the customer, and approving it again repeats the check against it.
+        priceTolerance:
+          $ref: '#/components/schemas/AgentApprovalPriceTolerance'
+          description: 'Present on a `PENDING_APPROVAL` `EXECUTE_QUOTE` action that Grid quotes again when it is approved: how far the price may move against the customer before they are asked again. Absent when approval executes `quote` as it is.'
         purchaseCard:
           $ref: '#/components/schemas/AgentPurchaseCardDetails'
           description: The purchase card the agent asked for, so an approval decision can show its amount, limit, description and funding account. Present for `ISSUE_PURCHASE_CARD`.
@@ -30763,7 +30794,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: When the action expires. For `EXECUTE_QUOTE`, this is the quote's own expiry. A `PENDING_APPROVAL` action that reaches this time transitions to `FAILED` with `failureReason` `QUOTE_EXPIRED`; approval never creates a replacement quote. For `ISSUE_PURCHASE_CARD`, this is the end of the approval window, after which a pending action fails with `APPROVAL_EXPIRED`.
+          description: 'When the action expires. For an `EXECUTE_QUOTE` action with `priceTolerance`, this is the end of the platform''s approval window, independent of the quote''s own expiry: approval quotes the send again, and a pending action that reaches this time fails with `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the quote''s own expiry; a pending action that reaches it fails with `QUOTE_EXPIRED`, and approval never creates a replacement quote. For `ISSUE_PURCHASE_CARD`, this is the end of the approval window, after which a pending action fails with `APPROVAL_EXPIRED`.'
           example: '2025-10-03T15:05:00Z'
         createdAt:
           type: string

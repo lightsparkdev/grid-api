@@ -1,0 +1,33 @@
+type: object
+description: >-
+  How far a send's price may move against the customer before they approve it
+  and Grid still sends it. Grid quotes the send again when it is approved. If
+  the new quote is worse for the customer by more than the larger of
+  `basisPoints` of the amount they were shown and `minimumAmount`, Grid does
+  not send it: the action stays `PENDING_APPROVAL` with the new `quote`, and
+  `previousQuote` names the one they were shown. A price that moved in the
+  customer's favor never asks again. For a quote that locks what the recipient
+  receives, worse means the customer sends more, measured in the sending
+  currency; for one that locks what the customer sends, it means the recipient
+  receives less, measured in the receiving currency. `minimumAmount` is
+  converted to that currency at the current rate.
+required:
+  - basisPoints
+  - minimumAmount
+  - currency
+properties:
+  basisPoints:
+    type: integer
+    minimum: 0
+    description: The share of the amount shown, in basis points. 100 is 1%.
+    example: 100
+  minimumAmount:
+    type: integer
+    format: int64
+    minimum: 0
+    description: The least the price may move by, in the smallest unit of `currency`.
+    example: 100
+  currency:
+    type: string
+    description: ISO 4217 code of `minimumAmount`. Known values are `USD`.
+    example: USD
