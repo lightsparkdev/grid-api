@@ -14,4 +14,7 @@ description: |-
   | `DISHONORED_RETURN` | The originating bank | A return |
   | `CONTESTED_RETURN` | The receiving bank | A dishonored return |
   | `REVERSAL` | The originator | The original entry |
+
+  A `REVERSAL` lists the entries answering it, such as a return of the
+  reversal, in its own `events`.
 example: RETURN

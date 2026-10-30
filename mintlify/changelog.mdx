@@ -29,11 +29,10 @@ so an event's `traceNumber` differs from the transfer's. It is present once the 
 reports it. When you ask your bank about a return, quote the return's trace if it is
 present, rather than the original's.
 
-Each event has an `id`, a `type`, `occurredAt`, and the NACHA `returnCode` it was sent
-under, or a `reversalReason` on a `REVERSAL`. `answersEventId` names the event it
-responds to, such as the return a dishonor answers, and is `null` when it answers the
-original entry. This tells apart a return of the original entry from a return of a
-reversal.
+Each event has a `type`, `occurredAt`, and the NACHA `returnCode` it was sent under, or
+a `reversalReason` on a `REVERSAL`. Events are listed oldest first. A reversal is itself
+an entry the receiving bank can return, so a `REVERSAL` has its own `events` listing the
+entries answering it, such as that return.
 
 The existing fields are unchanged. `returnedAt`, `returnCode`, `dishonoredAt`,
 `contestedAt` and `reversedAt` still describe the original entry's own return chain,

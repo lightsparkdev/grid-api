@@ -68,14 +68,13 @@ allOf:
       events:
         type: array
         description: >-
-          The entries sent after the original one, oldest first: returns,
-          dishonors, contests, and reversals. Each is its own entry on the ACH
-          network, so its `traceNumber`, once the bank reports it, is the one to
-          quote to your bank about that event. Each names the
-          event it answers in `answersEventId`, which tells apart, for example, a
-          return of the original entry from a return of its reversal. The flat
-          fields above (`returnedAt`, `returnCode`, `dishonoredAt` and the rest)
-          describe the original entry's own return chain. Empty until the first
-          event.
+          The entries sent in response to the original one, oldest first: its
+          return, a dishonor of that return, a contest of the dishonor, and a
+          reversal. Each is its own entry on the ACH network, so its
+          `traceNumber`, once the bank reports it, is the one to quote to your
+          bank about that event. Entries answering a reversal are listed in that
+          reversal's own `events`. The fields above (`returnedAt`, `returnCode`,
+          `dishonoredAt` and the rest) describe the original entry's return
+          chain. Empty until the first event.
         items:
           $ref: ./AchEntryEvent.yaml

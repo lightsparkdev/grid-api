@@ -27181,29 +27181,20 @@ components:
         | `DISHONORED_RETURN` | The originating bank | A return |
         | `CONTESTED_RETURN` | The receiving bank | A dishonored return |
         | `REVERSAL` | The originator | The original entry |
+
+        A `REVERSAL` lists the entries answering it, such as a return of the
+        reversal, in its own `events`.
       example: RETURN
     AchEntryEvent:
       title: ACH Entry Event
-      description: 'An ACH entry sent after the original one, in response to it or to another event: a return, a dishonor of a return, a contest of a dishonor, or a reversal.'
+      description: 'An ACH entry sent in response to an earlier one: a return, a dishonor of a return, a contest of a dishonor, or a reversal.'
       type: object
       required:
-        - id
         - type
-        - answersEventId
         - occurredAt
       properties:
-        id:
-          type: string
-          description: Unique identifier for the event.
-          example: AchEntryEvent:019542f5-b3e7-1d02-0000-000000000007
         type:
           $ref: '#/components/schemas/AchEntryEventType'
-        answersEventId:
-          type:
-            - string
-            - 'null'
-          description: The `id` of the event this one answers, such as the return a dishonor answers. Null when the event answers the original entry, whose trace number is the transfer's `traceNumber`.
-          example: null
         traceNumber:
           type: string
           description: 15-digit ACH trace number of this event's own entry. Quote it to your bank when you ask about this event. Absent until the bank reports it.
@@ -27222,6 +27213,11 @@ components:
           format: date-time
           description: When the bank settled this event's entry.
           example: '2026-10-01T14:00:00Z'
+        events:
+          type: array
+          description: 'Present only on a `REVERSAL`: the entries sent in response to the reversal itself, oldest first, such as the receiving bank returning it. Absent until the first one.'
+          items:
+            $ref: '#/components/schemas/AchEntryEvent'
     AchRailDetails:
       title: ACH Transfer
       description: A transfer over the ACH network.
@@ -27279,7 +27275,7 @@ components:
               example: '2026-10-01T14:00:00Z'
             events:
               type: array
-              description: 'The entries sent after the original one, oldest first: returns, dishonors, contests, and reversals. Each is its own entry on the ACH network, so its `traceNumber`, once the bank reports it, is the one to quote to your bank about that event. Each names the event it answers in `answersEventId`, which tells apart, for example, a return of the original entry from a return of its reversal. The flat fields above (`returnedAt`, `returnCode`, `dishonoredAt` and the rest) describe the original entry''s own return chain. Empty until the first event.'
+              description: 'The entries sent in response to the original one, oldest first: its return, a dishonor of that return, a contest of the dishonor, and a reversal. Each is its own entry on the ACH network, so its `traceNumber`, once the bank reports it, is the one to quote to your bank about that event. Entries answering a reversal are listed in that reversal''s own `events`. The fields above (`returnedAt`, `returnCode`, `dishonoredAt` and the rest) describe the original entry''s return chain. Empty until the first event.'
               items:
                 $ref: '#/components/schemas/AchEntryEvent'
     WireBankAccountDetails:

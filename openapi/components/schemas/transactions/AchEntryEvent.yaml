@@ -1,30 +1,14 @@
 title: ACH Entry Event
 description: >-
-  An ACH entry sent after the original one, in response to it or to another
-  event: a return, a dishonor of a return, a contest of a dishonor, or a
-  reversal.
+  An ACH entry sent in response to an earlier one: a return, a dishonor of a
+  return, a contest of a dishonor, or a reversal.
 type: object
 required:
-  - id
   - type
-  - answersEventId
   - occurredAt
 properties:
-  id:
-    type: string
-    description: Unique identifier for the event.
-    example: AchEntryEvent:019542f5-b3e7-1d02-0000-000000000007
   type:
     $ref: ./AchEntryEventType.yaml
-  answersEventId:
-    type:
-      - string
-      - 'null'
-    description: >-
-      The `id` of the event this one answers, such as the return a dishonor
-      answers. Null when the event answers the original entry, whose trace
-      number is the transfer's `traceNumber`.
-    example: null
   traceNumber:
     type: string
     description: >-
@@ -52,3 +36,11 @@ properties:
     format: date-time
     description: When the bank settled this event's entry.
     example: '2026-10-01T14:00:00Z'
+  events:
+    type: array
+    description: >-
+      Present only on a `REVERSAL`: the entries sent in response to the reversal
+      itself, oldest first, such as the receiving bank returning it. Absent until
+      the first one.
+    items:
+      $ref: ./AchEntryEvent.yaml
