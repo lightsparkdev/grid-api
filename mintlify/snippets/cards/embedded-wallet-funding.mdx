@@ -288,9 +288,7 @@ treasury.
 - Sign the delegated-key legs with a real API-key stamp over
   `payloadToSign`, signed with the session signing key. It works in
   Sandbox exactly as in production. See
-  [Sign a `payloadToSign`](/global-accounts/client-keys#2-sign-a-payloadtosign). The placeholder
-  `Grid-Wallet-Signature: sandbox-valid-signature` is deprecated. Sandbox
-  still accepts it for now, but it will be removed.
+  [Sign a `payloadToSign`](/global-accounts/client-keys#2-sign-a-payloadtosign).
 - `POST /sandbox/internal-accounts/{id}/fund` credits the account's ledger
   balance only. A card hold spends the wallet's balance on Spark, so fund
   the wallet with a quote whose destination is the wallet account, as
