@@ -1,0 +1,281 @@
+---
+title: "ACH Pull"
+description: "Debit a customer's US bank account to fund their Lightspark account"
+icon: "/images/icons/arrow-inbox.svg"
+"og:image": "/images/og/og-payouts-b2b.png"
+---
+
+An ACH pull debits a customer's bank account in the United States and credits their Lightspark internal account. You supply the account and routing number. Lightspark originates the debit through its partner bank as an ACH WEB entry, the NACHA code for a consumer debit authorized online. Funds are typically available two business days after initiation.
+
+A pull differs from a push deposit in one way: the customer's bank can return a debit after it settles. Most returns arrive within two banking days. A consumer who says the debit was unauthorized has 60 calendar days. Because of this, Lightspark validates the account before the first debit, holds pulled funds through the common return window, and reverses the credit when a return arrives. You capture the customer's authorization and keep the record.
+
+This page covers what Lightspark checks before the first debit, how long each step takes, when the funds become spendable, and what a return does.
+
+## Prerequisites
+
+- Your platform is enabled for ACH pull. Lightspark turns it on after compliance approval. Until then, a quote funded from an external account returns `501 NOT_IMPLEMENTED`.
+- The customer's verification status is `APPROVED`.
+- You have the customer's authorization for the debit. For what it must contain, see [Your obligations](#your-obligations).
+
+## Fund an account with an ACH pull
+
+<Steps>
+<Step title="Register the bank account">
+Create the [external account](/payouts-and-b2b/depositing-funds/external-accounts) with `accountType` set to `USD_ACCOUNT`. `routingNumber` is nine digits. `bankAccountType` is `CHECKING` or `SAVINGS`. Lightspark uses it to set the ACH transaction code, and a wrong value makes the bank send a notification of change. Lightspark starts validating the account as soon as you create it.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "currency": "USD",
+    "platformAccountId": "user_123_primary_bank",
+    "accountInfo": {
+      "accountType": "USD_ACCOUNT",
+      "accountNumber": "123456789",
+      "routingNumber": "021000021",
+      "bankAccountType": "CHECKING",
+      "bankName": "Chase Bank",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "John Doe",
+        "birthDate": "1990-01-15",
+        "nationality": "US",
+        "address": { "line1": "123 Main Street", "city": "San Francisco",
+                     "state": "CA", "postalCode": "94105", "country": "US" }
+      }
+    }
+  }'
+```
+
+</Step>
+
+<Step title="Wait for validation">
+Lightspark confirms with account validation providers that the account exists, is open, and accepts ACH. For most US accounts this completes within seconds of registration. When no provider can answer for the account's bank, Lightspark sends a $0 prenote and waits out the bank's return window, which takes three banking days. Validation happens once per account, not per pull. A change to the account number starts it again.
+
+Until validation completes, a quote from the account returns `409 BANK_ACCOUNT_VALIDATION_PENDING`. The account has not been rejected. Tell the customer to wait, not to re-enter their details. An account that fails validation returns `400 INVALID_BANK_ACCOUNT` on every later attempt. Ask the customer for a different account.
+
+<Note>
+Validation checks the account, not the holder. Lightspark also records whether the holder name you supplied matches the bank's records, but a name mismatch does not block a pull.
+</Note>
+</Step>
+
+<Step title="Create and execute the quote">
+Create a [quote](/platform-overview/core-concepts/quote-system) whose source is the external account and whose destination is the same customer's USD internal account. Set `immediatelyExecute: true` to send the debit as soon as the quote is created. Three rules apply to pull quotes: both accounts belong to the same customer, the quote is USD to USD, and you cannot add a platform fee. Send an `Idempotency-Key` so a retried request does not debit the customer twice.
+
+`statementDescriptor` is what the customer sees on their bank statement. It is up to 10 printable ASCII characters and defaults to `FUNDING`. Use a value the customer recognizes as your platform.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: 7f3a9c1e-pull-2026-10-19' \
+  -d '{
+    "source": { "sourceType": "ACCOUNT", "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965" },
+    "destination": { "destinationType": "ACCOUNT", "accountId": "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123" },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 50000,
+    "immediatelyExecute": true,
+    "statementDescriptor": "ACMEFUND",
+    "description": "Top up from linked bank account"
+  }'
+```
+
+</Step>
+
+<Step title="Track the transaction">
+A pull is an `INCOMING` transaction with a `DEBIT` direction. From the moment Lightspark sends the debit to the bank, the amount counts toward the internal account's `totalBalance` but not its spendable balance.
+
+| Stage | Transaction status | Webhook | Spendable |
+| ------- | -------------------- | --------- | ----------- |
+| Quote created | `PENDING` | `INCOMING_PAYMENT.PENDING` | No |
+| Debit sent to the bank | `PROCESSING` | `INCOMING_PAYMENT.PROCESSING` | No |
+| Bank settles, hold running | `PROCESSING` | None | No |
+| Hold released | `COMPLETED` | `INTERNAL_ACCOUNT.BALANCE_UPDATED`, then `INCOMING_PAYMENT.COMPLETED` | Yes |
+| Bank rejects, or returns the debit | `FAILED` | `INCOMING_PAYMENT.FAILED` | No |
+
+`source.railDetails` on the transaction carries the ACH leg: `paymentRail`, a status of `PENDING`, `SETTLED`, `RETURNED` or `FAILED`, the masked bank account, and the statement descriptor.
+
+<Warning>
+`COMPLETED` is not terminal. A return can arrive after `COMPLETED` and move the transaction to `FAILED`, so apply each status webhook as it arrives.
+</Warning>
+
+The webhook that tells you the funds are spendable:
+
+```json INCOMING_PAYMENT.COMPLETED
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000021",
+  "type": "INCOMING_PAYMENT.COMPLETED",
+  "timestamp": "2026-10-23T21:05:00Z",
+  "data": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000020",
+    "status": "COMPLETED",
+    "type": "INCOMING",
+    "direction": "DEBIT",
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+      "currency": "USD",
+      "railDetails": {
+        "paymentRail": "ACH",
+        "status": "SETTLED",
+        "settledAt": "2026-10-21T21:00:00Z",
+        "statementDescriptor": "ACMEFUND",
+        "bankAccount": {
+          "accountHolderName": "John Doe",
+          "routingNumber": "021000021",
+          "accountNumber": "****6789"
+        }
+      }
+    },
+    "destination": {
+      "destinationType": "ACCOUNT",
+      "accountId": "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+    },
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCustomerId": "user_123",
+    "receivedAmount": { "amount": 50000, "currency": { "code": "USD", "name": "United States Dollar", "symbol": "$", "decimals": 2 } },
+    "settledAt": "2026-10-21T21:00:00Z",
+    "createdAt": "2026-10-20T18:12:04Z",
+    "description": "Top up from linked bank account"
+  }
+}
+```
+
+`settledAt` is when the bank settled the debit. The webhook arrives when the hold releases, which is later.
+</Step>
+</Steps>
+
+## Timing
+
+| Step | Takes |
+| ------ | ------- |
+| Account validation | Seconds for most accounts. Three banking days when the prenote is needed. Once per account. |
+| Bank settlement | Same business day when the debit reaches the bank before its cutoff, otherwise the next business day. |
+| Settlement hold | 1, 2, or 5 banking days after settlement, by risk tier. Ends at the close of the banking day in US Eastern time. |
+
+Banking days exclude weekends and Federal Reserve holidays. A first pull from a newly registered account that needs the prenote and lands in the standard tier becomes spendable about five banking days after registration. A later pull from the same account becomes spendable two to three banking days after you create the quote.
+
+## Settlement holds
+
+Funds from an ACH pull are not available immediately, because the debit can be reversed. When they become available depends on the risk profile of the transaction and the customer. Lightspark chooses the tier per deposit based on the account's history and the amount.
+
+| Tier | Hold | Applies when |
+| ------ | ------ | -------------- |
+| Trusted | 1 banking day | The customer's account is at least 90 days old, has at least five completed pulls and no returned pull, and its settled balance already covers the amount. |
+| Standard | 2 banking days | Everything else. |
+| Extended | 5 banking days | The account has any returned pull, or the amount is over $5,000. |
+
+Held funds show in `totalBalance` and not in `balance`. Show the customer the pending amount and the expected availability so they do not mistake the wait for a lost deposit. Lightspark can adjust the tiers for your platform as your return history builds.
+
+The hold covers the common return window, not the whole one. When a return arrives after the hold releases, Lightspark debits the amount back from the account. For details, see [Returns](#returns).
+
+## Returns
+
+A return is the customer's bank sending the debit back. ACH has no card-style chargeback. The bank returns a debit when the account has insufficient funds, is closed, cannot be found, or has an invalid number, and when the customer tells their bank the debit was unauthorized.
+
+| Return | Window | Lightspark's response |
+| -------- | -------- | ----------------------- |
+| Insufficient funds, closed account, account not found, invalid account number | Two banking days after settlement, so usually inside the hold | Lightspark reverses the credit and blocks further pulls from a closed, missing, or invalid account. Register a corrected account to continue. |
+| Unauthorized, reported by a consumer | 60 calendar days after settlement | Lightspark reverses the credit, holds the customer's funds while it investigates, and contacts you. Have your authorization record ready. |
+| Unauthorized, reported by a business | Two banking days after settlement | Lightspark reverses the credit and contacts you. |
+
+### What you receive
+
+Every return arrives as one webhook, whether it lands during the hold or weeks after `COMPLETED`.
+
+| Field | Value |
+| ------- | ------- |
+| Webhook type | `INCOMING_PAYMENT.FAILED` |
+| `data.status` | `FAILED` |
+| `data.failureReason` | `QUOTE_EXECUTION_FAILED` |
+| `data.source.railDetails.status` | `RETURNED` |
+| `data.source.railDetails.returnedAt` | When Lightspark recorded the return |
+
+The API does not include the NACHA return code. Check `railDetails.status` to tell a return from a failure that happened before any money moved. A pull the bank rejected outright has `railDetails.status` set to `FAILED`.
+
+An insufficient-funds return, two days after the debit settled:
+
+```json INCOMING_PAYMENT.FAILED
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000022",
+  "type": "INCOMING_PAYMENT.FAILED",
+  "timestamp": "2026-10-23T15:02:00Z",
+  "data": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000020",
+    "status": "FAILED",
+    "type": "INCOMING",
+    "direction": "DEBIT",
+    "failureReason": "QUOTE_EXECUTION_FAILED",
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+      "currency": "USD",
+      "railDetails": {
+        "paymentRail": "ACH",
+        "status": "RETURNED",
+        "settledAt": "2026-10-21T21:00:00Z",
+        "returnedAt": "2026-10-23T15:00:00Z",
+        "statementDescriptor": "ACMEFUND",
+        "bankAccount": {
+          "accountHolderName": "John Doe",
+          "routingNumber": "021000021",
+          "accountNumber": "****6789"
+        }
+      }
+    },
+    "destination": {
+      "destinationType": "ACCOUNT",
+      "accountId": "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+    },
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCustomerId": "user_123",
+    "receivedAmount": { "amount": 50000, "currency": { "code": "USD", "name": "United States Dollar", "symbol": "$", "decimals": 2 } },
+    "settledAt": "2026-10-21T21:00:00Z",
+    "createdAt": "2026-10-20T18:12:04Z",
+    "description": "Top up from linked bank account"
+  }
+}
+```
+
+This is the same transaction id as the `INCOMING_PAYMENT.COMPLETED` webhook above, now `FAILED`. The payload does not say why the bank returned it.
+
+### What happens to the money
+
+- If the funds are still held, Lightspark cancels the pending credit. The customer's spendable balance never changed.
+- If the funds were already spendable, Lightspark debits the internal account for the returned amount.
+- If the balance does not cover the returned amount, the account goes to zero and your platform owes the shortfall under your agreement with Lightspark.
+
+Lightspark does not re-initiate a returned pull. Do not create a new pull for the same debit unless the customer authorizes it again and the cause of the return is resolved.
+
+## Limits
+
+Your agreement sets four ACH debit limits for your platform: a per-transaction cap, a daily cap, a rolling 30-day cap, and a cap on total unsettled volume, meaning pulls the bank has not yet settled. Lightspark reviews them as your volume and return history grow.
+
+Lightspark rejects a quote over the per-transaction or daily limit when you create it, with `400 TRANSACTION_SIZE_LIMIT_EXCEEDED` or `429 DAILY_VOLUME_LIMIT_EXCEEDED`. A pull that would breach the rolling or unsettled caps fails after execution, with `INCOMING_PAYMENT.FAILED` and `failureReason` set to `QUOTE_EXECUTION_FAILED`, before any debit reaches the bank.
+
+## Your obligations
+
+Lightspark originates pulls as a NACHA Third-Party Sender, and your platform agrees to the NACHA Operating Rules through the master services agreement. For pulls, that means:
+
+- **Authorization before every pull.** Capture it from the customer in your own flow. It must state that the customer authorizes the debit, the amount or how it is determined, the timing, the account to be debited, the date, how the customer can revoke it, and the customer's electronic signature or an equivalent authentication. Give the customer a copy they can keep.
+- **Retention.** Keep each authorization for two years after it ends or is revoked, and provide it to Lightspark within 24 hours of a request. The customer's bank can ask for proof of authorization, and the response goes through Lightspark.
+- **Revocation.** When a customer revokes, stop before the next pull. A debit after revocation is an unauthorized return.
+- **Return rates.** Keep returns below the NACHA thresholds: 0.5% unauthorized, 3% administrative, 15% overall. Lightspark can suspend ACH access above them. Two things lower your return rate. Show the customer the amount and date of each debit before you submit it, so they recognize it on their statement and keep enough money in the account. Do not submit a pull that your own risk checks flag. Checking the account before you submit helps too: account-linking services can confirm the account and its balance, which cuts insufficient-funds returns, the most common kind.
+- **Fraud screening.** Screen pulls before you submit them, with baseline profiling of each customer's normal activity. Pulls attract fraud because the fraudster needs only the account details, not the victim's bank login.
+
+## Sandbox
+
+Sandbox accounts do not go through validation. The last three digits of the external account number decide what a pull from it does.
+
+| Suffix | Behavior |
+| -------- | ---------- |
+| `002` | Insufficient funds. The pull fails immediately. |
+| `003` | Account closed or invalid. The pull fails immediately. |
+| `004` | The bank rejects the debit. The pull fails immediately. |
+| `005` | Stays pending about 30 seconds, then fails. |
+| `009` | Settles and completes, then about 30 seconds later the bank returns it. Lightspark reverses the credit and the transaction moves to `FAILED` with `railDetails.status` set to `RETURNED`. |
+| Any other | The pull completes. |
+
+Use `009` to test a deposit that completed and then came back.
