@@ -1,0 +1,17 @@
+type: string
+enum:
+  - RETURN
+  - DISHONORED_RETURN
+  - CONTESTED_RETURN
+  - REVERSAL
+description: |-
+  The kind of ACH entry an event records. Each is a separate entry on the ACH
+  network, with its own trace number.
+
+  | Type | Sent by | Answers |
+  |------|---------|---------|
+  | `RETURN` | The receiving bank | The original entry, or a reversal of it |
+  | `DISHONORED_RETURN` | The originating bank | A return |
+  | `CONTESTED_RETURN` | The receiving bank | A dishonored return |
+  | `REVERSAL` | The originator | The original entry |
+example: RETURN
