@@ -428,4 +428,14 @@ export const currencies: FiatCurrency[] = [
     allRails: ['MOBILE_MONEY'],
     examplePerson: { fullName: 'Achille Nkeng', nationality: 'CM' },
   },
+  {
+    code: 'TRY',
+    name: 'Turkish Lira',
+    countryCode: 'tr',
+    accountType: 'TRY_ACCOUNT',
+    accountLabel: 'Turkish Bank Account',
+    instantRails: [],
+    allRails: ['BANK_TRANSFER'],
+    examplePerson: { fullName: 'Mehmet Yilmaz', nationality: 'TR' },
+  },
 ];
