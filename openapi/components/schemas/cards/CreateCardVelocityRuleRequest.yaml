@@ -41,7 +41,9 @@ properties:
       - type: 'null'
     description: >-
       Maximum count within the window. Required for ATTEMPTS. Cannot be set
-      for AUTHORIZATION. Omit or send null to leave the count uncapped.
+      for AUTHORIZATION. Omit or send null for no count cap on this rule.
+      A matching broader-scope cap is inherited if no count cap remains at
+      this scope.
     example: 5
   maxAmount:
     anyOf:
@@ -56,7 +58,9 @@ properties:
       card in that card's currency, without foreign-exchange conversion. USD- and
       USDB-funded USD cards both use USD cents. The amount is holds less releases for
       transactions opened within the window. Releases restore capacity;
-      clearing against a hold does not. Omit or send null to leave the amount
-      uncapped. At least one of maxCount or maxAmount must be set. A zero cap
+      clearing against a hold does not. Omit or send null for no amount cap on
+      this rule. A matching broader-scope cap is inherited if no amount cap
+      remains at this scope. At least one of maxCount or maxAmount must be set.
+      A zero cap
       blocks applicable new authorizations, including zero-amount checks.
     example: 50000
