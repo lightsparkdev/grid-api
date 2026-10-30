@@ -154,6 +154,7 @@
             "group": "Sending payments",
             "pages": [
               "payouts-and-b2b/depositing-funds/depositing-funds",
+              "payouts-and-b2b/depositing-funds/ach-pull",
               "payouts-and-b2b/payment-flow/send-payment",
               "payouts-and-b2b/payment-flow/recipient-descriptors",
               "payouts-and-b2b/payment-flow/assessing-fees",
