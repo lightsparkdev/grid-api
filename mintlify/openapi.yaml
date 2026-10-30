@@ -77,9 +77,9 @@ tags:
   - name: Embedded Wallet Auth
     description: Endpoints for registering and verifying end-user authentication credentials (email OTP, OAuth, passkey) used to sign Embedded Wallet actions.
   - name: Agent Management
-    description: 'Endpoints for creating and managing agents (experimental), called by the partner''s backend using platform credentials. Covers the full agent lifecycle: creation, policy configuration, pausing, deletion, the device code installation flow, and approving or rejecting transactions initiated by agents.'
+    description: 'Endpoints for creating and managing agents, called by the partner''s backend using platform credentials. Covers the full agent lifecycle: creation, policy configuration, pausing, deletion, the device code installation flow, and approving or rejecting transactions initiated by agents.'
   - name: Agent Operations
-    description: Experimental endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
+    description: Endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
   - name: Cards
     description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage a card's funding source, and list card transactions.
   - name: Stablecoins

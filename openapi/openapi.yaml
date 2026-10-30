@@ -98,13 +98,13 @@ tags:
       actions.
   - name: Agent Management
     description: >-
-      Endpoints for creating and managing agents (experimental), called by the partner's
+      Endpoints for creating and managing agents, called by the partner's
       backend using platform credentials. Covers the full agent lifecycle: creation,
       policy configuration, pausing, deletion, the device code installation flow, and
       approving or rejecting transactions initiated by agents.
   - name: Agent Operations
     description: >-
-      Experimental endpoints called by the agent itself using its own credentials
+      Endpoints called by the agent itself using its own credentials
       (obtained via device code redemption). Scoped to the agent's associated customer — all requests
       automatically operate on behalf of that customer and are subject to the agent's
       policy. When an action requires approval, the resulting transaction enters a pending
