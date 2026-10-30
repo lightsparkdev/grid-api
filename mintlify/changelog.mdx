@@ -10,6 +10,14 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## Sandbox suffix for a paused corridor
+
+In sandbox, an external account whose account number ends in `014` simulates a corridor
+paused for maintenance. The account lookup and the quote fail with `403
+CORRIDOR_UNDER_MAINTENANCE`. Other accounts in the same currency work as normal, so you
+can test the paused and the open case side by side. See
+[sandbox testing](/payouts-and-b2b/platform-tools/sandbox-testing#testing-cross-currency-quotes).
+
 ## Sandbox no longer accepts placeholder signatures
 
 The sandbox placeholders `Grid-Wallet-Signature: sandbox-valid-signature` and the passkey

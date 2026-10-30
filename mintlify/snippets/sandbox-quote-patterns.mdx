@@ -13,6 +13,13 @@ When creating a quote with an external account destination, the account number s
 | **013** | Transfer limit exceeded — fails with `failureReason: LIMIT_EXCEEDED` |
 | **Any other** | Successful payment |
 
+One suffix fails before any payment starts. Use it to test a corridor that is
+paused for maintenance:
+
+| Suffix | Behavior |
+|--------|----------|
+| **014** | Corridor paused for maintenance — the account lookup and the quote fail with `403 CORRIDOR_UNDER_MAINTENANCE`. Other accounts in the same currency work as normal |
+
 One suffix applies to the quote's **source** instead of its destination. Use it
 on the external account a quote pulls funds from:
 
