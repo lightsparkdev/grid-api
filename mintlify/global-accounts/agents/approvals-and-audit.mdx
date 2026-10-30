@@ -40,7 +40,7 @@ An approved action is still subject to the latest account and policy state when 
 
 ### Re-quoted approvals
 
-Where Grid has enabled it for your platform, an `EXECUTE_QUOTE` action carries `priceTolerance` and waits for approval until its own `expiresAt` (24 hours by default) instead of expiring with its quote. When you approve it, Grid quotes the send again and runs every approval check against the new quote:
+Where Grid has enabled it for your platform, an `EXECUTE_QUOTE` action carries `priceTolerance` and waits for approval until its own `expiresAt` (24 hours by default) instead of expiring with its quote. Approved while its quote is live, it sends that quote as shown. Approved after the quote expired, Grid quotes the send again and runs every approval check against the new quote:
 
 - If the new price is no worse for the customer than `priceTolerance` allows (by default the larger of 1% and $1), Grid sends it and the action is `APPROVED` with the new `quote`.
 - If it is worse by more, nothing is sent. The approval returns the action still `PENDING_APPROVAL`, with the new `quote` and the one the customer saw in `previousQuote`. Show both and ask the customer again; approving again repeats the check.

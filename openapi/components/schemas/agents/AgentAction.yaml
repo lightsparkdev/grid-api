@@ -55,9 +55,10 @@ properties:
     $ref: ./AgentApprovalPriceTolerance.yaml
     description: >-
       Present on a `PENDING_APPROVAL` `EXECUTE_QUOTE` action that Grid quotes
-      again when it is approved: how far the price may move against the
-      customer before they are asked again. Absent when approval executes
-      `quote` as it is.
+      again when it is approved after its quote expired: how far the price may
+      move against the customer before they are asked again. Fixed when the
+      action is created. Absent when approval can only execute `quote` as it
+      is.
   purchaseCard:
     $ref: ./AgentPurchaseCardDetails.yaml
     description: >-
@@ -94,8 +95,8 @@ properties:
     description: >-
       When the action expires. For an `EXECUTE_QUOTE` action with
       `priceTolerance`, this is the end of the platform's approval window,
-      independent of the quote's own expiry: approval quotes the send again,
-      and a pending action that reaches this time fails with
+      independent of the quote's own expiry: approval executes a live quote
+      and quotes the send again once it has expired, and a pending action that reaches this time fails with
       `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the
       quote's own expiry; a pending action that reaches it fails with
       `QUOTE_EXPIRED`, and approval never creates a replacement quote. For

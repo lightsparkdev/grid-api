@@ -18,11 +18,13 @@ post:
     must have status `PENDING_APPROVAL`. Once approved, Grid executes the underlying
     operation (quote execution or transfer) and the action transitions to `APPROVED`.
 
-    For `EXECUTE_QUOTE` actions, note that the underlying quote may have expired between
-    submission and approval — in that case the action will transition to `FAILED` instead.
+    For an `EXECUTE_QUOTE` action without `priceTolerance`, note that the underlying
+    quote may have expired between submission and approval — in that case the action
+    will transition to `FAILED` instead.
 
-    An `EXECUTE_QUOTE` action with `priceTolerance` is quoted again on approval, and
-    approval runs every check against the new quote and its amount. When the new
+    An `EXECUTE_QUOTE` action with `priceTolerance` whose quote is still live executes
+    that quote, as shown. Once its quote has expired, approval quotes the send again
+    and runs every check against the new quote and its amount. When the new
     price is no worse for the customer than `priceTolerance` allows, Grid executes
     the new quote and the action transitions to `APPROVED` with it as `quote`. When
     it is worse by more, nothing is sent: the response is `200` with status still

@@ -1,7 +1,8 @@
 type: object
 description: >-
   How far a send's price may move against the customer before they approve it
-  and Grid still sends it. Grid quotes the send again when it is approved. If
+  and Grid still sends it. Grid quotes the send again when it is approved after
+  its quote expired; a live quote is sent as shown. If
   the new quote is worse for the customer by more than the larger of
   `basisPoints` of the amount they were shown and `minimumAmount`, Grid does
   not send it: the action stays `PENDING_APPROVAL` with the new `quote`, and
