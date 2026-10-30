@@ -4,17 +4,7 @@ allOf:
   - type: object
     properties:
       minimumReceivingAmount:
-        type:
-          - integer
-          - 'null'
-        format: int64
-        description: >-
-          Smallest amount the recipient receives, in the smallest unit of
-          `receivingCurrency`, for a quote to a `CHAIN_ADDRESS` destination. Grid
-          pays the chain itself at a locked rate, so this equals
-          `totalReceivingAmount`. Null for a quote whose destination is not
-          `CHAIN_ADDRESS`.
-        example: 1000
+        $ref: ../quotes/MinimumReceivingAmount.yaml
       destinationSparkAddress:
         type: string
         description: >-

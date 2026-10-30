@@ -64,6 +64,8 @@ properties:
       receiving currency (eg. cents).
     exclusiveMinimum: 0
     example: 1000
+  minimumReceivingAmount:
+    $ref: ./MinimumReceivingAmount.yaml
   exchangeRate:
     type: number
     description: >-

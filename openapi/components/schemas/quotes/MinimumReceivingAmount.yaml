@@ -1,0 +1,10 @@
+type:
+  - integer
+  - 'null'
+format: int64
+description: >-
+  Smallest amount the recipient receives, in the smallest unit of
+  `receivingCurrency`, for a send to an address on another chain. Grid pays
+  the chain itself at a locked rate, so this equals `totalReceivingAmount`.
+  Omitted or null for any other quote.
+example: 1000
