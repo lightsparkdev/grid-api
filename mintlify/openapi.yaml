@@ -21966,8 +21966,8 @@ components:
         - accountType
       description: |-
         Required fields depend on the selected paymentRails:
-        - NEFT: accountNumber, ifsc, rail
-        - RTGS: accountNumber, ifsc, rail
+        - NEFT: accountNumber, ifsc
+        - RTGS: accountNumber, ifsc
         - UPI: vpa
       properties:
         accountType:
