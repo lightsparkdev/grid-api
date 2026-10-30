@@ -1,0 +1,54 @@
+title: ACH Entry Event
+description: >-
+  An ACH entry sent after the original one, in response to it or to another
+  event: a return, a dishonor of a return, a contest of a dishonor, or a
+  reversal.
+type: object
+required:
+  - id
+  - type
+  - answersEventId
+  - occurredAt
+properties:
+  id:
+    type: string
+    description: Unique identifier for the event.
+    example: AchEntryEvent:019542f5-b3e7-1d02-0000-000000000007
+  type:
+    $ref: ./AchEntryEventType.yaml
+  answersEventId:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The `id` of the event this one answers, such as the return a dishonor
+      answers. Null when the event answers the original entry, whose trace
+      number is the transfer's `traceNumber`.
+    example: null
+  traceNumber:
+    type: string
+    description: >-
+      15-digit ACH trace number of this event's own entry. Quote it to your bank
+      when you ask about this event. Absent until the bank reports it.
+    example: '091000010000001'
+  returnCode:
+    type: string
+    pattern: '^R[0-9]{2}$'
+    description: >-
+      The NACHA reason code the entry was sent under: a return reason such as
+      `R01` on a `RETURN`, `R61` to `R69` on a `DISHONORED_RETURN`, or `R70` to
+      `R77` on a `CONTESTED_RETURN`. Absent on a `REVERSAL`. NACHA may add codes,
+      so accept any value matching the pattern.
+    example: R01
+  reversalReason:
+    type: string
+    description: >-
+      Why the entry was reversed, such as `DUPLICATE` or `INCORRECT_AMOUNT`.
+      Present only on a `REVERSAL`. Accept values beyond the examples, since more
+      reasons may be added.
+    example: DUPLICATE
+  occurredAt:
+    type: string
+    format: date-time
+    description: When the bank settled this event's entry.
+    example: '2026-10-01T14:00:00Z'

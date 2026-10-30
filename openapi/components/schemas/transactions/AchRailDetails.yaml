@@ -65,3 +65,17 @@ allOf:
         format: date-time
         description: When the originator reversed the entry. Present when `status` is `REVERSED`.
         example: '2026-10-01T14:00:00Z'
+      events:
+        type: array
+        description: >-
+          The entries sent after the original one, oldest first: returns,
+          dishonors, contests, and reversals. Each is its own entry on the ACH
+          network, so its `traceNumber`, once the bank reports it, is the one to
+          quote to your bank about that event. Each names the
+          event it answers in `answersEventId`, which tells apart, for example, a
+          return of the original entry from a return of its reversal. The flat
+          fields above (`returnedAt`, `returnCode`, `dishonoredAt` and the rest)
+          describe the original entry's own return chain. Empty until the first
+          event.
+        items:
+          $ref: ./AchEntryEvent.yaml
