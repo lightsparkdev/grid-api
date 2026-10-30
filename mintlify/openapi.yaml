@@ -27164,6 +27164,60 @@ components:
         Nacha sets a separate return-rate threshold for each category. Other return codes,
         such as `R01` (insufficient funds), belong to neither.
       example: UNAUTHORIZED
+    AchEntryEventType:
+      type: string
+      enum:
+        - RETURN
+        - DISHONORED_RETURN
+        - CONTESTED_RETURN
+        - REVERSAL
+      description: |-
+        The kind of ACH entry an event records. Each is a separate entry on the ACH
+        network, with its own trace number.
+
+        | Type | Sent by | Answers |
+        |------|---------|---------|
+        | `RETURN` | The receiving bank | The original entry, or a reversal of it |
+        | `DISHONORED_RETURN` | The originating bank | A return |
+        | `CONTESTED_RETURN` | The receiving bank | A dishonored return |
+        | `REVERSAL` | The originator | The original entry |
+
+        A `REVERSAL` lists the entries answering it, such as a return of the
+        reversal, in its own `events`.
+      example: RETURN
+    AchEntryEvent:
+      title: ACH Entry Event
+      description: 'An ACH entry sent in response to an earlier one: a return, a dishonor of a return, a contest of a dishonor, or a reversal.'
+      type: object
+      required:
+        - type
+        - occurredAt
+      properties:
+        type:
+          $ref: '#/components/schemas/AchEntryEventType'
+        traceNumber:
+          type: string
+          description: 15-digit ACH trace number of this event's own entry. Quote it to your bank when you ask about this event. Absent until the bank reports it.
+          example: '091000010000001'
+        returnCode:
+          type: string
+          pattern: ^R[0-9]{2}$
+          description: 'The NACHA reason code the entry was sent under: a return reason such as `R01` on a `RETURN`, `R61` to `R69` on a `DISHONORED_RETURN`, or `R70` to `R77` on a `CONTESTED_RETURN`. Absent on a `REVERSAL`. NACHA may add codes, so accept any value matching the pattern.'
+          example: R01
+        reversalReason:
+          type: string
+          description: Why the entry was reversed, such as `DUPLICATE` or `INCORRECT_AMOUNT`. Present only on a `REVERSAL`. Accept values beyond the examples, since more reasons may be added.
+          example: DUPLICATE
+        occurredAt:
+          type: string
+          format: date-time
+          description: When the bank settled this event's entry.
+          example: '2026-10-01T14:00:00Z'
+        events:
+          type: array
+          description: 'Present only on a `REVERSAL`: the entries sent in response to the reversal itself, oldest first, such as the receiving bank returning it. Absent until the first one.'
+          items:
+            $ref: '#/components/schemas/AchEntryEvent'
     AchRailDetails:
       title: ACH Transfer
       description: A transfer over the ACH network.
@@ -27180,7 +27234,7 @@ components:
               $ref: '#/components/schemas/AchRailStatus'
             traceNumber:
               type: string
-              description: 15-digit ACH trace number of the entry.
+              description: 15-digit ACH trace number of the original entry. A return, dishonor, contest or reversal is a separate entry with its own trace, listed on its item in `events`.
               example: '021000020123456'
             statementDescriptor:
               type: string
@@ -27219,6 +27273,11 @@ components:
               format: date-time
               description: When the originator reversed the entry. Present when `status` is `REVERSED`.
               example: '2026-10-01T14:00:00Z'
+            events:
+              type: array
+              description: 'The entries sent in response to the original one, oldest first: its return, a dishonor of that return, a contest of the dishonor, and a reversal. Each is its own entry on the ACH network, so its `traceNumber`, once the bank reports it, is the one to quote to your bank about that event. Entries answering a reversal are listed in that reversal''s own `events`. The fields above (`returnedAt`, `returnCode`, `dishonoredAt` and the rest) describe the original entry''s return chain. Empty until the first event.'
+              items:
+                $ref: '#/components/schemas/AchEntryEvent'
     WireBankAccountDetails:
       title: Wire Bank Account Details
       allOf:

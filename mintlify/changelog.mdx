@@ -20,6 +20,24 @@ on every signed action and the real WebAuthn assertion on passkey verify. See
 [Sign a `payloadToSign`](/global-accounts/client-keys#2-sign-a-payloadtosign) and
 [sandbox testing](/global-accounts/platform-tools/sandbox-testing).
 
+## ACH `railDetails.events`
+
+An ACH transfer's `railDetails` now has an `events` list with each entry sent after
+the original one: a return, a dishonor of a return, a contest of a dishonor, or a
+reversal. Each of these is its own entry on the ACH network with its own trace number,
+so an event's `traceNumber` differs from the transfer's. It is present once the bank
+reports it. When you ask your bank about a return, quote the return's trace if it is
+present, rather than the original's.
+
+Each event has a `type`, `occurredAt`, and the NACHA `returnCode` it was sent under, or
+a `reversalReason` on a `REVERSAL`. Events are listed oldest first. A reversal is itself
+an entry the receiving bank can return, so a `REVERSAL` has its own `events` listing the
+entries answering it, such as that return.
+
+The existing fields are unchanged. `returnedAt`, `returnCode`, `dishonoredAt`,
+`contestedAt` and `reversedAt` still describe the original entry's own return chain,
+so return-rate reporting by `returnCode` keeps its meaning.
+
 ## ACH `railDetails.returnCode` and `returnCategory`
 
 A returned ACH entry's `railDetails` now carries `returnCode`, the NACHA return reason
