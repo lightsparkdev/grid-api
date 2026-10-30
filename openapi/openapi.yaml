@@ -414,6 +414,12 @@ paths:
     $ref: paths/tokens/tokens_{tokenId}.yaml
   /internal-accounts/{id}:
     $ref: paths/internal_accounts/internal_accounts_{id}.yaml
+  /internal-accounts/{id}/authorize:
+    $ref: paths/internal_accounts/internal_accounts_{id}_authorize.yaml
+  /internal-accounts/{id}/authorize/resend:
+    $ref: paths/internal_accounts/internal_accounts_{id}_authorize_resend.yaml
+  /internal-accounts/{id}/stranded-funds/transfer:
+    $ref: paths/internal_accounts/internal_accounts_{id}_stranded-funds_transfer.yaml
   /internal-accounts/{id}/export:
     $ref: paths/internal_accounts/internal_accounts_{id}_export.yaml
   /internal-accounts/{id}/balance-changes:

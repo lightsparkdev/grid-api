@@ -1,0 +1,97 @@
+parameters:
+  - name: id
+    in: path
+    description: The ID of the rule-based internal account whose SCA challenge is being authorized.
+    required: true
+    schema:
+      type: string
+    example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+post:
+  summary: Authorize a rule-based account's SCA challenge
+  description: |
+    Satisfy the Strong Customer Authentication challenge carried by a
+    `RULE_BASED` internal account in `PENDING` status by submitting an
+    `ScaAuthorization` proof. The challenge authorizes the account's sweep
+    instruction once; later sweeps need no further authorization.
+
+    On success the account is returned `ACTIVE` with its
+    `fundingPaymentInstructions`, and an `INTERNAL_ACCOUNT.STATUS_UPDATED`
+    webhook is sent. As with all SCA, check the returned account: if it is still
+    `PENDING` it carries the next `scaChallenge` to authorize.
+
+    This endpoint is only meaningful for customers in a region where SCA is
+    required (e.g. EU). For other customers, and for accounts with no pending
+    challenge, this returns `409`.
+
+    In sandbox, the SMS code is always `123456`.
+  operationId: authorizeInternalAccount
+  tags:
+    - Internal Accounts
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sca/ScaAuthorization.yaml
+  responses:
+    '200':
+      description: Challenge authorized; the updated account is returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/InternalAccount.yaml
+    '400':
+      description: Invalid or expired authorization proof
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Internal account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        SCA is not required for this customer, or the account has no pending
+        challenge to authorize. Also returned with `SCA_SESSION_REQUIRED` when
+        the customer's SCA login session is missing or expired —
+        re-authenticate the customer, then authorize again.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '423':
+      description: >-
+        Returned with `ACCOUNT_LOCKED` when the customer's login is temporarily
+        locked after too many failed authorization attempts.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error423.yaml
+    '429':
+      description: >-
+        Too many requests. Returned with `RATE_LIMITED` when authorization
+        attempts for this challenge happen too frequently. Clients should back
+        off and retry after the interval indicated by the `Retry-After`
+        response header.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

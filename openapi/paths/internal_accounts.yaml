@@ -21,6 +21,17 @@ post:
     for your platform itself. `USDC` and `USDT` rule-based accounts are enabled
     per platform.
 
+    For customers in a region where Strong Customer Authentication is
+    required (the EU), the account is returned `PENDING` with an
+    `scaChallenge`: the account holder authorizes the account's sweep
+    instruction once with `POST /internal-accounts/{id}/authorize`, after which
+    the account is `ACTIVE` and later sweeps need no further authorization. An
+    external destination must already be a trusted beneficiary
+    (`POST /customers/external-accounts/{externalAccountId}/trust`). Retrying
+    the create request with the same `Idempotency-Key` while the account is
+    still `PENDING` returns it with a live challenge, issuing a new one if the
+    previous challenge expired.
+
     Sandbox platforms can create rule-based accounts and exercise the whole
     flow. The account number is generated locally rather than issued by a
     partner bank, and `POST /sandbox/internal-accounts/{accountId}/fund` stands
@@ -112,7 +123,8 @@ post:
     '201':
       description: >-
         Internal account created. `fundingPaymentInstructions` carries the
-        account's own number.
+        account's own number. For customers in a region where SCA is required,
+        the account is `PENDING` and carries the `scaChallenge` that opens it.
       content:
         application/json:
           schema:
@@ -150,7 +162,10 @@ post:
     '409':
       description: >-
         Conflict - the `Idempotency-Key` was already used to create a
-        materially different account. Use a new key for a new account.
+        materially different account (use a new key for a new account). Also
+        returned with `BENEFICIARY_NOT_TRUSTED` when the sweep destination must
+        be a trusted beneficiary and is not, and with `SCA_SESSION_REQUIRED`
+        when the customer's SCA login session is missing or expired.
       content:
         application/json:
           schema:

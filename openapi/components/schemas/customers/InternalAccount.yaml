@@ -55,6 +55,26 @@ properties:
     description: >-
       The routing rule attached to this account. Null for accounts that carry
       no rule, which is every account other than a `RULE_BASED` one.
+  scaChallenge:
+    allOf:
+      - $ref: ../sca/ScaChallenge.yaml
+    description: >-
+      The Strong Customer Authentication challenge the account holder must
+      satisfy before a `RULE_BASED` account opens. Present only while the
+      account is `PENDING` and waiting for that authorization, and only for
+      customers in a region where SCA is required (the EU). Authorize it with
+      `POST /internal-accounts/{id}/authorize`. If the challenge expires, retry
+      the create request with the same `Idempotency-Key` to receive a new one.
+  strandedBalances:
+    type: array
+    description: >-
+      Funds a `RULE_BASED` account's sweep converted but could not deliver to
+      the rule's destination, by currency. They are held for the account
+      holder and can be moved to their own account in that currency with
+      `POST /internal-accounts/{id}/stranded-funds/transfer`. Omitted when
+      there are none, and for every account other than a `RULE_BASED` one.
+    items:
+      $ref: ../common/CurrencyAmount.yaml
   privateEnabled:
     type: boolean
     description: >-
