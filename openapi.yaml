@@ -30218,7 +30218,7 @@ components:
         paymentUri:
           type: string
           format: uri
-          description: 'A payment link for a chain deposit carrying `target`, the token and `sourceAmount`, which a wallet on `sourceNetwork` can open to pay it: a Solana Pay transfer request on Solana and an EIP-681 token transfer on the EVM chains. Present while the deposit is `PENDING`; absent for Lightning deposits and where the chain has no widely supported link format, such as Tron.'
+          description: 'A payment link for a chain deposit carrying `target`, the token and `sourceAmount`, which a wallet on `sourceNetwork` can open to pay it: a Solana Pay transfer request on Solana and an EIP-681 token transfer on the EVM chains. Present while the deposit is `PENDING`; absent for Lightning deposits, for a deposit with no `sourceAmount`, and where the chain has no widely supported link format, such as Tron.'
           example: ethereum:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913@8453/transfer?address=0x1234567890abcdef1234567890abcdef12345678&uint256=50250000
         paymentLinks:
           type: object
