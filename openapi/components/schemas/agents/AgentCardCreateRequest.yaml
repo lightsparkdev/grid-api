@@ -3,7 +3,8 @@ description: >-
   Request body for `POST /agents/me/cards`. Without `kind`, or with
   `kind: STANDARD`, it issues the agent's standard card. With
   `kind: PURCHASE` it requests a single-use purchase card for one online
-  purchase of `amount`.
+  purchase of `amount`, or with `recurring: true` a recurring purchase card
+  that may spend up to `amount` a month at one merchant.
 required:
   - fundingSource
 properties:
@@ -28,6 +29,10 @@ properties:
       The purchase amount in the smallest unit of USD. Required for
       `kind: PURCHASE` and rejected otherwise. Grid adds an allowance for tax
       and shipping to set the card's limit; see `AgentPurchaseCardDetails`.
+      For a recurring card it is the monthly limit itself, with no allowance
+      added, so include tax and shipping in it. Each platform sets the largest
+      amount an agent may ask for, separately for single-use and recurring
+      cards; a larger one is rejected with `INVALID_INPUT`.
     example: 4999
   description:
     type: string
@@ -36,3 +41,17 @@ properties:
       What the card is for, such as the merchant and item, shown to the
       customer when they approve it. Allowed only with `kind: PURCHASE`.
     example: Running shoes from example-store.com
+  recurring:
+    type: boolean
+    default: false
+    description: >-
+      Request a recurring purchase card: one that locks to the first merchant
+      that charges it and may be charged there again, up to `amount` in any
+      trailing month (from a charge back to the same date a month earlier),
+      until it is closed. Use it for a subscription, a card
+      saved with a merchant, a hotel or car rental, or an order that ships in
+      parts. It always needs the customer's approval, whatever the agent's
+      policy says, and is available only where the platform enables
+      recurring purchase cards. `true` is allowed only with
+      `kind: PURCHASE`; `false` is accepted with any kind.
+    example: false
