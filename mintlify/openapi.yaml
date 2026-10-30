@@ -27234,7 +27234,7 @@ components:
               $ref: '#/components/schemas/AchRailStatus'
             traceNumber:
               type: string
-              description: 15-digit ACH trace number of the entry.
+              description: 15-digit ACH trace number of the original entry. A return, dishonor, contest or reversal is a separate entry with its own trace, listed on its item in `events`.
               example: '021000020123456'
             statementDescriptor:
               type: string
