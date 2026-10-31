@@ -16,6 +16,10 @@ Transfers can be funded via USDC and BTC on popular blockchains including Solana
 | Lightning | BTC |
 | Spark | BTC |
 
+<Note>
+BTC funding via Lightning or Spark is paid with a Lightning invoice. When the destination is an internal account, a BTC-funded quote settles only into a fiat internal account; quotes to internal stablecoin accounts (USDC, USDT, USDB) are not supported.
+</Note>
+
 ### Create a quote for USDC-funded transfer
 
 Request a quote that provides blockchain funding options:
