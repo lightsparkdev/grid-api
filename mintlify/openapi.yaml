@@ -2378,6 +2378,17 @@ paths:
         for your platform itself. `USDC` and `USDT` rule-based accounts are enabled
         per platform.
 
+        For customers in a region where Strong Customer Authentication is
+        required (the EU), the account is returned `PENDING` with an
+        `scaChallenge`: the account holder authorizes the account's sweep
+        instruction once with `POST /internal-accounts/{id}/authorize`, after which
+        the account is `ACTIVE` and later sweeps need no further authorization. An
+        external destination must already be a trusted beneficiary
+        (`POST /customers/external-accounts/{externalAccountId}/trust`). Retrying
+        the create request with the same `Idempotency-Key` while the account is
+        still `PENDING` returns it with a live challenge, issuing a new one if the
+        previous challenge expired.
+
         Sandbox platforms can create rule-based accounts and exercise the whole
         flow. The account number is generated locally rather than issued by a
         partner bank, and `POST /sandbox/internal-accounts/{accountId}/fund` stands
@@ -2463,7 +2474,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalAccount'
         '201':
-          description: Internal account created. `fundingPaymentInstructions` carries the account's own number.
+          description: Internal account created. `fundingPaymentInstructions` carries the account's own number. For customers in a region where SCA is required, the account is `PENDING` and carries the `scaChallenge` that opens it.
           content:
             application/json:
               schema:
@@ -2493,7 +2504,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict - the `Idempotency-Key` was already used to create a materially different account. Use a new key for a new account.
+          description: Conflict - the `Idempotency-Key` was already used to create a materially different account (use a new key for a new account). Also returned with `BENEFICIARY_NOT_TRUSTED` when the sweep destination must be a trusted beneficiary and is not, and with `SCA_SESSION_REQUIRED` when the customer's SCA login session is missing or expired.
           content:
             application/json:
               schema:
@@ -6656,6 +6667,228 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /internal-accounts/{id}/authorize:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the rule-based internal account whose SCA challenge is being authorized.
+        required: true
+        schema:
+          type: string
+        example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+    post:
+      summary: Authorize a rule-based account's SCA challenge
+      description: |
+        Satisfy the Strong Customer Authentication challenge carried by a
+        `RULE_BASED` internal account in `PENDING` status by submitting an
+        `ScaAuthorization` proof. The challenge authorizes the account's sweep
+        instruction once; later sweeps need no further authorization.
+
+        On success the account is returned `ACTIVE` with its
+        `fundingPaymentInstructions`, and an `INTERNAL_ACCOUNT.STATUS_UPDATED`
+        webhook is sent. As with all SCA, check the returned account: if it is still
+        `PENDING` it carries the next `scaChallenge` to authorize.
+
+        This endpoint is only meaningful for customers in a region where SCA is
+        required (e.g. EU). For other customers, and for accounts with no pending
+        challenge, this returns `409`.
+
+        In sandbox, the SMS code is always `123456`.
+      operationId: authorizeInternalAccount
+      tags:
+        - Internal Accounts
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaAuthorization'
+      responses:
+        '200':
+          description: Challenge authorized; the updated account is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccount'
+        '400':
+          description: Invalid or expired authorization proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer, or the account has no pending challenge to authorize. Also returned with `SCA_SESSION_REQUIRED` when the customer's SCA login session is missing or expired — re-authenticate the customer, then authorize again.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '423':
+          description: Returned with `ACCOUNT_LOCKED` when the customer's login is temporarily locked after too many failed authorization attempts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED` when authorization attempts for this challenge happen too frequently. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /internal-accounts/{id}/authorize/resend:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the rule-based internal account whose SCA challenge code should be re-sent.
+        required: true
+        schema:
+          type: string
+        example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+    post:
+      summary: Resend a rule-based account's SCA challenge code
+      description: |
+        Re-send the one-time code for a `PENDING` rule-based account whose
+        `scaChallenge.factor` is `SMS_OTP`. The existing challenge is reused and its
+        `scaChallenge.expiresAt` is **not** extended.
+
+        Only meaningful for customers in a region where SCA is required (e.g. EU);
+        a 409 is returned otherwise. `TOTP` and `PASSKEY` challenges cannot be
+        re-sent and return 409.
+
+        In sandbox, the code is always `123456`.
+      operationId: resendInternalAccountScaCode
+      tags:
+        - Internal Accounts
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Code re-sent.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer, the account has no pending challenge, or the challenge's factor cannot be re-sent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /internal-accounts/{id}/stranded-funds/transfer:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the rule-based internal account holding the stranded funds.
+        required: true
+        schema:
+          type: string
+        example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+    post:
+      summary: Move a rule-based account's stranded funds
+      description: |
+        Move funds a sweep converted but could not deliver (listed in the account's
+        `strandedBalances`) to the account holder's own internal account in the
+        same currency.
+
+        The transfer is returned as a quote in `PENDING_AUTHORIZATION` carrying an
+        `scaChallenge`. Authorize it with `POST /quotes/{quoteId}/authorize`, as for
+        any other quote. Once it completes, the currency drops out of
+        `strandedBalances` and an `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhook is
+        sent.
+
+        Stranded funds only arise for customers in a region where SCA is required
+        (the EU). For other accounts, or when nothing is stranded in that currency,
+        this returns `409`.
+      operationId: transferInternalAccountStrandedFunds
+      tags:
+        - Internal Accounts
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StrandedFundsTransferRequest'
+      responses:
+        '200':
+          description: The transfer's quote, awaiting authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Nothing is stranded in that currency, or the account is not one that can hold stranded funds. Also returned with `SCA_SESSION_REQUIRED` when the customer's SCA login session is missing or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -17815,6 +18048,7 @@ components:
             | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
             | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
             | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
+            | BENEFICIARY_NOT_TRUSTED | The external account must be a trusted beneficiary before it can be used here. Trust it first via `POST /customers/external-accounts/{externalAccountId}/trust` (and its `/confirm`), then retry |
             | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
             | BANK_ACCOUNT_VALIDATION_PENDING | The US bank account on this request is still being validated. Grid verifies a newly added ACH account by sending a micro-entry and waiting out the return window, which takes a few banking days. The account is not rejected; retry once validation completes. A permanently failed account returns `400 INVALID_BANK_ACCOUNT` instead |
             | INVALID_STATE_TRANSITION | The requested card `status` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE \| FROZEN → CLOSED`, or the card cannot be unfrozen by the platform because Grid froze it for review, it was frozen as `COMPROMISED`, or its customer is not `ACTIVE` |
@@ -17846,6 +18080,7 @@ components:
             - EMAIL_OTP_CREDENTIAL_SET_CHANGED
             - PASSKEY_ALREADY_ENROLLED
             - SCA_SESSION_REQUIRED
+            - BENEFICIARY_NOT_TRUSTED
             - BENEFICIARY_TRUSTED
             - BANK_ACCOUNT_VALIDATION_PENDING
             - INVALID_STATE_TRANSITION
@@ -18821,7 +19056,7 @@ components:
           type:
             - string
             - 'null'
-          description: Optional, informational label for what this particular challenge in the sequence authorizes — useful for step UX (e.g. "Authorize the currency conversion" vs "Authorize the payout"). Known values include `CURRENCY_CONVERSION`, `PAYOUT`, and `TRANSFER`, but the set is **non-exhaustive and may grow** — treat unrecognized values as a generic authorization step and do not branch program logic on it. Omitted when steps are not distinguished (e.g. a single-authorization flow).
+          description: Optional, informational label for what this particular challenge in the sequence authorizes — useful for step UX (e.g. "Authorize the currency conversion" vs "Authorize the payout"). Known values include `CURRENCY_CONVERSION`, `PAYOUT`, `TRANSFER`, and `STANDING_INSTRUCTION` (authorizing a rule-based account's sweep instruction), but the set is **non-exhaustive and may grow** — treat unrecognized values as a generic authorization step and do not branch program logic on it. Omitted when steps are not distinguished (e.g. a single-authorization flow).
           example: PAYOUT
         passkeyAssertionOptions:
           type:
@@ -19014,7 +19249,10 @@ components:
           example: RULE_BASED
         currency:
           type: string
-          description: Currency code the account is denominated in. Rule-based accounts are currently available in `USD`, `USDC`, and `USDT`. A `USD` account is issued its own bank account number; a `USDC` or `USDT` account is issued its own deposit address on each network your platform supports.
+          description: |-
+            Currency code the account is denominated in. Rule-based accounts are currently available in `USD`, `USDC`, and `USDT`. A `USD` account is issued its own bank account number; a `USDC` or `USDT` account is issued its own deposit address on each network your platform supports.
+
+            For customers in a region where Strong Customer Authentication is required (the EU), rule-based accounts are available in `EUR`, `USDC`, and `BTC`, and every sweep converts currency: an `EUR` account sweeps to a crypto destination, and a `USDC` or `BTC` account sweeps to an `EUR` destination. See the rule-based accounts guide for the supported combinations.
           example: USD
         onBehalfOfCustomerId:
           type: string
@@ -19029,6 +19267,9 @@ components:
           allOf:
             - $ref: '#/components/schemas/SweepRuleRequest'
           description: 'The routing rule for the account. Required when `type` is `RULE_BASED`, which is the only type this endpoint creates today: a rule-based account with no rule has no meaning, so the two are written together.'
+        scaFactor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: Optional preferred factor for the Strong Customer Authentication challenge that authorizes the account's standing instruction. Only relevant for customers in a region where SCA is required (e.g. EU); ignored otherwise. `SMS_OTP` (default), `TOTP`, and `PASSKEY` are all accepted, because the challenge authorizes the instruction rather than a single amount and payee.
     InternalAccountStatus:
       title: Internal Account Status
       type: string
@@ -19889,6 +20130,15 @@ components:
           allOf:
             - $ref: '#/components/schemas/SweepRule'
           description: The routing rule attached to this account. Null for accounts that carry no rule, which is every account other than a `RULE_BASED` one.
+        scaChallenge:
+          allOf:
+            - $ref: '#/components/schemas/ScaChallenge'
+          description: The Strong Customer Authentication challenge the account holder must satisfy before a `RULE_BASED` account opens. Present only while the account is `PENDING` and waiting for that authorization, and only for customers in a region where SCA is required (the EU). Authorize it with `POST /internal-accounts/{id}/authorize`. If the challenge expires, retry the create request with the same `Idempotency-Key` to receive a new one.
+        strandedBalances:
+          type: array
+          description: Funds a `RULE_BASED` account's sweep converted but could not deliver to the rule's destination, by currency. They are held for the account holder and can be moved to their own account in that currency with `POST /internal-accounts/{id}/stranded-funds/transfer`. Omitted when there are none, and for every account other than a `RULE_BASED` one.
+          items:
+            $ref: '#/components/schemas/CurrencyAmount'
         privateEnabled:
           type: boolean
           description: Whether wallet privacy is enabled for the Embedded Wallet. Only present for `EMBEDDED_WALLET` internal accounts.
@@ -29509,6 +29759,27 @@ components:
           type: boolean
           description: Whether wallet privacy should be enabled for the Embedded Wallet.
           example: true
+    ScaTransferFactor:
+      title: SCA Transfer Factor
+      type: string
+      description: A Strong Customer Authentication factor that can authorize a single transfer. `TOTP` is not one, because it cannot carry the required dynamic linking.
+      enum:
+        - SMS_OTP
+        - PASSKEY
+      example: SMS_OTP
+    StrandedFundsTransferRequest:
+      title: Stranded Funds Transfer Request
+      type: object
+      required:
+        - currency
+      properties:
+        currency:
+          type: string
+          description: Currency of the stranded balance to move, as listed in the account's `strandedBalances`. The whole stranded balance in that currency is moved.
+          example: USDC
+        scaFactor:
+          $ref: '#/components/schemas/ScaTransferFactor'
+          description: Optional preferred factor for the transfer's Strong Customer Authentication challenge. `SMS_OTP` (default) or `PASSKEY`.
     InternalAccountExportRequest:
       title: Internal Account Export Request
       description: Request body for `POST /internal-accounts/{id}/export`. The `clientPublicKey` is required on both steps of the signed-retry flow. On step 1 Grid binds it into `payloadToSign` so the subsequent stamp in `Grid-Wallet-Signature` commits to the target pubkey; on step 2 the client echoes the same `clientPublicKey` back and Grid uses it to encrypt the wallet credentials returned in the `200` response.

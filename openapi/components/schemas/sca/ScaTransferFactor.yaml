@@ -1,0 +1,9 @@
+title: SCA Transfer Factor
+type: string
+description: >-
+  A Strong Customer Authentication factor that can authorize a single transfer.
+  `TOTP` is not one, because it cannot carry the required dynamic linking.
+enum:
+  - SMS_OTP
+  - PASSKEY
+example: SMS_OTP

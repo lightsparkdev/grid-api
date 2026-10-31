@@ -31,6 +31,14 @@ properties:
       currently available in `USD`, `USDC`, and `USDT`. A `USD` account is
       issued its own bank account number; a `USDC` or `USDT` account is issued
       its own deposit address on each network your platform supports.
+
+
+      For customers in a region where Strong Customer Authentication is
+      required (the EU), rule-based accounts are available in `EUR`, `USDC`,
+      and `BTC`, and every sweep converts currency: an `EUR` account sweeps to
+      a crypto destination, and a `USDC` or `BTC` account sweeps to an `EUR`
+      destination. See the rule-based accounts guide for the supported
+      combinations.
     example: USD
   onBehalfOfCustomerId:
     type: string
@@ -55,3 +63,12 @@ properties:
       The routing rule for the account. Required when `type` is `RULE_BASED`,
       which is the only type this endpoint creates today: a rule-based account
       with no rule has no meaning, so the two are written together.
+  scaFactor:
+    $ref: ../sca/ScaFactor.yaml
+    description: >-
+      Optional preferred factor for the Strong Customer Authentication
+      challenge that authorizes the account's standing instruction. Only
+      relevant for customers in a region where SCA is required (e.g. EU);
+      ignored otherwise. `SMS_OTP` (default), `TOTP`, and `PASSKEY` are all
+      accepted, because the challenge authorizes the instruction rather than a
+      single amount and payee.

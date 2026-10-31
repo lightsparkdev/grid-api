@@ -1,0 +1,16 @@
+title: Stranded Funds Transfer Request
+type: object
+required:
+  - currency
+properties:
+  currency:
+    type: string
+    description: >-
+      Currency of the stranded balance to move, as listed in the account's
+      `strandedBalances`. The whole stranded balance in that currency is moved.
+    example: USDC
+  scaFactor:
+    $ref: ../sca/ScaTransferFactor.yaml
+    description: >-
+      Optional preferred factor for the transfer's Strong Customer
+      Authentication challenge. `SMS_OTP` (default) or `PASSKEY`.
