@@ -162,10 +162,23 @@ A same-currency destination isn't supported, and neither are `remittanceInformat
 
 The create request returns the account in `PENDING` with an `scaChallenge`. The account holder authorizes it once, and later sweeps run without further authorization:
 
-1. Make sure the customer has an active SCA login session. A missing session returns `409 SCA_SESSION_REQUIRED`.
-2. For an external destination, start beneficiary trust with `POST /customers/external-accounts/{externalAccountId}/trust`, then submit the customer's proof to `POST /customers/external-accounts/{externalAccountId}/trust/confirm`. Check that the response contains `trusted: true` before creating the account. An untrusted destination returns `409 BENEFICIARY_NOT_TRUSTED`.
-3. Call `POST /internal-accounts` with an `Idempotency-Key`. Pass `scaFactor` to choose `SMS_OTP` (default), `TOTP`, or `PASSKEY`.
-4. Call `POST /internal-accounts/{id}/authorize` with the customer's proof. The account becomes `ACTIVE` and Grid sends `INTERNAL_ACCOUNT.STATUS_UPDATED`.
+<Steps>
+<Step title="Confirm an SCA session">
+  Make sure the customer has an active SCA login session. A missing session returns `409 SCA_SESSION_REQUIRED`.
+</Step>
+
+<Step title="Trust an external destination">
+  For an external destination, start beneficiary trust with `POST /customers/external-accounts/{externalAccountId}/trust`, then submit the customer's proof to `POST /customers/external-accounts/{externalAccountId}/trust/confirm`. Check that the response contains `trusted: true` before creating the account. An untrusted destination returns `409 BENEFICIARY_NOT_TRUSTED`.
+</Step>
+
+<Step title="Create the account">
+  Call `POST /internal-accounts` with an `Idempotency-Key`. Pass `scaFactor` to choose `SMS_OTP` (default), `TOTP`, or `PASSKEY`.
+</Step>
+
+<Step title="Authorize the challenge">
+  Call `POST /internal-accounts/{id}/authorize` with the customer's proof, then check the returned account. If it is still `PENDING`, authorize its next `scaChallenge` and repeat until it advances. Once the account is `ACTIVE`, Grid sends `INTERNAL_ACCOUNT.STATUS_UPDATED`.
+</Step>
+</Steps>
 
 If the challenge expires, repeat the create request with the same `Idempotency-Key` to receive a new challenge. An account that is never authorized moves to `FAILED`.
 
