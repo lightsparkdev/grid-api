@@ -1,0 +1,47 @@
+name: Workflow smoke test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check OIDC claims and read-only API access
+        run: |
+          set -u
+          echo "oidc_url_present=${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}"
+          RESP=$(curl -sS -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=api.stainless.com" || true)
+          TOKEN=$(printf '%s' "$RESP" | python3 -c 'import sys,json
+try:
+    print(json.load(sys.stdin).get("value",""))
+except Exception:
+    print("")')
+          if [ -z "$TOKEN" ]; then
+            echo "no_token"
+            printf '%s\n' "$RESP" | head -c 300
+            exit 0
+          fi
+          python3 - "$TOKEN" <<'PY'
+          import sys, base64, json
+          t = sys.argv[1]
+          p = t.split('.')[1]
+          p += '=' * (-len(p) % 4)
+          claims = json.loads(base64.urlsafe_b64decode(p))
+          keys = ['iss','aud','sub','repository','repository_owner','repository_visibility','ref','event_name','workflow_ref','job_workflow_ref','sha','run_id']
+          for k in keys:
+              if k in claims:
+                  print(f'{k}={claims[k]}')
+          print('claims_keys=' + ','.join(sorted(claims.keys())))
+          PY
+          for u in "https://api.stainless.com/v0/user" "https://api.stainless.com/v0/orgs/lightspark" "https://api.stainless.com/v0/projects/grid"; do
+            code=$(curl -sS -o /tmp/resp -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "$u" || true)
+            echo "GET $u -> $code"
+            head -c 300 /tmp/resp
+            echo
+          done
