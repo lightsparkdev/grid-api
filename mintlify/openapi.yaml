@@ -19526,12 +19526,6 @@ components:
           type: string
           description: Solana wallet address
           example: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg
-    StablecoinAssetType:
-      type: string
-      description: Type of asset
-      enum:
-        - USDC
-        - USDT
     PaymentSolanaWalletInfo:
       title: Solana Wallet
       allOf:
@@ -19540,7 +19534,10 @@ components:
         - type: object
           properties:
             assetType:
-              $ref: '#/components/schemas/StablecoinAssetType'
+              type: string
+              description: Type of asset
+              enum:
+                - USDC
     EthereumWalletInfo:
       type: object
       required:
@@ -19555,6 +19552,12 @@ components:
           type: string
           description: Ethereum L1 wallet address
           example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+    StablecoinAssetType:
+      type: string
+      description: Type of asset
+      enum:
+        - USDC
+        - USDT
     PaymentEthereumWalletInfo:
       title: Ethereum Wallet
       allOf:
