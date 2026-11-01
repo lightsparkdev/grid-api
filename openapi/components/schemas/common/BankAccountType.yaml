@@ -1,0 +1,5 @@
+type: string
+description: Whether the account is a checking or a savings account.
+enum:
+- CHECKING
+- SAVINGS

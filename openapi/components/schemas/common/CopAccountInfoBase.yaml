@@ -18,11 +18,8 @@ properties:
     minLength: 1
     maxLength: 34
   bankAccountType:
-    type: string
+    $ref: ./BankAccountType.yaml
     description: The bank account type
-    enum:
-    - CHECKING
-    - SAVINGS
   bankName:
     type: string
     description: The name of the bank. Must be one of the `bankName` values `GET /discoveries`

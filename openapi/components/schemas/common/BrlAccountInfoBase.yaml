@@ -15,14 +15,7 @@ properties:
     minLength: 1
     maxLength: 77
   pixKeyType:
-    type: string
-    description: The type of PIX key
-    enum:
-    - CPF
-    - CNPJ
-    - EMAIL
-    - PHONE
-    - RANDOM
+    $ref: ./PixKeyType.yaml
   taxId:
     type: string
     description: The tax ID (CPF or CNPJ)

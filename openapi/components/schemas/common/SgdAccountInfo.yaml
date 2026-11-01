@@ -7,8 +7,4 @@ allOf:
     paymentRails:
       type: array
       items:
-        type: string
-        enum:
-        - PAYNOW
-        - FAST
-        - BANK_TRANSFER
+        $ref: ./SgdPaymentRail.yaml

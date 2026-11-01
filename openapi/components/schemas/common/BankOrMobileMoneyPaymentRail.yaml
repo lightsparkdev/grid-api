@@ -1,0 +1,5 @@
+type: string
+enum:
+- BANK_TRANSFER
+- MOBILE_MONEY
+description: Payment rail for a bank transfer or mobile money payout.

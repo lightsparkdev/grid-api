@@ -7,19 +7,9 @@ allOf:
     paymentRails:
       type: array
       items:
-        type: string
-        enum:
-        - ACH
-        - ACH_SAME_DAY
-        - WIRE
-        - RTP
-        - FEDNOW
+        $ref: ./UsdPaymentRail.yaml
     bankAccountType:
-      type: string
+      $ref: ./BankAccountType.yaml
       description: Whether the account is a checking or a savings account. Grid uses
         this to set the ACH transaction code, so a value that does not match the account
         causes the receiving bank to return a notification of change.
-      enum:
-      - CHECKING
-      - SAVINGS
-      example: CHECKING
