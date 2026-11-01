@@ -1,3 +1,4 @@
+title: Rail Fee Config
 allOf:
   - $ref: ./FeeConfig.yaml
   - type: object
