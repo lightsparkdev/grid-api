@@ -2,13 +2,8 @@ type: object
 description: >-
   Overrides the platform-collected fee for this transaction. When present,
   it replaces any configured platform-collected fees that would otherwise
-  apply to the transaction. The fixed fee must be denominated in the quote's
-  source currency. Support depends on the source currency and on the payment
-  rail that serves your platform for that currency. Fiat sources such as USD
-  and EUR are supported on rails that can collect platform fees. Crypto
-  sources such as BTC and USDC require Grid to enable overrides for your
-  platform. Lightning deposit quotes don't support overrides. Grid rejects an
-  unsupported override with `INVALID_INPUT` before it creates the quote.
+  apply to the transaction. The fixed fee must be denominated in the
+  quote's source currency.
 
 required:
   - platformFixedFee
@@ -18,8 +13,7 @@ properties:
     $ref: ../config/FixedFee.yaml
     description: >-
       Fixed fee charged for this transaction. Must be denominated in the
-      quote's source currency. If the rail collects fees only in a coarser
-      unit, Grid rounds the fee up to that unit.
+      quote's source currency.
   platformVariableFeeBps:
     type: integer
     minimum: 0
