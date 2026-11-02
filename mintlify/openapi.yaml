@@ -1205,7 +1205,7 @@ paths:
         Call `POST /customers/{customerId}/verify-email/confirm` with the received
         code to complete verification. Re-POST this endpoint to resend the code.
 
-        In sandbox, no email is sent and the code is always `123456`.
+        In sandbox, no email is sent and the code is always `000000`.
       operationId: sendCustomerEmailVerification
       tags:
         - Contact Verification
@@ -1254,7 +1254,7 @@ paths:
 
         Both email and phone must be `VERIFIED` before the customer can begin KYC.
 
-        In sandbox, the code is always `123456`.
+        In sandbox, the code is always `000000`.
       operationId: confirmCustomerEmailVerification
       tags:
         - Contact Verification
@@ -1325,7 +1325,7 @@ paths:
         Call `POST /customers/{customerId}/verify-phone/confirm` with the received
         code to complete verification. Re-POST this endpoint to resend the code.
 
-        In sandbox, no SMS is sent and the code is always `123456`.
+        In sandbox, no SMS is sent and the code is always `000000`.
       operationId: sendCustomerPhoneVerification
       tags:
         - Contact Verification
@@ -1374,7 +1374,7 @@ paths:
 
         Both email and phone must be `VERIFIED` before the customer can begin KYC.
 
-        In sandbox, the code is always `123456`.
+        In sandbox, the code is always `000000`.
       operationId: confirmCustomerPhoneVerification
       tags:
         - Contact Verification
@@ -1572,7 +1572,7 @@ paths:
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
-        In sandbox, the TOTP code is always `123456`.
+        In sandbox, the TOTP code is always `000000`.
       operationId: confirmScaFactorEnrollment
       tags:
         - Strong Customer Authentication
@@ -1769,7 +1769,7 @@ paths:
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
-        In sandbox, the SMS/TOTP code is always `123456`.
+        In sandbox, the SMS/TOTP code is always `000000`.
       operationId: completeScaLogin
       tags:
         - Strong Customer Authentication
@@ -2178,7 +2178,7 @@ paths:
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
-        In sandbox, the SMS/TOTP code is always `123456`.
+        In sandbox, the SMS/TOTP code is always `000000`.
       operationId: confirmBeneficiaryTrust
       tags:
         - Strong Customer Authentication
@@ -2305,7 +2305,7 @@ paths:
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
-        In sandbox, the SMS/TOTP code is always `123456`.
+        In sandbox, the SMS/TOTP code is always `000000`.
       operationId: confirmBeneficiaryUntrust
       tags:
         - Strong Customer Authentication
@@ -5117,7 +5117,7 @@ paths:
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
-        In sandbox, the SMS code is always `123456`.
+        In sandbox, the SMS code is always `000000`.
       operationId: authorizeQuote
       tags:
         - Strong Customer Authentication
@@ -5199,7 +5199,7 @@ paths:
         Only meaningful for customers in a region where SCA is required (e.g. EU);
         a 409 is returned otherwise. `PASSKEY` challenges cannot be re-sent and return 409.
 
-        In sandbox, the code is always `123456`.
+        In sandbox, the code is always `000000`.
       operationId: resendQuoteScaCode
       tags:
         - Strong Customer Authentication
@@ -18248,8 +18248,8 @@ components:
       properties:
         code:
           type: string
-          description: The one-time verification code the customer received via email or SMS. In sandbox, the code is always `123456`.
-          example: '123456'
+          description: The one-time verification code the customer received via email or SMS. In sandbox, the code is always `000000`.
+          example: '000000'
     ScaFactor:
       type: string
       enum:
@@ -18405,8 +18405,8 @@ components:
           description: The shared secret returned as `secret` by the TOTP enrollment start, threaded back to bind the confirmation to that enrollment.
         code:
           type: string
-          description: The current time-based one-time code from the customer's authenticator app. In sandbox, the code is always `123456`.
-          example: '123456'
+          description: The current time-based one-time code from the customer's authenticator app. In sandbox, the code is always `000000`.
+          example: '000000'
     PasskeyEnrollmentConfirmRequest:
       type: object
       description: The WebAuthn credential a device produced for a passkey registration challenge, submitted to enroll the passkey factor.
@@ -18556,8 +18556,8 @@ components:
           type:
             - string
             - 'null'
-          description: The one-time code the customer received by SMS, or read from their authenticator app. Provide for `SMS_OTP` / `TOTP`. In sandbox, the code is always `123456`.
-          example: '123456'
+          description: The one-time code the customer received by SMS, or read from their authenticator app. Provide for `SMS_OTP` / `TOTP`. In sandbox, the code is always `000000`.
+          example: '000000'
         passkeyAssertion:
           type:
             - object
@@ -18858,8 +18858,8 @@ components:
           type:
             - string
             - 'null'
-          description: The one-time code the customer received by SMS, or read from their authenticator app. Provide for `SMS_OTP` / `TOTP`. In sandbox, the code is always `123456`.
-          example: '123456'
+          description: The one-time code the customer received by SMS, or read from their authenticator app. Provide for `SMS_OTP` / `TOTP`. In sandbox, the code is always `000000`.
+          example: '000000'
         passkeyAssertion:
           type:
             - object
@@ -28910,8 +28910,8 @@ components:
           type:
             - string
             - 'null'
-          description: The one-time code the customer received by SMS, or read from their authenticator app. In sandbox, the code is always `123456`.
-          example: '123456'
+          description: The one-time code the customer received by SMS, or read from their authenticator app. In sandbox, the code is always `000000`.
+          example: '000000'
         passkeyAssertion:
           type:
             - object

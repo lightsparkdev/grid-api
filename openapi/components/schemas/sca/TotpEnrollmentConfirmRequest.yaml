@@ -22,5 +22,5 @@ properties:
     type: string
     description: >-
       The current time-based one-time code from the customer's authenticator
-      app. In sandbox, the code is always `123456`.
-    example: '123456'
+      app. In sandbox, the code is always `000000`.
+    example: '000000'

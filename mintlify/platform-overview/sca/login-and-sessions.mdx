@@ -57,7 +57,7 @@ and fed into risk assessment. Supply the customer's address, not your server's.
 ```bash
 POST /sca/login/complete?customerId={customerId}
 
-{ "factor": "SMS_OTP", "challengeId": "…", "code": "123456", "endUserIpAddress": "203.0.113.42" }
+{ "factor": "SMS_OTP", "challengeId": "…", "code": "000000", "endUserIpAddress": "203.0.113.42" }
 ```
 
 ```json
@@ -69,7 +69,7 @@ for that customer, and `sessionExpiresAt` gives its absolute expiry — prompt a
 re-login ahead of it rather than waiting for a call to fail. Any other `status`
 value means the login did not complete; treat only `SUCCESS` as success. An
 invalid or expired proof — or a missing or malformed `endUserIpAddress` —
-returns `400`. **In sandbox, the code is always `123456`.**
+returns `400`. **In sandbox, the code is always `000000`.**
 </Step>
 </Steps>
 

@@ -18,7 +18,7 @@ post:
     Only meaningful for customers in a region where SCA is required (e.g. EU);
     a 409 is returned otherwise. `PASSKEY` challenges cannot be re-sent and return 409.
 
-    In sandbox, the code is always `123456`.
+    In sandbox, the code is always `000000`.
   operationId: resendQuoteScaCode
   tags:
     - Strong Customer Authentication
