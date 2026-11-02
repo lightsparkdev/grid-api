@@ -8,4 +8,4 @@ description: |
   | Type | Description |
   |------|-------------|
   | `EXECUTE_QUOTE` | Execute a quote |
-  | `ISSUE_PURCHASE_CARD` | Issue a single-use purchase card. See `purchaseCard` |
+  | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. See `purchaseCard` |

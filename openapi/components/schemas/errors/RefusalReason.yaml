@@ -21,6 +21,7 @@ description: |
   | `AGENT_CARDS_CUSTOMER_NOT_VERIFIED` | 403 | Agent cards need a verified individual customer |
   | `AGENT_CARD_HANDOVER_DISABLED` | 403 | Handing an agent's card over to its customer is not enabled for the platform |
   | `AGENT_PURCHASE_CARDS_DISABLED` | 403 | Agent purchase cards are not enabled for the platform |
+  | `AGENT_RECURRING_PURCHASE_CARDS_DISABLED` | 403 | Agent recurring purchase cards are not enabled for the platform |
   | `AGENT_PURCHASE_CARD_POLICY_DENIED` | 403 | The agent's policy denied the purchase card. `details.policyDenialReason` says which rule |
   | `CARDS_DISABLED` | 403 | Cards are not enabled for the platform |
   | `CARDHOLDER_INFO_MISSING` | 400 | The cardholder record lacks fields a card needs. `details.missingFields` lists them; supply them through the customers API |

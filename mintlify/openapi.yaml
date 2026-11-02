@@ -8836,7 +8836,11 @@ paths:
       description: |
         Move the customer's standard agent card that Grid froze when the agent it was issued for was deleted to this agent, and unfreeze it. Use this when a customer reconnects agent software whose agent the platform deleted: a frozen card still counts against the customer's card limit, so without a hand-over the customer can neither use it nor be issued another.
 
-        A card qualifies only while the freeze Grid placed on its agent's deletion is the only reason it is frozen. A card frozen by the platform, the customer, an agent or Lightspark is left as it is, and purchase cards are never handed over. The agent must belong to the card's customer, must be neither paused nor deleted, must have a policy granting `MANAGE_CARDS`, and must hold no standard card that is not `CLOSED`. When several cards qualify, the most recently issued one is handed over.
+        A card qualifies only while the freeze Grid placed on its agent's deletion is the only reason it is frozen. A card frozen by the platform, the customer, an agent or Lightspark is left as it is, and single-use purchase cards are never handed over.
+
+        With `kind=PURCHASE`, the newest qualifying recurring purchase card is handed over instead; call again until `204` to move each of them. It is available only where the platform enables recurring purchase cards. The agent must also hold an active delegated key on the Embedded Wallet that funds the card, which pays for the card from then on; a card on a wallet where it holds none is not handed over. The agent may hold a standard card, but must have room under the platform's limit on open recurring purchase cards, counting those awaiting approval; otherwise the request is rejected with `PURCHASE_CARD_LIMIT_REACHED`.
+
+        The agent must belong to the card's customer, must be neither paused nor deleted, and must have a policy granting `MANAGE_CARDS`. For a standard card it must also hold no standard card that is not `CLOSED`. When several cards qualify, the most recently issued one is handed over.
 
         The customer must still meet what issuing a card requires: an individual customer with approved KYC who has accepted the cardholder agreement. The card is unfrozen as a platform `status: ACTIVE` update is, so the platform receives the same card status webhook; a card whose funding authorization is missing comes back `PENDING_AUTH`. A card that was still being provisioned when its agent was deleted is not handed over. Responds `204` when the customer has no card to hand over.
       operationId: handOverAgentCard
@@ -8847,6 +8851,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: kind
+          in: query
+          description: 'The kind of card to hand over: `STANDARD` (the default) or `PURCHASE` for a recurring purchase card.'
+          required: false
+          schema:
+            $ref: '#/components/schemas/AgentCardKind'
       tags:
         - Agent Management
       security:
@@ -8873,7 +8883,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agent card hand-over is not enabled for the platform
+          description: Forbidden - Agent card hand-over is not enabled for the platform, or recurring purchase cards are not enabled for a `kind=PURCHASE` request
           content:
             application/json:
               schema:
@@ -8885,7 +8895,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict - The agent already holds a standard card that is not `CLOSED` (`AGENT_CARD_EXISTS`), or the card cannot be unfrozen (`INVALID_STATE_TRANSITION`)
+          description: Conflict - The agent already holds a standard card that is not `CLOSED` (`AGENT_CARD_EXISTS`, standard cards only), already holds the most open recurring purchase cards allowed (`PURCHASE_CARD_LIMIT_REACHED`, `kind=PURCHASE` only), or the card cannot be unfrozen (`INVALID_STATE_TRANSITION`)
           content:
             application/json:
               schema:
@@ -10000,7 +10010,9 @@ paths:
         - A request the policy denies outright (over a spending limit, or a
           funding account the policy does not allow) is rejected with `403`.
 
-        The card is closed by its first approved authorization, and Grid closes it if it is still unused at `purchase.expiresAt`. Purchase cards are not counted by the one-standard-card rule, but an agent may hold only a limited number of open purchase cards, counting those awaiting approval; beyond that the request is rejected with `PURCHASE_CARD_LIMIT_REACHED`. Card details are never returned here; request them with `POST /agents/me/cards/{cardId}/reveal`.
+        The card is closed by its first approved authorization, and Grid closes it if it is still unused at `purchase.expiresAt`. Purchase cards are not counted by the one-standard-card rule, but an agent may hold only a limited number of open purchase cards, counting those awaiting approval; beyond that the request is rejected with `PURCHASE_CARD_LIMIT_REACHED`.
+
+        **Recurring purchase card** (`kind: PURCHASE`, `recurring: true`): for a subscription, a card saved with a merchant, a hotel or car rental, or an order that ships in parts. Available only where the platform enables recurring purchase cards. The card locks to the first merchant that charges it and declines every other merchant; that merchant may charge it again, up to `amount` in any trailing month (from a charge back to the same date a month earlier), with no allowance added. It always becomes an `ISSUE_PURCHASE_CARD` action awaiting the customer's approval and is returned with `202`, whatever the policy's approval threshold or execution mode, though a request the policy denies is still rejected with `403`. Its charges count against the agent's policy limits as they are authorized. It has no `purchase.expiresAt` and stays open until the customer or platform closes it (`PATCH /cards/{id}` with `status: CLOSED`, a `substatus` and a `reason`). Pausing the agent does not close it, but its charges are declined while the agent is paused; deleting the agent freezes it, and `POST /agents/{agentId}/card-handover` with `kind=PURCHASE` can move it to the customer's next agent. Recurring cards have their own, smaller limit on open cards, counting those awaiting approval, and do not use up the room for single-use cards. Card details are never returned here; request them with `POST /agents/me/cards/{cardId}/reveal`.
 
         Card issuance cannot be reversed, so an `Idempotency-Key` header is required. Keys are scoped to the agent: a retry by the same agent with the same key returns what the first request created, whatever has changed since, and another agent's key never matches. For a purchase card, a retry returns the issued card with `201`, or the action with `202` while it is pending, rejected or failed.
       operationId: agentCreateCard
@@ -10036,6 +10048,14 @@ paths:
                   fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                   amount: 4999
                   description: Running shoes from example-store.com
+              recurringPurchaseCard:
+                summary: Request a recurring card for a subscription
+                value:
+                  kind: PURCHASE
+                  recurring: true
+                  fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  amount: 1599
+                  description: Monthly music subscription at example-music.com
       responses:
         '201':
           description: Card created. A standard card starts in `PROCESSING` while the issuer provisions it. A purchase card is returned with `purchase` set.
@@ -10050,7 +10070,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AgentAction'
         '400':
-          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the customer's KYC status is not `APPROVED`, with `CARDHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires a cardholder agreement the customer has not accepted, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or too long, when the funding source does not belong to the customer or is not denominated in a card-eligible currency, when `amount` is missing for a purchase card or supplied for a standard one, when a purchase card's funding source is not an Embedded Wallet the agent holds an active delegated key on or the agent's policy is not in USD, and for general invalid parameters.
+          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the customer's KYC status is not `APPROVED`, with `CARDHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires a cardholder agreement the customer has not accepted, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or too long, when the funding source does not belong to the customer or is not denominated in a card-eligible currency, when `amount` is missing for a purchase card or supplied for a standard one, when `recurring` is `true` for a standard card, when `amount` is over the largest purchase (or, for a recurring card, monthly limit) the platform allows agents to ask for, when a purchase card's funding source is not an Embedded Wallet the agent holds an active delegated key on or the agent's policy is not in USD, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -10062,13 +10082,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: 'Forbidden - Agents API or agent cards are not enabled for the platform, agent purchase cards are not enabled for a `kind: PURCHASE` request, the agent is paused, the agent does not have the ISSUE_CARDS permission, or the agent''s policy denies the purchase card (its `reason` starts with `Agent policy denied the purchase card:` followed by the denial, such as `DAILY_LIMIT_EXCEEDED`)'
+          description: 'Forbidden - Agents API or agent cards are not enabled for the platform, agent purchase cards are not enabled for a `kind: PURCHASE` request, recurring purchase cards are not enabled for a `recurring: true` request, the agent is paused, the agent does not have the ISSUE_CARDS permission, or the agent''s policy denies the purchase card (its `reason` starts with `Agent policy denied the purchase card:` followed by the denial, such as `DAILY_LIMIT_EXCEEDED`)'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error403'
         '409':
-          description: Conflict. Returned with `AGENT_CARD_EXISTS` when the agent already holds a standard card that is not `CLOSED`, with `PURCHASE_CARD_LIMIT_REACHED` when it holds the most open purchase cards allowed, with `CARD_LIMIT_REACHED` when the platform has reached the maximum number of live cards it may hold, and with `CONFLICT` when the agent already used the `Idempotency-Key` for a different card request.
+          description: Conflict. Returned with `AGENT_CARD_EXISTS` when the agent already holds a standard card that is not `CLOSED`, with `PURCHASE_CARD_LIMIT_REACHED` when it holds the most open purchase cards (or recurring purchase cards) allowed, with `CARD_LIMIT_REACHED` when the platform has reached the maximum number of live cards it may hold, and with `CONFLICT` when the agent already used the `Idempotency-Key` for a different card request.
           content:
             application/json:
               schema:
@@ -16334,6 +16354,7 @@ components:
         | `AGENT_CARDS_CUSTOMER_NOT_VERIFIED` | 403 | Agent cards need a verified individual customer |
         | `AGENT_CARD_HANDOVER_DISABLED` | 403 | Handing an agent's card over to its customer is not enabled for the platform |
         | `AGENT_PURCHASE_CARDS_DISABLED` | 403 | Agent purchase cards are not enabled for the platform |
+        | `AGENT_RECURRING_PURCHASE_CARDS_DISABLED` | 403 | Agent recurring purchase cards are not enabled for the platform |
         | `AGENT_PURCHASE_CARD_POLICY_DENIED` | 403 | The agent's policy denied the purchase card. `details.policyDenialReason` says which rule |
         | `CARDS_DISABLED` | 403 | Cards are not enabled for the platform |
         | `CARDHOLDER_INFO_MISSING` | 400 | The cardholder record lacks fields a card needs. `details.missingFields` lists them; supply them through the customers API |
@@ -30269,7 +30290,7 @@ components:
         - MANAGE_IDENTITY
         - MANAGE_CARDS
         - ISSUE_CARDS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one standard virtual card for itself while it holds no live standard card, and single-use purchase cards where the platform enables them.'
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one standard virtual card for itself while it holds no live standard card, and single-use and recurring purchase cards where the platform enables them.'
     AgentExecutionMode:
       type: string
       enum:
@@ -30554,7 +30575,7 @@ components:
         | Type | Description |
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
-        | `ISSUE_PURCHASE_CARD` | Issue a single-use purchase card. See `purchaseCard` |
+        | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. See `purchaseCard` |
     AgentSendNetwork:
       type: string
       enum:
@@ -30645,7 +30666,7 @@ components:
       description: A quote created by an agent. For a `CHAIN_ADDRESS` destination, the quote's `destination` names the external account Grid recorded for the address, and `destinationChainAddress` names the address itself. For a `LIGHTNING_INVOICE` destination, `destination` names the external account Grid recorded for the invoice, and `destinationLightningInvoice` names the invoice itself.
     AgentPurchaseCardDetails:
       type: object
-      description: 'The purchase a `PURCHASE` card was requested for. The card''s issuer-enforced limit is `spendLimit`: the purchase amount plus an allowance for tax and shipping.'
+      description: 'The purchase a `PURCHASE` card was requested for. The card''s issuer-enforced limit is `spendLimit`: the purchase amount plus an allowance for tax and shipping, or for a recurring card the amount itself, over any trailing month.'
       required:
         - amount
         - spendLimit
@@ -30662,7 +30683,7 @@ components:
           type: integer
           format: int64
           minimum: 1
-          description: 'The most the card can be charged in its one purchase, in the smallest unit of `currency`: `amount` plus an allowance for tax and shipping of 15% of `amount`, at most 1000 (USD 10.00). The card issuer declines a charge above it, and it is the amount checked against the agent''s policy when the card is requested.'
+          description: 'The most the card can be charged in its one purchase, in the smallest unit of `currency`: `amount` plus an allowance for tax and shipping of 15% of `amount`, at most 1000 (USD 10.00). For a recurring card it is `amount`, and it caps what the card can be charged in any trailing month: from a charge back to the same date a month earlier. The card issuer declines a charge above it, and it is the amount checked against the agent''s policy when the card is requested.'
           example: 5749
         currency:
           type: string
@@ -30677,10 +30698,14 @@ components:
           type: string
           description: The customer's Embedded Wallet internal account that pays for the purchase.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        recurring:
+          type: boolean
+          description: 'Whether the card is a recurring purchase card: locked to the first merchant that charges it and reusable there, up to `spendLimit` each trailing month, until it is closed. Absent or `false` for a single-use card.'
+          example: false
         expiresAt:
           type: string
           format: date-time
-          description: When Grid closes the card if it has not been used. Present once the card is issued.
+          description: When Grid closes the card if it has not been used. Present once a single-use card is issued; a recurring card has none.
           example: '2026-10-26T15:30:00Z'
     AgentActionFailureReason:
       type: string
@@ -31051,6 +31076,18 @@ components:
           $ref: '#/components/schemas/AgentAccountRestrictions'
         approvalThresholds:
           $ref: '#/components/schemas/AgentApprovalThresholds'
+    AgentCardKind:
+      type: string
+      enum:
+        - STANDARD
+        - PURCHASE
+      description: |
+        How an agent card is used and funded.
+
+        | Kind | Description |
+        |------|-------------|
+        | `STANDARD` | A card issued for the agent, by the platform with `POST /cards` or by the agent with `POST /agents/me/cards`. The customer holds the card details and its spend comes from the customer's account; that spend counts against the agent's policy limits as the agent's sends do. The agent can read the card, tighten its merchant categories, and freeze it. |
+        | `PURCHASE` | A single-use virtual card the agent issued for one online purchase with `POST /agents/me/cards`. It is funded from the customer's Embedded Wallet, its spend counts against the agent's policy limits, and it closes after its first approved authorization or when it expires unused. A recurring purchase card (`purchase.recurring`) is instead locked to the first merchant that charges it, may be charged there again up to its monthly limit, and stays open until it is closed. The agent reads its number, expiry and CVV through `POST /agents/me/cards/{cardId}/reveal`. |
     CardStatus:
       type: string
       enum:
@@ -31374,18 +31411,6 @@ components:
               default: false
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
-    AgentCardKind:
-      type: string
-      enum:
-        - STANDARD
-        - PURCHASE
-      description: |
-        How an agent card is used and funded.
-
-        | Kind | Description |
-        |------|-------------|
-        | `STANDARD` | A card issued for the agent, by the platform with `POST /cards` or by the agent with `POST /agents/me/cards`. The customer holds the card details and its spend comes from the customer's account; that spend counts against the agent's policy limits as the agent's sends do. The agent can read the card, tighten its merchant categories, and freeze it. |
-        | `PURCHASE` | A single-use virtual card the agent issued for one online purchase with `POST /agents/me/cards`. It is funded from the customer's Embedded Wallet, its spend counts against the agent's policy limits, and it closes after its first approved authorization or when it expires unused. The agent reads its number, expiry and CVV through `POST /agents/me/cards/{cardId}/reveal`. |
     AgentCard:
       title: Agent Card
       type: object
@@ -31440,7 +31465,7 @@ components:
           example: 3
     AgentCardCreateRequest:
       type: object
-      description: 'Request body for `POST /agents/me/cards`. Without `kind`, or with `kind: STANDARD`, it issues the agent''s standard card. With `kind: PURCHASE` it requests a single-use purchase card for one online purchase of `amount`.'
+      description: 'Request body for `POST /agents/me/cards`. Without `kind`, or with `kind: STANDARD`, it issues the agent''s standard card. With `kind: PURCHASE` it requests a single-use purchase card for one online purchase of `amount`, or with `recurring: true` a recurring purchase card that may spend up to `amount` a month at one merchant.'
       required:
         - fundingSource
       properties:
@@ -31455,13 +31480,18 @@ components:
           type: integer
           format: int64
           minimum: 1
-          description: 'The purchase amount in the smallest unit of USD. Required for `kind: PURCHASE` and rejected otherwise. Grid adds an allowance for tax and shipping to set the card''s limit; see `AgentPurchaseCardDetails`.'
+          description: 'The purchase amount in the smallest unit of USD. Required for `kind: PURCHASE` and rejected otherwise. Grid adds an allowance for tax and shipping to set the card''s limit; see `AgentPurchaseCardDetails`. For a recurring card it is the monthly limit itself, with no allowance added, so include tax and shipping in it. Each platform sets the largest amount an agent may ask for, separately for single-use and recurring cards; a larger one is rejected with `INVALID_INPUT`.'
           example: 4999
         description:
           type: string
           maxLength: 255
           description: 'What the card is for, such as the merchant and item, shown to the customer when they approve it. Allowed only with `kind: PURCHASE`.'
           example: Running shoes from example-store.com
+        recurring:
+          type: boolean
+          default: false
+          description: 'Request a recurring purchase card: one that locks to the first merchant that charges it and may be charged there again, up to `amount` in any trailing month (from a charge back to the same date a month earlier), until it is closed. Use it for a subscription, a card saved with a merchant, a hotel or car rental, or an order that ships in parts. It always needs the customer''s approval, whatever the agent''s policy says, and is available only where the platform enables recurring purchase cards. `true` is allowed only with `kind: PURCHASE`; `false` is accepted with any kind.'
+          example: false
     AgentCardUpdateRequest:
       type: object
       description: 'Update request for `PATCH /agents/me/cards/{cardId}`. At least one field must be supplied. An agent may freeze the card or tighten merchant categories: `blockedMccs` must contain every code in the card''s `effectiveBlockedMccs`, and `allowedMccs` may only lose codes once set. The only status an agent may set is `FROZEN`; unfreezing and loosening happen on the platform through `PATCH /cards/{id}`. The platform manages card velocity limits through `/card-velocity-limits`.'
