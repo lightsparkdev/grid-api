@@ -170,7 +170,7 @@ async function emailOtpAuth(acct: WalletAccount, cb: AuthCallbacks): Promise<Ses
   const id = acct.emailOtpCredentialId;
   const { bundle, code } = await collectOtp(acct, cb);
   const tek = genTek();
-  const encryptedOtpBundle = encryptOtpBundle(bundle, tek.pubHex, code);
+  const encryptedOtpBundle = encryptOtpBundle(bundle, compressedPubHex(tek.privHex), code);
   const verifyBody = { type: 'EMAIL_OTP', encryptedOtpBundle };
 
   // Leg 1: 202 payloadToSign + requestId.

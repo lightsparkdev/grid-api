@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { gridFetch } from './gridClient';
+import { encryptOtpBundle } from './gridCrypto';
 import { pickCredentials, signIn, addPasskey, clearSession, getSession } from './gridSession';
 
 // Mocked at the system boundaries only: the Grid network (gridClient) and the
@@ -9,7 +10,7 @@ vi.mock('./gridClient', () => ({ gridFetch: vi.fn() }));
 vi.mock('./gridCrypto', () => ({
   genTek: () => ({ privHex: 'tek-priv', pubHex: 'tek-pub' }),
   compressedPubHex: () => 'tek-pub-compressed',
-  encryptOtpBundle: () => 'encrypted-otp-bundle',
+  encryptOtpBundle: vi.fn(() => 'encrypted-otp-bundle'),
   base64urlToBytes: () => new Uint8Array([1, 2, 3]),
   bytesToBase64url: () => 'b64url',
   stamp: async () => 'stamp-signature',
@@ -177,6 +178,9 @@ describe('sign-in order', () => {
 
     expect(session.via).toBe('email_otp');
     expect(callsTo('POST', (p) => p === '/auth/credentials')).toBe(0);
+    // The OTP bundle seals the compressed public half of the key the client keeps.
+    expect(session.privHex).toBe('tek-priv');
+    expect(vi.mocked(encryptOtpBundle)).toHaveBeenCalledWith('target-bundle', 'tek-pub-compressed', '000000');
   });
 
   it('offers the email on file to the entry step before mailing a code', async () => {
