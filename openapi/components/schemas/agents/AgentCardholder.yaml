@@ -2,8 +2,8 @@ type: object
 description: >-
   The person a business's agent card is issued for. The card is issued on the
   business's card account with this person as its authorized user, so their
-  name is the one on the card. Grid passes these details to the card issuer
-  and does not store them.
+  name is the one on the card. Grid passes these details to the card issuer,
+  holding them only while a purchase card awaits approval.
 required:
   - firstName
   - lastName

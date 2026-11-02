@@ -78,12 +78,12 @@ post:
 
 
     **Business customers**: where the platform enables agents for business
-    customers, an agent of a `BUSINESS` customer may be issued a standard
-    card once the business's KYB status is `APPROVED`. The request must name
-    the person the card is for in `cardholder`; the card is issued on the
-    business's card account with that person as its authorized user, and
-    carries the agent's `actingFor`. Purchase cards are not yet available to
-    business customers.
+    customers, an agent of a `BUSINESS` customer may be issued standard and
+    purchase cards once the business's KYB status is `APPROVED`. The request
+    must name the person the card is for in `cardholder`; the card is issued
+    on the business's card account with that person as its authorized user,
+    and carries the agent's `actingFor`. A purchase card awaiting approval
+    is issued to that person when it is approved.
 
 
     **Standard card** (`kind` omitted or `STANDARD`): as `POST /cards` with
@@ -228,8 +228,8 @@ post:
         agents to ask for, when a purchase
         card's funding source is not an Embedded Wallet the agent holds an
         active delegated key on or the agent's policy is not in USD, when
-        `cardholder` is missing for a business's standard card or supplied
-        for any other card, and for general invalid parameters.
+        `cardholder` is missing for a business's card or supplied for an
+        individual's, and for general invalid parameters.
       content:
         application/json:
           schema:
