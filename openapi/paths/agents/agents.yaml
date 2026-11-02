@@ -3,6 +3,13 @@ post:
   description: >
     Create a new agent with a specified policy. Returns the created agent and a device code
     that must be redeemed by the agent software to complete installation.
+
+
+    Agents of a `BUSINESS` customer are available only where the platform
+    enables them, and require `actingFor` to name the person the agent acts
+    for. Until the business's KYB status is `APPROVED`, its agents' sends and
+    deposits are held to the same limits as an unverified individual's,
+    counted across the whole business.
   operationId: createAgent
   tags:
     - Agent Management
@@ -22,7 +29,11 @@ post:
           schema:
             $ref: ../../components/schemas/agents/AgentCreateResponse.yaml
     '400':
-      description: Bad request
+      description: >-
+        Bad request. Returned with `INVALID_INPUT` when the customer is a
+        `BUSINESS` and the platform has not enabled agents for business
+        customers, when `actingFor` is missing for a business, and for
+        general invalid parameters.
       content:
         application/json:
           schema:

@@ -77,6 +77,15 @@ post:
     permission; reading the card afterwards needs MANAGE_CARDS.
 
 
+    **Business customers**: where the platform enables agents for business
+    customers, an agent of a `BUSINESS` customer may be issued a standard
+    card once the business's KYB status is `APPROVED`. The request must name
+    the person the card is for in `cardholder`; the card is issued on the
+    business's card account with that person as its authorized user, and
+    carries the agent's `actingFor`. Purchase cards are not yet available to
+    business customers.
+
+
     **Standard card** (`kind` omitted or `STANDARD`): as `POST /cards` with
     `agentId` does for the platform. While any of the agent's standard cards
     is not `CLOSED`, including one the platform issued for it, the request is
@@ -207,7 +216,7 @@ post:
     '400':
       description: >-
         Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the
-        customer's KYC status is not `APPROVED`, with
+        customer's KYC (for a business, KYB) status is not `APPROVED`, with
         `CARDHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires a
         cardholder agreement the customer has not accepted, and with
         `INVALID_INPUT` when the `Idempotency-Key` header is missing or too
@@ -218,8 +227,9 @@ post:
         purchase (or, for a recurring card, monthly limit) the platform allows
         agents to ask for, when a purchase
         card's funding source is not an Embedded Wallet the agent holds an
-        active delegated key on or the agent's policy is not in USD, and for
-        general invalid parameters.
+        active delegated key on or the agent's policy is not in USD, when
+        `cardholder` is missing for a business's standard card or supplied
+        for any other card, and for general invalid parameters.
       content:
         application/json:
           schema:

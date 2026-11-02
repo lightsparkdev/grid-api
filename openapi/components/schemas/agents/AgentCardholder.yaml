@@ -1,0 +1,38 @@
+type: object
+description: >-
+  The person a business's agent card is issued for. The card is issued on the
+  business's card account with this person as its authorized user, so their
+  name is the one on the card. Grid passes these details to the card issuer
+  and does not store them.
+required:
+  - firstName
+  - lastName
+  - email
+  - phoneNumber
+  - address
+properties:
+  firstName:
+    type: string
+    minLength: 1
+    maxLength: 255
+    example: Jane
+  lastName:
+    type: string
+    minLength: 1
+    maxLength: 255
+    example: Doe
+  email:
+    type: string
+    format: email
+    maxLength: 255
+    example: jane@example.com
+  phoneNumber:
+    type: string
+    description: Phone number in E.164 format.
+    pattern: ^\+[1-9]\d{1,14}$
+    example: '+14155550123'
+  address:
+    $ref: ../common/Address.yaml
+    description: >-
+      The person's residential address. Must be a complete United States
+      address with `city` and `state`.
