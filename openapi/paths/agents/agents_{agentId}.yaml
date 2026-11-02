@@ -46,7 +46,7 @@ get:
             $ref: ../../components/schemas/errors/Error500.yaml
 patch:
   summary: Update agent
-  description: Update an agent's name or paused state.
+  description: Update an agent's name, paused state or spending pool.
   operationId: updateAgent
   tags:
     - Agent Management

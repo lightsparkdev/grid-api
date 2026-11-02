@@ -27,3 +27,10 @@ properties:
       optional for an `INDIVIDUAL`. It cannot be changed after the agent is
       created.
     example: member_8f2c1a
+  spendingPoolId:
+    type: string
+    description: >-
+      A spending pool of the same customer to put the agent in, where the
+      platform enables spending pools. The agent's policy must be in the
+      pool's currency.
+    example: SpendingPool:019542f5-b3e7-1d02-0000-000000000007

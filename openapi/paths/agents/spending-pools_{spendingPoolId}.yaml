@@ -1,0 +1,151 @@
+parameters:
+  - name: spendingPoolId
+    in: path
+    description: System-generated unique spending pool identifier
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get a spending pool
+  description: >-
+    Retrieve a spending pool with what its agents have spent and may still
+    spend in the current period.
+  operationId: getSpendingPool
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/SpendingPool.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or spending pools are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Spending pool not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+patch:
+  summary: Update a spending pool
+  description: >-
+    Change a spending pool's name, limits, allowed payment types or
+    admin-approval flag. The change applies to payments decided after it.
+  operationId: updateSpendingPool
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/SpendingPoolUpdateRequest.yaml
+  responses:
+    '200':
+      description: Spending pool updated
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/SpendingPool.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or spending pools are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Spending pool not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: The spending pool is archived
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Archive a spending pool
+  description: >-
+    Archive a spending pool. Refused with `409` while any agent is assigned
+    to it; move or delete those agents first. An archived pool is still
+    returned by `GET /spending-pools/{spendingPoolId}`.
+  operationId: archiveSpendingPool
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: Spending pool archived
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or spending pools are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Spending pool not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Agents are still assigned to the spending pool
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
