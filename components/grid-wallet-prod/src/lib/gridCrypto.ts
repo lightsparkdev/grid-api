@@ -9,7 +9,7 @@
 import { p256 } from '@noble/curves/nist.js';
 import { bytesToHex as nobleBytesToHex, hexToBytes as nobleHexToBytes } from '@noble/hashes/utils.js';
 import { base64urlnopad } from '@scure/base';
-import { hpkeEncrypt, formatHpkeBuf, decryptCredentialBundle } from '@turnkey/crypto';
+import { hpkeEncrypt, formatHpkeBuf } from '@turnkey/crypto';
 import { ApiKeyStamper } from '@turnkey/api-key-stamper';
 
 export function bytesToHex(b: Uint8Array): string {
@@ -69,14 +69,6 @@ export function encryptOtpBundle(
   // caller assigns this directly into a request body object it JSON.stringifies
   // once itself.
   return formatHpkeBuf(encryptedBuf);
-}
-
-/** HPKE-open the session signing key (PASSKEY/OAUTH). Returns session priv hex. */
-export async function decryptSessionKey(
-  encryptedSessionSigningKey: string,
-  clientPrivHex: string,
-): Promise<string> {
-  return await decryptCredentialBundle(encryptedSessionSigningKey, clientPrivHex);
 }
 
 /** Build the Grid-Wallet-Signature stamp over `payload` (byte-for-byte). */
