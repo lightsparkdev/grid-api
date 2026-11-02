@@ -10,6 +10,110 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="October 2026">
 
+## Card velocity limits move to `/card-velocity-limits`
+
+Card amount and count limits now have one API: `/card-velocity-limits`. Use
+`POST /card-velocity-limits` to create a rule, `GET /card-velocity-limits` and
+`GET /card-velocity-limits/{id}` to read rules, and `DELETE /card-velocity-limits/{id}`
+to remove one. A rule with a `cardId` limits that card. A rule without one applies
+separately to every eligible card on your platform, including cards issued later.
+
+Each rule sets a `metric` (`ATTEMPTS` or `APPROVED`), a `window` (`AUTHORIZATION`,
+`ROLLING`, `DAY`, `WEEK`, `MONTH`, `QUARTER`, or `YEAR`), and a `maxCount`, a
+`maxAmount`, or both. Amounts are in the smallest unit of the card's currency, and
+calendar windows use UTC. Creating a rule that matches an existing one returns `409
+CONFLICT`. To change a rule, delete it and create a new one. Check
+`cardCapabilities.supportsVelocityLimits` to see whether a card supports these
+rules. For examples, see [velocity limits](/cards/card-management/velocity-limits).
+
+<Warning>
+`maxSpendPerTransaction`, `maxSpendPerDay`, and `maxTransactionsPerDay` are removed
+from card create and update requests, card responses, the platform `cardConfigs`, and
+agent card update requests. The capability flags `supportsSpendLimits`,
+`supportsSpendLimitsAtIssuance`, and `supportsTransactionCountLimit` are replaced by
+`supportsVelocityLimits`. If you set limits with those fields, create the matching
+rules through `/card-velocity-limits` instead.
+</Warning>
+
+## Read card disputes
+
+`GET /transactions/{transactionId}/disputes` lists the disputes opened against a card
+transaction, newest first. `GET /card-disputes/{disputeId}` returns one dispute. A
+`CardDispute` carries its `status` (`OPEN` or `CLOSED`), `disposition`,
+`disputedAmount`, and `provisionalCreditAmount`, which is the provisional credit
+granted less any reversed. You can read only disputes on your own transactions.
+
+The sandbox dispute simulators now return the same `CardDispute`, so a simulated
+dispute reads like a real one. Their `disputeId` and `disputeToken` fields are
+replaced by `CardDispute.id`.
+
+## Machine-readable refusal reasons
+
+A `400`, `403`, or `409` error can now carry `details.refusalReason`, which names why
+Grid refused the request. Several refusals share one `code`, and the `reason`
+message may be reworded, so branch on `refusalReason` instead. Some reasons
+include more fields:
+
+- `CARDHOLDER_INFO_MISSING` (`400`): `details.missingFields` lists the customer
+  fields a card needs that the customer record lacks, such as `PHONE_NUMBER`.
+- `CARDHOLDER_HOLDS_CARD` (`409`): the cardholder already holds the one card your
+  platform allows.
+- `AGENT_PERMISSION_REQUIRED` (`403`): `details.permission` names the agent
+  permission the call needs.
+- `AGENT_POLICY_DENIED` (`403`): `details.policyDenialReason` names the agent policy
+  rule that denied the quote.
+
+Grid can add values, so treat an unknown `refusalReason` as a refusal without a known
+cause.
+
+## Exchange rates report corridor availability
+
+Each rate from `GET /exchange-rates` now has a required `isAvailable` field. It is
+`false` while Grid has paused payouts on that corridor, including during scheduled
+maintenance. Check it before you show a corridor to your customers.
+
+## SWIFT `railDetails` with the `uetr`
+
+A payout sent over SWIFT now has `railDetails` on its destination, with `paymentRail:
+SWIFT` and `uetr`, the Unique End-to-end Transaction Reference of the wire. To trace
+the payment, give the `uetr` to the beneficiary's bank.
+
+## `RESIDENCE_PERMIT` identity document
+
+`RESIDENCE_PERMIT` is a new `documentType` for identity verification. Upload its
+`FRONT` and `BACK` as two separate documents, as for `DRIVERS_LICENSE` and
+`NATIONAL_ID`. It satisfies a `MISSING_IDENTITY_DOCUMENT` verification error. For the
+fields it requires, see
+[configuring customers](/payouts-and-b2b/onboarding/configuring-customers).
+
+<Warning>
+If you validate `documentType` against a fixed list, add `RESIDENCE_PERMIT`.
+</Warning>
+
+## Create an individual customer from a KYC share token
+
+`POST /customers/share` creates an individual customer from a reusable KYC share
+token in `shareToken`. Grid builds the customer's verification profile from the
+shared data, including the identity document, so the customer does not upload it
+again. Fields you send in the request take priority over the shared data. Check the
+customer's verification status, fill any gaps, and then submit the customer with
+`POST /verifications`. It returns `400 INVALID_INPUT` when the provider rejects the
+token or your platform does not use Grid's individual KYC.
+
+## `USDC` and `USDT` rule-based accounts
+
+Rule-based accounts are now available in `USDC` and `USDT` as well as `USD`. A
+`USDC` or `USDT` account gets its own deposit address on each network your platform
+supports, and its sweep rule moves deposits into the destination account. They are
+enabled per platform. For setup, see the new
+[rule-based accounts](/payouts-and-b2b/depositing-funds/rule-based-accounts) guide.
+
+## ACH pull guide
+
+The new [ACH pull](/payouts-and-b2b/depositing-funds/ach-pull) guide covers funding
+an account by pulling from a customer's US bank account: timing, settlement holds,
+returns, limits, and sandbox testing.
+
 ## Sandbox suffix for a paused corridor
 
 In sandbox, an external account whose account number ends in `014` simulates a corridor
