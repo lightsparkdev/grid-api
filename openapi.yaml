@@ -18969,14 +18969,14 @@ components:
         - OTHER
     PlatformFeeOverride:
       type: object
-      description: Overrides the platform-collected fee for this transaction. When present, it replaces any configured platform-collected fees that would otherwise apply to the transaction. Currently only supported when the quote's source currency is USD; the fixed fee must be denominated in the source currency.
+      description: Overrides the platform-collected fee for this transaction. When present, it replaces any configured platform-collected fees that would otherwise apply to the transaction. The fixed fee must be denominated in the quote's source currency.
       required:
         - platformFixedFee
         - platformVariableFeeBps
       properties:
         platformFixedFee:
           $ref: '#/components/schemas/FixedFee'
-          description: Fixed fee charged for this transaction. Must be denominated in the quote's source currency (USD today).
+          description: Fixed fee charged for this transaction. Must be denominated in the quote's source currency.
         platformVariableFeeBps:
           type: integer
           minimum: 0
