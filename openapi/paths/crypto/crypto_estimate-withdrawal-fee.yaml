@@ -5,6 +5,7 @@ post:
     crypto internal account to an external blockchain address. Use this to show fee
     information to customers before they initiate a withdrawal.
   operationId: estimateCryptoWithdrawalFee
+  x-hidden: true
   tags:
     - Cross-Currency Transfers
   security:
