@@ -56,7 +56,7 @@ or `passkeyAssertion` + `origin` (for `PASSKEY`):
 curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/authorize \
   -u "$GRID_API_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{ "code": "123456", "endUserIpAddress": "203.0.113.42" }'
+  -d '{ "code": "000000", "endUserIpAddress": "203.0.113.42" }'
 ```
 
 The optional `endUserIpAddress` is the IP of the end user's device authorizing
@@ -104,7 +104,7 @@ If the challenge expires unsatisfied, the transaction fails with
 have the customer authorize while the new challenge is live.
 
 <Note>
-In **sandbox**, the SMS code is always `123456`.
+In **sandbox**, the SMS code is always `000000`.
 </Note>
 
 ### Reducing prompts for repeat payees

@@ -35,8 +35,8 @@ properties:
     description: >-
       The one-time code the customer received by SMS, or read from their
       authenticator app. Provide for `SMS_OTP` / `TOTP`. In sandbox, the code is
-      always `123456`.
-    example: '123456'
+      always `000000`.
+    example: '000000'
   passkeyAssertion:
     type:
       - object
