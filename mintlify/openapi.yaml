@@ -21989,8 +21989,8 @@ components:
         - accountType
       description: |-
         Required fields depend on the selected paymentRails:
-        - NEFT: accountNumber, ifsc, rail
-        - RTGS: accountNumber, ifsc, rail
+        - NEFT: accountNumber, ifsc
+        - RTGS: accountNumber, ifsc
         - UPI: vpa
       properties:
         accountType:
@@ -22018,18 +22018,11 @@ components:
           minLength: 11
           maxLength: 11
           pattern: ^[A-Z]{4}0[A-Z0-9]{6}$
-        rail:
-          type: string
-          description: 'The payment rail to route the payout over: NEFT or RTGS. Omitted, the payout resolves it by amount.'
-          minLength: 1
-          maxLength: 32
-          example: NEFT
       example:
         accountType: INR_ACCOUNT
         vpa: user@upi
         accountNumber: '000111222333'
         ifsc: HDFC0001234
-        rail: NEFT
     InrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/InrAccountInfoBase'
@@ -22883,12 +22876,6 @@ components:
           type: string
           enum:
             - PHP_ACCOUNT
-        rail:
-          type: string
-          description: 'The payment rail to route the payout over: INSTAPAY or PESONET. Omitted, the payout resolves it by amount.'
-          minLength: 1
-          maxLength: 32
-          example: INSTAPAY
         bankName:
           type: string
           description: Name of the beneficiary's bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
@@ -22904,7 +22891,6 @@ components:
           pattern: ^[0-9]{8,16}$
       example:
         accountType: PHP_ACCOUNT
-        rail: INSTAPAY
         bankName: Bank of the Philippine Islands (BPI)
         accountNumber: '001234567890'
     PhpAccountInfo:
@@ -23910,7 +23896,6 @@ components:
     UsdBeneficiary:
       title: Individual Beneficiary
       type: object
-      description: Wires to this account may require `address.city`, at most 35 characters, depending on the bank that sends them for your platform. When they do, creating the account with an address that has no `city`, or a longer one, fails with `INVALID_INPUT`.
       required:
         - beneficiaryType
         - fullName
@@ -23945,7 +23930,6 @@ components:
     UsdBusinessBeneficiary:
       title: Business Beneficiary
       type: object
-      description: Wires to this account may require `address.city`, at most 35 characters, depending on the bank that sends them for your platform. When they do, creating the account with an address that has no `city`, or a longer one, fails with `INVALID_INPUT`.
       required:
         - beneficiaryType
         - legalName
