@@ -1,0 +1,61 @@
+parameters:
+  - name: id
+    in: path
+    description: The ID of the rule-based internal account whose SCA challenge code should be re-sent.
+    required: true
+    schema:
+      type: string
+    example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+post:
+  summary: Resend a rule-based account's SCA challenge code
+  description: |
+    Re-send the one-time code for a `PENDING` rule-based account whose
+    `scaChallenge.factor` is `SMS_OTP`. The existing challenge is reused and its
+    `scaChallenge.expiresAt` is **not** extended.
+
+    Only meaningful for customers in a region where SCA is required (e.g. EU);
+    a 409 is returned otherwise. `TOTP` and `PASSKEY` challenges cannot be
+    re-sent and return 409.
+
+    In sandbox, the code is always `123456`.
+  operationId: resendInternalAccountScaCode
+  tags:
+    - Internal Accounts
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: Code re-sent.
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Internal account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        SCA is not required for this customer, the account has no pending
+        challenge, or the challenge's factor cannot be re-sent.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '429':
+      description: Too many requests.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

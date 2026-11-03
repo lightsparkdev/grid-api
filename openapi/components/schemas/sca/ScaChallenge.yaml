@@ -57,7 +57,8 @@ properties:
       Optional, informational label for what this particular challenge in the
       sequence authorizes — useful for step UX (e.g. "Authorize the currency
       conversion" vs "Authorize the payout"). Known values include
-      `CURRENCY_CONVERSION`, `PAYOUT`, and `TRANSFER`, but the set is
+      `CURRENCY_CONVERSION`, `PAYOUT`, `TRANSFER`, and `STANDING_INSTRUCTION`
+      (authorizing a rule-based account's sweep instruction), but the set is
       **non-exhaustive and may grow** — treat unrecognized values as a generic
       authorization step and do not branch program logic on it. Omitted when steps are not distinguished (e.g. a single-authorization flow).
     example: PAYOUT

@@ -1,0 +1,76 @@
+parameters:
+  - name: id
+    in: path
+    description: The ID of the rule-based internal account holding the stranded funds.
+    required: true
+    schema:
+      type: string
+    example: InternalAccount:12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+post:
+  summary: Move a rule-based account's stranded funds
+  description: |
+    Move funds a sweep converted but could not deliver (listed in the account's
+    `strandedBalances`) to the account holder's own internal account in the
+    same currency.
+
+    The transfer is returned as a quote in `PENDING_AUTHORIZATION` carrying an
+    `scaChallenge`. Authorize it with `POST /quotes/{quoteId}/authorize`, as for
+    any other quote. Once it completes, the currency drops out of
+    `strandedBalances` and an `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhook is
+    sent.
+
+    Stranded funds only arise for customers in a region where SCA is required
+    (the EU). For other accounts, or when nothing is stranded in that currency,
+    this returns `409`.
+  operationId: transferInternalAccountStrandedFunds
+  tags:
+    - Internal Accounts
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/customers/StrandedFundsTransferRequest.yaml
+  responses:
+    '200':
+      description: The transfer's quote, awaiting authorization.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/quotes/Quote.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Internal account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Nothing is stranded in that currency, or the account is not one that
+        can hold stranded funds. Also returned with `SCA_SESSION_REQUIRED` when
+        the customer's SCA login session is missing or expired.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

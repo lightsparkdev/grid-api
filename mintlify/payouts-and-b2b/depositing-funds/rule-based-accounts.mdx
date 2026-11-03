@@ -9,7 +9,7 @@ import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 A rule-based account is an additional account number for an account holder, with a routing rule attached. Every payment that settles into it is attributed to that account and then swept to the rule's destination. Issue one account per payer, invoice, or use case, and you can reconcile incoming payments by the account they arrived at instead of matching on remittance text.
 
-Rule-based accounts never hold a balance. Funds that land in one are always moved on, either to the rule's destination or, if the sweep can't complete, to the account holder's own internal account in the same currency.
+Rule-based accounts never hold a balance. Funds that land in one are always moved on, either to the rule's destination or, if the sweep can't complete, to the account holder's own internal account in the same currency. The exception is an EU account whose payout fails after the conversion: those funds wait for an authorized transfer (see [Funds a sweep couldn't deliver](#funds-a-sweep-couldnt-deliver)).
 
 ## Supported currencies
 
@@ -145,6 +145,46 @@ A sweep that can't be completed fails with one of these reasons, and the funds m
 A sweep that was priced and then failed on the way to settlement reports `QUOTE_EXECUTION_FAILED`, the same as any other payment. Include it alongside the `SWEEP_*` reasons when you monitor for failed sweeps.
 
 To list an account holder's rule-based accounts, filter internal accounts with `type=RULE_BASED`.
+
+## EU customers
+
+For customers in a region where Strong Customer Authentication (SCA) is required, a rule-based account converts every deposit and sends the result to its destination. The sweep runs without any further action once the account holder has authorized it.
+
+| Currency | What payers send to | Supported destinations |
+|----------|---------------------|------------------------|
+| `EUR` | A dedicated IBAN | A crypto external account owned by the account holder (for example, a USDC wallet), or the account holder's own `USDC` or `BTC` internal account |
+| `USDC` | A dedicated deposit address | An `EUR` external bank account owned by the account holder, or their own `EUR` internal account |
+| `BTC` | A dedicated deposit address | An `EUR` external bank account owned by the account holder, or their own `EUR` internal account |
+
+A same-currency destination isn't supported, and neither are `remittanceInformation` or `purposeOfPayment` on the sweep rule. A customer can hold up to 10 rule-based accounts.
+
+### Authorize the account
+
+The create request returns the account in `PENDING` with an `scaChallenge`. The account holder authorizes it once, and later sweeps run without further authorization:
+
+<Steps>
+<Step title="Confirm an SCA session">
+  Make sure the customer has an active SCA login session. A missing session returns `409 SCA_SESSION_REQUIRED`.
+</Step>
+
+<Step title="Trust an external destination">
+  For an external destination, start beneficiary trust with `POST /customers/external-accounts/{externalAccountId}/trust`, then submit the customer's proof to `POST /customers/external-accounts/{externalAccountId}/trust/confirm`. Check that the response contains `trusted: true` before creating the account. An untrusted destination returns `409 BENEFICIARY_NOT_TRUSTED`.
+</Step>
+
+<Step title="Create the account">
+  Call `POST /internal-accounts` with an `Idempotency-Key`. Pass `scaFactor` to choose `SMS_OTP` (default), `TOTP`, or `PASSKEY`.
+</Step>
+
+<Step title="Authorize the challenge">
+  Call `POST /internal-accounts/{id}/authorize` with the customer's proof, then check the returned account. If it is still `PENDING`, authorize its next `scaChallenge` and repeat until it advances. Once the account is `ACTIVE`, Grid sends `INTERNAL_ACCOUNT.STATUS_UPDATED`.
+</Step>
+</Steps>
+
+If the challenge expires, repeat the create request with the same `Idempotency-Key` to receive a new challenge. An account that is never authorized moves to `FAILED`.
+
+### Funds a sweep couldn't deliver
+
+If a payout is refused after the conversion (for example, by the destination bank or a compliance check), the converted funds stay with the account holder. They are listed in the account's `strandedBalances`. Move them to the account holder's own internal account in that currency with `POST /internal-accounts/{id}/stranded-funds/transfer`, which returns a quote to authorize like any other SCA-protected transfer.
 
 ## Test in sandbox
 
