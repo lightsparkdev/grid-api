@@ -82,7 +82,7 @@ Call `POST /internal-accounts` with `type: RULE_BASED`, the currency, and a `swe
   </Tab>
 </Tabs>
 
-The response is the new internal account. Share its `fundingPaymentInstructions` with the payer: a bank account number for USD, or one wallet address per network for USDC and USDT. If the account's `status` is `PENDING` or `PENDING_AUTHORIZATION`, wait for `ACTIVE` before sharing them.
+The response is the new internal account. Share its `fundingPaymentInstructions` with the payer: a bank account number for USD, or one wallet address per network for USDC and USDT. If the account's `status` is `PENDING`, wait for `ACTIVE` before sharing them.
 
 <Accordion title="USDC response">
 ```json
