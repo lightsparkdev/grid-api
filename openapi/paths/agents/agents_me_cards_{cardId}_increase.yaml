@@ -11,8 +11,9 @@ post:
     when the original card required approval, it waits for the customer's
     approval through the ordinary action approval endpoint. Otherwise it is
     applied at once. Approval rechecks the card, limits and platform gate.
-    The increase in issuer limit is counted against the agent's spending
-    limits using a reservation. Replaying the same key returns the same
+    The full new issuer limit is checked against the agent's current spending
+    limits. Increases do not reserve or count spending; authorization counts
+    the actual spend. Replaying the same key returns the same
     action; a key used with different parameters is a conflict.
   operationId: agentIncreasePurchaseCard
   tags:

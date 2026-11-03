@@ -11301,7 +11301,7 @@ paths:
       summary: Increase a purchase card amount
       description: |-
         Increase an open, unused single-use purchase card belonging to this agent. Recurring cards cannot be increased. Requires ISSUE_CARDS and MANAGE_CARDS and platform enablement. The new amount must be greater than the current amount and within the platform's purchase-card maximum. The new issuer limit includes the platform's tax and shipping allowance.
-        Returns an ISSUE_PURCHASE_CARD action. Above the approval threshold, or when the original card required approval, it waits for the customer's approval through the ordinary action approval endpoint. Otherwise it is applied at once. Approval rechecks the card, limits and platform gate. The increase in issuer limit is counted against the agent's spending limits using a reservation. Replaying the same key returns the same action; a key used with different parameters is a conflict.
+        Returns an ISSUE_PURCHASE_CARD action. Above the approval threshold, or when the original card required approval, it waits for the customer's approval through the ordinary action approval endpoint. Otherwise it is applied at once. Approval rechecks the card, limits and platform gate. The full new issuer limit is checked against the agent's current spending limits. Increases do not reserve or count spending; authorization counts the actual spend. Replaying the same key returns the same action; a key used with different parameters is a conflict.
       operationId: agentIncreasePurchaseCard
       tags:
         - Agent Operations
