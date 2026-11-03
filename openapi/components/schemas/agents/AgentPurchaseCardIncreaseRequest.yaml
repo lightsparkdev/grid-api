@@ -1,0 +1,18 @@
+type: object
+description: Increase an unused single-use purchase card's amount before checkout.
+required:
+  - amount
+  - reason
+properties:
+  amount:
+    type: integer
+    format: int64
+    minimum: 1
+    description: New purchase amount in USD cents, strictly above the current amount.
+    example: 5999
+  reason:
+    type: string
+    minLength: 1
+    maxLength: 255
+    description: Why the purchase needs a higher amount, as reported by the app.
+    example: Shipping was added at checkout.

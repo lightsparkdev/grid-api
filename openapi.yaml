@@ -11296,6 +11296,80 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /agents/me/cards/{cardId}/increase:
+    post:
+      summary: Increase a purchase card amount
+      description: |-
+        Increase an open, unused single-use purchase card belonging to this agent. Recurring cards cannot be increased. Requires ISSUE_CARDS and MANAGE_CARDS and platform enablement. The new amount must be greater than the current amount and within the platform's purchase-card maximum. The new issuer limit includes the platform's tax and shipping allowance.
+        Returns an ISSUE_PURCHASE_CARD action. Above the approval threshold, or when the original card required approval, it waits for the customer's approval through the ordinary action approval endpoint. Otherwise it is applied at once. Approval rechecks the card, limits and platform gate. The increase in issuer limit is counted against the agent's spending limits using a reservation. Replaying the same key returns the same action; a key used with different parameters is a conflict.
+      operationId: agentIncreasePurchaseCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          description: The unused single-use purchase card to increase.
+          schema:
+            type: string
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Unique key for this increase, reused on retries.
+          schema:
+            type: string
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentPurchaseCardIncreaseRequest'
+      responses:
+        '200':
+          description: The increase action, applied or awaiting approval.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
+        '400':
+          description: Invalid amount, reason, card state or recurring card.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Platform feature disabled, permission missing or policy denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found for this agent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Idempotency key already used for another request or card changed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /card-velocity-limits:
     get:
       summary: List card velocity limits
@@ -23121,8 +23195,8 @@ components:
         - accountType
       description: |-
         Required fields depend on the selected paymentRails:
-        - NEFT: accountNumber, ifsc
-        - RTGS: accountNumber, ifsc
+        - NEFT: accountNumber, ifsc, rail
+        - RTGS: accountNumber, ifsc, rail
         - UPI: vpa
       properties:
         accountType:
@@ -23150,11 +23224,18 @@ components:
           minLength: 11
           maxLength: 11
           pattern: ^[A-Z]{4}0[A-Z0-9]{6}$
+        rail:
+          type: string
+          description: 'The payment rail to route the payout over: NEFT or RTGS. Omitted, the payout resolves it by amount.'
+          minLength: 1
+          maxLength: 32
+          example: NEFT
       example:
         accountType: INR_ACCOUNT
         vpa: user@upi
         accountNumber: '000111222333'
         ifsc: HDFC0001234
+        rail: NEFT
     InrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/InrAccountInfoBase'
@@ -32006,6 +32087,22 @@ components:
         - currency
         - fundingSource
       properties:
+        increaseCardId:
+          type: string
+          description: The existing card being increased, present only on increase actions.
+          example: Card:019542f5-b3e7-1d02-0000-000000000011
+        previousAmount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Purchase amount before this increase, in USD cents.
+          example: 4999
+        previousSpendLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Issuer-enforced limit before this increase, in USD cents.
+          example: 5749
         amount:
           type: integer
           format: int64
@@ -33573,6 +33670,25 @@ components:
           format: date-time
           description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
           example: '2026-05-08T14:16:00Z'
+    AgentPurchaseCardIncreaseRequest:
+      type: object
+      description: Increase an unused single-use purchase card's amount before checkout.
+      required:
+        - amount
+        - reason
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: New purchase amount in USD cents, strictly above the current amount.
+          example: 5999
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Why the purchase needs a higher amount, as reported by the app.
+          example: Shipping was added at checkout.
     CardVelocityMetric:
       type: string
       description: ATTEMPTS counts every real-time authorization request, including declined requests. APPROVED counts distinct approved authorizations, including zero-amount authorizations, and can also cap the amount they hold.
