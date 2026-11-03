@@ -2379,14 +2379,14 @@ paths:
         per platform.
 
         For customers in a region where Strong Customer Authentication is
-        required (the EU), the account is returned `PENDING` with an
-        `scaChallenge`: the account holder authorizes the account's sweep
+        required (the EU), the create request returns `202` with the account in
+        `PENDING_AUTHORIZATION` and an `scaChallenge`: the account holder authorizes the account's sweep
         instruction once with `POST /internal-accounts/{id}/authorize`, after which
         the account is `ACTIVE` and later sweeps need no further authorization. An
         external destination must already be a trusted beneficiary
         (`POST /customers/external-accounts/{externalAccountId}/trust`). Retrying
         the create request with the same `Idempotency-Key` while the account is
-        still `PENDING` returns it with a live challenge, issuing a new one if the
+        still `PENDING_AUTHORIZATION` returns it with a live challenge, issuing a new one if the
         previous challenge expired.
 
         Sandbox platforms can create rule-based accounts and exercise the whole
@@ -2474,7 +2474,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalAccount'
         '201':
-          description: Internal account created. `fundingPaymentInstructions` carries the account's own number. For customers in a region where SCA is required, the account is `PENDING` and carries the `scaChallenge` that opens it.
+          description: Internal account created. `fundingPaymentInstructions` carries the account's own number.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccount'
+        '202':
+          description: 'Internal account created, but waiting for Strong Customer Authentication. Returned only for customers in a region where SCA is required (the EU): the account is `PENDING_AUTHORIZATION` and carries the `scaChallenge` that opens it. Authorize it with `POST /internal-accounts/{id}/authorize`.'
           content:
             application/json:
               schema:
@@ -6687,14 +6693,14 @@ paths:
       summary: Authorize a rule-based account's SCA challenge
       description: |
         Satisfy the Strong Customer Authentication challenge carried by a
-        `RULE_BASED` internal account in `PENDING` status by submitting an
+        `RULE_BASED` internal account in `PENDING_AUTHORIZATION` status by submitting an
         `ScaAuthorization` proof. The challenge authorizes the account's sweep
         instruction once; later sweeps need no further authorization.
 
         On success the account is returned `ACTIVE` with its
         `fundingPaymentInstructions`, and an `INTERNAL_ACCOUNT.STATUS_UPDATED`
         webhook is sent. As with all SCA, check the returned account: if it is still
-        `PENDING` it carries the next `scaChallenge` to authorize.
+        `PENDING_AUTHORIZATION` it carries the next `scaChallenge` to authorize.
 
         This endpoint is only meaningful for customers in a region where SCA is
         required (e.g. EU). For other customers, and for accounts with no pending
@@ -6774,7 +6780,7 @@ paths:
     post:
       summary: Resend a rule-based account's SCA challenge code
       description: |
-        Re-send the one-time code for a `PENDING` rule-based account whose
+        Re-send the one-time code for a `PENDING_AUTHORIZATION` rule-based account whose
         `scaChallenge.factor` is `SMS_OTP`. The existing challenge is reused and its
         `scaChallenge.expiresAt` is **not** extended.
 
@@ -19298,6 +19304,7 @@ components:
       type: string
       enum:
         - PENDING
+        - PENDING_AUTHORIZATION
         - ACTIVE
         - CLOSED
         - FROZEN
@@ -19306,6 +19313,7 @@ components:
         Status of a Grid internal account. The status determines whether the account can send or receive payments.
 
         - `PENDING`: The account is under review and is being provisioned. The account cannot send or receive payments until provisioning completes.
+        - `PENDING_AUTHORIZATION`: The account is provisioned but waiting for the account holder to satisfy its Strong Customer Authentication challenge (`scaChallenge`). Only `RULE_BASED` accounts for customers in a region where SCA is required (the EU) enter this status. The account cannot receive payments until it is authorized with `POST /internal-accounts/{id}/authorize`.
         - `ACTIVE`: The account is ready to send and receive payments.
         - `CLOSED`: The account cannot send or receive payments. A customer can initiate the closing of an internal account, after which the account transitions to this status.
         - `FROZEN`: The account cannot send or receive payments. Grid may freeze an account in response to compliance or fraud signals; payments are blocked while the account remains frozen.
@@ -20156,7 +20164,7 @@ components:
         scaChallenge:
           allOf:
             - $ref: '#/components/schemas/ScaChallenge'
-          description: The Strong Customer Authentication challenge the account holder must satisfy before a `RULE_BASED` account opens. Present only while the account is `PENDING` and waiting for that authorization, and only for customers in a region where SCA is required (the EU). Authorize it with `POST /internal-accounts/{id}/authorize`. If the challenge expires, retry the create request with the same `Idempotency-Key` to receive a new one.
+          description: The Strong Customer Authentication challenge the account holder must satisfy before a `RULE_BASED` account opens. Present only while the account is `PENDING_AUTHORIZATION`, and only for customers in a region where SCA is required (the EU). Authorize it with `POST /internal-accounts/{id}/authorize`. If the challenge expires, retry the create request with the same `Idempotency-Key` to receive a new one.
         strandedBalances:
           type: array
           description: Funds a `RULE_BASED` account's sweep converted but could not deliver to the rule's destination, by currency. They are held for the account holder and can be moved to their own account in that currency with `POST /internal-accounts/{id}/stranded-funds/transfer`. Omitted when there are none, and for every account other than a `RULE_BASED` one.

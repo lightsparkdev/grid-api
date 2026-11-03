@@ -22,14 +22,14 @@ post:
     per platform.
 
     For customers in a region where Strong Customer Authentication is
-    required (the EU), the account is returned `PENDING` with an
-    `scaChallenge`: the account holder authorizes the account's sweep
+    required (the EU), the create request returns `202` with the account in
+    `PENDING_AUTHORIZATION` and an `scaChallenge`: the account holder authorizes the account's sweep
     instruction once with `POST /internal-accounts/{id}/authorize`, after which
     the account is `ACTIVE` and later sweeps need no further authorization. An
     external destination must already be a trusted beneficiary
     (`POST /customers/external-accounts/{externalAccountId}/trust`). Retrying
     the create request with the same `Idempotency-Key` while the account is
-    still `PENDING` returns it with a live challenge, issuing a new one if the
+    still `PENDING_AUTHORIZATION` returns it with a live challenge, issuing a new one if the
     previous challenge expired.
 
     Sandbox platforms can create rule-based accounts and exercise the whole
@@ -123,8 +123,18 @@ post:
     '201':
       description: >-
         Internal account created. `fundingPaymentInstructions` carries the
-        account's own number. For customers in a region where SCA is required,
-        the account is `PENDING` and carries the `scaChallenge` that opens it.
+        account's own number.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/customers/InternalAccount.yaml
+    '202':
+      description: >-
+        Internal account created, but waiting for Strong Customer
+        Authentication. Returned only for customers in a region where SCA is
+        required (the EU): the account is `PENDING_AUTHORIZATION` and carries
+        the `scaChallenge` that opens it. Authorize it with
+        `POST /internal-accounts/{id}/authorize`.
       content:
         application/json:
           schema:

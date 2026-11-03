@@ -10,14 +10,14 @@ post:
   summary: Authorize a rule-based account's SCA challenge
   description: |
     Satisfy the Strong Customer Authentication challenge carried by a
-    `RULE_BASED` internal account in `PENDING` status by submitting an
+    `RULE_BASED` internal account in `PENDING_AUTHORIZATION` status by submitting an
     `ScaAuthorization` proof. The challenge authorizes the account's sweep
     instruction once; later sweeps need no further authorization.
 
     On success the account is returned `ACTIVE` with its
     `fundingPaymentInstructions`, and an `INTERNAL_ACCOUNT.STATUS_UPDATED`
     webhook is sent. As with all SCA, check the returned account: if it is still
-    `PENDING` it carries the next `scaChallenge` to authorize.
+    `PENDING_AUTHORIZATION` it carries the next `scaChallenge` to authorize.
 
     This endpoint is only meaningful for customers in a region where SCA is
     required (e.g. EU). For other customers, and for accounts with no pending
