@@ -5281,6 +5281,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: actingFor
+          in: query
+          description: 'Filter to transactions made by agents acting for this person: those whose agent was created with this `actingFor`.'
+          required: false
+          schema:
+            type: string
         - name: platformCustomerId
           in: query
           description: Filter by platform-specific customer ID
@@ -7157,6 +7163,147 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /auth/admin-credentials:
+    post:
+      summary: Add an administrator credential
+      description: |
+        Add a credential for an additional administrator of a `BUSINESS` customer's Embedded Wallet, where the platform enables agents for business customers. The new administrator gets their own `EMAIL_OTP` or `PASSKEY` credential, tagged with `adminReference`, and signs for the wallet with it as the owner does. The wallet stays non-custodial: Grid never adds an administrator on its own, and every step is authorised by a signature from an existing verified credential on the account (the owner's, or another administrator's).
+
+        It takes two signed steps. The first call returns `202` with a `payloadToSign` that creates the administrator's wallet user; the signed retry returns another `202` whose payload grants that user the authority to sign for the wallet; the second signed retry returns `201` with the new `AuthMethod`. The administrator then signs in with `POST /auth/credentials/{id}/challenge` and `POST /auth/credentials/{id}/verify`.
+      operationId: createAdminCredential
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of an existing verified credential on the same internal account. Required on each signed retry.
+          schema:
+            type: string
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` of the `202` being answered, echoed back exactly on the signed retry. Must be paired with `Grid-Wallet-Signature`.
+          schema:
+            type: string
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminCredentialCreateRequestOneOf'
+      responses:
+        '201':
+          description: The administrator's credential was added.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMethodResponse'
+        '202':
+          description: 'A signature is needed: stamp `payloadToSign` with the session key of an existing verified credential on the account and retry with `Grid-Wallet-Signature` and `Request-Id`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSignedRequestChallenge'
+        '400':
+          description: Bad request, including a customer that is not a business, a platform without agents for business customers, or an email already on the account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized, including a signature that does not verify
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /auth/admin-credentials/{adminReference}:
+    parameters:
+      - name: adminReference
+        in: path
+        description: The administrator reference the credentials were added with.
+        required: true
+        schema:
+          type: string
+    delete:
+      summary: Revoke an administrator's credentials
+      description: |
+        Revoke every credential carrying `adminReference` on the account, removing the administrator's wallet users. Authorised like the add: the first call returns `202` with a `payloadToSign` for an existing verified credential to stamp, and the signed retry returns `204`. Refused with `400` `INVALID_INPUT` when it would leave the account with no active credential.
+      operationId: revokeAdminCredentials
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: accountId
+          in: query
+          required: true
+          description: The internal account whose administrator is revoked.
+          schema:
+            type: string
+        - name: Grid-Wallet-Signature
+          in: header
+          required: false
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of an existing verified credential on the same internal account. Required on each signed retry.
+          schema:
+            type: string
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` of the `202` being answered, echoed back exactly on the signed retry. Must be paired with `Grid-Wallet-Signature`.
+          schema:
+            type: string
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      responses:
+        '202':
+          description: 'A signature is needed: stamp `payloadToSign` with the session key of an existing verified credential on the account and retry with `Grid-Wallet-Signature` and `Request-Id`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSignedRequestChallenge'
+        '204':
+          description: The administrator's credentials were revoked.
+        '400':
+          description: Revoking would leave the account with no active credential
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized, including a signature that does not verify
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Internal account or administrator not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /auth/credentials:
     post:
       summary: Create an authentication credential
@@ -7448,6 +7595,8 @@ paths:
         2. Use the session API keypair of an existing verified credential on the same internal account — other than the one being revoked — to build an API-key stamp over `payloadToSign`, then retry the same `DELETE` request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `204`.
 
         The account must retain at least one authentication credential; an account with only a single credential cannot use this endpoint to revoke it.
+
+        An administrator's credential (one with `adminReference`) is revoked with `DELETE /auth/admin-credentials/{adminReference}` instead, and is refused here with `INVALID_INPUT`.
       operationId: revokeAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -8299,6 +8448,12 @@ paths:
         - name: customerId
           in: query
           description: Filter by customer ID
+          required: false
+          schema:
+            type: string
+        - name: actingFor
+          in: query
+          description: Filter by the agent's `actingFor`, the person it acts for.
           required: false
           schema:
             type: string
@@ -11715,6 +11870,12 @@ paths:
         - name: customerId
           in: query
           description: Filter by customer id.
+          required: false
+          schema:
+            type: string
+        - name: actingFor
+          in: query
+          description: 'Filter to agent cards issued for this person: cards whose `actingFor` is the given value.'
           required: false
           schema:
             type: string
@@ -31052,6 +31213,122 @@ components:
         - `EMAIL_OTP`: A one-time password delivered to the user's email address.
         - `SMS_OTP`: A one-time password delivered to the user's phone number.
         - `PASSKEY`: A WebAuthn passkey bound to the user's device.
+    AuthCredentialCreateRequest:
+      type: object
+      required:
+        - type
+        - accountId
+      properties:
+        type:
+          $ref: '#/components/schemas/AuthMethodType'
+        accountId:
+          type: string
+          description: Identifier of the internal account that this credential will authenticate.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+    AdminCredentialCreateRequestFields:
+      type: object
+      required:
+        - adminReference
+      properties:
+        adminReference:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: The platform's opaque reference for the administrator the credential belongs to, such as a member id. Grid stores it as given and uses it to revoke all of the administrator's credentials together.
+          example: member_8f2c1a
+    EmailOtpAdminCredentialCreateRequest:
+      title: Email OTP Admin Credential Create Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialCreateRequest'
+        - $ref: '#/components/schemas/AdminCredentialCreateRequestFields'
+        - type: object
+          required:
+            - type
+            - email
+          properties:
+            type:
+              type: string
+              enum:
+                - EMAIL_OTP
+              description: Discriminator value identifying this as an email OTP credential.
+            email:
+              type: string
+              format: email
+              maxLength: 255
+              description: The administrator's email address, which receives their one-time codes. Must differ from every other email credential on the account.
+              example: admin@example.com
+    PasskeyAttestation:
+      title: Passkey Attestation
+      type: object
+      required:
+        - credentialId
+        - clientDataJson
+        - attestationObject
+      properties:
+        credentialId:
+          type: string
+          description: Base64url-encoded credential identifier produced by the authenticator at registration time. Typically the base64url of `PublicKeyCredential.rawId`.
+          example: AdKXJEch1aV5Wo7bj7qLHskVY4OoNaj9qu8TPdJ7kSAgUeRxWNngXlcNIGt4gexZGKVGcqZpqqWordXb_he1izY
+        clientDataJson:
+          type: string
+          description: 'Base64url-encoded JSON client data collected by the browser during the WebAuthn `navigator.credentials.create()` call. Corresponds to `AuthenticatorAttestationResponse.clientDataJSON` from the WebAuthn spec — Grid''s field name is intentionally camelCased as `clientDataJson` (lowercase JSON) for consistency with the rest of the API; the value is the same bytes the browser returns. Contains the challenge, origin, and `type: "webauthn.create"`.'
+          example: eyJjaGFsbGVuZ2UiOiJBcktRaTJ5QVlIUGxnbkpORkJsbmVJd2NoUWRXWEJPVHJkQi1BbU1VQjIxTHgiLCJjbGllbnRFeHRlbnNpb25zIjp7fSwiaGFzaEFsZ29yaXRobSI6IlNIQS0yNTYiLCJvcmlnaW4iOiJodHRwczovL2Rldi5kb250bmVlZGEucHciLCJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIn0
+        attestationObject:
+          type: string
+          description: Base64url-encoded CBOR attestation object produced by the authenticator during registration. Corresponds to `AuthenticatorAttestationResponse.attestationObject`.
+          example: o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFPdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQHSlyRHIdWleVqO24-6ix7JFWODqDWo_arvEz3Se5EgIFHkcVjZ4F5XDSBreIHsWRilRnKmaaqlqK3V2_4XtYs2pQECAyYgASFYID5PQTZQQg6haZFQWFzqfAOyQ_ENsMH8xxQ4GRiNPsqrIlggU8IVUOV8qpgk_Jh-OTaLuZL52KdX1fTht07X4DiQPow
+        transports:
+          type: array
+          items:
+            type: string
+            enum:
+              - usb
+              - nfc
+              - ble
+              - internal
+              - hybrid
+          description: Optional. WebAuthn transports as returned by `AuthenticatorAttestationResponse.getTransports()`. Values follow the W3C `AuthenticatorTransport` enum — pass the raw values through to Grid; provider-specific translation is handled server-side. Some authenticators return an empty array; omit the field or send `[]` in that case.
+          example:
+            - internal
+            - hybrid
+    PasskeyCredentialCreateRequestFields:
+      type: object
+      required:
+        - type
+        - nickname
+        - challenge
+        - attestation
+      properties:
+        type:
+          type: string
+          enum:
+            - PASSKEY
+          description: Discriminator value identifying this as a passkey credential.
+        nickname:
+          type: string
+          description: 'Human-readable identifier for the passkey, chosen by the user at registration time (e.g. "iPhone Face-ID", "YubiKey 5C"). Leading and trailing whitespace is ignored. Must be 1-100 characters and may contain Unicode letters, numbers, spaces, and the following separators: period, underscore, hyphen, apostrophe, and parentheses. Shown back on AuthMethod responses and in credential listings.'
+          example: iPhone Face-ID
+        challenge:
+          type: string
+          description: Base64url-encoded WebAuthn challenge issued by the platform backend and passed to the client before `navigator.credentials.create()`. Grid verifies it matches the challenge embedded in the attestation's `clientDataJson`, binding the attestation to this registration. Must be single-use.
+          example: ArkQi2yAYHPlgnJNFBlneIwchQdWXBOTrdB-AmMUB21Lx
+        attestation:
+          $ref: '#/components/schemas/PasskeyAttestation'
+    PasskeyAdminCredentialCreateRequest:
+      title: Passkey Admin Credential Create Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialCreateRequest'
+        - $ref: '#/components/schemas/AdminCredentialCreateRequestFields'
+        - $ref: '#/components/schemas/PasskeyCredentialCreateRequestFields'
+    AdminCredentialCreateRequestOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/EmailOtpAdminCredentialCreateRequest'
+        - $ref: '#/components/schemas/PasskeyAdminCredentialCreateRequest'
+      discriminator:
+        propertyName: type
+        mapping:
+          EMAIL_OTP: '#/components/schemas/EmailOtpAdminCredentialCreateRequest'
+          PASSKEY: '#/components/schemas/PasskeyAdminCredentialCreateRequest'
     AuthMethod:
       type: object
       required:
@@ -31080,6 +31357,10 @@ components:
           type: string
           description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for SMS_OTP credentials this is the E.164 phone number; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the validated nickname provided at registration time.
           example: example@lightspark.com
+        adminReference:
+          type: string
+          description: The platform's reference for the administrator this credential belongs to, for a credential added with `POST /auth/admin-credentials`. Absent for the account owner's credentials.
+          example: member_8f2c1a
         createdAt:
           type: string
           format: date-time
@@ -31090,6 +31371,36 @@ components:
           format: date-time
           description: Last update timestamp.
           example: '2026-04-08T15:35:00Z'
+    AuthMethodResponse:
+      title: Auth Method Response
+      description: |-
+        Strict wrapper around `AuthMethod`. Used directly as the registration response on `POST /auth/credentials` and inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` / `SMS_OTP` branches of `POST /auth/credentials/{id}/challenge`. The only difference from `AuthMethod` is `unevaluatedProperties: false`, which disambiguates the oneOf against `PasskeyAuthChallenge` — without the strictness, an `AuthMethod` with extra fields would ambiguously match both branches.
+
+        For `EMAIL_OTP` and `SMS_OTP` credentials, responses that initiate or reissue an OTP challenge carry `otpEncryptionTargetBundle` so the client can HPKE-encrypt the OTP code in the subsequent `POST /auth/credentials/{id}/verify` call without the plaintext code ever transiting the server. First-time EMAIL_OTP wallet bootstrap registration can omit it; call `POST /auth/credentials/{id}/challenge` if it is absent.
+      allOf:
+        - $ref: '#/components/schemas/AuthMethod'
+        - type: object
+          properties:
+            otpEncryptionTargetBundle:
+              type: string
+              description: HPKE encryption target bundle for a freshly initiated OTP challenge. Returned only on `EMAIL_OTP` and `SMS_OTP` responses that initiate or reissue an OTP challenge, such as `POST /auth/credentials/{id}/challenge` and signed-retry add responses. It is omitted from first-time EMAIL_OTP wallet bootstrap registration; call `POST /auth/credentials/{id}/challenge` for the new credential if it is absent. The client generates an ephemeral P-256 keypair (the Target Encryption Key, or TEK) and uses this bundle as the recipient when HPKE-encrypting `{otp_code, public_key}`, where `public_key` is the compressed TEK public key; the encrypted payload is submitted as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`. The bundle is one-time-use per OTP issuance — re-issue via `POST /auth/credentials/{id}/challenge` to obtain a fresh bundle. The matching TEK private key must remain on the client and is used to stamp the exact UTF-8 bytes of the `payloadToSign` string returned by the first verify call. Preserve that string unchanged on the signed retry. Treat the bundle as opaque and pass it to your HPKE library; the Global Accounts client-keys guide shows how.
+              example: '{"version":"v1.0.0","data":"7b227461726765745075626c6963...","dataSignature":"30450221...","enclaveQuorumPublic":"04a1b2c3..."}'
+      unevaluatedProperties: false
+    AuthSignedRequestChallenge:
+      title: Authentication Signed Request Challenge
+      description: |-
+        202 response returned from Embedded Wallet Auth endpoints that require a signed retry — `POST /auth/credentials` (adding an additional credential), `DELETE /auth/credentials/{id}` (revoking a credential), `DELETE /auth/sessions/{id}` (revoking a session), and the `EMAIL_OTP` / `SMS_OTP` branch of `POST /auth/credentials/{id}/verify` (the secure OTP login flow, where the client submits an `encryptedOtpBundle` and receives a login signing message as `payloadToSign` to stamp for session issuance). Carries the signing fields from `SignedRequestChallenge` plus the `type` of the authentication credential involved (being added, revoked, that issued the session being revoked, or being authenticated). The client already knows the target resource id from the request path / body it just sent, so nothing beyond `type` is echoed in the response.
+
+        The keypair used to compute the stamp depends on the operation. For credential / session management retries, sign with the session API keypair of an existing verified credential on the same internal account. For OTP verify retries, sign with the ephemeral Target Encryption Key (TEK) the client generated for this login — its public key is the one carried inside the `encryptedOtpBundle` and bound into the `verificationToken`, and it becomes the client's session API key on successful completion.
+      allOf:
+        - $ref: '#/components/schemas/SignedRequestChallenge'
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              $ref: '#/components/schemas/AuthMethodType'
+              description: 'Credential type relevant to this challenge: the credential type being added (`POST /auth/credentials`), revoked (`DELETE /auth/credentials/{id}`), or authenticated (`EMAIL_OTP` / `SMS_OTP` branch of `POST /auth/credentials/{id}/verify`). For session revocation, this is the type of credential that issued the session (`DELETE /auth/sessions/{id}`).'
     AuthCredentialListResponse:
       type: object
       required:
@@ -31100,18 +31411,6 @@ components:
           description: List of authentication credentials registered on the internal account.
           items:
             $ref: '#/components/schemas/AuthMethod'
-    AuthCredentialCreateRequest:
-      type: object
-      required:
-        - type
-        - accountId
-      properties:
-        type:
-          $ref: '#/components/schemas/AuthMethodType'
-        accountId:
-          type: string
-          description: Identifier of the internal account that this credential will authenticate.
-          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
     EmailOtpCredentialCreateRequestFields:
       type: object
       required:
@@ -31173,63 +31472,6 @@ components:
       allOf:
         - $ref: '#/components/schemas/AuthCredentialCreateRequest'
         - $ref: '#/components/schemas/OauthCredentialCreateRequestFields'
-    PasskeyAttestation:
-      title: Passkey Attestation
-      type: object
-      required:
-        - credentialId
-        - clientDataJson
-        - attestationObject
-      properties:
-        credentialId:
-          type: string
-          description: Base64url-encoded credential identifier produced by the authenticator at registration time. Typically the base64url of `PublicKeyCredential.rawId`.
-          example: AdKXJEch1aV5Wo7bj7qLHskVY4OoNaj9qu8TPdJ7kSAgUeRxWNngXlcNIGt4gexZGKVGcqZpqqWordXb_he1izY
-        clientDataJson:
-          type: string
-          description: 'Base64url-encoded JSON client data collected by the browser during the WebAuthn `navigator.credentials.create()` call. Corresponds to `AuthenticatorAttestationResponse.clientDataJSON` from the WebAuthn spec — Grid''s field name is intentionally camelCased as `clientDataJson` (lowercase JSON) for consistency with the rest of the API; the value is the same bytes the browser returns. Contains the challenge, origin, and `type: "webauthn.create"`.'
-          example: eyJjaGFsbGVuZ2UiOiJBcktRaTJ5QVlIUGxnbkpORkJsbmVJd2NoUWRXWEJPVHJkQi1BbU1VQjIxTHgiLCJjbGllbnRFeHRlbnNpb25zIjp7fSwiaGFzaEFsZ29yaXRobSI6IlNIQS0yNTYiLCJvcmlnaW4iOiJodHRwczovL2Rldi5kb250bmVlZGEucHciLCJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIn0
-        attestationObject:
-          type: string
-          description: Base64url-encoded CBOR attestation object produced by the authenticator during registration. Corresponds to `AuthenticatorAttestationResponse.attestationObject`.
-          example: o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFPdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQHSlyRHIdWleVqO24-6ix7JFWODqDWo_arvEz3Se5EgIFHkcVjZ4F5XDSBreIHsWRilRnKmaaqlqK3V2_4XtYs2pQECAyYgASFYID5PQTZQQg6haZFQWFzqfAOyQ_ENsMH8xxQ4GRiNPsqrIlggU8IVUOV8qpgk_Jh-OTaLuZL52KdX1fTht07X4DiQPow
-        transports:
-          type: array
-          items:
-            type: string
-            enum:
-              - usb
-              - nfc
-              - ble
-              - internal
-              - hybrid
-          description: Optional. WebAuthn transports as returned by `AuthenticatorAttestationResponse.getTransports()`. Values follow the W3C `AuthenticatorTransport` enum — pass the raw values through to Grid; provider-specific translation is handled server-side. Some authenticators return an empty array; omit the field or send `[]` in that case.
-          example:
-            - internal
-            - hybrid
-    PasskeyCredentialCreateRequestFields:
-      type: object
-      required:
-        - type
-        - nickname
-        - challenge
-        - attestation
-      properties:
-        type:
-          type: string
-          enum:
-            - PASSKEY
-          description: Discriminator value identifying this as a passkey credential.
-        nickname:
-          type: string
-          description: 'Human-readable identifier for the passkey, chosen by the user at registration time (e.g. "iPhone Face-ID", "YubiKey 5C"). Leading and trailing whitespace is ignored. Must be 1-100 characters and may contain Unicode letters, numbers, spaces, and the following separators: period, underscore, hyphen, apostrophe, and parentheses. Shown back on AuthMethod responses and in credential listings.'
-          example: iPhone Face-ID
-        challenge:
-          type: string
-          description: Base64url-encoded WebAuthn challenge issued by the platform backend and passed to the client before `navigator.credentials.create()`. Grid verifies it matches the challenge embedded in the attestation's `clientDataJson`, binding the attestation to this registration. Must be single-use.
-          example: ArkQi2yAYHPlgnJNFBlneIwchQdWXBOTrdB-AmMUB21Lx
-        attestation:
-          $ref: '#/components/schemas/PasskeyAttestation'
     PasskeyCredentialCreateRequest:
       title: Passkey Credential Create Request
       allOf:
@@ -31248,36 +31490,6 @@ components:
           SMS_OTP: '#/components/schemas/SmsOtpCredentialCreateRequest'
           OAUTH: '#/components/schemas/OauthCredentialCreateRequest'
           PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
-    AuthMethodResponse:
-      title: Auth Method Response
-      description: |-
-        Strict wrapper around `AuthMethod`. Used directly as the registration response on `POST /auth/credentials` and inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` / `SMS_OTP` branches of `POST /auth/credentials/{id}/challenge`. The only difference from `AuthMethod` is `unevaluatedProperties: false`, which disambiguates the oneOf against `PasskeyAuthChallenge` — without the strictness, an `AuthMethod` with extra fields would ambiguously match both branches.
-
-        For `EMAIL_OTP` and `SMS_OTP` credentials, responses that initiate or reissue an OTP challenge carry `otpEncryptionTargetBundle` so the client can HPKE-encrypt the OTP code in the subsequent `POST /auth/credentials/{id}/verify` call without the plaintext code ever transiting the server. First-time EMAIL_OTP wallet bootstrap registration can omit it; call `POST /auth/credentials/{id}/challenge` if it is absent.
-      allOf:
-        - $ref: '#/components/schemas/AuthMethod'
-        - type: object
-          properties:
-            otpEncryptionTargetBundle:
-              type: string
-              description: HPKE encryption target bundle for a freshly initiated OTP challenge. Returned only on `EMAIL_OTP` and `SMS_OTP` responses that initiate or reissue an OTP challenge, such as `POST /auth/credentials/{id}/challenge` and signed-retry add responses. It is omitted from first-time EMAIL_OTP wallet bootstrap registration; call `POST /auth/credentials/{id}/challenge` for the new credential if it is absent. The client generates an ephemeral P-256 keypair (the Target Encryption Key, or TEK) and uses this bundle as the recipient when HPKE-encrypting `{otp_code, public_key}`, where `public_key` is the compressed TEK public key; the encrypted payload is submitted as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`. The bundle is one-time-use per OTP issuance — re-issue via `POST /auth/credentials/{id}/challenge` to obtain a fresh bundle. The matching TEK private key must remain on the client and is used to stamp the exact UTF-8 bytes of the `payloadToSign` string returned by the first verify call. Preserve that string unchanged on the signed retry. Treat the bundle as opaque and pass it to your HPKE library; the Global Accounts client-keys guide shows how.
-              example: '{"version":"v1.0.0","data":"7b227461726765745075626c6963...","dataSignature":"30450221...","enclaveQuorumPublic":"04a1b2c3..."}'
-      unevaluatedProperties: false
-    AuthSignedRequestChallenge:
-      title: Authentication Signed Request Challenge
-      description: |-
-        202 response returned from Embedded Wallet Auth endpoints that require a signed retry — `POST /auth/credentials` (adding an additional credential), `DELETE /auth/credentials/{id}` (revoking a credential), `DELETE /auth/sessions/{id}` (revoking a session), and the `EMAIL_OTP` / `SMS_OTP` branch of `POST /auth/credentials/{id}/verify` (the secure OTP login flow, where the client submits an `encryptedOtpBundle` and receives a login signing message as `payloadToSign` to stamp for session issuance). Carries the signing fields from `SignedRequestChallenge` plus the `type` of the authentication credential involved (being added, revoked, that issued the session being revoked, or being authenticated). The client already knows the target resource id from the request path / body it just sent, so nothing beyond `type` is echoed in the response.
-
-        The keypair used to compute the stamp depends on the operation. For credential / session management retries, sign with the session API keypair of an existing verified credential on the same internal account. For OTP verify retries, sign with the ephemeral Target Encryption Key (TEK) the client generated for this login — its public key is the one carried inside the `encryptedOtpBundle` and bound into the `verificationToken`, and it becomes the client's session API key on successful completion.
-      allOf:
-        - $ref: '#/components/schemas/SignedRequestChallenge'
-        - type: object
-          required:
-            - type
-          properties:
-            type:
-              $ref: '#/components/schemas/AuthMethodType'
-              description: 'Credential type relevant to this challenge: the credential type being added (`POST /auth/credentials`), revoked (`DELETE /auth/credentials/{id}`), or authenticated (`EMAIL_OTP` / `SMS_OTP` branch of `POST /auth/credentials/{id}/verify`). For session revocation, this is the type of credential that issued the session (`DELETE /auth/sessions/{id}`).'
     AuthCredentialVerifyRequest:
       type: object
       required:

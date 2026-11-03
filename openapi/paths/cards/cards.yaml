@@ -149,6 +149,14 @@ get:
       required: false
       schema:
         type: string
+    - name: actingFor
+      in: query
+      description: >-
+        Filter to agent cards issued for this person: cards whose `actingFor`
+        is the given value.
+      required: false
+      schema:
+        type: string
     - name: accountId
       in: query
       description: >-

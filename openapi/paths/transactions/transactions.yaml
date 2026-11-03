@@ -23,6 +23,14 @@ get:
       required: false
       schema:
         type: string
+    - name: actingFor
+      in: query
+      description: >-
+        Filter to transactions made by agents acting for this person: those
+        whose agent was created with this `actingFor`.
+      required: false
+      schema:
+        type: string
     - name: platformCustomerId
       in: query
       description: Filter by platform-specific customer ID
