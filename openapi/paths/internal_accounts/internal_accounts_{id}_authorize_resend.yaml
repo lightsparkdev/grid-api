@@ -9,7 +9,7 @@ parameters:
 post:
   summary: Resend a rule-based account's SCA challenge code
   description: |
-    Re-send the one-time code for a `PENDING` rule-based account whose
+    Re-send the one-time code for a `PENDING_AUTHORIZATION` rule-based account whose
     `scaChallenge.factor` is `SMS_OTP`. The existing challenge is reused and its
     `scaChallenge.expiresAt` is **not** extended.
 

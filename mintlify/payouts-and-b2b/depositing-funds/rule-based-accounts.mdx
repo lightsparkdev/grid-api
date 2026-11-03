@@ -160,7 +160,7 @@ A same-currency destination isn't supported, and neither are `remittanceInformat
 
 ### Authorize the account
 
-The create request returns the account in `PENDING` with an `scaChallenge`. The account holder authorizes it once, and later sweeps run without further authorization:
+The create request returns `202` with the account in `PENDING_AUTHORIZATION` and an `scaChallenge`. The account holder authorizes it once, and later sweeps run without further authorization:
 
 <Steps>
 <Step title="Confirm an SCA session">
@@ -176,7 +176,7 @@ The create request returns the account in `PENDING` with an `scaChallenge`. The 
 </Step>
 
 <Step title="Authorize the challenge">
-  Call `POST /internal-accounts/{id}/authorize` with the customer's proof, then check the returned account. If it is still `PENDING`, authorize its next `scaChallenge` and repeat until it advances. Once the account is `ACTIVE`, Grid sends `INTERNAL_ACCOUNT.STATUS_UPDATED`.
+  Call `POST /internal-accounts/{id}/authorize` with the customer's proof, then check the returned account. If it is still `PENDING_AUTHORIZATION`, authorize its next `scaChallenge` and repeat until it advances. Once the account is `ACTIVE`, Grid sends `INTERNAL_ACCOUNT.STATUS_UPDATED`.
 </Step>
 </Steps>
 

@@ -61,7 +61,7 @@ properties:
     description: >-
       The Strong Customer Authentication challenge the account holder must
       satisfy before a `RULE_BASED` account opens. Present only while the
-      account is `PENDING` and waiting for that authorization, and only for
+      account is `PENDING_AUTHORIZATION`, and only for
       customers in a region where SCA is required (the EU). Authorize it with
       `POST /internal-accounts/{id}/authorize`. If the challenge expires, retry
       the create request with the same `Idempotency-Key` to receive a new one.
