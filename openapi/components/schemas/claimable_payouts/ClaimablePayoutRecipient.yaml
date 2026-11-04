@@ -5,7 +5,6 @@ description: >-
   goes there.
 required:
   - name
-  - country
 properties:
   name:
     type: string
@@ -30,7 +29,8 @@ properties:
     type: string
     description: >-
       ISO 3166-1 alpha-2 country the recipient is paid in. Defaults to the
-      country of `phoneNumber`'s dialing code; required with `email`. The
-      recipient can choose another country when she claims.
+      country of `phoneNumber`'s dialing code; required with `email`. Always
+      present on a payout Grid returns. The recipient can choose another
+      country when she claims.
     pattern: ^[A-Z]{2}$
     example: PH
