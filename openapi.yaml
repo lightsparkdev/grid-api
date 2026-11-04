@@ -31194,7 +31194,7 @@ components:
         allowedMccs:
           type: array
           minItems: 1
-          description: Merchant category codes the card may spend at. Absent when the card may spend at any category not blocked.
+          description: 'The card''s own merchant-category allow list. Absent when the card sets no allow list of its own. Lightspark''s global, platform, and card controls also apply: spending must satisfy every configured allow list and no block list. This field does not include inherited restrictions.'
           items:
             type: string
             pattern: ^[0-9]{4}$
@@ -31202,7 +31202,7 @@ components:
             - '5411'
         blockedMccs:
           type: array
-          description: 'Merchant category codes the card declines, with `cardDeclinedReason: BLOCKED`. Absent when the card blocks no category of its own. A card issued for an agent also declines Grid''s default agent categories unless `defaultMccBlocksLifted` is true.'
+          description: 'Merchant category codes the card declines, with `cardDeclinedReason: BLOCKED`. Absent when the card blocks no category of its own. A card issued for an agent also declines Grid''s default agent categories unless `defaultMccBlocksLifted` is true. Lightspark''s global, platform, and card blocks apply in addition to this list and are not included in this field.'
           items:
             type: string
             pattern: ^[0-9]{4}$
@@ -31653,7 +31653,7 @@ components:
         allowedMccs:
           type: array
           minItems: 1
-          description: Merchant category codes the card may spend at. Omit to allow every category not blocked. Applies to a card issued with `agentId`, and to any other card once merchant category controls are enabled for your platform; until then it is ignored on a card without `agentId`. Rejected with `INVALID_INPUT` on a card program where the card issuer makes authorization decisions.
+          description: Merchant category codes the card may spend at. Omit to allow every category not blocked. Applies to a card issued with `agentId`, and to any other card once merchant category controls are enabled for your platform; until then it is ignored on a card without `agentId`. Rejected with `INVALID_INPUT` on a card program where the card issuer makes authorization decisions. Lightspark's global, platform, and card controls also apply. Every configured allow list must admit the category, and any block list can refuse it; this list cannot loosen those controls.
           items:
             type: string
             pattern: ^[0-9]{4}$
@@ -31661,7 +31661,7 @@ components:
             - '5411'
         blockedMccs:
           type: array
-          description: Merchant category codes the card declines. Applies to a card issued with `agentId`, and to any other card once merchant category controls are enabled for your platform; until then it is ignored on a card without `agentId`. Rejected with `INVALID_INPUT` on a card program where the card issuer makes authorization decisions.
+          description: Merchant category codes the card declines. Applies to a card issued with `agentId`, and to any other card once merchant category controls are enabled for your platform; until then it is ignored on a card without `agentId`. Rejected with `INVALID_INPUT` on a card program where the card issuer makes authorization decisions. Blocks at all scopes combine and take precedence over any allow list.
           items:
             type: string
             pattern: ^[0-9]{4}$
@@ -31732,7 +31732,7 @@ components:
                 type: string
                 pattern: ^[0-9]{4}$
             - type: 'null'
-          description: 'Replacement list of merchant category codes the card may spend at. Applies to a card issued for an agent, and to any other card once merchant category controls are enabled for your platform; until then it is ignored on a card without an agent. Supply null to allow every category not blocked, or omit to leave it unchanged. Rejected with `INVALID_INPUT` on a card whose issuer makes authorization decisions. Cannot be supplied alongside `status: CLOSED`.'
+          description: 'Replacement list of merchant category codes the card may spend at. Applies to a card issued for an agent, and to any other card once merchant category controls are enabled for your platform; until then it is ignored on a card without an agent. Supply null to allow every category not blocked, or omit to leave it unchanged. Rejected with `INVALID_INPUT` on a card whose issuer makes authorization decisions. Cannot be supplied alongside `status: CLOSED`. Changing or clearing this list does not loosen Lightspark''s global, platform, or card controls: all configured allow lists intersect and all block lists combine.'
           example:
             - '5411'
         blockedMccs:
@@ -31742,12 +31742,12 @@ components:
                 type: string
                 pattern: ^[0-9]{4}$
             - type: 'null'
-          description: 'Replacement list of merchant category codes the card declines. Applies to a card issued for an agent, and to any other card once merchant category controls are enabled for your platform; until then it is ignored on a card without an agent. Supply null to clear it, or omit to leave it unchanged. On a card issued for an agent, Grid''s default agent blocks still apply on top of this list; lift them with `defaultMccBlocksLifted`. Rejected with `INVALID_INPUT` on a card whose issuer makes authorization decisions. Cannot be supplied alongside `status: CLOSED`.'
+          description: 'Replacement list of merchant category codes the card declines. Applies to a card issued for an agent, and to any other card once merchant category controls are enabled for your platform; until then it is ignored on a card without an agent. Supply null to clear it, or omit to leave it unchanged. On a card issued for an agent, Grid''s default agent blocks still apply on top of this list; lift them with `defaultMccBlocksLifted`. Rejected with `INVALID_INPUT` on a card whose issuer makes authorization decisions. Cannot be supplied alongside `status: CLOSED`. Clearing this list removes only the card''s own blocks; Lightspark''s global, platform, and card controls still apply.'
           example:
             - '7995'
         defaultMccBlocksLifted:
           type: boolean
-          description: 'On a card issued for an agent, `true` lifts Grid''s default agent merchant-category blocks and `false` restores them. Ignored on a card with no agent. Cannot be supplied alongside `status: CLOSED`.'
+          description: 'On a card issued for an agent, `true` lifts Grid''s default agent merchant-category blocks and `false` restores them. Ignored on a card with no agent. Cannot be supplied alongside `status: CLOSED`. Lifting agent defaults does not remove other MCC restrictions.'
           example: true
     CardRevealRequest:
       type: object

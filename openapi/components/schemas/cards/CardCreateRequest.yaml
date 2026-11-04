@@ -61,7 +61,9 @@ properties:
       any other card once merchant category controls are enabled for your
       platform; until then it is ignored on a card without `agentId`. Rejected
       with `INVALID_INPUT` on a card program where the card issuer makes
-      authorization decisions.
+      authorization decisions. Lightspark's global, platform, and card
+      controls also apply. Every configured allow list must admit the category,
+      and any block list can refuse it; this list cannot loosen those controls.
     items:
       type: string
       pattern: ^[0-9]{4}$
@@ -74,7 +76,8 @@ properties:
       with `agentId`, and to any other card once merchant category controls
       are enabled for your platform; until then it is ignored on a card
       without `agentId`. Rejected with `INVALID_INPUT` on a card program where
-      the card issuer makes authorization decisions.
+      the card issuer makes authorization decisions. Blocks at all scopes
+      combine and take precedence over any allow list.
     items:
       type: string
       pattern: ^[0-9]{4}$

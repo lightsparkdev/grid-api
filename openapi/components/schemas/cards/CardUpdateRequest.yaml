@@ -76,7 +76,9 @@ properties:
       it is ignored on a card without an agent. Supply null to allow every
       category not blocked, or omit to leave it unchanged. Rejected with
       `INVALID_INPUT` on a card whose issuer makes authorization decisions.
-      Cannot be supplied alongside `status: CLOSED`.
+      Cannot be supplied alongside `status: CLOSED`. Changing or clearing
+      this list does not loosen Lightspark's global, platform, or card
+      controls: all configured allow lists intersect and all block lists combine.
     example:
       - '5411'
   blockedMccs:
@@ -96,6 +98,8 @@ properties:
       `defaultMccBlocksLifted`. Rejected with `INVALID_INPUT` on a card whose
       issuer makes authorization decisions. Cannot be supplied alongside
       `status: CLOSED`.
+      Clearing this list removes only the card's own blocks; Lightspark's
+      global, platform, and card controls still apply.
     example:
       - '7995'
   defaultMccBlocksLifted:
@@ -104,4 +108,5 @@ properties:
       On a card issued for an agent, `true` lifts Grid's default agent
       merchant-category blocks and `false` restores them. Ignored on a card
       with no agent. Cannot be supplied alongside `status: CLOSED`.
+      Lifting agent defaults does not remove other MCC restrictions.
     example: true
