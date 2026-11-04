@@ -38,6 +38,16 @@ An approved action is still subject to the latest account and policy state when 
 - Another action may have already consumed the available daily spend
 - For `EXECUTE_QUOTE` actions, the underlying quote may have expired
 
+### Re-quoted approvals
+
+Where Grid has enabled it for your platform, an `EXECUTE_QUOTE` action carries `priceTolerance` and waits for approval until its own `expiresAt` (24 hours by default) instead of expiring with its quote. Approved while its quote is live, it sends that quote as shown. Approved after the quote expired, Grid quotes the send again and runs every approval check against the new quote:
+
+- If the new price is no worse for the customer than `priceTolerance` allows (by default the larger of 1% and $1), Grid sends it and the action is `APPROVED` with the new `quote`.
+- If it is worse by more, nothing is sent. The approval returns the action still `PENDING_APPROVAL`, with the new `quote` and the one the customer saw in `previousQuote`. Show both and ask the customer again; approving again repeats the check.
+- A better price never asks again.
+
+Tell the customer about the tolerance when you ask for their approval, for example: "If the price moves by more than 1% or $1 (whichever is larger) before you approve, we'll ask you again." Read the numbers from `priceTolerance`.
+
 <Warning>
 An approval is not always a guarantee that the action will execute. Your product should be ready to show a `FAILED` state — for example, if a quote expired while waiting for approval. The `AgentAction.status` field reflects the final outcome.
 </Warning>
@@ -125,7 +135,7 @@ All of this information is present in the `AgentAction` payload delivered via we
 
 ## Integration guidance
 
-- Subscribe to [`AGENT_ACTION.PENDING_APPROVAL` webhooks](/global-accounts/platform-tools/webhooks) and send the customer a push notification immediately — quote-based actions expire quickly.
+- Subscribe to [`AGENT_ACTION.PENDING_APPROVAL` webhooks](/global-accounts/platform-tools/webhooks) and send the customer a push notification immediately — quote-based actions without `priceTolerance` expire with their quote, within minutes.
 - Use `GET /agents/approvals` to build an in-app approval queue as a fallback for users who miss the push notification.
 - Treat approval and rejection calls as idempotent in your integration so duplicate taps or retries do not cause confusing UX.
 - Show `FAILED` and `REJECTED` outcomes clearly — they are distinct states with different meanings for the customer.

@@ -12,10 +12,10 @@ description: |
 
   | Reason | Description |
   |--------|-------------|
-  | `QUOTE_EXPIRED` | The action's quote expired before execution |
+  | `QUOTE_EXPIRED` | The action's quote expired before execution, or, for an action Grid quotes again on approval, Grid could no longer quote the send |
   | `POLICY_DENIED` | The agent policy no longer allowed the action |
   | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
   | `EXECUTION_FAILED` | Grid could not execute the approved action. For `ISSUE_PURCHASE_CARD`, the card issuer did not issue the card |
   | `PRICE_MOVED` | Reserved and legacy. Quotes to a `CHAIN_ADDRESS` pay out at a locked rate and no longer fail with this reason |
   | `ADDRESS_REFUSED` | Grid refused the send's destination before it signed the send: the destination is no longer one the agent may send to (for example, a Spark address removed from the customer's saved addresses), or one of the customer's records of the address was refused or is held for review. A `CHAIN_ADDRESS` that screening refuses fails with `EXECUTION_FAILED` |
-  | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD` action was not approved before its `expiresAt` |
+  | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD` action, or an `EXECUTE_QUOTE` action with `priceTolerance`, was not approved before its `expiresAt` |

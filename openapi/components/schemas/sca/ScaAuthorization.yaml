@@ -12,8 +12,8 @@ properties:
       - 'null'
     description: >-
       The one-time code the customer received by SMS, or read from their
-      authenticator app. In sandbox, the code is always `123456`.
-    example: '123456'
+      authenticator app. In sandbox, the code is always `000000`.
+    example: '000000'
   passkeyAssertion:
     type:
       - object

@@ -7,5 +7,5 @@ properties:
     type: string
     description: >-
       The one-time verification code the customer received via email or SMS.
-      In sandbox, the code is always `123456`.
-    example: '123456'
+      In sandbox, the code is always `000000`.
+    example: '000000'

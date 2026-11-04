@@ -19,7 +19,7 @@ post:
     Call `POST /customers/{customerId}/verify-email/confirm` with the received
     code to complete verification. Re-POST this endpoint to resend the code.
 
-    In sandbox, no email is sent and the code is always `123456`.
+    In sandbox, no email is sent and the code is always `000000`.
   operationId: sendCustomerEmailVerification
   tags:
     - Contact Verification

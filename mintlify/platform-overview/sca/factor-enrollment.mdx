@@ -57,7 +57,7 @@ don't store them server-side.
 ```bash
 POST /sca/factors/confirm?customerId={customerId}
 
-{ "type": "TOTP", "secret": "…", "code": "123456" }
+{ "type": "TOTP", "secret": "…", "code": "000000" }
 ```
 
 ```json
@@ -65,7 +65,7 @@ POST /sca/factors/confirm?customerId={customerId}
 ```
 
 A wrong or expired code returns `400`. **In sandbox, the code is always
-`123456`.**
+`000000`.**
 </Step>
 </Steps>
 

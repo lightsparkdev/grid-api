@@ -48,7 +48,7 @@ it appears in `scaChallenge.availableFactors`.
 ```bash
 POST /customers/external-accounts/{externalAccountId}/trust/confirm
 
-{ "challengeId": "…", "code": "123456" }
+{ "challengeId": "…", "code": "000000" }
 ```
 
 ```json
@@ -56,7 +56,7 @@ POST /customers/external-accounts/{externalAccountId}/trust/confirm
 ```
 
 An invalid or expired proof returns `400`. **In sandbox, the code is always
-`123456`.**
+`000000`.**
 </Step>
 </Steps>
 
@@ -84,7 +84,7 @@ Submit the proof for the factor Grid returned in `scaChallenge`: `code` for
 ```bash
 POST /customers/external-accounts/{externalAccountId}/untrust/confirm
 
-{ "challengeId": "…", "code": "123456" }
+{ "challengeId": "…", "code": "000000" }
 ```
 
 </Step>
