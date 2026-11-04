@@ -8239,11 +8239,23 @@ paths:
         Create a new agent with a specified policy. Returns the created agent and a device code that must be redeemed by the agent software to complete installation.
 
         Agents of a `BUSINESS` customer are available only where the platform enables them, and require `actingFor` to name the person the agent acts for. Until the business's KYB status is `APPROVED`, its agents' sends and deposits are held to the same limits as an unverified individual's, counted across the whole business.
+
+        Send an `Idempotency-Key` header to make retries safe: a request carrying a key already used returns the agent the first request created, with a `200` instead of a `201` and a new device code that replaces any unredeemed one. Reusing a key for a different customer, name or policy, for an agent that was deleted, or for one already connected is rejected with `409`. Without a key a retry cannot be recognised, so each request creates its own agent.
       operationId: createAgent
       tags:
         - Agent Management
       security:
         - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: |
+            A unique identifier for the request. A retry with the same key returns the agent the first request created rather than creating a second one.
+          required: false
+          schema:
+            type: string
+            maxLength: 255
+            example: 550e8400-e29b-41d4-a716-446655440000
       requestBody:
         required: true
         content:
@@ -8251,6 +8263,12 @@ paths:
             schema:
               $ref: '#/components/schemas/AgentCreateRequest'
       responses:
+        '200':
+          description: 'The `Idempotency-Key` was already used for this request: the agent the first request created, with a new device code'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCreateResponse'
         '201':
           description: Agent created successfully
           content:
@@ -8281,6 +8299,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - the `Idempotency-Key` was already used for a different customer, name or policy, or for an agent that was since deleted or connected. Use a new key for a new agent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:

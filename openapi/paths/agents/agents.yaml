@@ -10,11 +10,31 @@ post:
     for. Until the business's KYB status is `APPROVED`, its agents' sends and
     deposits are held to the same limits as an unverified individual's,
     counted across the whole business.
+
+
+    Send an `Idempotency-Key` header to make retries safe: a request carrying
+    a key already used returns the agent the first request created, with a
+    `200` instead of a `201` and a new device code that replaces any
+    unredeemed one. Reusing a key for a different customer, name or policy,
+    for an agent that was deleted, or for one already connected is rejected
+    with `409`. Without a key a retry cannot be recognised, so each request
+    creates its own agent.
   operationId: createAgent
   tags:
     - Agent Management
   security:
     - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      description: >
+        A unique identifier for the request. A retry with the same key returns
+        the agent the first request created rather than creating a second one.
+      required: false
+      schema:
+        type: string
+        maxLength: 255
+        example: 550e8400-e29b-41d4-a716-446655440000
   requestBody:
     required: true
     content:
@@ -22,6 +42,14 @@ post:
         schema:
           $ref: ../../components/schemas/agents/AgentCreateRequest.yaml
   responses:
+    '200':
+      description: >-
+        The `Idempotency-Key` was already used for this request: the agent the
+        first request created, with a new device code
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentCreateResponse.yaml
     '201':
       description: Agent created successfully
       content:
@@ -56,6 +84,15 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict - the `Idempotency-Key` was already used for a different
+        customer, name or policy, or for an agent that was since deleted or
+        connected. Use a new key for a new agent.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
     '500':
       description: Internal service error
       content:
