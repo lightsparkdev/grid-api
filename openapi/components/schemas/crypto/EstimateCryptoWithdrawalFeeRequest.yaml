@@ -17,8 +17,11 @@ properties:
   cryptoNetwork:
     type: string
     description: >-
-      The blockchain network for the withdrawal. Example values: SOLANA,
-      ETHEREUM, BASE, POLYGON, ARBITRUM, SPARK, LIGHTNING, BITCOIN.
+      The blockchain network for the withdrawal. Must be a network the
+      internal account is set up to receive deposits on (for an embedded
+      wallet, the wallet's own network); any other network returns a 400
+      error. Example values: SOLANA, ETHEREUM, BASE, POLYGON, ARBITRUM, SPARK,
+      LIGHTNING, BITCOIN.
     example: SOLANA
   amount:
     type: integer
