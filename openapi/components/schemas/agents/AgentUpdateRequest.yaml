@@ -9,3 +9,12 @@ properties:
     type: boolean
     description: Set to true to pause the agent or false to resume it.
     example: true
+  spendingPoolId:
+    type:
+      - string
+      - 'null'
+    description: >-
+      Move the agent to this spending pool of the same customer, or take it
+      out of its pool with `null`. Available where the platform enables
+      spending pools. The agent's policy must be in the pool's currency.
+    example: SpendingPool:019542f5-b3e7-1d02-0000-000000000007

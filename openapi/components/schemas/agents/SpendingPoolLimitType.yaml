@@ -1,0 +1,12 @@
+type: string
+enum:
+  - RECURRING
+  - TOTAL
+description: |
+  How a spending pool's `limitAmount` applies.
+
+  | Value | Description |
+  |-------|-------------|
+  | `RECURRING` | Resets at the start of each `period` (UTC calendar week starting Monday, or calendar month) |
+  | `TOTAL` | A running total that never resets; raise `limitAmount` to allow more |
+example: RECURRING

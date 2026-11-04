@@ -8485,6 +8485,279 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /spending-pools:
+    post:
+      summary: Create a spending pool
+      description: |
+        Create a spending pool on a customer. Agents assigned to it (with `spendingPoolId` on `POST /agents` or `PATCH /agents/{agentId}`) are held to its limits and allowed payment types together, in addition to each agent's own policy. Available where the platform enables spending pools.
+
+        Every agent payment checks the pool: sends (including Lightning), bank payouts and card authorizations. A payment the pool refuses is rejected with `AGENT_POLICY_DENIED` and `details.policyDenialReason` `POOL_LIMIT_EXCEEDED` or `POOL_PAYMENT_TYPE_NOT_ALLOWED`; a card authorization is declined. Payments in flight hold their amount against the pool until they complete or fail, so concurrent payments cannot together exceed it. `RECURRING` limits reset on UTC calendar boundaries.
+      operationId: createSpendingPool
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpendingPoolCreateRequest'
+      responses:
+        '201':
+          description: Spending pool created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingPool'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or spending pools are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List spending pools
+      description: Retrieve a paginated list of the platform's spending pools, with their current usage.
+      operationId: listSpendingPools
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: customerId
+          in: query
+          description: Filter by customer ID
+          required: false
+          schema:
+            type: string
+        - name: isArchived
+          in: query
+          description: Filter by archived status. Omitted, pools of both are returned.
+          required: false
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingPoolListResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or spending pools are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /spending-pools/{spendingPoolId}:
+    parameters:
+      - name: spendingPoolId
+        in: path
+        description: System-generated unique spending pool identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a spending pool
+      description: Retrieve a spending pool with what its agents have spent and may still spend in the current period.
+      operationId: getSpendingPool
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingPool'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or spending pools are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Spending pool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update a spending pool
+      description: Change a spending pool's name, limits, allowed payment types or admin-approval flag. The change applies to payments decided after it.
+      operationId: updateSpendingPool
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpendingPoolUpdateRequest'
+      responses:
+        '200':
+          description: Spending pool updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingPool'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or spending pools are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Spending pool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The spending pool is archived
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Archive a spending pool
+      description: Archive a spending pool. Refused with `409` while any agent is assigned to it; move or delete those agents first. An archived pool is still returned by `GET /spending-pools/{spendingPoolId}`.
+      operationId: archiveSpendingPool
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Spending pool archived
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or spending pools are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Spending pool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Agents are still assigned to the spending pool
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /agents/me:
     get:
       summary: Get current agent
@@ -8861,7 +9134,7 @@ paths:
                 $ref: '#/components/schemas/Error500'
     patch:
       summary: Update agent
-      description: Update an agent's name or paused state.
+      description: Update an agent's name, paused state or spending pool.
       operationId: updateAgent
       tags:
         - Agent Management
@@ -18015,6 +18288,8 @@ components:
         | `DAILY_LIMIT_EXCEEDED` | The amount would exceed the daily spending limit |
         | `MONTHLY_LIMIT_EXCEEDED` | The amount would exceed the monthly spending limit |
         | `DAILY_TRANSACTION_LIMIT_EXCEEDED` | The agent has made its daily number of transactions |
+        | `POOL_LIMIT_EXCEEDED` | The amount would exceed a limit of the agent's spending pool |
+        | `POOL_PAYMENT_TYPE_NOT_ALLOWED` | The agent's spending pool does not allow this kind of payment |
       example: DAILY_LIMIT_EXCEEDED
     Error403:
       type: object
@@ -30738,6 +31013,10 @@ components:
           type: string
           description: The platform's reference for the person this agent acts for, as given when the agent was created. Absent when none was given.
           example: member_8f2c1a
+        spendingPoolId:
+          type: string
+          description: The spending pool the agent spends under, in addition to its own policy. Absent when the agent is in no pool.
+          example: SpendingPool:019542f5-b3e7-1d02-0000-000000000007
         policy:
           $ref: '#/components/schemas/AgentPolicy'
         usage:
@@ -30795,6 +31074,10 @@ components:
           maxLength: 255
           description: The platform's own reference for the person this agent acts for, such as a member id within a business. Grid stores it as given, never interprets it, and copies it onto every card the agent is issued, for audit and screening. Required when the customer is a `BUSINESS`, where agents are available only where the platform enables them for business customers; optional for an `INDIVIDUAL`. It cannot be changed after the agent is created.
           example: member_8f2c1a
+        spendingPoolId:
+          type: string
+          description: A spending pool of the same customer to put the agent in, where the platform enables spending pools. The agent's policy must be in the pool's currency.
+          example: SpendingPool:019542f5-b3e7-1d02-0000-000000000007
     AgentDeviceCode:
       type: object
       required:
@@ -31133,6 +31416,297 @@ components:
         totalCount:
           type: integer
           description: Total number of actions matching the criteria (excluding pagination).
+    SpendingPoolLimitType:
+      type: string
+      enum:
+        - RECURRING
+        - TOTAL
+      description: |
+        How a spending pool's `limitAmount` applies.
+
+        | Value | Description |
+        |-------|-------------|
+        | `RECURRING` | Resets at the start of each `period` (UTC calendar week starting Monday, or calendar month) |
+        | `TOTAL` | A running total that never resets; raise `limitAmount` to allow more |
+      example: RECURRING
+    SpendingPoolPeriod:
+      type: string
+      enum:
+        - MONTH
+        - WEEK
+      description: 'The UTC calendar period a `RECURRING` pool''s limit resets on: a calendar month, or a week starting Monday 00:00 UTC.'
+      example: MONTH
+    SpendingPoolPaymentType:
+      type: string
+      enum:
+        - CARDS
+        - CRYPTO_SENDS
+        - BANK_PAYOUTS
+      description: |
+        A kind of agent payment a spending pool may allow.
+
+        | Value | Description |
+        |-------|-------------|
+        | `CARDS` | Authorizations on the agents' cards |
+        | `CRYPTO_SENDS` | Sends to crypto destinations, Spark and Lightning included |
+        | `BANK_PAYOUTS` | Payouts to bank accounts |
+      example: CARDS
+    SpendingPoolUsage:
+      type: object
+      description: What the pool's agents have spent, counting payments still in flight, as of the request. Amounts are in the smallest unit of the pool's `currency`.
+      required:
+        - spent
+        - remaining
+        - dailySpent
+        - monthlySpent
+      properties:
+        periodStart:
+          type: string
+          format: date
+          description: The first day (UTC) of the current period of a `RECURRING` pool. Absent for a `TOTAL` pool.
+          example: '2026-11-01'
+        periodEnd:
+          type: string
+          format: date
+          description: The first day (UTC) of the next period of a `RECURRING` pool, when its spending resets. Absent for a `TOTAL` pool.
+          example: '2026-12-01'
+        spent:
+          type: integer
+          format: int64
+          description: 'Spent against `limitAmount`: in the current period for a `RECURRING` pool, ever for a `TOTAL` one.'
+          example: 125000
+        remaining:
+          type: integer
+          format: int64
+          description: 'What the pool''s agents may still spend now: the least room left under `limitAmount`, `dailyLimit` and `monthlyLimit`, and never below zero. A single payment is also held to `perTransactionLimit`, and to each agent''s own policy.'
+          example: 375000
+        dailySpent:
+          type: integer
+          format: int64
+          description: Spent today (UTC).
+          example: 2500
+        monthlySpent:
+          type: integer
+          format: int64
+          description: Spent in the current UTC calendar month.
+          example: 125000
+    SpendingPool:
+      title: Spending Pool
+      type: object
+      description: 'A spending limit shared by the agents assigned to it, on their customer''s balance. A pool holds no money and no money moves between pools: it only limits what its agents may spend, in addition to each agent''s own policy. Limits of different pools may add up to more than the balance. Each agent belongs to at most one pool.'
+      required:
+        - id
+        - customerId
+        - name
+        - currency
+        - limitType
+        - limitAmount
+        - allowedPaymentTypes
+        - requiresAdminApproval
+        - isArchived
+        - usage
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier for the pool.
+          example: SpendingPool:019542f5-b3e7-1d02-0000-000000000007
+        customerId:
+          type: string
+          description: The customer whose agents spend under the pool.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        name:
+          type: string
+          description: Human-readable name for the pool.
+          example: Marketing
+        currency:
+          type: string
+          description: ISO 4217 currency code all of the pool's amounts are in. Only agents whose policy is in the same currency may be assigned to it. Immutable.
+          example: USD
+        limitType:
+          $ref: '#/components/schemas/SpendingPoolLimitType'
+        period:
+          $ref: '#/components/schemas/SpendingPoolPeriod'
+          description: The period a `RECURRING` pool resets on. Absent for `TOTAL`.
+        limitAmount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: 'The most the pool''s agents may spend together: per `period` for a `RECURRING` pool, in total for a `TOTAL` one.'
+          example: 500000
+        perTransactionLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The most a single payment may be. Absent for no cap.
+          example: 50000
+        dailyLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The most the pool's agents may spend together per UTC day. Absent for no cap.
+          example: 100000
+        monthlyLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The most the pool's agents may spend together per UTC calendar month. Absent for no cap.
+          example: 400000
+        allowedPaymentTypes:
+          type: array
+          description: The kinds of payment the pool's agents may make. Any other is refused with `policyDenialReason` `POOL_PAYMENT_TYPE_NOT_ALLOWED`.
+          items:
+            $ref: '#/components/schemas/SpendingPoolPaymentType'
+          uniqueItems: true
+          example:
+            - CARDS
+            - CRYPTO_SENDS
+        requiresAdminApproval:
+          type: boolean
+          description: Whether the platform requires an administrator to approve the pool's agents' payments that need approval. Grid stores it for the platform and does not act on it.
+          example: false
+        isArchived:
+          type: boolean
+          description: Whether the pool was archived. An archived pool takes no agents and cannot be changed.
+          example: false
+        usage:
+          $ref: '#/components/schemas/SpendingPoolUsage'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-11-02T17:32:28Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2026-11-02T17:32:28Z'
+    SpendingPoolListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: Spending pools matching the filter criteria.
+          items:
+            $ref: '#/components/schemas/SpendingPool'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+    SpendingPoolCreateRequest:
+      type: object
+      description: 'Request body for `POST /spending-pools`. `period` is required with `limitType: RECURRING` and rejected with `TOTAL`.'
+      required:
+        - customerId
+        - name
+        - limitType
+        - limitAmount
+        - allowedPaymentTypes
+      properties:
+        customerId:
+          type: string
+          description: The customer whose agents will spend under the pool.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Marketing
+        currency:
+          type: string
+          description: ISO 4217 currency code of the pool's amounts. Defaults to `USD`.
+          example: USD
+        limitType:
+          $ref: '#/components/schemas/SpendingPoolLimitType'
+        period:
+          $ref: '#/components/schemas/SpendingPoolPeriod'
+        limitAmount:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 500000
+        perTransactionLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 50000
+        dailyLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 100000
+        monthlyLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 400000
+        allowedPaymentTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpendingPoolPaymentType'
+          uniqueItems: true
+          example:
+            - CARDS
+        requiresAdminApproval:
+          type: boolean
+          default: false
+          example: false
+    SpendingPoolUpdateRequest:
+      type: object
+      description: Partial update to a spending pool. At least one field must be provided. A cap set to `null` is removed. Changing `limitType` to `RECURRING` requires `period`; changing it to `TOTAL` removes `period`. Lowering a limit below what is already spent refuses further payments; it never reverses one.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Marketing
+        limitType:
+          $ref: '#/components/schemas/SpendingPoolLimitType'
+        period:
+          $ref: '#/components/schemas/SpendingPoolPeriod'
+        limitAmount:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 600000
+        perTransactionLimit:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          minimum: 1
+          example: 50000
+        dailyLimit:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          minimum: 1
+          example: 100000
+        monthlyLimit:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          minimum: 1
+          example: 400000
+        allowedPaymentTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpendingPoolPaymentType'
+          uniqueItems: true
+          example:
+            - CARDS
+            - BANK_PAYOUTS
+        requiresAdminApproval:
+          type: boolean
+          example: true
     AgentCustomerUpdateRequest:
       title: Agent Customer Update Request
       description: 'Request body for `PATCH /agents/me/customer`: the identity fields an agent may update on its customer. Any other field, including `email` and `currencies`, returns 400.'
@@ -31344,6 +31918,12 @@ components:
           type: boolean
           description: Set to true to pause the agent or false to resume it.
           example: true
+        spendingPoolId:
+          type:
+            - string
+            - 'null'
+          description: Move the agent to this spending pool of the same customer, or take it out of its pool with `null`. Available where the platform enables spending pools. The agent's policy must be in the pool's currency.
+          example: SpendingPool:019542f5-b3e7-1d02-0000-000000000007
     AgentSpendingLimitsUpdate:
       type: object
       description: Partial update to spending limits. Only provided fields will be updated; omitted fields retain their current values.

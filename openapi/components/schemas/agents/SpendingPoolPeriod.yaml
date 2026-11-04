@@ -1,0 +1,8 @@
+type: string
+enum:
+  - MONTH
+  - WEEK
+description: >-
+  The UTC calendar period a `RECURRING` pool's limit resets on: a calendar
+  month, or a week starting Monday 00:00 UTC.
+example: MONTH

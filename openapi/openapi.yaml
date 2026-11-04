@@ -448,6 +448,10 @@ paths:
     $ref: paths/agents/agents.yaml
   /agents/approvals:
     $ref: paths/agents/agents_approvals.yaml
+  /spending-pools:
+    $ref: paths/agents/spending-pools.yaml
+  /spending-pools/{spendingPoolId}:
+    $ref: paths/agents/spending-pools_{spendingPoolId}.yaml
   /agents/me:
     $ref: paths/agents/agents_me.yaml
   /agents/me/customer:
