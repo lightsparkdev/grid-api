@@ -55,3 +55,11 @@ properties:
       recurring purchase cards. `true` is allowed only with
       `kind: PURCHASE`; `false` is accepted with any kind.
     example: false
+  cardholder:
+    $ref: ./AgentCardholder.yaml
+    description: >-
+      The person the card is for, named on the card as an authorized user of
+      the business. Required for every card when the agent's customer is a
+      `BUSINESS`, and rejected for an `INDIVIDUAL`. For a purchase card that
+      awaits approval, Grid keeps it, encrypted, until the card is issued or
+      the request ends.

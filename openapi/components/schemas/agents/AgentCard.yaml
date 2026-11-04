@@ -17,6 +17,13 @@ properties:
     example: Agent:019542f5-b3e7-1d02-0000-000000000042
   agentCardKind:
     $ref: ./AgentCardKind.yaml
+  actingFor:
+    type: string
+    description: >-
+      The platform's reference for the person the card was issued for: the
+      issuing agent's `actingFor` when the card was issued. Absent when the
+      agent had none.
+    example: member_8f2c1a
   effectiveBlockedMccs:
     type: array
     description: >-

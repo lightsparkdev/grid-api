@@ -8235,6 +8235,8 @@ paths:
       summary: Create an agent
       description: |
         Create a new agent with a specified policy. Returns the created agent and a device code that must be redeemed by the agent software to complete installation.
+
+        Agents of a `BUSINESS` customer are available only where the platform enables them, and require `actingFor` to name the person the agent acts for. Until the business's KYB status is `APPROVED`, its agents' sends and deposits are held to the same limits as an unverified individual's, counted across the whole business.
       operationId: createAgent
       tags:
         - Agent Management
@@ -8254,7 +8256,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AgentCreateResponse'
         '400':
-          description: Bad request
+          description: Bad request. Returned with `INVALID_INPUT` when the customer is a `BUSINESS` and the platform has not enabled agents for business customers, when `actingFor` is missing for a business, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -10235,6 +10237,8 @@ paths:
       description: |
         Issue a virtual card for the authenticated agent. The card belongs to the agent's customer, who must have KYC status `APPROVED` and have accepted the cardholder agreement where the platform requires one. Its spend counts against the agent's policy limits as the agent's sends do, and Grid's default agent merchant-category blocks apply. Requires the ISSUE_CARDS permission; reading the card afterwards needs MANAGE_CARDS.
 
+        **Business customers**: where the platform enables agents for business customers, an agent of a `BUSINESS` customer may be issued standard and purchase cards once the business's KYB status is `APPROVED`. The request must name the person the card is for in `cardholder`; the card is issued on the business's card account with that person as its authorized user, and carries the agent's `actingFor`. A purchase card awaiting approval is issued to that person when it is approved.
+
         **Standard card** (`kind` omitted or `STANDARD`): as `POST /cards` with `agentId` does for the platform. While any of the agent's standard cards is not `CLOSED`, including one the platform issued for it, the request is rejected with `AGENT_CARD_EXISTS`. New cards start in `status: "PROCESSING"` and follow the same status transitions and `card.status_change` webhooks as cards issued with `POST /cards`.
 
         **Purchase card** (`kind: PURCHASE`): a single-use card for one online purchase of `amount`, paid from the customer's Embedded Wallet with the agent's delegated key. Available only where the platform enables agent purchase cards. Its limit (`purchase.spendLimit`) is `amount` plus an allowance for tax and shipping, and that limit is evaluated against the agent's policy as a send of the same amount would be:
@@ -10311,7 +10315,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AgentAction'
         '400':
-          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the customer's KYC status is not `APPROVED`, with `CARDHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires a cardholder agreement the customer has not accepted, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or too long, when the funding source does not belong to the customer or is not denominated in a card-eligible currency, when `amount` is missing for a purchase card or supplied for a standard one, when `recurring` is `true` for a standard card, when `amount` is over the largest purchase (or, for a recurring card, monthly limit) the platform allows agents to ask for, when a purchase card's funding source is not an Embedded Wallet the agent holds an active delegated key on or the agent's policy is not in USD, and for general invalid parameters.
+          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the customer's KYC (for a business, KYB) status is not `APPROVED`, with `CARDHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires a cardholder agreement the customer has not accepted, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or too long, when the funding source does not belong to the customer or is not denominated in a card-eligible currency, when `amount` is missing for a purchase card or supplied for a standard one, when `recurring` is `true` for a standard card, when `amount` is over the largest purchase (or, for a recurring card, monthly limit) the platform allows agents to ask for, when a purchase card's funding source is not an Embedded Wallet the agent holds an active delegated key on or the agent's policy is not in USD, when `cardholder` is missing for a business's card or supplied for an individual's, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -30730,6 +30734,10 @@ components:
           type: boolean
           description: Whether the agent has been installed and connected (i.e., its device code has been redeemed).
           example: true
+        actingFor:
+          type: string
+          description: The platform's reference for the person this agent acts for, as given when the agent was created. Absent when none was given.
+          example: member_8f2c1a
         policy:
           $ref: '#/components/schemas/AgentPolicy'
         usage:
@@ -30781,6 +30789,12 @@ components:
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         policy:
           $ref: '#/components/schemas/AgentPolicy'
+        actingFor:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: The platform's own reference for the person this agent acts for, such as a member id within a business. Grid stores it as given, never interprets it, and copies it onto every card the agent is issued, for audit and screening. Required when the customer is a `BUSINESS`, where agents are available only where the platform enables them for business customers; optional for an `INDIVIDUAL`. It cannot be changed after the agent is created.
+          example: member_8f2c1a
     AgentDeviceCode:
       type: object
       required:
@@ -31728,6 +31742,10 @@ components:
           example: Agent:019542f5-b3e7-1d02-0000-000000000042
         agentCardKind:
           $ref: '#/components/schemas/AgentCardKind'
+        actingFor:
+          type: string
+          description: 'The platform''s reference for the person the card was issued for: the issuing agent''s `actingFor` when the card was issued. Absent when the agent had none.'
+          example: member_8f2c1a
         effectiveBlockedMccs:
           type: array
           description: 'Every merchant category code the card declines: `blockedMccs` plus the categories Grid blocks for agent cards, unless the platform lifted those defaults (`defaultMccBlocksLifted`).'
@@ -31762,6 +31780,39 @@ components:
           type: integer
           description: Total number of cards matching the criteria (excluding pagination).
           example: 3
+    AgentCardholder:
+      type: object
+      description: The person a business's agent card is issued for. The card is issued on the business's card account with this person as its authorized user, so their name is the one on the card. Grid passes these details to the card issuer, holding them only while a purchase card awaits approval.
+      required:
+        - firstName
+        - lastName
+        - email
+        - phoneNumber
+        - address
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Jane
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Doe
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: jane@example.com
+        phoneNumber:
+          type: string
+          description: Phone number in E.164 format.
+          pattern: ^\+[1-9]\d{1,14}$
+          example: '+14155550123'
+        address:
+          $ref: '#/components/schemas/Address'
+          description: The person's residential address. Must be a complete United States address with `city` and `state`.
     AgentCardCreateRequest:
       type: object
       description: 'Request body for `POST /agents/me/cards`. Without `kind`, or with `kind: STANDARD`, it issues the agent''s standard card. With `kind: PURCHASE` it requests a single-use purchase card for one online purchase of `amount`, or with `recurring: true` a recurring purchase card that may spend up to `amount` a month at one merchant.'
@@ -31791,6 +31842,9 @@ components:
           default: false
           description: 'Request a recurring purchase card: one that locks to the first merchant that charges it and may be charged there again, up to `amount` in any trailing month (from a charge back to the same date a month earlier), until it is closed. Use it for a subscription, a card saved with a merchant, a hotel or car rental, or an order that ships in parts. It always needs the customer''s approval, whatever the agent''s policy says, and is available only where the platform enables recurring purchase cards. `true` is allowed only with `kind: PURCHASE`; `false` is accepted with any kind.'
           example: false
+        cardholder:
+          $ref: '#/components/schemas/AgentCardholder'
+          description: The person the card is for, named on the card as an authorized user of the business. Required for every card when the agent's customer is a `BUSINESS`, and rejected for an `INDIVIDUAL`. For a purchase card that awaits approval, Grid keeps it, encrypted, until the card is issued or the request ends.
     AgentCardUpdateRequest:
       type: object
       description: 'Update request for `PATCH /agents/me/cards/{cardId}`. At least one field must be supplied. An agent may freeze the card or tighten merchant categories: `blockedMccs` must contain every code in the card''s `effectiveBlockedMccs`, and `allowedMccs` may only lose codes once set. The only status an agent may set is `FROZEN`; unfreezing and loosening happen on the platform through `PATCH /cards/{id}`. The platform manages card velocity limits through `/card-velocity-limits`.'

@@ -31,6 +31,12 @@ properties:
     type: boolean
     description: Whether the agent has been installed and connected (i.e., its device code has been redeemed).
     example: true
+  actingFor:
+    type: string
+    description: >-
+      The platform's reference for the person this agent acts for, as given
+      when the agent was created. Absent when none was given.
+    example: member_8f2c1a
   policy:
     $ref: ./AgentPolicy.yaml
   usage:
