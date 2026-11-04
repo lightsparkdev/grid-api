@@ -1,0 +1,237 @@
+// Figma 89:185, Dots · Fund account (PIX/SPEI/SEPA).
+.screen {
+  --dot-bg: #fff;
+  --dot-edge: 255, 255, 255;
+  --dot-text: #000;
+  --dot-muted: #a3a3a3;
+  --dot-them: #f2f2f2;
+  --dot-blue: #3566ef;
+  --dot-chip: #edf3ff;
+  --dot-chip-picked: #dde7ff;
+  --dot-chip-text: #2f57d9;
+  --dot-card: #fff;
+  --part-surface: var(--dot-card);
+  --part-sunk: var(--dot-them);
+  --part-text: var(--dot-text);
+  --part-muted: #8d8d8d;
+  --part-rule: rgba(0, 0, 0, 0.06);
+  --part-radius: 22px;
+  --part-shadow: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.08));
+  --part-accent: var(--dot-blue);
+  --part-accent-text: #fff;
+  --part-done: var(--dot-chip);
+  --part-done-text: var(--dot-chip-text);
+  --part-chip: var(--dot-chip);
+  --part-chip-text: var(--dot-chip-text);
+  background: var(--dot-bg);
+  color: var(--dot-text);
+
+  :global([data-theme='dark']) & {
+    --dot-bg: #0d0d0d;
+    --dot-edge: 13, 13, 13;
+    --dot-text: #f5f5f5;
+    --dot-muted: #737373;
+    --dot-them: #232323;
+    --dot-chip: #17213d;
+    --dot-chip-picked: #1f2c52;
+    --dot-chip-text: #8fb0ff;
+    --dot-card: #1a1a1a;
+    --part-muted: #8d8d8d;
+    --part-rule: rgba(255, 255, 255, 0.08);
+    --part-shadow: none;
+  }
+}
+
+.edge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 178px;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(var(--dot-edge), 0.97) 0%, rgba(var(--dot-edge), 0.75) 60%, rgba(var(--dot-edge), 0) 100%);
+  pointer-events: none;
+}
+
+.menu,
+.call {
+  position: absolute;
+  top: 63px;
+  z-index: 3;
+}
+
+.menu {
+  left: 16px;
+}
+
+.call {
+  right: 16px;
+}
+
+.avatar {
+  position: absolute;
+  top: 63px;
+  left: 172px;
+  z-index: 3;
+  object-fit: contain;
+}
+
+.name {
+  position: absolute;
+  top: 125px;
+  left: 50%;
+  z-index: 3;
+  height: 37px;
+  translate: -50% 0;
+}
+
+.nameText {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 37px;
+  padding: 0 14px;
+  font-size: 17px;
+  font-weight: 590;
+}
+
+.stamp {
+  align-self: stretch;
+  padding: 4px 0 8px;
+  color: var(--dot-muted);
+  font-size: 11px;
+  font-weight: 510;
+  text-align: center;
+}
+
+.them,
+.me {
+  padding: 11.5px 16px;
+  border-radius: 22px;
+  font-size: 17px;
+  line-height: 21px;
+}
+
+.them {
+  max-width: 300px;
+  background: var(--dot-them);
+}
+
+.me {
+  max-width: 268px;
+  background: var(--dot-blue);
+  color: #fff;
+}
+
+.seen,
+.sender {
+  color: var(--dot-muted);
+  font-size: 13px;
+}
+
+.seen {
+  margin-top: 4px;
+}
+
+.sender {
+  margin: 0 0 4px 4px;
+}
+
+.chips {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 47px;
+  padding: 0 16px 0 14px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--dot-chip);
+  color: var(--dot-chip-text);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 510;
+  line-height: 21px;
+  cursor: pointer;
+  transition: opacity 0.3s ease, scale 0.15s ease, background-color 0.2s ease;
+
+  .chips[data-picked] & {
+    opacity: 0.4;
+  }
+
+  .chips[data-picked] &[data-picked] {
+    opacity: 1;
+    scale: 0.97;
+    background: var(--dot-chip-picked);
+  }
+}
+
+.composer {
+  height: 48.5px;
+  margin: 0 auto;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.35, 1) 0.12s;
+}
+
+.sendSlot {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 45px;
+  margin-right: 4px;
+}
+
+.composerRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 48.5px;
+}
+
+.slot {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 45px;
+}
+
+.field {
+  --placeholder: #8d8d8d;
+  font-size: 17px;
+}
+
+.send {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--dot-blue);
+  color: #fff;
+  transition: scale 0.15s ease;
+
+  &[data-pressing] {
+    scale: 0.88;
+  }
+}
+
+.glyph {
+  background: var(--dot-text);
+  mask: no-repeat center / contain;
+}
+
+.chevron {
+  width: 7px;
+  height: 12px;
+  background: currentColor;
+  mask: url('/assets/agents/dot/chevron.svg') no-repeat center / contain;
+}

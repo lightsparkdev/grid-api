@@ -1,0 +1,13 @@
+/* SF Pro Rounded variable font — iOS phone mock screens.
+   Source: macOS .SF NS Rounded (SFNSRounded.ttf). Axes: wght 1–1000, GRAD 400–1000. */
+
+@font-face {
+  font-family: 'SF Pro Rounded';
+  src: url('/fonts/SF-Pro-Rounded.woff2') format('woff2');
+  font-weight: 1 1000;
+  font-display: swap;
+}
+
+:root {
+  --font-family-sf-pro-rounded: 'SF Pro Rounded', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}

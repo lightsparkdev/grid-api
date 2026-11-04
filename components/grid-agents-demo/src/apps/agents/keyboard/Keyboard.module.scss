@@ -1,0 +1,114 @@
+.keyboard {
+  --key: #fff;
+  --key-system: rgb(255 255 255 / 0.55);
+  --key-down: #b7b9bf;
+  --key-text: #000;
+  --key-muted: rgb(60 60 67 / 0.85);
+  --rule: rgb(60 60 67 / 0.18);
+
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  color: var(--key-text);
+  font-family: var(--font-family-sf-pro), -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: normal;
+  pointer-events: none;
+
+  &[data-dark] {
+    --key: rgb(255 255 255 / 0.3);
+    --key-system: rgb(255 255 255 / 0.14);
+    --key-down: rgb(255 255 255 / 0.5);
+    --key-text: #fff;
+    --key-muted: rgb(235 235 245 / 0.75);
+    --rule: rgb(235 235 245 / 0.18);
+  }
+}
+
+.suggestionRule {
+  position: absolute;
+  top: 16px;
+  width: 1px;
+  height: 17px;
+  background: var(--rule);
+}
+
+.suggestion {
+  position: absolute;
+  top: 12px;
+  width: 134px;
+  overflow: hidden;
+  font-size: 16px;
+  line-height: 25px;
+  letter-spacing: -0.3px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.key {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border-radius: 8.5px;
+  font-size: 22.5px;
+  line-height: 1;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.char,
+.space {
+  background: var(--key);
+}
+
+.system {
+  background: var(--key-system);
+}
+
+.return {
+  background: #0088ff;
+  color: #fff;
+}
+
+.down {
+  background: var(--key-down);
+}
+
+.switch {
+  font-size: 16px;
+  letter-spacing: -0.3px;
+}
+
+// iOS 26's pop-up: a rounded square floating over the key (which lights up beneath), its glyph larger.
+.pop {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding-bottom: 4px;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.14), 0 0 0 0.5px rgb(0 0 0 / 0.06);
+  font-size: 34px;
+  line-height: 1;
+  z-index: 2;
+
+  .keyboard[data-dark] & {
+    background: rgb(92 90 92 / 0.94);
+    box-shadow: 0 4px 14px rgb(0 0 0 / 0.35), inset 0 0 0 0.5px rgb(255 255 255 / 0.08);
+  }
+}
+
+.emoji {
+  position: absolute;
+  left: 36px;
+  top: 289px;
+  color: var(--key-muted);
+}
+
+.mic {
+  position: absolute;
+  left: 344px;
+  top: 289px;
+  color: var(--key-muted);
+}

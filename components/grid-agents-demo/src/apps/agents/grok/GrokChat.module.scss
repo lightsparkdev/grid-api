@@ -1,0 +1,297 @@
+// Figma 89:95, Grok Bot · Pay abroad (PIX). Dark follows Grok's own dark theme.
+.screen {
+  --grok-bg: #fcfcfc;
+  --grok-edge: 252, 252, 252;
+  --grok-text: #000;
+  --grok-muted: #9b9b9b;
+  --grok-faint: #a8a8a8;
+  --grok-bubble: #f1f1f1;
+  --grok-card: #fff;
+  --grok-line: #ebebeb;
+  --grok-ink: #000;
+  --grok-ink-text: #fff;
+  --grok-soft: #ededed;
+  --grok-soft-text: #6b6b6b;
+  --part-surface: var(--grok-card);
+  --part-sunk: var(--grok-bubble);
+  --part-text: var(--grok-text);
+  --part-muted: var(--grok-muted);
+  --part-rule: var(--grok-line);
+  --part-radius: 20px;
+  --part-shadow: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.05));
+  --part-accent: var(--grok-ink);
+  --part-accent-text: var(--grok-ink-text);
+  --part-done: var(--grok-soft);
+  --part-done-text: var(--grok-soft-text);
+  --part-chip: var(--grok-bubble);
+  --part-chip-text: var(--grok-text);
+  background: var(--grok-bg);
+  color: var(--grok-text);
+
+  :global([data-theme='dark']) & {
+    --grok-bg: #000;
+    --grok-edge: 0, 0, 0;
+    --grok-text: #fff;
+    --grok-muted: #8e8e8e;
+    --grok-faint: #6f6f6f;
+    --grok-bubble: #1d1d1f;
+    --grok-card: #141414;
+    --grok-line: #2a2a2a;
+    --grok-ink: #fff;
+    --grok-ink-text: #000;
+    --grok-soft: #2a2a2a;
+    --grok-soft-text: #9b9b9b;
+    --part-shadow: none;
+  }
+}
+
+.edge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 140px;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(var(--grok-edge), 0.96) 0%, rgba(var(--grok-edge), 0.69) 50%, rgba(var(--grok-edge), 0) 100%);
+  pointer-events: none;
+}
+
+.back,
+.more {
+  position: absolute;
+  top: 61px;
+  z-index: 3;
+}
+
+.back {
+  left: 16px;
+}
+
+.more {
+  right: 16px;
+}
+
+.title {
+  position: absolute;
+  top: 61px;
+  left: 50%;
+  z-index: 3;
+  height: 44px;
+  translate: -50% 0;
+}
+
+.titleRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px 0 9px;
+  font-size: 17px;
+  font-weight: 510;
+  white-space: nowrap;
+}
+
+.bubble {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 318px;
+  padding: 12px 16px;
+  border-radius: 20px;
+  background: var(--grok-bubble);
+  font-size: 17px;
+  line-height: 23.5px;
+
+  p {
+    margin: 0;
+  }
+}
+
+.me {
+  max-width: 290px;
+  padding: 10px 16px;
+  border-radius: 20px;
+  background: var(--grok-ink);
+  color: var(--grok-ink-text);
+  font-size: 17px;
+  line-height: 22px;
+}
+
+.sender,
+.stamp {
+  color: var(--grok-faint);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.sender {
+  margin: 0 0 4px 4px;
+}
+
+.stamp {
+  align-self: center;
+}
+
+.bullet {
+  display: flex;
+  gap: 12px;
+  padding-left: 4px;
+
+  span {
+    color: #b4b4b4;
+  }
+
+  p {
+    flex: 1;
+  }
+}
+
+.payoutWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 340px;
+  padding-top: 4px;
+}
+
+.payout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 14px 16px 16px;
+  border: 1px solid var(--grok-line);
+  border-radius: 20px;
+  background: var(--grok-card);
+  filter: var(--part-shadow);
+}
+
+.flagTile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 47px;
+  height: 47px;
+  border: 1px solid var(--grok-line);
+  border-radius: 12px;
+  background: var(--grok-card);
+  font-size: 19px;
+  font-weight: 590;
+}
+
+.payoutText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.payoutName {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 17px;
+  font-weight: 510;
+  white-space: nowrap;
+}
+
+.payoutDetail {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--grok-muted);
+  font-size: 15px;
+  line-height: 20px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.approve {
+  display: grid;
+  flex: none;
+  place-items: center;
+  height: 33px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--grok-ink);
+  color: var(--grok-ink-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 510;
+  cursor: pointer;
+  transition: scale 0.15s ease, background-color 0.3s ease, color 0.3s ease;
+
+  &[data-pressing] {
+    scale: 0.94;
+  }
+
+  &[data-done] {
+    background: var(--grok-soft);
+    color: var(--grok-soft-text);
+    cursor: default;
+  }
+}
+
+.caption {
+  width: 320px;
+  margin: 0;
+  color: var(--grok-faint);
+  font-size: 13px;
+  line-height: 17px;
+}
+
+.composer {
+  width: 342px;
+  height: 48px;
+  margin: 0 auto;
+}
+
+.composerRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 8px;
+}
+
+.plus,
+.voice {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  corner-shape: round;
+}
+
+.plus {
+  background: var(--grok-soft);
+}
+
+.voice {
+  background: var(--grok-ink);
+  transition: scale 0.15s ease;
+
+  &[data-pressing] {
+    scale: 0.88;
+  }
+}
+
+.glyph {
+  background: var(--grok-text);
+  mask: no-repeat center / contain;
+}
+
+.voiceGlyph {
+  background: var(--grok-ink-text);
+  mask: no-repeat center / contain;
+}
+
+.field {
+  --placeholder: var(--grok-faint);
+  font-size: 17px;
+}

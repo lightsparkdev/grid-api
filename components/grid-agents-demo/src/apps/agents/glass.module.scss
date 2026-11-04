@@ -1,0 +1,7 @@
+@use '../shared/glass/glass-button-shadow' as shadow;
+
+.pill {
+  overflow: hidden;
+  corner-shape: round;
+  @include shadow.glass-button-shadow;
+}

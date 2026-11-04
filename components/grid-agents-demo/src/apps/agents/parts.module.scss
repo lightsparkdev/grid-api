@@ -1,0 +1,261 @@
+// Shared chat parts. A skin sets these on its screen:
+//   --part-surface      card fill
+//   --part-sunk         inset fill (rows, the code well)
+//   --part-text         primary text
+//   --part-muted        secondary text
+//   --part-rule         hairlines
+//   --part-radius       card corner
+//   --part-shadow       card shadow (a drop-shadow filter value, or none)
+//   --part-accent       primary button fill
+//   --part-accent-text  primary button text
+//   --part-done         a pressed/settled button's fill
+//   --part-done-text    its text
+//   --part-chip         chip fill
+//   --part-chip-text    chip text
+//   --part-success      the settled check
+
+.note,
+.ask {
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+  border-radius: var(--part-radius, 20px);
+  background: var(--part-surface, #fff);
+  color: var(--part-text, #000);
+  filter: var(--part-shadow, none);
+}
+
+.note {
+  gap: 3px;
+  padding: 12px 16px 13px;
+}
+
+.noteTitle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  font-weight: 590;
+  line-height: 20px;
+}
+
+.check {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--part-success, #34c759);
+  color: #fff;
+}
+
+.noteLine {
+  color: var(--part-muted, #8a8a8d);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.code {
+  margin: 4px 0 3px;
+  padding: 8px 10px;
+  overflow: hidden;
+  border-radius: calc(var(--part-radius, 20px) * 0.5);
+  background: var(--part-sunk, #f2f2f2);
+  color: var(--part-text, #000);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowImage {
+  border-radius: 7px;
+  object-fit: contain;
+}
+
+.rowDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--part-muted, #8a8a8d);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 360px;
+
+  &[data-picked] .chip:not([data-picked]) {
+    opacity: 0.4;
+  }
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px 0 10px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--part-chip, #f2f2f2);
+  color: var(--part-chip-text, #000);
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  transition: opacity 0.3s ease, scale 0.15s ease;
+
+  &[data-picked] {
+    scale: 0.97;
+  }
+
+  img {
+    border-radius: 50%;
+  }
+}
+
+.ask {
+  gap: 12px;
+  padding: 16px;
+}
+
+.askTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.askTitle {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 590;
+  line-height: 20px;
+}
+
+.askAmount {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.askWho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.askWhoMark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--part-sunk, #f2f2f2);
+  font-size: 15px;
+  font-weight: 590;
+
+  img {
+    border-radius: 50%;
+  }
+}
+
+.askWhoText,
+.askRowText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 16px;
+  line-height: 21px;
+
+  small {
+    color: var(--part-muted, #8a8a8d);
+    font-size: 13px;
+    line-height: 17px;
+  }
+}
+
+.askRows {
+  overflow: hidden;
+  border-radius: calc(var(--part-radius, 20px) * 0.7);
+  background: var(--part-sunk, #f2f2f2);
+}
+
+.askRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+
+  & + & {
+    border-top: 1px solid var(--part-rule, rgba(0, 0, 0, 0.06));
+  }
+}
+
+.askRowLead {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  color: var(--part-muted, #8a8a8d);
+}
+
+.askMethod {
+  color: var(--part-muted, #8a8a8d);
+  font-size: 13px;
+  line-height: 17px;
+}
+
+.askActions {
+  display: flex;
+  gap: 8px;
+
+  button {
+    display: grid;
+    flex: 1;
+    place-items: center;
+    height: 42px;
+    border: 0;
+    border-radius: 999px;
+    corner-shape: round;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 590;
+    cursor: pointer;
+    transition: scale 0.15s ease, opacity 0.3s ease, background 0.3s ease, color 0.3s ease;
+  }
+}
+
+.askDeny {
+  background: var(--part-sunk, #f2f2f2);
+  color: var(--part-text, #000);
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+}
+
+.askAllow {
+  background: var(--part-accent, #000);
+  color: var(--part-accent-text, #fff);
+
+  &[data-pressing] {
+    scale: 0.96;
+  }
+
+  &[data-done] {
+    background: var(--part-done, #ededed);
+    color: var(--part-done-text, #6b6b6b);
+    cursor: default;
+  }
+}

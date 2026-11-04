@@ -1,0 +1,22 @@
+/** Above this the layout is 3 columns: Configure (400) | App | API. The
+    Agent Accounts Figma (124:3873) is 3-col at 1392, a 1440 screen with the
+    docs sidebar collapsed; the phone fit-scales into the middle column, and
+    with no card stage beside it the cards demo's 1600 is more room than the
+    phone needs. A 1440 screen with the sidebar expanded (1160) stacks.
+    TS twin: LAYOUT_WIDE_PX in lib/layout.ts — change them together. */
+$breakpoint-layout-wide: 1280px;
+
+/** Configure stacks above app + API (phone). */
+$breakpoint-layout-mobile: 767px;
+
+/** Configure left, app over API on the right (between mobile and wide).
+    TS twin: CONFIGURE_COL_PX in lib/layout.ts — change them together. */
+$layout-laptop-config-width: 400px;
+$layout-laptop-content-padding: 40px;
+$layout-laptop-api-content-max-width: 680px;
+
+@mixin layout-laptop {
+  @media (max-width: ($breakpoint-layout-wide - 1px)) and (min-width: ($breakpoint-layout-mobile + 1px)) {
+    @content;
+  }
+}

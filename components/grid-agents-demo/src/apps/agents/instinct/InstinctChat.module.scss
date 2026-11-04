@@ -1,0 +1,366 @@
+// Figma 89:297, Instinct · Group bill split (iMessage). Dark is iMessage's dark.
+.screen {
+  --im-bg: #fff;
+  --im-edge: 255, 255, 255;
+  --im-text: #000;
+  --im-muted: #8a8a8d;
+  --im-them: #e9e9eb;
+  --im-blue: #08f;
+  --im-ring: #fff;
+  --im-badge: #0e0e0e;
+  --im-placeholder: #bdbdbf;
+  --part-surface: var(--im-them);
+  --part-sunk: var(--im-bg);
+  --part-text: var(--im-text);
+  --part-muted: var(--im-muted);
+  --part-rule: rgba(0, 0, 0, 0.08);
+  --part-radius: 18px;
+  --part-shadow: none;
+  --part-accent: var(--im-blue);
+  --part-accent-text: #fff;
+  --part-done: var(--im-bg);
+  --part-done-text: var(--im-muted);
+  --part-chip: var(--im-them);
+  --part-chip-text: var(--im-blue);
+  background: var(--im-bg);
+  color: var(--im-text);
+
+  :global([data-theme='dark']) & {
+    --im-bg: #000;
+    --im-edge: 0, 0, 0;
+    --im-text: #fff;
+    --im-muted: #98989f;
+    --im-them: #26252a;
+    --im-ring: #000;
+    --im-badge: #3a3a3c;
+    --im-placeholder: #636366;
+    --part-rule: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.edge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 149px;
+  z-index: 2;
+  background: linear-gradient(180deg, rgb(var(--im-edge)) 0%, rgba(var(--im-edge), 0.9) 50%, rgba(var(--im-edge), 0.45) 88%, rgba(var(--im-edge), 0) 100%);
+  pointer-events: none;
+}
+
+.nav {
+  position: absolute;
+  top: 62px;
+  right: 0;
+  left: 0;
+  z-index: 3;
+  height: 87px;
+}
+
+.back {
+  position: absolute;
+  top: 0;
+  left: 16px;
+  height: 44px;
+}
+
+.backRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 17px 0 13px;
+}
+
+.badge {
+  display: grid;
+  place-items: center;
+  width: 33px;
+  height: 19px;
+  padding-bottom: 1px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--im-badge);
+  color: #fff;
+  font-size: 11.8px;
+  font-weight: 510;
+  letter-spacing: -0.15px;
+}
+
+.facetime {
+  position: absolute;
+  top: 0;
+  right: 17px;
+}
+
+.contact {
+  position: absolute;
+  top: 0;
+  left: 152px;
+  width: 97px;
+  height: 87px;
+}
+
+.navAvatar {
+  position: absolute;
+  top: 14px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--im-ring);
+  border-radius: 50%;
+  corner-shape: round;
+  color: #fff;
+  font-size: 14.3px;
+  font-weight: 590;
+}
+
+.navM {
+  left: -9px;
+  background: linear-gradient(180deg, #fdba74 0%, #f97316 100%);
+}
+
+.navS {
+  left: 73px;
+  background: linear-gradient(180deg, #93c5fd 0%, #3b82f6 100%);
+}
+
+.navInstinct {
+  position: absolute;
+  top: 0;
+  left: 26px;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 2px solid var(--im-ring);
+  border-radius: 50%;
+  corner-shape: round;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.name {
+  position: absolute;
+  top: 55px;
+  left: 50%;
+  height: 32px;
+  translate: -50% 0;
+}
+
+.nameRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 11px 0 13px;
+  font-size: 17px;
+  font-weight: 590;
+  letter-spacing: -0.43px;
+  white-space: nowrap;
+}
+
+.stamp {
+  align-self: stretch;
+  padding: 12px 0 3px;
+  color: var(--im-muted);
+  font-size: 11px;
+  font-weight: 590;
+  line-height: 13px;
+  letter-spacing: 0.06px;
+  text-align: center;
+}
+
+// A friend's (or Instinct's) message: indented for the avatar that ends their run.
+.group {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  align-self: stretch;
+  padding-left: 36px;
+
+  &[data-first] {
+    padding-top: 7px;
+  }
+}
+
+.sender {
+  padding-left: 14px;
+  color: var(--im-muted);
+  font-size: 11px;
+  font-weight: 590;
+  line-height: 13px;
+  letter-spacing: 0.06px;
+}
+
+.body {
+  position: relative;
+}
+
+.bubble,
+.me {
+  max-width: 284px;
+  padding: 10px 13px 10px 14px;
+  border-radius: 20px;
+  font-size: 17px;
+  line-height: 20px;
+  letter-spacing: -0.43px;
+}
+
+.bubble {
+  background: var(--im-them);
+}
+
+.me {
+  position: relative;
+  padding: 10px 14px 10px 13px;
+  background: var(--im-blue);
+  color: #fff;
+}
+
+.tailIn,
+.tailOut {
+  position: absolute;
+  bottom: -7px;
+  width: 24px;
+  height: 17px;
+  mask: no-repeat center / contain;
+}
+
+.tailIn {
+  left: 0;
+  background: var(--im-them);
+  mask-image: url('/assets/agents/instinct/tail-in.svg');
+}
+
+.tailOut {
+  right: 0;
+  background: var(--im-blue);
+  mask-image: url('/assets/agents/instinct/tail-out.svg');
+}
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 250px;
+  padding: 12px 14px 13px;
+  border-radius: 18px;
+  background: var(--im-them);
+  white-space: nowrap;
+
+  strong {
+    font-size: 15px;
+    font-weight: 590;
+    line-height: 20px;
+    letter-spacing: -0.23px;
+  }
+
+  span {
+    color: var(--im-muted);
+    font-size: 13px;
+    line-height: 17px;
+    letter-spacing: -0.08px;
+  }
+}
+
+.avatar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  corner-shape: round;
+  color: #fff;
+  font-size: 11.8px;
+  font-weight: 590;
+}
+
+.instinctAvatar {
+  border: 0.5px solid #e5e5ea;
+  background: #fff;
+}
+
+.composer {
+  position: relative;
+  height: 40px;
+}
+
+.plus {
+  position: absolute;
+  top: 0;
+  left: 28px;
+  width: 40px;
+  height: 40px;
+}
+
+.plusIcon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 40px;
+}
+
+.field {
+  position: absolute;
+  top: 0;
+  left: 80px;
+  width: 294px;
+  height: 40px;
+}
+
+.fieldRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px 0 16px;
+}
+
+.fieldText {
+  --placeholder: var(--im-placeholder);
+  font-size: 17px;
+  letter-spacing: -0.43px;
+}
+
+.send {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-right: -6px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--im-blue);
+  color: #fff;
+  transition: scale 0.15s ease;
+
+  &[data-pressing] {
+    scale: 0.88;
+  }
+}
+
+.glyph {
+  background: var(--im-text);
+  mask: no-repeat center / contain;
+}
+
+.muted {
+  background: var(--im-placeholder);
+  mask: no-repeat center / contain;
+}
+
+.ask {
+  width: 284px;
+}

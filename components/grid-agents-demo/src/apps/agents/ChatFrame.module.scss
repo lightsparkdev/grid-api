@@ -1,0 +1,155 @@
+// Laid out at the phone's true 402 × 874; the device scales the whole screen.
+.screen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  font-family: var(--font-family-sf-pro);
+  -webkit-font-smoothing: antialiased;
+  text-wrap: pretty;
+}
+
+// The agent apps draw plain circular corners (their Figma radii), not the
+// playground scope's superellipse, so pills, discs and tab bars read truly round.
+.screen.screen,
+.screen.screen * {
+  corner-shape: round;
+}
+
+.thread {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+// Pinned to the composer: new messages land at the foot and the rest move up.
+.stack {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  padding: 0 16px var(--thread-foot);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.35, 1);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  &[data-kind='me'] {
+    align-items: flex-end;
+  }
+}
+
+.composer {
+  position: absolute;
+  right: 0;
+  bottom: var(--composer-bottom);
+  left: 0;
+  z-index: 4;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.35, 1);
+}
+
+// The keyboard pushes the thread and the composer up together, as iOS does.
+.screen[data-keyboard] {
+  .stack,
+  .composer {
+    transform: translateY(calc(-1 * var(--lift)));
+    transition-delay: 0.12s;
+  }
+}
+
+.keyboard {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 342px;
+  z-index: 6;
+}
+
+// A short line sits left (its auto margin takes the room); a long one overflows
+// leftward, keeping its newest words in view as the field scrolls.
+.field {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.typed {
+  justify-content: flex-end;
+}
+
+.line {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  margin-right: auto;
+  white-space: pre;
+}
+
+.placeholder {
+  overflow: hidden;
+  color: var(--placeholder, #8e8e93);
+  text-overflow: ellipsis;
+}
+
+.caret {
+  flex: none;
+  width: 2px;
+  height: 22px;
+  margin: 0 1px;
+  border-radius: 1px;
+  background: #0a84ff;
+  animation: caret 1s steps(1) infinite;
+}
+
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.dots {
+  display: inline-flex;
+  gap: 5px;
+  padding: 3px 0;
+
+  i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    corner-shape: round;
+    background: currentColor;
+    opacity: 0.35;
+    animation: dot 1.2s infinite ease-in-out;
+  }
+
+  i:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  i:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+}
+
+@keyframes dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: none;
+  }
+
+  30% {
+    opacity: 0.75;
+    transform: translateY(-2px);
+  }
+}
