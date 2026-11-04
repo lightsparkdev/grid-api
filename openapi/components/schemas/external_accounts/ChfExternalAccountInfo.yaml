@@ -1,0 +1,19 @@
+title: CHF Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/ChfAccountInfo.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/ChfBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/ChfBusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/ChfBeneficiary.yaml
+          BUSINESS: ../common/ChfBusinessBeneficiary.yaml

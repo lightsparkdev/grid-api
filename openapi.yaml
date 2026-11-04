@@ -20599,6 +20599,7 @@ components:
         - CNY_ACCOUNT
         - ILS_ACCOUNT
         - TRY_ACCOUNT
+        - CHF_ACCOUNT
       description: Type of external account or wallet
       example: AED_ACCOUNT
     BaseExternalAccountInfo:
@@ -25806,6 +25807,129 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/TryBeneficiary'
                   BUSINESS: '#/components/schemas/TryBusinessBeneficiary'
+    ChfAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - iban
+      properties:
+        accountType:
+          type: string
+          enum:
+            - CHF_ACCOUNT
+        iban:
+          type: string
+          description: Swiss IBAN (21 characters, starting with CH)
+          example: CH9300762011623852957
+          minLength: 21
+          maxLength: 21
+          pattern: ^CH[0-9]{7}[0-9A-Z]{12}$
+      example:
+        accountType: CHF_ACCOUNT
+        iban: CH9300762011623852957
+    ChfAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/ChfAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+    ChfBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          maxLength: 250
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    ChfBusinessBeneficiary:
+      title: Business Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - legalName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+        legalName:
+          type: string
+          maxLength: 250
+          description: The legal name of the business
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          maxLength: 100
+          description: The company registration number of the business
+        taxId:
+          type: string
+          maxLength: 100
+          description: The tax identification number of the business
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    ChfExternalAccountInfo:
+      title: CHF Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ChfAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ChfBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/ChfBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/ChfBeneficiary'
+                  BUSINESS: '#/components/schemas/ChfBusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountInfo'
@@ -25857,6 +25981,7 @@ components:
         - $ref: '#/components/schemas/CnyExternalAccountInfo'
         - $ref: '#/components/schemas/IlsExternalAccountInfo'
         - $ref: '#/components/schemas/TryExternalAccountInfo'
+        - $ref: '#/components/schemas/ChfExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -25910,6 +26035,7 @@ components:
           CNY_ACCOUNT: '#/components/schemas/CnyExternalAccountInfo'
           ILS_ACCOUNT: '#/components/schemas/IlsExternalAccountInfo'
           TRY_ACCOUNT: '#/components/schemas/TryExternalAccountInfo'
+          CHF_ACCOUNT: '#/components/schemas/ChfExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
@@ -26782,6 +26908,26 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/TryBeneficiary'
                   BUSINESS: '#/components/schemas/TryBusinessBeneficiary'
+    ChfExternalAccountCreateInfo:
+      title: CHF Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ChfAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ChfBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/ChfBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/ChfBeneficiary'
+                  BUSINESS: '#/components/schemas/ChfBusinessBeneficiary'
     ExternalAccountCreateInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountCreateInfo'
@@ -26833,6 +26979,7 @@ components:
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
         - $ref: '#/components/schemas/IlsExternalAccountCreateInfo'
         - $ref: '#/components/schemas/TryExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/ChfExternalAccountCreateInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -26885,6 +27032,7 @@ components:
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           ILS_ACCOUNT: '#/components/schemas/IlsExternalAccountCreateInfo'
           TRY_ACCOUNT: '#/components/schemas/TryExternalAccountCreateInfo'
+          CHF_ACCOUNT: '#/components/schemas/ChfExternalAccountCreateInfo'
     CustomerExternalAccountCreateRequest:
       type: object
       required:
