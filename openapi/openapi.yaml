@@ -110,6 +110,12 @@ tags:
       policy. When an action requires approval, the resulting transaction enters a pending
       state and must be approved by the platform via
       `POST /transactions/{transactionId}/approve`.
+  - name: Claimable Payouts
+    description: >-
+      Endpoints the platform's claim page calls for a claimable payout an
+      agent sent to a person by phone number or email: issue the claim token
+      for the recipient's link, look the payout up by it, list how Grid can
+      pay her, lock a quote to her account and confirm it.
   - name: Cards
     description: >-
       Card management endpoints. Issue debit cards against an internal
@@ -501,6 +507,22 @@ paths:
     $ref: paths/agents/agents_me_external-accounts.yaml
   /agents/me/external-accounts/{externalAccountId}:
     $ref: paths/agents/agents_me_external-accounts_{externalAccountId}.yaml
+  /agents/me/claimable-payouts:
+    $ref: paths/agents/agents_me_claimable-payouts.yaml
+  /agents/me/claimable-payouts/{claimablePayoutId}:
+    $ref: paths/agents/agents_me_claimable-payouts_{claimablePayoutId}.yaml
+  /agents/me/claimable-payouts/{claimablePayoutId}/cancel:
+    $ref: paths/agents/agents_me_claimable-payouts_{claimablePayoutId}_cancel.yaml
+  /claimable-payouts/{claimablePayoutId}/claim-token:
+    $ref: paths/claimable-payouts/claimable-payouts_{claimablePayoutId}_claim-token.yaml
+  /claimable-payouts/claim/lookup:
+    $ref: paths/claimable-payouts/claimable-payouts_claim_lookup.yaml
+  /claimable-payouts/claim/options:
+    $ref: paths/claimable-payouts/claimable-payouts_claim_options.yaml
+  /claimable-payouts/claim/quote:
+    $ref: paths/claimable-payouts/claimable-payouts_claim_quote.yaml
+  /claimable-payouts/claim/confirm:
+    $ref: paths/claimable-payouts/claimable-payouts_claim_confirm.yaml
   /agents/me/cards:
     $ref: paths/agents/agents_me_cards.yaml
   /agents/me/cards/{cardId}:
@@ -584,6 +606,8 @@ paths:
 webhooks:
   agent-action:
     $ref: webhooks/agent-action.yaml
+  claimable-payout:
+    $ref: webhooks/claimable-payout.yaml
   incoming-payment:
     $ref: webhooks/incoming-payment.yaml
   outgoing-payment:

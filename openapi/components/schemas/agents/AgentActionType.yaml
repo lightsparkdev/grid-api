@@ -2,6 +2,7 @@ type: string
 enum:
   - EXECUTE_QUOTE
   - ISSUE_PURCHASE_CARD
+  - CLAIMABLE_PAYOUT
 description: |
   The type of action the agent is requesting.
 
@@ -9,3 +10,4 @@ description: |
   |------|-------------|
   | `EXECUTE_QUOTE` | Execute a quote |
   | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. See `purchaseCard` |
+  | `CLAIMABLE_PAYOUT` | Send a claimable payout to a person by phone number or email. See `claimablePayout` |

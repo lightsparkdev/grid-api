@@ -1,0 +1,20 @@
+type: object
+description: >-
+  How Grid can pay the recipient in a country: one exchange rate per
+  currency and rail it delivers to there, priced for the payout's amount, as
+  `GET /exchange-rates` prices them for the platform.
+required:
+  - country
+  - options
+properties:
+  country:
+    type: string
+    description: The ISO 3166-1 alpha-2 country the options are for.
+    example: PH
+  options:
+    type: array
+    description: >-
+      Empty when Grid cannot pay out in `country`. A row with `isAvailable`
+      false is paused and cannot be claimed to now.
+    items:
+      $ref: ./ClaimablePayoutOption.yaml

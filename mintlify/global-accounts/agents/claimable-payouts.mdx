@@ -1,0 +1,29 @@
+---
+title: "Claimable payouts"
+description: "Let an agent send money to a person by phone number or email, for them to claim from a link"
+icon: "/images/icons/receipt-check.svg"
+"og:image": "/images/og/og-global-accounts.webp"
+---
+
+<Note>
+Claimable payouts are off by default. To request access, reach out to your Lightspark contact.
+</Note>
+
+A claimable payout lets an agent send money from its customer's Embedded Wallet to someone who has no Grid account. The agent names the recipient's phone number or email. You send the recipient a link, she chooses how to receive the money from what Grid pays out to in her country, and Grid pays her from the customer's wallet.
+
+## The hold
+
+Grid holds the amount from the moment the payout is created. The funds stay in the customer's wallet, but quotes and card payments from that wallet cannot spend the held amount, and the payout counts toward the agent's spending limits like a send of the same amount. Grid releases the hold when the payout expires, is cancelled or rejected, or fails.
+
+## Lifecycle
+
+1. The agent calls `POST /agents/me/claimable-payouts`. Grid evaluates it against the agent's policy as a payout to a bank account, so it may need the customer's approval as a `CLAIMABLE_PAYOUT` [agent action](/global-accounts/agents/approvals-and-audit).
+2. Once the payout is `AWAITING_CLAIM`, your backend calls `POST /claimable-payouts/{claimablePayoutId}/claim-token` and sends the recipient a link to your claim page carrying the token. Grid keeps only the token's hash. Issuing another token, for a reminder, replaces the earlier one.
+3. Your claim page calls `POST /claimable-payouts/claim/lookup` with the token. Show her only the sender's name and the amount until she enters a one-time code you send to the payout's phone number or email, so a forwarded link alone cannot claim it.
+4. `POST /claimable-payouts/claim/options` lists the currencies and rails Grid pays out to in her country, priced for the payout.
+5. `POST /claimable-payouts/claim/quote` takes her account details, validates and screens them, saves her as an external account under the sender's customer, and locks a quote.
+6. `POST /claimable-payouts/claim/confirm` pays her on that quote. The payout is `CLAIMED`, then `PAID` or `FAILED`.
+
+Grid fires `CLAIMABLE_PAYOUT.CLAIMED`, `CLAIMABLE_PAYOUT.PAID`, `CLAIMABLE_PAYOUT.EXPIRED` and `CLAIMABLE_PAYOUT.FAILED` so you can tell the sender. A payout not claimed within 7 days of approval expires. The agent can cancel a payout until it is claimed with `POST /agents/me/claimable-payouts/{claimablePayoutId}/cancel`.
+
+Because the recipient is saved as an external account, the agent can pay her again later as a saved recipient, without a link.

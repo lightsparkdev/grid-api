@@ -1,0 +1,36 @@
+type: object
+description: >-
+  The person a claimable payout is for. Exactly one of `phoneNumber` and
+  `email` is set: the one-time code that proves the recipient holds the link
+  goes there.
+required:
+  - name
+  - country
+properties:
+  name:
+    type: string
+    minLength: 1
+    maxLength: 100
+    description: >-
+      What the sender calls the recipient. Shown to the customer when they
+      approve the payout and in the message that carries the link; the
+      recipient gives her legal name with her payout details.
+    example: Maria
+  phoneNumber:
+    type: string
+    description: The recipient's mobile number in E.164 format.
+    example: '+639171234567'
+  email:
+    type: string
+    format: email
+    maxLength: 254
+    description: The recipient's email address.
+    example: maria@example.com
+  country:
+    type: string
+    description: >-
+      ISO 3166-1 alpha-2 country the recipient is paid in. Defaults to the
+      country of `phoneNumber`'s dialing code; required with `email`. The
+      recipient can choose another country when she claims.
+    pattern: ^[A-Z]{2}$
+    example: PH

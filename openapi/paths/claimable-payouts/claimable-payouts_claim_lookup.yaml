@@ -1,0 +1,51 @@
+post:
+  summary: Look up a claim
+  description: >
+    The claimable payout a claim token is for, as the platform's claim page
+    needs it. The page should show the recipient only `senderName` and
+    `amount` until she has entered a one-time code sent to
+    `recipient.phoneNumber` or `recipient.email`, so that a forwarded link
+    alone cannot claim the payout. A token that matches no payout, or one
+    that was replaced, is answered with `404`.
+  operationId: lookupClaimablePayoutClaim
+  tags:
+    - Claimable Payouts
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/claimable_payouts/ClaimablePayoutClaimRequest.yaml
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/claimable_payouts/ClaimablePayoutClaim.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Claimable payouts are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: No claimable payout for this claim token
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

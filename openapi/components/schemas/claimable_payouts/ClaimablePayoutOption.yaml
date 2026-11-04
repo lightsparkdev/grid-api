@@ -1,0 +1,13 @@
+type: object
+required:
+  - accountType
+  - rate
+properties:
+  accountType:
+    allOf:
+      - $ref: ../external_accounts/ExternalAccountType.yaml
+    description: >-
+      The `accountInfo.accountType` that pays to this currency; its schema
+      lists the details the recipient gives.
+  rate:
+    $ref: ../exchange_rates/ExchangeRate.yaml

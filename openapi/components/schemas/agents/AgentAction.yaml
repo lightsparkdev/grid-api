@@ -65,6 +65,13 @@ properties:
       The purchase card the agent asked for, so an approval decision can show
       its amount, limit, description and funding account. Present for
       `ISSUE_PURCHASE_CARD`.
+  claimablePayout:
+    $ref: ../claimable_payouts/ClaimablePayout.yaml
+    description: >-
+      The claimable payout the agent asked to send, so an approval decision
+      can show its amount and recipient. Present for `CLAIMABLE_PAYOUT`.
+      Approving the action makes the payout `AWAITING_CLAIM`; rejecting it,
+      or letting it expire, ends the payout and releases its hold.
   cardId:
     type: string
     description: >-

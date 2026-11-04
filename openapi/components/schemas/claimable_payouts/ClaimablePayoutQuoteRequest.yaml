@@ -1,0 +1,16 @@
+type: object
+description: >-
+  The recipient's payout details. Grid validates them as for
+  `POST /customers/external-accounts`, screens the recipient, saves the
+  account under the sender's customer and locks a quote for the payout.
+required:
+  - claimToken
+  - accountInfo
+properties:
+  claimToken:
+    type: string
+    minLength: 1
+    maxLength: 128
+    description: The claim token from the recipient's link.
+  accountInfo:
+    $ref: ../external_accounts/ExternalAccountCreateInfoOneOf.yaml

@@ -80,6 +80,8 @@ tags:
     description: 'Endpoints for creating and managing agents (experimental), called by the partner''s backend using platform credentials. Covers the full agent lifecycle: creation, policy configuration, pausing, deletion, the device code installation flow, and approving or rejecting transactions initiated by agents.'
   - name: Agent Operations
     description: Experimental endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
+  - name: Claimable Payouts
+    description: 'Endpoints the platform''s claim page calls for a claimable payout an agent sent to a person by phone number or email: issue the claim token for the recipient''s link, look the payout up by it, list how Grid can pay her, lock a quote to her account and confirm it.'
   - name: Cards
     description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage a card's funding source, and list card transactions.
   - name: Stablecoins
@@ -10443,6 +10445,517 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /agents/me/claimable-payouts:
+    post:
+      summary: Send a claimable payout
+      description: |
+        Send money from the agent's customer's Embedded Wallet to a person by phone number or email. The recipient needs no Grid account: she claims the payout from a link the platform sends her, choosing how to receive it from what Grid pays out to in her country, and Grid pays her from the customer's wallet.
+
+        Grid holds `amount` against the wallet's balance and the agent's spending limits from creation. Funds do not leave the wallet until the recipient claims; while the payout is held, quotes and card payments from the wallet cannot spend the held amount. The hold is released when the payout expires, is cancelled or rejected, or fails.
+
+        The request is evaluated against the agent's policy as a send of the same amount to a bank account: it needs the EXECUTE_QUOTES permission, counts toward the spending limits, and needs the customer's approval above the policy's approval threshold, in `APPROVAL_REQUIRED` mode, or above the platform's limit for bank payouts without approval. A payout that needs approval is created `PENDING_APPROVAL` with a `CLAIMABLE_PAYOUT` agent action, and the `AGENT_ACTION.PENDING_APPROVAL` webhook fires; approving the action makes it `AWAITING_CLAIM`. Otherwise it is created `AWAITING_CLAIM`. Then issue the recipient's link with `POST /claimable-payouts/{claimablePayoutId}/claim-token`.
+
+        Available only where the platform enables claimable payouts and agent bank payouts, for a customer whose KYC status is `APPROVED`.
+      operationId: agentCreateClaimablePayout
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: |
+            A unique identifier for the request, scoped to the agent. A retry with the same key returns the payout the first request created.
+          schema:
+            type: string
+            maxLength: 255
+            example: <uuid>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimablePayoutCreateRequest'
+      responses:
+        '201':
+          description: Claimable payout created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayout'
+        '400':
+          description: Bad request - Invalid parameters, or the wallet does not hold the amount on top of its existing holds (`INSUFFICIENT_FUNDS`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Claimable payouts are not enabled for the platform, the customer is not verified, or the agent policy does not permit this payout
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '503':
+          description: Service unavailable - Grid could not read the wallet's balance. Retry later.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
+    get:
+      summary: List claimable payouts
+      description: |
+        List the claimable payouts the authenticated agent sent, newest first.
+      operationId: agentListClaimablePayouts
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by status
+          required: false
+          schema:
+            $ref: '#/components/schemas/ClaimablePayoutStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayoutListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/claimable-payouts/{claimablePayoutId}:
+    parameters:
+      - name: claimablePayoutId
+        in: path
+        description: Unique identifier of the claimable payout
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a claimable payout
+      description: |
+        Retrieve a claimable payout the authenticated agent sent.
+      operationId: agentGetClaimablePayout
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayout'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Claimable payout not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/claimable-payouts/{claimablePayoutId}/cancel:
+    parameters:
+      - name: claimablePayoutId
+        in: path
+        description: Unique identifier of the claimable payout
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Cancel a claimable payout
+      description: |
+        Cancel a claimable payout the authenticated agent sent that is `PENDING_APPROVAL` or `AWAITING_CLAIM`, releasing its hold. Its claim link stops working. Cancelling a payout already `CANCELLED` returns it unchanged; one the recipient has claimed, or that has ended otherwise, is refused with `409`.
+      operationId: agentCancelClaimablePayout
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Claimable payout cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayout'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Claimable payout not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The payout was claimed or has already ended (`CONFLICT`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /claimable-payouts/{claimablePayoutId}/claim-token:
+    parameters:
+      - name: claimablePayoutId
+        in: path
+        description: Unique identifier of the claimable payout
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Issue a claim token
+      description: |
+        Issue the claim token for the recipient's link to a payout that is `AWAITING_CLAIM`. Grid stores only its hash, so it is returned once; issuing another, for a reminder, replaces it and the earlier link stops working. Put it in a link to your own claim page and send it to the payout's `recipient.phoneNumber` or `recipient.email`. Never show it to the agent.
+      operationId: issueClaimablePayoutClaimToken
+      tags:
+        - Claimable Payouts
+      security:
+        - BasicAuth: []
+      responses:
+        '201':
+          description: Claim token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayoutClaimToken'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Claimable payouts are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Claimable payout not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The payout is not `AWAITING_CLAIM` (`CONFLICT`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /claimable-payouts/claim/lookup:
+    post:
+      summary: Look up a claim
+      description: |
+        The claimable payout a claim token is for, as the platform's claim page needs it. The page should show the recipient only `senderName` and `amount` until she has entered a one-time code sent to `recipient.phoneNumber` or `recipient.email`, so that a forwarded link alone cannot claim the payout. A token that matches no payout, or one that was replaced, is answered with `404`.
+      operationId: lookupClaimablePayoutClaim
+      tags:
+        - Claimable Payouts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimablePayoutClaimRequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayoutClaim'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Claimable payouts are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: No claimable payout for this claim token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /claimable-payouts/claim/options:
+    post:
+      summary: List payout options for a claim
+      description: |
+        The currencies and rails Grid can pay a claimable payout to in a country, priced for the payout's amount. It is the platform's corridor set from `GET /exchange-rates`, limited to the country's currencies. An empty `options` means Grid cannot pay out in that country.
+      operationId: listClaimablePayoutOptions
+      tags:
+        - Claimable Payouts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimablePayoutOptionsRequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayoutOptions'
+        '400':
+          description: Bad request - Invalid country
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Claimable payouts are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: No claimable payout for this claim token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The payout is not `AWAITING_CLAIM` (`CONFLICT`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /claimable-payouts/claim/quote:
+    post:
+      summary: Quote a claim
+      description: |
+        Lock a quote paying a claimable payout to the recipient's account. Call it only after the recipient has proved she holds the payout's phone number or email. Grid validates `accountInfo` as `POST /customers/external-accounts` does, screens the recipient, and saves her account under the sender's customer, where an agent can pay it again. Grid then quotes the payout's full `amount` from the sender's wallet to that account. The payout stays `AWAITING_CLAIM` until the quote is confirmed; calling again replaces the quote.
+      operationId: quoteClaimablePayoutClaim
+      tags:
+        - Claimable Payouts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimablePayoutQuoteRequest'
+      responses:
+        '200':
+          description: Quote locked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayoutQuote'
+        '400':
+          description: Bad request - Invalid account details, or a currency or rail Grid does not pay out to
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Claimable payouts are not enabled for the platform, or screening did not clear the recipient (`SANCTION_BLOCKED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: No claimable payout for this claim token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The payout is not `AWAITING_CLAIM` (`CONFLICT`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '503':
+          description: Service unavailable - Grid could not screen the recipient or price the payout right now. Retry later.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
+  /claimable-payouts/claim/confirm:
+    post:
+      summary: Confirm a claim
+      description: |
+        Pay a claimable payout on the locked quote from `POST /claimable-payouts/claim/quote`. The payout becomes `CLAIMED`, and Grid signs the payout from the sender's wallet with the agent's delegated key; it becomes `PAID` when the payout completes, or `FAILED`. A quote that has expired is refused with `QUOTE_EXPIRED`: request another. Confirming a payout already `CLAIMED` or `PAID` on the same quote returns it unchanged.
+      operationId: confirmClaimablePayoutClaim
+      tags:
+        - Claimable Payouts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimablePayoutConfirmRequest'
+      responses:
+        '200':
+          description: Claim confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayoutClaim'
+        '400':
+          description: Bad request - The quote expired (`QUOTE_EXPIRED`) or is not this payout's
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Claimable payouts are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: No claimable payout for this claim token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The payout expired, was cancelled, or was confirmed on another quote (`CONFLICT`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /agents/me/cards:
     get:
       summary: List agent cards
@@ -14185,6 +14698,86 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+  claimable-payout:
+    post:
+      summary: Claimable payout webhook
+      description: |
+        Fired when a claimable payout is claimed, paid, expires or fails, so the platform can tell the sender. `CLAIMABLE_PAYOUT.EXPIRED` and `CLAIMABLE_PAYOUT.FAILED` mean the hold on the sender's wallet was released.
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+      operationId: claimablePayoutWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimablePayoutWebhook'
+            examples:
+              paid:
+                summary: Claimable payout paid
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000021
+                  type: CLAIMABLE_PAYOUT.PAID
+                  timestamp: '2025-10-04T09:00:00Z'
+                  data:
+                    id: ClaimablePayout:019542f5-b3e7-1d02-0000-000000000077
+                    agentId: Agent:019542f5-b3e7-1d02-0000-000000000042
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000010
+                    platformCustomerId: user-a1b2c3
+                    status: PAID
+                    sourceAccountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                    amount:
+                      amount: 5000
+                      currency:
+                        code: USDB
+                        name: USDB
+                        symbol: $
+                        decimals: 2
+                    recipient:
+                      name: Maria
+                      phoneNumber: '+639171234567'
+                      country: PH
+                    externalAccountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000030
+                    receivedAmount:
+                      amount: 287000
+                      currency:
+                        code: PHP
+                        name: Philippine Peso
+                        symbol: ₱
+                        decimals: 2
+                    paymentRail: MOBILE_MONEY
+                    expiresAt: '2025-10-10T15:00:00Z'
+                    createdAt: '2025-10-03T15:00:00Z'
+                    updatedAt: '2025-10-04T09:00:00Z'
+      responses:
+        '200':
+          description: Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
   incoming-payment:
     post:
       summary: Incoming payment webhook and approval mechanism
@@ -31284,6 +31877,7 @@ components:
       enum:
         - EXECUTE_QUOTE
         - ISSUE_PURCHASE_CARD
+        - CLAIMABLE_PAYOUT
       description: |
         The type of action the agent is requesting.
 
@@ -31291,6 +31885,7 @@ components:
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
         | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. See `purchaseCard` |
+        | `CLAIMABLE_PAYOUT` | Send a claimable payout to a person by phone number or email. See `claimablePayout` |
     AgentSendNetwork:
       type: string
       enum:
@@ -31445,6 +32040,163 @@ components:
           format: date-time
           description: When Grid closes the card if it has not been used. Present once a single-use card is issued; a recurring card has none.
           example: '2026-10-26T15:30:00Z'
+    ClaimablePayoutStatus:
+      type: string
+      enum:
+        - PENDING_APPROVAL
+        - AWAITING_CLAIM
+        - CLAIMED
+        - PAID
+        - EXPIRED
+        - CANCELLED
+        - FAILED
+      description: |
+        Status of a claimable payout. Grid holds the amount against the sender's
+        Embedded Wallet balance and the agent's spending limits from creation until
+        the payout is `PAID`, or releases it when the payout ends in any other
+        status.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING_APPROVAL` | Waiting for the customer to approve the agent's request. No claim token can be issued yet |
+        | `AWAITING_CLAIM` | Approved; the recipient can claim it with a claim token until `expiresAt` |
+        | `CLAIMED` | The recipient confirmed a locked quote and Grid is paying her |
+        | `PAID` | The payout reached the recipient's account |
+        | `EXPIRED` | Not claimed by `expiresAt`, or not approved in time. The hold is released |
+        | `CANCELLED` | Cancelled by the agent, or rejected by the customer. The hold is released |
+        | `FAILED` | The payout could not be made; see `failureReason`. The hold is released |
+    ClaimablePayoutRecipient:
+      type: object
+      description: 'The person a claimable payout is for. Exactly one of `phoneNumber` and `email` is set: the one-time code that proves the recipient holds the link goes there.'
+      required:
+        - name
+        - country
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: What the sender calls the recipient. Shown to the customer when they approve the payout and in the message that carries the link; the recipient gives her legal name with her payout details.
+          example: Maria
+        phoneNumber:
+          type: string
+          description: The recipient's mobile number in E.164 format.
+          example: '+639171234567'
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: The recipient's email address.
+          example: maria@example.com
+        country:
+          type: string
+          description: ISO 3166-1 alpha-2 country the recipient is paid in. Defaults to the country of `phoneNumber`'s dialing code; required with `email`. The recipient can choose another country when she claims.
+          pattern: ^[A-Z]{2}$
+          example: PH
+    ClaimablePayoutFailureReason:
+      type: string
+      enum:
+        - INSUFFICIENT_FUNDS
+        - RECIPIENT_REFUSED
+        - AGENT_INACTIVE
+        - PAYOUT_FAILED
+      description: |
+        Why a claimable payout is `FAILED`.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `INSUFFICIENT_FUNDS` | The sender's wallet no longer held the amount when the recipient claimed it |
+        | `RECIPIENT_REFUSED` | Grid's screening did not clear the recipient's account |
+        | `AGENT_INACTIVE` | The agent was deleted or paused, or its delegated key revoked, before the payout was made |
+        | `PAYOUT_FAILED` | The payout to the recipient's account failed |
+    ClaimablePayout:
+      type: object
+      description: Money an agent sends to a person by phone number or email, for her to claim from a link. Grid holds `amount` against the sender's Embedded Wallet balance and the agent's spending limits; the funds stay in the wallet until the recipient claims and Grid pays her from it.
+      required:
+        - id
+        - agentId
+        - customerId
+        - platformCustomerId
+        - status
+        - sourceAccountId
+        - amount
+        - recipient
+        - expiresAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier.
+          example: ClaimablePayout:019542f5-b3e7-1d02-0000-000000000077
+        agentId:
+          type: string
+          description: The agent that sent the payout.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        customerId:
+          type: string
+          description: The sender, the agent's customer.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000010
+        platformCustomerId:
+          type: string
+          description: Platform-specific ID of the sender.
+          example: user-a1b2c3
+        status:
+          $ref: '#/components/schemas/ClaimablePayoutStatus'
+        sourceAccountId:
+          type: string
+          description: The sender's `EMBEDDED_WALLET` internal account the payout is paid from.
+          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        amount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: The amount held and sent, in the source account's currency.
+        recipient:
+          $ref: '#/components/schemas/ClaimablePayoutRecipient'
+        note:
+          type: string
+          maxLength: 140
+          description: The sender's note to the recipient.
+          example: Happy birthday, Mom
+        agentActionId:
+          type: string
+          description: The `CLAIMABLE_PAYOUT` agent action the customer approves or rejects.
+          example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+        externalAccountId:
+          type: string
+          description: The external account Grid saved under the sender's customer for the recipient's payout details. Present once the recipient has claimed. An agent can pay it again as a saved recipient.
+          example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        transactionId:
+          type: string
+          description: The outgoing transaction that paid the recipient. Present once Grid sends the payout.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000030
+        receivedAmount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: What the recipient receives, in her currency. Present once she has a locked quote.
+        paymentRail:
+          allOf:
+            - $ref: '#/components/schemas/PaymentRail'
+          description: The rail the recipient chose. Present once she has claimed.
+        failureReason:
+          allOf:
+            - $ref: '#/components/schemas/ClaimablePayoutFailureReason'
+          description: Present only when `status` is `FAILED`.
+        expiresAt:
+          type: string
+          format: date-time
+          description: While `PENDING_APPROVAL`, the end of the approval window; from `AWAITING_CLAIM`, when the claim window ends, 7 days after approval. A payout not `PAID` by then, and not being paid, expires and its hold is released.
+          example: '2025-10-10T15:00:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: When the agent sent the payout.
+          example: '2025-10-03T15:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the payout last changed.
+          example: '2025-10-03T15:02:00Z'
     AgentActionFailureReason:
       type: string
       enum:
@@ -31515,6 +32267,9 @@ components:
         purchaseCard:
           $ref: '#/components/schemas/AgentPurchaseCardDetails'
           description: The purchase card the agent asked for, so an approval decision can show its amount, limit, description and funding account. Present for `ISSUE_PURCHASE_CARD`.
+        claimablePayout:
+          $ref: '#/components/schemas/ClaimablePayout'
+          description: The claimable payout the agent asked to send, so an approval decision can show its amount and recipient. Present for `CLAIMABLE_PAYOUT`. Approving the action makes the payout `AWAITING_CLAIM`; rejecting it, or letting it expire, ends the payout and releases its hold.
         cardId:
           type: string
           description: The purchase card the action issued. Present for an `ISSUE_PURCHASE_CARD` action once it is `APPROVED` and the card is issued; read it with `GET /agents/me/cards/{cardId}`.
@@ -32453,6 +33208,204 @@ components:
               default: false
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
+    ClaimablePayoutListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: The claimable payouts on this page.
+          items:
+            $ref: '#/components/schemas/ClaimablePayout'
+        hasMore:
+          type: boolean
+          description: Whether more results exist past this page.
+        nextCursor:
+          type: string
+          description: Cursor for the next page.
+    ClaimablePayoutCreateRequest:
+      type: object
+      description: A claimable payout an agent sends from its customer's Embedded Wallet.
+      required:
+        - sourceAccountId
+        - amount
+        - recipient
+      properties:
+        sourceAccountId:
+          type: string
+          description: The customer's `EMBEDDED_WALLET` internal account to pay from.
+          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        amount:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+          maximum: 9000000000000000
+          description: The amount to send, in the smallest unit of the source account's currency.
+          example: 5000
+        recipient:
+          $ref: '#/components/schemas/ClaimablePayoutRecipient'
+        note:
+          type: string
+          maxLength: 140
+          description: A note for the recipient, shown once she has proved she holds the link.
+          example: Happy birthday, Mom
+    ClaimablePayoutClaimToken:
+      type: object
+      description: 'A claim token for the recipient''s link. Grid keeps only its hash and shows it once: issuing another replaces it, so an earlier link stops working.'
+      required:
+        - claimToken
+        - expiresAt
+      properties:
+        claimToken:
+          type: string
+          description: The token to put in the link you send the recipient. Never log it or show it to the agent.
+          example: 2mJ0b7cX4lXzv1q3eRk8Wf6YtN9pHs5aUo-dGiCQwLE
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the payout's claim window ends.
+          example: '2025-10-10T15:00:00Z'
+    ClaimablePayoutClaimRequest:
+      type: object
+      required:
+        - claimToken
+      properties:
+        claimToken:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: The claim token from the recipient's link.
+    ClaimablePayoutClaim:
+      type: object
+      description: A claimable payout as its claim token shows it to the platform. Show the recipient no more than `senderName` and `amount` until she has proved she holds `recipient.phoneNumber` or `recipient.email`.
+      required:
+        - id
+        - status
+        - senderName
+        - amount
+        - recipient
+        - expiresAt
+      properties:
+        id:
+          type: string
+          description: The claimable payout's identifier.
+          example: ClaimablePayout:019542f5-b3e7-1d02-0000-000000000077
+        status:
+          $ref: '#/components/schemas/ClaimablePayoutStatus'
+        senderName:
+          type: string
+          description: The sender's first name, from their verified identity.
+          example: Kevin
+        amount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        recipient:
+          $ref: '#/components/schemas/ClaimablePayoutRecipient'
+        note:
+          type: string
+          description: The sender's note to the recipient.
+          example: Happy birthday, Mom
+        receivedAmount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: What the recipient receives. Present once she has a locked quote.
+        paymentRail:
+          allOf:
+            - $ref: '#/components/schemas/PaymentRail'
+          description: The rail the recipient chose. Present once she has a locked quote.
+        failureReason:
+          allOf:
+            - $ref: '#/components/schemas/ClaimablePayoutFailureReason'
+          description: Present only when `status` is `FAILED`.
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the claim window ends.
+          example: '2025-10-10T15:00:00Z'
+    ClaimablePayoutOptionsRequest:
+      type: object
+      required:
+        - claimToken
+      properties:
+        claimToken:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: The claim token from the recipient's link.
+        country:
+          type: string
+          pattern: ^[A-Z]{2}$
+          description: ISO 3166-1 alpha-2 country to list payout options for. Defaults to the payout's `recipient.country`.
+          example: PH
+    ClaimablePayoutOption:
+      type: object
+      required:
+        - accountType
+        - rate
+      properties:
+        accountType:
+          allOf:
+            - $ref: '#/components/schemas/ExternalAccountType'
+          description: The `accountInfo.accountType` that pays to this currency; its schema lists the details the recipient gives.
+        rate:
+          $ref: '#/components/schemas/ExchangeRate'
+    ClaimablePayoutOptions:
+      type: object
+      description: 'How Grid can pay the recipient in a country: one exchange rate per currency and rail it delivers to there, priced for the payout''s amount, as `GET /exchange-rates` prices them for the platform.'
+      required:
+        - country
+        - options
+      properties:
+        country:
+          type: string
+          description: The ISO 3166-1 alpha-2 country the options are for.
+          example: PH
+        options:
+          type: array
+          description: Empty when Grid cannot pay out in `country`. A row with `isAvailable` false is paused and cannot be claimed to now.
+          items:
+            $ref: '#/components/schemas/ClaimablePayoutOption'
+    ClaimablePayoutQuoteRequest:
+      type: object
+      description: The recipient's payout details. Grid validates them as for `POST /customers/external-accounts`, screens the recipient, saves the account under the sender's customer and locks a quote for the payout.
+      required:
+        - claimToken
+        - accountInfo
+      properties:
+        claimToken:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: The claim token from the recipient's link.
+        accountInfo:
+          $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
+    ClaimablePayoutQuote:
+      type: object
+      description: A locked quote paying the claimable payout to the recipient. Confirm it before `quote.expiresAt`; after that, request another.
+      required:
+        - claimablePayout
+        - quote
+      properties:
+        claimablePayout:
+          $ref: '#/components/schemas/ClaimablePayoutClaim'
+        quote:
+          $ref: '#/components/schemas/Quote'
+    ClaimablePayoutConfirmRequest:
+      type: object
+      required:
+        - claimToken
+        - quoteId
+      properties:
+        claimToken:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: The claim token from the recipient's link.
+        quoteId:
+          type: string
+          description: The quote from `POST /claimable-payouts/claim/quote`.
+          example: Quote:019542f5-b3e7-1d02-0000-000000000006
     AgentCard:
       title: Agent Card
       type: object
@@ -34291,6 +35244,10 @@ components:
         - AGENT_ACTION.APPROVED
         - AGENT_ACTION.REJECTED
         - AGENT_ACTION.FAILED
+        - CLAIMABLE_PAYOUT.CLAIMED
+        - CLAIMABLE_PAYOUT.PAID
+        - CLAIMABLE_PAYOUT.EXPIRED
+        - CLAIMABLE_PAYOUT.FAILED
         - CARD.STATUS_CHANGE
         - CARD.PIN_STATUS_CHANGE
         - CARD_TRANSACTION.AUTHORIZED
@@ -34341,6 +35298,24 @@ components:
               $ref: '#/components/schemas/AgentAction'
             type:
               $ref: '#/components/schemas/AgentActionWebhookEventType'
+    ClaimablePayoutWebhookEventType:
+      type: string
+      enum:
+        - CLAIMABLE_PAYOUT.CLAIMED
+        - CLAIMABLE_PAYOUT.PAID
+        - CLAIMABLE_PAYOUT.EXPIRED
+        - CLAIMABLE_PAYOUT.FAILED
+    ClaimablePayoutWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/ClaimablePayout'
+            type:
+              $ref: '#/components/schemas/ClaimablePayoutWebhookEventType'
     IncomingPaymentWebhookData:
       title: Incoming Payment Webhook Data
       allOf:
