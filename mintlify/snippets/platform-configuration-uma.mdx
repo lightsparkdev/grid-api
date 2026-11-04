@@ -136,7 +136,7 @@ The `webhookEndpoint` parameter specifies the URL where Grid will send webhook n
 
 ### Supported Currencies for UMA
 
-The `supportedCurrencies` array allows you to define settings for each currency your platform will support for UMA payments. Each object in this array can contain:
+The `supportedCurrencies` array allows you to define settings for each currency your platform will support for UMA payments. In a `PATCH /config` request, `supportedCurrencies` can only update currencies that are already configured for your platform. Including a currency that is not configured returns a `400` error. To support a new currency, contact support. Each object in this array can contain:
 
 - `currencyCode`: (String, required) The ISO 4217 currency code (e.g., "USD").
 - `minAmount`: (Integer, required) Minimum transaction amount in the smallest unit of the currency.
