@@ -7,6 +7,7 @@ get:
     **Filtering Options:**
     - Filter by source currency to get all available destination corridors
     - Filter by specific destination currency or currencies
+    - Filter by destination payment rail to get each rail's own minimum and maximum amounts
     - Provide a sending amount to get calculated receiving amounts
 
     Each rate reports whether its corridor is paying out now (`isAvailable`).
@@ -38,6 +39,24 @@ get:
           type: string
       example:
         - INR
+    - name: destinationPaymentRail
+      in: query
+      description: >-
+        Filter by destination payment rail(s). Can be repeated for multiple rails
+        (e.g., &destinationPaymentRail=NEFT&destinationPaymentRail=RTGS). Each rail
+        you name returns its own exchange rate, with the minimum and maximum sending
+        amounts that rail supports. A rail that is not available to your platform is
+        not returned. Without this filter, each destination currency returns its
+        default rail.
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          $ref: ../../components/schemas/common/PaymentRail.yaml
+      example:
+        - NEFT
     - name: sendingAmount
       in: query
       description: >-

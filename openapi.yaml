@@ -314,6 +314,7 @@ paths:
         **Filtering Options:**
         - Filter by source currency to get all available destination corridors
         - Filter by specific destination currency or currencies
+        - Filter by destination payment rail to get each rail's own minimum and maximum amounts
         - Provide a sending amount to get calculated receiving amounts
 
         Each rate reports whether its corridor is paying out now (`isAvailable`).
@@ -342,6 +343,18 @@ paths:
               type: string
           example:
             - INR
+        - name: destinationPaymentRail
+          in: query
+          description: Filter by destination payment rail(s). Can be repeated for multiple rails (e.g., &destinationPaymentRail=NEFT&destinationPaymentRail=RTGS). Each rail you name returns its own exchange rate, with the minimum and maximum sending amounts that rail supports. A rail that is not available to your platform is not returned. Without this filter, each destination currency returns its default rail.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/PaymentRail'
+          example:
+            - NEFT
         - name: sendingAmount
           in: query
           description: Sending amount in the smallest unit of the source currency (e.g., cents for USD). If omitted, USD and USD-pegged currencies default to $100 (10000 USD cents, scaled to the source currency's precision; e.g., 100000000 for USDC, which is 100 USDC). Other currencies default to 10000 in the source currency's smallest unit.
