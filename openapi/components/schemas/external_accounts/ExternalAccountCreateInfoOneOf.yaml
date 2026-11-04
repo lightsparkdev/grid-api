@@ -48,6 +48,7 @@ oneOf:
 - $ref: ./TronWalletExternalAccountInfo.yaml
 - $ref: ./IlsExternalAccountCreateInfo.yaml
 - $ref: ./TryExternalAccountCreateInfo.yaml
+- $ref: ./ChfExternalAccountCreateInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -100,3 +101,4 @@ discriminator:
     TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
     ILS_ACCOUNT: ./IlsExternalAccountCreateInfo.yaml
     TRY_ACCOUNT: ./TryExternalAccountCreateInfo.yaml
+    CHF_ACCOUNT: ./ChfExternalAccountCreateInfo.yaml
