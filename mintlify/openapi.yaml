@@ -21198,8 +21198,7 @@ components:
               items:
                 type: string
                 enum:
-                  - SEPA
-                  - SEPA_INSTANT
+                  - BANK_TRANSFER
     DkkBeneficiary:
       title: Individual Beneficiary
       type: object
