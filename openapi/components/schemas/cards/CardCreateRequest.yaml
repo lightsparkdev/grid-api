@@ -39,6 +39,15 @@ properties:
       customer and be denominated in a card-eligible currency; otherwise the
       request is rejected with `INVALID_INPUT`.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  cardholder:
+    $ref: ./CardCardholder.yaml
+    description: >-
+      The person to issue a `BUSINESS` customer's card to. The card spends
+      from the business's account and carries this person's name and
+      contact details. Omit it to issue the card to the business itself.
+      Rejected with `INVALID_INPUT` for an `INDIVIDUAL` customer, for an
+      address that is not a complete United States address, and together
+      with `agentId`, whose agent names its own person.
   maxNetworkRiskScore:
     type: integer
     minimum: 0

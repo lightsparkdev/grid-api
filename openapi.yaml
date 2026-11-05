@@ -11673,7 +11673,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Card'
         '400':
-          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the cardholder's KYC status is not `APPROVED`, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or exceeds 255 characters, when a required `threeDSecurePassword` is missing, empty, or whitespace-only, when the supplied funding source does not belong to the cardholder or is not denominated in a card-eligible currency, and for general invalid parameters.
+          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the cardholder's KYC status is not `APPROVED`, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or exceeds 255 characters, when a required `threeDSecurePassword` is missing, empty, or whitespace-only, when the supplied funding source does not belong to the cardholder or is not denominated in a card-eligible currency, when `cardholder` is sent for an `INDIVIDUAL` customer or with an address that is not a complete United States address, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -33796,6 +33796,49 @@ components:
         totalCount:
           type: integer
           description: Total number of cards matching the criteria (excluding pagination)
+    CardCardholder:
+      type: object
+      description: 'The person a business''s card is issued to. The card spends from the business''s account, with this person as its authorized user, so their name and contact details are the ones on the card. Each person keeps one authorized user per business: a later card with the same `reference` is issued to the same person, with the details sent on that request.'
+      required:
+        - reference
+        - firstName
+        - lastName
+        - email
+        - phoneNumber
+        - address
+      properties:
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Your own identifier for the person within the business, such as an employee or member id. Grid never interprets it. Cards with the same `reference` are issued to the same person, and an agent whose `actingFor` has the same value issues its cards to that person too.
+          example: member_8f2c1a
+        firstName:
+          type: string
+          description: The person's first name, as printed on the card.
+          minLength: 1
+          maxLength: 255
+          example: Jane
+        lastName:
+          type: string
+          description: The person's last name, as printed on the card.
+          minLength: 1
+          maxLength: 255
+          example: Doe
+        email:
+          type: string
+          description: The person's email address.
+          format: email
+          maxLength: 255
+          example: jane@example.com
+        phoneNumber:
+          type: string
+          description: Phone number in E.164 format.
+          pattern: ^\+[1-9]\d{1,14}$
+          example: '+14155550123'
+        address:
+          $ref: '#/components/schemas/Address'
+          description: The person's residential address. Must be a complete United States address with `city` and `state`.
     CardCreateRequest:
       type: object
       required:
@@ -33821,6 +33864,9 @@ components:
           type: string
           description: Internal account id that funds this card. The account must belong to the customer and be denominated in a card-eligible currency; otherwise the request is rejected with `INVALID_INPUT`.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        cardholder:
+          $ref: '#/components/schemas/CardCardholder'
+          description: The person to issue a `BUSINESS` customer's card to. The card spends from the business's account and carries this person's name and contact details. Omit it to issue the card to the business itself. Rejected with `INVALID_INPUT` for an `INDIVIDUAL` customer, for an address that is not a complete United States address, and together with `agentId`, whose agent names its own person.
         maxNetworkRiskScore:
           type: integer
           minimum: 0

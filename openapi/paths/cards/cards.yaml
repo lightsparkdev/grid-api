@@ -92,8 +92,10 @@ post:
         when the `Idempotency-Key` header is missing or exceeds 255 characters,
         when a required `threeDSecurePassword` is missing, empty, or
         whitespace-only, when the supplied funding source does not belong to
-        the cardholder or is not denominated in a card-eligible currency, and
-        for general invalid parameters.
+        the cardholder or is not denominated in a card-eligible currency, when
+        `cardholder` is sent for an `INDIVIDUAL` customer or with an address
+        that is not a complete United States address, and for general invalid
+        parameters.
       content:
         application/json:
           schema:
