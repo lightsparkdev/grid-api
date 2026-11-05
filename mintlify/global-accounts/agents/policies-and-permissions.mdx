@@ -40,6 +40,10 @@ Grid exposes explicit allowlists instead of broad agent access. Available permis
 | `CREATE_QUOTES` | Create quotes |
 | `EXECUTE_QUOTES` | Execute quotes |
 | `MANAGE_EXTERNAL_ACCOUNTS` | Create and manage external accounts |
+| `RECEIVE_FUNDS` | Create deposit targets for receiving funds |
+| `MANAGE_IDENTITY` | Read and update customer identity information and start verification |
+| `MANAGE_CARDS` | Read, tighten, and freeze the agent's cards |
+| `ISSUE_CARDS` | Issue one virtual card for itself while it holds no live card |
 
 These permissions are intentionally narrow and map to concrete Grid-backed actions rather than broad scopes such as "manage wallet."
 
@@ -57,14 +61,14 @@ This is especially useful when a customer has separate balances for treasury, pa
 
 ## Spending limits
 
-Use value-based limits to contain damage if the agent behaves unexpectedly or the agent connection is misused.
+Use value-based limits to contain damage if the agent behaves unexpectedly or the agent connection is misused. These limits cover both the agent's sends and purchases on cards issued for the agent.
 
 Common controls:
 
-- Per-transaction limit
-- Daily spend limit
+- Per-transaction limit (covers both sends and card authorizations)
+- Daily spend limit (total sends and card spend combined)
 - Monthly spend limit
-- Daily transaction count limit
+- Daily transaction count limit (sends and card authorizations combined)
 
 Keep limits in the smallest currency unit used by Grid so comparisons are exact and auditable.
 
@@ -109,7 +113,11 @@ For example, Grid stores and enforces a policy object shaped like:
     "VIEW_TRANSACTIONS",
     "CREATE_QUOTES",
     "EXECUTE_QUOTES",
-    "MANAGE_EXTERNAL_ACCOUNTS"
+    "MANAGE_EXTERNAL_ACCOUNTS",
+    "RECEIVE_FUNDS",
+    "MANAGE_IDENTITY",
+    "MANAGE_CARDS",
+    "ISSUE_CARDS"
   ],
   "defaultExecutionMode": "APPROVAL_REQUIRED",
   "spendingLimits": {
