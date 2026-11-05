@@ -1,5 +1,5 @@
 import { IconArrowInbox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowInbox';
-import { IconBank2 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank2';
+import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
 import { IconCreditCard1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCard1';
 import { IconHistory } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHistory';
 import { IconLimit } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLimit';
@@ -21,7 +21,7 @@ export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
   buy: IconCreditCard1,
   agent: IconAiBotHead,
   getpaid: IconArrowInbox,
-  cashout: IconBank2,
+  cashout: IconBank,
   balance: IconWallet1,
   history: IconHistory,
 };
