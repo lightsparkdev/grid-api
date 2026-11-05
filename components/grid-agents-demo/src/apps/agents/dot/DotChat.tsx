@@ -83,6 +83,7 @@ export function DotChat({ chat }: AgentChatProps) {
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={5}
+      threadTop={172}
       composerBottom={38.5}
       composerHeight={48.5}
       edge={<div className={styles.edge} />}

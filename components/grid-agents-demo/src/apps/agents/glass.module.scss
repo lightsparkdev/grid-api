@@ -1,6 +1,8 @@
 @use '../shared/glass/glass-button-shadow' as shadow;
 
+// A grid, so the panel's content wrapper stretches to the glass's full size.
 .pill {
+  display: grid;
   corner-shape: round;
   @include shadow.glass-button-shadow;
 }

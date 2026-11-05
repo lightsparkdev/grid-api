@@ -111,6 +111,7 @@ export function InstinctChat({ chat }: AgentChatProps) {
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={3}
+      threadTop={178}
       composerBottom={28}
       composerHeight={40}
       edge={<div className={styles.edge} />}

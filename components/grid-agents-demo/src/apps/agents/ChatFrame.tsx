@@ -28,6 +28,7 @@ export function ChatFrame({
   composerBottom,
   composerHeight,
   gap = 8,
+  threadTop,
   fadeTop,
   faceId,
   onFaceIdDone,
@@ -39,7 +40,9 @@ export function ChatFrame({
   header: ReactNode;
   /** The brand's scroll-edge fade under the header. */
   edge?: ReactNode;
-  /** Fade the thread itself out under the header, from clear at `[0]` to gone at `[1]` (pt from the top). */
+  /** Where a short thread starts (pt from the top, under the header); it fills down, then scrolls up from the composer. */
+  threadTop?: number;
+  /** Fade the thread out under the header: gone above `[0]`, whole from `[1]` (pt from the top). Defaults to the 64pt above `threadTop`. */
   fadeTop?: [number, number];
   composer: ReactNode;
   tabBar?: ReactNode;
@@ -53,6 +56,7 @@ export function ChatFrame({
   onFaceIdDone?: () => void;
 }) {
   const overlay = useScreenOverlay();
+  const fade = fadeTop ?? (threadTop !== undefined ? [threadTop - 64, threadTop] : undefined);
   return (
     <div
       className={`${styles.screen} ${className ?? ''}`}
@@ -61,18 +65,19 @@ export function ChatFrame({
           '--composer-bottom': `${composerBottom}px`,
           '--thread-foot': `${composerBottom + composerHeight + 12}px`,
           '--gap': `${gap}px`,
+          ...(threadTop !== undefined && { '--thread-top': `${threadTop}px` }),
         } as CSSProperties
       }
     >
       <div
         className={styles.thread}
         style={
-          fadeTop && {
-            maskImage: `linear-gradient(180deg, transparent ${fadeTop[0]}px, #000 ${fadeTop[1]}px)`,
+          fade && {
+            maskImage: `linear-gradient(180deg, transparent ${fade[0]}px, #000 ${fade[1]}px)`,
           }
         }
       >
-        <div className={styles.stack}>
+        <div className={styles.stack} data-top={threadTop !== undefined || undefined}>
           {messages.map((m, i) => (
             <motion.div
               key={m.id}

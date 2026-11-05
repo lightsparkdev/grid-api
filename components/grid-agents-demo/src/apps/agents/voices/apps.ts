@@ -38,7 +38,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
 
   /** xAI's bot: direct, a little dry. */
   grok: {
-    name: 'Grok',
+    name: 'Grok Bot',
     lines: {
       greeting: () => `Hey ${PERSON.first}. Give me the money chores. I’ll stay inside your limits and ask when it matters.`,
       'connect.intro': () => 'Sure. I need my own account and a leash. Here’s what I’m asking for.',

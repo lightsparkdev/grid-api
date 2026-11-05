@@ -109,6 +109,7 @@ export function ClaudeChat({ chat }: AgentChatProps) {
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={8}
+      threadTop={150}
       composerBottom={108}
       composerHeight={52}
       edge={<div className={styles.edge} />}

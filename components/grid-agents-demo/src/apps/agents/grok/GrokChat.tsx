@@ -52,7 +52,7 @@ function PayoutCard({
         </button>
       </div>
       <p className={styles.caption}>
-        Grok always asks before moving money over your limit.{' '}
+        Grok Bot always asks before moving money over your limit.{' '}
         {!b.settled && !b.pressing && (
           <button type="button" className={styles.decline} onClick={onDeny}>
             {ask.deny ?? 'Decline'}
@@ -112,6 +112,7 @@ export function GrokChat({ chat }: AgentChatProps) {
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={9}
+      threadTop={124}
       composerBottom={26}
       composerHeight={48}
       edge={<div className={styles.edge} />}
@@ -126,7 +127,7 @@ export function GrokChat({ chat }: AgentChatProps) {
           <GlassPill radius={22} absolute className={styles.title}>
             <span className={styles.titleRow}>
               <img src={`${A}/avatar.svg`} alt="" width={28} height={28} />
-              Grok
+              Grok Bot
             </span>
           </GlassPill>
         </>
@@ -137,7 +138,7 @@ export function GrokChat({ chat }: AgentChatProps) {
             <span className={styles.plus}>
               <span className={styles.glyph} style={{ ...mask(`${A}/plus.svg`), width: 14, height: 14 }} />
             </span>
-            <ComposerField chat={chat} placeholder="Ask Grok" className={styles.field} />
+            <ComposerField chat={chat} placeholder="Ask Grok Bot" className={styles.field} />
             <span className={styles.glyph} style={{ ...mask(`${A}/mic.svg`), width: 14, height: 20, opacity: 0.6 }} />
             <span className={styles.voice} role="button" onClick={chat.send} data-ready={chat.canSend || undefined}>
               <span className={styles.voiceGlyph} style={{ ...mask(`${A}/waveform.svg`), width: 16, height: 14 }} />

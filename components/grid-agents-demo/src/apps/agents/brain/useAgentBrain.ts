@@ -57,8 +57,14 @@ export function useAgentBrain({
   reply: (text: string) => Promise<FreeTextReply>;
 }) {
   const [messages, setMessages] = useState<StoredMessage[]>(() => [
+    { id: 0, kind: 'stamp', text: 'Today' },
     { id: 1, kind: 'them', said: { key: 'greeting' }, typing: false },
   ]);
+  // The clock is the visitor's, so it lands after hydration.
+  useEffect(() => {
+    const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    setMessages((all) => all.map((m) => (m.id === 0 && m.kind === 'stamp' ? { ...m, text: `Today ${time}` } : m)));
+  }, []);
   const [composer, setComposer] = useState('');
   const [prefill, setPrefill] = useState<{ flow: ActionId; variant: number; text: string } | null>(null);
   const [running, setRunning] = useState<ActionId | null>(null);

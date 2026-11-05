@@ -47,6 +47,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={8}
+      threadTop={172}
       composerBottom={34}
       composerHeight={48}
       edge={<div className={styles.edge} />}

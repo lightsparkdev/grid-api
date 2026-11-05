@@ -286,10 +286,9 @@ export function MuseChat({ chat }: AgentChatProps) {
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={0}
+      threadTop={178}
       composerBottom={103}
-      composerHeight={44}
-      fadeTop={[100, 178]}
-      header={
+      composerHeight={44}      header={
         <>
           <div className={styles.menu}>
             <GlassDisc label="Menu" icon={`${A}/menu.svg`} width={32} height={32} />

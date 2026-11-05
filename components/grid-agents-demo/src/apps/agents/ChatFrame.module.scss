@@ -32,6 +32,13 @@
   gap: var(--gap);
   padding: 0 16px var(--thread-foot);
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.35, 1);
+
+  // At least the thread's height, so a short thread sits at the top; a long
+  // one outgrows it upward and stays pinned to the composer.
+  &[data-top] {
+    min-height: 100%;
+    padding-top: var(--thread-top);
+  }
 }
 
 .row {
