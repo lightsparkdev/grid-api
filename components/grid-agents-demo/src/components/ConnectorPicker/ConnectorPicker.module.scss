@@ -114,17 +114,16 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   min-width: 0;
 }
 
-/* The app's icon at 22px in a 24px slot, like the flow icons beside it,
-   rounded the way iOS rounds icons (a squircle at 22.4% of the side). */
+/* The app's icon at 22px in a 24px slot, like the flow icons beside it, cut
+   to the iOS icon shape: a superellipse (n = 5) over the whole tile, whose
+   corners start curving far earlier than a circular radius. */
 .logo {
   position: relative;
   flex-shrink: 0;
   width: 22px;
   height: 22px;
   margin: 1px;
-  overflow: hidden;
-  border-radius: 22.4%;
-  corner-shape: superellipse(1.6);
+  mask: url('/assets/connectors/icon-mask.svg') no-repeat center / 100% 100%;
   transform-origin: center;
   transition: transform 250ms $ease-out-swift;
 
@@ -133,9 +132,8 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
     content: '';
     position: absolute;
     inset: 0;
-    border: 0.5px solid var(--border-primary);
-    border-radius: inherit;
-    corner-shape: inherit;
+    background: var(--border-primary);
+    mask: url('/assets/connectors/icon-edge.svg') no-repeat center / 100% 100%;
     pointer-events: none;
   }
 
