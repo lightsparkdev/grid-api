@@ -1,15 +1,19 @@
-// Figma 89:185, Dots · Fund account (PIX/SPEI/SEPA).
-.screen {
+// Dots, measured from recordings 3, 5, 7 and 8 (refs/dots/spec.md).
+.stage {
+  position: absolute;
+  inset: 0;
   --dot-bg: #fff;
   --dot-edge: 255, 255, 255;
   --dot-text: #000;
   --dot-muted: #a3a3a3;
-  --dot-them: #f2f2f2;
-  --dot-blue: #3566ef;
+  --dot-secondary: #6e6e73;
+  --dot-them: #efefef;
+  --dot-blue: #2d59ee;
   --dot-chip: #edf3ff;
   --dot-chip-picked: #dde7ff;
   --dot-chip-text: #2f57d9;
   --dot-card: #fff;
+  --dot-line: #e5e5e5;
   --part-surface: var(--dot-card);
   --part-sunk: var(--dot-them);
   --part-text: var(--dot-text);
@@ -23,23 +27,27 @@
   --part-done-text: var(--dot-chip-text);
   --part-chip: var(--dot-chip);
   --part-chip-text: var(--dot-chip-text);
-  background: var(--dot-bg);
-  color: var(--dot-text);
 
   :global([data-theme='dark']) & {
     --dot-bg: #0d0d0d;
     --dot-edge: 13, 13, 13;
     --dot-text: #f5f5f5;
     --dot-muted: #737373;
+    --dot-secondary: #9a9a9f;
     --dot-them: #232323;
     --dot-chip: #17213d;
     --dot-chip-picked: #1f2c52;
     --dot-chip-text: #8fb0ff;
     --dot-card: #1a1a1a;
-    --part-muted: #8d8d8d;
+    --dot-line: #2c2c2e;
     --part-rule: rgba(255, 255, 255, 0.08);
     --part-shadow: none;
   }
+}
+
+.screen {
+  background: var(--dot-bg);
+  color: var(--dot-text);
 }
 
 .edge {
@@ -53,6 +61,7 @@
   pointer-events: none;
 }
 
+// ── Header ──────────────────────────────────────────────────────────────
 .menu,
 .call {
   position: absolute;
@@ -95,38 +104,78 @@
   font-weight: 590;
 }
 
+// ── Thread ──────────────────────────────────────────────────────────────
 .stamp {
   align-self: stretch;
-  padding: 4px 0 8px;
+  padding: 6px 0 8px;
   color: var(--dot-muted);
-  font-size: 11px;
-  font-weight: 510;
+  font-size: 12px;
   text-align: center;
+
+  b {
+    font-weight: 600;
+  }
 }
 
 .them,
 .me {
-  padding: 11.5px 16px;
-  border-radius: 22px;
+  padding: 11px 16px 12px;
+  border-radius: 20px;
   font-size: 17px;
-  line-height: 21px;
+  line-height: 22px;
 }
 
 .them {
-  max-width: 300px;
+  max-width: 315px;
   background: var(--dot-them);
+
+  p {
+    margin: 0;
+  }
+
+  p + p,
+  p + ul,
+  ul + p {
+    margin-top: 10px;
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  strong {
+    font-weight: 600;
+  }
+
+  u {
+    text-underline-offset: 2px;
+  }
 }
 
 .me {
-  max-width: 268px;
+  max-width: 315px;
   background: var(--dot-blue);
   color: #fff;
+}
+
+.typing {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 18px;
+  background: var(--dot-them);
+  color: var(--dot-text);
 }
 
 .seen,
 .sender {
   color: var(--dot-muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .seen {
@@ -152,7 +201,6 @@
   padding: 0 16px 0 14px;
   border: 0;
   border-radius: 999px;
-  corner-shape: round;
   background: var(--dot-chip);
   color: var(--dot-chip-text);
   font: inherit;
@@ -173,27 +221,480 @@
   }
 }
 
-.composer {
-  min-height: 48.5px;
-  margin: 0 auto;
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.35, 1) 0.12s;
+.chevron {
+  width: 7px;
+  height: 12px;
+  background: currentColor;
+  mask: url('/assets/agents/dot/chevron.svg') no-repeat center / contain;
 }
 
-.sendSlot {
-  display: grid;
+// ── Action pill ─────────────────────────────────────────────────────────
+.mark {
+  position: relative;
+  display: inline-block;
   flex: none;
-  place-items: center;
-  width: 40px;
-  height: 45px;
-  margin-right: 4px;
+  overflow: hidden;
+  border-radius: 28%;
+  background: #e8efff;
+
+  img {
+    position: absolute;
+    top: -2%;
+    left: -4%;
+    width: 158%;
+    height: auto;
+  }
 }
 
-.composerRow {
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px 0 9px;
+  border: 1px solid var(--dot-line);
+  border-radius: 20px;
+  background: var(--dot-card);
+  color: var(--dot-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 510;
+  cursor: pointer;
+  transition: scale 0.15s ease, opacity 0.2s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.97;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &[data-state='denied'],
+  &[data-state='expired'] {
+    opacity: 0.5;
+  }
+}
+
+.pillEnd {
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  color: var(--dot-secondary);
+  font-size: 20px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: dot-spin 0.8s linear infinite;
+}
+
+@keyframes dot-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+// ── Setup sheet: a floating card inset 8pt, device corners at the foot ──
+.setupPanel {
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+}
+
+.setup {
   position: relative;
   display: flex;
-  align-items: flex-end;
-  min-height: 48.5px;
-  padding-block: 1.75px;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 24px 24px;
+  border-radius: 38px 38px 47px 47px;
+  background: var(--dot-card);
+  color: var(--dot-text);
+}
+
+.close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--dot-them);
+  color: var(--dot-secondary);
+  cursor: pointer;
+}
+
+.setupMarks {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.setupTitle {
+  margin-top: 14px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.setupBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  color: var(--dot-secondary);
+  font-size: 13px;
+  line-height: 18px;
+
+  p {
+    margin: 0;
+  }
+
+  b {
+    color: var(--dot-text);
+    font-weight: 600;
+  }
+
+  u {
+    text-underline-offset: 2px;
+  }
+}
+
+.notNow {
+  margin-top: 20px;
+  padding: 8px;
+  border: 0;
+  background: none;
+  color: var(--dot-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.black {
+  width: 100%;
+  height: 50px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 25px;
+  background: #000;
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active {
+    scale: 0.98;
+  }
+
+  :global([data-theme='dark']) & {
+    background: #fff;
+    color: #000;
+  }
+}
+
+// ── Pay sheet: Dots' own checkout, full height ─────────────────────────
+.payPanel {
+  top: 54px;
+}
+
+.pay {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 38px 38px 0 0;
+  background: var(--dot-card);
+  color: var(--dot-text);
+}
+
+.payBar {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  padding: 14px 16px 0;
+
+  strong {
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+  }
+}
+
+.payDisc {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--dot-them);
+  color: var(--dot-text);
+  cursor: pointer;
+}
+
+.burger {
+  width: 16px;
+  height: 12px;
+  background:
+    linear-gradient(currentColor 0 0) 0 0 / 100% 1.8px no-repeat,
+    linear-gradient(currentColor 0 0) 0 50% / 100% 1.8px no-repeat,
+    linear-gradient(currentColor 0 0) 0 100% / 70% 1.8px no-repeat;
+}
+
+.preparing {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding-bottom: 120px;
+  color: var(--dot-secondary);
+
+  strong {
+    color: var(--dot-text);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 34px;
+  }
+}
+
+.payBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 20px 0;
+  overflow: hidden;
+}
+
+.payMarks {
+  display: flex;
+  gap: 10px;
+}
+
+.payWho {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border: 1px solid var(--dot-line);
+  border-radius: 50%;
+  background: #fff;
+  color: #000;
+  font-size: 17px;
+  font-weight: 600;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+.payTitle {
+  margin-top: 16px;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 34px;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.requested {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  color: var(--dot-secondary);
+  font-size: 13px;
+}
+
+.email {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+
+  i {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--dot-them);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 600;
+  }
+}
+
+.total {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--dot-line);
+  border-radius: 16px;
+
+  img {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #f6f6f6;
+    object-fit: contain;
+  }
+
+  span {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  small {
+    color: var(--dot-secondary);
+    font-size: 13px;
+  }
+
+  b {
+    font-size: 17px;
+    font-weight: 600;
+  }
+}
+
+.payRows {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 16px;
+
+  > div {
+    display: flex;
+    gap: 12px;
+    padding: 14px 0;
+    border-top: 1px solid var(--dot-line);
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  span {
+    flex: none;
+    width: 76px;
+    color: var(--dot-secondary);
+  }
+
+  p {
+    flex: 1;
+    margin: 0;
+  }
+}
+
+.balanceRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.payActions {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px 40px;
+}
+
+.decline,
+.approve {
+  flex: 1;
+  height: 50px;
+  border-radius: 25px;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: scale 0.15s ease, opacity 0.2s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.98;
+  }
+}
+
+.decline {
+  border: 1px solid var(--dot-line);
+  background: var(--dot-card);
+  color: var(--dot-text);
+}
+
+.approve {
+  border: 0;
+  background: var(--dot-blue);
+  color: #fff;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+// ── Composer ───────────────────────────────────────────────────────────
+.composerBox {
+  width: 370px;
+  margin: 0 auto;
+}
+
+.composer {
+  width: 100%;
+}
+
+.composerGrid {
+  position: relative;
+  display: grid;
+  grid-template-areas: 'plus field tools';
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: end;
+  min-height: 48px;
+  padding: 1.5px 6px 1.5px 0;
+
+  &[data-multiline] {
+    grid-template-areas:
+      'field field field'
+      'plus . tools';
+    padding: 4px 6px 2px 0;
+  }
+}
+
+.fieldSlot {
+  display: flex;
+  grid-area: field;
+  min-width: 0;
+
+  [data-multiline] > & {
+    padding: 0 16px;
+  }
+}
+
+.tools {
+  display: flex;
+  grid-area: tools;
+  align-items: center;
 }
 
 .slot {
@@ -215,25 +716,22 @@
   place-items: center;
   width: 32px;
   height: 32px;
+  margin: 0 2px 0 -4px;
   border-radius: 50%;
-  corner-shape: round;
   background: var(--dot-blue);
   color: #fff;
-  transition: scale 0.15s ease;
+  cursor: pointer;
+  animation: dot-send-in 0.15s ease-out;
+}
 
-  &[data-pressing] {
-    scale: 0.88;
+@keyframes dot-send-in {
+  from {
+    scale: 0.6;
+    opacity: 0;
   }
 }
 
 .glyph {
   background: var(--dot-text);
   mask: no-repeat center / contain;
-}
-
-.chevron {
-  width: 7px;
-  height: 12px;
-  background: currentColor;
-  mask: url('/assets/agents/dot/chevron.svg') no-repeat center / contain;
 }
