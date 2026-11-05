@@ -52,7 +52,7 @@ export function ConfigurePanel({
                   ) : null
                 }
               />
-              <FlowPicker flows={group.flows} activeFlow={activeFlow} onAction={onAction} />
+              <FlowPicker flows={group.flows} columns={group.columns} activeFlow={activeFlow} onAction={onAction} />
             </section>
           ))}
         </div>

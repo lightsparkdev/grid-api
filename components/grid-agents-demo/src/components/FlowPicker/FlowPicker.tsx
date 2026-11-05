@@ -9,6 +9,8 @@ import styles from './FlowPicker.module.scss';
 interface FlowPickerProps {
   /** This section's flows, in grid order. */
   flows: ActionId[];
+  /** Two columns read across (the default), or one: a list. */
+  columns?: 1 | 2;
   /** The flow playing, marked (unstyled) on its section for the flow sweep. */
   activeFlow: ActionId | null;
   onAction: (id: ActionId) => void;
@@ -17,11 +19,11 @@ interface FlowPickerProps {
 /** A section of flows: two columns, read across. A tile sends its flow's line;
  *  picking another mid-flow starts over there, as in the other playgrounds.
  *  One that needs an installed agent installs it first. */
-export function FlowPicker({ flows, activeFlow, onAction }: FlowPickerProps) {
+export function FlowPicker({ flows, columns = 2, activeFlow, onAction }: FlowPickerProps) {
   const actions = flows.map((id) => ACTIONS.find((a) => a.id === id)!);
   const playing = activeFlow && flows.includes(activeFlow) ? activeFlow : undefined;
   return (
-    <div className={styles.group} data-active-flow={playing}>
+    <div className={styles.group} data-columns={columns} data-active-flow={playing}>
       {actions.map((action) => {
         const Icon = FLOW_ICONS[action.id];
         return (

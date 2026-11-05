@@ -122,9 +122,9 @@ export function actionLabel(id: ActionId): string {
   return ACTIONS.find((a) => a.id === id)!.label;
 }
 
-/** The picker's sections, each a two-column grid read across, with related
- *  flows sharing a row: the agent's account, then its payments. */
-export const FLOW_GROUPS: { label: string; flows: ActionId[] }[] = [
+/** The picker's sections: the agent's account as a two-column grid read across,
+ *  related flows sharing a row, then its payments as a list. */
+export const FLOW_GROUPS: { label: string; flows: ActionId[]; columns?: 1 | 2 }[] = [
   { label: 'Account', flows: ['connect', 'limits', 'fund', 'cashout', 'balance', 'history'] },
-  { label: 'Payments', flows: ['pay', 'getpaid', 'buy', 'agent'] },
+  { label: 'Payments', flows: ['pay', 'getpaid', 'buy', 'agent'], columns: 1 },
 ];

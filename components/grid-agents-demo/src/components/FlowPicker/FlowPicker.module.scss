@@ -38,6 +38,23 @@
   &:nth-last-child(-n + 2) {
     border-bottom: none;
   }
+
+  /* One column: a list, each tile full width, divided by rows only. */
+  [data-columns='1'] > & {
+    border-right: none;
+
+    &:nth-last-child(2) {
+      border-bottom: var(--stroke-xs) solid var(--border-primary);
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+.group[data-columns='1'] {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .optionEnabled {
