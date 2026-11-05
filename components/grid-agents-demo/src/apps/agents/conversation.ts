@@ -64,15 +64,37 @@ export interface AgentNote {
   rows?: { title: string; detail: string; amount: string; incoming: boolean }[];
 }
 
+/** A product the agent found: a card in a carousel, an image Instinct sends, a line in a list. */
+export interface Product {
+  title: string;
+  merchant: string;
+  domain: string;
+  price: string;
+  rating?: string;
+  image: string;
+  /** The one the agent goes with. */
+  pick?: boolean;
+}
+
+/** A small centered line about the agent itself: a routine it set up, a saved setting. */
+export interface AgentMeta {
+  text: string;
+  icon: 'routine' | 'check';
+}
+
 /** open → the visitor taps; pressing/authing → Face ID; done or denied; expired when a new flow replaced it. */
 export type AskState = 'open' | 'pressing' | 'authing' | 'done' | 'denied' | 'expired';
 
 export type Message =
-  | { id: number; kind: 'me'; text: string }
+  | { id: number; kind: 'me'; text: string; react?: string }
   | { id: number; kind: 'them'; text: string; sender?: string; bullets?: string[]; typing: boolean }
   | { id: number; kind: 'ask'; ask: AgentAsk; state: AskState }
   | { id: number; kind: 'card'; card: AgentNote; sender?: string }
   | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
+  | { id: number; kind: 'work'; status: string }
+  | { id: number; kind: 'products'; products: Product[] }
+  | { id: number; kind: 'meta'; meta: AgentMeta }
+  | { id: number; kind: 'divider'; text: string }
   | { id: number; kind: 'tag'; text: string }
   | { id: number; kind: 'stamp'; text: string };
 
@@ -82,11 +104,15 @@ export type Message =
 export type Said = { key: string; params?: Params } | { text: string };
 
 export type StoredMessage =
-  | { id: number; kind: 'me'; text: string }
+  | { id: number; kind: 'me'; text: string; react?: string }
   | { id: number; kind: 'them'; said: Said; sender?: string; typing: boolean }
   | { id: number; kind: 'ask'; key: string; params?: Params; state: AskState }
   | { id: number; kind: 'card'; key: string; params?: Params }
   | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
+  | { id: number; kind: 'work'; key: string; params?: Params }
+  | { id: number; kind: 'products'; key: string }
+  | { id: number; kind: 'meta'; key: string; params?: Params }
+  | { id: number; kind: 'divider'; text: string }
   | { id: number; kind: 'stamp'; text: string };
 
 /* ── Flows: what a conversation does ─────────────────────────────────── */
@@ -94,11 +120,17 @@ export type StoredMessage =
 /**
  * One beat of a flow. Most play on their own; an ask or chips wait for the
  * visitor. `when` builds its beats when it's reached, so they read the
- * account as it is then.
+ * account as it is then. `work` shows what the agent is doing for `ms`, and
+ * stays up until the next thing it says or shows.
  */
 export type Beat =
   | { say: string; params?: Params; sender?: string }
   | { card: string; params?: Params }
+  | { work: string; ms: number; params?: Params }
+  | { products: string }
+  | { react: string }
+  | { meta: string; params?: Params }
+  | { divider: string }
   | { ask: string; params?: Params; faceId?: boolean; allow: Beat[]; deny: Beat[] }
   | { chips: Chip[]; reply?: boolean; then: (picked: number) => Beat[] }
   | { emit: AgentEvent }

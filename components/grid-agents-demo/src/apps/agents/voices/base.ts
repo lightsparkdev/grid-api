@@ -1,5 +1,5 @@
-import type { AgentAsk, AgentNote, Params } from '../conversation';
-import { ADDRESS, HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
+import type { AgentAsk, AgentMeta, AgentNote, Params, Product } from '../conversation';
+import { ADDRESS, BUY_OPTIONS, HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
 
 /* The neutral voice: every line, ask and note a flow can produce, written so
    it reads right in any app. Each app's voice overrides what it says
@@ -11,6 +11,35 @@ const s = (p: Params | undefined, k: string) => String(p?.[k] ?? '');
 export type LineFn = (p?: Params) => string;
 export type AskFn = (p?: Params) => AgentAsk;
 export type NoteFn = (p?: Params) => AgentNote;
+
+/** What the agent is doing while it works: Grok's status row, Muse's header subtitle. */
+export const STATUS = {
+  searching: () => 'Searching stores',
+  filling: () => 'Filling the checkout form',
+  paying: () => 'Paying for the order',
+  quoting: () => 'Getting a quote',
+  sending: () => 'Sending the payment',
+  setup: (p) => `Setting up ${s(p, 'wallet')}`,
+  checking: (p) => `Checking ${s(p, 'wallet')}`,
+  talking: () => `Talking to ${HOTEL.name}’s agent`,
+  watching: () => 'Waiting for the payment',
+} satisfies Record<string, LineFn>;
+
+export type StatusKey = keyof typeof STATUS;
+
+export const PRODUCTS = {
+  'buy.options': () => BUY_OPTIONS,
+} satisfies Record<string, () => Product[]>;
+
+export type ProductsKey = keyof typeof PRODUCTS;
+
+export const METAS = {
+  'buy.tracking': () => ({ text: 'Created routine · Track the delivery', icon: 'routine' }),
+  'sub.reminder': () => ({ text: 'Created routine · Remind me before it renews', icon: 'routine' }),
+  'connect.limits': () => ({ text: 'Limits saved', icon: 'check' }),
+} satisfies Record<string, (p?: Params) => AgentMeta>;
+
+export type MetaKey = keyof typeof METAS;
 
 export const LINES = {
   greeting: () => `Hi ${PERSON.first}. I can pay, buy and get paid for you, within limits you set. What do you need?`,
@@ -34,7 +63,7 @@ export const LINES = {
   'pay.done': () => `Sent. ${SOFIA.first} has it, and I told her it’s from you.`,
   'pay.denied': () => 'Okay, I won’t send it.',
 
-  'buy.intro': () => `Found it at ${RING_LIGHT.merchant}: the RP10-H, ${usd2(RING_LIGHT.amount)} with standard shipping.`,
+  'buy.intro': () => `Found three that fit. The ${RING_LIGHT.merchant} RP10-H is the best of them, ${usd2(RING_LIGHT.amount)} with standard shipping.`,
   'buy.card': () => `I’ll get a one-time card for exactly this order, so ${RING_LIGHT.merchant} never sees your real card.`,
   'buy.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m checking out.`,
   'buy.done': () => 'Ordered. It arrives Thursday, and the card closed itself after the charge.',
@@ -98,11 +127,11 @@ export const ASKS = {
     deny: 'Cancel',
     denied: 'Canceled',
   }),
-  pay: () => ({
+  pay: (p) => ({
     title: `Send ${SOFIA.local} to ${SOFIA.first}`,
     who: { name: SOFIA.name, flag: SOFIA.flag, detail: `${SOFIA.local} to ${SOFIA.bank} via PIX` },
     amount: SOFIA.local,
-    method: `From your balance · ${usd2(SOFIA.usd)}`,
+    method: `From ${s(p, 'wallet')} · ${usd2(SOFIA.usd)}`,
     allow: 'Approve',
     allowed: 'Paid',
     deny: 'Decline',
@@ -112,7 +141,7 @@ export const ASKS = {
     title: `Move ${s(p, 'local')} to ${s(p, 'to')}`,
     who: { name: s(p, 'to'), flag: s(p, 'flag') || undefined, detail: `${s(p, 'local')} over ${s(p, 'rail')}` },
     amount: s(p, 'local'),
-    method: `From your balance · ${usd2(n(p, 'usd'))}`,
+    method: `From ${s(p, 'wallet')} · ${usd2(n(p, 'usd'))}`,
     allow: 'Approve',
     allowed: 'Sent',
     deny: 'Decline',
@@ -173,16 +202,16 @@ export const NOTES = {
   }),
   quote: (p) => ({
     title: `${s(p, 'local')} to ${s(p, 'to')}`,
-    lines: [`${usd2(n(p, 'usd'))} from your balance · fee ${usd2(n(p, 'fee'))}`, 'Quote expires in 5 min'],
+    lines: [`${usd2(n(p, 'usd'))} from ${s(p, 'wallet')} · fee ${usd2(n(p, 'fee'))}`, 'Quote expires in 5 min'],
   }),
-  'receipt.pay': () => ({
+  'receipt.pay': (p) => ({
     title: `${SOFIA.local} to ${SOFIA.name}`,
-    lines: [`${SOFIA.bank} · PIX`, `${usd2(SOFIA.usd)} from your balance`],
+    lines: [`${SOFIA.bank} · PIX`, `${usd2(SOFIA.usd)} from ${s(p, 'wallet')}`],
     done: true,
   }),
   'receipt.cashout': (p) => ({
     title: `${s(p, 'local')} to ${s(p, 'to')}`,
-    lines: [s(p, 'rail'), `${usd2(n(p, 'usd'))} from your balance`],
+    lines: [s(p, 'rail'), `${usd2(n(p, 'usd'))} from ${s(p, 'wallet')}`],
     done: true,
   }),
   'receipt.buy': () => ({
@@ -222,7 +251,7 @@ export const NOTES = {
 
 export type NoteKey = keyof typeof NOTES;
 
-/** Meta Pay's order sheet for the ring light, shared by Muse's voice. */
+/** Muse's order sheet for the ring light. */
 export const MUSE_ORDER = (balance: number): AgentAsk => ({
   title: `The agent wants to place an order at ${RING_LIGHT.merchant}`,
   badge: 'N',
@@ -230,7 +259,7 @@ export const MUSE_ORDER = (balance: number): AgentAsk => ({
     { text: RING_LIGHT.item, sub: 'Qty: 1', image: RING_LIGHT.image },
     { text: 'Standard by 2 to 5 business days', sub: ADDRESS, icon: 'truck' },
     { text: PERSON.email, sub: PERSON.phone, icon: 'envelope' },
-    { text: 'Meta Pay balance', sub: 'Pay with Meta Pay', icon: 'meta' },
+    { text: 'Muse balance', sub: `${usd2(balance)} available`, icon: 'meta' },
   ],
   total: usd2(RING_LIGHT.amount),
   method: `${usd2(balance)} available`,

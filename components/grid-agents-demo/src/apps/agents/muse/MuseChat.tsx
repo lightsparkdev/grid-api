@@ -3,7 +3,7 @@ import { TextMorph } from 'torph/react';
 import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
 import type { AskRow, Chip, Message } from '../conversation';
-import { askButtons, MORPH, NoteCard, RowGlyph } from '../parts';
+import { askButtons, Divider, MetaLine, MORPH, NoteCard, ProductRow, RowGlyph, WorkLine } from '../parts';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
 
@@ -269,6 +269,14 @@ export function MuseChat({ chat }: AgentChatProps) {
       case 'tag':
       case 'stamp':
         return <span className={styles.stamp}>{m.text}</span>;
+      case 'work':
+        return <WorkLine status={m.status} />;
+      case 'products':
+        return <ProductRow products={m.products} />;
+      case 'meta':
+        return <MetaLine meta={m.meta} />;
+      case 'divider':
+        return <Divider text={m.text} />;
       default: {
         const exhaustive: never = m;
         return exhaustive;

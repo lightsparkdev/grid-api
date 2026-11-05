@@ -3,7 +3,7 @@ import { Flag } from '@/apps/shared/Flag';
 import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
 import type { Message } from '../conversation';
-import { AskCard, askButtons, ChipRow, MORPH, NoteCard } from '../parts';
+import { askButtons, AskCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, WorkLine } from '../parts';
 import type { AgentChatProps } from '../types';
 import styles from './GrokChat.module.scss';
 
@@ -97,6 +97,14 @@ export function GrokChat({ chat }: AgentChatProps) {
       case 'tag':
       case 'stamp':
         return <span className={styles.stamp}>{m.text}</span>;
+      case 'work':
+        return <WorkLine status={m.status} />;
+      case 'products':
+        return <ProductRow products={m.products} />;
+      case 'meta':
+        return <MetaLine meta={m.meta} />;
+      case 'divider':
+        return <Divider text={m.text} />;
       default: {
         const exhaustive: never = m;
         return exhaustive;

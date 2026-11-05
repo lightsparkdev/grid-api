@@ -3,7 +3,7 @@ import { SfSymbol } from '@/apps/shared/icons';
 import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
 import type { Message } from '../conversation';
-import { AskCard, NoteCard } from '../parts';
+import { AskCard, Divider, MetaLine, NoteCard, ProductRow, WorkLine } from '../parts';
 import type { AgentChatProps } from '../types';
 import styles from './DotChat.module.scss';
 
@@ -68,6 +68,14 @@ export function DotChat({ chat }: AgentChatProps) {
       case 'stamp':
       case 'tag':
         return <span className={styles.stamp}>{m.text}</span>;
+      case 'work':
+        return <WorkLine status={m.status} />;
+      case 'products':
+        return <ProductRow products={m.products} />;
+      case 'meta':
+        return <MetaLine meta={m.meta} />;
+      case 'divider':
+        return <Divider text={m.text} />;
       default: {
         const exhaustive: never = m;
         return exhaustive;

@@ -38,6 +38,35 @@ export const RING_LIGHT: Purchase & { item: string; image: string } = {
   image: '/assets/agents/muse/product.png',
 };
 
+/** What the agent turns up for the ring light; it goes with the first. */
+export const BUY_OPTIONS = [
+  {
+    title: 'RP10-H 10" Selfie Ring Light',
+    merchant: RING_LIGHT.merchant,
+    domain: 'neewer.com',
+    price: usd2(RING_LIGHT.amount),
+    rating: '4.6',
+    image: '/assets/agents/products/ring.png',
+    pick: true,
+  },
+  {
+    title: 'Halo 12" Ring Light Kit',
+    merchant: 'Lumacraft',
+    domain: 'lumacraft.co',
+    price: '$62.00',
+    rating: '4.4',
+    image: '/assets/agents/products/halo.png',
+  },
+  {
+    title: 'Bluetooth Remote Shutter',
+    merchant: 'Brightway',
+    domain: 'brightway.shop',
+    price: '$9.99',
+    rating: '4.1',
+    image: '/assets/agents/products/remote.png',
+  },
+];
+
 export const SUBSCRIPTION: Purchase & { item: string } = {
   merchant: 'Duolingo',
   description: 'Duolingo Max, monthly',

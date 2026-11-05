@@ -1,7 +1,17 @@
 import type { ConnectorId } from '@/data/connectors';
 import type { Params } from '../conversation';
 import { HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
-import { ASKS, MUSE_ORDER, type AskFn, type AskKey, type LineFn, type LineKey, type NoteFn, type NoteKey } from './base';
+import {
+  ASKS,
+  MUSE_ORDER,
+  type AskFn,
+  type AskKey,
+  type LineFn,
+  type LineKey,
+  type NoteFn,
+  type NoteKey,
+  type StatusKey,
+} from './base';
 
 /* What each app says differently. Anything not here falls back to the
    neutral voice (voices/base.ts). */
@@ -9,9 +19,12 @@ import { ASKS, MUSE_ORDER, type AskFn, type AskKey, type LineFn, type LineKey, t
 export interface VoiceOverrides {
   /** What the agent calls itself. */
   name: string;
+  /** What the app calls the money it holds for you. */
+  wallet: string;
   lines?: Partial<Record<LineKey, LineFn>>;
   asks?: Partial<Record<AskKey, AskFn>>;
   notes?: Partial<Record<NoteKey, NoteFn>>;
+  status?: Partial<Record<StatusKey, LineFn>>;
 }
 
 const n = (p: Params | undefined, k: string) => Number(p?.[k] ?? 0);
@@ -22,19 +35,20 @@ const duetSpend =
   (p) => ({ ...ASKS[key](p), expires: 'Expires in 10 min', allowed: 'Paid', deny: 'Not now', denied: 'Not now' });
 
 export const VOICES: Record<ConnectorId, VoiceOverrides> = {
-  /** Meta's agent: warm, brief, and it pays with Meta Pay. */
+  /** Meta's agent: warm, brief, and it pays from its own Muse balance. */
   muse: {
     name: 'Muse',
+    wallet: 'Muse balance',
     lines: {
       greeting: () => `Morning, ${PERSON.first}. Your Thursday is clear after 2. Anything you want me to take care of?`,
-      'connect.intro': () => 'Happy to. I’ll use my own Meta Pay balance for it, with limits you choose.',
-      'connect.done': () => 'All set. I have my own balance now, and I’ll always stay inside your limits.',
-      'buy.intro': () => `Found it at ${RING_LIGHT.merchant}: the RP10-H, ${usd2(RING_LIGHT.amount)} with standard shipping.`,
-      'buy.card': () => 'Here’s the final quote. Do these details look correct, and should I place the order with your Meta Pay balance?',
+      'connect.intro': () => 'Happy to. I’ll set up a Muse balance for it, with limits you choose.',
+      'connect.done': () => 'All set. Your Muse balance is ready, and I’ll always stay inside your limits.',
+      'buy.intro': () => `Here are a few picks. The ${RING_LIGHT.merchant} RP10-H is the one I’d get: ${usd2(RING_LIGHT.amount)} with standard shipping.`,
+      'buy.card': () => 'Here’s the final quote. Do these details look correct, and should I place the order with your Muse balance?',
       'buy.done': () => 'Ordered. It arrives Thursday, and tracking is in your inbox.',
       'pay.done': () => `Sent. ${SOFIA.first} has it, and I let her know it’s from you.`,
       'agent.done': () => 'You’re booked. The confirmation is in your inbox.',
-      fallback: () => 'I can help with your Meta Pay balance here. Try one of the flows on the left.',
+      fallback: () => 'I can help with your Muse balance here. Try one of the flows on the left.',
     },
     asks: {
       buy: (p) => MUSE_ORDER(n(p, 'balance')),
@@ -44,6 +58,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
   /** xAI's bot: direct, a little dry. */
   grok: {
     name: 'Grok Bot',
+    wallet: 'Bot balance',
     lines: {
       greeting: () => `Hey ${PERSON.first}. Give me the money chores. I’ll stay inside your limits and ask when it matters.`,
       'connect.intro': () => 'Sure. I need my own account and a leash. Here’s what I’m asking for.',
@@ -61,6 +76,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
   /** OpenAI's dot: casual, lowercase, upbeat. */
   dot: {
     name: 'dot',
+    wallet: 'Dots balance',
     lines: {
       greeting: () => `hey ${PERSON.first.toLowerCase()}! i can pay people, buy stuff and collect money for you. what do you need?`,
       'connect.intro': () => 'ooh yes. i’ll need my own account for that, with limits you pick. here’s what i’m asking for:',
@@ -78,6 +94,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
   /** Instinct over iMessage: short texts, a lot more action than talk. */
   instinct: {
     name: 'Instinct',
+    wallet: 'Instinct balance',
     lines: {
       greeting: () => `hey ${PERSON.first}, it’s Instinct. text me what you need and i’ll handle it`,
       'connect.intro': () => 'i need my own account for that. approve it here:',
@@ -105,6 +122,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
   /** Anthropic's Duet: measured, organized, the one that briefs you. */
   claude: {
     name: 'Claude',
+    wallet: 'Duet balance',
     lines: {
       greeting: () => `Morning, ${PERSON.first}. Payroll ran at 6 AM, all 14 people are paid. What can I take on?`,
       'connect.intro': () => 'I’ll need my own account for this, with limits you set. Here’s exactly what I’m asking for.',
@@ -129,5 +147,6 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
   /** A platform's own agent: the neutral voice. */
   yourapp: {
     name: 'Your agent',
+    wallet: 'your balance',
   },
 };

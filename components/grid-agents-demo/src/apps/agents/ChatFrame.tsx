@@ -92,19 +92,24 @@ export function ChatFrame({
         }
       >
         <div className={styles.stack} data-top={threadTop !== undefined || undefined}>
-          {messages.map((m, i) => (
-            <motion.div
-              key={m.id}
-              layout="position"
-              className={styles.row}
-              data-kind={m.kind}
-              initial={{ opacity: 0, y: 14, filter: 'blur(6px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              transition={ROW_IN}
-            >
-              {render(m, i, messages)}
-            </motion.div>
-          ))}
+          {messages.map((m, i) => {
+            const node = render(m, i, messages);
+            // A skin may draw a message elsewhere (Muse's status sits in its header).
+            if (node === null) return null;
+            return (
+              <motion.div
+                key={m.id}
+                layout="position"
+                className={styles.row}
+                data-kind={m.kind}
+                initial={{ opacity: 0, y: 14, filter: 'blur(6px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                transition={ROW_IN}
+              >
+                {node}
+              </motion.div>
+            );
+          })}
         </div>
       </div>
       {edge}

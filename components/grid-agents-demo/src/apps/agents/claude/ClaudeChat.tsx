@@ -2,7 +2,7 @@ import { TextMorph } from 'torph/react';
 import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
-import { AskCard, askButtons, ChipRow, MORPH, NoteCard } from '../parts';
+import { askButtons, AskCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, WorkLine } from '../parts';
 import type { AgentChatProps } from '../types';
 import { ClaudeMascot } from './ClaudeMascot';
 import type { MascotState } from './mascot';
@@ -96,6 +96,14 @@ export function ClaudeChat({ chat }: AgentChatProps) {
         return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.pick} expired={m.expired} />;
       case 'stamp':
         return <span className={styles.stamp}>{m.text}</span>;
+      case 'work':
+        return <WorkLine status={m.status} />;
+      case 'products':
+        return <ProductRow products={m.products} />;
+      case 'meta':
+        return <MetaLine meta={m.meta} />;
+      case 'divider':
+        return <Divider text={m.text} />;
       default: {
         const exhaustive: never = m;
         return exhaustive;

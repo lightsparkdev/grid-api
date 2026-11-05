@@ -23,6 +23,8 @@ type NewMessage = StoredMessage extends infer M ? (M extends StoredMessage ? Omi
 
 const MAX_MESSAGES = 16;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** A reply that approves an open ask; anything else declines it. */
+const YES = /^\s*(y|yes|yeah|yep|yup|ok|okay|sure|approve|approved|do it|go ahead|send it)\b/i;
 
 /** A run's handle: cancelling it settles whatever it was waiting on. */
 interface Run {
@@ -85,6 +87,17 @@ export function useAgentBrain({
   const patch = useCallback((id: number, f: (m: StoredMessage) => StoredMessage) => {
     setMessages((list) => list.map((m) => (m.id === id ? f(m) : m)));
   }, []);
+  /** The agent's status leaves once it has something to say or show. */
+  const clearWork = useCallback(() => {
+    setMessages((list) => (list.some((m) => m.kind === 'work') ? list.filter((m) => m.kind !== 'work') : list));
+  }, []);
+  const show = useCallback(
+    (m: NewMessage) => {
+      clearWork();
+      return push(m);
+    },
+    [clearWork, push],
+  );
 
   /** Stop whatever is playing: open asks and chips expire, typing settles. */
   const cancelRun = useCallback(() => {
@@ -97,12 +110,14 @@ export function useAgentBrain({
     authRef.current?.();
     decideRef.current = pickRef.current = authRef.current = null;
     setMessages((list) =>
-      list.map((m) => {
-        if (m.kind === 'ask' && (m.state === 'open' || m.state === 'pressing' || m.state === 'authing')) return { ...m, state: 'expired' };
-        if (m.kind === 'chips' && m.picked === null) return { ...m, expired: true };
-        if (m.kind === 'them' && m.typing) return { ...m, typing: false };
-        return m;
-      }),
+      list
+        .filter((m) => m.kind !== 'work')
+        .map((m) => {
+          if (m.kind === 'ask' && (m.state === 'open' || m.state === 'pressing' || m.state === 'authing')) return { ...m, state: 'expired' };
+          if (m.kind === 'chips' && m.picked === null) return { ...m, expired: true };
+          if (m.kind === 'them' && m.typing) return { ...m, typing: false };
+          return m;
+        }),
     );
     setRunning(null);
     setBusy(false);
@@ -112,14 +127,34 @@ export function useAgentBrain({
     async (beats: Beat[], run: Run): Promise<boolean> => {
       for (const b of beats) {
         if (run.cancelled) return false;
-        if ('say' in b) {
-          const id = push({ kind: 'them', said: { key: b.say, params: b.params }, sender: b.sender, typing: true });
+        if ('work' in b) {
+          setMessages((list) => {
+            const rest = list.filter((m) => m.kind !== 'work');
+            return [...rest, { id: nextId.current++, kind: 'work', key: b.work, params: b.params } as StoredMessage].slice(-MAX_MESSAGES);
+          });
+          await sleep(b.ms);
+        } else if ('products' in b) {
+          show({ kind: 'products', key: b.products });
+          await sleep(1200);
+        } else if ('react' in b) {
+          setMessages((list) => {
+            const last = [...list].reverse().find((m) => m.kind === 'me');
+            return last ? list.map((m) => (m === last ? { ...m, react: b.react } : m)) : list;
+          });
+          await sleep(400);
+        } else if ('meta' in b) {
+          show({ kind: 'meta', key: b.meta, params: b.params });
+          await sleep(500);
+        } else if ('divider' in b) {
+          show({ kind: 'divider', text: b.divider });
+        } else if ('say' in b) {
+          const id = show({ kind: 'them', said: { key: b.say, params: b.params }, sender: b.sender, typing: true });
           await sleep(700);
           if (run.cancelled) return false;
           patch(id, (m) => (m.kind === 'them' ? { ...m, typing: false } : m));
           await sleep(900);
         } else if ('card' in b) {
-          push({ kind: 'card', key: b.card, params: b.params });
+          show({ kind: 'card', key: b.card, params: b.params });
           await sleep(1000);
         } else if ('emit' in b) {
           cb.current.onEvent(b.emit);
@@ -128,7 +163,7 @@ export function useAgentBrain({
         } else if ('when' in b) {
           if (!(await play(b.when(), run))) return false;
         } else if ('ask' in b) {
-          const id = push({ kind: 'ask', key: b.ask, params: b.params, state: 'open' });
+          const id = show({ kind: 'ask', key: b.ask, params: b.params, state: 'open' });
           setBusy(false);
           const decision = await new Promise<Decision>((r) => (decideRef.current = r));
           decideRef.current = null;
@@ -152,7 +187,7 @@ export function useAgentBrain({
           await sleep(600);
           if (!(await play(b.allow, run))) return false;
         } else if ('chips' in b) {
-          const id = push({ kind: 'chips', chips: b.chips, picked: null });
+          const id = show({ kind: 'chips', chips: b.chips, picked: null });
           setBusy(false);
           const picked = await new Promise<number>((r) => (pickRef.current = r));
           pickRef.current = null;
@@ -166,7 +201,7 @@ export function useAgentBrain({
       }
       return !run.cancelled;
     },
-    [push, patch],
+    [push, patch, show],
   );
 
   const start = useCallback(
@@ -178,12 +213,13 @@ export function useAgentBrain({
       setBusy(true);
       const finished = await play(beats, run);
       if (runRef.current !== run) return;
+      clearWork();
       runRef.current = null;
       setRunning(null);
       setBusy(false);
       if (finished && flow) cb.current.onCompleted?.(flow);
     },
-    [play],
+    [play, clearWork],
   );
 
   // A tile's jump, applied once: whatever was playing stops, and the tile's line goes out as the visitor's message.
@@ -206,7 +242,15 @@ export function useAgentBrain({
 
   const send = useCallback(async () => {
     const text = composer.trim();
-    if (!text || runRef.current) return;
+    if (!text) return;
+    // An open ask takes a text reply as its answer.
+    if (decideRef.current) {
+      setComposer('');
+      push({ kind: 'me', text });
+      decideRef.current(YES.test(text) ? 'allow' : 'deny');
+      return;
+    }
+    if (runRef.current) return;
     setComposer('');
     push({ kind: 'me', text });
     setBusy(true);
@@ -232,13 +276,14 @@ export function useAgentBrain({
 
   const authing = messages.some((m) => m.kind === 'ask' && m.state === 'authing');
   const asking = messages.some((m) => m.kind === 'ask' && (m.state === 'open' || m.state === 'pressing' || m.state === 'authing'));
+  const answering = messages.some((m) => m.kind === 'ask' && m.state === 'open');
 
   return {
     messages,
     composer,
     setComposer,
     send,
-    canSend: composer.trim().length > 0 && !running && !busy,
+    canSend: composer.trim().length > 0 && (answering || (!running && !busy)),
     busy,
     allow,
     deny,

@@ -2,7 +2,7 @@ import { TextMorph } from 'torph/react';
 import { Flag } from '@/apps/shared/Flag';
 import { SfSymbol } from '@/apps/shared/icons';
 import { cubicBezierCss, easeOutSnappy } from '@/lib/easing';
-import type { AgentAsk, AgentNote, AskRow, AskState, Chip } from './conversation';
+import type { AgentAsk, AgentMeta, AgentNote, AskRow, AskState, Chip, Product } from './conversation';
 import styles from './parts.module.scss';
 
 /* The pieces a skin draws when it has no bespoke design for them. Each reads
@@ -62,6 +62,59 @@ export function NoteCard({ note, className }: { note: AgentNote; className?: str
       )}
     </div>
   );
+}
+
+const META_SYMBOL = { routine: 'clock.arrow.trianglehead.counterclockwise.rotate.90', check: 'checkmark' } as const;
+
+/** What the agent found, as a sideways row of cards; its pick is marked. */
+export function ProductRow({ products, className }: { products: Product[]; className?: string }) {
+  return (
+    <div className={`${styles.products} ${className ?? ''}`}>
+      {products.map((p) => (
+        <div key={p.title} className={styles.product}>
+          <img className={styles.productImage} src={p.image} alt="" />
+          <span className={styles.productText}>
+            <strong>{p.title}</strong>
+            <small>
+              {p.merchant}
+              {p.rating && ` · ★ ${p.rating}`}
+            </small>
+            <span>{p.price}</span>
+            {p.pick && <span className={styles.productPick}>Best match</span>}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** A routine the agent set up, a rename: one small centered line. */
+export function MetaLine({ meta, className }: { meta: AgentMeta; className?: string }) {
+  return (
+    <span className={`${styles.meta} ${className ?? ''}`}>
+      <SfSymbol name={META_SYMBOL[meta.icon]} size={12} />
+      {meta.text}
+    </span>
+  );
+}
+
+/** What the agent is doing right now, as a quiet line with a pulse. */
+export function WorkLine({ status, className }: { status: string; className?: string }) {
+  return (
+    <span className={`${styles.work} ${className ?? ''}`}>
+      <span className={styles.workDots} aria-hidden>
+        <i />
+        <i />
+        <i />
+      </span>
+      {status}
+    </span>
+  );
+}
+
+/** The unread marker. */
+export function Divider({ text, className }: { text: string; className?: string }) {
+  return <span className={`${styles.divider} ${className ?? ''}`}>{text}</span>;
 }
 
 /** Quick replies: the visitor taps one, or the agent's pick lands on its own. */

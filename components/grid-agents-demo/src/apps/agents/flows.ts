@@ -48,6 +48,7 @@ const connect = (ctx: FlowContext): Beat[] => {
       params: { perTx: l.perTransaction, daily: l.daily, approve: l.approvalAbove },
       faceId: true,
       allow: [
+        { work: 'setup', ms: 1100 },
         { emit: { type: 'connect' } },
         { say: 'connect.done' },
         { when: () => [{ card: 'account.ready', params: { balance: ctx.account().balanceCents } }] },
@@ -106,15 +107,16 @@ const limits = (ctx: FlowContext): Beat[] => {
 };
 
 const pay = (ctx: FlowContext): Beat[] => [
-  { say: 'pay.intro' },
+  { work: 'quoting', ms: 1200 },
   { emit: { type: 'pay.quote', payee: SOFIA } },
+  { say: 'pay.intro' },
   { emit: { type: 'pay.execute' } },
   ...approvalOr(
     ctx,
     ctx.needsApproval(SOFIA.usd),
     { key: 'pay' },
     'pay.auto',
-    [{ card: 'receipt.pay' }, { say: 'pay.done' }],
+    [{ work: 'sending', ms: 1000 }, { card: 'receipt.pay' }, { say: 'pay.done' }],
     'pay.denied',
   ),
 ];
@@ -131,21 +133,30 @@ const buy = (ctx: FlowContext): Beat[] => {
         true,
         { key: 'sub' },
         'buy.auto',
-        [{ emit: { type: 'buy.checkout' } }, { card: 'receipt.sub' }, { say: 'sub.done' }],
+        [{ work: 'paying', ms: 1000 }, { emit: { type: 'buy.checkout' } }, { card: 'receipt.sub' }, { say: 'sub.done' }, { meta: 'sub.reminder' }],
         'sub.denied',
       ),
     ];
   }
   return [
+    { work: 'searching', ms: 1800 },
     { say: 'buy.intro' },
+    { products: 'buy.options' },
     { say: 'buy.card' },
     { emit: { type: 'buy.request', purchase: RING_LIGHT } },
+    { work: 'filling', ms: 1300 },
     ...approvalOr(
       ctx,
       ctx.needsApproval(purchaseSpendLimit(RING_LIGHT.amount)),
       { key: 'buy', params: { balance: ctx.account().balanceCents } },
       'buy.auto',
-      [{ emit: { type: 'buy.checkout' } }, { card: 'receipt.buy' }, { say: 'buy.done' }],
+      [
+        { work: 'paying', ms: 1100 },
+        { emit: { type: 'buy.checkout' } },
+        { card: 'receipt.buy' },
+        { say: 'buy.done' },
+        { meta: 'buy.tracking' },
+      ],
       'buy.denied',
     ),
   ];
@@ -179,7 +190,7 @@ const getpaid = (ctx: FlowContext): Beat[] => [
         { emit: { type: 'getpaid.address', network: o.network, currency: o.currency } },
         { say: 'getpaid.address', params },
         { card: 'receive', params },
-        { pause: 2200 },
+        { work: 'watching', ms: 2200 },
         { emit: { type: 'getpaid.received', from: LUCIA.name, amount: LUCIA.amount } },
         { when: () => [{ card: 'receipt.getpaid' }, { say: 'getpaid.done', params: { balance: ctx.account().balanceCents } }] },
       ];
@@ -196,6 +207,7 @@ const cashout = (ctx: FlowContext): Beat[] => [
       const p = CASHOUT[i];
       const params = { local: p.local, to: p.name, rail: p.rail, usd: p.usd, flag: p.flag ?? '' };
       return [
+        { work: 'quoting', ms: 1000 },
         { emit: { type: 'cashout.quote', payee: p } },
         { say: 'cashout.quote', params },
         { emit: { type: 'cashout.execute' } },
@@ -204,7 +216,7 @@ const cashout = (ctx: FlowContext): Beat[] => [
           ctx.needsApproval(p.usd),
           { key: 'cashout', params },
           'cashout.auto',
-          [{ card: 'receipt.cashout', params }, { say: 'cashout.done' }],
+          [{ work: 'sending', ms: 900 }, { card: 'receipt.cashout', params }, { say: 'cashout.done' }],
           'cashout.denied',
         ),
       ];
@@ -213,6 +225,7 @@ const cashout = (ctx: FlowContext): Beat[] => [
 ];
 
 const balance = (ctx: FlowContext): Beat[] => [
+  { work: 'checking', ms: 700 },
   { emit: { type: 'account.overview' } },
   {
     when: () => {
@@ -229,6 +242,7 @@ const balance = (ctx: FlowContext): Beat[] => [
 ];
 
 const history = (ctx: FlowContext): Beat[] => [
+  { work: 'checking', ms: 700 },
   { emit: { type: 'transactions.list' } },
   {
     when: () => {

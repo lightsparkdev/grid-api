@@ -5,7 +5,7 @@ import { SfSymbol } from '@/apps/shared/icons';
 import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
 import type { Message } from '../conversation';
-import { ChipRow, NoteCard } from '../parts';
+import { ChipRow, Divider, MetaLine, NoteCard, ProductRow, WorkLine } from '../parts';
 import type { AgentChatProps } from '../types';
 import { INSTINCT_HOST, InstinctSafari } from './InstinctSafari';
 import styles from './InstinctChat.module.scss';
@@ -138,6 +138,14 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
             {tapbackFor(i, all) && <span className={styles.tapback}>👍</span>}
           </span>
         );
+      case 'work':
+        return <WorkLine status={m.status} />;
+      case 'products':
+        return <ProductRow products={m.products} />;
+      case 'meta':
+        return <MetaLine meta={m.meta} />;
+      case 'divider':
+        return <Divider text={m.text} />;
       default: {
         const exhaustive: never = m;
         return exhaustive;
