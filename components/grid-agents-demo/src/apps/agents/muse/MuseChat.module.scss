@@ -10,7 +10,6 @@
   --muse-sunk: #eeeff0;
   --muse-rule: #e4e5e7;
   --muse-glyph: #111112;
-  --muse-edge: 252, 252, 252;
   --muse-accent: #0064d4;
   --part-surface: var(--muse-card);
   --part-sunk: var(--muse-sunk);
@@ -25,8 +24,11 @@
   --part-done-text: #0064d4;
   --part-chip: var(--muse-them);
   --part-chip-text: var(--muse-text);
+  --muse-choice: #a3a7aa;
+  --muse-dots: #5c5e61;
   background: var(--muse-bg);
   color: var(--muse-text);
+  font-family: 'Optimistic AI', var(--font-family-sf-pro);
 
   :global([data-theme='dark']) & {
     --muse-bg: #000;
@@ -39,22 +41,35 @@
     --muse-sunk: #2c2c2e;
     --muse-rule: #3a3a3c;
     --muse-glyph: #fff;
-    --muse-edge: 28, 28, 30;
     --muse-accent: #0a84ff;
+    --muse-choice: #636366;
+    --muse-dots: #aeaeb2;
     --part-done-text: #0a84ff;
   }
 }
 
-.edge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 132px;
-  z-index: 2;
-  background: linear-gradient(180deg, rgba(var(--muse-edge), 0.95) 0%, rgba(var(--muse-edge), 0.7) 55%, rgba(var(--muse-edge), 0) 100%);
-  pointer-events: none;
+// MockMuse's thread rhythm: 4 inside a sender's run, 12 between senders, 16
+// after a timestamp, 20 before an approval.
+$groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
+
+.screen [data-kind] + [data-kind] {
+  margin-top: 12px;
 }
+
+.screen :is(#{$groups}) + :is(#{$groups}),
+.screen [data-kind='me'] + [data-kind='me'] {
+  margin-top: 4px;
+}
+
+.screen [data-kind='stamp'] + [data-kind],
+.screen [data-kind='tag'] + [data-kind] {
+  margin-top: 16px;
+}
+
+.screen [data-kind] + [data-kind='ask'] {
+  margin-top: 20px;
+}
+
 
 .menu,
 .gift {
@@ -76,9 +91,27 @@
   top: 56px;
   left: 167px;
   z-index: 3;
+  overflow: hidden;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   corner-shape: round;
-  object-fit: cover;
+  background: #f5f4f6;
+
+  video,
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+
+    &[data-on] {
+      opacity: 1;
+    }
+  }
 }
 
 .status {
@@ -100,7 +133,7 @@
 
   strong {
     font-size: 15px;
-    font-weight: 510;
+    font-weight: 550;
   }
 
   span {
@@ -114,39 +147,145 @@
   }
 }
 
+// Bubbles: 22pt open corners, 6.5pt where a run joins (the agent's left side).
 .them,
 .me {
+  max-width: 348px;
   padding: 11px 16px;
-  border-radius: 20px;
+  border-radius: 22px;
   font-size: 17px;
   line-height: 22px;
 }
 
+.them,
+.noteWrap,
+.choices {
+  &[data-pos='first'],
+  &[data-pos='middle'] {
+    border-bottom-left-radius: 6.5px;
+  }
+
+  &[data-pos='middle'],
+  &[data-pos='last'] {
+    border-top-left-radius: 6.5px;
+  }
+}
+
 .them {
-  max-width: 330px;
   background: var(--muse-them);
 }
 
+// The typing bubble is a 68 × 44 capsule of three pulsing dots.
+.typing {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 44px;
+  padding: 0;
+  color: var(--muse-dots);
+
+  i {
+    animation-name: pulse;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}
+
 .me {
-  padding: 9px 16px;
-  max-width: 300px;
   background: var(--muse-me);
   color: var(--muse-me-text);
 }
 
-.sender,
-.stamp {
-  color: var(--muse-muted);
-  font-size: 12px;
-  line-height: 16px;
-}
-
-.sender {
-  margin: 0 0 4px 4px;
-}
-
 .stamp {
   align-self: center;
+  color: var(--muse-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+// Receipts and summaries ride in the agent's bubble, as Muse's own cards do.
+.noteWrap {
+  overflow: hidden;
+  width: 348px;
+  border-radius: 22px;
+  background: var(--muse-them);
+}
+
+.note {
+  --part-surface: transparent;
+  --part-shadow: none;
+  width: 100%;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8.33px;
+  width: 348px;
+  padding: 11px 16px;
+  border-radius: 22px;
+  background: var(--muse-them);
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 37.67px;
+  padding: 0 7px 0 11px;
+  border: 0;
+  border-radius: 8px;
+  background: no-repeat center / 100% 100%;
+  color: var(--muse-text);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+
+  // A 1pt border dashed 2 on, 2 off (CSS `dashed` can't set the dash).
+  &[data-state='open'],
+  &[data-state='dimmed'] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='8' fill='none' stroke='%23A3A7AA' stroke-width='2' stroke-dasharray='2 2'/%3E%3C/svg%3E");
+  }
+
+  &[data-state='open']:active {
+    opacity: 0.55;
+  }
+
+  &[data-state='selected'] {
+    box-shadow: inset 0 0 0 1px var(--muse-text);
+  }
+
+  &[data-state='dimmed'] {
+    color: var(--muse-muted);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.choiceCheck {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  background: var(--muse-text);
+  mask: url('/assets/agents/muse/check-filled.svg') no-repeat center / contain;
 }
 
 .card {
@@ -157,6 +296,23 @@
   border-radius: 28px;
   background: var(--muse-card);
   filter: drop-shadow(0 9.5px 22px rgba(0, 0, 0, 0.11));
+
+  .detail[data-pay],
+  .total,
+  .actions {
+    transition: opacity 0.2s ease-out;
+  }
+
+  &:not([data-ready]) {
+    .detail[data-pay],
+    .total {
+      opacity: 0.45;
+    }
+
+    .actions {
+      opacity: 0.5;
+    }
+  }
 }
 
 .cardTitle {
@@ -362,8 +518,9 @@
   opacity: 0.4;
 }
 
+// The app ramps its Allow blue in linear light, not gamma-encoded sRGB.
 .allow {
-  background: linear-gradient(90deg, #0064d4 0%, #4453e4 100%);
+  background: linear-gradient(90deg in srgb-linear, #0064d4, #4453e4);
   color: #fff;
 
   &[data-pressing] {
@@ -412,39 +569,57 @@
 }
 
 .field {
-  --placeholder: #8f9296;
+  --placeholder: #a4a6a9;
   font-size: 17px;
+  caret-color: var(--muse-accent);
 }
 
-.icon {
+.icon,
+.mic {
   width: 20px;
   height: 20px;
   background: var(--muse-glyph);
   mask: no-repeat center / contain;
 }
 
-.stop,
-.send {
+.mic {
+  background: #c6c6c6;
+}
+
+// Send and stop: 32pt circles in the user's bubble blue, glyph in the text ink.
+.circle {
   display: grid;
   place-items: center;
   width: 32px;
   height: 32px;
   border-radius: 50%;
   corner-shape: round;
-}
-
-.stop {
   background: #d0e4fc;
+  transition: scale 0.15s ease;
+  animation: pop 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+
+  [role='button']:active > & {
+    scale: 0.9;
+  }
 }
 
-.send {
-  background: linear-gradient(90deg, #0064d4 0%, #4453e4 100%);
-  color: #fff;
-  transition: scale 0.15s ease;
-
-  &[data-pressing] {
-    scale: 0.88;
+@keyframes pop {
+  from {
+    opacity: 0;
+    scale: 0.6;
   }
+}
+
+.sendGlyph {
+  width: 16px;
+  height: 18.67px;
+  background: #111112;
+  mask: url('/assets/agents/muse/send.png') no-repeat center / contain;
+}
+
+.slot[role='button'] {
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 // The iOS 26 tab bar (Figma Tab Bar - iPhone, 5 tabs) with Muse's own icons.

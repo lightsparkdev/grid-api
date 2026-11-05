@@ -12,6 +12,7 @@
 @use './fonts/inter';
 @use './fonts/geist';
 @use './fonts/circular';
+@use './fonts/optimistic-ai';
 @use '../apps/shared/typography/ios-type';
 @use '../styles/breakpoints' as *;
 
@@ -128,6 +129,10 @@ body {
      pure white/black at matched alpha — reads as the app surface with the
      frost showing through. */
   --float-sheet-tint: rgba(255, 255, 255, 0.85);
+  /* The agent chats' chrome glass (header buttons, composers, tab bars) frosting
+     the live thread: clear enough that bubbles read through as they pass. */
+  --chat-glass-tint: rgba(252, 252, 253, 0.6);
+  --chat-glass-ink: #111112;
 }
 
 [data-theme='dark'] {
@@ -139,6 +144,8 @@ body {
   --glass-symbol-backdrop: linear-gradient(180deg, #242426 0%, #1a1a1c 100%);
   --sheet-flat-edge: rgba(255, 255, 255, 0.1);
   --float-sheet-tint: rgba(0, 0, 0, 0.85);
+  --chat-glass-tint: rgba(36, 36, 38, 0.55);
+  --chat-glass-ink: #fff;
 }
 
 /* iPhone mock palette — the wallet is a self-contained iOS app preview, so it

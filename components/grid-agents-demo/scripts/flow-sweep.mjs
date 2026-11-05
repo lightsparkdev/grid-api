@@ -64,7 +64,7 @@ for (const connector of CONNECTORS) {
         answered += 1;
         continue;
       }
-      const chip = page.locator('[data-screen-body] button:enabled[class*="chip"]').first();
+      const chip = page.locator('[data-screen-body] button:enabled:is([class*="chip"], [class*="choice"])').first();
       if (await chip.count()) {
         await chip.click({ timeout: 1000 }).catch(() => {});
         answered += 1;

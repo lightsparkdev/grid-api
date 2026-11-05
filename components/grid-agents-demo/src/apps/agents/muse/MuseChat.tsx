@@ -1,14 +1,57 @@
+import { useEffect, useRef, useState } from 'react';
 import { TextMorph } from 'torph/react';
-import { SfSymbol } from '@/apps/shared/icons';
 import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
-import type { AskRow, Message } from '../conversation';
-import { askButtons, ChipRow, MORPH, NoteCard, RowGlyph } from '../parts';
+import type { AskRow, Chip, Message } from '../conversation';
+import { askButtons, MORPH, NoteCard, RowGlyph } from '../parts';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
 
-/** Figma 87:259, Muse · Approval (Meta Pay balance); dark from 124:3873. */
+/** Figma 87:259, Muse · Approval (Meta Pay balance); dark from 124:3873. Measures from MockMuse. */
 const A = '/assets/agents/muse';
+
+type AvatarMode = 'idle' | 'working' | 'still';
+
+/**
+ * muse.ai's own avatar loops: idle, working, and the full-body still while it
+ * needs approval, crossfaded on change. The hidden loop pauses so only one plays.
+ */
+function MuseAvatar({ mode }: { mode: AvatarMode }) {
+  const idle = useRef<HTMLVideoElement>(null);
+  const working = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const live = mode === 'idle' ? idle.current : mode === 'working' ? working.current : null;
+    for (const v of [idle.current, working.current]) {
+      if (!v) continue;
+      if (v === live) {
+        v.currentTime = 0;
+        v.play().catch(() => {});
+      } else {
+        const el = v;
+        window.setTimeout(() => el.pause(), 300);
+      }
+    }
+  }, [mode]);
+  return (
+    <div className={styles.avatar} aria-hidden>
+      <video ref={idle} src={`${A}/hatch.mp4`} muted loop playsInline autoPlay data-on={mode === 'idle' || undefined} />
+      <video ref={working} src={`${A}/hatch-working.mp4`} muted loop playsInline data-on={mode === 'working' || undefined} />
+      <img src={`${A}/hatch-still.png`} alt="" draggable={false} data-on={mode === 'still' || undefined} />
+    </div>
+  );
+}
+
+/** Agent bubbles, cards and choices join into one run: 6.5pt corners where they meet. */
+const GROUPS = new Set<Message['kind']>(['them', 'card', 'chips']);
+
+function groupPosition(i: number, all: Message[]) {
+  const up = i > 0 && GROUPS.has(all[i - 1].kind);
+  const down = i < all.length - 1 && GROUPS.has(all[i + 1].kind);
+  if (up && down) return 'middle';
+  if (up) return 'last';
+  if (down) return 'first';
+  return 'single';
+}
 
 function RowLead({ row }: { row: AskRow }) {
   if (row.image) return <img className={styles.product} src={row.image} alt="" width={32} height={32} />;
@@ -28,7 +71,44 @@ function RowLead({ row }: { row: AskRow }) {
   }
 }
 
-/** Meta Pay's approval sheet: what the agent wants, the details, the total, Deny or Allow. */
+/** Muse's choices: dashed chips in the agent's bubble; the pick takes a solid outline and a check. */
+function Choices({
+  chips,
+  picked,
+  expired,
+  onPick,
+  pos,
+}: {
+  chips: Chip[];
+  picked: number | null;
+  expired?: boolean;
+  onPick: (i: number) => void;
+  pos: string;
+}) {
+  const settled = picked !== null || !!expired;
+  return (
+    <div className={styles.choices} data-pos={pos}>
+      {chips.map((c, i) => (
+        <button
+          key={c.label}
+          type="button"
+          className={styles.choice}
+          data-state={picked === i ? 'selected' : settled ? 'dimmed' : 'open'}
+          disabled={settled}
+          onClick={() => onPick(i)}
+        >
+          <span>{c.label}</span>
+          {picked === i && <span className={styles.choiceCheck} />}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Meta Pay's approval sheet: what the agent wants, the details, the total, Deny
+ * or Allow. Payment and Total settle in after a beat, as Meta Pay loads them.
+ */
 function ApprovalCard({
   m,
   onAllow,
@@ -40,8 +120,14 @@ function ApprovalCard({
 }) {
   const { ask, state } = m;
   const b = askButtons(ask, state);
+  const [ready, setReady] = useState(state !== 'open');
+  useEffect(() => {
+    if (ready) return;
+    const t = window.setTimeout(() => setReady(true), 900);
+    return () => window.clearTimeout(t);
+  }, [ready]);
   return (
-    <div className={styles.card}>
+    <div className={styles.card} data-ready={ready || undefined}>
       <div className={styles.cardTitle}>
         <span>{ask.title}</span>
         {ask.badge && <span className={styles.merchant}>{ask.badge}</span>}
@@ -113,7 +199,7 @@ function ApprovalCard({
           type="button"
           className={styles.deny}
           data-chosen={state === 'denied' || undefined}
-          disabled={b.settled || b.pressing}
+          disabled={!ready || b.settled || b.pressing}
           onClick={onDeny}
         >
           <TextMorph {...MORPH}>{b.denyLabel}</TextMorph>
@@ -123,7 +209,7 @@ function ApprovalCard({
           className={styles.allow}
           data-pressing={b.pressing || undefined}
           data-done={state === 'done' || undefined}
-          disabled={b.settled || b.pressing}
+          disabled={!ready || b.settled || b.pressing}
           onClick={onAllow}
         >
           <TextMorph {...MORPH}>{b.allowLabel}</TextMorph>
@@ -148,25 +234,38 @@ const TABS = [
 ] as const;
 
 export function MuseChat({ chat }: AgentChatProps) {
-  const render = (m: Message) => {
+  const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
         return (
-          <>
-            {m.sender && <span className={styles.sender}>{m.sender}</span>}
-            <Said typing={m.typing} className={styles.them}>
-              {m.text}
-            </Said>
-          </>
+          <Said
+            typing={m.typing}
+            className={`${styles.them} ${m.typing ? styles.typing : ''}`}
+            pos={groupPosition(i, all)}
+          >
+            {m.text}
+          </Said>
         );
       case 'me':
         return <span className={styles.me}>{m.text}</span>;
       case 'ask':
         return <ApprovalCard m={m} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':
-        return <NoteCard note={m.card} />;
+        return (
+          <div className={styles.noteWrap} data-pos={groupPosition(i, all)}>
+            <NoteCard note={m.card} className={styles.note} />
+          </div>
+        );
       case 'chips':
-        return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.pick} expired={m.expired} />;
+        return (
+          <Choices
+            chips={m.chips}
+            picked={m.picked}
+            expired={m.expired}
+            onPick={chat.pick}
+            pos={groupPosition(i, all)}
+          />
+        );
       case 'tag':
       case 'stamp':
         return <span className={styles.stamp}>{m.text}</span>;
@@ -177,6 +276,8 @@ export function MuseChat({ chat }: AgentChatProps) {
     }
   };
 
+  const avatar: AvatarMode = chat.asking ? 'still' : chat.busy ? 'working' : 'idle';
+
   return (
     <ChatFrame
       className={styles.screen}
@@ -184,10 +285,10 @@ export function MuseChat({ chat }: AgentChatProps) {
       render={render}
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
-      gap={10}
+      gap={0}
       composerBottom={103}
       composerHeight={44}
-      edge={<div className={styles.edge} />}
+      fadeTop={[100, 178]}
       header={
         <>
           <div className={styles.menu}>
@@ -200,11 +301,11 @@ export function MuseChat({ chat }: AgentChatProps) {
             <span className={styles.statusText}>
               <strong>Muse</strong>
               <span data-asking={chat.asking || undefined}>
-                <TextMorph {...MORPH}>{chat.asking ? 'Needs approval' : 'Assistant'}</TextMorph>
+                <TextMorph {...MORPH}>{chat.asking ? 'Needs approval' : chat.busy ? 'Working' : 'Assistant'}</TextMorph>
               </span>
             </span>
           </GlassPill>
-          <img className={styles.avatar} src={`${A}/avatar.png`} alt="" width={68} height={68} draggable={false} />
+          <MuseAvatar mode={avatar} />
         </>
       }
       composer={
@@ -214,20 +315,26 @@ export function MuseChat({ chat }: AgentChatProps) {
               <span className={styles.icon} style={{ maskImage: `url(${A}/plus.svg)` }} />
             </span>
             <ComposerField chat={chat} placeholder="Message" className={styles.field} />
-            <span className={styles.slot}>
-              <span className={styles.icon} style={{ maskImage: `url(${A}/mic.svg)` }} />
-            </span>
-            <span className={styles.slot}>
-              {chat.composer ? (
-                <span className={styles.send} role="button" onClick={chat.send} data-ready={chat.canSend || undefined}>
-                  <SfSymbol name="arrow.up" size={15} />
+            {chat.composer ? (
+              <span className={styles.slot} role="button" aria-label="Send" onClick={chat.send}>
+                <span className={styles.circle} data-ready={chat.canSend || undefined}>
+                  <span className={styles.sendGlyph} />
                 </span>
-              ) : (
-                <span className={styles.stop}>
-                  <img src={`${A}/stop.svg`} alt="" width={15} height={15} />
+              </span>
+            ) : (
+              <>
+                <span className={styles.slot}>
+                  <span className={styles.mic} style={{ maskImage: `url(${A}/mic.svg)` }} />
                 </span>
-              )}
-            </span>
+                {chat.busy && (
+                  <span className={styles.slot}>
+                    <span className={styles.circle}>
+                      <img src={`${A}/stop.svg`} alt="" width={16} height={16} />
+                    </span>
+                  </span>
+                )}
+              </>
+            )}
           </span>
         </GlassPill>
       }

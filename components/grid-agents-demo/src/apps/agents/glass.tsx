@@ -1,15 +1,17 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { GlassOver } from '@/components/liquid-glass';
-import { GlassSymbolButton, TEXT_GLASS } from '@/apps/shared/glass';
+import { FrostPanel, type FrostSpecular } from '@/components/liquid-glass';
 import styles from './glass.module.scss';
 
-/** What the lens refracts: the same neutral surface the playground's glass symbol buttons sit on. */
-const BACKDROP = 'var(--glass-symbol-backdrop)';
-
 /**
- * Liquid glass of any size, the playground's own lens (the pill text button's
- * tuning): title pills, composers, tab bars, odd-sized discs. Truly round ends.
+ * The chat chrome's glass sits over the live thread, which scrolls and animates
+ * under it, so it frosts what passes behind (GPU `backdrop-filter`) and bakes the
+ * buttons' specular rim on top. A displacement lens can only bend a static copy.
  */
+const SPECULAR: FrostSpecular = { rotation: 45, glowStrength: 0.08, edgeStrength: 0.9, edgeWidth: 1.5 };
+const TINT = 'var(--chat-glass-tint)';
+const BLUR = 6;
+
+/** Glass of any size: title pills, composers, tab bars. Truly round ends. */
 export function GlassPill({
   radius,
   absolute,
@@ -18,27 +20,28 @@ export function GlassPill({
   children,
 }: {
   radius: number;
-  /** Floats over the screen (the lens otherwise sets itself `position: relative`). */
+  /** Floats over the screen (the panel otherwise sets itself `position: relative`). */
   absolute?: boolean;
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;
 }) {
   return (
-    <GlassOver
-      {...TEXT_GLASS}
+    <FrostPanel
       radius={radius}
-      backdrop={BACKDROP}
+      tint={TINT}
+      tintBlur={BLUR}
+      edge="none"
+      specular={SPECULAR}
       className={`${styles.pill} ${className ?? ''}`}
       style={{ borderRadius: radius, ...(absolute && { position: 'absolute' }), ...style }}
     >
       {children}
-    </GlassOver>
+    </FrostPanel>
   );
 }
 
-/** A 44pt round glass control holding a Figma glyph, inked in the button's
- *  own label color so it follows the theme. */
+/** A 44pt round glass control holding a Figma glyph, inked in the theme's label color. */
 export function GlassDisc({
   label,
   icon,
@@ -51,18 +54,20 @@ export function GlassDisc({
   height: number;
 }) {
   return (
-    <GlassSymbolButton aria-label={label} tabIndex={-1}>
-      <span
-        style={{
-          width,
-          height,
-          background: 'currentColor',
-          maskImage: `url(${icon})`,
-          maskRepeat: 'no-repeat',
-          maskPosition: 'center',
-          maskSize: 'contain',
-        }}
-      />
-    </GlassSymbolButton>
+    <GlassPill radius={22} className={styles.disc}>
+      <span role="img" aria-label={label} className={styles.discInner}>
+        <span
+          style={{
+            width,
+            height,
+            background: 'currentColor',
+            maskImage: `url(${icon})`,
+            maskRepeat: 'no-repeat',
+            maskPosition: 'center',
+            maskSize: 'contain',
+          }}
+        />
+      </span>
+    </GlassPill>
   );
 }

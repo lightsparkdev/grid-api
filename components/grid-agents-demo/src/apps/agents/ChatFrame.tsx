@@ -28,6 +28,7 @@ export function ChatFrame({
   composerBottom,
   composerHeight,
   gap = 8,
+  fadeTop,
   faceId,
   onFaceIdDone,
 }: {
@@ -37,7 +38,9 @@ export function ChatFrame({
   render: (m: Message, i: number, all: Message[]) => ReactNode;
   header: ReactNode;
   /** The brand's scroll-edge fade under the header. */
-  edge: ReactNode;
+  edge?: ReactNode;
+  /** Fade the thread itself out under the header, from clear at `[0]` to gone at `[1]` (pt from the top). */
+  fadeTop?: [number, number];
   composer: ReactNode;
   tabBar?: ReactNode;
   /** The composer's resting distance from the screen's foot, and its height (pt). */
@@ -61,7 +64,14 @@ export function ChatFrame({
         } as CSSProperties
       }
     >
-      <div className={styles.thread}>
+      <div
+        className={styles.thread}
+        style={
+          fadeTop && {
+            maskImage: `linear-gradient(180deg, transparent ${fadeTop[0]}px, #000 ${fadeTop[1]}px)`,
+          }
+        }
+      >
         <div className={styles.stack}>
           {messages.map((m, i) => (
             <motion.div
@@ -124,14 +134,17 @@ export function ComposerField({
 export function Said({
   typing,
   className,
+  pos,
   children,
 }: {
   typing: boolean;
   className?: string;
+  /** Where the bubble sits in a run of the sender's messages, for skins that join corners. */
+  pos?: string;
   children: ReactNode;
 }) {
   return (
-    <motion.div layout className={className} transition={motionTransition(easeOutSnappy, 0.45)}>
+    <motion.div layout className={className} data-pos={pos} transition={motionTransition(easeOutSnappy, 0.45)}>
       <AnimatePresence initial={false} mode="popLayout">
         {typing ? (
           <motion.div key="dots" exit={{ opacity: 0, filter: 'blur(4px)' }} transition={{ duration: 0.15 }}>
