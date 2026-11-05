@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   isCardParked,
   PHONE_FADE_IN_TRANSITION,
@@ -171,7 +171,8 @@ export function AppShell({
   // shape (`operator="out"`) — i.e. a true outset shadow that's a squircle on every
   // browser, and leaves the bezel transparent so the lens still shows through.
   // Tunable via the Shadow sliders (offset / blur / spread / opacity).
-  const shadowId = useRef(`phsh-${Math.random().toString(36).slice(2)}`).current;
+  // Stable across server and client render, so hydration doesn't see two ids.
+  const shadowId = `phsh-${useId().replace(/:/g, '')}`;
   const [shadowOpacity, setShadowOpacity] = useState(
     glassConfig.shadowOpacity ?? 0.12,
   );

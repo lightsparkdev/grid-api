@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { displacementMapToDataURL } from './displacement';
 import { squirclePath } from './squircle';
 import { useGlassEngine } from './useGlassEngine';
@@ -311,7 +311,8 @@ export default function LiquidGlass(props: LiquidGlassProps) {
   // (including the lens x/y), so it freezes the glass mid-drag while the plain
   // CSS shadow keeps moving. The fix (straight from Aave's writeup) is to mint a
   // FRESH id on every update — position included — which forces a clean repaint.
-  const baseId = useRef(`lg-${Math.random().toString(36).slice(2)}`).current;
+  // Stable across server and client render, so hydration doesn't see two ids.
+  const baseId = `lg-${useId().replace(/:/g, '')}`;
   const sig = `${mapUrl}|${lx}|${ly}|${lw}|${lh}|${cfg.scale}|${cfg.chromaticAberration}|${cfg.blur}|${cfg.specularStrength}|${cfg.glowStrength}|${cfg.edgeStrength}|${cfg.refreshKey ?? ''}|${isSafari ? 's' : 'c'}`;
   const verRef = useRef(0);
   const lastSig = useRef<string | null>(null);
