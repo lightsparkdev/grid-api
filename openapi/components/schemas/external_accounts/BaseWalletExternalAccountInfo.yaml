@@ -4,3 +4,4 @@ allOf:
   - $ref: ../common/BaseWalletInfo.yaml
   - $ref: ./WalletBeneficiaryFields.yaml
   - $ref: ./WalletCustodyFields.yaml
+  - $ref: ./ProviderWalletExternalAccountFields.yaml

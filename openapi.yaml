@@ -11043,13 +11043,15 @@ paths:
     post:
       summary: Issue a card
       description: |
-        Issue a new card for a cardholder. Every card is bound to one internal account, `fundingSource`, at create time. The cardholder must have KYC status `APPROVED` before a card can be issued; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
+        Issue a new card for a cardholder. Every card is bound to one account, `fundingSource`, at create time. The cardholder must have KYC status `APPROVED` before a card can be issued; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
 
         Card issuance is fee-bearing and cannot be reversed, so an `Idempotency-Key` header is required. Retries must carry the same key.
 
         Configure card velocity limits through `POST /card-velocity-limits`. Omit cardId to set platform defaults before issuance, or supply the returned card id to set card-specific limits after issuance. Limits use the smallest unit of the card's currency, including USD cents for USDB-funded USD cards.
 
         If the funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
+
+        If the funding source is a provider wallet external account, the cardholder must delegate the wallet to Grid at the provider, and Grid then creates the delegated key. Until that key is `ACTIVE`, Authorization Decisioning cannot use the account to fund card transactions.
 
         A platform may be limited to a maximum number of live cards. Once that limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED` until a card is closed or Lightspark raises the limit. Cards in `CLOSED` status do not count toward the limit.
 
@@ -11138,7 +11140,7 @@ paths:
             type: string
         - name: accountId
           in: query
-          description: Filter by internal account id. Returns cards whose `fundingSource` is the given internal account id.
+          description: Filter by internal or external account id. Returns cards whose `fundingSource` is the given account id.
           required: false
           schema:
             type: string
@@ -25321,6 +25323,40 @@ components:
           type: string
           description: Name of the VASP that custodies this account. Present when the wallet is held at an exchange or other custodial platform; omit it for self-custody wallets. Ownership verification applies only to self-custody wallets.
           example: Kraken
+    DynamicWalletInfo:
+      title: Dynamic Wallet
+      type: object
+      required:
+        - provider
+        - environmentId
+        - walletId
+      properties:
+        provider:
+          type: string
+          enum:
+            - DYNAMIC
+          description: The provider that custodies the wallet.
+          example: DYNAMIC
+        environmentId:
+          type: string
+          description: The Dynamic environment the wallet lives in. It must be configured for your platform.
+          example: f0e1d2c3-4b5a-4c6d-8e7f-0a1b2c3d4e5f
+        walletId:
+          type: string
+          description: Dynamic's identifier for the wallet.
+          example: b6f2c0e4-9d2a-4c1e-8f3b-2a7d5e9c1f40
+    ProviderWalletExternalAccountFields:
+      type: object
+      properties:
+        providerWallet:
+          description: The provider that custodies this wallet and the wallet's identity there. Accepted only on `POST /customers/external-accounts`. Omit it for a plain destination address. An account must carry it to fund a card.
+          oneOf:
+            - title: Dynamic Wallet
+              $ref: '#/components/schemas/DynamicWalletInfo'
+          discriminator:
+            propertyName: provider
+            mapping:
+              DYNAMIC: '#/components/schemas/DynamicWalletInfo'
     BaseWalletExternalAccountInfo:
       title: Base Wallet
       allOf:
@@ -25328,6 +25364,7 @@ components:
         - $ref: '#/components/schemas/BaseWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+        - $ref: '#/components/schemas/ProviderWalletExternalAccountFields'
     EthereumWalletExternalAccountInfo:
       title: Ethereum L1 Wallet
       allOf:
@@ -32275,7 +32312,7 @@ components:
           example: 2029
         fundingSource:
           type: string
-          description: Internal account id that funds this card.
+          description: Internal account id or crypto external account id that funds this card.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         cardCapabilities:
           $ref: '#/components/schemas/CardCapabilities'
@@ -32772,7 +32809,7 @@ components:
           $ref: '#/components/schemas/CardForm'
         fundingSource:
           type: string
-          description: Internal account id that funds this card. The account must belong to the customer and be denominated in a card-eligible currency; otherwise the request is rejected with `INVALID_INPUT`.
+          description: Internal account id, or the id of a crypto external account that carries `providerWallet`, that funds this card. The account must belong to the customer and be denominated in a card-eligible currency; otherwise the request is rejected with `INVALID_INPUT`. A provider wallet funds the card only while a delegated key on it is `ACTIVE`.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         maxNetworkRiskScore:
           type: integer
