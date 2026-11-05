@@ -259,7 +259,7 @@ export const MUSE_ORDER = (balance: number): AgentAsk => ({
     { text: RING_LIGHT.item, sub: 'Qty: 1', image: RING_LIGHT.image },
     { text: 'Standard by 2 to 5 business days', sub: ADDRESS, icon: 'truck' },
     { text: PERSON.email, sub: PERSON.phone, icon: 'envelope' },
-    { text: 'Muse balance', sub: `${usd2(balance)} available`, icon: 'meta' },
+    { text: 'Muse balance', sub: 'Pay with Muse balance', icon: 'meta' },
   ],
   total: usd2(RING_LIGHT.amount),
   method: `${usd2(balance)} available`,

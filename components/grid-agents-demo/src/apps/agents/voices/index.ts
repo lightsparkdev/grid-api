@@ -67,7 +67,7 @@ export function renderThread(messages: StoredMessage[], voice: Voice): Message[]
       case 'chips':
         return m;
       case 'work':
-        return { id: m.id, kind: 'work', status: voice.status(m.key, m.params) };
+        return { id: m.id, kind: 'work', key: m.key, status: voice.status(m.key, m.params) };
       case 'products':
         return { id: m.id, kind: 'products', products: voice.products(m.key) };
       case 'meta':

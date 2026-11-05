@@ -102,7 +102,7 @@ export type Message =
   | { id: number; kind: 'ask'; ask: AgentAsk; state: AskState }
   | { id: number; kind: 'card'; card: AgentNote; sender?: string }
   | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
-  | { id: number; kind: 'work'; status: string }
+  | { id: number; kind: 'work'; key: string; status: string }
   | { id: number; kind: 'products'; products: Product[] }
   | { id: number; kind: 'meta'; meta: AgentMeta }
   | { id: number; kind: 'divider'; text: string }

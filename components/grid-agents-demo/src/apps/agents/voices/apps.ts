@@ -53,6 +53,17 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     asks: {
       buy: (p) => MUSE_ORDER(n(p, 'balance')),
     },
+    status: {
+      searching: () => '🛍️ Searching stores',
+      filling: () => '📝 Filling checkout',
+      paying: () => '💳 Checking out',
+      quoting: () => '💱 Getting a quote',
+      sending: () => '💸 Sending',
+      setup: () => '✨ Setting up Muse balance',
+      checking: () => '👀 Checking your balance',
+      talking: () => `🏨 Talking to ${HOTEL.name}`,
+      watching: () => '⏳ Waiting for the payment',
+    },
   },
 
   /** xAI's bot: direct, a little dry. */

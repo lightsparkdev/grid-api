@@ -1,14 +1,59 @@
 import { useEffect, useRef, useState } from 'react';
 import { TextMorph } from 'torph/react';
-import { ChatFrame, ComposerField, Said } from '../ChatFrame';
+import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
+import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
+import { ChatFrame, ComposerField, NATIVE_IN, Said, TypingDots } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
-import type { AskRow, Chip, Message } from '../conversation';
-import { askButtons, Divider, MetaLine, MORPH, NoteCard, ProductRow, RowGlyph, WorkLine } from '../parts';
+import type { AskRow, Chip, Message, Product } from '../conversation';
+import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph } from '../parts';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
 
-/** Figma 87:259, Muse · Approval (Meta Pay balance); dark from 124:3873. Measures from MockMuse. */
+/** Muse, from recording 9 (refs/muse/spec.md) over Figma 87:259 and its dark 124:3873. */
 const A = '/assets/agents/muse';
+
+/** What the agent does in a browser: these show as the Browser card while they run. */
+const BROWSING = new Set(['searching', 'filling', 'paying']);
+
+/** The Browser card: Muse working a page for you, a blurred look at it, and Open browser. */
+function BrowserCard({ status, waiting }: { status: string; waiting?: boolean }) {
+  return (
+    <div className={styles.browser}>
+      <div className={styles.browserHead}>
+        <span className={styles.globe}>
+          <IconGlobe size={14} />
+        </span>
+        <span className={styles.browserTitle}>
+          <strong>Browser</strong>
+          <small>{waiting ? 'Waiting' : status.replace(/^\S+\s/, '')}</small>
+        </span>
+      </div>
+      <div className={styles.preview} aria-hidden>
+        <span className={styles.previewBar} />
+        <span className={styles.previewHero} />
+        <span className={styles.previewLine} />
+        <span className={styles.previewLine} data-short />
+      </div>
+      <span className={styles.openBrowser}>Open browser</span>
+    </div>
+  );
+}
+
+/** What Muse found, as entity links in its bubble: a thumbnail, the name in bold, the price. */
+function EntityLinks({ products }: { products: Product[] }) {
+  return (
+    <div className={styles.them}>
+      {products.map((p, i) => (
+        <span key={p.title} className={styles.entityLine}>
+          {i > 0 && ' '}
+          <img src={p.image} alt="" className={styles.entityThumb} />
+          <strong className={styles.entity}>{p.title}</strong> at {p.price}
+          {p.pick ? ' is my pick.' : i === 1 ? ', or' : '.'}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 type AvatarMode = 'idle' | 'working' | 'still';
 
@@ -128,6 +173,15 @@ function ApprovalCard({
   }, [ready]);
   return (
     <div className={styles.card} data-ready={ready || undefined}>
+      <div className={styles.browserHead}>
+        <span className={styles.globe}>
+          <IconGlobe size={14} />
+        </span>
+        <span className={styles.browserTitle}>
+          <strong>Checkout</strong>
+          <small>{state === 'open' ? 'Waiting for you' : state === 'done' ? 'Done' : state === 'denied' ? 'Stopped' : state === 'expired' ? 'Expired' : 'Working'}</small>
+        </span>
+      </div>
       <div className={styles.cardTitle}>
         <span>{ask.title}</span>
         {ask.badge && <span className={styles.merchant}>{ask.badge}</span>}
@@ -225,14 +279,6 @@ function ApprovalCard({
   );
 }
 
-const TABS = [
-  ['tab-chat', 52, 811, 25.3, 22.7],
-  ['tab-feed', 122, 810, 22.7, 22.7],
-  ['tab-ideas', 192, 810, 17.7, 23.3],
-  ['tab-goals', 258, 810, 22.7, 22.7],
-  ['tab-library', 326, 811, 22, 21.7],
-] as const;
-
 export function MuseChat({ chat }: AgentChatProps) {
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
@@ -270,9 +316,15 @@ export function MuseChat({ chat }: AgentChatProps) {
       case 'stamp':
         return <span className={styles.stamp}>{m.text}</span>;
       case 'work':
-        return <WorkLine status={m.status} />;
+        return BROWSING.has(m.key) ? (
+          <BrowserCard status={m.status} />
+        ) : (
+          <span className={`${styles.them} ${styles.typing}`}>
+            <TypingDots />
+          </span>
+        );
       case 'products':
-        return <ProductRow products={m.products} />;
+        return <EntityLinks products={m.products} />;
       case 'meta':
         return <MetaLine meta={m.meta} />;
       case 'divider':
@@ -285,31 +337,37 @@ export function MuseChat({ chat }: AgentChatProps) {
   };
 
   const avatar: AvatarMode = chat.asking ? 'still' : chat.busy ? 'working' : 'idle';
+  const work = chat.messages.find((m): m is Extract<Message, { kind: 'work' }> => m.kind === 'work');
+  const subtitle = chat.asking ? 'Needs approval' : work ? work.status : chat.busy ? 'is working' : '';
 
   return (
     <ChatFrame
       className={styles.screen}
       messages={chat.messages}
       render={render}
+      rowMotion={() => NATIVE_IN}
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={0}
       threadTop={178}
-      composerBottom={103}
-      composerHeight={44}      header={
+      composerBottom={30}
+      composerHeight={46}
+      header={
         <>
           <div className={styles.menu}>
             <GlassDisc label="Menu" icon={`${A}/menu.svg`} width={32} height={32} />
           </div>
-          <div className={styles.gift}>
-            <GlassDisc label="Gift" icon={`${A}/gift.svg`} width={24} height={24} />
-          </div>
+          <GlassPill radius={22} absolute className={styles.invite}>
+            <span className={styles.inviteText}>Invite</span>
+          </GlassPill>
           <GlassPill radius={16} absolute className={styles.status}>
             <span className={styles.statusText}>
               <strong>Muse</strong>
-              <span data-asking={chat.asking || undefined}>
-                <TextMorph {...MORPH}>{chat.asking ? 'Needs approval' : chat.busy ? 'Working' : 'Assistant'}</TextMorph>
-              </span>
+              {subtitle && (
+                <span data-asking={chat.asking || undefined}>
+                  <TextMorph {...MORPH}>{subtitle}</TextMorph>
+                </span>
+              )}
             </span>
           </GlassPill>
           <MuseAvatar mode={avatar} />
@@ -324,8 +382,8 @@ export function MuseChat({ chat }: AgentChatProps) {
             <ComposerField chat={chat} placeholder="Message" className={styles.field} />
             {chat.composer ? (
               <span className={styles.slot} role="button" aria-label="Send" onClick={chat.send}>
-                <span className={styles.circle} data-ready={chat.canSend || undefined}>
-                  <span className={styles.sendGlyph} />
+                <span className={styles.sendCircle} data-ready={chat.canSend || undefined}>
+                  <IconArrowUp size={18} />
                 </span>
               </span>
             ) : (
@@ -335,8 +393,8 @@ export function MuseChat({ chat }: AgentChatProps) {
                 </span>
                 {chat.busy && (
                   <span className={styles.slot}>
-                    <span className={styles.circle}>
-                      <img src={`${A}/stop.svg`} alt="" width={16} height={16} />
+                    <span className={styles.circle} aria-label="Stop">
+                      <span className={styles.stopSquare} />
                     </span>
                   </span>
                 )}
@@ -344,20 +402,6 @@ export function MuseChat({ chat }: AgentChatProps) {
             )}
           </span>
         </GlassPill>
-      }
-      tabBar={
-        <div className={styles.tabBar}>
-          <GlassPill radius={29} absolute className={styles.tabPill}>
-            <span className={styles.tabSelected} />
-          </GlassPill>
-          {TABS.map(([icon, x, y, w, h]) => (
-            <span
-              key={icon}
-              className={styles.tabIcon}
-              style={{ left: x, top: y - 779, width: w, height: h, maskImage: `url(${A}/${icon}.png)` }}
-            />
-          ))}
-        </div>
       }
     />
   );
