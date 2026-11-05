@@ -31,15 +31,15 @@ export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
  *  --color-blue-500, --icon-info) with steps between for the extra rows. */
 export const FLOW_ICON_COLORS: Record<ActionId, string> = {
   connect: '#34C759',
-  fund: '#22B96C',
-  limits: 'var(--icon-success)',
-  balance: '#0BAB8F',
-  pay: '#05AEB8',
-  buy: 'var(--color-sky-500)',
-  agent: '#00A2EE',
+  limits: '#22B96C',
+  fund: 'var(--icon-success)',
+  cashout: '#0BAB8F',
+  balance: '#05AEB8',
+  history: 'var(--color-sky-500)',
+  pay: '#00A2EE',
   getpaid: 'var(--color-blue-500)',
-  cashout: '#0082ED',
-  history: 'var(--icon-info)',
+  buy: '#0082ED',
+  agent: 'var(--icon-info)',
 };
 
 function actionIdForLabel(label: string): ActionId | undefined {
