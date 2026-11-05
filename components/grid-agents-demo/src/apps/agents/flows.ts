@@ -107,6 +107,7 @@ const limits = (ctx: FlowContext): Beat[] => {
 };
 
 const pay = (ctx: FlowContext): Beat[] => [
+  { react: '👍' },
   { work: 'quoting', ms: 1200 },
   { emit: { type: 'pay.quote', payee: SOFIA } },
   { say: 'pay.intro' },
@@ -139,6 +140,7 @@ const buy = (ctx: FlowContext): Beat[] => {
     ];
   }
   return [
+    { react: '👍' },
     { work: 'searching', ms: 1800 },
     { say: 'buy.intro' },
     { products: 'buy.options' },

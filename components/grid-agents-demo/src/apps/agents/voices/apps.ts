@@ -71,6 +71,37 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'balance.answer': (p) => `${usd2(n(p, 'balance'))}. Here’s the breakdown.`,
       fallback: () => 'Not my department here. I only handle your account. Pick a flow on the left.',
     },
+    asks: {
+      connect: (p) => ({
+        ...ASKS.connect(p),
+        form: {
+          title: 'Turn on Bot balance',
+          sub: 'Set what your Bot can spend. Only you can change these.',
+          sheetTitle: 'Bot balance',
+          fields: [
+            { label: 'Per payment', value: usd(n(p, 'perTx')) },
+            { label: 'Per day', value: usd(n(p, 'daily')) },
+            { label: 'Ask me above', value: usd(n(p, 'approve')) },
+          ],
+          toggle: 'Face ID for anything over the limit',
+          submitted: 'Turned on Bot balance',
+        },
+      }),
+      limits: (p) => ({
+        ...ASKS.limits(p),
+        form: {
+          title: 'Update your Bot’s limits',
+          sub: 'Your Bot can’t change its own limits. Review and save them here.',
+          sheetTitle: 'Limits',
+          fields: [
+            { label: `Acts alone up to (was ${usd(n(p, 'fromApprove'))})`, value: usd(n(p, 'approve')) },
+            { label: `Per day (was ${usd(n(p, 'fromDaily'))})`, value: usd(n(p, 'daily')) },
+            { label: `Per payment (was ${usd(n(p, 'fromPerTx'))})`, value: usd(n(p, 'perTx')) },
+          ],
+          submitted: 'Saved new limits',
+        },
+      }),
+    },
   },
 
   /** OpenAI's dot: casual, lowercase, upbeat. */

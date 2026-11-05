@@ -147,21 +147,21 @@ export const ASKS = {
     deny: 'Decline',
     denied: 'Declined',
   }),
-  buy: () => ({
+  buy: (p) => ({
     title: `Buy at ${RING_LIGHT.merchant}`,
-    who: { name: RING_LIGHT.merchant, detail: `${RING_LIGHT.item} · one-time card` },
+    who: { name: RING_LIGHT.merchant, icon: RING_LIGHT.image, detail: `${RING_LIGHT.item} · one-time card` },
     amount: usd2(RING_LIGHT.amount),
-    method: 'One-time Visa · closes after one charge',
+    method: `From ${s(p, 'wallet')} · one-time card`,
     allow: 'Approve',
     allowed: 'Approved',
     deny: 'Decline',
     denied: 'Declined',
   }),
-  sub: () => ({
+  sub: (p) => ({
     title: `Subscribe to ${SUBSCRIPTION.item}`,
     who: { name: SUBSCRIPTION.merchant, detail: `Up to ${usd2(SUBSCRIPTION.amount)} a month · card locked to ${SUBSCRIPTION.merchant}` },
     amount: `${usd2(SUBSCRIPTION.amount)}/mo`,
-    method: 'Recurring Visa · only Duolingo can charge it',
+    method: `From ${s(p, 'wallet')} · card only ${SUBSCRIPTION.merchant} can charge`,
     allow: 'Approve',
     allowed: 'Approved',
     deny: 'Decline',

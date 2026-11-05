@@ -26,6 +26,16 @@ export interface AskRow {
   image?: string;
 }
 
+/** A form the person fills in and submits as their approval (Grok's consent and limits). */
+export interface AgentForm {
+  title: string;
+  sub: string;
+  sheetTitle: string;
+  fields: { label: string; value: string }[];
+  toggle?: string;
+  submitted: string;
+}
+
 /**
  * What the agent needs the person to approve. One shape for every skin: Muse
  * draws it as Meta Pay's order sheet, Grok as a payout row, Claude as a spend
@@ -48,8 +58,9 @@ export interface AgentAsk {
   allowed?: string;
   deny?: string;
   denied?: string;
-  /** The merchant whose terms the person accepts by allowing (Meta Pay's footnote). */
+  /** The merchant whose terms the person accepts by allowing (Muse's footnote). */
   legal?: string;
+  form?: AgentForm;
 }
 
 /** An info card in the thread: a receipt, an address, a summary, a list. */

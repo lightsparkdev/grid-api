@@ -60,7 +60,7 @@ export const ACTIONS: ActionDef[] = [
     id: 'connect',
     label: 'Connect',
     desc: 'Give the agent its own account, with a policy',
-    prompts: ['Connect my Lightspark account'],
+    prompts: ['Set up a balance so you can pay for things'],
   },
   {
     id: 'fund',

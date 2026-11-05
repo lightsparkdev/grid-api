@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, type TargetAndTransition, type Transition } from 'motion/react';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { easeOutSnappy, motionTransition } from '@/lib/easing';
@@ -9,6 +9,32 @@ import type { ChatView } from './types';
 import styles from './ChatFrame.module.scss';
 
 const ROW_IN = motionTransition(easeOutSnappy, 0.5);
+
+/** How the thread moves up when something lands at its foot (fitted to the Grok and Dots captures, 233–300ms). */
+export const THREAD_SCROLL: Transition = { duration: 0.28, ease: [0.28, 0.05, 0.65, 1] };
+
+/** How a row arrives: where it starts, where it lands, and how it gets there. */
+export interface RowMotion {
+  initial: TargetAndTransition;
+  animate: TargetAndTransition;
+  transition: Transition;
+}
+
+const SOFT_IN: RowMotion = {
+  initial: { opacity: 0, y: 14, filter: 'blur(6px)' },
+  animate: { opacity: 1, y: 0, filter: 'blur(0px)' },
+  transition: ROW_IN,
+};
+
+/**
+ * The native apps' arrival (Dots, Muse, Grok in the captures): a row mounts in
+ * its final place, pale, and fills in over ~150ms while the thread rises.
+ */
+export const NATIVE_IN: RowMotion = {
+  initial: { opacity: 0.25 },
+  animate: { opacity: 1 },
+  transition: { duration: 0.15, ease: [0, 0, 0.2, 1] },
+};
 /** The composer takes a sentence, not an essay (the model's guardrails start here). */
 export const COMPOSER_MAX = 300;
 /** The field grows a line at a time to this many, then scrolls. */
@@ -34,9 +60,12 @@ export function ChatFrame({
   fadeTop,
   faceId,
   onFaceIdDone,
+  rowMotion,
 }: {
   className?: string;
   messages: Message[];
+  /** How each row arrives; defaults to a soft rise. */
+  rowMotion?: (m: Message) => RowMotion;
   /** A message, given the thread around it (group chats show a sender's name and avatar once per run). */
   render: (m: Message, i: number, all: Message[]) => ReactNode;
   header: ReactNode;
@@ -96,15 +125,16 @@ export function ChatFrame({
             const node = render(m, i, messages);
             // A skin may draw a message elsewhere (Muse's status sits in its header).
             if (node === null) return null;
+            const enter = rowMotion?.(m) ?? SOFT_IN;
             return (
               <motion.div
                 key={m.id}
                 layout="position"
                 className={styles.row}
                 data-kind={m.kind}
-                initial={{ opacity: 0, y: 14, filter: 'blur(6px)' }}
-                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                transition={ROW_IN}
+                initial={enter.initial}
+                animate={enter.animate}
+                transition={{ ...enter.transition, layout: THREAD_SCROLL }}
               >
                 {node}
               </motion.div>
@@ -134,15 +164,42 @@ export function ComposerField({
   chat,
   placeholder,
   className,
+  onMultiline,
 }: {
   chat: Pick<ChatView, 'composer' | 'setComposer' | 'send'>;
   placeholder: string;
   className?: string;
+  /**
+   * The text has outgrown one row. Skins whose composer turns into a card
+   * (text on top, buttons below) relayout on this; it holds until the text is
+   * shorter than where it first overflowed, so the wider card can't flip it back.
+   */
+  onMultiline?: (multiline: boolean) => void;
 }) {
   const wrap = useRef<HTMLSpanElement>(null);
   const twin = useRef<HTMLTextAreaElement>(null);
   const [height, setHeight] = useState<number | null>(null);
   const [lines, setLines] = useState(1);
+  const overflowAt = useRef<number | null>(null);
+  const [multiline, setMultiline] = useState(false);
+  const report = useRef(onMultiline);
+  report.current = onMultiline;
+
+  useLayoutEffect(() => {
+    const len = chat.composer.length;
+    let next = multiline;
+    if (!multiline && (lines > 1 || chat.composer.includes('\n'))) {
+      overflowAt.current = len;
+      next = true;
+    } else if (multiline && !chat.composer.includes('\n') && len < (overflowAt.current ?? 0)) {
+      overflowAt.current = null;
+      next = false;
+    }
+    if (next !== multiline) {
+      setMultiline(next);
+      report.current?.(next);
+    }
+  }, [chat.composer, lines, multiline]);
 
   useLayoutEffect(() => {
     const el = twin.current;
@@ -164,7 +221,7 @@ export function ComposerField({
   }, [chat.composer]);
 
   return (
-    <span ref={wrap} className={`${styles.fieldWrap} ${className ?? ''}`} data-multiline={lines > 1 || undefined}>
+    <span ref={wrap} className={`${styles.fieldWrap} ${className ?? ''}`} data-multiline={multiline || undefined}>
       <textarea
         className={styles.field}
         style={{ height: height ?? undefined }}
@@ -201,20 +258,16 @@ export function Said({
   pos?: string;
   children: ReactNode;
 }) {
+  // The dots give way at once and the text fills in from pale (~150ms, as Dots and Muse do it) while the bubble grows.
   return (
-    <motion.div layout className={className} data-pos={pos} transition={motionTransition(easeOutSnappy, 0.45)}>
+    <motion.div layout className={className} data-pos={pos} data-typing={typing || undefined} transition={THREAD_SCROLL}>
       <AnimatePresence initial={false} mode="popLayout">
         {typing ? (
-          <motion.div key="dots" exit={{ opacity: 0, filter: 'blur(4px)' }} transition={{ duration: 0.15 }}>
+          <motion.div key="dots" exit={{ opacity: 0 }} transition={{ duration: 0.08 }}>
             <TypingDots />
           </motion.div>
         ) : (
-          <motion.div
-            key="text"
-            initial={{ opacity: 0, filter: 'blur(4px)' }}
-            animate={{ opacity: 1, filter: 'blur(0px)' }}
-            transition={motionTransition(easeOutSnappy, 0.4)}
-          >
+          <motion.div key="text" initial={{ opacity: 0.25 }} animate={{ opacity: 1 }} transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}>
             {children}
           </motion.div>
         )}

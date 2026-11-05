@@ -1,110 +1,332 @@
-import { TextMorph } from 'torph/react';
+import { useState } from 'react';
+import { AnimatePresence, motion, type Transition } from 'motion/react';
+import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
+import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
+import { IconChevronGrabberVertical } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronGrabberVertical';
+import { IconClock } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconClock';
+import { IconCrossSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossSmall';
+import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
+import { IconHome } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHome';
+import { IconPaperPlane } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPaperPlane';
+import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconTag';
 import { Flag } from '@/apps/shared/Flag';
-import { ChatFrame, ComposerField, Said } from '../ChatFrame';
+import { ChatFrame, ComposerField, NATIVE_IN, type RowMotion } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
-import type { Message } from '../conversation';
-import { askButtons, AskCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, WorkLine } from '../parts';
+import type { AgentAsk, Chip, Message, Product } from '../conversation';
+import { Divider, NoteCard } from '../parts';
+import { AppSheet } from '../sheet';
 import type { AgentChatProps } from '../types';
+import { GrokEyes } from './GrokEyes';
 import styles from './GrokChat.module.scss';
 
-/** Figma 89:95, Grok Bot · Pay abroad (PIX). */
+/** Grok Bot, rebuilt from recordings 10-13 and IMG_1849-1857 (refs/grok/spec.md). */
 const A = '/assets/agents/grok';
-
 const mask = (src: string) => ({ maskImage: `url(${src})` });
 
-/** Grok's payout row: who, what, and Approve, with its promise under it. */
-function PayoutCard({
-  m,
-  onAllow,
-  onDeny,
-}: {
-  m: Extract<Message, { kind: 'ask' }>;
-  onAllow: () => void;
-  onDeny: () => void;
-}) {
-  const { ask, state } = m;
-  const b = askButtons(ask, state);
-  const name = ask.who?.name ?? ask.title;
-  const detail = ask.who?.detail ?? [ask.amount, ask.method].filter(Boolean).join(' · ');
+type Ask = Extract<Message, { kind: 'ask' }>;
+
+/** The composer turning into a card: critically damped, ~300ms (fitted: stiffness 975, damping 62). */
+const COMPOSER_SPRING: Transition = { type: 'spring', stiffness: 975, damping: 62, mass: 1 };
+/** The form sheet: cubic-bezier(0.30, 0.70, 0.20, 1) over 450ms. */
+const SHEET_IN: Transition = { duration: 0.45, ease: [0.3, 0.7, 0.2, 1] };
+/** Your bubble lands in place at once; its fill darkens from gray (see .me). */
+const SENT: RowMotion = { initial: { opacity: 1 }, animate: { opacity: 1 }, transition: { duration: 0 } };
+/** The reaction pop: scale 0 → ~1.2 → 1 in ~200ms. */
+const POP: Transition = { type: 'spring', stiffness: 700, damping: 17, mass: 0.7 };
+
+/** The status label with Grok's dark shimmer band sweeping across it. */
+function Shimmer({ children }: { children: string }) {
+  return <span className={styles.shimmer}>{children}</span>;
+}
+
+/** What the bot is doing: its face, then the label, at the thread's foot. */
+function StatusRow({ label, typing }: { label: string; typing?: boolean }) {
   return (
-    <div className={styles.payoutWrap}>
-      <div className={styles.payout}>
-        <span className={styles.flagTile}>
-          {ask.who?.flag ? <Flag code={ask.who.flag} size={34} /> : name[0]}
+    <div className={styles.status}>
+      {typing ? (
+        <span className={styles.typingDots} aria-hidden>
+          <i />
+          <i />
+          <i />
         </span>
-        <span className={styles.payoutText}>
-          <span className={styles.payoutName}>
-            {name}
-            {ask.who && <img src={`${A}/verified.svg`} alt="" width={16} height={16} />}
-          </span>
-          <span className={styles.payoutDetail}>{detail}</span>
-        </span>
-        <button
-          type="button"
-          className={styles.approve}
-          data-pressing={b.pressing || undefined}
-          data-done={state === 'done' || undefined}
-          data-muted={state === 'denied' || state === 'expired' || undefined}
-          disabled={b.settled || b.pressing}
-          onClick={onAllow}
-        >
-          <TextMorph {...MORPH}>{state === 'denied' ? b.denyLabel : b.allowLabel}</TextMorph>
-        </button>
-      </div>
-      <p className={styles.caption}>
-        Grok Bot always asks before moving money over your limit.{' '}
-        {!b.settled && !b.pressing && (
-          <button type="button" className={styles.decline} onClick={onDeny}>
-            {ask.deny ?? 'Decline'}
-          </button>
-        )}
-      </p>
+      ) : (
+        <GrokEyes size={26} mode="working" />
+      )}
+      <Shimmer>{label}</Shimmer>
     </div>
   );
 }
 
+/** Lettered options in a white card, with the hint to answer in the chat instead. */
+function ChoiceCard({ m, onPick }: { m: Extract<Message, { kind: 'chips' }>; onPick: (i: number) => void }) {
+  const done = m.picked !== null || m.expired;
+  return (
+    <div className={styles.choiceWrap}>
+      <div className={styles.choice} data-done={done || undefined}>
+        <span className={styles.choiceClose} aria-hidden>
+          <IconCrossSmall size={16} />
+        </span>
+        {m.chips.map((c: Chip, i) => (
+          <button
+            key={c.label}
+            type="button"
+            className={styles.option}
+            data-picked={m.picked === i || undefined}
+            disabled={done}
+            onClick={() => onPick(i)}
+          >
+            <span className={styles.key}>{String.fromCharCode(65 + i)}</span>
+            {c.flag && <Flag code={c.flag} size={18} />}
+            {c.label}
+          </button>
+        ))}
+      </div>
+      {!done && <span className={styles.hint}>Or answer in the chat below</span>}
+    </div>
+  );
+}
+
+/** What the bot found: a sideways carousel of product cards. */
+function Products({ products }: { products: Product[] }) {
+  return (
+    <div className={styles.products}>
+      {products.map((p) => (
+        <div key={p.title} className={styles.product}>
+          <span className={styles.productImage}>
+            <img src={p.image} alt="" />
+          </span>
+          <span className={styles.productText}>
+            <strong>{p.title}</strong>
+            {p.rating && <small>★ {p.rating}</small>}
+            <span>{p.price}</span>
+            <span className={styles.productMerchant}>
+              <i>{p.merchant[0]}</i>
+              {p.merchant}
+            </span>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Consent and limits: a form card; Continue opens the sheet, and once sent it folds to one line. */
+function FormCard({ m, onOpen }: { m: Ask; onOpen: () => void }) {
+  const f = m.ask.form!;
+  if (m.state !== 'open') {
+    const label =
+      m.state === 'denied' ? 'Canceled' : m.state === 'expired' ? 'Expired' : m.state === 'done' ? f.submitted : 'Submitting…';
+    return (
+      <div className={styles.formDone}>
+        <IconGlobe size={16} />
+        <span>Form</span>
+        <small>{label}</small>
+        <IconChevronGrabberVertical size={14} />
+      </div>
+    );
+  }
+  return (
+    <div className={styles.form}>
+      <span className={styles.formKind}>
+        <IconGlobe size={16} />
+        Form
+      </span>
+      <strong>{f.title}</strong>
+      <span className={styles.formSub}>{f.sub}</span>
+      <button type="button" className={styles.continue} onClick={onOpen}>
+        Continue
+      </button>
+    </div>
+  );
+}
+
+/** The form's sheet: Cancel, the title and a blue Done; the fields come filled in. */
+function FormSheet({ ask, onCancel, onDone }: { ask: AgentAsk; onCancel: () => void; onDone: () => void }) {
+  const f = ask.form!;
+  const [on, setOn] = useState(true);
+  return (
+    <div className={styles.sheet}>
+      <div className={styles.sheetBar}>
+        <button type="button" className={styles.sheetCancel} onClick={onCancel}>
+          Cancel
+        </button>
+        <strong>{f.sheetTitle}</strong>
+        <button type="button" className={styles.sheetDone} onClick={onDone}>
+          Done
+        </button>
+      </div>
+      <div className={styles.fields}>
+        {f.fields.map((x) => (
+          <label key={x.label} className={styles.field}>
+            <span>{x.label}</span>
+            <span className={styles.input}>{x.value}</span>
+          </label>
+        ))}
+        {f.toggle && (
+          <button type="button" className={styles.toggleRow} onClick={() => setOn((v) => !v)} aria-pressed={on}>
+            {f.toggle}
+            <span className={styles.switch} data-on={on || undefined}>
+              <i />
+            </span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Money out: the order card, Pay in black; it collapses while it pays, then tracks. */
+function OrderCard({ m, onAllow, onDeny }: { m: Ask; onAllow: () => void; onDeny: () => void }) {
+  const { ask, state } = m;
+  const who = ask.who;
+  const order = !!who?.icon || ask.allowed === 'Approved';
+  const placing = state === 'pressing' || state === 'authing';
+  const tile = who?.flag ? <Flag code={who.flag} size={20} /> : <span>{(who?.name ?? ask.title)[0]}</span>;
+  const method = ask.method?.replace(/^From /, '');
+  return (
+    <div className={styles.order} data-state={state}>
+      <div className={styles.orderHead}>
+        <span className={styles.orderTile}>{tile}</span>
+        <span>{who?.name ?? ask.title}</span>
+        {state === 'done' && <small>{order ? 'PRP9GNCWF' : 'Settled'}</small>}
+      </div>
+      {state === 'done' ? (
+        <>
+          <strong className={styles.orderTitle}>{order ? 'Your order is confirmed' : 'Payment sent'}</strong>
+          <span className={styles.orderSub}>{who?.detail.split(' · ')[0] ?? ask.title}</span>
+          <div className={styles.track} data-full={!order || undefined}>
+            <span className={styles.trackEnd}>
+              <IconPaperPlane size={12} />
+            </span>
+            <span className={styles.trackBar}>
+              <i />
+            </span>
+            <span className={styles.trackMark}>{order ? <IconTag size={12} /> : <IconCheckmark1 size={12} />}</span>
+            {order && (
+              <span className={styles.trackEnd}>
+                <IconHome size={12} />
+              </span>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className={styles.orderItem}>
+            {who?.icon && <img src={who.icon} alt="" />}
+            <span>
+              <strong>{ask.title}</strong>
+              <small>{who?.detail}</small>
+            </span>
+          </div>
+          {state === 'open' && (
+            <>
+              <div className={styles.orderLines}>
+                <span>Total</span>
+                <strong>{ask.amount}</strong>
+                {method && (
+                  <>
+                    <span>Pay with</span>
+                    <span>{method}</span>
+                  </>
+                )}
+              </div>
+              <div className={styles.orderActions}>
+                <button type="button" className={styles.cancel} onClick={onDeny}>
+                  Cancel
+                </button>
+                <button type="button" className={styles.pay} onClick={onAllow}>
+                  Pay {ask.amount}
+                </button>
+              </div>
+            </>
+          )}
+          {placing && (
+            <span className={styles.orderFoot}>
+              <Shimmer>{order ? 'Placing your order…' : 'Sending…'}</Shimmer>
+            </span>
+          )}
+          {(state === 'denied' || state === 'expired') && (
+            <span className={styles.orderFoot}>{state === 'denied' ? 'Canceled. Nothing was charged.' : 'This request expired.'}</span>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/** A receipt right after the order card it settles would say it twice; the card already tracks it. */
+function settledByOrder(i: number, all: Message[]) {
+  for (let j = i - 1; j >= 0; j--) {
+    const m = all[j];
+    if (m.kind === 'me') return false;
+    if (m.kind === 'ask') return m.state === 'done' && !m.ask.form;
+  }
+  return false;
+}
+
 export function GrokChat({ chat }: AgentChatProps) {
-  const render = (m: Message) => {
+  const [multiline, setMultiline] = useState(false);
+  // The sheet keeps its ask while it slides away.
+  const [sheet, setSheet] = useState<{ id: number; ask: AgentAsk } | null>(null);
+  const sheetOpen = !!sheet && chat.messages.some((m) => m.kind === 'ask' && m.id === sheet.id && m.state === 'open');
+  const [shown, setShown] = useState(false);
+  const closeSheet = () => setShown(false);
+  const working = chat.busy || chat.messages.some((m) => m.kind === 'work');
+
+  const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
+        if (m.typing) return <StatusRow label="Typing…" typing />;
         return (
           <>
             {m.sender && <span className={styles.sender}>{m.sender}</span>}
-            <Said typing={m.typing} className={styles.bubble}>
-              <p>{m.text}</p>
-              {m.bullets?.map((b) => (
-                <div key={b} className={styles.bullet}>
-                  <span>•</span>
-                  <p>{b}</p>
-                </div>
-              ))}
-            </Said>
+            <div className={styles.bubble}>{m.text}</div>
           </>
         );
       case 'me':
-        return <span className={styles.me}>{m.text}</span>;
+        return (
+          <span className={styles.meWrap}>
+            <span className={styles.me}>{m.text}</span>
+            {m.react && (
+              <motion.span className={styles.react} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={POP}>
+                {m.react}
+              </motion.span>
+            )}
+          </span>
+        );
       case 'ask':
-        // The payout row is for moving money; an ask with details to read (connecting, limits) is a plain approval.
-        return m.ask.rows ? (
-          <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />
+        return m.ask.form ? (
+          <FormCard
+            m={m}
+            onOpen={() => {
+              setSheet({ id: m.id, ask: m.ask });
+              setShown(true);
+            }}
+          />
         ) : (
-          <PayoutCard m={m} onAllow={chat.allow} onDeny={chat.deny} />
+          <OrderCard m={m} onAllow={chat.allow} onDeny={chat.deny} />
         );
       case 'card':
-        return <NoteCard note={m.card} />;
+        if (m.card.done && settledByOrder(i, all)) return null;
+        return <NoteCard note={m.card} className={styles.note} />;
       case 'chips':
-        return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.pick} expired={m.expired} />;
+        return <ChoiceCard m={m} onPick={chat.pick} />;
+      case 'work':
+        return <StatusRow label={m.status} />;
+      case 'products':
+        return <Products products={m.products} />;
+      case 'meta':
+        return (
+          <span className={styles.meta}>
+            <IconClock size={13} />
+            {m.meta.text.replace(/ · .*/, '')}
+          </span>
+        );
+      case 'divider':
+        return <Divider text={m.text} className={styles.divider} />;
       case 'tag':
       case 'stamp':
         return <span className={styles.stamp}>{m.text}</span>;
-      case 'work':
-        return <WorkLine status={m.status} />;
-      case 'products':
-        return <ProductRow products={m.products} />;
-      case 'meta':
-        return <MetaLine meta={m.meta} />;
-      case 'divider':
-        return <Divider text={m.text} />;
       default: {
         const exhaustive: never = m;
         return exhaustive;
@@ -112,48 +334,92 @@ export function GrokChat({ chat }: AgentChatProps) {
     }
   };
 
+  const hasText = chat.composer.trim().length > 0;
+
   return (
-    <ChatFrame
-      className={styles.screen}
-      messages={chat.messages}
-      render={render}
-      faceId={chat.authing}
-      onFaceIdDone={chat.authed}
-      gap={9}
-      threadTop={124}
-      composerBottom={26}
-      composerHeight={48}
-      edge={<div className={styles.edge} />}
-      header={
-        <>
-          <div className={styles.back}>
-            <GlassDisc label="Back" icon={`${A}/back.svg`} width={12} height={20} />
-          </div>
-          <div className={styles.more}>
-            <GlassDisc label="More" icon={`${A}/ellipsis.svg`} width={18} height={4} />
-          </div>
-          <GlassPill radius={22} absolute className={styles.title}>
-            <span className={styles.titleRow}>
-              <img src={`${A}/avatar.svg`} alt="" width={28} height={28} />
-              Grok Bot
-            </span>
-          </GlassPill>
-        </>
-      }
-      composer={
-        <GlassPill radius={24} className={styles.composer}>
-          <span className={styles.composerRow}>
-            <span className={styles.plus}>
-              <span className={styles.glyph} style={{ ...mask(`${A}/plus.svg`), width: 14, height: 14 }} />
-            </span>
-            <ComposerField chat={chat} placeholder="Ask Grok Bot" className={styles.field} />
-            <span className={`${styles.glyph} ${styles.mic}`} style={{ ...mask(`${A}/mic.svg`), width: 14, height: 20, opacity: 0.6 }} />
-            <span className={styles.voice} role="button" onClick={chat.send} data-ready={chat.canSend || undefined}>
-              <span className={styles.voiceGlyph} style={{ ...mask(`${A}/waveform.svg`), width: 16, height: 14 }} />
-            </span>
-          </span>
-        </GlassPill>
-      }
-    />
+    <div className={styles.stage}>
+      <ChatFrame
+        className={styles.screen}
+        messages={chat.messages}
+        render={render}
+        rowMotion={(m) => (m.kind === 'me' ? SENT : NATIVE_IN)}
+        faceId={chat.authing}
+        onFaceIdDone={chat.authed}
+        gap={9}
+        threadTop={124}
+        composerBottom={26}
+        composerHeight={50}
+        edge={<div className={styles.edge} />}
+        header={
+          <>
+            <div className={styles.back}>
+              <GlassDisc label="Back" icon={`${A}/back.svg`} width={12} height={20} />
+            </div>
+            <div className={styles.more}>
+              <GlassDisc label="More" icon={`${A}/ellipsis.svg`} width={18} height={4} />
+            </div>
+            <GlassPill radius={22} absolute className={styles.title}>
+              <span className={styles.titleRow}>
+                <GrokEyes size={26} header live={working} />
+                Grok Bot
+              </span>
+            </GlassPill>
+          </>
+        }
+        composer={
+          <motion.div layout transition={COMPOSER_SPRING} className={styles.composerBox} style={{ borderRadius: multiline ? 24 : 25 }}>
+            <GlassPill radius={multiline ? 24 : 25} className={styles.composer}>
+              <span className={styles.composerGrid} data-multiline={multiline || undefined}>
+                <motion.span layout="position" transition={COMPOSER_SPRING} className={styles.plus}>
+                  <span className={styles.glyph} style={{ ...mask(`${A}/plus.svg`), width: 14, height: 14 }} />
+                </motion.span>
+                <motion.span layout="position" transition={COMPOSER_SPRING} className={styles.fieldSlot}>
+                  <ComposerField chat={chat} placeholder="Ask Grok Bot" className={styles.fieldText} onMultiline={setMultiline} />
+                </motion.span>
+                <motion.span layout="position" transition={COMPOSER_SPRING} className={styles.tools}>
+                  <span className={styles.micDisc}>
+                    <span className={styles.glyph} style={{ ...mask(`${A}/mic.svg`), width: 12, height: 17 }} />
+                  </span>
+                  <span
+                    className={styles.voice}
+                    role="button"
+                    aria-label={hasText ? 'Send' : 'Voice'}
+                    onClick={chat.send}
+                    data-ready={chat.canSend || undefined}
+                  >
+                    <AnimatePresence initial={false} mode="popLayout">
+                      {hasText ? (
+                        <motion.span key="send" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }} transition={{ duration: 0.15 }} className={styles.voiceIcon}>
+                          <IconArrowUp size={18} />
+                        </motion.span>
+                      ) : (
+                        <motion.span key="wave" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }} transition={{ duration: 0.15 }} className={styles.voiceIcon}>
+                          <span className={styles.voiceGlyph} style={{ ...mask(`${A}/waveform.svg`), width: 16, height: 14 }} />
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </span>
+                </motion.span>
+              </span>
+            </GlassPill>
+          </motion.div>
+        }
+      />
+      <AppSheet open={shown && sheetOpen} present={SHEET_IN} dim={0.2} className={styles.sheetPanel} onDismiss={closeSheet}>
+        {sheet && (
+          <FormSheet
+            ask={sheet.ask}
+            onCancel={() => {
+              closeSheet();
+              chat.deny();
+            }}
+            onDone={() => {
+              closeSheet();
+              chat.allow();
+            }}
+          />
+        )}
+      </AppSheet>
+    </div>
   );
 }

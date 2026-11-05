@@ -35,7 +35,7 @@ export const RING_LIGHT: Purchase & { item: string; image: string } = {
   description: 'NEEWER BASICS RP10-H 10" ring light, standard shipping',
   amount: 4_875,
   item: 'NEEWER BASICS RP10-H 10" Selfie Ring Light',
-  image: '/assets/agents/muse/product.png',
+  image: '/assets/agents/products/ring.png',
 };
 
 /** What the agent turns up for the ring light; it goes with the first. */
@@ -46,7 +46,7 @@ export const BUY_OPTIONS = [
     domain: 'neewer.com',
     price: usd2(RING_LIGHT.amount),
     rating: '4.6',
-    image: '/assets/agents/products/ring.png',
+    image: RING_LIGHT.image,
     pick: true,
   },
   {
