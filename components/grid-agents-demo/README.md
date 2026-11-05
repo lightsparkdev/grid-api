@@ -74,7 +74,9 @@ doesn't settle in 60 seconds, and saves end-state screenshots to `.tmp-sweep/`.
   picked. An open ask or choice also takes a typed reply: "yes" approves, an option's number or
   label picks it.
 - `src/apps/agents/flows.ts`: the ten flows as beats. They read the account's policy, so an amount
-  over the approval threshold asks the person and one under it doesn't.
+  over the approval threshold asks the person and one under it doesn't. Any tile works from any
+  starting point: `useAgentsDemoLogic` installs the agent and tops up the balance silently when a
+  flow needs it.
 - `src/apps/agents/conversation.ts`: messages are stored by meaning (a key and params), not text.
 - `src/apps/agents/voices/`: how each app says each line and draws each ask. `base.ts` is the
   neutral voice; `apps.ts` holds each app's overrides.

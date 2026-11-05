@@ -309,13 +309,15 @@
   left: 8px;
 }
 
-.setup {
+.setup.setup {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 28px 24px 24px;
-  border-radius: 38px 38px 47px 47px;
+  // Inset 8pt from the screen, so the foot is concentric with its corners: the same superellipse, 8pt tighter.
+  border-radius: 38px 38px calc(var(--screen-corner-radius, 73px) - 8px) calc(var(--screen-corner-radius, 73px) - 8px);
+  corner-shape: round round var(--corner-shape) var(--corner-shape);
   background: var(--dot-card);
   color: var(--dot-text);
 }

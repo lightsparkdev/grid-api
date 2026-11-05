@@ -31,7 +31,7 @@ const CONNECTORS = process.env.SWEEP_CONNECTORS
   ? ALL_CONNECTORS.filter((c) => process.env.SWEEP_CONNECTORS.split(',').includes(c))
   : ALL_CONNECTORS;
 const FLOWS = ['Connect', 'Add funds', 'Set limits', 'Pay someone', 'Buy online', 'Pay an agent', 'Get paid', 'Withdraw', 'Balance', 'History'];
-const ALLOW = /^(\s*(Allow|Approve|Connect|Save|Save limits|Save to vault|Done|Turn on Dots balance|Pay \$[\d.,]+(\/mo)?))+\s*$/;
+const ALLOW = /^(\s*(Allow|Approve|Connect|Continue|Save|Save card|Save limits|Save to vault|Done|Turn on Dots balance|Pay \$[\d.,]+(\/mo)?))+\s*$/;
 const DENY = /^(\s*(Deny|Decline|Not\s+now|Cancel))+\s*$/;
 
 const browser = await engine.launch();

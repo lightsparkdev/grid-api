@@ -88,20 +88,43 @@ function InstinctImage({ note }: { note: AgentNote }) {
   );
 }
 
-/** The balance, as the image Instinct sends: the big number in its serif. Tap it for the page in Safari. */
-function BalanceImage({ balance, onOpen }: { balance: AgentBalance; onOpen: () => void }) {
+/** The balance, as the rich link to its page on app.instinct.com: the number in the serif, then the title and domain. */
+function BalanceLink({ balance, onOpen }: { balance: AgentBalance; onOpen: () => void }) {
   return (
-    <button type="button" className={`${styles.image} ${styles.balanceImage}`} onClick={onOpen} aria-label={`${balance.wallet} ${balance.amount}`}>
-      <span className={styles.imageTop}>
-        <span className={styles.wordmark}>Instinct</span>
-        <span>{today()}</span>
+    <button type="button" className={styles.link} onClick={onOpen} aria-label={`${balance.wallet} ${balance.amount}`}>
+      <span className={`${styles.linkHero} ${styles.balanceHero}`}>
+        <span className={styles.balanceLabel}>{balance.wallet}</span>
+        <strong className={styles.balanceAmount}>{balance.amount}</strong>
+        <span className={styles.balanceSpent}>
+          {balance.spent.today} of {balance.spent.limit} spent today
+        </span>
+        <span className={styles.linkWord}>Instinct</span>
       </span>
-      <span className={styles.balanceLabel}>{balance.wallet}</span>
-      <strong className={styles.balanceAmount}>{balance.amount}</strong>
-      <span className={styles.imageLine}>
-        {balance.spent.today} of {balance.spent.limit} spent today
+      <span className={styles.linkMeta}>
+        <strong>{balance.wallet}</strong>
+        <small>{INSTINCT_HOST}</small>
       </span>
     </button>
+  );
+}
+
+/** Under your last message: Delivered, then Read with the time once Instinct has seen it. */
+function Receipt() {
+  const [read, setRead] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setRead(true), 1100);
+    return () => window.clearTimeout(t);
+  }, []);
+  return (
+    <span className={styles.read}>
+      {read ? (
+        <>
+          <b>Read</b> {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+        </>
+      ) : (
+        'Delivered'
+      )}
+    </span>
   );
 }
 
@@ -186,7 +209,12 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
     if (statusBar) statusBar.style.visibility = 'hidden';
     const radius = parseFloat(getComputedStyle(stage).getPropertyValue('--screen-corner-radius')) || 55;
     let live = true;
+    from.style.visibility = '';
+    to.style.visibility = '';
     playAppSwitch(from, to, { wallpaper: WALLPAPER, radius, direction: switchTo === 'safari' ? 1 : -1 }).then(() => {
+      // The app left behind is hidden the moment the switch lands: the switch clears its transform, and
+      // until React drops it, it would flash full-screen over the app you came back to.
+      from.style.visibility = 'hidden';
       if (statusBar) statusBar.style.visibility = '';
       if (!live) return;
       setView(switchTo);
@@ -251,7 +279,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         );
       case 'card': {
         const b = m.card.balance;
-        return b ? <BalanceImage balance={b} onOpen={() => openPage({ kind: 'balance', balance: b })} /> : <InstinctImage note={m.card} />;
+        return b ? <BalanceLink balance={b} onOpen={() => openPage({ kind: 'balance', balance: b })} /> : <InstinctImage note={m.card} />;
       }
       case 'ask':
         return m.ask.rows ? (
@@ -301,11 +329,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
                 </motion.span>
               )}
             </span>
-            {m.id === lastMe && (
-              <span className={styles.read}>
-                <b>Read</b> {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-              </span>
-            )}
+            {m.id === lastMe && <Receipt key={m.id} />}
           </div>
         );
       }

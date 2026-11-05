@@ -127,10 +127,39 @@ same way (`.tmp-sweep/capture.mjs`) and compared frame by frame.
 - Pay an agent shows a sub-agent row. Its sheet holds the sub-agent's steps
   and the two agents' messages.
 
+### 2026-11-05: any flow from any starting point
+
+The account opens at $0, as the Global Accounts playground's wallet does.
+Jumping to a payment (Pay someone, Buy online, Pay an agent, Withdraw) with
+less in the balance than it needs tops it up silently first, the same way a
+jump already installs the agent. Neither step is logged. The seeded History
+nets to zero.
+
+### 2026-11-05: fund with and store cards
+
+Add funds offers a debit or credit card first, ahead of Lightning and
+stablecoins. The first time, the card goes into the account's PCI vault, and
+each app asks for it its own way: Grok's card sheet with "Securely save to
+your Bot's vault", Instinct's Purchase card page in Safari, and a scan in the
+Apple Wallet style (Hold Near Card) in the others. After that, top-ups charge
+the vaulted card with no prompt. Grid has no vault API yet, so
+`card.vault` and `fund.card` log a provisional sketch: `POST
+/customers/{id}/vaulted-cards`, then a quote whose source is the vaulted
+card. Rewrite them when the API lands.
+
+### 2026-11-05: the thread scrolls
+
+The thread is a scroller. New content grows at its foot and the whole thread
+scrolls up together on the measured curve (280ms,
+`cubic-bezier(0.28, 0.05, 0.65, 1)`), instead of each row animating its own
+position, which let rows overlap mid-move. Scrolled back to read, it stays put
+until the visitor returns to the foot.
+
 ### 2026-11-05: the iOS 27 glass rim
 
-The rim is a 0.5pt hairline: dark on the left and right, faint on the top and
-bottom, with a white line just inside. One mixin
+The rim is a 0.5pt hairline: dark on the left and right, bright white on the
+top and bottom, with a soft white highlight inside. The glass sits a step
+grayer than the page so the white reads, as in the captures. One mixin
 (`src/styles/_glass-rim.scss`) draws it on every glass surface in the phone.
 It replaces the 45-degree baked specular. The values were matched to the
 zoomed captures at 3x.

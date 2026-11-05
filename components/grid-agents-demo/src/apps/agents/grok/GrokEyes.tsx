@@ -2,62 +2,76 @@ import { useEffect, useId, useRef } from 'react';
 import styles from './GrokEyes.module.scss';
 
 /*
- * Grok Bot's face: two white capsules on a black disc, driven frame by frame
- * from the recordings (60fps, recordings 10-13). The eyes drift together and
- * tilt as they look around, morph between tall capsules, dots and tilted ovals,
- * blink with a ~90ms squash, and while the bot works they roll up and out of
- * the top, leave the face empty for ~80ms, and come back in from the bottom.
- * Everything runs on one requestAnimationFrame loop writing SVG attributes, so
- * nothing re-renders.
+ * Grok Bot's face, measured from recording 10 at 60fps (in a 26-unit disc):
+ * - The status row's face rests with two tall capsules (5.2 × 10.7, centers
+ *   4.3 either side), holds still for a second or two, then looks: the pair
+ *   turns ~20° and drops a little while each eye tilts ~30°. Now and then it
+ *   blinks (a 90ms squash) or rolls its eyes: up and out of the top in 250ms,
+ *   an empty face for 80ms, back in from the bottom in 150ms.
+ * - The header's face is small and nearly still: two slanted eyes up and to
+ *   the right (2.5 × 6.1, tilted -37°), blinking now and then.
+ * One requestAnimationFrame loop writes the SVG attributes, so nothing re-renders.
  */
 
-type Mode = 'idle' | 'working';
-
-/** One eye pose in the 26-unit face. */
-interface Pose {
-  dx: number;
-  dy: number;
-  rot: number;
+interface Eye {
+  x: number;
+  y: number;
   w: number;
   h: number;
+  rot: number;
 }
+type Pose = [Eye, Eye];
 
-const REST: Pose = { dx: 0, dy: 0, rot: 0, w: 4, h: 8 };
-/** The header avatar looks up and to the right, as the app's icon does. */
-const HEADER: Pose = { dx: 2.6, dy: -3, rot: 18, w: 3.8, h: 7 };
-const SHAPES: Pick<Pose, 'w' | 'h' | 'rot'>[] = [
-  { w: 4, h: 8, rot: 0 },
-  { w: 4.4, h: 4.4, rot: 0 },
-  { w: 5, h: 7, rot: 22 },
-  { w: 3.6, h: 8.6, rot: -12 },
+const REST: Pose = [
+  { x: 8.7, y: 12.6, w: 5.2, h: 10.7, rot: 0 },
+  { x: 17.3, y: 12.6, w: 5.2, h: 10.7, rot: 0 },
 ];
 
-const GAP = 3.6;
-const CENTER_Y = 12.5;
+/** The pair turned by `angle` about the face's center and shifted, each eye tilted by `tilt`. */
+function look(angle: number, dx: number, dy: number, tilt: number, scale = 0.92): Pose {
+  const a = (angle * Math.PI) / 180;
+  return REST.map((e) => {
+    const ox = e.x - 13;
+    const oy = e.y - 13;
+    return {
+      x: 13 + ox * Math.cos(a) - oy * Math.sin(a) + dx,
+      y: 13 + ox * Math.sin(a) + oy * Math.cos(a) + dy,
+      w: e.w * scale,
+      h: e.h * scale,
+      rot: tilt,
+    };
+  }) as Pose;
+}
+
+const LOOKS: Pose[] = [look(20, -1.2, 2.4, 30), look(-16, 1.2, 1.6, -26), look(8, 1.6, -1.8, 12, 0.96), REST];
+
+const HEADER: Pose = [
+  { x: 13.8, y: 9.4, w: 2.5, h: 6.1, rot: -37 },
+  { x: 20.3, y: 6.8, w: 2.4, h: 6.1, rot: -37 },
+];
 
 const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 const easeIn = (t: number) => t * t * t;
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const mix = (a: Pose, b: Pose, t: number): Pose => ({
-  dx: lerp(a.dx, b.dx, t),
-  dy: lerp(a.dy, b.dy, t),
-  rot: lerp(a.rot, b.rot, t),
+const mixEye = (a: Eye, b: Eye, t: number): Eye => ({
+  x: lerp(a.x, b.x, t),
+  y: lerp(a.y, b.y, t),
   w: lerp(a.w, b.w, t),
   h: lerp(a.h, b.h, t),
+  rot: lerp(a.rot, b.rot, t),
 });
+const mix = (a: Pose, b: Pose, t: number): Pose => [mixEye(a[0], b[0], t), mixEye(a[1], b[1], t)];
 
 export function GrokEyes({
   size = 26,
-  mode = 'idle',
   header = false,
   live = false,
   className,
 }: {
   size?: number;
-  mode?: Mode;
-  /** The header's slower, upward-looking face. */
+  /** The header's small, upward-looking face. */
   header?: boolean;
   /** The green dot the header avatar wears while the bot works. */
   live?: boolean;
@@ -66,8 +80,6 @@ export function GrokEyes({
   const clip = `grok-face-${useId().replace(/:/g, '')}`;
   const left = useRef<SVGRectElement>(null);
   const right = useRef<SVGRectElement>(null);
-  const modeRef = useRef(mode);
-  modeRef.current = mode;
 
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -76,70 +88,56 @@ export function GrokEyes({
     let to: Pose = base;
     let moveStart = 0;
     let moveDur = 1;
-    let nextMove = performance.now() + rand(600, 1400);
-    let blinkAt = performance.now() + rand(1800, 3800);
-    let rollAt = performance.now() + rand(2600, 4200);
-    let roll: { start: number } | null = null;
+    const now0 = performance.now();
+    let nextMove = now0 + rand(1200, 2400);
+    let blinkAt = now0 + rand(2000, 4000);
+    let rollAt = now0 + rand(3500, 5500);
+    let roll: number | null = null;
     let raf = 0;
 
     const draw = (p: Pose, lift: number, squash: number) => {
-      const h = Math.max(0.6, p.h * squash);
-      for (const [el, side] of [
-        [left.current, -1],
-        [right.current, 1],
-      ] as const) {
-        if (!el) continue;
-        const cx = 13 + side * GAP + p.dx;
-        const cy = CENTER_Y + p.dy + lift;
-        el.setAttribute('x', String(cx - p.w / 2));
-        el.setAttribute('y', String(cy - h / 2));
-        el.setAttribute('width', String(p.w));
+      p.forEach((e, i) => {
+        const el = (i === 0 ? left : right).current;
+        if (!el) return;
+        const h = Math.max(0.6, e.h * squash);
+        const y = e.y + lift;
+        el.setAttribute('x', String(e.x - e.w / 2));
+        el.setAttribute('y', String(y - h / 2));
+        el.setAttribute('width', String(e.w));
         el.setAttribute('height', String(h));
-        el.setAttribute('rx', String(Math.min(p.w, h) / 2));
-        el.setAttribute('transform', `rotate(${p.rot} ${cx} ${cy})`);
-      }
+        el.setAttribute('rx', String(Math.min(e.w, h) / 2));
+        el.setAttribute('transform', `rotate(${e.rot} ${e.x} ${y})`);
+      });
     };
 
     const tick = (now: number) => {
-      const working = modeRef.current === 'working';
-      const pace = header ? 1.8 : working ? 0.75 : 1.2;
-
-      if (now >= nextMove) {
+      if (!header && now >= nextMove && roll === null) {
         from = mix(from, to, ease(Math.min(1, (now - moveStart) / moveDur)));
-        const shape = Math.random() < (working ? 0.45 : 0.25) ? SHAPES[Math.floor(Math.random() * SHAPES.length)] : null;
-        const reach = header ? 1.2 : 3;
-        to = {
-          dx: base.dx + rand(-reach, reach),
-          dy: base.dy + rand(-reach, reach) * 0.8,
-          rot: shape ? shape.rot : header ? base.rot + rand(-6, 6) : rand(-25, 25) * (working ? 1 : 0.4),
-          w: shape ? shape.w : base.w,
-          h: shape ? shape.h : base.h,
-        };
+        const options = LOOKS.filter((p) => p !== to);
+        to = options[Math.floor(Math.random() * options.length)];
         moveStart = now;
-        moveDur = rand(180, 260) * (header ? 1.5 : 1);
-        nextMove = now + rand(700, 1900) * pace;
+        moveDur = rand(200, 260);
+        nextMove = now + rand(1100, 2600);
       }
       const pose = mix(from, to, ease(Math.min(1, (now - moveStart) / moveDur)));
 
-      // Blink: a 90ms vertical squash.
       let squash = 1;
       if (now >= blinkAt) {
         const t = (now - blinkAt) / 90;
-        if (t >= 1) blinkAt = now + rand(2400, 5200) * pace;
+        if (t >= 1) blinkAt = now + rand(header ? 3500 : 2600, header ? 7000 : 5200);
         else squash = t < 0.5 ? 1 - t * 1.8 : 0.1 + (t - 0.5) * 1.8;
       }
 
-      // Roll: out the top in 250ms, empty for 80ms, back from the bottom in 150ms.
       let lift = 0;
-      if (working && !header && !roll && now >= rollAt) roll = { start: now };
-      if (roll) {
-        const t = now - roll.start;
+      if (!header && roll === null && now >= rollAt) roll = now;
+      if (roll !== null) {
+        const t = now - roll;
         if (t < 250) lift = -26 * easeIn(t / 250);
         else if (t < 330) lift = -40;
         else if (t < 480) lift = 26 * (1 - easeOut((t - 330) / 150));
         else {
           roll = null;
-          rollAt = now + rand(3800, 6500);
+          rollAt = now + rand(4500, 7500);
         }
       }
 
@@ -166,7 +164,7 @@ export function GrokEyes({
           <rect ref={right} />
         </g>
       </svg>
-      {live && <span className={styles.live} />}
+      {live && <span className={styles.live} style={{ width: size * 0.39, height: size * 0.39 }} />}
     </span>
   );
 }

@@ -6,6 +6,12 @@
 }
 
 .sheet {
+  // Sheets sit outside the chat screen, so they set the apps' round corners themselves.
+  &,
+  & * {
+    corner-shape: round;
+  }
+
   position: absolute;
   right: 0;
   bottom: 0;

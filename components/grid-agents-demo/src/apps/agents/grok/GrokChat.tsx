@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, type Transition } from 'motion/react';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
@@ -34,6 +34,36 @@ const SENT: RowMotion = { initial: { opacity: 1 }, animate: { opacity: 1 }, tran
 /** The reaction pop: scale 0 → ~1.2 → 1 in ~200ms. */
 const POP: Transition = { type: 'spring', stiffness: 700, damping: 17, mass: 0.7 };
 
+/**
+ * A Grok bubble: a pill while it's one line, 20pt corners once it wraps, and
+ * tighter corners where it meets another bubble from the same sender.
+ */
+function Bubble({ className, up, down, children }: { className: string; up: boolean; down: boolean; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      el.dataset.single = el.offsetHeight < 52 ? 'true' : 'false';
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className={className} data-up={up || undefined} data-down={down || undefined}>
+      {children}
+    </div>
+  );
+}
+
+/** Whether the bubble above or below is the same sender's. */
+function neighbors(i: number, all: Message[], kind: 'them' | 'me') {
+  const same = (m?: Message) => !!m && m.kind === kind && !(m.kind === 'them' && m.typing);
+  return { up: same(all[i - 1]), down: same(all[i + 1]) };
+}
+
 /** The status label with Grok's dark shimmer band sweeping across it. */
 function Shimmer({ children }: { children: string }) {
   return <span className={styles.shimmer}>{children}</span>;
@@ -50,7 +80,7 @@ function StatusRow({ label, typing }: { label: string; typing?: boolean }) {
           <i />
         </span>
       ) : (
-        <GrokEyes size={26} mode="working" />
+        <GrokEyes size={26} />
       )}
       <Shimmer>{label}</Shimmer>
     </div>
@@ -148,12 +178,16 @@ function FormSheet({ ask, onCancel, onDone }: { ask: AgentAsk; onCancel: () => v
   return (
     <div className={styles.sheet}>
       <div className={styles.sheetBar}>
-        <button type="button" className={styles.sheetCancel} onClick={onCancel}>
-          Cancel
+        <button type="button" className={styles.sheetButton} onClick={onCancel}>
+          <GlassPill radius={18}>
+            <span className={styles.sheetLabel}>Cancel</span>
+          </GlassPill>
         </button>
         <strong>{f.sheetTitle}</strong>
-        <button type="button" className={styles.sheetDone} onClick={onDone}>
-          Done
+        <button type="button" className={`${styles.sheetButton} ${styles.sheetDone}`} onClick={onDone}>
+          <GlassPill radius={18} tint="rgba(28, 124, 244, 0.92)">
+            <span className={styles.sheetLabel}>Done</span>
+          </GlassPill>
         </button>
       </div>
       <div className={styles.fields}>
@@ -262,8 +296,10 @@ function BalanceSheet({ balance, onDone }: { balance: AgentBalance; onDone: () =
       <div className={styles.sheetBar}>
         <span />
         <strong>{balance.wallet}</strong>
-        <button type="button" className={styles.sheetDone} onClick={onDone}>
-          Done
+        <button type="button" className={`${styles.sheetButton} ${styles.sheetDone}`} onClick={onDone}>
+          <GlassPill radius={18} tint="rgba(28, 124, 244, 0.92)">
+            <span className={styles.sheetLabel}>Done</span>
+          </GlassPill>
         </button>
       </div>
       <div className={styles.balanceHero}>
@@ -310,13 +346,17 @@ export function GrokChat({ chat }: AgentChatProps) {
         return (
           <>
             {m.sender && <span className={styles.sender}>{m.sender}</span>}
-            <div className={styles.bubble}>{m.text}</div>
+            <Bubble className={styles.bubble} {...neighbors(i, all, 'them')}>
+              {m.text}
+            </Bubble>
           </>
         );
       case 'me':
         return (
           <span className={styles.meWrap}>
-            <span className={styles.me}>{m.text}</span>
+            <Bubble className={styles.me} {...neighbors(i, all, 'me')}>
+              {m.text}
+            </Bubble>
             {m.react && (
               <motion.span className={styles.react} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={POP}>
                 {m.react}

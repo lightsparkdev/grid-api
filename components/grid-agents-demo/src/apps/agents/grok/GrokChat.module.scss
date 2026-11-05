@@ -103,9 +103,10 @@
 
 // ── Thread ──────────────────────────────────────────────────────────────
 .bubble {
+  --r: 20px;
   max-width: 325px;
   padding: 11px 14px 12px;
-  border-radius: 18px;
+  border-radius: var(--r);
   background: var(--grok-bubble);
   font-size: 17px;
   line-height: 24px;
@@ -121,14 +122,43 @@
 
 // Sent: the bubble is in place from the first frame and its fill darkens from gray in ~170ms.
 .me {
+  --r: 20px;
   max-width: 290px;
   padding: 11px 14px 12px;
-  border-radius: 18px;
+  border-radius: var(--r);
   background: var(--grok-ink);
   color: var(--grok-ink-text);
   font-size: 17px;
   line-height: 24px;
   animation: grok-sent 0.17s cubic-bezier(0, 0, 0.2, 1);
+}
+
+// One line is a pill; where the same sender's bubbles meet, those corners tighten.
+.bubble,
+.me {
+  &[data-single='true'] {
+    --r: 24px;
+  }
+}
+
+.bubble {
+  &[data-up] {
+    border-top-left-radius: 8px;
+  }
+
+  &[data-down] {
+    border-bottom-left-radius: 8px;
+  }
+}
+
+.me {
+  &[data-up] {
+    border-top-right-radius: 8px;
+  }
+
+  &[data-down] {
+    border-bottom-right-radius: 8px;
+  }
 }
 
 @keyframes grok-sent {
@@ -543,26 +573,32 @@
   }
 }
 
-.sheetCancel,
-.sheetDone {
-  height: 36px;
-  padding: 0 14px;
+.sheetButton {
+  justify-self: start;
+  padding: 0;
   border: 0;
-  border-radius: 18px;
+  background: none;
+  color: var(--grok-text);
   font: inherit;
   font-size: 17px;
   cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active {
+    scale: 0.95;
+  }
 }
 
-.sheetCancel {
-  justify-self: start;
-  background: var(--grok-soft);
-  color: var(--grok-text);
+.sheetLabel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16px;
 }
 
 .sheetDone {
   justify-self: end;
-  background: var(--grok-blue);
   color: #fff;
   font-weight: 600;
 }

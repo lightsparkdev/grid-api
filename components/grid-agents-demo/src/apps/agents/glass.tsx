@@ -14,11 +14,14 @@ const BLUR = 3;
 export function GlassPill({
   radius,
   absolute,
+  tint = TINT,
   className,
   style,
   children,
 }: {
   radius: number;
+  /** The frost's fill; tinted glass (Grok's blue Done) passes its own. */
+  tint?: string;
   /** Floats over the screen (the panel otherwise sets itself `position: relative`). */
   absolute?: boolean;
   className?: string;
@@ -28,7 +31,7 @@ export function GlassPill({
   return (
     <FrostPanel
       radius={radius}
-      tint={TINT}
+      tint={tint}
       tintBlur={BLUR}
       edge="none"
       className={`${styles.pill} ${className ?? ''}`}

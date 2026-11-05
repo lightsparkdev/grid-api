@@ -1,5 +1,5 @@
 /* iOS 27 glass rim: a 0.5pt hairline, dark on the left and right edges and
-   faint on the top and bottom, where a white line sits just inside it.
+   bright white on the top and bottom, with a soft white highlight just inside.
    The ring ramps vertically from the cap color to the side color and back, so
    it reads the same on a 44pt disc, a wide pill and a tall sheet. Cut to a ring
    with mask-composite, it follows the host's border-radius.
@@ -39,8 +39,8 @@
     border-radius: inherit;
     corner-shape: inherit;
     box-shadow:
-      inset 0 $width 0 var(--glass-rim-inset),
-      inset 0 (-$width) 0 var(--glass-rim-inset);
+      inset 0 1px 1px var(--glass-rim-inset),
+      inset 0 -1px 1px var(--glass-rim-inset);
     pointer-events: none;
   }
 }

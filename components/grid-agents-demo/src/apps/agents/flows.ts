@@ -64,6 +64,7 @@ function approvalOr(
 const connect = (ctx: FlowContext): Beat[] => {
   const l = ctx.account().limits;
   return [
+    { react: '❤️' },
     { say: 'connect.intro' },
     {
       ask: 'connect',
@@ -105,6 +106,7 @@ const cardTopUp = (ctx: FlowContext): Beat[] => [
 ];
 
 const fund = (ctx: FlowContext): Beat[] => [
+  { react: '👍' },
   { say: 'fund.ask' },
   {
     chips: [{ label: CARD_OPTION }, ...FUND.options.map((o) => ({ label: o.label }))],
@@ -135,6 +137,7 @@ const limits = (ctx: FlowContext): Beat[] => {
   const from = ctx.account().limits;
   const to = NEW_LIMITS;
   return [
+    { react: '👍' },
     { say: 'limits.intro' },
     {
       ask: 'limits',
@@ -228,6 +231,7 @@ const agent = (ctx: FlowContext): Beat[] => [
 ];
 
 const getpaid = (ctx: FlowContext): Beat[] => [
+  { react: '‼️' },
   { say: 'getpaid.ask' },
   {
     chips: LUCIA.options.map((o) => ({ label: o.label })),
@@ -248,6 +252,7 @@ const getpaid = (ctx: FlowContext): Beat[] => [
 ];
 
 const cashout = (ctx: FlowContext): Beat[] => [
+  { react: '👍' },
   { say: 'cashout.ask' },
   {
     chips: CASHOUT.map((c) => ({ label: c.chip, flag: c.flag })),

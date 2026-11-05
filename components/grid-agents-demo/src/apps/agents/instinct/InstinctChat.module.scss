@@ -217,7 +217,8 @@
 .me {
   position: relative;
   padding: 10px 14px 10px 13px;
-  background: var(--im-blue);
+  // iMessage's blue runs lighter at the top (recording 6: #37A6F9 to #2B99FA).
+  background: linear-gradient(180deg, #37a6f9 0%, #2b99fa 100%);
   color: #fff;
 }
 
@@ -238,7 +239,10 @@
 
 .tailOut {
   right: 0;
-  background: var(--im-blue);
+  bottom: -5px;
+  width: 20px;
+  height: 14px;
+  background: #2b99fa;
   mask-image: url('/assets/agents/instinct/tail-out.svg');
 }
 
@@ -565,7 +569,7 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
 }
 
 .read {
-  margin-top: 3px;
+  margin: 6px 21px 0 0;
   color: #7e7d80;
   font-size: 12px;
   line-height: 15px;
@@ -755,7 +759,6 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
 }
 
 .balanceLabel {
-  margin-top: 20px;
   color: #7a7274;
   font-size: 13px;
 }
@@ -766,4 +769,17 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   font-weight: 400;
   line-height: 46px;
   letter-spacing: -0.8px;
+}
+
+.balanceHero {
+  justify-content: flex-end;
+  gap: 0;
+  height: 150px;
+  background: #fbf8f5;
+}
+
+.balanceSpent {
+  margin-top: 2px;
+  color: #7a7274;
+  font-size: 13px;
 }

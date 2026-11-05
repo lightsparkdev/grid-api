@@ -5,7 +5,8 @@ import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1
 import { ChatFrame, ComposerField, NATIVE_IN, Said, TypingDots } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
 import type { AgentBalance, AskRow, Chip, Message, Product } from '../conversation';
-import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useCardScan, useSubAgentSheet, VaultCardAsk } from '../parts';
+import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useSubAgentSheet } from '../parts';
+import { useCardScan, VaultCardAsk } from '../vault/CardScan';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
 

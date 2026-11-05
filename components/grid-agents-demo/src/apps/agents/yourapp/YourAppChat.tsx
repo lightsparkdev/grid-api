@@ -4,7 +4,8 @@ import { GridLogoMark } from '@/components/GridWordmark';
 import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
-import { AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useCardScan, useSubAgentSheet, VaultCardAsk, WorkLine } from '../parts';
+import { AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
+import { useCardScan, VaultCardAsk } from '../vault/CardScan';
 import type { AgentChatProps } from '../types';
 import styles from './YourAppChat.module.scss';
 
