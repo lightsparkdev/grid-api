@@ -108,7 +108,8 @@
             "pages": [
               "global-accounts/agents/overview",
               "global-accounts/agents/policies-and-permissions",
-              "global-accounts/agents/approvals-and-audit"
+              "global-accounts/agents/approvals-and-audit",
+              "global-accounts/agents/claimable-payouts"
             ]
           },
           {

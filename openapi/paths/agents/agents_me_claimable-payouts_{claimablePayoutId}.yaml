@@ -1,0 +1,47 @@
+parameters:
+  - name: claimablePayoutId
+    in: path
+    description: Unique identifier of the claimable payout
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get a claimable payout
+  description: >
+    Retrieve a claimable payout the authenticated agent sent.
+  operationId: agentGetClaimablePayout
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/claimable_payouts/ClaimablePayout.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Claimable payout not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,25 @@
+type: object
+description: A claimable payout an agent sends from its customer's Embedded Wallet.
+required:
+  - sourceAccountId
+  - amount
+  - recipient
+properties:
+  sourceAccountId:
+    type: string
+    description: The customer's `EMBEDDED_WALLET` internal account to pay from.
+    example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+  amount:
+    type: integer
+    format: int64
+    exclusiveMinimum: 0
+    maximum: 9000000000000000
+    description: The amount to send, in the smallest unit of the source account's currency.
+    example: 5000
+  recipient:
+    $ref: ./ClaimablePayoutRecipient.yaml
+  note:
+    type: string
+    maxLength: 140
+    description: A note for the recipient, shown once she has proved she holds the link.
+    example: Happy birthday, Mom

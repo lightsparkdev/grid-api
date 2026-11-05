@@ -1,0 +1,71 @@
+post:
+  summary: Quote a claim
+  description: >
+    Lock a quote paying a claimable payout to the recipient's account. Call
+    it only after the recipient has proved she holds the payout's phone
+    number or email. Grid validates `accountInfo` as
+    `POST /customers/external-accounts` does, screens the recipient, and
+    saves her account under the sender's customer, where an agent can pay it
+    again. Grid then quotes the payout's full `amount` from the sender's
+    wallet to that account. The payout stays `AWAITING_CLAIM` until the
+    quote is confirmed; calling again replaces the quote.
+  operationId: quoteClaimablePayoutClaim
+  tags:
+    - Claimable Payouts
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/claimable_payouts/ClaimablePayoutQuoteRequest.yaml
+  responses:
+    '200':
+      description: Quote locked
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/claimable_payouts/ClaimablePayoutQuote.yaml
+    '400':
+      description: Bad request - Invalid account details, or a currency or rail Grid does not pay out to
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Claimable payouts are not enabled for the platform, or screening did not clear the recipient (`SANCTION_BLOCKED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: No claimable payout for this claim token
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - The payout is not `AWAITING_CLAIM` (`CONFLICT`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '503':
+      description: Service unavailable - Grid could not screen the recipient or price the payout right now. Retry later.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error503.yaml
