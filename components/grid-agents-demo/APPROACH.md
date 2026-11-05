@@ -58,7 +58,7 @@ to a row underneath, as MockMuse does.
 ### 2026-11-05: ten flows, and Buy online is the card flow
 
 The flows are Connect, Add funds, Set limits, Pay someone, Buy online, Pay agent,
-Receive, Withdraw, Balance, and History. Buy online is the standard way
+Get paid, Withdraw, Balance, and History. Buy online is the standard way
 agents pay merchants today: the agent asks for a single-use virtual Visa scoped
 to the order (`request_purchase_card`), and the app's approval UI comes up.
 Its second run is a subscription with a recurring card locked to one merchant,

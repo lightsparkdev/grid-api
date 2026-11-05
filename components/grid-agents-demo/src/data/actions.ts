@@ -94,7 +94,7 @@ export const ACTIONS: ActionDef[] = [
   },
   {
     id: 'getpaid',
-    label: 'Receive',
+    label: 'Get paid',
     desc: 'A client pays the account in stablecoins or BTC',
     prompts: ['Lucía wants to pay my invoice. Where should she send it?'],
   },

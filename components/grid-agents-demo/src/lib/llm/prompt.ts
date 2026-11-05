@@ -18,7 +18,7 @@ export const FLOW_GUIDE: Record<string, string> = {
   pay: 'Pay someone: send money to Sofia Almeida in Brazil over PIX (the only payee you know).',
   buy: 'Buy online: order the saved ring light with a one-time card ("order"), or subscribe to Duolingo Max with a recurring card ("subscription").',
   agent: 'Pay agent: book Hotel Alma in Lisbon by paying the hotel’s agent directly.',
-  getpaid: 'Receive: share an address so Lucía can pay her invoice.',
+  getpaid: 'Get paid: share an address so Lucía can pay her invoice.',
   cashout: 'Withdraw: move $200 to the person’s bank.',
   balance: 'Balance: show the balance and what’s left to spend.',
   history: 'History: list recent activity.',
