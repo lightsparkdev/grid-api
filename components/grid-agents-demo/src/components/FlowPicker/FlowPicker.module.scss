@@ -91,7 +91,4 @@
   min-width: 0;
   color: var(--text-primary);
   font-feature-settings: 'salt' 1;
-  /* "Pay someone" fills its tile to within a pixel; let it run into the
-     tile's padding rather than wrap or clip. */
-  white-space: nowrap;
 }

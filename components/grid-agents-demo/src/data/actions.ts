@@ -76,7 +76,7 @@ export const ACTIONS: ActionDef[] = [
   },
   {
     id: 'pay',
-    label: 'Pay someone',
+    label: 'Send',
     desc: 'Pay out to a bank account on a local rail',
     prompts: ['Send Sofia R$250 for the concert tickets'],
   },
@@ -88,19 +88,19 @@ export const ACTIONS: ActionDef[] = [
   },
   {
     id: 'agent',
-    label: 'Pay an agent',
+    label: 'Pay agent',
     desc: 'Pay another agent’s account directly',
     prompts: ['Book Hotel Alma in Lisbon for the 12th to the 14th'],
   },
   {
     id: 'getpaid',
-    label: 'Get paid',
+    label: 'Receive',
     desc: 'A client pays the account in stablecoins or BTC',
     prompts: ['Lucía wants to pay my invoice. Where should she send it?'],
   },
   {
     id: 'cashout',
-    label: 'Cash out',
+    label: 'Withdraw',
     desc: 'Move money to a bank or mobile wallet',
     prompts: ['Move $200 to my bank'],
   },
