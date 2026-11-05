@@ -7169,7 +7169,7 @@ paths:
       description: |
         Add a credential for an additional administrator of a `BUSINESS` customer's Embedded Wallet. The new administrator gets their own `EMAIL_OTP` or `PASSKEY` credential, tagged with `adminReference`, and signs for the wallet with it as the owner does. The wallet stays non-custodial: Grid never adds an administrator on its own, and every step is authorised by a signature from an existing verified credential on the account (the owner's, or another administrator's).
 
-        This is the only way an administrator adds a credential. An administrator's session cannot sign `POST /auth/credentials`, which Grid refuses with `403 FORBIDDEN`, so removing an administrator always removes every credential they added.
+        This is the only way an administrator adds a credential. An administrator's session cannot sign `POST /auth/credentials`, which Grid refuses with `403 FORBIDDEN`, so every credential belonging to an administrator carries their `adminReference` and removing them revokes it. An administrator added with another administrator's signature has their own `adminReference` and is removed separately.
 
         It takes two signed steps. The first call returns `202` with a `payloadToSign` that creates the administrator's wallet user; the signed retry returns another `202` whose payload grants that user the authority to sign for the wallet; the second signed retry returns `201` with the new `AuthMethod`. The administrator then signs in with `POST /auth/credentials/{id}/challenge` and `POST /auth/credentials/{id}/verify`.
       operationId: createAdminCredential
