@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
@@ -11,6 +11,8 @@ import styles from './ChatFrame.module.scss';
 const ROW_IN = motionTransition(easeOutSnappy, 0.5);
 /** The composer takes a sentence, not an essay (the model's guardrails start here). */
 export const COMPOSER_MAX = 300;
+/** The field grows a line at a time to this many, then scrolls. */
+const COMPOSER_LINES = 5;
 
 /**
  * The frame every agent chat shares, at the phone's true 402 × 874: a thread
@@ -57,13 +59,25 @@ export function ChatFrame({
 }) {
   const overlay = useScreenOverlay();
   const fade = fadeTop ?? (threadTop !== undefined ? [threadTop - 64, threadTop] : undefined);
+  // The composer grows with its text, and the thread's foot rises with it.
+  const composerRef = useRef<HTMLDivElement>(null);
+  const [composerH, setComposerH] = useState(composerHeight);
+  useLayoutEffect(() => {
+    const el = composerRef.current;
+    if (!el) return;
+    const measure = () => setComposerH(Math.max(composerHeight, el.offsetHeight));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [composerHeight]);
   return (
     <div
       className={`${styles.screen} ${className ?? ''}`}
       style={
         {
           '--composer-bottom': `${composerBottom}px`,
-          '--thread-foot': `${composerBottom + composerHeight + 12}px`,
+          '--thread-foot': `${composerBottom + composerH + 12}px`,
           '--gap': `${gap}px`,
           ...(threadTop !== undefined && { '--thread-top': `${threadTop}px` }),
         } as CSSProperties
@@ -96,42 +110,76 @@ export function ChatFrame({
       {edge}
       {header}
       {tabBar}
-      <div className={styles.composer}>{composer}</div>
+      <div ref={composerRef} className={styles.composer}>
+        {composer}
+      </div>
       {overlay && onFaceIdDone && createPortal(<FaceIdAuth active={!!faceId} onDone={onFaceIdDone} />, overlay)}
     </div>
   );
 }
 
 /**
- * The composer's field: a real input. A tile prefills it with its flow's line;
- * the visitor sends it, or types their own (answered by the model).
+ * The composer's field: a real text area that grows a line at a time (up to
+ * COMPOSER_LINES, then scrolls). Enter sends; Shift+Enter starts a new line.
+ * A hidden twin measures the text, so the height can animate between lines.
+ * Skins set `--field-pad` (the padding that centers one line against their
+ * buttons) and may style the wrapper's `[data-multiline]`.
  */
 export function ComposerField({
   chat,
   placeholder,
   className,
 }: {
-  chat: Pick<ChatView, 'composer' | 'setComposer' | 'send' | 'prefilled'>;
+  chat: Pick<ChatView, 'composer' | 'setComposer' | 'send'>;
   placeholder: string;
   className?: string;
 }) {
+  const wrap = useRef<HTMLSpanElement>(null);
+  const twin = useRef<HTMLTextAreaElement>(null);
+  const [height, setHeight] = useState<number | null>(null);
+  const [lines, setLines] = useState(1);
+
+  useLayoutEffect(() => {
+    const el = twin.current;
+    const box = wrap.current;
+    if (!el || !box) return;
+    const measure = () => {
+      el.value = chat.composer || ' ';
+      const cs = getComputedStyle(el);
+      const line = parseFloat(cs.lineHeight) || 22;
+      const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      const n = Math.max(1, Math.round((el.scrollHeight - pad) / line));
+      setLines(n);
+      setHeight(Math.min(n, COMPOSER_LINES) * line + pad);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [chat.composer]);
+
   return (
-    <input
-      className={`${styles.field} ${className ?? ''}`}
-      data-prefilled={chat.prefilled || undefined}
-      value={chat.composer}
-      placeholder={placeholder}
-      maxLength={COMPOSER_MAX}
-      enterKeyHint="send"
-      aria-label="Message"
-      onChange={(e) => chat.setComposer(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          chat.send();
-        }
-      }}
-    />
+    <span ref={wrap} className={`${styles.fieldWrap} ${className ?? ''}`} data-multiline={lines > 1 || undefined}>
+      <textarea
+        className={styles.field}
+        style={{ height: height ?? undefined }}
+        rows={1}
+        value={chat.composer}
+        placeholder={placeholder}
+        maxLength={COMPOSER_MAX}
+        enterKeyHint="send"
+        aria-label="Message"
+        data-scrolls={lines > COMPOSER_LINES || undefined}
+        onChange={(e) => chat.setComposer(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chat.send();
+          }
+        }}
+      />
+      <textarea ref={twin} className={`${styles.field} ${styles.twin}`} rows={1} tabIndex={-1} aria-hidden readOnly />
+    </span>
   );
 }
 

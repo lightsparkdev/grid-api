@@ -271,13 +271,15 @@
 
 .composer {
   position: relative;
-  height: 40px;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0 28px;
 }
 
 .plus {
-  position: absolute;
-  top: 0;
-  left: 28px;
+  flex: none;
   width: 40px;
   height: 40px;
 }
@@ -290,23 +292,27 @@
 }
 
 .field {
-  position: absolute;
-  top: 0;
-  left: 80px;
-  width: 294px;
-  height: 40px;
+  flex: 1;
+  min-height: 40px;
 }
 
 .fieldRow {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
-  height: 40px;
-  padding: 0 12px 0 16px;
+  min-height: 40px;
+  padding: 6px 12px 6px 16px;
+}
+
+// The dictation glyph, centered on the 28pt send's line.
+.dictation {
+  flex: none;
+  margin-bottom: 6px;
 }
 
 .fieldText {
+  --field-pad: 3px;
   --placeholder: var(--im-placeholder);
   font-size: 17px;
   letter-spacing: -0.43px;

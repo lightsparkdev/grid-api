@@ -42,12 +42,18 @@ Messages are stored by meaning (`StoredMessage`: a key and params) and turned
 into text by each app's voice (`voices/`), so the same thread reads in Muse's
 voice in Muse and in dot's lowercase in Dots.
 
-### 2026-11-05: tiles prefill, the visitor drives
+### 2026-11-05: tiles send, the visitor drives
 
-A tile prefills the composer with its flow's first line. Sending it starts the
+A tile sends its flow's first line as the visitor's message and starts the
 flow; the flow then waits on the visitor for every ask, quick reply, and Face
-ID. There's no simulated keyboard typing. Picking another tile mid-flow
-cancels the run and marks its open asks and quick replies expired.
+ID. There's no simulated keyboard typing, and the tile doesn't stay
+highlighted. Picking another tile mid-flow cancels the run and marks its open
+asks and quick replies expired.
+
+The composer is a text area that grows a line at a time, up to five, then
+scrolls. Enter sends and Shift+Enter starts a new line. Buttons stay on the
+bottom line, as in each app; Muse moves its text to the top and its + and send
+to a row underneath, as MockMuse does.
 
 ### 2026-11-05: ten flows, and Buy online is the card flow
 
@@ -77,7 +83,7 @@ and the panel never disagree.
 
 ### 2026-11-05: Claude Haiku for free text, behind guardrails
 
-Anything the visitor types that isn't a tile's prefill goes to
+Anything the visitor types goes to
 `/api/agent`. It calls Claude Haiku through an adapter (`src/lib/llm/`) with a
 forced structured reply: up to 3 sentences, and optionally one flow to start.
 The model can start a flow but never approves anything; approvals stay in the

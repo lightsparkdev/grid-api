@@ -66,7 +66,6 @@ export function useAgentBrain({
     setMessages((all) => all.map((m) => (m.id === 0 && m.kind === 'stamp' ? { ...m, text: `Today ${time}` } : m)));
   }, []);
   const [composer, setComposer] = useState('');
-  const [prefill, setPrefill] = useState<{ flow: ActionId; variant: number; text: string } | null>(null);
   const [running, setRunning] = useState<ActionId | null>(null);
   const [busy, setBusy] = useState(false);
   const nextId = useRef(2);
@@ -187,7 +186,7 @@ export function useAgentBrain({
     [play],
   );
 
-  // A tile's jump, applied once: whatever was playing stops, and its line lands in the composer.
+  // A tile's jump, applied once: whatever was playing stops, and the tile's line goes out as the visitor's message.
   const lastNonce = useRef(0);
   useEffect(() => {
     if (!entry || entry.nonce === lastNonce.current) return;
@@ -195,11 +194,12 @@ export function useAgentBrain({
     const def = ACTIONS.find((a) => a.id === entry.flow)!;
     const text = def.prompts[entry.variant % def.prompts.length];
     cancelRun();
-    setPrefill({ flow: entry.flow, variant: entry.variant, text });
-    setComposer(text);
-  }, [entry, cancelRun]);
+    push({ kind: 'me', text });
+    const ctx: FlowContext = { ...cb.current.context(), variant: entry.variant };
+    void start(entry.flow, FLOWS[entry.flow](ctx));
+  }, [entry, cancelRun, push, start]);
 
-  const activeFlow = running ?? prefill?.flow ?? null;
+  const activeFlow = running;
   useEffect(() => {
     cb.current.onActiveFlow?.(activeFlow);
   }, [activeFlow]);
@@ -209,13 +209,6 @@ export function useAgentBrain({
     if (!text || runRef.current) return;
     setComposer('');
     push({ kind: 'me', text });
-    const flowLine = prefill && text === prefill.text ? prefill : null;
-    setPrefill(null);
-    if (flowLine) {
-      const ctx: FlowContext = { ...cb.current.context(), variant: flowLine.variant };
-      void start(flowLine.flow, FLOWS[flowLine.flow](ctx));
-      return;
-    }
     setBusy(true);
     const typingId = push({ kind: 'them', said: { text: '' }, typing: true });
     const answer = await cb.current.reply(text);
@@ -226,7 +219,7 @@ export function useAgentBrain({
       await sleep(700);
       void start(answer.flow.id, FLOWS[answer.flow.id](ctx));
     }
-  }, [composer, prefill, push, patch, start]);
+  }, [composer, push, patch, start]);
 
   /** The visitor's tap on the open ask's primary button. */
   const allow = useCallback(() => decideRef.current?.('allow'), []);
@@ -246,7 +239,6 @@ export function useAgentBrain({
     setComposer,
     send,
     canSend: composer.trim().length > 0 && !running && !busy,
-    prefilled: prefill !== null && composer === prefill.text,
     busy,
     allow,
     deny,

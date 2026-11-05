@@ -174,7 +174,7 @@
 }
 
 .composer {
-  height: 48.5px;
+  min-height: 48.5px;
   margin: 0 auto;
   transition: width 0.35s cubic-bezier(0.4, 0, 0.35, 1) 0.12s;
 }
@@ -191,8 +191,9 @@
 .composerRow {
   position: relative;
   display: flex;
-  align-items: center;
-  height: 48.5px;
+  align-items: flex-end;
+  min-height: 48.5px;
+  padding-block: 1.75px;
 }
 
 .slot {
@@ -204,6 +205,7 @@
 }
 
 .field {
+  --field-pad: 11.5px;
   --placeholder: #8d8d8d;
   font-size: 17px;
 }

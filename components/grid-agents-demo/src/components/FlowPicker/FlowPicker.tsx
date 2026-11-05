@@ -17,7 +17,7 @@ interface FlowPickerProps {
  *  playgrounds. One that needs an installed agent installs it first. */
 export function FlowPicker({ activeFlow, onAction }: FlowPickerProps) {
   return (
-    <div className={styles.group}>
+    <div className={styles.group} data-active-flow={activeFlow ?? undefined}>
       {ACTIONS.map((action) => {
         const Icon = FLOW_ICONS[action.id];
         return (
@@ -25,7 +25,6 @@ export function FlowPicker({ activeFlow, onAction }: FlowPickerProps) {
             key={action.id}
             type="button"
             className={clsx(styles.option, styles.optionEnabled)}
-            data-active={activeFlow === action.id || undefined}
             title={action.desc}
             {...pressable({ onClick: () => onAction(action.id) })}
           >

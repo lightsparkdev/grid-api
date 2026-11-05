@@ -1,5 +1,5 @@
-// Runs every flow on every connector in a real browser: clicks the tile, sends
-// the line it prefills, then answers each approval (Approve, or Decline with
+// Runs every flow on every connector in a real browser: clicks the tile (which
+// sends its line), then answers each approval (Approve, or Decline with
 // SWEEP_DENY=1) and picks the first chip, until the flow settles. Reports how
 // long each took, how many tool calls, Grid calls and webhooks it logged, and
 // any console errors. Screenshots of each flow's end state land in
@@ -41,8 +41,7 @@ await page.goto(`${base}/?embed=true&theme=${theme}&nav=48`, { waitUntil: 'netwo
 await page.waitForTimeout(1500);
 
 const tile = (label) => page.locator('aside button', { hasText: new RegExp(`^${label}$`) });
-const input = () => page.locator('[data-screen-body] input').last();
-const activeTile = () => page.locator('aside button[data-active]');
+const activeTile = () => page.locator('aside [data-active-flow]');
 
 const rows = [];
 for (const connector of CONNECTORS) {
@@ -58,7 +57,6 @@ for (const connector of CONNECTORS) {
     const t0 = Date.now();
     await tile(flow).click();
     await page.waitForTimeout(300);
-    await input().press('Enter');
     let answered = 0;
     while (Date.now() - t0 < 60_000) {
       await page.waitForTimeout(500);

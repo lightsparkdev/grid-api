@@ -60,26 +60,60 @@
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.35, 1);
 }
 
-// The composer's real input: transparent over the skin's glass, the skin's type.
-// The screen body passes the pointer through; the field takes it back.
-.field {
+// The composer's field: a text area over the skin's glass, in the skin's type
+// (its class lands on the wrapper and the field inherits). One line sits
+// centered against the skin's buttons through `--field-pad`; more lines grow
+// it upward. The screen body passes the pointer through; the field takes it back.
+.fieldWrap {
+  position: relative;
+  display: grid;
   flex: 1;
+  align-self: flex-end;
   min-width: 0;
-  height: 100%;
-  padding: 0;
+  caret-color: #0a84ff;
+}
+
+.field {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: var(--field-pad, 10px) 0;
   border: 0;
   outline: none;
   background: transparent;
   color: inherit;
   font: inherit;
+  line-height: var(--field-line, 22px);
+  letter-spacing: inherit;
+  caret-color: inherit;
+  resize: none;
+  overflow: hidden;
   pointer-events: auto;
-  text-overflow: ellipsis;
-  caret-color: #0a84ff;
+  scrollbar-width: none;
+  transition: height 0.18s cubic-bezier(0.4, 0, 0.35, 1);
+
+  // Past the last line it grows to, the text scrolls under a soft top edge.
+  &[data-scrolls] {
+    overflow-y: auto;
+    mask-image: linear-gradient(180deg, transparent 0, #000 calc(var(--field-pad, 10px) + 8px));
+  }
 
   &::placeholder {
     color: var(--placeholder, #8e8e93);
     opacity: 1;
   }
+}
+
+// Measures the text at the field's width; never seen or focused.
+.twin {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: none;
 }
 
 .dots {

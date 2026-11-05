@@ -256,17 +256,17 @@
 
 .composer {
   width: 342px;
-  height: 48px;
+  min-height: 48px;
   margin: 0 auto;
 }
 
 .composerRow {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 10px;
-  height: 48px;
-  padding: 0 8px;
+  min-height: 48px;
+  padding: 8px;
 }
 
 .plus,
@@ -304,6 +304,12 @@
 }
 
 .field {
+  --field-pad: 5px;
   --placeholder: var(--grok-faint);
   font-size: 17px;
+}
+
+// The bare mic glyph, centered on the bottom line's 32pt controls.
+.mic {
+  margin-bottom: 6px;
 }

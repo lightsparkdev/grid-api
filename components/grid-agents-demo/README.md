@@ -12,9 +12,9 @@ playground) and shares its chrome, design system, and embed contract:
 
 A visitor picks an agent app (Muse, Grok Bot, Dots, Instinct, Claude Duet, or a plain "Your agent")
 and a flow: Connect, Add funds, Set limits, Send, Buy online, Pay agent, Receive, Withdraw,
-Balance, or History. The flow's tile prefills the chat's composer; the visitor sends it and
-makes every choice in the chat (Approve or Decline, quick replies, Face ID). Anything else they
-type goes to a small model with guardrails. The API panel shows each agent tool call with the Grid
+Balance, or History. The flow's tile sends its first line as the visitor's message; the visitor
+then makes every choice in the chat (Approve or Decline, quick replies, Face ID). Anything they
+type goes to a small model with guardrails. The composer grows with the text, up to five lines. The API panel shows each agent tool call with the Grid
 calls behind it, plus the platform's own calls and webhooks.
 
 All six apps share one conversation and one account. Switching apps mid-flow re-renders the same
@@ -56,7 +56,7 @@ declines anything that isn't about the account, including coding help.
 ### Flow sweep
 
 With the dev server up, `node scripts/flow-sweep.mjs [light|dark]` runs every flow in every app in
-headless Chromium. It sends each prefill, approves each ask (following Instinct's links into
+headless Chromium. It clicks each tile, approves each ask (following Instinct's links into
 Safari), picks the first quick reply, fails on console errors or a flow that doesn't settle in 60
 seconds, and saves end-state screenshots to `.tmp-sweep/`.
 

@@ -272,20 +272,21 @@
 
 .composer {
   width: 371px;
-  height: 52px;
+  min-height: 52px;
   margin: 0 auto;
 }
 
 .composerRow {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 12px;
-  height: 52px;
-  padding: 0 8px 0 14px;
+  min-height: 52px;
+  padding: 8px 8px 8px 14px;
 }
 
 .field {
+  --field-pad: 7px;
   --placeholder: #87867f;
   font-size: 17px;
   letter-spacing: -0.43px;
@@ -379,4 +380,9 @@
 
 .mascotLine {
   fill: var(--cl-ink);
+}
+
+// The bare + and mic glyphs, centered on the bottom line's 36pt voice button.
+.rowGlyph {
+  margin-bottom: 6px;
 }

@@ -188,12 +188,12 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           }
           composer={
             <div className={styles.composer}>
-              <GlassPill radius={20} absolute className={styles.plus}>
+              <GlassPill radius={20} className={styles.plus}>
                 <span className={styles.plusIcon}>
                   <span className={styles.glyph} style={mask(`${A}/plus.svg`, 16, 16)} />
                 </span>
               </GlassPill>
-              <GlassPill radius={20} absolute className={styles.field}>
+              <GlassPill radius={20} className={styles.field}>
                 <span className={styles.fieldRow}>
                   <ComposerField chat={chat} placeholder="iMessage" className={styles.fieldText} />
                   {chat.composer ? (
@@ -201,7 +201,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
                       <SfSymbol name="arrow.up" size={14} />
                     </span>
                   ) : (
-                    <span className={styles.muted} style={mask(`${A}/dictation.svg`, 18, 16)} />
+                    <span className={`${styles.muted} ${styles.dictation}`} style={mask(`${A}/dictation.svg`, 18, 16)} />
                   )}
                 </span>
               </GlassPill>

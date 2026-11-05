@@ -146,9 +146,9 @@ export function ClaudeChat({ chat }: AgentChatProps) {
       composer={
         <GlassPill radius={26} className={styles.composer}>
           <span className={styles.composerRow}>
-            <span className={styles.glyph} style={mask(`${A}/plus.svg`, 24, 24)} />
+            <span className={`${styles.glyph} ${styles.rowGlyph}`} style={mask(`${A}/plus.svg`, 24, 24)} />
             <ComposerField chat={chat} placeholder="Message" className={styles.field} />
-            <span className={styles.glyph} style={mask(`${A}/mic.svg`, 24, 24)} />
+            <span className={`${styles.glyph} ${styles.rowGlyph}`} style={mask(`${A}/mic.svg`, 24, 24)} />
             <span className={styles.voice} role="button" onClick={chat.send} data-ready={chat.canSend || undefined}>
               <span className={styles.voiceGlyph} style={mask(`${A}/waveform.svg`, 22, 22)} />
             </span>

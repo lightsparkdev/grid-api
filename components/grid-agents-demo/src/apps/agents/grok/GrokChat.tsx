@@ -139,7 +139,7 @@ export function GrokChat({ chat }: AgentChatProps) {
               <span className={styles.glyph} style={{ ...mask(`${A}/plus.svg`), width: 14, height: 14 }} />
             </span>
             <ComposerField chat={chat} placeholder="Ask Grok Bot" className={styles.field} />
-            <span className={styles.glyph} style={{ ...mask(`${A}/mic.svg`), width: 14, height: 20, opacity: 0.6 }} />
+            <span className={`${styles.glyph} ${styles.mic}`} style={{ ...mask(`${A}/mic.svg`), width: 14, height: 20, opacity: 0.6 }} />
             <span className={styles.voice} role="button" onClick={chat.send} data-ready={chat.canSend || undefined}>
               <span className={styles.voiceGlyph} style={{ ...mask(`${A}/waveform.svg`), width: 16, height: 14 }} />
             </span>
