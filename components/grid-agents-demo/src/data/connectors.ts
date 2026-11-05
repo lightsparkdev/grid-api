@@ -17,5 +17,5 @@ export const CONNECTORS: ConnectorDef[] = [
   // Instinct lives in iMessage and has no app: its mark, drawn as an icon.
   { id: 'instinct', label: 'Instinct', logo: { src: '/assets/connectors/instinct-app.png' } },
   { id: 'claude', label: 'Duet', logo: { src: '/assets/connectors/duet-app.png' } },
-  { id: 'yourapp', label: 'Your app', logo: { src: '/assets/connectors/your-app.svg', glyph: true } },
+  { id: 'yourapp', label: 'Your agent', logo: { src: '/assets/connectors/your-app.svg', glyph: true } },
 ];

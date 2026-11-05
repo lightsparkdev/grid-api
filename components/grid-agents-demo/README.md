@@ -10,7 +10,7 @@ playground) and shares its chrome, design system, and embed contract:
 - `motion` for transitions
 - Config panel, glass phone stage, and API panel laid out identically to the cards demo
 
-A visitor picks an agent app (Muse, Grok Bot, Dots, Instinct, Claude Duet, or a plain "Your app")
+A visitor picks an agent app (Muse, Grok Bot, Dots, Instinct, Claude Duet, or a plain "Your agent")
 and a flow: Connect, Add funds, Set limits, Send, Buy online, Pay agent, Receive, Withdraw,
 Balance, or History. The flow's tile prefills the chat's composer; the visitor sends it and
 makes every choice in the chat (Approve or Decline, quick replies, Face ID). Anything else they

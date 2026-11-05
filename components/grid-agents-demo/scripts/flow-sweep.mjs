@@ -23,7 +23,7 @@ const deny = process.env.SWEEP_DENY === '1';
 const out = new URL('../.tmp-sweep/', import.meta.url).pathname;
 mkdirSync(out, { recursive: true });
 
-const ALL_CONNECTORS = ['Muse', 'Bot', 'Dots', 'Instinct', 'Duet', 'Your app'];
+const ALL_CONNECTORS = ['Muse', 'Bot', 'Dots', 'Instinct', 'Duet', 'Your agent'];
 const CONNECTORS = process.env.SWEEP_CONNECTORS
   ? ALL_CONNECTORS.filter((c) => process.env.SWEEP_CONNECTORS.split(',').includes(c))
   : ALL_CONNECTORS;
