@@ -56,9 +56,11 @@ declines anything that isn't about the account, including coding help.
 ### Flow sweep
 
 With the dev server up, `node scripts/flow-sweep.mjs [light|dark]` runs every flow in every app in
-headless Chromium. It clicks each tile, approves each ask (following Instinct's links into
-Safari), picks the first quick reply, fails on console errors or a flow that doesn't settle in 60
-seconds, and saves end-state screenshots to `.tmp-sweep/`.
+headless Chromium. It clicks each tile and answers each ask the way the app takes it: Grok's form
+sheet (Continue, then Done), Dots' pills and sheets, Instinct's vault links into Safari, and
+Instinct's text replies (it sends the drafted Yes, or "no" when declining). It picks the first quick
+reply, opens and closes the sub-agent sheet once per flow, fails on console errors or a flow that
+doesn't settle in 60 seconds, and saves end-state screenshots to `.tmp-sweep/`.
 
 - `SWEEP_DENY=1` declines every ask instead.
 - `SWEEP_ENGINE=webkit` runs WebKit.
@@ -67,8 +69,10 @@ seconds, and saves end-state screenshots to `.tmp-sweep/`.
 ## Where things live
 
 - `src/apps/agents/brain/useAgentBrain.ts`: the one conversation. It plays a flow's beats (lines,
-  cards, asks, quick replies, pauses), waits on the visitor's decisions, fires each Grid event at
-  its beat, and cancels cleanly when another tile is picked.
+  cards, asks, quick replies, work statuses, products, reactions, sub-agents, pauses), waits on the
+  visitor's decisions, fires each Grid event at its beat, and cancels cleanly when another tile is
+  picked. An open ask or choice also takes a typed reply: "yes" approves, an option's number or
+  label picks it.
 - `src/apps/agents/flows.ts`: the ten flows as beats. They read the account's policy, so an amount
   over the approval threshold asks the person and one under it doesn't.
 - `src/apps/agents/conversation.ts`: messages are stored by meaning (a key and params), not text.
@@ -76,12 +80,15 @@ seconds, and saves end-state screenshots to `.tmp-sweep/`.
   neutral voice; `apps.ts` holds each app's overrides.
 - `src/apps/agents/AgentHost.tsx`: holds the brain above the skins and crossfades skins when the
   app changes.
-- `src/apps/agents/<app>/`: the skins. Each one only renders: `muse/` (ported from the MockMuse
-  SwiftUI app), `grok/`, `dot/`, `instinct/` (iMessage, with approvals on an app.instinct.com page
-  in Safari), `claude/` (with the procedural mascot from Claude Duet's product page), and
-  `yourapp/`. Every skin has light and dark.
-- `src/apps/agents/ChatFrame.tsx`, `parts.tsx`, `glass.tsx`: the frame every chat shares, the cards
-  a skin draws when it has no design of its own, and the frosted glass chrome.
+- `src/apps/agents/<app>/`: the skins. Each one only renders: `muse/` (recording 9 over the MockMuse
+  port), `grok/` (with the animated eyes in `GrokEyes.tsx`), `dot/`, `instinct/` (text-only
+  iMessage, with its vault on app.instinct.com in Safari), `claude/` (with the procedural mascot
+  from Claude Duet's product page), and `yourapp/`. Every skin has light and dark.
+- `src/apps/agents/ChatFrame.tsx`, `parts.tsx`, `glass.tsx`, `sheet.tsx`: the frame every chat
+  shares (with each app's row motion), the parts a skin draws when it has no design of its own (the
+  balance card, the sub-agent row and sheet), the frosted glass chrome, and the sheet each app
+  styles.
+- `src/styles/_glass-rim.scss`: the iOS 27 glass rim every in-phone glass surface uses.
 - `src/apps/shared/appSwitch/`: the iOS app switch and Safari toolbar, ported from the GoFundMe
   demo.
 - `src/data/agentEvents.ts`: what a conversation asks Grid to do, in its own terms.

@@ -78,7 +78,7 @@ function ActionPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
   const pending = state === 'pressing' || state === 'authing';
   const label = ask.form?.title ?? ask.title;
   return (
-    <button type="button" className={styles.pill} data-state={state} disabled={state !== 'open'} onClick={onOpen}>
+    <button type="button" className={styles.pill} data-state={state} disabled={state !== 'open'} onClick={onOpen} data-opens-sheet>
       <DotsMark size={22} />
       <span>{state === 'done' ? (ask.allowed ?? 'Done') : state === 'denied' ? (ask.denied ?? 'Not now') : label}</span>
       <span className={styles.pillEnd}>
@@ -248,7 +248,7 @@ function PayPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
           ? 'Expired'
           : `Review payment · ${ask.amount}`;
   return (
-    <button type="button" className={styles.pill} data-state={state} disabled={state !== 'open'} onClick={onOpen}>
+    <button type="button" className={styles.pill} data-state={state} disabled={state !== 'open'} onClick={onOpen} data-opens-sheet>
       <DotsMark size={22} />
       <span>{label}</span>
       <span className={styles.pillEnd}>

@@ -185,26 +185,12 @@ export function ComposerField({
   const [height, setHeight] = useState<number | null>(null);
   const [lines, setLines] = useState(1);
   const overflowAt = useRef<number | null>(null);
+  const multilineRef = useRef(false);
   const [multiline, setMultiline] = useState(false);
   const report = useRef(onMultiline);
   report.current = onMultiline;
 
-  useLayoutEffect(() => {
-    const len = chat.composer.length;
-    let next = multiline;
-    if (!multiline && (lines > 1 || chat.composer.includes('\n'))) {
-      overflowAt.current = len;
-      next = true;
-    } else if (multiline && !chat.composer.includes('\n') && len < (overflowAt.current ?? 0)) {
-      overflowAt.current = null;
-      next = false;
-    }
-    if (next !== multiline) {
-      setMultiline(next);
-      report.current?.(next);
-    }
-  }, [chat.composer, lines, multiline]);
-
+  // Decided in the same layout pass as the measurement, so a composer that turns into a card does it before paint.
   useLayoutEffect(() => {
     const el = twin.current;
     const box = wrap.current;
@@ -217,6 +203,21 @@ export function ComposerField({
       const n = Math.max(1, Math.round((el.scrollHeight - pad) / line));
       setLines(n);
       setHeight(Math.min(n, COMPOSER_LINES) * line + pad);
+      const text = chat.composer;
+      const was = multilineRef.current;
+      let next = was;
+      if (!was && (n > 1 || text.includes('\n'))) {
+        overflowAt.current = text.length;
+        next = true;
+      } else if (was && !text.includes('\n') && text.length < (overflowAt.current ?? 0)) {
+        overflowAt.current = null;
+        next = false;
+      }
+      if (next !== was) {
+        multilineRef.current = next;
+        setMultiline(next);
+        report.current?.(next);
+      }
     };
     measure();
     const ro = new ResizeObserver(measure);

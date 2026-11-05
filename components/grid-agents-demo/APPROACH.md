@@ -96,9 +96,48 @@ playground answers with canned lines.
 Haiku over a larger model: replies are a sentence or two in a fixed voice, and
 it keeps the per-turn cost low on a public page.
 
+### 2026-11-05: rebuilt 1:1 from the recordings, with no provider in the phone
+
+Grok Bot, Dots, Muse, and Instinct are rebuilt from 13 screen recordings and
+21 screenshots. Each transition was studied at 60fps and fitted to a curve
+(specs in `refs/<app>/spec.md`, gitignored). The playground is captured the
+same way (`.tmp-sweep/capture.mjs`) and compared frame by frame.
+
+- Nothing inside the phone names Lightspark or Grid. Each app calls the money
+  its own: Muse balance, Bot balance, Dots balance, Instinct balance, Duet
+  balance. Third-party patterns from the recordings (a connect sheet, a web
+  checkout, a card vault) keep their layouts and carry the host app's brand.
+  Merchants stay third-party because they are the payee.
+- The balance card keeps the website's anatomy ("{App} balance", the amount, a
+  note, then Add money, Card, and Send), so the playground and the website's
+  hero read as one product. Each app adds its own depth: Grok's detail sheet,
+  Dots' sheet, Muse's stat-tile artifact, and Instinct's balance page.
+- Grok Bot: animated eyes in the header and the status row, a status row
+  with a shimmer, reactions, a lettered choice card, a product carousel, a
+  form card with a native sheet for consent and limits, and an order card
+  from Pay through placing to confirmed.
+- Dots: markdown bubbles, Seen, an action pill that opens a floating setup
+  sheet, and Dots' own checkout sheet for payments.
+- Muse: the status subtitle under its name, a Browser card while it works a
+  page, entity links, and the stop and send discs.
+- Instinct: text only. Besides bubbles, it uses only what iMessage draws
+  (tapbacks, data detectors, inline replies, rich links, and images Instinct
+  generates). Payments are approved by replying Yes, which it drafts in the
+  composer. Consent and limits go through a vault link in Safari.
+- Pay an agent shows a sub-agent row. Its sheet holds the sub-agent's steps
+  and the two agents' messages.
+
+### 2026-11-05: the iOS 27 glass rim
+
+The rim is a 0.5pt hairline: dark on the left and right, faint on the top and
+bottom, with a white line just inside. One mixin
+(`src/styles/_glass-rim.scss`) draws it on every glass surface in the phone.
+It replaces the 45-degree baked specular. The values were matched to the
+zoomed captures at 3x.
+
 ### 2026-11-05: each app draws its own approval
 
-- Muse: Meta Pay's order sheet, ported from MockMuse with its measurements:
+- Muse: its order sheet, ported from MockMuse with its measurements:
   the Optimistic AI face, the avatar loops (idle, working, the still while it
   needs approval), joined bubble runs, dashed choices, and the sheet's
   settle-in.
@@ -119,7 +158,7 @@ Header buttons, composers, and tab bars are glass over the live thread. A
 displacement lens can only bend a static copy of what's behind it, and Safari
 renders that copy empty (see the liquid-glass README and the parked
 `pat/scroll-refraction-experiment`). So the chrome frosts the thread with
-`backdrop-filter` and keeps the glass buttons' specular rim. Short threads
+`backdrop-filter` and draws the iOS 27 rim on top. Short threads
 start under each app's header and fill down; long ones stay pinned to the
 composer and fade out under the header.
 

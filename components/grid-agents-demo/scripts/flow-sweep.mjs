@@ -1,6 +1,9 @@
 // Runs every flow on every connector in a real browser: clicks the tile (which
 // sends its line), then answers each approval (Approve, or Decline with
-// SWEEP_DENY=1) and picks the first chip, until the flow settles. Reports how
+// SWEEP_DENY=1) and picks the first chip, until the flow settles. It opens what
+// each app opens first (Grok's form sheet, Dots' pills, Instinct's vault links),
+// replies by text where the app takes text (Instinct: the drafted Yes, or "no"),
+// and opens and closes the sub-agent sheet once per flow. Reports how
 // long each took, how many tool calls, Grid calls and webhooks it logged, and
 // any console errors. Screenshots of each flow's end state land in
 // .tmp-sweep/ (gitignored).
@@ -28,7 +31,7 @@ const CONNECTORS = process.env.SWEEP_CONNECTORS
   ? ALL_CONNECTORS.filter((c) => process.env.SWEEP_CONNECTORS.split(',').includes(c))
   : ALL_CONNECTORS;
 const FLOWS = ['Connect', 'Add funds', 'Set limits', 'Pay someone', 'Buy online', 'Pay an agent', 'Get paid', 'Withdraw', 'Balance', 'History'];
-const ALLOW = /^(\s*(Allow|Approve|Connect|Save))+\s*$/;
+const ALLOW = /^(\s*(Allow|Approve|Connect|Save|Save limits|Save to vault|Done|Turn on Dots balance|Pay \$[\d.,]+(\/mo)?))+\s*$/;
 const DENY = /^(\s*(Deny|Decline|Not\s+now|Cancel))+\s*$/;
 
 const browser = await engine.launch();
@@ -58,23 +61,56 @@ for (const connector of CONNECTORS) {
     await tile(flow).click();
     await page.waitForTimeout(300);
     let answered = 0;
+    let peeked = false;
     while (Date.now() - t0 < 60_000) {
       await page.waitForTimeout(500);
       if ((await activeTile().count()) === 0) break;
+      // The sub-agent sheet: open it once, look, close it.
+      const subSheet = page.locator('[data-screen-body] [role="dialog"]', { hasText: 'Agent conversation' });
+      if (await subSheet.count()) {
+        await subSheet.locator('button', { hasText: /^Done$/ }).click({ timeout: 1000 }).catch(() => {});
+        await page.waitForTimeout(500);
+        continue;
+      }
+      const row = page.locator('[data-screen-body] [data-subagent]:visible').last();
+      if (!peeked && (await row.count())) {
+        peeked = true;
+        await row.click({ timeout: 1000 }).catch(() => {});
+        await page.waitForTimeout(900);
+        continue;
+      }
+      // Instinct takes text: send the drafted reply, or turn it down.
+      if (connector === 'Instinct') {
+        const field = page.locator('[data-screen-body] textarea:not([aria-hidden])').first();
+        const draft = await field.inputValue().catch(() => '');
+        if (draft) {
+          if (deny && draft === 'Yes') await field.fill('no');
+          await field.press('Enter').catch(() => {});
+          answered += 1;
+          await page.waitForTimeout(600);
+          continue;
+        }
+      }
       const ask = page.locator('[data-screen-body] button:enabled:visible', { hasText: deny ? DENY : ALLOW }).last();
       if (await ask.count()) {
         await ask.click({ timeout: 1000 }).catch(() => {});
         answered += 1;
         continue;
       }
-      // Instinct's approvals are links that open Safari.
+      const opener = page.locator('[data-screen-body] [data-opens-sheet]:enabled:visible').last();
+      if (await opener.count()) {
+        await opener.click({ timeout: 1000 }).catch(() => {});
+        await page.waitForTimeout(800);
+        continue;
+      }
+      // Instinct's vault links open Safari.
       const link = page.locator('[data-screen-body] [data-open-link]:enabled:visible').last();
       if (await link.count()) {
         await link.click({ timeout: 1000 }).catch(() => {});
         await page.waitForTimeout(1200);
         continue;
       }
-      const chip = page.locator('[data-screen-body] button:enabled:is([class*="chip"], [class*="choice"])').first();
+      const chip = page.locator('[data-screen-body] button:enabled:is([class*="chip"], [class*="choice"], [data-chip])').first();
       if (await chip.count()) {
         await chip.click({ timeout: 1000 }).catch(() => {});
         answered += 1;

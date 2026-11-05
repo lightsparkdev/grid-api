@@ -71,6 +71,7 @@ function ChoiceCard({ m, onPick }: { m: Extract<Message, { kind: 'chips' }>; onP
             key={c.label}
             type="button"
             className={styles.option}
+            data-chip
             data-picked={m.picked === i || undefined}
             disabled={done}
             onClick={() => onPick(i)}
@@ -133,7 +134,7 @@ function FormCard({ m, onOpen }: { m: Ask; onOpen: () => void }) {
       </span>
       <strong>{f.title}</strong>
       <span className={styles.formSub}>{f.sub}</span>
-      <button type="button" className={styles.continue} onClick={onOpen}>
+      <button type="button" className={styles.continue} onClick={onOpen} data-opens-sheet>
         Continue
       </button>
     </div>
