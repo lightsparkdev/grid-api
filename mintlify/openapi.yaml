@@ -7169,6 +7169,8 @@ paths:
       description: |
         Add a credential for an additional administrator of a `BUSINESS` customer's Embedded Wallet. The new administrator gets their own `EMAIL_OTP` or `PASSKEY` credential, tagged with `adminReference`, and signs for the wallet with it as the owner does. The wallet stays non-custodial: Grid never adds an administrator on its own, and every step is authorised by a signature from an existing verified credential on the account (the owner's, or another administrator's).
 
+        This is the only way an administrator adds a credential. An administrator's session cannot sign `POST /auth/credentials`, which Grid refuses with `403 FORBIDDEN`, so removing an administrator always removes every credential they added.
+
         It takes two signed steps. The first call returns `202` with a `payloadToSign` that creates the administrator's wallet user; the signed retry returns another `202` whose payload grants that user the authority to sign for the wallet; the second signed retry returns `201` with the new `AuthMethod`. The administrator then signs in with `POST /auth/credentials/{id}/challenge` and `POST /auth/credentials/{id}/verify`.
       operationId: createAdminCredential
       tags:
@@ -7312,7 +7314,7 @@ paths:
 
         Embedded Wallet internal accounts are initialized with an `EMAIL_OTP` credential tied to the customer email on the account. Use this endpoint to add another credential (`SMS_OTP`, `OAUTH`, or `PASSKEY`), or to add `EMAIL_OTP` / `SMS_OTP` back after it has been removed. The account holder may have one `EMAIL_OTP` and one `SMS_OTP` credential per internal account; multiple distinct `PASSKEY` credentials may be registered. Administrators' credentials, added with `POST /auth/admin-credentials`, are not counted.
 
-        Adding a credential requires a signature from an existing verified credential on the same account. Call this endpoint with the new credential's details to receive `202` with `payloadToSign` and `requestId`. Use the session API keypair of an existing verified credential (the session signing key the client holds for it) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For OTP credentials, the one-time password is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
+        Adding a credential requires a signature from an existing verified credential on the same account. An administrator's session cannot sign it: a credential added here carries no `adminReference`, so it would outlive the administrator's removal. Grid refuses an administrator's signature with `403 FORBIDDEN`; administrators add their own credentials with `POST /auth/admin-credentials`. Call this endpoint with the new credential's details to receive `202` with `payloadToSign` and `requestId`. Use the session API keypair of an existing verified credential (the session signing key the client holds for it) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For OTP credentials, the one-time password is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
       operationId: createAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -7481,6 +7483,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. Returned with `FORBIDDEN` when the signed retry is signed by an administrator's session. Administrators add their own credentials with `POST /auth/admin-credentials`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Internal account not found
           content:

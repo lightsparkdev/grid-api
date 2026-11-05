@@ -769,7 +769,7 @@ Requires an active session on an *existing* credential on the same account. The 
 </Steps>
 
 <Note>
-  The account holder may have one `EMAIL_OTP` credential per internal account; an administrator's credentials, added with `POST /auth/admin-credentials`, are not counted. Multiple distinct `PASSKEY` credentials are allowed; registering the same WebAuthn credentialId twice returns `400 PASSKEY_CREDENTIAL_ALREADY_EXISTS`.
+  The account holder may have one `EMAIL_OTP` credential per internal account; an administrator's credentials, added with `POST /auth/admin-credentials`, are not counted. An administrator's session cannot add credentials with `POST /auth/credentials` (`403 FORBIDDEN`); administrators add their own with `POST /auth/admin-credentials`. Multiple distinct `PASSKEY` credentials are allowed; registering the same WebAuthn credentialId twice returns `400 PASSKEY_CREDENTIAL_ALREADY_EXISTS`.
 </Note>
 
 ### Revoke a credential
