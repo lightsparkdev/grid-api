@@ -33379,6 +33379,9 @@ components:
           type: boolean
           description: Whether the platform lifted Grid's default agent merchant-category blocks on this card. Present only for a card issued for an agent.
           example: false
+        lockedMerchant:
+          $ref: '#/components/schemas/CardMerchant'
+          description: 'The merchant a merchant-locked card (an agent''s recurring purchase card) is locked to: the first merchant whose authorization on it was approved, the only one that can charge it. Absent until that first approved charge, and on every other card.'
         currency:
           type: string
           description: Currency the card transacts in, fixed at issuance by its card program. USDB-funded cards transact in USD, with funding converted at 1 USDB = 1 USD. Spending limits use the smallest unit of the card's currency (USD cents for USDB-funded cards). Changing the funding source does not change the card's currency or spending-limit units.
