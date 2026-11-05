@@ -432,6 +432,10 @@ paths:
     $ref: paths/internal_accounts/internal_accounts_{id}_balance-changes.yaml
   /internal-accounts/{id}/confirm-statement:
     $ref: paths/internal_accounts/internal_accounts_{id}_confirm-statement.yaml
+  /auth/admin-credentials:
+    $ref: paths/auth/auth_admin-credentials.yaml
+  /auth/admin-credentials/{adminReference}:
+    $ref: paths/auth/auth_admin-credentials_{adminReference}.yaml
   /auth/credentials:
     $ref: paths/auth/auth_credentials.yaml
   /auth/credentials/{id}:
