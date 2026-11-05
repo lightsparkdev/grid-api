@@ -1,6 +1,6 @@
 import { ACTIONS, type ActionId } from './actions';
 
-/** The Figma's flow glyphs (and four drawn to match): colored strokes that read on both themes. */
+/** The Figma's flow glyphs (and four drawn to match), used as masks. */
 const FLOW_ICON_SRC: Record<ActionId, string> = {
   connect: '/assets/flows/connect.svg',
   fund: '/assets/flows/fund.svg',
@@ -16,14 +16,22 @@ const FLOW_ICON_SRC: Record<ActionId, string> = {
 
 type FlowIconCmp = (props: { size?: number }) => JSX.Element;
 
-/** The 20px glyph sits in a 24px slot, as in the Figma. */
+/** The 20px glyph sits in a 24px slot, as in the Figma, inked in the slot's color
+ *  (`--icon-primary` in the picker, as in the cards playground). */
 function flowIcon(id: ActionId): FlowIconCmp {
   const src = FLOW_ICON_SRC[id];
   function FlowIcon({ size = 24 }: { size?: number }) {
     const glyph = Math.round((size * 20) / 24);
     return (
       <span style={{ display: 'grid', placeItems: 'center', width: size, height: size }}>
-        <img src={src} alt="" width={glyph} height={glyph} draggable={false} />
+        <span
+          style={{
+            width: glyph,
+            height: glyph,
+            background: 'currentColor',
+            mask: `url(${src}) no-repeat center / contain`,
+          }}
+        />
       </span>
     );
   }

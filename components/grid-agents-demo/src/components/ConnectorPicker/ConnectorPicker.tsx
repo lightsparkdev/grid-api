@@ -13,17 +13,9 @@ interface ConnectorPickerProps {
 }
 
 function Logo({ logo }: { logo: ConnectorDef['logo'] }) {
-  const { mark } = logo;
   return (
-    <span className={styles.logo} data-circle={logo.circle || undefined} style={{ background: logo.background }}>
-      <img
-        src={logo.src}
-        alt=""
-        className={styles.mark}
-        data-round={mark.round || undefined}
-        style={{ left: mark.left, top: mark.top, width: mark.width, height: mark.height }}
-        draggable={false}
-      />
+    <span className={styles.logo} data-glyph={logo.glyph || undefined}>
+      <img src={logo.src} alt="" className={styles.mark} draggable={false} />
     </span>
   );
 }

@@ -114,7 +114,8 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   min-width: 0;
 }
 
-/* The 22px logo tile in a 24px slot, like the flow icons beside it. */
+/* The app's icon at 22px in a 24px slot, like the flow icons beside it,
+   rounded the way iOS rounds icons (a squircle at 22.4% of the side). */
 .logo {
   position: relative;
   flex-shrink: 0;
@@ -122,16 +123,26 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   height: 22px;
   margin: 1px;
   overflow: hidden;
-  border: 0.5px solid var(--border-primary);
-  border-radius: 6px;
-  corner-shape: round;
+  border-radius: 22.4%;
+  corner-shape: superellipse(1.6);
   transform-origin: center;
   transition: transform 250ms $ease-out-swift;
 
-  &[data-circle] {
-    border-color: #fff;
-    border-radius: 50%;
-    box-shadow: 0 0.5px 2px rgba(0, 0, 0, 0.12);
+  // A hairline inside the edge, so white icons hold their shape on a light tile.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 0.5px solid var(--border-primary);
+    border-radius: inherit;
+    corner-shape: inherit;
+    pointer-events: none;
+  }
+
+  &[data-glyph] {
+    display: grid;
+    place-items: center;
+    background: var(--connector-yourapp-bg);
   }
 
   @media (hover: hover) {
@@ -147,13 +158,14 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
 }
 
 .mark {
-  position: absolute;
-  max-width: none;
-  object-fit: contain;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 
-  &[data-round] {
-    border-radius: 50%;
-    object-fit: cover;
+  [data-glyph] > & {
+    width: 14px;
+    height: 14px;
   }
 }
 
