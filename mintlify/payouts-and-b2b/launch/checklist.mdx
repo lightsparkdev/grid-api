@@ -26,23 +26,18 @@ Complete these before you build the consent and disclosure flows below. They gat
 
 ## End user agreements
 
-Which agreements you present depends on who your end user is and, for businesses, whether Lightspark Payments is licensed in the end user's state. Present every applicable agreement in your onboarding flow and capture affirmative consent before you onboard the end user.
+Present each of these agreements in your onboarding flow and capture affirmative consent before you onboard the end user.
 
-| Agreement | US consumers | US businesses (licensed states) | US businesses (unlicensed states) | Where to get it |
-| --- | :---: | :---: | :---: | --- |
-| Lightspark terms of service | Required | Required | Required | [End User Terms](https://www.lightspark.com/legal/grid/enduserterms) |
-| Lightspark e-sign consent | Required | Required | Required | Contact your Lightspark representative |
-| Lightspark privacy policy | Required | Required | Required | [Privacy Policy](https://www.lightspark.com/privacy-policy) |
-| Partner bank e-sign consent | Required | Not required | Not required | Contact your Lightspark representative |
-| Partner bank accountholder agreement | Required | Not required | Required | Contact your Lightspark representative |
-| Partner bank privacy policy | Required | Not required | Required | [Your Privacy Rights](https://www.lead.bank/legal/privacy) |
-
-<Note>
-Business end users in states where Lightspark Payments is licensed contract with Lightspark alone, so they see no partner bank agreements. Confirm which states apply to your product with your Lightspark representative.
-</Note>
+| Agreement | Where to get it |
+| --- | --- |
+| Lightspark terms of service | [End User Terms](https://www.lightspark.com/legal/grid/enduserterms) |
+| Lightspark e-sign consent | [E-Sign Consent](https://www.lightspark.com/legal/grid/enduserterms#e-sign-consent) |
+| Lightspark privacy policy | [Privacy Policy](https://www.lightspark.com/privacy-policy) |
+| Partner bank accountholder agreement | Send your fee schedule to your Lightspark representative. Lightspark generates the agreement from it for you to display. |
+| Partner bank privacy policy | [Your Privacy Rights](https://www.lead.bank/legal/privacy) |
 
 <Warning>
-Link the e-sign consent language on its own, not by reference to the full terms. The Lightspark e-sign consent is section 1.4 of the End User Terms, and burying it in the full document does not give it enough prominence at the point of consent. Your end user has to see and affirm it directly.
+Link the e-sign consent to its own section of the End User Terms, as in the table above. A link to the full terms doesn't make the consent prominent enough. Your end user has to see and affirm it directly.
 </Warning>
 
 ### Sample consent screen
@@ -53,7 +48,7 @@ Present the agreements as two separate affirmative actions: one consent to recei
 Account provided by [Partner Bank].
 
 ☐ I consent to receive all disclosures, agreements, and records electronically.
-  Lightspark [E-Sign Consent] · [Partner Bank] [E-Sign Consent]
+  Lightspark [E-Sign Consent]
 
 ☐ I agree to Lightspark's [Terms of Service] and [Partner Bank]'s
   [Accountholder Agreement], and I acknowledge Lightspark's [Privacy Policy]
@@ -61,10 +56,6 @@ Account provided by [Partner Bank].
 ```
 
 Use unchecked checkboxes or an equivalent affirmative action. Pre-checked boxes and implied consent are not acceptable.
-
-### Don't describe accounts as FDIC-insured
-
-Do not represent or imply that accounts made available through Grid are FDIC-insured or otherwise government-backed, anywhere in your interface or marketing. Lightspark screens for this during the review described below.
 
 ### Record each acceptance
 
@@ -78,7 +69,7 @@ Beyond onboarding, you owe end users disclosures and records over the life of th
 | --- | --- | --- |
 | Reg E Part B pre-transaction disclosure | Before an end user confirms an international remittance. Shows the exchange rate, fees, and the amount the recipient receives. | Quote response fields, see [Assessing fees](/payouts-and-b2b/payment-flow/assessing-fees) |
 | Receipts | Every completed transaction. | [Receipts](/payouts-and-b2b/payment-flow/receipts) |
-| Periodic statements | On the cadence your product commits to, for end users holding a balance. | [List transactions](/payouts-and-b2b/payment-flow/list-transactions) |
+| Periodic statements | On the cadence your product commits to, for end users holding a balance. | [Periodic statements](/payouts-and-b2b/payment-flow/statements) |
 | ACH mandate | Before you debit an end user's bank account by ACH. Captures their authorization for the debit. | [External accounts](/payouts-and-b2b/depositing-funds/external-accounts) |
 
 ## If you're launching Cards
@@ -102,7 +93,7 @@ Confirm your integration handles production traffic and failure modes.
 
 ## What to submit to Lightspark
 
-Send these two items to your Lightspark representative to request review.
+Send these items to your Lightspark representative to request review.
 
 <Steps>
   <Step title="Screenshots of your consent and disclosure screens">
@@ -125,8 +116,20 @@ Send these two items to your Lightspark representative to request review.
 
     A single unedited recording is preferred. Narration is optional.
   </Step>
+
+  <Step title="Your policies and audit reports">
+    Send PDF copies of:
+
+    - Your privacy policy
+    - Your terms of service
+    - Your information security policy
+    - Your most recent ISO, SOC 2, or PCI audit reports, if you have them
+    - Your most recent penetration test report, if you have one
+
+    If you contact end users by phone call or text message, also send your Telephone Consumer Protection Act (TCPA) disclosure.
+  </Step>
 </Steps>
 
 <Check>
-After Lightspark approves your submission, your representative enables production credentials and activates the corridors your product needs.
+After Lightspark approves your submission, Lightspark creates a production platform under your existing account and configures the fees defined in your order form. You then generate production API keys for that platform from the dashboard.
 </Check>
