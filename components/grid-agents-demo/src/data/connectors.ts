@@ -1,4 +1,4 @@
-/* The agent apps a visitor can connect (Figma 124:3873, Select connector). */
+/* The agent apps a visitor can connect (Figma 124:3873, Select agent). */
 
 export type ConnectorId = 'muse' | 'grok' | 'dot' | 'instinct' | 'claude' | 'yourapp';
 

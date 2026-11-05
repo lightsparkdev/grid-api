@@ -35,7 +35,7 @@ export function ConfigurePanel({
           <PlaygroundIntro />
 
           <section className={styles.section}>
-            <SectionDivider label="Select connector" />
+            <SectionDivider label="Select agent" />
             <ConnectorPicker selected={connector} onSelect={onConnectorSelect} />
           </section>
 

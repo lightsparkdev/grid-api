@@ -20,7 +20,7 @@ function Logo({ logo }: { logo: ConnectorDef['logo'] }) {
   );
 }
 
-/** Select connector: the agent app on the phone (Figma 124:3873). Switching
+/** Select agent: the agent app on the phone (Figma 124:3873). Switching
  *  mid-flow is fine: the conversation carries on in the next app's look. */
 export function ConnectorPicker({ selected, onSelect }: ConnectorPickerProps) {
   return (
