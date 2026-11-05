@@ -1,8 +1,8 @@
 post:
   summary: Issue a card
   description: >
-    Issue a new card for a cardholder. Every card is bound to one internal
-    account, `fundingSource`, at create time. The cardholder must
+    Issue a new card for a cardholder. Every card is bound to one account,
+    `fundingSource`, at create time. The cardholder must
     have KYC status `APPROVED` before a card can be issued; otherwise the
     request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
 
@@ -23,6 +23,12 @@ post:
     `POST /auth/delegated-keys`. Until an active delegated key exists for that
     funding source, Authorization Decisioning cannot use it to fund card
     transactions.
+
+
+    If the funding source is a provider wallet external account, the cardholder
+    must delegate the wallet to Grid at the provider, and Grid then creates the
+    delegated key. Until that key is `ACTIVE`, Authorization Decisioning cannot
+    use the account to fund card transactions.
 
 
     A platform may be limited to a maximum number of live cards. Once that
@@ -162,8 +168,8 @@ get:
     - name: accountId
       in: query
       description: >-
-        Filter by internal account id. Returns cards whose `fundingSource` is
-        the given internal account id.
+        Filter by internal or external account id. Returns cards whose
+        `fundingSource` is the given account id.
       required: false
       schema:
         type: string
