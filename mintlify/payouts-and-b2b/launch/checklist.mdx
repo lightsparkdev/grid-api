@@ -10,12 +10,8 @@ import { topLevelProductName } from '/snippets/variables.mdx';
 Work through this checklist before you request production access. Lightspark reviews each item and confirms your platform is ready to move real funds.
 
 <Warning>
-Launch approval is a gate, not a formality. Lightspark enables production credentials after reviewing the agreements you present to end users, the disclosures you send, and a recording of your sandbox flow. Start assembling this evidence while you build, not after.
+Lightspark Legal approval is a hard gate on launch. You can't go live or onboard any end user until Legal has reviewed and approved your consent flow. Start assembling this evidence while you build, not after.
 </Warning>
-
-<Info>
-The agreement and disclosure requirements on this page apply to end users in the **United States**. For requirements in other regions, contact your Lightspark representative.
-</Info>
 
 ## Commercial and compliance prerequisites
 
@@ -30,20 +26,24 @@ Complete these before you build the consent and disclosure flows below. They gat
 
 ## End user agreements
 
-Which agreements you present depends on who your end user is and, for businesses, whether Lightspark Payments is licensed in the end user's state. Present every applicable agreement in your onboarding flow and capture affirmative consent before the end user can transact.
+Which agreements you present depends on who your end user is and, for businesses, whether Lightspark Payments is licensed in the end user's state. Present every applicable agreement in your onboarding flow and capture affirmative consent before you onboard the end user.
 
-| Agreement | US consumers | US businesses (licensed states) | US businesses (unlicensed states) |
-| --- | :---: | :---: | :---: |
-| Lightspark terms of service | Required | Required | Required |
-| Lightspark e-sign consent | Required | Required | Required |
-| Lightspark privacy policy | Required | Required | Required |
-| Partner bank e-sign consent | Required | Not required | Not required |
-| Partner bank accountholder agreement | Required | Not required | Required |
-| Partner bank privacy policy | Required | Not required | Required |
+| Agreement | US consumers | US businesses (licensed states) | US businesses (unlicensed states) | Where to get it |
+| --- | :---: | :---: | :---: | --- |
+| Lightspark terms of service | Required | Required | Required | [End User Terms](https://www.lightspark.com/legal/grid/enduserterms) |
+| Lightspark e-sign consent | Required | Required | Required | Contact your Lightspark representative |
+| Lightspark privacy policy | Required | Required | Required | [Privacy Policy](https://www.lightspark.com/privacy-policy) |
+| Partner bank e-sign consent | Required | Not required | Not required | Contact your Lightspark representative |
+| Partner bank accountholder agreement | Required | Not required | Required | Contact your Lightspark representative |
+| Partner bank privacy policy | Required | Not required | Required | [Your Privacy Rights](https://www.lead.bank/legal/privacy) |
 
 <Note>
 Business end users in states where Lightspark Payments is licensed contract with Lightspark alone, so they see no partner bank agreements. Confirm which states apply to your product with your Lightspark representative.
 </Note>
+
+<Warning>
+Link the e-sign consent language on its own, not by reference to the full terms. The Lightspark e-sign consent is section 1.4 of the End User Terms, and burying it in the full document does not give it enough prominence at the point of consent. Your end user has to see and affirm it directly.
+</Warning>
 
 ### Sample consent screen
 
@@ -61,6 +61,10 @@ Account provided by [Partner Bank].
 ```
 
 Use unchecked checkboxes or an equivalent affirmative action. Pre-checked boxes and implied consent are not acceptable.
+
+### Don't describe accounts as FDIC-insured
+
+Do not represent or imply that accounts made available through Grid are FDIC-insured or otherwise government-backed, anywhere in your interface or marketing. Lightspark screens for this during the review described below.
 
 ### Record each acceptance
 
@@ -101,13 +105,13 @@ Confirm your integration handles production traffic and failure modes.
 Send these two items to your Lightspark representative to request review.
 
 <Steps>
-  <Step title="Your terms and disclosure content">
-    For each agreement and disclosure in the tables above, provide either:
+  <Step title="Screenshots of your consent and disclosure screens">
+    Submit screenshots of your implemented interface showing every agreement and disclosure in the tables above. Lightspark Legal reviews them against the sample consent screen above. Include:
 
-    - **A link** to the live page where the content is hosted, or
-    - **A screenshot** of the screen where the end user sees it, if the content isn't publicly reachable.
+    - **The consent screen**, showing each agreement linked and the unchecked boxes the end user has to check.
+    - **Each disclosure** in the screen where the end user sees it.
 
-    Include the consent screen itself, so Lightspark can confirm each agreement is presented and accepted before the end user transacts.
+    Where the content is hosted on a page of your own, include the link alongside the screenshot.
   </Step>
 
   <Step title="A recording of your sandbox flow">
