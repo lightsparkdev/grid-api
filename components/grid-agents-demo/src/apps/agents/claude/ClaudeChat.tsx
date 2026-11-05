@@ -2,7 +2,7 @@ import { TextMorph } from 'torph/react';
 import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
-import { askButtons, AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
+import { askButtons, AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useCardScan, useSubAgentSheet, VaultCardAsk, WorkLine } from '../parts';
 import type { AgentChatProps } from '../types';
 import { ClaudeMascot } from './ClaudeMascot';
 import type { MascotState } from './mascot';
@@ -61,6 +61,7 @@ function SpendCard({
 
 export function ClaudeChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages);
+  const scan = useCardScan({ wallet: 'Duet balance', onAllow: chat.allow, onDeny: chat.deny });
   const render = (m: Message) => {
     switch (m.kind) {
       case 'them':
@@ -85,6 +86,7 @@ export function ClaudeChat({ chat }: AgentChatProps) {
           </span>
         );
       case 'ask':
+        if (m.ask.card) return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.ask)} onDeny={chat.deny} />;
         // The spend card needs an amount; an ask without one (connecting, limits) is a plain approval.
         return m.ask.amount ? (
           <SpendCard m={m} onAllow={chat.allow} onDeny={chat.deny} />
@@ -130,7 +132,12 @@ export function ClaudeChat({ chat }: AgentChatProps) {
       className={styles.screen}
       messages={chat.messages}
       render={render}
-      overlay={sub.sheet}
+      overlay={
+        <>
+          {sub.sheet}
+          {scan.sheet}
+        </>
+      }
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={8}

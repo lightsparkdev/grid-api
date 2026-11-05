@@ -23,6 +23,7 @@ export const STATUS = {
   checking: (p) => `Checking ${s(p, 'wallet')}`,
   talking: () => `Talking to ${HOTEL.name}’s agent`,
   watching: () => 'Waiting for the payment',
+  adding: () => 'Adding money',
 } satisfies Record<string, LineFn>;
 
 export type StatusKey = keyof typeof STATUS;
@@ -64,6 +65,7 @@ export const METAS = {
   'buy.tracking': () => ({ text: 'Created routine · Track the delivery', icon: 'routine' }),
   'sub.reminder': () => ({ text: 'Created routine · Remind me before it renews', icon: 'routine' }),
   'connect.limits': () => ({ text: 'Limits saved', icon: 'check' }),
+  'card.saved': () => ({ text: 'Visa •••• 4242 saved to your vault', icon: 'check' }),
 } satisfies Record<string, (p?: Params) => AgentMeta>;
 
 export type MetaKey = keyof typeof METAS;
@@ -80,6 +82,9 @@ export const LINES = {
   'fund.ask': () => 'How do you want to add it?',
   'fund.address': (p) => `Here’s your ${s(p, 'method')} ${s(p, 'method') === 'Lightning' ? 'invoice' : 'address'}. Whatever you send lands as dollars.`,
   'fund.done': (p) => `${usd(n(p, 'amount'))} landed. You have ${usd2(n(p, 'balance'))} now.`,
+  'fund.card': (p) => `Adding ${usd(n(p, 'amount'))} from your Visa •••• 4242.`,
+  'card.intro': (p) => `Add your card once and it stays in your ${s(p, 'wallet')} vault. I only ever see a card id, never the number.`,
+  'card.denied': () => 'Okay, no card for now. You can add one any time.',
 
   'limits.intro': () => 'I can’t change my own limits, so I sent it to you to confirm.',
   'limits.done': (p) => `Done. I’ll handle anything up to ${usd(n(p, 'approve'))} and ask you above it.`,
@@ -152,6 +157,19 @@ export const ASKS = {
     allowed: 'Saved',
     deny: 'Cancel',
     denied: 'Canceled',
+  }),
+  vault: () => ({
+    title: 'Add your card',
+    rows: [
+      { text: 'Card number', sub: '•••• •••• •••• 4242', icon: 'card' },
+      { text: 'Expires', sub: '09 / 29', icon: 'card' },
+      { text: 'Billing ZIP', sub: '90405', icon: 'lock' },
+    ],
+    card: { brand: 'VISA', last4: '4242', expires: '09/29', name: PERSON.full },
+    allow: 'Save card',
+    allowed: 'Card saved',
+    deny: 'Not now',
+    denied: 'Not now',
   }),
   pay: (p) => ({
     title: `Send ${SOFIA.local} to ${SOFIA.first}`,

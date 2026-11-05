@@ -8,7 +8,7 @@ import { Flag } from '@/apps/shared/Flag';
 import { ChatFrame, ComposerField, NATIVE_IN, Said, TypingDots } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
 import type { AgentAsk, AgentBalance, Message, Product } from '../conversation';
-import { BalanceCard, BalanceDetail, Divider, MetaLine, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
+import { BalanceCard, BalanceDetail, Divider, MetaLine, NoteCard, SubAgentRow, useCardScan, useSubAgentSheet } from '../parts';
 import { AppSheet } from '../sheet';
 import { ADDRESS, PERSON } from '../story';
 import type { AgentChatProps } from '../types';
@@ -266,6 +266,7 @@ export function DotChat({ chat }: AgentChatProps) {
   const [balance, setBalance] = useState<AgentBalance | null>(null);
   const [balanceShown, setBalanceShown] = useState(false);
   const sub = useSubAgentSheet(chat.messages, SHEET_IN);
+  const scan = useCardScan({ wallet: 'Dots balance', onAllow: chat.allow, onDeny: chat.deny });
   const sheetOpen = shown && !!sheet && chat.messages.some((m) => m.kind === 'ask' && m.id === sheet.id && m.state === 'open');
   const open = (m: Ask) => {
     setSheet({ id: m.id, ask: m.ask });
@@ -329,6 +330,7 @@ export function DotChat({ chat }: AgentChatProps) {
           </div>
         );
       case 'ask':
+        if (m.ask.card) return <ActionPill m={m} onOpen={() => scan.open(m.ask)} />;
         return m.ask.rows ? <ActionPill m={m} onOpen={() => open(m)} /> : <PayPill m={m} onOpen={() => open(m)} />;
       case 'card': {
         const b = m.card.balance;
@@ -444,6 +446,7 @@ export function DotChat({ chat }: AgentChatProps) {
           ))}
       </AppSheet>
       {sub.sheet}
+      {scan.sheet}
       <AppSheet open={balanceShown} present={SHEET_IN} className={styles.setupPanel} onDismiss={() => setBalanceShown(false)}>
         {balance && <BalanceSheet balance={balance} onClose={() => setBalanceShown(false)} />}
       </AppSheet>

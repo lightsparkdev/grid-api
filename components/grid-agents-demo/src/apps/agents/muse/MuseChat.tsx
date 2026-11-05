@@ -5,7 +5,7 @@ import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1
 import { ChatFrame, ComposerField, NATIVE_IN, Said, TypingDots } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
 import type { AgentBalance, AskRow, Chip, Message, Product } from '../conversation';
-import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useSubAgentSheet } from '../parts';
+import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useCardScan, useSubAgentSheet, VaultCardAsk } from '../parts';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
 
@@ -323,6 +323,7 @@ function ApprovalCard({
 
 export function MuseChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages);
+  const scan = useCardScan({ wallet: 'Muse balance', onAllow: chat.allow, onDeny: chat.deny });
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
@@ -338,6 +339,9 @@ export function MuseChat({ chat }: AgentChatProps) {
       case 'me':
         return <span className={styles.me}>{m.text}</span>;
       case 'ask':
+        if (m.ask.card) {
+          return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.ask)} onDeny={chat.deny} className={styles.vaultAsk} />;
+        }
         return <ApprovalCard m={m} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':
         if (m.card.balance) return <BalanceArtifact balance={m.card.balance} />;
@@ -392,7 +396,12 @@ export function MuseChat({ chat }: AgentChatProps) {
       messages={chat.messages}
       render={render}
       rowMotion={() => NATIVE_IN}
-      overlay={sub.sheet}
+      overlay={
+        <>
+          {sub.sheet}
+          {scan.sheet}
+        </>
+      }
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={0}

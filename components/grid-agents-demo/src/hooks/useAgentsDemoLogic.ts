@@ -6,13 +6,27 @@ import { NEEDS_CONNECTION, type FlowContext } from '@/apps/agents/flows';
 import { voiceFor } from '@/apps/agents/voices';
 import type { Entry } from '@/components/ApiPanel/types';
 import { actionLabel, type ActionId } from '@/data/actions';
-import { createAgentSession, type AccountSnapshot, type AgentSession, type CallStep } from '@/data/agentApiCalls';
+import { createAgentSession, FAST_FORWARD_FUND_CENTS, type AccountSnapshot, type AgentSession, type CallStep } from '@/data/agentApiCalls';
 import type { AgentEvent } from '@/data/agentEvents';
 import type { ConnectorId } from '@/data/connectors';
 import type { ChatTurn } from '@/lib/llm/types';
 
 /** The calls one step makes land one after another, not in a block. */
 const CALL_STAGGER_MS = 650;
+
+/** The most a flow spends (USD cents): jumping to it with less in the balance tops it up first. */
+const SPENDS: Partial<Record<ActionId, number>> = { pay: 4_520, buy: 4_875, agent: 37_080, cashout: 20_000 };
+
+/**
+ * Fast-forward, as the Global Accounts playground does: whatever a flow needs
+ * (an installed agent, money to spend) is set up silently, so any tile works
+ * from any starting point. State only; nothing is logged for it.
+ */
+function prepare(session: AgentSession, id: ActionId) {
+  if (NEEDS_CONNECTION[id] && !session.snapshot().connected) session.assumeConnected();
+  const need = SPENDS[id];
+  if (need && session.snapshot().balanceCents < need) session.assumeFunded(FAST_FORWARD_FUND_CENTS);
+}
 
 let groupSeq = 0;
 function newGroupId() {
@@ -152,8 +166,8 @@ export function useAgentsDemoLogic() {
       });
       const data = (await res.json()) as { reply?: string; flow?: ActionId; variant?: number; fallback?: string };
       if (data.reply) {
-        if (data.flow && NEEDS_CONNECTION[data.flow] && !sessionRef.current.snapshot().connected) {
-          sessionRef.current.assumeConnected();
+        if (data.flow) {
+          prepare(sessionRef.current, data.flow);
           setAccount(sessionRef.current.snapshot());
         }
         return { said: { text: data.reply }, flow: data.flow ? { id: data.flow, variant: data.variant ?? 0 } : undefined };
@@ -168,10 +182,8 @@ export function useAgentsDemoLogic() {
   const handleAction = useCallback(
     (id: ActionId) => {
       const session = sessionRef.current;
-      if (NEEDS_CONNECTION[id] && !session.snapshot().connected) {
-        session.assumeConnected();
-        setAccount(session.snapshot());
-      }
+      prepare(session, id);
+      setAccount(session.snapshot());
       setEntry({ nonce: Date.now(), flow: id, variant: runs[id] });
     },
     [runs],

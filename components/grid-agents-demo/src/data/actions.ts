@@ -23,7 +23,7 @@ export interface WalletState {
 }
 
 /** What the customer's wallet holds before the visitor funds it. */
-const OPENING_BALANCE_CENTS = 125_000;
+const OPENING_BALANCE_CENTS = 0;
 
 export const initialWallet: WalletState = {
   connected: false,

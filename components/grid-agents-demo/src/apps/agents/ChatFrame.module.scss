@@ -15,28 +15,33 @@
   corner-shape: round;
 }
 
+// The thread scrolls; the stack grows at its foot and the thread follows it (useStickToEnd).
 .thread {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  pointer-events: auto;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-// Pinned to the composer: new messages land at the foot and the rest move up.
+// At least the thread's height: a short thread sits at its foot (or under the
+// header, with data-top) and a long one outgrows it and scrolls.
 .stack {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   gap: var(--gap);
-  padding: 0 16px var(--thread-foot);
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.35, 1);
+  min-height: 100%;
+  padding: 120px 16px var(--thread-foot);
 
-  // At least the thread's height, so a short thread sits at the top; a long
-  // one outgrows it upward and stays pinned to the composer.
   &[data-top] {
-    min-height: 100%;
+    justify-content: flex-start;
     padding-top: var(--thread-top);
   }
 }

@@ -928,3 +928,9 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
     background: #0866ff;
   }
 }
+
+.vaultAsk {
+  --part-surface: var(--muse-browser);
+  width: 345px;
+  border-radius: 22px;
+}

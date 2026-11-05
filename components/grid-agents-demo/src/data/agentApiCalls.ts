@@ -63,7 +63,9 @@ export const DEFAULT_LIMITS: Limits = {
 const MONTHLY_LIMIT = 1_000_000;
 
 /** What the customer's wallet holds before the visitor funds it. */
-export const OPENING_BALANCE_CENTS = 125_000;
+export const OPENING_BALANCE_CENTS = 0;
+/** What a jump straight to a payment tops the balance up to, when it has less than the payment needs. */
+export const FAST_FORWARD_FUND_CENTS = 125_000;
 
 /* ── Shapes ───────────────────────────────────────────────────────────── */
 
@@ -92,6 +94,8 @@ export interface LedgerEntry {
 
 export interface AccountSnapshot {
   connected: boolean;
+  /** A credit or debit card is in the account's vault. */
+  cardVaulted: boolean;
   balanceCents: number;
   limits: Limits;
   spentTodayCents: number;
@@ -164,15 +168,14 @@ function depositTarget(network: DepositNetwork, amount: number) {
   return `0x${hex(40)}`;
 }
 
-/** The past few days, so History is never empty. */
+/** The past few days, so History is never empty. It nets to zero: the account opens empty. */
 function seedLedger(): LedgerEntry[] {
   const day = 86_400_000;
   const now = Date.now();
   return [
     { id: nextId('Transaction'), at: now - 1 * day, title: 'Spotify', detail: 'Subscription · card', cents: -1199, status: 'COMPLETED' },
-    { id: nextId('Transaction'), at: now - 2 * day, title: 'Added funds', detail: 'USDC on Base', cents: 100_000, status: 'COMPLETED' },
     { id: nextId('Transaction'), at: now - 3 * day, title: 'Blue Bottle Coffee', detail: 'One-time card', cents: -1850, status: 'COMPLETED' },
-    { id: nextId('Transaction'), at: now - 5 * day, title: 'Added funds', detail: 'Lightning', cents: 25_000, status: 'COMPLETED' },
+    { id: nextId('Transaction'), at: now - 5 * day, title: 'Added funds', detail: 'Debit card •••• 4242', cents: 3049, status: 'COMPLETED' },
   ];
 }
 
@@ -200,6 +203,8 @@ export interface AgentSession {
   needsApproval(usdCents: number): boolean;
   /** Install the agent without logging anything: a flow that needs it, started first. */
   assumeConnected(): void;
+  /** Top up without logging anything: a payment jumped to before any money was added. */
+  assumeFunded(cents: number): void;
   snapshot(): AccountSnapshot;
 }
 
@@ -223,6 +228,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
   let receive: { network: DepositNetwork; currency: string; address: string } | null = null;
   let pending: Pending | null = null;
   let card: { id: string; purchase: Purchase } | null = null;
+  let vaulted: string | null = null;
 
   const needsApproval = (usdCents: number) => usdCents > limits.approvalAbove;
 
@@ -563,6 +569,57 @@ export function createAgentSession(nameOf: () => string): AgentSession {
       {
         tool: { name: 'get_deposit_status', args: { deposit_id: d.id }, result: { status: 'COMPLETED', received: money(d.amount) } },
         calls: [incomingWebhook(d.amount, d.currency, d.network, 'Deposit landed', `INCOMING_PAYMENT.COMPLETED: ${money(d.amount)} in the customer's wallet.`, d.id)],
+      },
+    ];
+  };
+
+  // Provisional: the vaulted-card calls are a sketch until Grid's vault API lands.
+  const cardVault = (): CallStep[] => {
+    vaulted = nextId('VaultedCard');
+    return [
+      {
+        tool: { name: 'vault_card', args: { source: 'card_scan' }, result: { vaulted_card_id: vaulted, brand: 'VISA', last4: '4242' } },
+        calls: [
+          {
+            method: 'POST',
+            path: `/customers/${CUSTOMER}/vaulted-cards`,
+            title: 'Vault card',
+            reqBody: { cardToken: `tok_${hex(24)}`, billingPostalCode: '90405' },
+            status: '201 Created',
+            note: 'The card goes into the PCI vault. Agents see a card id, never the number.',
+            resBody: { id: vaulted, customerId: CUSTOMER, brand: 'VISA', last4: '4242', expMonth: 9, expYear: 2029, status: 'ACTIVE', createdAt: nowIso() },
+          },
+        ],
+      },
+    ];
+  };
+
+  const fundCard = (amount: number): CallStep[] => {
+    const id = vaulted ?? nextId('VaultedCard');
+    vaulted = id;
+    balance += amount;
+    record('Added funds', 'Visa •••• 4242', amount);
+    return [
+      {
+        tool: { name: 'add_funds', args: { source: 'vaulted_card', amount_usd: dollars(amount) }, result: { status: 'COMPLETED', received: money(amount) } },
+        calls: [
+          {
+            method: 'POST',
+            path: '/quotes',
+            title: 'Fund from vaulted card',
+            reqBody: {
+              source: { sourceType: 'VAULTED_CARD', vaultedCardId: id },
+              destination: { destinationType: 'ACCOUNT', accountId: WALLET, currency: 'USDB' },
+              lockedCurrencySide: 'RECEIVING',
+              lockedCurrencyAmount: amount,
+              immediatelyExecute: true,
+            },
+            status: '201 Created',
+            note: 'Charged to the vaulted card with 3DS, and settled into the balance.',
+            resBody: { id: nextId('Quote'), status: 'COMPLETED', totalReceivingAmount: amount, receivingCurrency: USDB, createdAt: nowIso() },
+          },
+          incomingWebhook(amount, 'USD', 'CARD', 'Top-up landed', `INCOMING_PAYMENT.COMPLETED: ${money(amount)} from Visa •••• 4242.`),
+        ],
       },
     ];
   };
@@ -934,7 +991,11 @@ export function createAgentSession(nameOf: () => string): AgentSession {
     assumeConnected: () => {
       connected = true;
     },
-    snapshot: () => ({ connected, balanceCents: balance, limits: { ...limits }, spentTodayCents: spentToday, ledger: ledger.slice() }),
+    assumeFunded: (cents) => {
+      balance += cents;
+      record('Added funds', 'Debit card •••• 4242', cents);
+    },
+    snapshot: () => ({ connected, cardVaulted: vaulted !== null, balanceCents: balance, limits: { ...limits }, spentTodayCents: spentToday, ledger: ledger.slice() }),
     stepsFor(event) {
       switch (event.type) {
         case 'connect':
@@ -943,6 +1004,10 @@ export function createAgentSession(nameOf: () => string): AgentSession {
           return fundDeposit(event.network, event.currency, event.amount);
         case 'fund.received':
           return fundReceived();
+        case 'card.vault':
+          return cardVault();
+        case 'fund.card':
+          return fundCard(event.amount);
         case 'getpaid.address':
           return getpaidAddress(event.network, event.currency);
         case 'getpaid.received':

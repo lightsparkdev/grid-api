@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TextMorph } from 'torph/react';
 import type { Transition } from 'motion/react';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
@@ -256,6 +256,138 @@ export function useSubAgentSheet(messages: Message[], present?: Transition) {
     },
     sheet: <SubAgentSheet agent={last.current} done={m?.done ?? true} open={shown && !!m} onClose={() => setShown(false)} present={present} />,
   };
+}
+
+/** A card, drawn: the vaulted card's face in the scan sheet and the card ask. */
+export function CardArt({ card, className }: { card?: AgentAsk['card']; className?: string }) {
+  return (
+    <span className={`${styles.cardArt} ${className ?? ''}`} aria-hidden>
+      <i className={styles.cardChip} />
+      <span className={styles.cardNumber}>{card ? `•••• ${card.last4}` : ''}</span>
+      <span className={styles.cardFoot}>
+        <span>{card ? `${card.name} · ${card.expires}` : ''}</span>
+        <b>{card?.brand ?? 'VISA'}</b>
+      </span>
+    </span>
+  );
+}
+
+const SCAN_MS = 1700;
+
+/**
+ * Adding a card the way Apple Wallet does it: what it's for, then "Hold Near
+ * Card" while the phone reads the chip, then the card it found. Save puts it
+ * in the vault (the ask's allow); Not now declines.
+ */
+function CardScan({ ask, wallet, onSave, onClose }: { ask: AgentAsk; wallet: string; onSave: () => void; onClose: () => void }) {
+  const [stage, setStage] = useState<'intro' | 'scan' | 'found'>('intro');
+  useEffect(() => {
+    if (stage !== 'scan') return;
+    const t = window.setTimeout(() => setStage('found'), SCAN_MS);
+    return () => window.clearTimeout(t);
+  }, [stage]);
+  if (stage === 'scan') {
+    return (
+      <div className={styles.scanDark}>
+        <button type="button" className={styles.scanCancel} onClick={() => setStage('intro')}>
+          Cancel
+        </button>
+        <span className={styles.scanPhone}>
+          <i />
+        </span>
+        <strong>Hold Near Card</strong>
+        <span>Hold your phone near the chip on the card to add it.</span>
+        <button type="button" className={styles.scanManual} onClick={() => setStage('found')}>
+          Enter Card Details Manually
+        </button>
+      </div>
+    );
+  }
+  const found = stage === 'found';
+  return (
+    <div className={styles.scanSheet}>
+      <CardArt card={found ? ask.card : undefined} className={styles.scanCard} />
+      <strong className={styles.scanTitle}>{found ? `Visa •••• ${ask.card?.last4 ?? ''}` : 'Add a credit or debit card'}</strong>
+      <p className={styles.scanBody}>
+        {found
+          ? `It goes into your ${wallet} vault. Your agent only ever sees a card id, never the number.`
+          : `Fund your ${wallet} and pay at checkout with a card you already have. It’s kept in a PCI vault.`}
+      </p>
+      <button type="button" className={styles.scanPrimary} onClick={found ? onSave : () => setStage('scan')}>
+        {found ? (ask.allow ?? 'Save card') : 'Continue'}
+      </button>
+      <button type="button" className={styles.scanSecondary} onClick={onClose}>
+        {ask.deny ?? 'Not now'}
+      </button>
+    </div>
+  );
+}
+
+/** A skin's card scan sheet: `open(ask)` from its card ask, and the sheet to render in its screen. */
+export function useCardScan({ wallet, onAllow, onDeny }: { wallet: string; onAllow: () => void; onDeny: () => void }) {
+  const [ask, setAsk] = useState<AgentAsk | null>(null);
+  const [shown, setShown] = useState(false);
+  const close = () => setShown(false);
+  return {
+    open: (next: AgentAsk) => {
+      setAsk(next);
+      setShown(true);
+    },
+    sheet: (
+      <AppSheet open={shown} present={SHEET_IN} dim={0.3} className={styles.scanPanel} onDismiss={close}>
+        {ask && (
+          <CardScan
+            key={ask.title}
+            ask={ask}
+            wallet={wallet}
+            onSave={() => {
+              close();
+              onAllow();
+            }}
+            onClose={() => {
+              close();
+              onDeny();
+            }}
+          />
+        )}
+      </AppSheet>
+    ),
+  };
+}
+
+/** The card ask in the thread: the card, what it's for, and Add card (which opens the scan). */
+export function VaultCardAsk({
+  ask,
+  state,
+  onOpen,
+  onDeny,
+  className,
+}: {
+  ask: AgentAsk;
+  state: AskState;
+  onOpen: () => void;
+  onDeny: () => void;
+  className?: string;
+}) {
+  const b = askButtons(ask, state);
+  return (
+    <div className={`${styles.ask} ${styles.vaultAsk} ${className ?? ''}`}>
+      <CardArt card={state === 'done' ? ask.card : undefined} className={styles.vaultCard} />
+      <span className={styles.askTitle}>{state === 'done' ? `Visa •••• ${ask.card?.last4 ?? ''} saved` : ask.title}</span>
+      <span className={styles.askMethod}>Kept in a PCI vault. Your agent sees a card id, never the number.</span>
+      {!b.settled && (
+        <div className={styles.askActions} data-state={state}>
+          <button type="button" className={styles.askDeny} disabled={b.pressing} onClick={onDeny}>
+            {b.denyLabel}
+          </button>
+          <button type="button" className={styles.askAllow} data-pressing={b.pressing || undefined} disabled={b.pressing} onClick={onOpen} data-opens-sheet>
+            Add card
+          </button>
+        </div>
+      )}
+      {state === 'denied' && <span className={styles.askMethod}>{b.denyLabel}</span>}
+    </div>
+  );
 }
 
 const META_SYMBOL = { routine: 'clock.arrow.trianglehead.counterclockwise.rotate.90', check: 'checkmark' } as const;

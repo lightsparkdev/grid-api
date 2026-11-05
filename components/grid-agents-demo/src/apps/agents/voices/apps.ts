@@ -98,6 +98,22 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
           submitted: 'Turned on Bot balance',
         },
       }),
+      vault: () => ({
+        ...ASKS.vault(),
+        form: {
+          title: 'Add your card',
+          sub: 'Never shown to your Bot. Only filled in your Bot’s vault.',
+          sheetTitle: 'Card',
+          fields: [
+            { label: 'Card number', value: '4242 4242 4242 4242' },
+            { label: 'Expiration', value: '09 / 29' },
+            { label: 'CVC', value: '•••' },
+            { label: 'ZIP', value: '90405' },
+          ],
+          toggle: 'Securely save to your Bot’s vault',
+          submitted: 'Saved your card',
+        },
+      }),
       limits: (p) => ({
         ...ASKS.limits(p),
         form: {
@@ -196,6 +212,19 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
           { text: 'Per payment', sub: usd(n(p, 'perTx')), icon: 'gauge' },
           { text: 'Per day', sub: usd(n(p, 'daily')), icon: 'gauge' },
           { text: 'Ask me above', sub: usd(n(p, 'approve')), icon: 'lock' },
+        ],
+        allow: 'Save to vault',
+        allowed: 'Saved',
+      }),
+      vault: () => ({
+        ...ASKS.vault(),
+        title: 'Purchase card',
+        rows: [
+          { text: 'Card number', sub: '•••• •••• •••• 4242', icon: 'card' },
+          { text: 'Expiry month', sub: '09', icon: 'card' },
+          { text: 'Expiry year', sub: '29', icon: 'card' },
+          { text: 'CVV', sub: '•••', icon: 'lock' },
+          { text: 'Billing ZIP', sub: '90405', icon: 'lock' },
         ],
         allow: 'Save to vault',
         allowed: 'Saved',

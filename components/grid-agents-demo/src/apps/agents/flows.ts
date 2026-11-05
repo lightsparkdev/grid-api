@@ -16,6 +16,8 @@ export interface FlowContext {
   variant: number;
 }
 
+const CARD_OPTION = 'Debit or credit card';
+
 const limitParams = (ctx: FlowContext) => ({ limit: ctx.account().limits.approvalAbove });
 
 /** What the balance card reads: the balance, today's spend against the limits, recent activity. */
@@ -78,13 +80,38 @@ const connect = (ctx: FlowContext): Beat[] => {
   ];
 };
 
+/** Top up from a card: vault it the first time (each app's own way), then charge it. */
+const cardTopUp = (ctx: FlowContext): Beat[] => [
+  {
+    when: () => {
+      const amount = FUND.amount;
+      const charge: Beat[] = [
+        { work: 'adding', ms: 900 },
+        { emit: { type: 'fund.card', amount } },
+        { when: () => [{ say: 'fund.done', params: { amount, balance: ctx.account().balanceCents } }] },
+      ];
+      if (ctx.account().cardVaulted) return [{ say: 'fund.card', params: { amount } }, ...charge];
+      return [
+        { say: 'card.intro' },
+        {
+          ask: 'vault',
+          faceId: true,
+          allow: [{ emit: { type: 'card.vault' } }, { meta: 'card.saved' }, ...charge],
+          deny: [{ say: 'card.denied' }],
+        },
+      ];
+    },
+  },
+];
+
 const fund = (ctx: FlowContext): Beat[] => [
   { say: 'fund.ask' },
   {
-    chips: FUND.options.map((o) => ({ label: o.label })),
+    chips: [{ label: CARD_OPTION }, ...FUND.options.map((o) => ({ label: o.label }))],
     reply: true,
-    then: (i) => {
-      const o = FUND.options[i];
+    then: (picked) => {
+      if (picked === 0) return cardTopUp(ctx);
+      const o = FUND.options[picked - 1];
       const params = { method: o.label, network: o.network, currency: o.currency, amount: FUND.amount };
       return [
         { emit: { type: 'fund.deposit', network: o.network, currency: o.currency, amount: FUND.amount } },

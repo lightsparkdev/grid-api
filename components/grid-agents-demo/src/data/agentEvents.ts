@@ -57,6 +57,10 @@ export type AgentEvent =
   | { type: 'fund.deposit'; network: DepositNetwork; currency: string; amount: number }
   /** The deposit landed. */
   | { type: 'fund.received' }
+  /** The person's credit or debit card goes into the account's PCI vault (the agent only ever sees its id). */
+  | { type: 'card.vault' }
+  /** A top-up charged to the vaulted card. */
+  | { type: 'fund.card'; amount: number }
   /** The agent shares where someone can pay the account. */
   | { type: 'getpaid.address'; network: DepositNetwork; currency: string }
   /** Someone paid it. */

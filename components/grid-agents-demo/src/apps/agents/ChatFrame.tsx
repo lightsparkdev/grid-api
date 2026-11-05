@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, type TargetAndTransition, type Transition } from 'motion/react';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
@@ -12,6 +12,89 @@ const ROW_IN = motionTransition(easeOutSnappy, 0.5);
 
 /** How the thread moves up when something lands at its foot (fitted to the Grok and Dots captures, 233–300ms). */
 export const THREAD_SCROLL: Transition = { duration: 0.28, ease: [0.28, 0.05, 0.65, 1] };
+
+/** cubic-bezier(x1, y1, x2, y2) as a function of time, for the thread's own scroll animation. */
+function bezier(x1: number, y1: number, x2: number, y2: number) {
+  const at = (a: number, b: number, t: number) => 3 * a * t * (1 - t) ** 2 + 3 * b * t * t * (1 - t) + t ** 3;
+  return (x: number) => {
+    let lo = 0;
+    let hi = 1;
+    for (let i = 0; i < 24; i++) {
+      const mid = (lo + hi) / 2;
+      if (at(x1, x2, mid) < x) lo = mid;
+      else hi = mid;
+    }
+    return at(y1, y2, (lo + hi) / 2);
+  };
+}
+const SCROLL_EASE = bezier(0.28, 0.05, 0.65, 1);
+const SCROLL_MS = 280;
+
+/**
+ * Keeps a scrolling thread on its newest message: when the content grows (a
+ * message, a typing bubble turning into text, the composer growing), the whole
+ * thread scrolls up together on the measured curve. Scrolled back to read, it
+ * stays put until the visitor returns to the foot.
+ */
+function useStickToEnd(scroller: React.RefObject<HTMLDivElement>, content: React.RefObject<HTMLDivElement>) {
+  useEffect(() => {
+    const el = scroller.current;
+    const inner = content.current;
+    if (!el || !inner) return;
+    let stuck = true;
+    let raf = 0;
+    let animating = false;
+    const end = () => el.scrollHeight - el.clientHeight;
+    const settle = () => {
+      cancelAnimationFrame(raf);
+      animating = false;
+    };
+    const follow = () => {
+      if (!stuck) return;
+      const from = el.scrollTop;
+      const to = end();
+      if (Math.abs(to - from) < 1) return;
+      settle();
+      // The first layout lands without motion.
+      if (!el.dataset.ready) {
+        el.scrollTop = to;
+        return;
+      }
+      animating = true;
+      const t0 = performance.now();
+      const step = (now: number) => {
+        const t = Math.min(1, (now - t0) / SCROLL_MS);
+        el.scrollTop = from + (end() - from) * SCROLL_EASE(t);
+        if (t < 1) raf = requestAnimationFrame(step);
+        else animating = false;
+      };
+      raf = requestAnimationFrame(step);
+    };
+    const onScroll = () => {
+      if (animating) return;
+      stuck = end() - el.scrollTop < 24;
+    };
+    const interrupt = () => {
+      settle();
+      stuck = end() - el.scrollTop < 24;
+    };
+    const ro = new ResizeObserver(follow);
+    ro.observe(inner);
+    ro.observe(el);
+    follow();
+    el.dataset.ready = '1';
+    el.addEventListener('scroll', onScroll, { passive: true });
+    el.addEventListener('wheel', interrupt, { passive: true });
+    el.addEventListener('touchstart', interrupt, { passive: true });
+    return () => {
+      settle();
+      ro.disconnect();
+      el.removeEventListener('scroll', onScroll);
+      el.removeEventListener('wheel', interrupt);
+      el.removeEventListener('touchstart', interrupt);
+    };
+  }, [scroller, content]);
+}
 
 /** How a row arrives: where it starts, where it lands, and how it gets there. */
 export interface RowMotion {
@@ -90,6 +173,9 @@ export function ChatFrame({
   onFaceIdDone?: () => void;
 }) {
   const screenOverlay = useScreenOverlay();
+  const threadRef = useRef<HTMLDivElement>(null);
+  const stackRef = useRef<HTMLDivElement>(null);
+  useStickToEnd(threadRef, stackRef);
   const fade = fadeTop ?? (threadTop !== undefined ? [threadTop - 64, threadTop] : undefined);
   // The composer grows with its text, and the thread's foot rises with it.
   const composerRef = useRef<HTMLDivElement>(null);
@@ -116,6 +202,7 @@ export function ChatFrame({
       }
     >
       <div
+        ref={threadRef}
         className={styles.thread}
         style={
           fade && {
@@ -123,7 +210,7 @@ export function ChatFrame({
           }
         }
       >
-        <div className={styles.stack} data-top={threadTop !== undefined || undefined}>
+        <div ref={stackRef} className={styles.stack} data-top={threadTop !== undefined || undefined}>
           {messages.map((m, i) => {
             const node = render(m, i, messages);
             // A skin may draw a message elsewhere (Muse's status sits in its header).
@@ -132,12 +219,11 @@ export function ChatFrame({
             return (
               <motion.div
                 key={m.id}
-                layout="position"
                 className={styles.row}
                 data-kind={m.kind}
                 initial={enter.initial}
                 animate={enter.animate}
-                transition={{ ...enter.transition, layout: THREAD_SCROLL }}
+                transition={enter.transition}
               >
                 {node}
               </motion.div>
@@ -265,7 +351,7 @@ export function Said({
 }) {
   // The dots give way at once and the text fills in from pale (~150ms, as Dots and Muse do it) while the bubble grows.
   return (
-    <motion.div layout className={className} data-pos={pos} data-typing={typing || undefined} transition={THREAD_SCROLL}>
+    <div className={className} data-pos={pos} data-typing={typing || undefined}>
       <AnimatePresence initial={false} mode="popLayout">
         {typing ? (
           <motion.div key="dots" exit={{ opacity: 0 }} transition={{ duration: 0.08 }}>
@@ -277,7 +363,7 @@ export function Said({
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
 
