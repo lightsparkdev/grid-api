@@ -1,51 +1,129 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { motion } from 'motion/react';
 import { PhoneStatusBar } from '@/apps/shared/AppShell/PhoneStatusBar';
 import { playAppSwitch, WALLPAPER } from '@/apps/shared/appSwitch';
 import { SfSymbol } from '@/apps/shared/icons';
-import { ChatFrame, ComposerField, Said } from '../ChatFrame';
+import { ChatFrame, ComposerField, NATIVE_IN, Said, TypingDots, type RowMotion } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
-import type { Message } from '../conversation';
-import { ChipRow, Divider, MetaLine, NoteCard, ProductRow, WorkLine } from '../parts';
+import type { AgentAsk, AgentNote, Message, Product } from '../conversation';
 import type { AgentChatProps } from '../types';
 import { INSTINCT_HOST, InstinctSafari } from './InstinctSafari';
 import styles from './InstinctChat.module.scss';
 
-/** Figma 89:297 (iMessage), as your 1:1 thread with Instinct; approvals open app.instinct.com in Safari. */
+/**
+ * Instinct over iMessage (recordings 1, 2, 4, 6): text only. Besides bubbles
+ * there is only what iMessage itself draws: tapbacks, rich links, and the
+ * images Instinct generates (receipts, product cards). Payments are approved
+ * by replying, and anything sensitive goes through a vault link in Safari.
+ */
 const A = '/assets/agents/instinct';
 
 const mask = (src: string, width: number, height: number) => ({ maskImage: `url(${src})`, width, height });
 
-/** Instinct's side of the thread: its texts, cards, links and quick replies run together; the last text takes the tail. */
-const THEIRS = new Set<Message['kind']>(['them', 'card', 'chips', 'ask']);
+/** Instinct's side of the thread: its texts, images and links run together; the last takes the tail. */
+const THEIRS = new Set<Message['kind']>(['them', 'card', 'chips', 'ask', 'work', 'products']);
 
 type Ask = Extract<Message, { kind: 'ask' }>;
 
 /** After the page settles, the beat Safari holds before heading back to Messages. */
-const RETURN_MS = 900;
+const RETURN_MS = 1600;
 
-/** Your message gets Instinct's 👍 once the approval it led to goes through. */
-function tapbackFor(i: number, all: Message[]) {
-  for (let j = i + 1; j < all.length; j++) {
-    const m = all[j];
-    if (m.kind === 'me') return false;
-    if (m.kind === 'ask') return m.state === 'done';
-  }
-  return false;
+/** Your bubble rises from the field into place, as iMessage sends. */
+const IMSG_SENT: RowMotion = {
+  initial: { y: 34, scale: 0.98 },
+  animate: { y: 0, scale: 1 },
+  transition: { type: 'spring', stiffness: 420, damping: 38, mass: 1 },
+};
+
+/** iMessage's data detectors: amounts, days and street addresses, underlined. */
+const DETECT = /(R?\$[\d,]+(?:\.\d{2})?|\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b|\d{3,5} [A-Z][\w ]+? (?:Blvd|St|Ave|Rd)\b[^,.]*)/gi;
+
+function Detected({ text }: { text: string }) {
+  const parts = text.split(DETECT);
+  return (
+    <>
+      {parts.map((p, i) => (i % 2 === 1 ? <u key={i} className={styles.detected}>{p}</u> : <Fragment key={i}>{p}</Fragment>))}
+    </>
+  );
 }
 
-/** An iMessage rich link to Instinct's approval page: the page's preview, then its title and domain. */
-function LinkPreview({ m, onOpen }: { m: Ask; onOpen: () => void }) {
+/** A money ask, as Instinct texts it: what, how much, from where, and to reply yes. */
+function askText(ask: AgentAsk) {
+  const what = ask.who ? `${ask.who.name}, ${ask.amount}` : `${ask.title}, ${ask.amount}`;
+  const from = ask.method ? ` ${ask.method.replace(/^From /, 'from ')}.` : '';
+  const verb = ask.who?.icon ? 'place the order' : 'send it';
+  return `${what}.${from} reply yes and i’ll ${verb}`;
+}
+
+/** A choice, as a numbered text to answer by typing. */
+function chipsText(m: Extract<Message, { kind: 'chips' }>) {
+  return `reply with one:\n${m.chips.map((c, i) => `${i + 1}. ${c.label}`).join('\n')}`;
+}
+
+const today = () => new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+/** An image Instinct generates: its paper, the headline in its serif, the details, its wordmark. */
+function InstinctImage({ note }: { note: AgentNote }) {
+  return (
+    <div className={styles.image} role="img" aria-label={note.title}>
+      <span className={styles.imageTop}>
+        <span className={styles.wordmark}>Instinct</span>
+        <span>{today()}</span>
+      </span>
+      <strong className={styles.imageTitle}>{note.title}</strong>
+      {note.code && <code className={styles.imageCode}>{note.code}</code>}
+      {note.lines.map((l) => (
+        <span key={l} className={styles.imageLine}>
+          {l}
+        </span>
+      ))}
+      {note.rows?.map((r, i) => (
+        <span key={`${r.title}-${i}`} className={styles.imageRow}>
+          <span>{r.title}</span>
+          <b data-in={r.incoming || undefined}>{r.amount}</b>
+        </span>
+      ))}
+      {note.done && <span className={styles.imageDone}>✓ Done</span>}
+    </div>
+  );
+}
+
+/** What Instinct found, as the product image it sends: the photo, how many it found, brand, title, price. */
+function ProductImage({ products }: { products: Product[] }) {
+  const p = products.find((x) => x.pick) ?? products[0];
+  return (
+    <div className={styles.productStack} role="img" aria-label={p.title}>
+      <span className={styles.stackBack} />
+      <div className={styles.productImage}>
+        <span className={styles.productPhoto}>
+          <img src={p.image} alt="" />
+          <i className={styles.count}>{products.length}</i>
+        </span>
+        <span className={styles.productBrand}>{p.merchant}</span>
+        <strong>{p.title}</strong>
+        <span className={styles.productPrice}>{p.price}</span>
+        <span className={styles.imageTop}>
+          <span>{today()}</span>
+          <span className={styles.wordmark}>Instinct</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** The vault link: iMessage's rich link to Instinct's page, its preview over the title and domain. */
+function VaultLink({ m, onOpen }: { m: Ask; onOpen: () => void }) {
   const { ask, state } = m;
   return (
     <button type="button" className={styles.link} data-open-link disabled={state !== 'open'} onClick={onOpen}>
       <span className={styles.linkHero}>
-        <span className={styles.linkMark}>
-          <img src={`${A}/logo.png`} alt="" width={6.3} height={17.6} />
-        </span>
-        <span className={styles.linkHeadline}>{ask.amount ?? ask.total ?? 'Approve'}</span>
-        <span className={styles.linkState} data-state={state}>
-          {state === 'done' ? 'Approved' : state === 'denied' ? 'Declined' : state === 'expired' ? 'Expired' : 'Tap to review'}
-        </span>
+        <span className={styles.linkHeadline}>{ask.title}</span>
+        <span className={styles.linkWord}>Instinct</span>
+        {state !== 'open' && (
+          <span className={styles.linkState} data-state={state}>
+            {state === 'done' ? 'Saved to your vault' : state === 'denied' ? 'Not now' : state === 'expired' ? 'Expired' : 'Saving…'}
+          </span>
+        )}
       </span>
       <span className={styles.linkMeta}>
         <strong>{ask.title}</strong>
@@ -104,8 +182,29 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
     return () => window.clearTimeout(t);
   }, [view, switchTo, askState, back]);
 
+  // A payment or a choice waits on a text: the likely answer is drafted, ready to send.
+  const drafted = useRef(new Set<number>());
+  const { composer, setComposer } = chat;
+  useEffect(() => {
+    const open = [...chat.messages]
+      .reverse()
+      .find((m) => (m.kind === 'ask' && m.state === 'open' && !m.ask.rows) || (m.kind === 'chips' && m.picked === null && !m.expired));
+    if (!open || drafted.current.has(open.id)) return;
+    drafted.current.add(open.id);
+    if (!composer) setComposer(open.kind === 'chips' ? open.chips[0].label : 'Yes');
+  }, [chat.messages, composer, setComposer]);
+  const lastMe = chat.messages.reduce((id, m) => (m.kind === 'me' ? m.id : id), -1);
+
+  const bubble = (key: string, body: ReactNode, tail: boolean) => (
+    <div className={styles.body} key={key}>
+      <div className={styles.bubble}>{body}</div>
+      {tail && <span className={styles.tailIn} />}
+    </div>
+  );
+
   const render = (m: Message, i: number, all: Message[]) => {
     const theirsNext = i < all.length - 1 && THEIRS.has(all[i + 1].kind);
+    const prev = all[i - 1];
     switch (m.kind) {
       case 'stamp':
       case 'tag':
@@ -119,33 +218,77 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         return (
           <div className={styles.body}>
             <Said typing={m.typing} className={styles.bubble}>
-              {m.text}
+              <Detected text={m.text} />
             </Said>
             {!theirsNext && <span className={styles.tailIn} />}
           </div>
         );
       case 'card':
-        return <NoteCard note={m.card} className={styles.ask} />;
+        return <InstinctImage note={m.card} />;
       case 'ask':
-        return <LinkPreview m={m} onOpen={() => openLink(m.id)} />;
+        return m.ask.rows ? (
+          <VaultLink m={m} onOpen={() => openLink(m.id)} />
+        ) : (
+          bubble('ask', <Detected text={askText(m.ask)} />, !theirsNext)
+        );
       case 'chips':
-        return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.pick} expired={m.expired} />;
-      case 'me':
+        return bubble('chips', <span className={styles.lines}>{chipsText(m)}</span>, !theirsNext);
+      case 'work':
         return (
-          <span className={styles.me}>
-            {m.text}
-            <span className={styles.tailOut} />
-            {tapbackFor(i, all) && <span className={styles.tapback}>👍</span>}
+          <div className={styles.body}>
+            <div className={`${styles.bubble} ${styles.typingBubble}`}>
+              <TypingDots />
+            </div>
+            <span className={styles.tailIn} />
+          </div>
+        );
+      case 'products':
+        return <ProductImage products={m.products} />;
+      case 'me': {
+        // A reply to an ask or a choice shows what it answers, as iMessage's inline reply does.
+        const answers =
+          prev?.kind === 'ask' && !prev.ask.rows ? prev : prev?.kind === 'chips' ? prev : null;
+        const tapback = m.react ?? (answers?.kind === 'ask' && answers.state === 'done' ? '👍' : undefined);
+        return (
+          <div className={styles.meCol}>
+            {answers && (
+              <span className={styles.replyTo}>
+                <span className={styles.quote}>
+                  {answers.kind === 'ask' ? askText(answers.ask) : chipsText(answers).split('\n')[0]}
+                </span>
+                <span className={styles.thread} />
+              </span>
+            )}
+            <span className={styles.me}>
+              <Detected text={m.text} />
+              <span className={styles.tailOut} />
+              {tapback && (
+                <motion.span
+                  className={styles.tapback}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 600, damping: 20, mass: 0.7 }}
+                >
+                  {tapback}
+                </motion.span>
+              )}
+            </span>
+            {m.id === lastMe && (
+              <span className={styles.read}>
+                <b>Read</b> {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+              </span>
+            )}
+          </div>
+        );
+      }
+      case 'meta':
+        return null;
+      case 'divider':
+        return (
+          <span className={styles.stamp}>
+            <strong>{m.text}</strong>
           </span>
         );
-      case 'work':
-        return <WorkLine status={m.status} />;
-      case 'products':
-        return <ProductRow products={m.products} />;
-      case 'meta':
-        return <MetaLine meta={m.meta} />;
-      case 'divider':
-        return <Divider text={m.text} />;
       default: {
         const exhaustive: never = m;
         return exhaustive;
@@ -163,6 +306,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           className={styles.screen}
           messages={chat.messages}
           render={render}
+          rowMotion={(m) => (m.kind === 'me' ? IMSG_SENT : NATIVE_IN)}
           faceId={chat.authing}
           onFaceIdDone={chat.authed}
           gap={3}
@@ -175,7 +319,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
               <GlassPill radius={22} absolute className={styles.back}>
                 <span className={styles.backRow}>
                   <span className={styles.glyph} style={mask(`${A}/back.svg`, 11, 19)} />
-                  <span className={styles.badge}>213</span>
+                  <span className={styles.badge}>233</span>
                 </span>
               </GlassPill>
               <div className={styles.facetime}>

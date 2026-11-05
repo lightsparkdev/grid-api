@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ACTIONS, type ActionId } from '@/data/actions';
 import type { AgentEvent } from '@/data/agentEvents';
-import type { Beat, Said, StoredMessage } from '../conversation';
+import type { Beat, Chip, Said, StoredMessage } from '../conversation';
 import { FLOWS, type FlowContext } from '../flows';
 
 /** A tile's jump: put this flow's line in the composer. */
@@ -75,6 +75,9 @@ export function useAgentBrain({
   const decideRef = useRef<((d: Decision) => void) | null>(null);
   const pickRef = useRef<((i: number) => void) | null>(null);
   const authRef = useRef<(() => void) | null>(null);
+  /** The open choice's options, so a typed reply can pick one. */
+  const openChips = useRef<Chip[] | null>(null);
+  const pickedByText = useRef(false);
 
   const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, reply });
   cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, reply };
@@ -189,12 +192,15 @@ export function useAgentBrain({
         } else if ('chips' in b) {
           const id = show({ kind: 'chips', chips: b.chips, picked: null });
           setBusy(false);
+          openChips.current = b.chips;
           const picked = await new Promise<number>((r) => (pickRef.current = r));
           pickRef.current = null;
+          openChips.current = null;
           if (picked < 0 || run.cancelled) return false;
           setBusy(true);
           patch(id, (m) => (m.kind === 'chips' ? { ...m, picked } : m));
-          if (b.reply) push({ kind: 'me', text: b.chips[picked].label });
+          if (b.reply && !pickedByText.current) push({ kind: 'me', text: b.chips[picked].label });
+          pickedByText.current = false;
           await sleep(600);
           if (!(await play(b.then(picked), run))) return false;
         }
@@ -250,6 +256,19 @@ export function useAgentBrain({
       decideRef.current(YES.test(text) ? 'allow' : 'deny');
       return;
     }
+    // An open choice takes a typed option: its number, or its label.
+    const chips = openChips.current;
+    if (chips && pickRef.current) {
+      const n = Number.parseInt(text, 10);
+      const lower = text.toLowerCase();
+      const i = n >= 1 && n <= chips.length ? n - 1 : chips.findIndex((c) => lower.includes(c.label.toLowerCase()) || c.label.toLowerCase().includes(lower));
+      if (i < 0) return;
+      setComposer('');
+      push({ kind: 'me', text });
+      pickedByText.current = true;
+      pickRef.current(i);
+      return;
+    }
     if (runRef.current) return;
     setComposer('');
     push({ kind: 'me', text });
@@ -276,7 +295,7 @@ export function useAgentBrain({
 
   const authing = messages.some((m) => m.kind === 'ask' && m.state === 'authing');
   const asking = messages.some((m) => m.kind === 'ask' && (m.state === 'open' || m.state === 'pressing' || m.state === 'authing'));
-  const answering = messages.some((m) => m.kind === 'ask' && m.state === 'open');
+  const answering = messages.some((m) => (m.kind === 'ask' && m.state === 'open') || (m.kind === 'chips' && m.picked === null && !m.expired));
 
   return {
     messages,

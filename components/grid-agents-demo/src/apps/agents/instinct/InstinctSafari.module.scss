@@ -1,9 +1,7 @@
-// Instinct's site palette (instinct.com): warm paper, clay rules, ink near-black, a serif display face.
+// Instinct's vault on app.instinct.com (recording 6): warm paper, beige fields, a serif title, a black button.
 .page {
   --in-paper: #fdfcfb;
-  --in-card: #fff;
-  --in-sand: #f4efec;
-  --in-clay: #e1d5cd;
+  --in-field: #f0edea;
   --in-ink: #231f20;
   --in-muted: #7a7274;
   --in-button: #231f20;
@@ -18,9 +16,7 @@
 
   :global([data-theme='dark']) & {
     --in-paper: #141213;
-    --in-card: #1d1a1b;
-    --in-sand: #262223;
-    --in-clay: #3a3436;
+    --in-field: #262223;
     --in-ink: #f4efec;
     --in-muted: #a39a9c;
     --in-button: #f4efec;
@@ -50,214 +46,109 @@
   cursor: pointer;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding-top: 76px;
-  font-family: 'New York', ui-serif, Georgia, serif;
-  font-size: 20px;
-  letter-spacing: -0.2px;
-}
-
-.mark {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  corner-shape: round;
-  background: var(--in-ink);
-
-  img {
-    filter: invert(1);
-
-    :global([data-theme='dark']) & {
-      filter: none;
-    }
-  }
-}
-
 .sheet {
   display: flex;
   flex-direction: column;
-  margin: 26px 16px 0;
-  padding: 24px 20px 20px;
-  border: 1px solid var(--in-clay);
-  border-radius: 24px;
-  background: var(--in-card);
+  align-items: stretch;
+  padding: 104px 24px 0;
 }
 
-.eyebrow {
+.tile {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--in-field);
   color: var(--in-muted);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
 }
 
 .title {
-  margin: 8px 0 0;
+  margin: 18px 0 0;
   font-family: 'New York', ui-serif, Georgia, serif;
   font-size: 28px;
   font-weight: 400;
   line-height: 32px;
-  letter-spacing: -0.4px;
-  text-wrap: balance;
+  letter-spacing: -0.5px;
+  text-align: center;
 }
 
-.amount {
-  margin: 10px 0 0;
-  font-size: 34px;
-  font-weight: 600;
-  letter-spacing: -0.8px;
-  font-variant-numeric: tabular-nums;
-}
-
-.who {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 18px;
-  padding: 12px;
-  border-radius: 16px;
-  background: var(--in-sand);
-}
-
-.whoMark {
-  display: grid;
-  overflow: hidden;
-  flex: none;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  corner-shape: round;
-  background: var(--in-clay);
-  font-weight: 600;
-}
-
-.whoText,
-.rowText {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-  font-size: 16px;
-  line-height: 21px;
-
-  small {
-    color: var(--in-muted);
-    font-size: 13px;
-    line-height: 17px;
-  }
-}
-
-.rows {
-  display: flex;
-  flex-direction: column;
-  margin: 18px 0 0;
-  padding: 0;
-  list-style: none;
-
-  li {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 0;
-
-    & + li {
-      border-top: 1px solid var(--in-sand);
-    }
-  }
-}
-
-.rowLead {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: var(--in-sand);
-}
-
-.summary {
-  margin: 14px 0 0;
-
-  div {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 6px 0;
-    font-size: 15px;
-  }
-
-  dt {
-    color: var(--in-muted);
-  }
-
-  dd {
-    margin: 0;
-    text-align: right;
-  }
-}
-
-.note {
-  margin: 14px 0 0;
+.sub {
+  margin: 8px 0 0;
   color: var(--in-muted);
   font-size: 13px;
   line-height: 18px;
+  text-align: center;
 }
 
-.actions {
+.fields {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 20px;
-
-  button {
-    display: grid;
-    place-items: center;
-    height: 50px;
-    border: 0;
-    border-radius: 999px;
-    corner-shape: round;
-    font: inherit;
-    font-size: 17px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: scale 0.15s ease, opacity 0.3s ease, background 0.3s ease, color 0.3s ease;
-
-    &:disabled {
-      cursor: default;
-    }
-  }
+  gap: 16px;
+  margin-top: 30px;
 }
 
-.allow {
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--in-muted);
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.input {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background: var(--in-field);
+  font-size: 15px;
+}
+
+.black {
+  height: 44px;
+  margin-top: 28px;
+  border: 0;
+  border-radius: 6px;
   background: var(--in-button);
   color: var(--in-button-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: opacity 0.2s ease, scale 0.15s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.98;
+  }
 
   &[data-pressing] {
-    scale: 0.97;
-  }
-
-  &[data-done] {
-    background: var(--in-sand);
-    color: var(--in-ink);
+    opacity: 0.7;
   }
 }
 
-.deny {
-  background: transparent;
-  color: var(--in-ink);
-  box-shadow: inset 0 0 0 1px var(--in-clay);
-}
+.notNow {
+  margin-top: 14px;
+  padding: 6px;
+  border: 0;
+  background: none;
+  color: var(--in-muted);
+  font: inherit;
+  font-size: 15px;
+  pointer-events: auto;
+  cursor: pointer;
 
-.actions[data-state='denied'] .allow,
-.actions[data-state='done'] .deny,
-.actions[data-state='expired'] button {
-  opacity: 0.4;
+  &:disabled {
+    cursor: default;
+  }
 }
