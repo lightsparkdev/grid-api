@@ -27,7 +27,7 @@ const ALL_CONNECTORS = ['Muse', 'Bot', 'Dots', 'Instinct', 'Duet', 'Your agent']
 const CONNECTORS = process.env.SWEEP_CONNECTORS
   ? ALL_CONNECTORS.filter((c) => process.env.SWEEP_CONNECTORS.split(',').includes(c))
   : ALL_CONNECTORS;
-const FLOWS = ['Connect', 'Add funds', 'Set limits', 'Send', 'Buy online', 'Pay agent', 'Receive', 'Withdraw', 'Balance', 'History'];
+const FLOWS = ['Connect', 'Add funds', 'Set limits', 'Pay someone', 'Buy online', 'Pay agent', 'Receive', 'Withdraw', 'Balance', 'History'];
 const ALLOW = /^(\s*(Allow|Approve|Connect|Save))+\s*$/;
 const DENY = /^(\s*(Deny|Decline|Not\s+now|Cancel))+\s*$/;
 

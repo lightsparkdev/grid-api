@@ -76,7 +76,7 @@ export const ACTIONS: ActionDef[] = [
   },
   {
     id: 'pay',
-    label: 'Send',
+    label: 'Pay someone',
     desc: 'Pay out to a bank account on a local rail',
     prompts: ['Send Sofia R$250 for the concert tickets'],
   },

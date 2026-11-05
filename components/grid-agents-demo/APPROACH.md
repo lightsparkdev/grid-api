@@ -57,7 +57,7 @@ to a row underneath, as MockMuse does.
 
 ### 2026-11-05: ten flows, and Buy online is the card flow
 
-The flows are Connect, Add funds, Set limits, Send, Buy online, Pay agent,
+The flows are Connect, Add funds, Set limits, Pay someone, Buy online, Pay agent,
 Receive, Withdraw, Balance, and History. Buy online is the standard way
 agents pay merchants today: the agent asks for a single-use virtual Visa scoped
 to the order (`request_purchase_card`), and the app's approval UI comes up.
@@ -144,7 +144,7 @@ The conversation emits semantic events (`src/data/agentEvents.ts`); only that
 file turns them into tool calls, paths, and bodies. When the Agent Accounts
 docs land, rewrite that file and nothing else.
 
-Ahead of the spec: Send and Withdraw quote to bank accounts on local
+Ahead of the spec: Pay someone and Withdraw quote to bank accounts on local
 rails (PIX, RTP), as the Figma's panel shows. Pay agent uses a real
 destination: the merchant agent's Embedded Wallet on the same platform.
 

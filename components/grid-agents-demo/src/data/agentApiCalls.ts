@@ -14,7 +14,7 @@
    the app's backend makes for it, or the platform's own calls with no
    tool (creating the agent, changing its policy, approving an action).
 
-   Ahead of the spec: Send and Withdraw quote to a bank account
+   Ahead of the spec: Pay someone and Withdraw quote to a bank account
    or mobile wallet on a local rail. Today `POST /agents/me/quotes`
    pays embedded wallets, Spark accounts, chain addresses and
    Lightning invoices only.

@@ -15,7 +15,7 @@ export const FLOW_GUIDE: Record<string, string> = {
   connect: 'Connect: give you your own account with limits (the person approves).',
   fund: 'Add funds: top up the account over Lightning or stablecoins.',
   limits: 'Set limits: change what you may spend alone and per day.',
-  pay: 'Send: send money to Sofia Almeida in Brazil over PIX (the only payee you know).',
+  pay: 'Pay someone: send money to Sofia Almeida in Brazil over PIX (the only payee you know).',
   buy: 'Buy online: order the saved ring light with a one-time card ("order"), or subscribe to Duolingo Max with a recurring card ("subscription").',
   agent: 'Pay agent: book Hotel Alma in Lisbon by paying the hotel’s agent directly.',
   getpaid: 'Receive: share an address so Lucía can pay her invoice.',
