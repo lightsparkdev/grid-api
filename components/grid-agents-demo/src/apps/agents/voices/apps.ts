@@ -1,7 +1,7 @@
 import type { ConnectorId } from '@/data/connectors';
 import type { Params } from '../conversation';
 import { HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
-import { MUSE_ORDER, type AskFn, type AskKey, type LineFn, type LineKey, type NoteFn, type NoteKey } from './base';
+import { ASKS, MUSE_ORDER, type AskFn, type AskKey, type LineFn, type LineKey, type NoteFn, type NoteKey } from './base';
 
 /* What each app says differently. Anything not here falls back to the
    neutral voice (voices/base.ts). */
@@ -15,6 +15,11 @@ export interface VoiceOverrides {
 }
 
 const n = (p: Params | undefined, k: string) => Number(p?.[k] ?? 0);
+
+/** Claude Duet's spend card: a clock on the request, Approve or Not now, then Paid. */
+const duetSpend =
+  (key: AskKey): AskFn =>
+  (p) => ({ ...ASKS[key](p), expires: 'Expires in 10 min', allowed: 'Paid', deny: 'Not now', denied: 'Not now' });
 
 export const VOICES: Record<ConnectorId, VoiceOverrides> = {
   /** Meta's agent: warm, brief, and it pays with Meta Pay. */
@@ -111,6 +116,13 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'agent.done': () => 'Booked. I added it to your calendar and filed the receipt.',
       'history.answer': () => 'Here’s what moved this week.',
       fallback: () => 'I can only help with your account here. Try one of the flows on the left.',
+    },
+    asks: {
+      pay: duetSpend('pay'),
+      cashout: duetSpend('cashout'),
+      buy: duetSpend('buy'),
+      sub: duetSpend('sub'),
+      agent: duetSpend('agent'),
     },
   },
 

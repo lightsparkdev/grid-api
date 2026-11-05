@@ -365,3 +365,18 @@
   background: var(--cl-muted);
   mask: no-repeat center / contain;
 }
+
+// The mascot's clay blob and ink line (PhoneMock --d-clay, --d-ink).
+.mascotArt {
+  width: 76px;
+  height: 76px;
+  overflow: visible;
+}
+
+.mascotShape {
+  fill: #d97757;
+}
+
+.mascotLine {
+  fill: var(--cl-ink);
+}

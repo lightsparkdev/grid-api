@@ -4,6 +4,8 @@ import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
 import { AskCard, askButtons, ChipRow, MORPH, NoteCard } from '../parts';
 import type { AgentChatProps } from '../types';
+import { ClaudeMascot } from './ClaudeMascot';
+import type { MascotState } from './mascot';
 import styles from './ClaudeChat.module.scss';
 
 /** Figma 91:163, Claude Duet · Supplies budget (virtual card). */
@@ -101,6 +103,17 @@ export function ClaudeChat({ chat }: AgentChatProps) {
     }
   };
 
+  const typing = chat.messages.some((m) => m.kind === 'them' && m.typing);
+  const mascotState: MascotState = chat.asking
+    ? 'waitshape'
+    : chat.busy && chat.activeFlow === 'connect'
+      ? 'connecting'
+      : typing
+        ? 'think1'
+        : chat.busy
+          ? 'working'
+          : 'tilde';
+
   return (
     <ChatFrame
       className={styles.screen}
@@ -122,7 +135,7 @@ export function ClaudeChat({ chat }: AgentChatProps) {
           </GlassPill>
           <GlassPill radius={38} absolute className={styles.mascot}>
             <span className={styles.disc}>
-              <img src={`${A}/mascot.svg`} alt="" width={76} height={76} />
+              <ClaudeMascot state={mascotState} />
             </span>
           </GlassPill>
           <GlassPill radius={24} absolute className={styles.account}>
