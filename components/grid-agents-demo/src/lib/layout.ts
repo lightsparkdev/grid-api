@@ -4,7 +4,7 @@
  *  styles/breakpoints.scss. Change them together. */
 
 /** Stacked ⇄ 3-col threshold. Twin: $breakpoint-layout-wide. */
-export const LAYOUT_WIDE_PX = 1280;
+export const LAYOUT_WIDE_PX = 1600;
 
 /** Configure column width. Twin: $layout-laptop-config-width. */
 export const CONFIGURE_COL_PX = 400;

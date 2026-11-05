@@ -1,10 +1,11 @@
-/** Above this the layout is 3 columns: Configure (400) | App | API. The
-    Agent Accounts Figma (124:3873) is 3-col at 1392, a 1440 screen with the
-    docs sidebar collapsed; the phone fit-scales into the middle column, and
-    with no card stage beside it the cards demo's 1600 is more room than the
-    phone needs. A 1440 screen with the sidebar expanded (1160) stacks.
+/** App + API side-by-side inside the right column. Above this the layout is 3
+    columns: Configure (400) | App | API. The phone needs ~466px (434 shell +
+    16px inset each side) to render full size, and the API column defaults to
+    680 — below ~1600 the 3-col reads cramped (a MacBook Pro 16" at 1728 with
+    the docs sidebar expanded gives the embed 1448, which should stack; with
+    the sidebar collapsed it gets 1680, which fits 3-col comfortably).
     TS twin: LAYOUT_WIDE_PX in lib/layout.ts — change them together. */
-$breakpoint-layout-wide: 1280px;
+$breakpoint-layout-wide: 1600px;
 
 /** Configure stacks above app + API (phone). */
 $breakpoint-layout-mobile: 767px;

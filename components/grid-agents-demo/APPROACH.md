@@ -142,11 +142,11 @@ Ahead of the spec: Pay someone and Cash out quote to bank accounts on local
 rails (PIX, RTP), as the Figma's panel shows. Pay an agent uses a real
 destination: the merchant agent's Embedded Wallet on the same platform.
 
-### 2026-11-04: three columns at the docs' 1392
+### 2026-11-05: the same layout breakpoint as the cards playground
 
-`LAYOUT_WIDE_PX` is 1280, not the cards demo's 1600: the Figma is three
-columns at 1392 (a 1440 screen, docs sidebar collapsed), and without a card
-stage the phone fit-scales into the middle column.
+Three columns start at 1600px, as in the cards demo, so both playgrounds
+stack and un-stack at the same docs widths. This replaces a 1280px
+breakpoint chosen to match the Figma's three columns at 1392.
 
 ### Superseded
 

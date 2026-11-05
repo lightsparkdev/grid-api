@@ -120,12 +120,10 @@ but it never approves anything or changes the account. Nothing calls a live sand
 These match `components/grid-cards-demo` so fixes port with `cp`: `src/app/page.module.scss`,
 `src/components/{PanelHeader,ColumnResizeHandle,DotGridCanvas,SectionDivider,liquid-glass,glass-gl}`,
 `src/components/ThemeSync.tsx`, `src/hooks/{useTheme,useThemeMode,useColumnResize}.ts`,
-`src/lib/{groupApiEntries.ts,easing.ts,sounds.ts}`, `src/apps/shared/{FaceIdAuth,glass,icons}`.
+`src/lib/{groupApiEntries.ts,easing.ts,sounds.ts,layout.ts}`, `src/styles/breakpoints.scss`, `src/apps/shared/{FaceIdAuth,glass,icons}`.
 
 Deliberate differences:
 
-- `$breakpoint-layout-wide` / `LAYOUT_WIDE_PX` is 1280 here (1600 in cards), so the 1392px docs
-  embed with the sidebar collapsed is three columns as in the Figma.
 - `src/lib/apiCodeFormat.tsx` signs agent calls with `Bearer $AGENT_TOKEN` (`ApiCall.auth`) and has
   no synthesized response stubs.
 - `src/components/ApiPanel/` nests Grid calls under agent tool calls (`Entry.tool`, `Entry.parent`).
