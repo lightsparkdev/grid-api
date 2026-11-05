@@ -234,6 +234,7 @@ For customers in regions where Strong Customer Authentication (SCA) is required 
 Where the challenge appears depends on how the quote is funded:
 
 - **Prefunded** — `POST /quotes/{quoteId}/execute` returns `PENDING_AUTHORIZATION` with the challenge instead of initiating the transfer. The challenge does not exist until `execute` is called, so the proof always goes on the follow-up authorize; re-calling `execute` returns `409`.
+- **Immediate execution** — when `immediatelyExecute: true` and SCA is required, `POST /quotes` returns `202` with `PENDING_AUTHORIZATION` instead of `200`. Authorize it via `POST /quotes/{quoteId}/authorize`, the same as a prefunded execute.
 - **Realtime (JIT) funded** — the challenge arrives earlier and `paymentInstructions` are withheld until it is satisfied.
 
 **Quote response with SCA challenge:**
@@ -346,6 +347,10 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
 <Warning>
 Customer doesn't see rate before execution. If you want to lock a quote and confirm fees and exchange rate details before executing the quote, set `immediatelyExecute` to `false` or omit the field.
 </Warning>
+
+<Note>
+For EU customers requiring SCA, `POST /quotes` with `immediatelyExecute: true` returns `202` with `status: PENDING_AUTHORIZATION` instead of executing immediately. Authorize it via `POST /quotes/{quoteId}/authorize` before the transfer proceeds.
+</Note>
 
 ## Fees
 
