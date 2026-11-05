@@ -1,4 +1,5 @@
 @use '../typography/ios-type-mixins' as ios;
+@use '../../../styles/glass-rim' as rim;
 
 .bar {
   position: absolute;
@@ -7,29 +8,25 @@
   left: 0;
   z-index: 5;
   height: 48px;
-  color: #fff;
+  color: #111112;
   pointer-events: none;
 }
 
-// The grey glass of Pat's phone: rgb 172 over white, about 125 over dark text (a 0.77 grey veil on a light blur),
-// a dark hairline round the edge, a lit top rim, a soft haze below.
+// iOS 27 Safari over a light page (recording 6): white frost, the hairline rim, dark glyphs.
 .glass {
   position: absolute;
   top: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   height: 48px;
   border-radius: 999px;
   corner-shape: round;
-  background: rgb(146 146 146 / 0.77);
-  backdrop-filter: blur(3px);
-  box-shadow:
-    0 0 0 0.5px rgb(0 0 0 / 0.32),
-    inset 0 0.75px 0 rgb(255 255 255 / 0.4),
-    inset 0 -0.5px 0 rgb(255 255 255 / 0.18),
-    0 5px 16px rgb(0 0 0 / 0.08);
+  background: rgb(252 252 253 / 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: rim.$glass-rim-shadow;
+  @include rim.glass-rim;
 }
 
 .back {

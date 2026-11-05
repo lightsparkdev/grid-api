@@ -1,10 +1,11 @@
-@use '../shared/glass/glass-button-shadow' as shadow;
+@use '../../styles/glass-rim' as rim;
 
 // A grid, so the panel's content wrapper stretches to the glass's full size.
 .pill {
   display: grid;
   corner-shape: round;
-  @include shadow.glass-button-shadow;
+  box-shadow: rim.$glass-rim-shadow;
+  @include rim.glass-rim;
 }
 
 .disc {

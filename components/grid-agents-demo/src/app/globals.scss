@@ -131,8 +131,12 @@ body {
   --float-sheet-tint: rgba(255, 255, 255, 0.85);
   /* The agent chats' chrome glass (header buttons, composers, tab bars) frosting
      the live thread: clear enough that bubbles read through as they pass. */
-  --chat-glass-tint: rgba(252, 252, 253, 0.6);
+  --chat-glass-tint: rgba(252, 252, 253, 0.5);
   --chat-glass-ink: #111112;
+  /* iOS 27 glass rim (styles/_glass-rim.scss): dark sides, bright caps. */
+  --glass-rim-side: rgba(0, 0, 0, 0.34);
+  --glass-rim-cap: rgba(0, 0, 0, 0.12);
+  --glass-rim-inset: rgba(255, 255, 255, 0.95);
 }
 
 [data-theme='dark'] {
@@ -146,6 +150,9 @@ body {
   --float-sheet-tint: rgba(0, 0, 0, 0.85);
   --chat-glass-tint: rgba(36, 36, 38, 0.55);
   --chat-glass-ink: #fff;
+  --glass-rim-side: rgba(255, 255, 255, 0.1);
+  --glass-rim-cap: rgba(255, 255, 255, 0.28);
+  --glass-rim-inset: rgba(255, 255, 255, 0.14);
 }
 
 /* iPhone mock palette — the wallet is a self-contained iOS app preview, so it

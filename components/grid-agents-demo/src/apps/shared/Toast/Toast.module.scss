@@ -1,5 +1,6 @@
 @use '../typography/ios-type-mixins' as ios;
 @use '../glass/glass-button-shadow' as shadow;
+@use '../../../styles/glass-rim' as rim;
 
 /* Fills AppShell's overlay layer; the pill centers in the iOS banner slot just
    below the status bar / Dynamic Island. Non-interactive — clicks fall through. */
@@ -22,6 +23,8 @@
   corner-shape: round;
   will-change: transform;
   @include shadow.glass-button-shadow;
+  position: relative;
+  @include rim.glass-rim;
 }
 
 /* Rounded clip shared by both surface variants. */

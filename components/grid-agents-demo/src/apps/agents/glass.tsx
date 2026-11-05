@@ -1,15 +1,14 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { FrostPanel, type FrostSpecular } from '@/components/liquid-glass';
+import { FrostPanel } from '@/components/liquid-glass';
 import styles from './glass.module.scss';
 
 /**
  * The chat chrome's glass sits over the live thread, which scrolls and animates
- * under it, so it frosts what passes behind (GPU `backdrop-filter`) and bakes the
- * buttons' specular rim on top. A displacement lens can only bend a static copy.
+ * under it, so it frosts what passes behind (GPU `backdrop-filter`) and draws the
+ * iOS 27 hairline rim on top. A displacement lens can only bend a static copy.
  */
-const SPECULAR: FrostSpecular = { rotation: 45, glowStrength: 0.08, edgeStrength: 0.9, edgeWidth: 1.5 };
 const TINT = 'var(--chat-glass-tint)';
-const BLUR = 6;
+const BLUR = 3;
 
 /** Glass of any size: title pills, composers, tab bars. Truly round ends. */
 export function GlassPill({
@@ -32,7 +31,6 @@ export function GlassPill({
       tint={TINT}
       tintBlur={BLUR}
       edge="none"
-      specular={SPECULAR}
       className={`${styles.pill} ${className ?? ''}`}
       style={{ borderRadius: radius, ...(absolute && { position: 'absolute' }), ...style }}
     >

@@ -1,0 +1,51 @@
+/* iOS 27 glass rim: a 0.5pt hairline, dark on the left and right edges and
+   faint on the top and bottom, where a white line sits just inside it.
+   The ring ramps vertically from the cap color to the side color and back, so
+   it reads the same on a 44pt disc, a wide pill and a tall sheet. Cut to a ring
+   with mask-composite, it follows the host's border-radius.
+
+   The host needs `position: relative` (or absolute) and its border-radius. */
+@mixin glass-rim($width: 0.5px) {
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    corner-shape: inherit;
+    padding: $width;
+    background: linear-gradient(
+      180deg,
+      var(--glass-rim-cap) 0%,
+      var(--glass-rim-side) 38%,
+      var(--glass-rim-side) 62%,
+      var(--glass-rim-cap) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    pointer-events: none;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: $width;
+    z-index: 1;
+    border-radius: inherit;
+    corner-shape: inherit;
+    box-shadow:
+      inset 0 $width 0 var(--glass-rim-inset),
+      inset 0 (-$width) 0 var(--glass-rim-inset);
+    pointer-events: none;
+  }
+}
+
+/* The soft outer shadow under rimmed glass. */
+$glass-rim-shadow:
+  0 4px 14px rgba(0, 0, 0, 0.06),
+  0 0.5px 1.5px rgba(0, 0, 0, 0.05);

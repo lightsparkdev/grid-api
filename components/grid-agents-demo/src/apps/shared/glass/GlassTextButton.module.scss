@@ -1,5 +1,6 @@
 @use '../typography/ios-type-mixins' as ios;
 @use './glass-button-shadow' as shadow;
+@use '../../../styles/glass-rim' as rim;
 
 .root {
   width: 100%;
@@ -12,6 +13,8 @@
   -webkit-tap-highlight-color: transparent;
   @include shadow.glass-button-shadow;
   @include shadow.glass-button-press-scale(1.04);
+  position: relative;
+  @include rim.glass-rim;
   opacity: 1;
   transition:
     transform shadow.$glass-button-press-duration shadow.$glass-button-press-ease,

@@ -1,4 +1,5 @@
 @use './glass-button-shadow' as shadow;
+@use '../../../styles/glass-rim' as rim;
 
 $group-height: 40px;
 $group-press-scale: ($group-height + shadow.$glass-button-bloom * 2) / $group-height;
@@ -12,6 +13,7 @@ $group-hover-scale: ($group-height + shadow.$glass-button-hover-bloom * 2) / $gr
   corner-shape: round;
   @include shadow.glass-button-shadow;
   @include shadow.glass-button-press-base;
+  @include rim.glass-rim;
 
   &:hover {
     transform: scale($group-hover-scale);

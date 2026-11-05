@@ -1,4 +1,5 @@
 @use './glass-button-shadow' as shadow;
+@use '../../../styles/glass-rim' as rim;
 
 .root {
   position: relative;
@@ -16,6 +17,7 @@
   -webkit-tap-highlight-color: transparent;
   @include shadow.glass-button-shadow;
   @include shadow.glass-button-press(44px);
+  @include rim.glass-rim;
   opacity: 1;
   /* The press mixin's transitions, plus the ease between enabled and disabled. */
   transition:
