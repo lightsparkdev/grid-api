@@ -1,0 +1,14 @@
+type: string
+enum:
+  - CARDS
+  - CRYPTO_SENDS
+  - BANK_PAYOUTS
+description: |
+  A kind of agent payment a spending pool may allow.
+
+  | Value | Description |
+  |-------|-------------|
+  | `CARDS` | Authorizations on the agents' cards |
+  | `CRYPTO_SENDS` | Sends to crypto destinations, Spark and Lightning included |
+  | `BANK_PAYOUTS` | Payouts to bank accounts |
+example: CARDS

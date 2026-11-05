@@ -1,0 +1,9 @@
+type: object
+required:
+  - claimToken
+properties:
+  claimToken:
+    type: string
+    minLength: 1
+    maxLength: 128
+    description: The claim token from the recipient's link.

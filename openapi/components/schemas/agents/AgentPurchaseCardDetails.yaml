@@ -10,6 +10,22 @@ required:
   - currency
   - fundingSource
 properties:
+  increaseCardId:
+    type: string
+    description: The existing card being increased, present only on increase actions.
+    example: Card:019542f5-b3e7-1d02-0000-000000000011
+  previousAmount:
+    type: integer
+    format: int64
+    minimum: 1
+    description: Purchase amount before this increase, in USD cents.
+    example: 4999
+  previousSpendLimit:
+    type: integer
+    format: int64
+    minimum: 1
+    description: Issuer-enforced limit before this increase, in USD cents.
+    example: 5749
   amount:
     type: integer
     format: int64
@@ -41,9 +57,10 @@ properties:
     type: string
     maxLength: 255
     description: >-
-      What the agent said the card is for, such as the merchant and item.
-      Shown to the customer when they approve the card. Supplied by the agent
-      and not verified by Grid.
+      What the agent said the card is for, such as the merchant and item. On
+      an increase action, the agent's `reason` for the higher amount. Shown
+      to the customer when they approve the card or the increase. Supplied by
+      the agent and not verified by Grid.
     example: Running shoes from example-store.com
   fundingSource:
     type: string

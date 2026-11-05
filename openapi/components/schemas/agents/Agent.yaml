@@ -31,6 +31,18 @@ properties:
     type: boolean
     description: Whether the agent has been installed and connected (i.e., its device code has been redeemed).
     example: true
+  actingFor:
+    type: string
+    description: >-
+      The platform's reference for the person this agent acts for, as given
+      when the agent was created. Absent when none was given.
+    example: member_8f2c1a
+  spendingPoolId:
+    type: string
+    description: >-
+      The spending pool the agent spends under, in addition to its own
+      policy. Absent when the agent is in no pool.
+    example: SpendingPool:019542f5-b3e7-1d02-0000-000000000007
   policy:
     $ref: ./AgentPolicy.yaml
   usage:

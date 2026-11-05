@@ -1,0 +1,99 @@
+type: object
+description: >-
+  Money an agent sends to a person by phone number or email, for her to claim
+  from a link. Grid holds `amount` against the sender's Embedded Wallet
+  balance and the agent's spending limits; the funds stay in the wallet
+  until the recipient claims and Grid pays her from it.
+required:
+  - id
+  - agentId
+  - customerId
+  - platformCustomerId
+  - status
+  - sourceAccountId
+  - amount
+  - recipient
+  - expiresAt
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique identifier.
+    example: ClaimablePayout:019542f5-b3e7-1d02-0000-000000000077
+  agentId:
+    type: string
+    description: The agent that sent the payout.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000042
+  customerId:
+    type: string
+    description: The sender, the agent's customer.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000010
+  platformCustomerId:
+    type: string
+    description: Platform-specific ID of the sender.
+    example: user-a1b2c3
+  status:
+    $ref: ./ClaimablePayoutStatus.yaml
+  sourceAccountId:
+    type: string
+    description: The sender's `EMBEDDED_WALLET` internal account the payout is paid from.
+    example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+  amount:
+    allOf:
+      - $ref: ../common/CurrencyAmount.yaml
+    description: The amount held and sent, in the source account's currency.
+  recipient:
+    $ref: ./ClaimablePayoutRecipient.yaml
+  note:
+    type: string
+    maxLength: 140
+    description: The sender's note to the recipient.
+    example: Happy birthday, Mom
+  agentActionId:
+    type: string
+    description: >-
+      The `CLAIMABLE_PAYOUT` agent action the customer approves or rejects.
+    example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+  externalAccountId:
+    type: string
+    description: >-
+      The external account Grid saved under the sender's customer for the
+      recipient's payout details. Present once the recipient has claimed.
+      An agent can pay it again as a saved recipient.
+    example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+  transactionId:
+    type: string
+    description: The outgoing transaction that paid the recipient. Present once Grid sends the payout.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000030
+  receivedAmount:
+    allOf:
+      - $ref: ../common/CurrencyAmount.yaml
+    description: What the recipient receives, in her currency. Present once she has a locked quote.
+  paymentRail:
+    allOf:
+      - $ref: ../common/PaymentRail.yaml
+    description: The rail the recipient chose. Present once she has claimed.
+  failureReason:
+    allOf:
+      - $ref: ./ClaimablePayoutFailureReason.yaml
+    description: Present only when `status` is `FAILED`.
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      While `PENDING_APPROVAL`, the end of the approval window; from
+      `AWAITING_CLAIM`, when the claim window ends, 7 days after approval. A
+      payout not `PAID` by then, and not being paid, expires and its hold is
+      released.
+    example: '2025-10-10T15:00:00Z'
+  createdAt:
+    type: string
+    format: date-time
+    description: When the agent sent the payout.
+    example: '2025-10-03T15:00:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the payout last changed.
+    example: '2025-10-03T15:02:00Z'

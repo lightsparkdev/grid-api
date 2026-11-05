@@ -65,11 +65,19 @@ properties:
       The purchase card the agent asked for, so an approval decision can show
       its amount, limit, description and funding account. Present for
       `ISSUE_PURCHASE_CARD`.
+  claimablePayout:
+    $ref: ../claimable_payouts/ClaimablePayout.yaml
+    description: >-
+      The claimable payout the agent asked to send, so an approval decision
+      can show its amount and recipient. Present for `CLAIMABLE_PAYOUT`.
+      Approving the action makes the payout `AWAITING_CLAIM`; rejecting it,
+      or letting it expire, ends the payout and releases its hold.
   cardId:
     type: string
     description: >-
-      The purchase card the action issued. Present for an `ISSUE_PURCHASE_CARD`
-      action once it is `APPROVED` and the card is issued; read it with
+      The purchase card the action issued, or for an increase the card whose
+      amount it raised. Present for an `ISSUE_PURCHASE_CARD` action once it is
+      `APPROVED` and the card is issued or increased; read it with
       `GET /agents/me/cards/{cardId}`.
     example: Card:019542f5-b3e7-1d02-0000-000000000011
   transaction:

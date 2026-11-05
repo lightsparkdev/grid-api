@@ -14,3 +14,23 @@ properties:
     example: Customer:019542f5-b3e7-1d02-0000-000000000001
   policy:
     $ref: ./AgentPolicy.yaml
+  actingFor:
+    type: string
+    minLength: 1
+    maxLength: 255
+    description: >-
+      The platform's own reference for the person this agent acts for, such as
+      a member id within a business. Grid stores it as given, never interprets
+      it, and copies it onto every card the agent is issued, for audit and
+      screening. Required when the customer is a `BUSINESS`, where agents are
+      available only where the platform enables them for business customers;
+      optional for an `INDIVIDUAL`. It cannot be changed after the agent is
+      created.
+    example: member_8f2c1a
+  spendingPoolId:
+    type: string
+    description: >-
+      A spending pool of the same customer to put the agent in, where the
+      platform enables spending pools. The agent's policy must be in the
+      pool's currency.
+    example: SpendingPool:019542f5-b3e7-1d02-0000-000000000007

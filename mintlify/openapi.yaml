@@ -80,6 +80,8 @@ tags:
     description: 'Endpoints for creating and managing agents (experimental), called by the partner''s backend using platform credentials. Covers the full agent lifecycle: creation, policy configuration, pausing, deletion, the device code installation flow, and approving or rejecting transactions initiated by agents.'
   - name: Agent Operations
     description: Experimental endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
+  - name: Claimable Payouts
+    description: 'Endpoints the platform''s claim page calls for a claimable payout an agent sent to a person by phone number or email: issue the claim token for the recipient''s link, look the payout up by it, list how Grid can pay her, lock a quote to her account and confirm it.'
   - name: Cards
     description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage a card's funding source, and list card transactions.
   - name: Stablecoins
@@ -1495,9 +1497,9 @@ paths:
         so SMS is always available as a factor with no extra setup and appears
         among the customer's enrolled factors in `GET /sca/factors`.
 
-        A customer may have **only one passkey**. Starting a passkey enrollment when
-        one is already enrolled returns `409` (`PASSKEY_ALREADY_ENROLLED`) — delete it
-        via `DELETE /sca/factors/{credentialId}` first.
+        A customer may have **up to two passkeys**. Starting a passkey enrollment
+        with two already enrolled returns `409` (`PASSKEY_ALREADY_ENROLLED`). Delete
+        one via `DELETE /sca/factors/{credentialId}` first.
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: startScaFactorEnrollment
@@ -1537,7 +1539,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: SCA is not required for this customer (`CONFLICT`), or a passkey enrollment was requested while one is already enrolled (`PASSKEY_ALREADY_ENROLLED`) — only one passkey per customer is supported.
+          description: SCA is not required for this customer (`CONFLICT`), or a passkey enrollment was requested while the customer already has the most passkeys allowed (`PASSKEY_ALREADY_ENROLLED`). A customer may have up to two passkeys.
           content:
             application/json:
               schema:
@@ -8235,6 +8237,8 @@ paths:
       summary: Create an agent
       description: |
         Create a new agent with a specified policy. Returns the created agent and a device code that must be redeemed by the agent software to complete installation.
+
+        Agents of a `BUSINESS` customer are available only where the platform enables them, and require `actingFor` to name the person the agent acts for. Until the business's KYB status is `APPROVED`, its agents' sends and deposits are held to the same limits as an unverified individual's, counted across the whole business.
       operationId: createAgent
       tags:
         - Agent Management
@@ -8254,7 +8258,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AgentCreateResponse'
         '400':
-          description: Bad request
+          description: Bad request. Returned with `INVALID_INPUT` when the customer is a `BUSINESS` and the platform has not enabled agents for business customers, when `actingFor` is missing for a business, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -8477,6 +8481,279 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /spending-pools:
+    post:
+      summary: Create a spending pool
+      description: |
+        Create a spending pool on a customer. Agents assigned to it (with `spendingPoolId` on `POST /agents` or `PATCH /agents/{agentId}`) are held to its limits and allowed payment types together, in addition to each agent's own policy. Available where the platform enables spending pools.
+
+        Every agent payment checks the pool: sends (including Lightning), bank payouts and card authorizations. A payment the pool refuses is rejected with `AGENT_POLICY_DENIED` and `details.policyDenialReason` `POOL_LIMIT_EXCEEDED` or `POOL_PAYMENT_TYPE_NOT_ALLOWED`; a card authorization is declined. Payments in flight hold their amount against the pool until they complete or fail, so concurrent payments cannot together exceed it. `RECURRING` limits reset on UTC calendar boundaries.
+      operationId: createSpendingPool
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpendingPoolCreateRequest'
+      responses:
+        '201':
+          description: Spending pool created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingPool'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or spending pools are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List spending pools
+      description: Retrieve a paginated list of the platform's spending pools, with their current usage.
+      operationId: listSpendingPools
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: customerId
+          in: query
+          description: Filter by customer ID
+          required: false
+          schema:
+            type: string
+        - name: isArchived
+          in: query
+          description: Filter by archived status. Omitted, pools of both are returned.
+          required: false
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingPoolListResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or spending pools are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /spending-pools/{spendingPoolId}:
+    parameters:
+      - name: spendingPoolId
+        in: path
+        description: System-generated unique spending pool identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a spending pool
+      description: Retrieve a spending pool with what its agents have spent and may still spend in the current period.
+      operationId: getSpendingPool
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingPool'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or spending pools are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Spending pool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update a spending pool
+      description: Change a spending pool's name, limits, allowed payment types or admin-approval flag. The change applies to payments decided after it.
+      operationId: updateSpendingPool
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpendingPoolUpdateRequest'
+      responses:
+        '200':
+          description: Spending pool updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingPool'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or spending pools are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Spending pool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The spending pool is archived
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Archive a spending pool
+      description: Archive a spending pool. Refused with `409` while any agent is assigned to it; move or delete those agents first. An archived pool is still returned by `GET /spending-pools/{spendingPoolId}`.
+      operationId: archiveSpendingPool
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Spending pool archived
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or spending pools are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Spending pool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Agents are still assigned to the spending pool
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -8859,7 +9136,7 @@ paths:
                 $ref: '#/components/schemas/Error500'
     patch:
       summary: Update agent
-      description: Update an agent's name or paused state.
+      description: Update an agent's name, paused state or spending pool.
       operationId: updateAgent
       tags:
         - Agent Management
@@ -9166,7 +9443,7 @@ paths:
         Approve a pending agent action, allowing Grid to proceed with execution. The action must have status `PENDING_APPROVAL`. Once approved, Grid executes the underlying operation (quote execution or transfer) and the action transitions to `APPROVED`.
         For an `EXECUTE_QUOTE` action without `priceTolerance`, note that the underlying quote may have expired between submission and approval — in that case the action will transition to `FAILED` instead.
         An `EXECUTE_QUOTE` action with `priceTolerance` whose quote is still live executes that quote, as shown. Once its quote has expired, approval quotes the send again and runs every check against the new quote and its amount. When the new price is no worse for the customer than `priceTolerance` allows, Grid executes the new quote and the action transitions to `APPROVED` with it as `quote`. When it is worse by more, nothing is sent: the response is `200` with status still `PENDING_APPROVAL`, the new `quote`, and `previousQuote` set to the quote the customer was shown, so they can be asked again; approving again repeats the check against the new quote. A send Grid can no longer quote fails with the matching `failureReason`, and one past its `expiresAt` with `APPROVAL_EXPIRED`.
-        For `ISSUE_PURCHASE_CARD` actions, approval issues the purchase card and the action carries its `cardId`. The card's limit is checked against the agent's policy again first; an action past its `expiresAt` fails with `APPROVAL_EXPIRED`, one the policy now denies with `POLICY_DENIED`, a paused or deleted agent with `AGENT_INACTIVE`, and one the card issuer refuses with `EXECUTION_FAILED`.
+        For `ISSUE_PURCHASE_CARD` actions, approval issues the purchase card and the action carries its `cardId`. When `purchaseCard.increaseCardId` is set, approval instead raises that existing card to the new amount and limit. The card's limit is checked against the agent's policy again first; an action past its `expiresAt` fails with `APPROVAL_EXPIRED`, one the policy now denies with `POLICY_DENIED`, a paused or deleted agent with `AGENT_INACTIVE`, and one the card issuer refuses with `EXECUTION_FAILED`.
         This endpoint is called by the platform's backend using platform credentials, not by the agent itself.
       operationId: approveAgentAction
       tags:
@@ -10168,6 +10445,517 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /agents/me/claimable-payouts:
+    post:
+      summary: Send a claimable payout
+      description: |
+        Send money from the agent's customer's Embedded Wallet to a person by phone number or email. The recipient needs no Grid account: she claims the payout from a link the platform sends her, choosing how to receive it from what Grid pays out to in her country, and Grid pays her from the customer's wallet.
+
+        Grid holds `amount` against the wallet's balance and the agent's spending limits from creation. Funds do not leave the wallet until the recipient claims; while the payout is held, quotes and card payments from the wallet cannot spend the held amount. The hold is released when the payout expires, is cancelled or rejected, or fails.
+
+        The request is evaluated against the agent's policy as a send of the same amount to a bank account: it needs the EXECUTE_QUOTES permission, counts toward the spending limits, and needs the customer's approval above the policy's approval threshold, in `APPROVAL_REQUIRED` mode, or above the platform's limit for bank payouts without approval. A payout that needs approval is created `PENDING_APPROVAL` with a `CLAIMABLE_PAYOUT` agent action, and the `AGENT_ACTION.PENDING_APPROVAL` webhook fires; approving the action makes it `AWAITING_CLAIM`. Otherwise it is created `AWAITING_CLAIM`. Then issue the recipient's link with `POST /claimable-payouts/{claimablePayoutId}/claim-token`.
+
+        Available only where the platform enables claimable payouts and agent bank payouts, for a customer whose KYC status is `APPROVED`.
+      operationId: agentCreateClaimablePayout
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: |
+            A unique identifier for the request, scoped to the agent. A retry with the same key returns the payout the first request created.
+          schema:
+            type: string
+            maxLength: 255
+            example: <uuid>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimablePayoutCreateRequest'
+      responses:
+        '201':
+          description: Claimable payout created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayout'
+        '400':
+          description: Bad request - Invalid parameters, or the wallet does not hold the amount on top of its existing holds (`INSUFFICIENT_FUNDS`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Claimable payouts are not enabled for the platform, the customer is not verified, or the agent policy does not permit this payout
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '503':
+          description: Service unavailable - Grid could not read the wallet's balance. Retry later.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
+    get:
+      summary: List claimable payouts
+      description: |
+        List the claimable payouts the authenticated agent sent, newest first.
+      operationId: agentListClaimablePayouts
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by status
+          required: false
+          schema:
+            $ref: '#/components/schemas/ClaimablePayoutStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayoutListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/claimable-payouts/{claimablePayoutId}:
+    parameters:
+      - name: claimablePayoutId
+        in: path
+        description: Unique identifier of the claimable payout
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a claimable payout
+      description: |
+        Retrieve a claimable payout the authenticated agent sent.
+      operationId: agentGetClaimablePayout
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayout'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Claimable payout not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/claimable-payouts/{claimablePayoutId}/cancel:
+    parameters:
+      - name: claimablePayoutId
+        in: path
+        description: Unique identifier of the claimable payout
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Cancel a claimable payout
+      description: |
+        Cancel a claimable payout the authenticated agent sent that is `PENDING_APPROVAL` or `AWAITING_CLAIM`, releasing its hold. Its claim link stops working. Cancelling a payout already `CANCELLED` returns it unchanged; one the recipient has claimed, or that has ended otherwise, is refused with `409`.
+      operationId: agentCancelClaimablePayout
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Claimable payout cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayout'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Claimable payout not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The payout was claimed or has already ended (`CONFLICT`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /claimable-payouts/{claimablePayoutId}/claim-token:
+    parameters:
+      - name: claimablePayoutId
+        in: path
+        description: Unique identifier of the claimable payout
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Issue a claim token
+      description: |
+        Issue the claim token for the recipient's link to a payout that is `AWAITING_CLAIM`. Grid stores only its hash, so it is returned once; issuing another, for a reminder, replaces it and the earlier link stops working. Put it in a link to your own claim page and send it to the payout's `recipient.phoneNumber` or `recipient.email`. Never show it to the agent.
+      operationId: issueClaimablePayoutClaimToken
+      tags:
+        - Claimable Payouts
+      security:
+        - BasicAuth: []
+      responses:
+        '201':
+          description: Claim token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayoutClaimToken'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Claimable payouts are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Claimable payout not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The payout is not `AWAITING_CLAIM` (`CONFLICT`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /claimable-payouts/claim/lookup:
+    post:
+      summary: Look up a claim
+      description: |
+        The claimable payout a claim token is for, as the platform's claim page needs it. The page should show the recipient only `senderName` and `amount` until she has entered a one-time code sent to `recipient.phoneNumber` or `recipient.email`, so that a forwarded link alone cannot claim the payout. A token that matches no payout, or one that was replaced, is answered with `404`.
+      operationId: lookupClaimablePayoutClaim
+      tags:
+        - Claimable Payouts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimablePayoutClaimRequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayoutClaim'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Claimable payouts are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: No claimable payout for this claim token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /claimable-payouts/claim/options:
+    post:
+      summary: List payout options for a claim
+      description: |
+        The currencies and rails Grid can pay a claimable payout to in a country, priced for the payout's amount. It is the platform's corridor set from `GET /exchange-rates`, limited to the country's currencies. An empty `options` means Grid cannot pay out in that country.
+      operationId: listClaimablePayoutOptions
+      tags:
+        - Claimable Payouts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimablePayoutOptionsRequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayoutOptions'
+        '400':
+          description: Bad request - Invalid country
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Claimable payouts are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: No claimable payout for this claim token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The payout is not `AWAITING_CLAIM` (`CONFLICT`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /claimable-payouts/claim/quote:
+    post:
+      summary: Quote a claim
+      description: |
+        Lock a quote paying a claimable payout to the recipient's account. Call it only after the recipient has proved she holds the payout's phone number or email. Grid validates `accountInfo` as `POST /customers/external-accounts` does, screens the recipient, and saves her account under the sender's customer, where an agent can pay it again. Grid then quotes the payout's full `amount` from the sender's wallet to that account. The payout stays `AWAITING_CLAIM` until the quote is confirmed; calling again replaces the quote.
+      operationId: quoteClaimablePayoutClaim
+      tags:
+        - Claimable Payouts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimablePayoutQuoteRequest'
+      responses:
+        '200':
+          description: Quote locked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayoutQuote'
+        '400':
+          description: Bad request - Invalid account details, or a currency or rail Grid does not pay out to
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Claimable payouts are not enabled for the platform, or screening did not clear the recipient (`SANCTION_BLOCKED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: No claimable payout for this claim token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The payout is not `AWAITING_CLAIM` (`CONFLICT`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '503':
+          description: Service unavailable - Grid could not screen the recipient or price the payout right now. Retry later.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
+  /claimable-payouts/claim/confirm:
+    post:
+      summary: Confirm a claim
+      description: |
+        Pay a claimable payout on the locked quote from `POST /claimable-payouts/claim/quote`. The payout becomes `CLAIMED`, and Grid signs the payout from the sender's wallet with the agent's delegated key; it becomes `PAID` when the payout completes, or `FAILED`. A quote that has expired is refused with `QUOTE_EXPIRED`: request another. Confirming a payout already `CLAIMED` or `PAID` on the same quote returns it unchanged.
+      operationId: confirmClaimablePayoutClaim
+      tags:
+        - Claimable Payouts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimablePayoutConfirmRequest'
+      responses:
+        '200':
+          description: Claim confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimablePayoutClaim'
+        '400':
+          description: Bad request - The quote expired (`QUOTE_EXPIRED`) or is not this payout's
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Claimable payouts are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: No claimable payout for this claim token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The payout expired, was cancelled, or was confirmed on another quote (`CONFLICT`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /agents/me/cards:
     get:
       summary: List agent cards
@@ -10234,6 +11022,8 @@ paths:
       summary: Issue an agent card
       description: |
         Issue a virtual card for the authenticated agent. The card belongs to the agent's customer, who must have KYC status `APPROVED` and have accepted the cardholder agreement where the platform requires one. Its spend counts against the agent's policy limits as the agent's sends do, and Grid's default agent merchant-category blocks apply. Requires the ISSUE_CARDS permission; reading the card afterwards needs MANAGE_CARDS.
+
+        **Business customers**: where the platform enables agents for business customers, an agent of a `BUSINESS` customer may be issued standard and purchase cards once the business's KYB status is `APPROVED`. The request must name the person the card is for in `cardholder`; the card is issued on the business's card account with that person as its authorized user, and carries the agent's `actingFor`. A purchase card awaiting approval is issued to that person when it is approved.
 
         **Standard card** (`kind` omitted or `STANDARD`): as `POST /cards` with `agentId` does for the platform. While any of the agent's standard cards is not `CLOSED`, including one the platform issued for it, the request is rejected with `AGENT_CARD_EXISTS`. New cards start in `status: "PROCESSING"` and follow the same status transitions and `card.status_change` webhooks as cards issued with `POST /cards`.
 
@@ -10311,7 +11101,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AgentAction'
         '400':
-          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the customer's KYC status is not `APPROVED`, with `CARDHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires a cardholder agreement the customer has not accepted, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or too long, when the funding source does not belong to the customer or is not denominated in a card-eligible currency, when `amount` is missing for a purchase card or supplied for a standard one, when `recurring` is `true` for a standard card, when `amount` is over the largest purchase (or, for a recurring card, monthly limit) the platform allows agents to ask for, when a purchase card's funding source is not an Embedded Wallet the agent holds an active delegated key on or the agent's policy is not in USD, and for general invalid parameters.
+          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the customer's KYC (for a business, KYB) status is not `APPROVED`, with `CARDHOLDER_AGREEMENT_NOT_ACCEPTED` when the platform requires a cardholder agreement the customer has not accepted, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or too long, when the funding source does not belong to the customer or is not denominated in a card-eligible currency, when `amount` is missing for a purchase card or supplied for a standard one, when `recurring` is `true` for a standard card, when `amount` is over the largest purchase (or, for a recurring card, monthly limit) the platform allows agents to ask for, when a purchase card's funding source is not an Embedded Wallet the agent holds an active delegated key on or the agent's policy is not in USD, when `cardholder` is missing for a business's card or supplied for an individual's, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -10502,6 +11292,80 @@ paths:
                 $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/cards/{cardId}/increase:
+    post:
+      summary: Increase a purchase card amount
+      description: |-
+        Increase an open, unused single-use purchase card belonging to this agent. Recurring cards cannot be increased. Requires ISSUE_CARDS and MANAGE_CARDS and platform enablement. The new amount must be greater than the current amount and within the platform's purchase-card maximum. The new issuer limit includes the platform's tax and shipping allowance.
+        Returns an ISSUE_PURCHASE_CARD action whose `purchaseCard.increaseCardId` is the card being increased. It waits for the customer's approval through the ordinary action approval endpoint when the agent's current policy requires approval for the new limit (the funding account's execution mode, else the default execution mode, or the approval threshold), or when the original card required approval. Otherwise it is applied at once. Approval rechecks the card, limits and platform gate. The full new issuer limit is checked against the agent's current spending limits. Increases do not reserve or count spending; authorization counts the actual spend. Replaying the same key returns the same action; a key used with different parameters is a conflict.
+      operationId: agentIncreasePurchaseCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          description: The unused single-use purchase card to increase.
+          schema:
+            type: string
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Unique key for this increase, reused on retries.
+          schema:
+            type: string
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentPurchaseCardIncreaseRequest'
+      responses:
+        '200':
+          description: The increase action, applied or awaiting approval.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
+        '400':
+          description: Invalid amount, reason, card state or recurring card.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Platform feature disabled, permission missing or policy denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found for this agent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Idempotency key already used for another request or card changed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error.
           content:
             application/json:
               schema:
@@ -13908,6 +14772,86 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+  claimable-payout:
+    post:
+      summary: Claimable payout webhook
+      description: |
+        Fired when a claimable payout is claimed, paid, expires or fails, so the platform can tell the sender. `CLAIMABLE_PAYOUT.EXPIRED` and `CLAIMABLE_PAYOUT.FAILED` mean the hold on the sender's wallet was released.
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+      operationId: claimablePayoutWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimablePayoutWebhook'
+            examples:
+              paid:
+                summary: Claimable payout paid
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000021
+                  type: CLAIMABLE_PAYOUT.PAID
+                  timestamp: '2025-10-04T09:00:00Z'
+                  data:
+                    id: ClaimablePayout:019542f5-b3e7-1d02-0000-000000000077
+                    agentId: Agent:019542f5-b3e7-1d02-0000-000000000042
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000010
+                    platformCustomerId: user-a1b2c3
+                    status: PAID
+                    sourceAccountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                    amount:
+                      amount: 5000
+                      currency:
+                        code: USDB
+                        name: USDB
+                        symbol: $
+                        decimals: 2
+                    recipient:
+                      name: Maria
+                      phoneNumber: '+639171234567'
+                      country: PH
+                    externalAccountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000030
+                    receivedAmount:
+                      amount: 287000
+                      currency:
+                        code: PHP
+                        name: Philippine Peso
+                        symbol: ₱
+                        decimals: 2
+                    paymentRail: MOBILE_MONEY
+                    expiresAt: '2025-10-10T15:00:00Z'
+                    createdAt: '2025-10-03T15:00:00Z'
+                    updatedAt: '2025-10-04T09:00:00Z'
+      responses:
+        '200':
+          description: Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
   incoming-payment:
     post:
       summary: Incoming payment webhook and approval mechanism
@@ -16600,6 +17544,7 @@ components:
         | `CARDS_DISABLED` | 403 | Cards are not enabled for the platform |
         | `CARDHOLDER_INFO_MISSING` | 400 | The cardholder record lacks fields a card needs. `details.missingFields` lists them; supply them through the customers API |
         | `CARDHOLDER_BANK_ACCOUNT_NOT_OPEN` | 400 | The cardholder's USD bank account is not open yet, so no card can be issued until it is |
+        | `CARDHOLDER_COUNTRY_NOT_SUPPORTED` | 400 | The cardholder's address is outside the United States, where agent cards are not offered yet |
         | `CARDHOLDER_HOLDS_CARD` | 409 | The cardholder already holds a card and the platform allows one per cardholder. Close it before issuing another |
         | `INVOICE_SUB_SAT_AMOUNT` | 400 | The Lightning invoice's amount is not a whole number of satoshis |
         | `INVOICE_FUNDS_DEPOSIT` | 400 | The Lightning invoice was issued by Lightspark to fund a deposit and cannot be paid with a send |
@@ -18011,6 +18956,8 @@ components:
         | `DAILY_LIMIT_EXCEEDED` | The amount would exceed the daily spending limit |
         | `MONTHLY_LIMIT_EXCEEDED` | The amount would exceed the monthly spending limit |
         | `DAILY_TRANSACTION_LIMIT_EXCEEDED` | The agent has made its daily number of transactions |
+        | `POOL_LIMIT_EXCEEDED` | The amount would exceed a limit of the agent's spending pool |
+        | `POOL_PAYMENT_TYPE_NOT_ALLOWED` | The agent's spending pool does not allow this kind of payment |
       example: DAILY_LIMIT_EXCEEDED
     Error403:
       type: object
@@ -18075,7 +19022,7 @@ components:
             | UMA_ADDRESS_EXISTS | UMA address already exists |
             | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
             | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
-            | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
+            | PASSKEY_ALREADY_ENROLLED | The customer already has the most passkeys allowed (two). Delete one before enrolling another |
             | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
             | BENEFICIARY_NOT_TRUSTED | The external account must be a trusted beneficiary before it can be used here. Trust it first via `POST /customers/external-accounts/{externalAccountId}/trust` (and its `/confirm`), then retry |
             | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
@@ -20320,6 +21267,7 @@ components:
         - CNY_ACCOUNT
         - ILS_ACCOUNT
         - TRY_ACCOUNT
+        - CHF_ACCOUNT
       description: Type of external account or wallet
       example: AED_ACCOUNT
     BaseExternalAccountInfo:
@@ -25527,6 +26475,129 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/TryBeneficiary'
                   BUSINESS: '#/components/schemas/TryBusinessBeneficiary'
+    ChfAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - iban
+      properties:
+        accountType:
+          type: string
+          enum:
+            - CHF_ACCOUNT
+        iban:
+          type: string
+          description: Swiss IBAN (21 characters, starting with CH)
+          example: CH9300762011623852957
+          minLength: 21
+          maxLength: 21
+          pattern: ^CH[0-9]{7}[0-9A-Z]{12}$
+      example:
+        accountType: CHF_ACCOUNT
+        iban: CH9300762011623852957
+    ChfAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/ChfAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+    ChfBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          maxLength: 250
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    ChfBusinessBeneficiary:
+      title: Business Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - legalName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+        legalName:
+          type: string
+          maxLength: 250
+          description: The legal name of the business
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          maxLength: 100
+          description: The company registration number of the business
+        taxId:
+          type: string
+          maxLength: 100
+          description: The tax identification number of the business
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    ChfExternalAccountInfo:
+      title: CHF Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ChfAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ChfBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/ChfBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/ChfBeneficiary'
+                  BUSINESS: '#/components/schemas/ChfBusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountInfo'
@@ -25578,6 +26649,7 @@ components:
         - $ref: '#/components/schemas/CnyExternalAccountInfo'
         - $ref: '#/components/schemas/IlsExternalAccountInfo'
         - $ref: '#/components/schemas/TryExternalAccountInfo'
+        - $ref: '#/components/schemas/ChfExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -25631,6 +26703,7 @@ components:
           CNY_ACCOUNT: '#/components/schemas/CnyExternalAccountInfo'
           ILS_ACCOUNT: '#/components/schemas/IlsExternalAccountInfo'
           TRY_ACCOUNT: '#/components/schemas/TryExternalAccountInfo'
+          CHF_ACCOUNT: '#/components/schemas/ChfExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
@@ -26503,6 +27576,26 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/TryBeneficiary'
                   BUSINESS: '#/components/schemas/TryBusinessBeneficiary'
+    ChfExternalAccountCreateInfo:
+      title: CHF Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ChfAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ChfBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/ChfBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/ChfBeneficiary'
+                  BUSINESS: '#/components/schemas/ChfBusinessBeneficiary'
     ExternalAccountCreateInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountCreateInfo'
@@ -26554,6 +27647,7 @@ components:
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
         - $ref: '#/components/schemas/IlsExternalAccountCreateInfo'
         - $ref: '#/components/schemas/TryExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/ChfExternalAccountCreateInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -26606,6 +27700,7 @@ components:
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           ILS_ACCOUNT: '#/components/schemas/IlsExternalAccountCreateInfo'
           TRY_ACCOUNT: '#/components/schemas/TryExternalAccountCreateInfo'
+          CHF_ACCOUNT: '#/components/schemas/ChfExternalAccountCreateInfo'
     CustomerExternalAccountCreateRequest:
       type: object
       required:
@@ -30730,6 +31825,14 @@ components:
           type: boolean
           description: Whether the agent has been installed and connected (i.e., its device code has been redeemed).
           example: true
+        actingFor:
+          type: string
+          description: The platform's reference for the person this agent acts for, as given when the agent was created. Absent when none was given.
+          example: member_8f2c1a
+        spendingPoolId:
+          type: string
+          description: The spending pool the agent spends under, in addition to its own policy. Absent when the agent is in no pool.
+          example: SpendingPool:019542f5-b3e7-1d02-0000-000000000007
         policy:
           $ref: '#/components/schemas/AgentPolicy'
         usage:
@@ -30781,6 +31884,16 @@ components:
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         policy:
           $ref: '#/components/schemas/AgentPolicy'
+        actingFor:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: The platform's own reference for the person this agent acts for, such as a member id within a business. Grid stores it as given, never interprets it, and copies it onto every card the agent is issued, for audit and screening. Required when the customer is a `BUSINESS`, where agents are available only where the platform enables them for business customers; optional for an `INDIVIDUAL`. It cannot be changed after the agent is created.
+          example: member_8f2c1a
+        spendingPoolId:
+          type: string
+          description: A spending pool of the same customer to put the agent in, where the platform enables spending pools. The agent's policy must be in the pool's currency.
+          example: SpendingPool:019542f5-b3e7-1d02-0000-000000000007
     AgentDeviceCode:
       type: object
       required:
@@ -30838,13 +31951,15 @@ components:
       enum:
         - EXECUTE_QUOTE
         - ISSUE_PURCHASE_CARD
+        - CLAIMABLE_PAYOUT
       description: |
         The type of action the agent is requesting.
 
         | Type | Description |
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
-        | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. See `purchaseCard` |
+        | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. When `purchaseCard.increaseCardId` is set, raise the amount of that existing single-use card instead of issuing one. See `purchaseCard` |
+        | `CLAIMABLE_PAYOUT` | Send a claimable payout to a person by phone number or email. See `claimablePayout` |
     AgentSendNetwork:
       type: string
       enum:
@@ -30965,6 +32080,22 @@ components:
         - currency
         - fundingSource
       properties:
+        increaseCardId:
+          type: string
+          description: The existing card being increased, present only on increase actions.
+          example: Card:019542f5-b3e7-1d02-0000-000000000011
+        previousAmount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Purchase amount before this increase, in USD cents.
+          example: 4999
+        previousSpendLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Issuer-enforced limit before this increase, in USD cents.
+          example: 5749
         amount:
           type: integer
           format: int64
@@ -30984,7 +32115,7 @@ components:
         description:
           type: string
           maxLength: 255
-          description: What the agent said the card is for, such as the merchant and item. Shown to the customer when they approve the card. Supplied by the agent and not verified by Grid.
+          description: What the agent said the card is for, such as the merchant and item. On an increase action, the agent's `reason` for the higher amount. Shown to the customer when they approve the card or the increase. Supplied by the agent and not verified by Grid.
           example: Running shoes from example-store.com
         fundingSource:
           type: string
@@ -30999,6 +32130,162 @@ components:
           format: date-time
           description: When Grid closes the card if it has not been used. Present once a single-use card is issued; a recurring card has none.
           example: '2026-10-26T15:30:00Z'
+    ClaimablePayoutStatus:
+      type: string
+      enum:
+        - PENDING_APPROVAL
+        - AWAITING_CLAIM
+        - CLAIMED
+        - PAID
+        - EXPIRED
+        - CANCELLED
+        - FAILED
+      description: |
+        Status of a claimable payout. Grid holds the amount against the sender's
+        Embedded Wallet balance and the agent's spending limits from creation until
+        the payout is `PAID`, or releases it when the payout ends in any other
+        status.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING_APPROVAL` | Waiting for the customer to approve the agent's request. No claim token can be issued yet |
+        | `AWAITING_CLAIM` | Approved; the recipient can claim it with a claim token until `expiresAt` |
+        | `CLAIMED` | The recipient confirmed a locked quote and Grid is paying her |
+        | `PAID` | The payout reached the recipient's account |
+        | `EXPIRED` | Not claimed by `expiresAt`, or not approved in time. The hold is released |
+        | `CANCELLED` | Cancelled by the agent, or rejected by the customer. The hold is released |
+        | `FAILED` | The payout could not be made; see `failureReason`. The hold is released |
+    ClaimablePayoutRecipient:
+      type: object
+      description: 'The person a claimable payout is for. Exactly one of `phoneNumber` and `email` is set: the one-time code that proves the recipient holds the link goes there.'
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: What the sender calls the recipient. Shown to the customer when they approve the payout and in the message that carries the link; the recipient gives her legal name with her payout details.
+          example: Maria
+        phoneNumber:
+          type: string
+          description: The recipient's mobile number in E.164 format.
+          example: '+639171234567'
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: The recipient's email address.
+          example: maria@example.com
+        country:
+          type: string
+          description: ISO 3166-1 alpha-2 country the recipient is paid in. Defaults to the country of `phoneNumber`'s dialing code; required with `email`. Always present on a payout Grid returns. The recipient can choose another country when she claims.
+          pattern: ^[A-Z]{2}$
+          example: PH
+    ClaimablePayoutFailureReason:
+      type: string
+      enum:
+        - INSUFFICIENT_FUNDS
+        - RECIPIENT_REFUSED
+        - AGENT_INACTIVE
+        - PAYOUT_FAILED
+      description: |
+        Why a claimable payout is `FAILED`.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `INSUFFICIENT_FUNDS` | The sender's wallet no longer held the amount when the recipient claimed it |
+        | `RECIPIENT_REFUSED` | Grid's screening did not clear the recipient's account |
+        | `AGENT_INACTIVE` | The agent was deleted or paused, or its delegated key revoked, before the payout was made |
+        | `PAYOUT_FAILED` | The payout to the recipient's account failed |
+    ClaimablePayout:
+      type: object
+      description: Money an agent sends to a person by phone number or email, for her to claim from a link. Grid holds `amount` against the sender's Embedded Wallet balance and the agent's spending limits; the funds stay in the wallet until the recipient claims and Grid pays her from it.
+      required:
+        - id
+        - agentId
+        - customerId
+        - platformCustomerId
+        - status
+        - sourceAccountId
+        - amount
+        - recipient
+        - expiresAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier.
+          example: ClaimablePayout:019542f5-b3e7-1d02-0000-000000000077
+        agentId:
+          type: string
+          description: The agent that sent the payout.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        customerId:
+          type: string
+          description: The sender, the agent's customer.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000010
+        platformCustomerId:
+          type: string
+          description: Platform-specific ID of the sender.
+          example: user-a1b2c3
+        status:
+          $ref: '#/components/schemas/ClaimablePayoutStatus'
+        sourceAccountId:
+          type: string
+          description: The sender's `EMBEDDED_WALLET` internal account the payout is paid from.
+          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        amount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: The amount held and sent, in the source account's currency.
+        recipient:
+          $ref: '#/components/schemas/ClaimablePayoutRecipient'
+        note:
+          type: string
+          maxLength: 140
+          description: The sender's note to the recipient.
+          example: Happy birthday, Mom
+        agentActionId:
+          type: string
+          description: The `CLAIMABLE_PAYOUT` agent action the customer approves or rejects.
+          example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+        externalAccountId:
+          type: string
+          description: The external account Grid saved under the sender's customer for the recipient's payout details. Present once the recipient has claimed. An agent can pay it again as a saved recipient.
+          example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        transactionId:
+          type: string
+          description: The outgoing transaction that paid the recipient. Present once Grid sends the payout.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000030
+        receivedAmount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: What the recipient receives, in her currency. Present once she has a locked quote.
+        paymentRail:
+          allOf:
+            - $ref: '#/components/schemas/PaymentRail'
+          description: The rail the recipient chose. Present once she has claimed.
+        failureReason:
+          allOf:
+            - $ref: '#/components/schemas/ClaimablePayoutFailureReason'
+          description: Present only when `status` is `FAILED`.
+        expiresAt:
+          type: string
+          format: date-time
+          description: While `PENDING_APPROVAL`, the end of the approval window; from `AWAITING_CLAIM`, when the claim window ends, 7 days after approval. A payout not `PAID` by then, and not being paid, expires and its hold is released.
+          example: '2025-10-10T15:00:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: When the agent sent the payout.
+          example: '2025-10-03T15:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the payout last changed.
+          example: '2025-10-03T15:02:00Z'
     AgentActionFailureReason:
       type: string
       enum:
@@ -31069,9 +32356,12 @@ components:
         purchaseCard:
           $ref: '#/components/schemas/AgentPurchaseCardDetails'
           description: The purchase card the agent asked for, so an approval decision can show its amount, limit, description and funding account. Present for `ISSUE_PURCHASE_CARD`.
+        claimablePayout:
+          $ref: '#/components/schemas/ClaimablePayout'
+          description: The claimable payout the agent asked to send, so an approval decision can show its amount and recipient. Present for `CLAIMABLE_PAYOUT`. Approving the action makes the payout `AWAITING_CLAIM`; rejecting it, or letting it expire, ends the payout and releases its hold.
         cardId:
           type: string
-          description: The purchase card the action issued. Present for an `ISSUE_PURCHASE_CARD` action once it is `APPROVED` and the card is issued; read it with `GET /agents/me/cards/{cardId}`.
+          description: The purchase card the action issued, or for an increase the card whose amount it raised. Present for an `ISSUE_PURCHASE_CARD` action once it is `APPROVED` and the card is issued or increased; read it with `GET /agents/me/cards/{cardId}`.
           example: Card:019542f5-b3e7-1d02-0000-000000000011
         transaction:
           allOf:
@@ -31119,6 +32409,297 @@ components:
         totalCount:
           type: integer
           description: Total number of actions matching the criteria (excluding pagination).
+    SpendingPoolLimitType:
+      type: string
+      enum:
+        - RECURRING
+        - TOTAL
+      description: |
+        How a spending pool's `limitAmount` applies.
+
+        | Value | Description |
+        |-------|-------------|
+        | `RECURRING` | Resets at the start of each `period` (UTC calendar week starting Monday, or calendar month) |
+        | `TOTAL` | A running total that never resets; raise `limitAmount` to allow more |
+      example: RECURRING
+    SpendingPoolPeriod:
+      type: string
+      enum:
+        - MONTH
+        - WEEK
+      description: 'The UTC calendar period a `RECURRING` pool''s limit resets on: a calendar month, or a week starting Monday 00:00 UTC.'
+      example: MONTH
+    SpendingPoolPaymentType:
+      type: string
+      enum:
+        - CARDS
+        - CRYPTO_SENDS
+        - BANK_PAYOUTS
+      description: |
+        A kind of agent payment a spending pool may allow.
+
+        | Value | Description |
+        |-------|-------------|
+        | `CARDS` | Authorizations on the agents' cards |
+        | `CRYPTO_SENDS` | Sends to crypto destinations, Spark and Lightning included |
+        | `BANK_PAYOUTS` | Payouts to bank accounts |
+      example: CARDS
+    SpendingPoolUsage:
+      type: object
+      description: What the pool's agents have spent, counting payments still in flight, as of the request. Amounts are in the smallest unit of the pool's `currency`.
+      required:
+        - spent
+        - remaining
+        - dailySpent
+        - monthlySpent
+      properties:
+        periodStart:
+          type: string
+          format: date
+          description: The first day (UTC) of the current period of a `RECURRING` pool. Absent for a `TOTAL` pool.
+          example: '2026-11-01'
+        periodEnd:
+          type: string
+          format: date
+          description: The first day (UTC) of the next period of a `RECURRING` pool, when its spending resets. Absent for a `TOTAL` pool.
+          example: '2026-12-01'
+        spent:
+          type: integer
+          format: int64
+          description: 'Spent against `limitAmount`: in the current period for a `RECURRING` pool, ever for a `TOTAL` one.'
+          example: 125000
+        remaining:
+          type: integer
+          format: int64
+          description: 'What the pool''s agents may still spend now: the least room left under `limitAmount`, `dailyLimit` and `monthlyLimit`, and never below zero. A single payment is also held to `perTransactionLimit`, and to each agent''s own policy.'
+          example: 375000
+        dailySpent:
+          type: integer
+          format: int64
+          description: Spent today (UTC).
+          example: 2500
+        monthlySpent:
+          type: integer
+          format: int64
+          description: Spent in the current UTC calendar month.
+          example: 125000
+    SpendingPool:
+      title: Spending Pool
+      type: object
+      description: 'A spending limit shared by the agents assigned to it, on their customer''s balance. A pool holds no money and no money moves between pools: it only limits what its agents may spend, in addition to each agent''s own policy. Limits of different pools may add up to more than the balance. Each agent belongs to at most one pool.'
+      required:
+        - id
+        - customerId
+        - name
+        - currency
+        - limitType
+        - limitAmount
+        - allowedPaymentTypes
+        - requiresAdminApproval
+        - isArchived
+        - usage
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier for the pool.
+          example: SpendingPool:019542f5-b3e7-1d02-0000-000000000007
+        customerId:
+          type: string
+          description: The customer whose agents spend under the pool.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        name:
+          type: string
+          description: Human-readable name for the pool.
+          example: Marketing
+        currency:
+          type: string
+          description: ISO 4217 currency code all of the pool's amounts are in. Only agents whose policy is in the same currency may be assigned to it. Immutable.
+          example: USD
+        limitType:
+          $ref: '#/components/schemas/SpendingPoolLimitType'
+        period:
+          $ref: '#/components/schemas/SpendingPoolPeriod'
+          description: The period a `RECURRING` pool resets on. Absent for `TOTAL`.
+        limitAmount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: 'The most the pool''s agents may spend together: per `period` for a `RECURRING` pool, in total for a `TOTAL` one.'
+          example: 500000
+        perTransactionLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The most a single payment may be. Absent for no cap.
+          example: 50000
+        dailyLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The most the pool's agents may spend together per UTC day. Absent for no cap.
+          example: 100000
+        monthlyLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The most the pool's agents may spend together per UTC calendar month. Absent for no cap.
+          example: 400000
+        allowedPaymentTypes:
+          type: array
+          description: The kinds of payment the pool's agents may make. Any other is refused with `policyDenialReason` `POOL_PAYMENT_TYPE_NOT_ALLOWED`.
+          items:
+            $ref: '#/components/schemas/SpendingPoolPaymentType'
+          uniqueItems: true
+          example:
+            - CARDS
+            - CRYPTO_SENDS
+        requiresAdminApproval:
+          type: boolean
+          description: Whether the platform requires an administrator to approve the pool's agents' payments that need approval. Grid stores it for the platform and does not act on it.
+          example: false
+        isArchived:
+          type: boolean
+          description: Whether the pool was archived. An archived pool takes no agents and cannot be changed.
+          example: false
+        usage:
+          $ref: '#/components/schemas/SpendingPoolUsage'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-11-02T17:32:28Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2026-11-02T17:32:28Z'
+    SpendingPoolListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: Spending pools matching the filter criteria.
+          items:
+            $ref: '#/components/schemas/SpendingPool'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+    SpendingPoolCreateRequest:
+      type: object
+      description: 'Request body for `POST /spending-pools`. `period` is required with `limitType: RECURRING` and rejected with `TOTAL`.'
+      required:
+        - customerId
+        - name
+        - limitType
+        - limitAmount
+        - allowedPaymentTypes
+      properties:
+        customerId:
+          type: string
+          description: The customer whose agents will spend under the pool.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Marketing
+        currency:
+          type: string
+          description: ISO 4217 currency code of the pool's amounts. Defaults to `USD`.
+          example: USD
+        limitType:
+          $ref: '#/components/schemas/SpendingPoolLimitType'
+        period:
+          $ref: '#/components/schemas/SpendingPoolPeriod'
+        limitAmount:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 500000
+        perTransactionLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 50000
+        dailyLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 100000
+        monthlyLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 400000
+        allowedPaymentTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpendingPoolPaymentType'
+          uniqueItems: true
+          example:
+            - CARDS
+        requiresAdminApproval:
+          type: boolean
+          default: false
+          example: false
+    SpendingPoolUpdateRequest:
+      type: object
+      description: Partial update to a spending pool. At least one field must be provided. A cap set to `null` is removed. Changing `limitType` to `RECURRING` requires `period`; changing it to `TOTAL` removes `period`. Lowering a limit below what is already spent refuses further payments; it never reverses one.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Marketing
+        limitType:
+          $ref: '#/components/schemas/SpendingPoolLimitType'
+        period:
+          $ref: '#/components/schemas/SpendingPoolPeriod'
+        limitAmount:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 600000
+        perTransactionLimit:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          minimum: 1
+          example: 50000
+        dailyLimit:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          minimum: 1
+          example: 100000
+        monthlyLimit:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          minimum: 1
+          example: 400000
+        allowedPaymentTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpendingPoolPaymentType'
+          uniqueItems: true
+          example:
+            - CARDS
+            - BANK_PAYOUTS
+        requiresAdminApproval:
+          type: boolean
+          example: true
     AgentCustomerUpdateRequest:
       title: Agent Customer Update Request
       description: 'Request body for `PATCH /agents/me/customer`: the identity fields an agent may update on its customer. Any other field, including `email` and `currencies`, returns 400.'
@@ -31330,6 +32911,12 @@ components:
           type: boolean
           description: Set to true to pause the agent or false to resume it.
           example: true
+        spendingPoolId:
+          type:
+            - string
+            - 'null'
+          description: Move the agent to this spending pool of the same customer, or take it out of its pool with `null`. Available where the platform enables spending pools. The agent's policy must be in the pool's currency.
+          example: SpendingPool:019542f5-b3e7-1d02-0000-000000000007
     AgentSpendingLimitsUpdate:
       type: object
       description: Partial update to spending limits. Only provided fields will be updated; omitted fields retain their current values.
@@ -31710,6 +33297,208 @@ components:
               default: false
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
+    ClaimablePayoutListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: The claimable payouts on this page.
+          items:
+            $ref: '#/components/schemas/ClaimablePayout'
+        hasMore:
+          type: boolean
+          description: Whether more results exist past this page.
+        nextCursor:
+          type: string
+          description: Cursor for the next page.
+    ClaimablePayoutCreateRequest:
+      type: object
+      description: A claimable payout an agent sends from its customer's Embedded Wallet.
+      required:
+        - sourceAccountId
+        - amount
+        - recipient
+      properties:
+        sourceAccountId:
+          type: string
+          description: The customer's `EMBEDDED_WALLET` internal account to pay from.
+          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        amount:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+          maximum: 9000000000000000
+          description: The amount to send, in the smallest unit of the source account's currency.
+          example: 5000
+        recipient:
+          $ref: '#/components/schemas/ClaimablePayoutRecipient'
+        note:
+          type: string
+          maxLength: 140
+          description: A note for the recipient, shown once she has proved she holds the link.
+          example: Happy birthday, Mom
+    ClaimablePayoutClaimToken:
+      type: object
+      description: 'A claim token for the recipient''s link. Grid keeps only its hash and shows it once: issuing another replaces it, so an earlier link stops working.'
+      required:
+        - claimToken
+        - expiresAt
+      properties:
+        claimToken:
+          type: string
+          description: The token to put in the link you send the recipient. Never log it or show it to the agent.
+          example: 2mJ0b7cX4lXzv1q3eRk8Wf6YtN9pHs5aUo-dGiCQwLE
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the payout's claim window ends.
+          example: '2025-10-10T15:00:00Z'
+    ClaimablePayoutClaimRequest:
+      type: object
+      required:
+        - claimToken
+      properties:
+        claimToken:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: The claim token from the recipient's link.
+    ClaimablePayoutClaim:
+      type: object
+      description: A claimable payout as its claim token shows it to the platform. Show the recipient no more than `senderName` and `amount` until she has proved she holds `recipient.phoneNumber` or `recipient.email`.
+      required:
+        - id
+        - status
+        - senderName
+        - amount
+        - recipient
+        - expiresAt
+      properties:
+        id:
+          type: string
+          description: The claimable payout's identifier.
+          example: ClaimablePayout:019542f5-b3e7-1d02-0000-000000000077
+        status:
+          $ref: '#/components/schemas/ClaimablePayoutStatus'
+        senderName:
+          type: string
+          description: The sender's first name, from their verified identity.
+          example: Kevin
+        amount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        recipient:
+          $ref: '#/components/schemas/ClaimablePayoutRecipient'
+        note:
+          type: string
+          description: The sender's note to the recipient.
+          example: Happy birthday, Mom
+        receivedAmount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: What the recipient receives. Present once she has a locked quote.
+        paymentRail:
+          allOf:
+            - $ref: '#/components/schemas/PaymentRail'
+          description: The rail the recipient chose. Present once she has a locked quote.
+        failureReason:
+          allOf:
+            - $ref: '#/components/schemas/ClaimablePayoutFailureReason'
+          description: Present only when `status` is `FAILED`.
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the claim window ends.
+          example: '2025-10-10T15:00:00Z'
+    ClaimablePayoutOptionsRequest:
+      type: object
+      required:
+        - claimToken
+      properties:
+        claimToken:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: The claim token from the recipient's link.
+        country:
+          type: string
+          pattern: ^[A-Z]{2}$
+          description: ISO 3166-1 alpha-2 country to list payout options for. Defaults to the payout's `recipient.country`.
+          example: PH
+    ClaimablePayoutOption:
+      type: object
+      required:
+        - accountType
+        - rate
+      properties:
+        accountType:
+          allOf:
+            - $ref: '#/components/schemas/ExternalAccountType'
+          description: The `accountInfo.accountType` that pays to this currency; its schema lists the details the recipient gives.
+        rate:
+          $ref: '#/components/schemas/ExchangeRate'
+    ClaimablePayoutOptions:
+      type: object
+      description: 'How Grid can pay the recipient in a country: one exchange rate per currency and rail it delivers to there, priced for the payout''s amount, as `GET /exchange-rates` prices them for the platform.'
+      required:
+        - country
+        - options
+      properties:
+        country:
+          type: string
+          description: The ISO 3166-1 alpha-2 country the options are for.
+          example: PH
+        options:
+          type: array
+          description: Empty when Grid cannot pay out in `country`. A row with `isAvailable` false is paused and cannot be claimed to now.
+          items:
+            $ref: '#/components/schemas/ClaimablePayoutOption'
+    ClaimablePayoutQuoteRequest:
+      type: object
+      description: The recipient's payout details. Grid validates them as for `POST /customers/external-accounts`, screens the recipient, saves the account under the sender's customer and locks a quote for the payout.
+      required:
+        - claimToken
+        - accountInfo
+      properties:
+        claimToken:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: The claim token from the recipient's link.
+        accountInfo:
+          $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
+        paymentRail:
+          allOf:
+            - $ref: '#/components/schemas/PaymentRail'
+          description: The rail the recipient chose from `POST /claimable-payouts/claim/options`, when her account type is paid on more than one (for example `SEPA` or `SEPA_INSTANT`). Omit it to use the account type's default rail.
+    ClaimablePayoutQuote:
+      type: object
+      description: A locked quote paying the claimable payout to the recipient. Confirm it before `quote.expiresAt`; after that, request another.
+      required:
+        - claimablePayout
+        - quote
+      properties:
+        claimablePayout:
+          $ref: '#/components/schemas/ClaimablePayoutClaim'
+        quote:
+          $ref: '#/components/schemas/Quote'
+    ClaimablePayoutConfirmRequest:
+      type: object
+      required:
+        - claimToken
+        - quoteId
+      properties:
+        claimToken:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: The claim token from the recipient's link.
+        quoteId:
+          type: string
+          description: The quote from `POST /claimable-payouts/claim/quote`.
+          example: Quote:019542f5-b3e7-1d02-0000-000000000006
     AgentCard:
       title: Agent Card
       type: object
@@ -31728,6 +33517,10 @@ components:
           example: Agent:019542f5-b3e7-1d02-0000-000000000042
         agentCardKind:
           $ref: '#/components/schemas/AgentCardKind'
+        actingFor:
+          type: string
+          description: 'The platform''s reference for the person the card was issued for: the issuing agent''s `actingFor` when the card was issued. Absent when the agent had none.'
+          example: member_8f2c1a
         effectiveBlockedMccs:
           type: array
           description: 'Every merchant category code the card declines: `blockedMccs` plus the categories Grid blocks for agent cards, unless the platform lifted those defaults (`defaultMccBlocksLifted`).'
@@ -31762,6 +33555,39 @@ components:
           type: integer
           description: Total number of cards matching the criteria (excluding pagination).
           example: 3
+    AgentCardholder:
+      type: object
+      description: The person a business's agent card is issued for. The card is issued on the business's card account with this person as its authorized user, so their name is the one on the card. Grid passes these details to the card issuer, holding them only while a purchase card awaits approval.
+      required:
+        - firstName
+        - lastName
+        - email
+        - phoneNumber
+        - address
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Jane
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Doe
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: jane@example.com
+        phoneNumber:
+          type: string
+          description: Phone number in E.164 format.
+          pattern: ^\+[1-9]\d{1,14}$
+          example: '+14155550123'
+        address:
+          $ref: '#/components/schemas/Address'
+          description: The person's residential address. Must be a complete United States address with `city` and `state`.
     AgentCardCreateRequest:
       type: object
       description: 'Request body for `POST /agents/me/cards`. Without `kind`, or with `kind: STANDARD`, it issues the agent''s standard card. With `kind: PURCHASE` it requests a single-use purchase card for one online purchase of `amount`, or with `recurring: true` a recurring purchase card that may spend up to `amount` a month at one merchant.'
@@ -31791,6 +33617,9 @@ components:
           default: false
           description: 'Request a recurring purchase card: one that locks to the first merchant that charges it and may be charged there again, up to `amount` in any trailing month (from a charge back to the same date a month earlier), until it is closed. Use it for a subscription, a card saved with a merchant, a hotel or car rental, or an order that ships in parts. It always needs the customer''s approval, whatever the agent''s policy says, and is available only where the platform enables recurring purchase cards. `true` is allowed only with `kind: PURCHASE`; `false` is accepted with any kind.'
           example: false
+        cardholder:
+          $ref: '#/components/schemas/AgentCardholder'
+          description: The person the card is for, named on the card as an authorized user of the business. Required for every card when the agent's customer is a `BUSINESS`, and rejected for an `INDIVIDUAL`. For a purchase card that awaits approval, Grid keeps it, encrypted, until the card is issued or the request ends.
     AgentCardUpdateRequest:
       type: object
       description: 'Update request for `PATCH /agents/me/cards/{cardId}`. At least one field must be supplied. An agent may freeze the card or tighten merchant categories: `blockedMccs` must contain every code in the card''s `effectiveBlockedMccs`, and `allowedMccs` may only lose codes once set. The only status an agent may set is `FROZEN`; unfreezing and loosening happen on the platform through `PATCH /cards/{id}`. The platform manages card velocity limits through `/card-velocity-limits`.'
@@ -31834,6 +33663,25 @@ components:
           format: date-time
           description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
           example: '2026-05-08T14:16:00Z'
+    AgentPurchaseCardIncreaseRequest:
+      type: object
+      description: Increase an unused single-use purchase card's amount before checkout.
+      required:
+        - amount
+        - reason
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: New purchase amount in USD cents, strictly above the current amount.
+          example: 5999
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Why the purchase needs a higher amount, as reported by the app. The increase action returns it as `purchaseCard.description`, which is shown to the customer when they approve the increase.
+          example: Shipping was added at checkout.
     CardVelocityMetric:
       type: string
       description: ATTEMPTS counts every real-time authorization request, including declined requests. APPROVED counts distinct approved authorizations, including zero-amount authorizations, and can also cap the amount they hold.
@@ -33508,6 +35356,10 @@ components:
         - AGENT_ACTION.APPROVED
         - AGENT_ACTION.REJECTED
         - AGENT_ACTION.FAILED
+        - CLAIMABLE_PAYOUT.CLAIMED
+        - CLAIMABLE_PAYOUT.PAID
+        - CLAIMABLE_PAYOUT.EXPIRED
+        - CLAIMABLE_PAYOUT.FAILED
         - CARD.STATUS_CHANGE
         - CARD.PIN_STATUS_CHANGE
         - CARD_TRANSACTION.AUTHORIZED
@@ -33558,6 +35410,24 @@ components:
               $ref: '#/components/schemas/AgentAction'
             type:
               $ref: '#/components/schemas/AgentActionWebhookEventType'
+    ClaimablePayoutWebhookEventType:
+      type: string
+      enum:
+        - CLAIMABLE_PAYOUT.CLAIMED
+        - CLAIMABLE_PAYOUT.PAID
+        - CLAIMABLE_PAYOUT.EXPIRED
+        - CLAIMABLE_PAYOUT.FAILED
+    ClaimablePayoutWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/ClaimablePayout'
+            type:
+              $ref: '#/components/schemas/ClaimablePayoutWebhookEventType'
     IncomingPaymentWebhookData:
       title: Incoming Payment Webhook Data
       allOf:

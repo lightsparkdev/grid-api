@@ -1,0 +1,59 @@
+type: object
+description: >-
+  Request body for `POST /spending-pools`. `period` is required with
+  `limitType: RECURRING` and rejected with `TOTAL`.
+required:
+  - customerId
+  - name
+  - limitType
+  - limitAmount
+  - allowedPaymentTypes
+properties:
+  customerId:
+    type: string
+    description: The customer whose agents will spend under the pool.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  name:
+    type: string
+    minLength: 1
+    maxLength: 255
+    example: Marketing
+  currency:
+    type: string
+    description: ISO 4217 currency code of the pool's amounts. Defaults to `USD`.
+    example: USD
+  limitType:
+    $ref: ./SpendingPoolLimitType.yaml
+  period:
+    $ref: ./SpendingPoolPeriod.yaml
+  limitAmount:
+    type: integer
+    format: int64
+    minimum: 1
+    example: 500000
+  perTransactionLimit:
+    type: integer
+    format: int64
+    minimum: 1
+    example: 50000
+  dailyLimit:
+    type: integer
+    format: int64
+    minimum: 1
+    example: 100000
+  monthlyLimit:
+    type: integer
+    format: int64
+    minimum: 1
+    example: 400000
+  allowedPaymentTypes:
+    type: array
+    items:
+      $ref: ./SpendingPoolPaymentType.yaml
+    uniqueItems: true
+    example:
+      - CARDS
+  requiresAdminApproval:
+    type: boolean
+    default: false
+    example: false

@@ -1,0 +1,48 @@
+type: object
+description: >-
+  A claimable payout as its claim token shows it to the platform. Show the
+  recipient no more than `senderName` and `amount` until she has proved she
+  holds `recipient.phoneNumber` or `recipient.email`.
+required:
+  - id
+  - status
+  - senderName
+  - amount
+  - recipient
+  - expiresAt
+properties:
+  id:
+    type: string
+    description: The claimable payout's identifier.
+    example: ClaimablePayout:019542f5-b3e7-1d02-0000-000000000077
+  status:
+    $ref: ./ClaimablePayoutStatus.yaml
+  senderName:
+    type: string
+    description: The sender's first name, from their verified identity.
+    example: Kevin
+  amount:
+    $ref: ../common/CurrencyAmount.yaml
+  recipient:
+    $ref: ./ClaimablePayoutRecipient.yaml
+  note:
+    type: string
+    description: The sender's note to the recipient.
+    example: Happy birthday, Mom
+  receivedAmount:
+    allOf:
+      - $ref: ../common/CurrencyAmount.yaml
+    description: What the recipient receives. Present once she has a locked quote.
+  paymentRail:
+    allOf:
+      - $ref: ../common/PaymentRail.yaml
+    description: The rail the recipient chose. Present once she has a locked quote.
+  failureReason:
+    allOf:
+      - $ref: ./ClaimablePayoutFailureReason.yaml
+    description: Present only when `status` is `FAILED`.
+  expiresAt:
+    type: string
+    format: date-time
+    description: When the claim window ends.
+    example: '2025-10-10T15:00:00Z'

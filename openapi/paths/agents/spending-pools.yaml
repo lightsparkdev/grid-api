@@ -1,0 +1,137 @@
+post:
+  summary: Create a spending pool
+  description: >
+    Create a spending pool on a customer. Agents assigned to it (with
+    `spendingPoolId` on `POST /agents` or `PATCH /agents/{agentId}`) are held
+    to its limits and allowed payment types together, in addition to each
+    agent's own policy. Available where the platform enables spending pools.
+
+
+    Every agent payment checks the pool: sends (including Lightning), bank
+    payouts and card authorizations. A payment the pool refuses is rejected
+    with `AGENT_POLICY_DENIED` and `details.policyDenialReason`
+    `POOL_LIMIT_EXCEEDED` or `POOL_PAYMENT_TYPE_NOT_ALLOWED`; a card
+    authorization is declined. Payments in flight hold their amount against
+    the pool until they complete or fail, so concurrent payments cannot
+    together exceed it. `RECURRING` limits reset on UTC calendar boundaries.
+  operationId: createSpendingPool
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/SpendingPoolCreateRequest.yaml
+  responses:
+    '201':
+      description: Spending pool created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/SpendingPool.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or spending pools are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List spending pools
+  description: Retrieve a paginated list of the platform's spending pools, with their current usage.
+  operationId: listSpendingPools
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: customerId
+      in: query
+      description: Filter by customer ID
+      required: false
+      schema:
+        type: string
+    - name: isArchived
+      in: query
+      description: Filter by archived status. Omitted, pools of both are returned.
+      required: false
+      schema:
+        type: boolean
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/SpendingPoolListResponse.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or spending pools are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
