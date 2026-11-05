@@ -14,7 +14,7 @@ and the GoFundMe demo's app switch (`bitcoin-2026-gofundme-web`).
 ## Start here
 
 **The shape.** Three columns, like the cards playground. Left: pick an agent
-app (Select agent) and a flow (Explore flows). Middle: the person's phone,
+app (Select agent) and a flow (Set it up, Put it to work). Middle: the person's phone,
 running that agent's chat. Right: the agent's tool calls with the Grid calls
 behind them, and the platform's calls and webhooks, each landing at the beat
 of the conversation that causes it. The reader is the platform developer; the

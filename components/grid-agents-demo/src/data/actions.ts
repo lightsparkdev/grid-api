@@ -54,7 +54,7 @@ export interface ActionDef {
   prompts: string[];
 }
 
-/** In grid order: two columns, read across. */
+/** Every flow. `FLOW_GROUPS` sets the picker's sections and their order. */
 export const ACTIONS: ActionDef[] = [
   {
     id: 'connect',
@@ -121,3 +121,10 @@ export const ACTIONS: ActionDef[] = [
 export function actionLabel(id: ActionId): string {
   return ACTIONS.find((a) => a.id === id)!.label;
 }
+
+/** The picker's sections, each a two-column grid read across: the agent's
+ *  account first, then what it does with it. */
+export const FLOW_GROUPS: { label: string; flows: ActionId[] }[] = [
+  { label: 'Set it up', flows: ['connect', 'fund', 'limits', 'balance'] },
+  { label: 'Put it to work', flows: ['pay', 'buy', 'agent', 'getpaid', 'cashout', 'history'] },
+];

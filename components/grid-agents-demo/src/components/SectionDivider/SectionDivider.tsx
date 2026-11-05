@@ -8,7 +8,7 @@ import styles from './SectionDivider.module.scss';
 
 interface SectionDividerProps {
   label: string;
-  /** When true, show the Explore flows icon for this action label. */
+  /** When true, show the flow picker's icon for this action label. */
   showFlowIcon?: boolean;
   /** Optional control pinned to the right; the rule fills the space as it leaves. */
   action?: ReactNode;

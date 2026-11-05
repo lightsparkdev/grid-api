@@ -26,19 +26,19 @@ export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
   history: IconHistory,
 };
 
-/** Green to blue down the grid, in reading order, as in the Global Accounts
+/** Green to blue down both grids, in reading order, as in the Global Accounts
  *  playground: its anchors (#34C759, --icon-success, --color-sky-500,
  *  --color-blue-500, --icon-info) with steps between for the extra rows. */
 export const FLOW_ICON_COLORS: Record<ActionId, string> = {
   connect: '#34C759',
   fund: '#22B96C',
   limits: 'var(--icon-success)',
-  pay: '#0BAB8F',
-  buy: '#05AEB8',
-  agent: 'var(--color-sky-500)',
-  getpaid: '#00A2EE',
-  cashout: 'var(--color-blue-500)',
-  balance: '#0082ED',
+  balance: '#0BAB8F',
+  pay: '#05AEB8',
+  buy: 'var(--color-sky-500)',
+  agent: '#00A2EE',
+  getpaid: 'var(--color-blue-500)',
+  cashout: '#0082ED',
   history: 'var(--icon-info)',
 };
 

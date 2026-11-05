@@ -7,18 +7,22 @@ import { pressable } from '@/lib/sounds';
 import styles from './FlowPicker.module.scss';
 
 interface FlowPickerProps {
-  /** The flow in the composer or playing: its tile stays lit. */
+  /** This section's flows, in grid order. */
+  flows: ActionId[];
+  /** The flow playing, marked (unstyled) on its section for the flow sweep. */
   activeFlow: ActionId | null;
   onAction: (id: ActionId) => void;
 }
 
-/** Explore flows: two columns, read across. A tile puts its flow's line in the
- *  composer; picking another mid-flow starts over there, as in the other
- *  playgrounds. One that needs an installed agent installs it first. */
-export function FlowPicker({ activeFlow, onAction }: FlowPickerProps) {
+/** A section of flows: two columns, read across. A tile sends its flow's line;
+ *  picking another mid-flow starts over there, as in the other playgrounds.
+ *  One that needs an installed agent installs it first. */
+export function FlowPicker({ flows, activeFlow, onAction }: FlowPickerProps) {
+  const actions = flows.map((id) => ACTIONS.find((a) => a.id === id)!);
+  const playing = activeFlow && flows.includes(activeFlow) ? activeFlow : undefined;
   return (
-    <div className={styles.group} data-active-flow={activeFlow ?? undefined}>
-      {ACTIONS.map((action) => {
+    <div className={styles.group} data-active-flow={playing}>
+      {actions.map((action) => {
         const Icon = FLOW_ICONS[action.id];
         return (
           <button
