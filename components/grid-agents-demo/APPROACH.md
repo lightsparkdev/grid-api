@@ -124,6 +124,11 @@ same way (`.tmp-sweep/capture.mjs`) and compared frame by frame.
   (tapbacks, data detectors, inline replies, rich links, and images Instinct
   generates). Payments are approved by replying Yes, which it drafts in the
   composer. Consent and limits go through a vault link in Safari.
+- Instinct's motion is fitted frame by frame to recording 2. Your bubble lifts
+  out of the field and swells into place. Delivered swells in as the thread
+  makes room, then fades out, and Read and the time fade in. Instinct reacts
+  and types only after Read, so the brain waits for it (`readsFor` on the skin).
+  Tapbacks grow out of their tail.
 - Pay an agent shows a sub-agent row. Its sheet holds the sub-agent's steps
   and the two agents' messages.
 

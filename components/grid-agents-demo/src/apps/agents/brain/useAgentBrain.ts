@@ -46,6 +46,7 @@ export function useAgentBrain({
   onRun,
   onCompleted,
   reply,
+  readsFor = 0,
 }: {
   entry?: FlowEntry;
   context: () => Omit<FlowContext, 'variant'>;
@@ -57,6 +58,8 @@ export function useAgentBrain({
   onCompleted?: (flow: ActionId) => void;
   /** Answers free text (the model, behind /api/agent). */
   reply: (text: string) => Promise<FreeTextReply>;
+  /** How long the agent takes to read each of your messages before it reacts, types or carries on (ms). */
+  readsFor?: number;
 }) {
   const [messages, setMessages] = useState<StoredMessage[]>(() => [
     { id: 0, kind: 'stamp', text: 'Today' },
@@ -79,8 +82,13 @@ export function useAgentBrain({
   const openChips = useRef<Chip[] | null>(null);
   const pickedByText = useRef(false);
 
-  const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, reply });
-  cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, reply };
+  const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, reply, readsFor });
+  cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, reply, readsFor };
+  /** Runs once the agent has read what you just sent. */
+  const afterReading = (f: () => void) => {
+    if (cb.current.readsFor > 0) setTimeout(f, cb.current.readsFor);
+    else f();
+  };
 
   const push = useCallback((m: NewMessage) => {
     const id = nextId.current++;
@@ -217,13 +225,14 @@ export function useAgentBrain({
   );
 
   const start = useCallback(
-    async (flow: ActionId | null, beats: Beat[]) => {
+    async (flow: ActionId | null, beats: Beat[], after = 0) => {
       const run: Run = { flow, cancelled: false };
       runRef.current = run;
       if (flow) cb.current.onRun?.(flow);
       setRunning(flow);
       setBusy(true);
-      const finished = await play(beats, run);
+      if (after > 0) await sleep(after);
+      const finished = !run.cancelled && (await play(beats, run));
       if (runRef.current !== run) return;
       clearWork();
       runRef.current = null;
@@ -244,7 +253,7 @@ export function useAgentBrain({
     cancelRun();
     push({ kind: 'me', text });
     const ctx: FlowContext = { ...cb.current.context(), variant: entry.variant };
-    void start(entry.flow, FLOWS[entry.flow](ctx));
+    void start(entry.flow, FLOWS[entry.flow](ctx), cb.current.readsFor);
   }, [entry, cancelRun, push, start]);
 
   const activeFlow = running;
@@ -256,31 +265,38 @@ export function useAgentBrain({
     const text = composer.trim();
     if (!text) return;
     // An open ask takes a text reply as its answer.
-    if (decideRef.current) {
+    const decide = decideRef.current;
+    if (decide) {
+      decideRef.current = null;
       setComposer('');
       push({ kind: 'me', text });
-      decideRef.current(YES.test(text) ? 'allow' : 'deny');
+      const decision = YES.test(text) ? 'allow' : 'deny';
+      afterReading(() => decide(decision));
       return;
     }
     // An open choice takes a typed option: its number, or its label.
     const chips = openChips.current;
-    if (chips && pickRef.current) {
+    const pick = pickRef.current;
+    if (chips && pick) {
       const n = Number.parseInt(text, 10);
       const lower = text.toLowerCase();
       const i = n >= 1 && n <= chips.length ? n - 1 : chips.findIndex((c) => lower.includes(c.label.toLowerCase()) || c.label.toLowerCase().includes(lower));
       if (i < 0) return;
+      pickRef.current = null;
       setComposer('');
       push({ kind: 'me', text });
       pickedByText.current = true;
-      pickRef.current(i);
+      afterReading(() => pick(i));
       return;
     }
     if (runRef.current) return;
     setComposer('');
     push({ kind: 'me', text });
     setBusy(true);
+    const replying = cb.current.reply(text);
+    if (cb.current.readsFor > 0) await sleep(cb.current.readsFor);
     const typingId = push({ kind: 'them', said: { text: '' }, typing: true });
-    const answer = await cb.current.reply(text);
+    const answer = await replying;
     patch(typingId, (m) => (m.kind === 'them' ? { ...m, said: answer.said, typing: false } : m));
     setBusy(false);
     if (answer.flow) {

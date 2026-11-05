@@ -323,6 +323,7 @@ export function ComposerField({
         enterKeyHint="send"
         aria-label="Message"
         data-scrolls={lines > COMPOSER_LINES || undefined}
+        data-empty={!chat.composer || undefined}
         onChange={(e) => chat.setComposer(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !e.shiftKey) {

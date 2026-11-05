@@ -21,7 +21,7 @@ const SKIN_EXIT = { ...SKIN_HIDDEN, pointerEvents: 'none' as const };
 
 type BrainOptions = Parameters<typeof useAgentBrain>[0];
 
-export interface AgentHostProps extends Omit<BrainOptions, 'reply'> {
+export interface AgentHostProps extends Omit<BrainOptions, 'reply' | 'readsFor'> {
   connector: ConnectorId;
   dark: boolean;
   /** Answers free text, given the thread so far as this app says it. */
@@ -58,7 +58,7 @@ export function AgentHost({ connector, dark, reply, ...options }: AgentHostProps
     },
     [reply],
   );
-  const brain = useAgentBrain({ ...options, reply: replyWithHistory });
+  const brain = useAgentBrain({ ...options, reply: replyWithHistory, readsFor: SKINS[connector].readsFor });
   const voice = useMemo(() => voiceFor(connector), [connector]);
   const messages = useMemo(() => renderThread(brain.messages, voice), [brain.messages, voice]);
   rendered.current = messages;

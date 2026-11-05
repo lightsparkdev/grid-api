@@ -39,6 +39,8 @@
   gap: var(--gap);
   min-height: 100%;
   padding: 120px 16px var(--thread-foot);
+  // Something mid-flight (a bubble leaving the field) must not grow the scroll area the thread follows.
+  overflow: clip;
 
   &[data-top] {
     justify-content: flex-start;

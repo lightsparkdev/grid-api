@@ -320,6 +320,11 @@
   --placeholder: var(--im-placeholder);
   font-size: 17px;
   letter-spacing: -0.43px;
+
+  // Sent, the field holds its height while the text lifts off under its glass, then drops to one line (recording 2: 83–133ms).
+  textarea[data-empty] {
+    transition: height 0.05s ease-in 0.085s;
+  }
 }
 
 .send {
@@ -452,22 +457,25 @@
   }
 }
 
-// Instinct's tapback on your message: a bubble at its top-left corner.
+// Instinct's tapback on your message (recording 2 at 30s): a 34pt cloud over the bubble's
+// top-left corner, ringed in the background, its tail trailing down and out to the left.
+// It grows out of the smallest dot.
 .tapback {
   position: absolute;
-  top: -18px;
-  left: -16px;
+  top: -27px;
+  left: -14px;
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 28px;
-  border: 2px solid var(--im-bg);
-  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
   corner-shape: round;
   background: var(--im-them);
-  font-size: 14px;
+  box-shadow: 0 0 0 1.5px var(--im-bg);
+  font-size: 18px;
+  line-height: 1;
+  transform-origin: -1px 40px;
 
-  // The iOS 27 tapback's thought-cloud tail: two small circles toward the bubble.
   &::before,
   &::after {
     content: '';
@@ -477,24 +485,17 @@
   }
 
   &::before {
-    right: -2px;
-    bottom: -5px;
-    width: 8px;
-    height: 8px;
+    top: 27px;
+    left: 1px;
+    width: 10px;
+    height: 10px;
   }
 
   &::after {
-    right: -6px;
-    bottom: -9px;
-    width: 4px;
-    height: 4px;
-  }
-}
-
-@keyframes tapback {
-  from {
-    opacity: 0;
-    scale: 0.4;
+    top: 37.5px;
+    left: -3px;
+    width: 5px;
+    height: 5px;
   }
 }
 
@@ -530,9 +531,29 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
 }
 
 .meCol {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  // A tapback lands: the row opens above for it, so the bubble dips and the thread rises back.
+  transition: margin-top 0.1s ease-out;
+
+  &[data-tapped] {
+    margin-top: 12px;
+  }
+
+  .me {
+    transform-origin: 100% 100%;
+  }
+}
+
+// The field's text as it lifts off: a pale, blurred copy of the field under the composer's glass.
+.ghost {
+  position: absolute;
+  border-radius: 20px;
+  background: #2b99fa;
+  filter: blur(8px);
+  pointer-events: none;
 }
 
 // An inline reply: the quoted text in an outlined bubble, a thread line down to yours.
@@ -568,11 +589,19 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   background: #d0d0d3;
 }
 
+// Delivered and Read share one right-aligned line; the cap height sits 6pt under the bubble.
 .read {
-  margin: 6px 21px 0 0;
+  display: grid;
+  justify-items: end;
+  margin: 3px 21px 0 0;
   color: #7e7d80;
   font-size: 12px;
   line-height: 15px;
+  white-space: nowrap;
+
+  > * {
+    grid-area: 1 / 1;
+  }
 
   b {
     font-weight: 600;

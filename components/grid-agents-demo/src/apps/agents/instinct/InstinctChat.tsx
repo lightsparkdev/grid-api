@@ -28,12 +28,111 @@ type Ask = Extract<Message, { kind: 'ask' }>;
 /** After the page settles, the beat Safari holds before heading back to Messages. */
 const RETURN_MS = 1600;
 
-/** Your bubble rises from the field into place, as iMessage sends. */
-const IMSG_SENT: RowMotion = {
-  initial: { y: 34, scale: 0.98 },
-  animate: { y: 0, scale: 1 },
-  transition: { type: 'spring', stiffness: 420, damping: 38, mass: 1 },
-};
+const TAPBACK = { type: 'spring', duration: 0.32, bounce: 0.25 } as const;
+
+/** Your row doesn't move on its own: the bubble flies out of the field (SentBubble). */
+const STILL: RowMotion = { initial: {}, animate: {}, transition: {} };
+
+type Keys = readonly (readonly [number, number])[];
+
+/** A value along keyframes [ms, value], straight between them. */
+function at(t: number, keys: Keys) {
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 1; i < keys.length; i++) {
+    const [t1, v1] = keys[i];
+    if (t > t1) continue;
+    const [t0, v0] = keys[i - 1];
+    return v0 + ((v1 - v0) * (t - t0)) / (t1 - t0);
+  }
+  return keys[keys.length - 1][1];
+}
+
+/**
+ * iMessage's send, frame by frame from recording 2 (24.68s on, ms from the tap).
+ * The field's text lifts off as a pale, blurred copy of the field; the bubble
+ * condenses out of it at 0.81 size, rises to its place, then swells to full
+ * size from its tail corner.
+ */
+const SEND = {
+  /** How far the bubble's bottom-right corner has come from the field's to its own. */
+  rise: [[0, 0], [33, 0.03], [117, 0.21], [133, 0.34], [150, 0.47], [167, 0.58], [183, 0.73], [200, 0.82], [233, 0.88], [250, 0.92], [267, 0.94], [283, 0.98], [317, 1]],
+  scale: [[217, 0.81], [233, 0.82], [250, 0.835], [267, 0.85], [283, 0.87], [300, 0.89], [317, 0.9], [333, 0.92], [350, 0.935], [367, 0.946], [383, 0.959], [400, 0.968], [417, 0.978], [433, 0.985], [450, 0.989], [520, 1]],
+  opacity: [[0, 0], [33, 0.35], [117, 0.7], [167, 1]],
+  blur: [[0, 8], [117, 3], [183, 0]],
+  /** The pale field left behind: it narrows from the left, sinks a little, and is gone as the field drops to one line. */
+  ghost: [[0, 0], [33, 0.45], [100, 0.7], [140, 0]],
+  ghostInset: [[0, 0], [33, 13], [83, 28]],
+  ghostSink: [[0, 0], [117, -6]],
+  end: 520,
+} satisfies Record<string, Keys | number>;
+
+/** Your bubble. Freshly sent, it flies out of the composer's field as iMessage's does. */
+function SentBubble({ fresh, from, children }: { fresh: boolean; from: () => DOMRect | null; children: ReactNode }) {
+  const bubble = useRef<HTMLSpanElement>(null);
+  const ghost = useRef<HTMLSpanElement>(null);
+  const [flying, setFlying] = useState(fresh);
+  useLayoutEffect(() => {
+    const el = bubble.current;
+    const g = ghost.current;
+    const col = el?.parentElement;
+    const field = from();
+    if (!fresh || !el || !g || !col || !field || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setFlying(false);
+      return;
+    }
+    // The phone is drawn scaled; transforms are in its own pixels.
+    const k = col.getBoundingClientRect().width / col.offsetWidth || 1;
+    let dx = 0;
+    let dy = 0;
+    let raf = 0;
+    const t0 = performance.now();
+    const land = () => {
+      el.style.transform = el.style.opacity = el.style.filter = '';
+    };
+    const frame = (now: number) => {
+      const t = now - t0;
+      if (t >= SEND.end) {
+        land();
+        setFlying(false);
+        return;
+      }
+      // Where the bubble sits in the thread right now (the thread is scrolling under it).
+      const r = el.getBoundingClientRect();
+      const right = r.right - dx * k;
+      const bottom = r.bottom - dy * k;
+      const rise = at(t, SEND.rise);
+      dx = ((field.right - right) * (1 - rise)) / k;
+      dy = ((field.bottom - bottom) * (1 - rise)) / k;
+      el.style.transform = `translate(${dx}px, ${dy}px) scale(${at(t, SEND.scale)})`;
+      el.style.opacity = String(at(t, SEND.opacity));
+      el.style.filter = `blur(${at(t, SEND.blur)}px)`;
+      const c = col.getBoundingClientRect();
+      const inset = at(t, SEND.ghostInset);
+      Object.assign(g.style, {
+        left: `${(field.left - c.left) / k + inset}px`,
+        top: `${(field.top - c.top) / k}px`,
+        width: `${field.width / k - inset}px`,
+        height: `${field.height / k + at(t, SEND.ghostSink)}px`,
+        opacity: String(at(t, SEND.ghost)),
+      });
+      raf = requestAnimationFrame(frame);
+    };
+    frame(t0);
+    return () => {
+      cancelAnimationFrame(raf);
+      land();
+    };
+    // A bubble flies once, on mount.
+  }, []);
+  return (
+    <>
+      {flying && <span ref={ghost} className={styles.ghost} />}
+      <span ref={bubble} className={styles.me}>
+        {children}
+      </span>
+    </>
+  );
+}
 
 /** iMessage's data detectors: amounts, days and street addresses, underlined. */
 const DETECT = /(R?\$[\d,]+(?:\.\d{2})?|\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b|\d{3,5} [A-Z][\w ]+? (?:Blvd|St|Ave|Rd)\b[^,.]*)/gi;
@@ -108,22 +207,48 @@ function BalanceLink({ balance, onOpen }: { balance: AgentBalance; onOpen: () =>
   );
 }
 
-/** Under your last message: Delivered, then Read with the time once Instinct has seen it. */
-function Receipt() {
-  const [read, setRead] = useState(false);
+/** When the receipt under your bubble changes, in ms from the send (recording 2). */
+const RECEIPT = { delivered: 1390, out: 2260, read: 2570 } as const;
+type ReceiptStage = 'sent' | keyof typeof RECEIPT;
+
+/** Over iMessage, Instinct reacts or starts typing only once it has read you, after Read has faded in. */
+export const INSTINCT_READS_FOR = RECEIPT.read + 330;
+
+/**
+ * Under your last message. The row opens (the thread rises to make room) as
+ * Delivered swells from its center; Delivered fades out, a beat of nothing,
+ * then Read and the time fade in.
+ */
+function Receipt({ fresh }: { fresh: boolean }) {
+  const [stage, setStage] = useState<ReceiptStage>(fresh ? 'sent' : 'read');
+  const [time] = useState(() => new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
   useEffect(() => {
-    const t = window.setTimeout(() => setRead(true), 1100);
-    return () => window.clearTimeout(t);
-  }, []);
+    if (!fresh) return;
+    const timers = (Object.keys(RECEIPT) as (keyof typeof RECEIPT)[]).map((s) =>
+      window.setTimeout(() => setStage(s), RECEIPT[s]),
+    );
+    return () => timers.forEach(window.clearTimeout);
+  }, [fresh]);
+  if (stage === 'sent') return null;
   return (
     <span className={styles.read}>
-      {read ? (
-        <>
-          <b>Read</b> {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-        </>
-      ) : (
-        'Delivered'
-      )}
+      <motion.span
+        initial={{ opacity: 0, scale: 0 }}
+        animate={
+          stage === 'delivered'
+            ? { opacity: 1, scale: 1, transition: { duration: 0.5, ease: [0.5, 1, 0.89, 1] } }
+            : { opacity: 0, transition: { duration: 0.1, ease: 'easeIn' } }
+        }
+      >
+        Delivered
+      </motion.span>
+      <motion.span
+        initial={fresh ? { opacity: 0 } : false}
+        animate={{ opacity: stage === 'read' ? 1 : 0 }}
+        transition={{ duration: 0.17, ease: 'easeOut' }}
+      >
+        <b>Read</b> {time}
+      </motion.span>
     </span>
   );
 }
@@ -249,6 +374,22 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
   }, [chat.messages, composer, setComposer]);
   const lastMe = chat.messages.reduce((id, m) => (m.kind === 'me' ? m.id : id), -1);
 
+  // Messages already in the thread when it opens are just there; only new ones animate.
+  const opened = useRef<Set<number> | null>(null);
+  opened.current ??= new Set(chat.messages.map((m) => m.id));
+
+  // A bubble flies out of the field as it was when sent (two lines tall, say), not the emptied one.
+  const fieldRow = useRef<HTMLSpanElement>(null);
+  const sentFrom = useRef<DOMRect | null>(null);
+  useLayoutEffect(() => {
+    if (chat.composer && fieldRow.current) sentFrom.current = fieldRow.current.getBoundingClientRect();
+  }, [chat.composer]);
+  const takeSentFrom = useCallback(() => {
+    const rect = sentFrom.current ?? fieldRow.current?.getBoundingClientRect() ?? null;
+    sentFrom.current = null;
+    return rect;
+  }, []);
+
   const bubble = (key: string, body: ReactNode, tail: boolean) => (
     <div className={styles.body} key={key}>
       <div className={styles.bubble}>{body}</div>
@@ -305,31 +446,40 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         const answers =
           prev?.kind === 'ask' && !prev.ask.rows ? prev : prev?.kind === 'chips' ? prev : null;
         const tapback = m.react ?? (answers?.kind === 'ask' && answers.state === 'done' ? '👍' : undefined);
+        const fresh = !opened.current?.has(m.id);
         return (
-          <div className={styles.meCol}>
+          <div className={styles.meCol} data-tapped={tapback ? true : undefined}>
             {answers && (
-              <span className={styles.replyTo}>
+              <motion.span
+                className={styles.replyTo}
+                initial={fresh ? { opacity: 0 } : false}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+              >
                 <span className={styles.quote}>
                   {answers.kind === 'ask' ? askText(answers.ask) : chipsText(answers).split('\n')[0]}
                 </span>
                 <span className={styles.thread} />
-              </span>
+              </motion.span>
             )}
-            <span className={styles.me}>
+            <SentBubble fresh={fresh} from={takeSentFrom}>
               <Detected text={m.text} />
               <span className={styles.tailOut} />
               {tapback && (
+                // The cloud grows out of its tail, and the emoji pops in a beat later (recording 2, 29.53s).
                 <motion.span
                   className={styles.tapback}
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 600, damping: 20, mass: 0.7 }}
+                  transition={TAPBACK}
                 >
-                  {tapback}
+                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ ...TAPBACK, delay: 0.05 }}>
+                    {tapback}
+                  </motion.span>
                 </motion.span>
               )}
-            </span>
-            {m.id === lastMe && <Receipt key={m.id} />}
+            </SentBubble>
+            {m.id === lastMe && <Receipt key={m.id} fresh={fresh} />}
           </div>
         );
       }
@@ -374,7 +524,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           className={styles.screen}
           messages={chat.messages}
           render={render}
-          rowMotion={(m) => (m.kind === 'me' ? IMSG_SENT : NATIVE_IN)}
+          rowMotion={(m) => (m.kind === 'me' ? STILL : NATIVE_IN)}
           faceId={chat.authing}
           onFaceIdDone={chat.authed}
           gap={3}
@@ -414,7 +564,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
                 </span>
               </GlassPill>
               <GlassPill radius={20} className={styles.field}>
-                <span className={styles.fieldRow}>
+                <span ref={fieldRow} className={styles.fieldRow}>
                   <ComposerField chat={chat} placeholder="iMessage" className={styles.fieldText} />
                   {chat.composer ? (
                     <span className={styles.send} role="button" onClick={chat.send} data-ready={chat.canSend || undefined}>
