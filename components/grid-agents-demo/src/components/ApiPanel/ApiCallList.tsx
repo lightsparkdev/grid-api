@@ -324,7 +324,7 @@ function ToolCallBlock({
         {children.length > 0 && (
           <button type="button" className={styles.nestedToggle} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
             <span>
-              {children.length} Grid {children.length === 1 ? 'call' : 'calls'} behind it
+              {children.length} Lightspark API {children.length === 1 ? 'call' : 'calls'}
             </span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
               <path d={open ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} strokeLinecap="round" strokeLinejoin="round" />

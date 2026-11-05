@@ -64,7 +64,7 @@ isn't one. There's no KYC step.
 Each agent action is a tool call named like Lightspark's MCP tools
 (`quote_send`, `execute_send`, `request_purchase_card`, `get_account_overview`,
 and so on), with Arguments and Result tabs. The Grid calls it makes sit under
-it, behind a "N Grid calls behind it" toggle. Platform calls (create the agent,
+it, behind a "N Lightspark API calls" toggle. Platform calls (create the agent,
 change its policy, approve or reject an action) and webhooks stand alone.
 
 ### 2026-11-05: the real default policy
