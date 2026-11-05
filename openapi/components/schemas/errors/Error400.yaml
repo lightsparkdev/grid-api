@@ -39,7 +39,7 @@ properties:
       | SUSPECTED_FRAUD | Document suspected of being forged or edited |
       | UNSUITABLE_DOCUMENT | Document type is not accepted or not supported |
       | INCOMPLETE | Document is missing pages or sides |
-      | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
+      | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | The account holder already has an EMAIL_OTP credential on the target internal account; the holder may have one. Administrators' credentials, added with `POST /auth/admin-credentials`, are not counted |
       | SMS_OTP_CREDENTIAL_ALREADY_EXISTS | An SMS_OTP credential is already registered on the target internal account; only one SMS OTP credential is supported per internal account at this time |
       | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential with the same WebAuthn credentialId is already registered on the target internal account |
       | AUTH_CREDENTIAL_VERIFICATION_REQUIRED | The new email or phone number has no verified replacement credential |

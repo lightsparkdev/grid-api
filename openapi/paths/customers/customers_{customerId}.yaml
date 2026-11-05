@@ -54,7 +54,9 @@ patch:
     retry, Grid updates the customer contact field and every tied matching OTP
     credential across all tied Embedded Wallets as one logical operation. If
     any tied credential cannot be updated, the customer contact field is not
-    changed.
+    changed. A business administrator's credentials (those with
+    `adminReference`) are not tied to the customer's contact and keep their
+    own email.
 
 
     Update `email` and `phoneNumber` in separate PATCH calls. A request that

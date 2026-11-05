@@ -3,7 +3,8 @@ description: >-
   Request body for `PATCH /customers/{customerId}`. When `email` changes for a
   customer with tied Embedded Wallet internal accounts, Grid updates the
   customer email and every tied `EMAIL_OTP` credential through the endpoint's
-  signed-retry flow. When `phoneNumber` changes for a customer with tied
+  signed-retry flow. A business administrator's credentials are not tied and
+  keep their own email. When `phoneNumber` changes for a customer with tied
   Embedded Wallet internal accounts, Grid updates the customer phone number and
   every tied `SMS_OTP` credential through the same signed-retry flow. Update
   `email` and `phoneNumber` in separate PATCH calls.
@@ -33,7 +34,8 @@ properties:
     description: >-
       Email address for the customer. For customers with tied Embedded Wallet
       internal accounts, changing this value also updates every tied
-      `EMAIL_OTP` credential across all tied Embedded Wallets.
+      `EMAIL_OTP` credential across all tied Embedded Wallets, but not a
+      business administrator's credentials.
     example: john.doe@example.com
   phoneNumber:
     type: string
