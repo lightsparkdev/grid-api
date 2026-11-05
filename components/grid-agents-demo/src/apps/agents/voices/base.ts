@@ -15,6 +15,7 @@ export type NoteFn = (p?: Params) => AgentNote;
 export const LINES = {
   greeting: () => `Hi ${PERSON.first}. I can pay, buy and get paid for you, within limits you set. What do you need?`,
   fallback: () => 'I can only help with your account here. Try one of the flows on the left.',
+  limited: () => 'Let’s keep going with the flows on the left. I’ve hit my chat limit for now.',
 
   'connect.intro': () => 'I’ll need my own account for that, with limits you set. Here’s what I’m asking for.',
   'connect.done': () => 'Connected. I have my own account now, and I can only spend what you put in it.',

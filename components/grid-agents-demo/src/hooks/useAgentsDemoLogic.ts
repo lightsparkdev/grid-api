@@ -9,6 +9,7 @@ import { actionLabel, type ActionId } from '@/data/actions';
 import { createAgentSession, type AccountSnapshot, type AgentSession, type CallStep } from '@/data/agentApiCalls';
 import type { AgentEvent } from '@/data/agentEvents';
 import type { ConnectorId } from '@/data/connectors';
+import type { ChatTurn } from '@/lib/llm/types';
 
 /** The calls one step makes land one after another, not in a block. */
 const CALL_STAGGER_MS = 650;
@@ -134,11 +135,34 @@ export function useAgentsDemoLogic() {
     setRuns((r) => ({ ...r, [flow]: r[flow] + 1 }));
   }, []);
 
-  /** Free text, until the model is wired: the agent points at the flows. */
-  const reply = useCallback(
-    (): Promise<FreeTextReply> => new Promise((resolve) => setTimeout(() => resolve({ said: { key: 'fallback' } }), 900)),
-    [],
-  );
+  /** Free text goes to the model (/api/agent). Off, limited or failing, the agent points at the flows. */
+  const reply = useCallback(async (text: string, history: ChatTurn[]): Promise<FreeTextReply> => {
+    const a = sessionRef.current.snapshot();
+    const money = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    try {
+      const res = await fetch('/api/agent', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          connector: connectorRef.current,
+          text,
+          history,
+          state: { connected: a.connected, balance: money(a.balanceCents), approvalAbove: money(a.limits.approvalAbove) },
+        }),
+      });
+      const data = (await res.json()) as { reply?: string; flow?: ActionId; variant?: number; fallback?: string };
+      if (data.reply) {
+        if (data.flow && NEEDS_CONNECTION[data.flow] && !sessionRef.current.snapshot().connected) {
+          sessionRef.current.assumeConnected();
+          setAccount(sessionRef.current.snapshot());
+        }
+        return { said: { text: data.reply }, flow: data.flow ? { id: data.flow, variant: data.variant ?? 0 } : undefined };
+      }
+      return { said: { key: data.fallback === 'visitor' || data.fallback === 'daily' ? 'limited' : 'fallback' } };
+    } catch {
+      return { said: { key: 'fallback' } };
+    }
+  }, []);
 
   /** A tile: set up what the flow needs (silently), then put its line in the composer. */
   const handleAction = useCallback(

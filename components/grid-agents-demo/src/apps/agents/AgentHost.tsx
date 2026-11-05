@@ -1,10 +1,12 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import type { ConnectorId } from '@/data/connectors';
+import type { ChatTurn } from '@/lib/llm/types';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
-import { useAgentBrain } from './brain/useAgentBrain';
+import { useAgentBrain, type FreeTextReply } from './brain/useAgentBrain';
+import type { Message } from './conversation';
 import { SKINS } from './skins';
 import type { ChatView } from './types';
 import { renderThread, voiceFor } from './voices';
@@ -19,9 +21,24 @@ const SKIN_EXIT = { ...SKIN_HIDDEN, pointerEvents: 'none' as const };
 
 type BrainOptions = Parameters<typeof useAgentBrain>[0];
 
-export interface AgentHostProps extends BrainOptions {
+export interface AgentHostProps extends Omit<BrainOptions, 'reply'> {
   connector: ConnectorId;
   dark: boolean;
+  /** Answers free text, given the thread so far as this app says it. */
+  reply: (text: string, history: ChatTurn[]) => Promise<FreeTextReply>;
+}
+
+const HISTORY_TURNS = 8;
+
+/** The last few things said, as the model reads them. */
+function turnsOf(messages: Message[]): ChatTurn[] {
+  return messages
+    .flatMap((m): ChatTurn[] => {
+      if (m.kind === 'me') return [{ role: 'user', text: m.text }];
+      if (m.kind === 'them' && !m.typing && m.text) return [{ role: 'assistant', text: m.text }];
+      return [];
+    })
+    .slice(-HISTORY_TURNS);
 }
 
 /**
@@ -29,10 +46,22 @@ export interface AgentHostProps extends BrainOptions {
  * The brain lives here, above the skins, and stays mounted across switches,
  * so a flow halfway through carries on in the next app's look and voice.
  */
-export function AgentHost({ connector, dark, ...options }: AgentHostProps) {
-  const brain = useAgentBrain(options);
+export function AgentHost({ connector, dark, reply, ...options }: AgentHostProps) {
+  const rendered = useRef<Message[]>([]);
+  // The model gets the person's message once, as the turn: if the thread has
+  // already rendered it, it's dropped from the history.
+  const replyWithHistory = useCallback(
+    (text: string) => {
+      const turns = turnsOf(rendered.current);
+      const last = turns[turns.length - 1];
+      return reply(text, last?.role === 'user' && last.text === text ? turns.slice(0, -1) : turns);
+    },
+    [reply],
+  );
+  const brain = useAgentBrain({ ...options, reply: replyWithHistory });
   const voice = useMemo(() => voiceFor(connector), [connector]);
   const messages = useMemo(() => renderThread(brain.messages, voice), [brain.messages, voice]);
+  rendered.current = messages;
   const chat: ChatView = { ...brain, messages };
   const { Chat } = SKINS[connector];
   return (
