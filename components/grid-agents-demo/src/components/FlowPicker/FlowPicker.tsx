@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import { ACTIONS, type ActionId } from '@/data/actions';
-import { FLOW_ICONS } from '@/data/flowIcons';
+import { FLOW_ICONS, FLOW_ICON_COLORS } from '@/data/flowIcons';
 import { pressable } from '@/lib/sounds';
 import styles from './FlowPicker.module.scss';
 
@@ -29,7 +29,7 @@ export function FlowPicker({ activeFlow, onAction }: FlowPickerProps) {
             title={action.desc}
             {...pressable({ onClick: () => onAction(action.id) })}
           >
-            <span className={styles.optionIcon}>
+            <span className={styles.optionIcon} style={{ color: FLOW_ICON_COLORS[action.id] }}>
               <Icon size={24} />
             </span>
             <span className={styles.optionLabel}>{action.label}</span>

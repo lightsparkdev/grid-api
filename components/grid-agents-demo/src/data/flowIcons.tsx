@@ -1,47 +1,46 @@
+import { IconArrowInbox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowInbox';
+import { IconBank2 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank2';
+import { IconCreditCard1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCard1';
+import { IconHistory } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHistory';
+import { IconLimit } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLimit';
+import { IconPaperPlaneTopRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPaperPlaneTopRight';
+import { IconPlugin1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlugin1';
+import { IconPlusLarge } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusLarge';
+import { IconRobot } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRobot';
+import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { ACTIONS, type ActionId } from './actions';
 
-/** The Figma's flow glyphs (and four drawn to match), used as masks. */
-const FLOW_ICON_SRC: Record<ActionId, string> = {
-  connect: '/assets/flows/connect.svg',
-  fund: '/assets/flows/fund.svg',
-  limits: '/assets/flows/set-limits.svg',
-  pay: '/assets/flows/pay-someone.svg',
-  buy: '/assets/flows/buy-online.svg',
-  agent: '/assets/flows/pay-an-agent.svg',
-  getpaid: '/assets/flows/get-paid.svg',
-  cashout: '/assets/flows/cash-out.svg',
-  balance: '/assets/flows/balance.svg',
-  history: '/assets/flows/history.svg',
+export type FlowIconCmp = typeof IconPlugin1;
+
+/** Shared with FlowPicker + API feed section dividers. */
+export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
+  connect: IconPlugin1,
+  fund: IconPlusLarge,
+  limits: IconLimit,
+  pay: IconPaperPlaneTopRight,
+  buy: IconCreditCard1,
+  agent: IconRobot,
+  getpaid: IconArrowInbox,
+  cashout: IconBank2,
+  balance: IconWallet1,
+  history: IconHistory,
 };
 
-type FlowIconCmp = (props: { size?: number }) => JSX.Element;
-
-/** The 20px glyph sits in a 24px slot, as in the Figma, inked in the slot's color
- *  (`--icon-primary` in the picker, as in the cards playground). */
-function flowIcon(id: ActionId): FlowIconCmp {
-  const src = FLOW_ICON_SRC[id];
-  function FlowIcon({ size = 24 }: { size?: number }) {
-    const glyph = Math.round((size * 20) / 24);
-    return (
-      <span style={{ display: 'grid', placeItems: 'center', width: size, height: size }}>
-        <span
-          style={{
-            width: glyph,
-            height: glyph,
-            background: 'currentColor',
-            mask: `url(${src}) no-repeat center / contain`,
-          }}
-        />
-      </span>
-    );
-  }
-  return FlowIcon;
-}
-
-/** Shared with FlowPicker and the API feed's section dividers. */
-export const FLOW_ICONS = Object.fromEntries(
-  ACTIONS.map((a) => [a.id, flowIcon(a.id)]),
-) as Record<ActionId, FlowIconCmp>;
+/** Green to blue down the grid, in reading order, as in the Global Accounts
+ *  playground: its anchors (#34C759, --icon-success, --color-sky-500,
+ *  --color-blue-500, --icon-info) with steps between for the extra rows. */
+export const FLOW_ICON_COLORS: Record<ActionId, string> = {
+  connect: '#34C759',
+  fund: '#22B96C',
+  limits: 'var(--icon-success)',
+  pay: '#0BAB8F',
+  buy: '#05AEB8',
+  agent: 'var(--color-sky-500)',
+  getpaid: '#00A2EE',
+  cashout: 'var(--color-blue-500)',
+  balance: '#0082ED',
+  history: 'var(--icon-info)',
+};
 
 function actionIdForLabel(label: string): ActionId | undefined {
   return ACTIONS.find((action) => action.label === label)?.id;
