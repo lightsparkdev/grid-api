@@ -1,6 +1,11 @@
 post:
   summary: Create a delegated signing key
   description: >
+    Only `GRID_GENERATED` keys are created through this endpoint. Grid creates
+    `PROVIDER_DELEGATED` keys itself, when the cardholder has delegated the
+    wallet at the provider and a card is funded by that wallet.
+
+
     Delegate Spark token-transaction signing authority for a card funding
     source or agent backed by an Embedded Wallet internal account to a
     Grid-custodied P-256 API key. Grid uses the requested owner and internal
@@ -106,10 +111,10 @@ post:
               summary: Active delegated key
               value:
                 id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+                keySource: GRID_GENERATED
                 cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                 fundingSourceId: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                publicKey: 02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
                 nickname: Card payments key
                 status: ACTIVE
                 createdAt: '2026-04-08T15:30:01Z'
@@ -165,8 +170,9 @@ post:
 get:
   summary: List delegated signing keys
   description: >-
-    List delegated signing keys for an Embedded Wallet internal account,
-    a card funding source, or both, including `PENDING` keys (user created
+    List delegated signing keys for an Embedded Wallet internal account, a
+    crypto external account that carries `providerWallet`, a card funding
+    source, or a combination of these, including `PENDING` keys (user created
     but policy leg never completed) and `REVOKED` keys. At least one of
     `accountId` or `fundingSourceId` must be supplied.
   operationId: listDelegatedKeys
@@ -178,7 +184,7 @@ get:
     - name: accountId
       in: query
       required: false
-      description: The id of the internal account whose delegated keys to list.
+      description: The id of the internal or external account whose delegated keys to list.
       schema:
         type: string
       example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
