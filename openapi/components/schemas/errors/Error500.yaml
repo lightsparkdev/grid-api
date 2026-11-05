@@ -10,9 +10,11 @@ properties:
       |------------|-------------|
       | GRID_SWITCH_ERROR | Grid switch error |
       | INTERNAL_ERROR | Internal server or UMA error |
+      | SCREENING_UNAVAILABLE | Sanction screening could not reach a verdict. The request was not processed; retry shortly. |
     enum:
       - GRID_SWITCH_ERROR
       - INTERNAL_ERROR
+      - SCREENING_UNAVAILABLE
   reason:
     type: string
     description: Error message
