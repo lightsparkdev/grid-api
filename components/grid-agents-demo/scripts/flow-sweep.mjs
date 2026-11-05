@@ -50,6 +50,11 @@ for (const connector of CONNECTORS) {
   await page.waitForTimeout(700);
   for (const flow of FLOWS) {
     const before = errors.length;
+    // A frozen page blocks evaluate and screenshot forever; say which flow and stop.
+    const watchdog = setTimeout(() => {
+      console.log(`${connector.padEnd(12)} ${flow.padEnd(13)} HUNG (no response in 120s)`);
+      process.exit(1);
+    }, 120_000);
     const t0 = Date.now();
     await tile(flow).click();
     await page.waitForTimeout(300);
@@ -89,6 +94,7 @@ for (const connector of CONNECTORS) {
     const file = `${out}${connector.replace(/\s/g, '-').toLowerCase()}-${flow.replace(/\s/g, '-').toLowerCase()}-${theme}-${engineName}${deny ? '-deny' : ''}.png`;
     await page.screenshot({ path: file });
     const stuck = Number(secs) >= 60;
+    clearTimeout(watchdog);
     rows.push({ connector, flow, secs, answered, ...calls, errors: errors.slice(before), stuck });
     console.log(
       `${connector.padEnd(12)} ${flow.padEnd(13)} ${secs.padStart(5)}s  answered ${answered}  panel: ${calls.tools} tools, ${calls.grid} grid, ${calls.webhooks} webhooks${stuck ? '  STUCK' : ''}${errors.length > before ? `  ERRORS: ${errors.slice(before).join(' | ')}` : ''}`,

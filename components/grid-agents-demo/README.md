@@ -11,10 +11,14 @@ playground) and shares its chrome, design system, and embed contract:
 - Config panel, glass phone stage, and API panel laid out identically to the cards demo
 
 A visitor picks an agent app (Muse, Grok Bot, Dots, Instinct, Claude Duet, or a plain "Your app")
-and runs flows in its chat: Connect, Fund, Set limits, Pay someone, Buy online, Pay an agent. The
-API panel shows the Grid calls and webhooks behind each beat of the conversation: the platform's
-own calls (create the agent, change its policy, approve an action) and the agent's calls with its
-own token (`/agents/me/*`).
+and a flow: Connect, Add funds, Set limits, Pay someone, Buy online, Pay an agent, Get paid, Cash
+out, Balance, or History. The flow's tile prefills the chat's composer; the visitor sends it and
+makes every choice in the chat (Approve or Decline, quick replies, Face ID). Anything else they
+type goes to a small model with guardrails. The API panel shows each agent tool call with the Grid
+calls behind it, plus the platform's own calls and webhooks.
+
+All six apps share one conversation and one account. Switching apps mid-flow re-renders the same
+thread, in the new app's voice and with its own approval UI.
 
 ## Develop
 
@@ -30,29 +34,63 @@ The port is pinned to 4003 (4000 is the wallet demo, 4002 the cards demo) so the
 embed the local app while you preview the docs with `make mint`. The docs page targets
 `localhost:4003` when served locally.
 
-Flow sweep: with the dev server up, `node scripts/flow-sweep.mjs [dark|light]` runs every flow on
-every connector in headless Chromium, prints what each logged, fails on console errors, and saves
-end-state screenshots to `.tmp-sweep/`.
+### The model
+
+Free text in the composer posts to `src/app/api/agent/route.ts`, which calls Claude Haiku through
+the adapter in `src/lib/llm/`. Without the variables below, the route returns a fallback and the
+agent answers with a canned line, so the playground works without a key.
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | unset | The model's key. Keep it in `.env.local` (gitignored) or the Vercel project. |
+| `AGENT_MODEL_ENABLED` | unset | Must be `true` for the route to call the model. Set it to anything else to turn the model off. |
+| `AGENT_MODEL` | `claude-haiku-4-5` | The Anthropic model ID. |
+| `AGENT_RATE_LIMIT` | `20` | Model turns per visitor every 10 minutes. |
+| `AGENT_DAILY_CAP` | `2000` | Model turns per day across all visitors. |
+| `KV_REST_API_URL`, `KV_REST_API_TOKEN` | unset | Upstash Redis for the limits. Without them, the limits are per server instance, in memory. |
+
+The route rejects requests from other origins, caps the input at 300 characters, keeps the last 8
+turns, forces a structured reply (a short answer plus an optional flow to start), and its prompt
+declines anything that isn't about the account, including coding help.
+
+### Flow sweep
+
+With the dev server up, `node scripts/flow-sweep.mjs [light|dark]` runs every flow in every app in
+headless Chromium. It sends each prefill, approves each ask (following Instinct's links into
+Safari), picks the first quick reply, fails on console errors or a flow that doesn't settle in 60
+seconds, and saves end-state screenshots to `.tmp-sweep/`.
+
+- `SWEEP_DENY=1` declines every ask instead.
+- `SWEEP_ENGINE=webkit` runs WebKit.
+- `SWEEP_CONNECTORS="Muse,Instinct"` limits the apps.
 
 ## Where things live
 
-- `src/apps/agents/` — the agent apps on the phone. `useAgentChat` plays a flow's steps in the
-  thread (typing on the keyboard, the agent's replies, approvals with Face ID, chips) and fires each
-  Grid event at its beat. `ChatFrame` is the frame every app shares; `parts.tsx` holds the note,
-  chip, and approval cards a skin draws when it has no design of its own, themed by each skin's
-  `--part-*` tokens. Each skin (`muse/`, `grok/`, `dot/`, `instinct/`, `claude/`, `yourapp/`) is
-  light and dark.
-- `src/data/agentScripts.ts` — the conversations: one persona per connector, six flows each, built
-  from shared templates. Scripts read the agent's policy, so an amount over the approval threshold
-  asks the person and one under it doesn't.
-- `src/data/agentEvents.ts` — what a conversation asks Grid to do, in its own terms.
-- `src/data/agentApiCalls.ts` — every path, request, response, and webhook the panel shows, built
-  from those events. Provisional: rewrite it when the Agent Accounts docs land; nothing else names
-  an endpoint.
-- `src/lib/chatBrain.ts` — where a flow's steps come from. `scriptedBrain` plays the scripts; a
-  model-backed brain behind `src/app/api/agent/route.ts` (501 today) streams the same steps.
-- `src/hooks/useAgentsDemoLogic.ts` — playground state: the connector, the running flow, the
-  agent's session (ids, policy, the held action), the API log, reset.
+- `src/apps/agents/brain/useAgentBrain.ts`: the one conversation. It plays a flow's beats (lines,
+  cards, asks, quick replies, pauses), waits on the visitor's decisions, fires each Grid event at
+  its beat, and cancels cleanly when another tile is picked.
+- `src/apps/agents/flows.ts`: the ten flows as beats. They read the account's policy, so an amount
+  over the approval threshold asks the person and one under it doesn't.
+- `src/apps/agents/conversation.ts`: messages are stored by meaning (a key and params), not text.
+- `src/apps/agents/voices/`: how each app says each line and draws each ask. `base.ts` is the
+  neutral voice; `apps.ts` holds each app's overrides.
+- `src/apps/agents/AgentHost.tsx`: holds the brain above the skins and crossfades skins when the
+  app changes.
+- `src/apps/agents/<app>/`: the skins. Each one only renders: `muse/` (ported from the MockMuse
+  SwiftUI app), `grok/`, `dot/`, `instinct/` (iMessage, with approvals on an app.instinct.com page
+  in Safari), `claude/` (with the procedural mascot from Claude Duet's product page), and
+  `yourapp/`. Every skin has light and dark.
+- `src/apps/agents/ChatFrame.tsx`, `parts.tsx`, `glass.tsx`: the frame every chat shares, the cards
+  a skin draws when it has no design of its own, and the frosted glass chrome.
+- `src/apps/shared/appSwitch/`: the iOS app switch and Safari toolbar, ported from the GoFundMe
+  demo.
+- `src/data/agentEvents.ts`: what a conversation asks Grid to do, in its own terms.
+- `src/data/agentApiCalls.ts`: every agent tool call, path, request, response, and webhook the panel
+  shows, built from those events. Provisional: rewrite it when the Agent Accounts docs land;
+  nothing else names an endpoint.
+- `src/lib/llm/`: the model adapter, prompt, and limits.
+- `src/hooks/useAgentsDemoLogic.ts`: playground state: the app, the active flow, the agent's session
+  and ledger, the API log, reset.
 - Docs embed: `mintlify/agent-accounts/demo.mdx`,
   `mintlify/snippets/agent-accounts/agents-demo-embed.mdx`.
 
@@ -61,7 +99,8 @@ end-state screenshots to `.tmp-sweep/`.
 Deploy to Vercel as its own project, `grid-agents-demo`. `vercel.json` sets an `ignoreCommand` so a
 commit only triggers a build if it touches this directory. The docs page iframes the deployed URL
 (`https://grid-agents-demo.vercel.app`). If the URL differs, update
-`mintlify/snippets/agent-accounts/agents-demo-embed.mdx`.
+`mintlify/snippets/agent-accounts/agents-demo-embed.mdx`. Set the model variables above in the
+Vercel project to turn on free text.
 
 ## Embed contract
 
@@ -73,16 +112,23 @@ commit only triggers a build if it touches this directory. The docs page iframes
 
 ## Scope
 
-Scripted conversations. It does not call a live sandbox or a model yet.
+The flows, amounts, and API calls are scripted. The model answers free text and can start a flow,
+but it never approves anything or changes the account. Nothing calls a live sandbox.
 
 ## Chrome files shared with the cards demo
 
 These match `components/grid-cards-demo` so fixes port with `cp`: `src/app/page.module.scss`,
-`src/components/{PanelHeader,ColumnResizeHandle,DotGridCanvas,SectionDivider,liquid-glass,glass-gl,ApiPanel}`,
+`src/components/{PanelHeader,ColumnResizeHandle,DotGridCanvas,SectionDivider,liquid-glass,glass-gl}`,
 `src/components/ThemeSync.tsx`, `src/hooks/{useTheme,useThemeMode,useColumnResize}.ts`,
-`src/lib/{groupApiEntries.ts,easing.ts,sounds.ts}`, `src/apps/shared/{AppShell,FaceIdAuth,glass,icons}`.
+`src/lib/{groupApiEntries.ts,easing.ts,sounds.ts}`, `src/apps/shared/{FaceIdAuth,glass,icons}`.
 
-Deliberate differences: `$breakpoint-layout-wide` / `LAYOUT_WIDE_PX` is 1280 here (1600 in cards),
-so the 1392px docs embed with the sidebar collapsed is three columns as in the Figma;
-`src/lib/apiCodeFormat.tsx` signs agent calls with `Bearer $AGENT_TOKEN` (`ApiCall.auth`) and has no
-synthesized response stubs; the theme key is `grid-agents-theme`.
+Deliberate differences:
+
+- `$breakpoint-layout-wide` / `LAYOUT_WIDE_PX` is 1280 here (1600 in cards), so the 1392px docs
+  embed with the sidebar collapsed is three columns as in the Figma.
+- `src/lib/apiCodeFormat.tsx` signs agent calls with `Bearer $AGENT_TOKEN` (`ApiCall.auth`) and has
+  no synthesized response stubs.
+- `src/components/ApiPanel/` nests Grid calls under agent tool calls (`Entry.tool`, `Entry.parent`).
+- `src/apps/shared/AppShell/` uses `useId` for its SVG ids, and the status bar lifts its time when an
+  app shows a back-to-app breadcrumb.
+- The theme key is `grid-agents-theme`.
