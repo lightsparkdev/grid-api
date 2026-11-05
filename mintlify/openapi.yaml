@@ -9443,7 +9443,7 @@ paths:
         Approve a pending agent action, allowing Grid to proceed with execution. The action must have status `PENDING_APPROVAL`. Once approved, Grid executes the underlying operation (quote execution or transfer) and the action transitions to `APPROVED`.
         For an `EXECUTE_QUOTE` action without `priceTolerance`, note that the underlying quote may have expired between submission and approval — in that case the action will transition to `FAILED` instead.
         An `EXECUTE_QUOTE` action with `priceTolerance` whose quote is still live executes that quote, as shown. Once its quote has expired, approval quotes the send again and runs every check against the new quote and its amount. When the new price is no worse for the customer than `priceTolerance` allows, Grid executes the new quote and the action transitions to `APPROVED` with it as `quote`. When it is worse by more, nothing is sent: the response is `200` with status still `PENDING_APPROVAL`, the new `quote`, and `previousQuote` set to the quote the customer was shown, so they can be asked again; approving again repeats the check against the new quote. A send Grid can no longer quote fails with the matching `failureReason`, and one past its `expiresAt` with `APPROVAL_EXPIRED`.
-        For `ISSUE_PURCHASE_CARD` actions, approval issues the purchase card and the action carries its `cardId`. The card's limit is checked against the agent's policy again first; an action past its `expiresAt` fails with `APPROVAL_EXPIRED`, one the policy now denies with `POLICY_DENIED`, a paused or deleted agent with `AGENT_INACTIVE`, and one the card issuer refuses with `EXECUTION_FAILED`.
+        For `ISSUE_PURCHASE_CARD` actions, approval issues the purchase card and the action carries its `cardId`. When `purchaseCard.increaseCardId` is set, approval instead raises that existing card to the new amount and limit. The card's limit is checked against the agent's policy again first; an action past its `expiresAt` fails with `APPROVAL_EXPIRED`, one the policy now denies with `POLICY_DENIED`, a paused or deleted agent with `AGENT_INACTIVE`, and one the card issuer refuses with `EXECUTION_FAILED`.
         This endpoint is called by the platform's backend using platform credentials, not by the agent itself.
       operationId: approveAgentAction
       tags:
@@ -11292,6 +11292,80 @@ paths:
                 $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/cards/{cardId}/increase:
+    post:
+      summary: Increase a purchase card amount
+      description: |-
+        Increase an open, unused single-use purchase card belonging to this agent. Recurring cards cannot be increased. Requires ISSUE_CARDS and MANAGE_CARDS and platform enablement. The new amount must be greater than the current amount and within the platform's purchase-card maximum. The new issuer limit includes the platform's tax and shipping allowance.
+        Returns an ISSUE_PURCHASE_CARD action whose `purchaseCard.increaseCardId` is the card being increased. It waits for the customer's approval through the ordinary action approval endpoint when the agent's current policy requires approval for the new limit (the funding account's execution mode, else the default execution mode, or the approval threshold), or when the original card required approval. Otherwise it is applied at once. Approval rechecks the card, limits and platform gate. The full new issuer limit is checked against the agent's current spending limits. Increases do not reserve or count spending; authorization counts the actual spend. Replaying the same key returns the same action; a key used with different parameters is a conflict.
+      operationId: agentIncreasePurchaseCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          description: The unused single-use purchase card to increase.
+          schema:
+            type: string
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Unique key for this increase, reused on retries.
+          schema:
+            type: string
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentPurchaseCardIncreaseRequest'
+      responses:
+        '200':
+          description: The increase action, applied or awaiting approval.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
+        '400':
+          description: Invalid amount, reason, card state or recurring card.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Platform feature disabled, permission missing or policy denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found for this agent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Idempotency key already used for another request or card changed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error.
           content:
             application/json:
               schema:
@@ -31884,7 +31958,7 @@ components:
         | Type | Description |
         |------|-------------|
         | `EXECUTE_QUOTE` | Execute a quote |
-        | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. See `purchaseCard` |
+        | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. When `purchaseCard.increaseCardId` is set, raise the amount of that existing single-use card instead of issuing one. See `purchaseCard` |
         | `CLAIMABLE_PAYOUT` | Send a claimable payout to a person by phone number or email. See `claimablePayout` |
     AgentSendNetwork:
       type: string
@@ -32006,6 +32080,22 @@ components:
         - currency
         - fundingSource
       properties:
+        increaseCardId:
+          type: string
+          description: The existing card being increased, present only on increase actions.
+          example: Card:019542f5-b3e7-1d02-0000-000000000011
+        previousAmount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Purchase amount before this increase, in USD cents.
+          example: 4999
+        previousSpendLimit:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Issuer-enforced limit before this increase, in USD cents.
+          example: 5749
         amount:
           type: integer
           format: int64
@@ -32025,7 +32115,7 @@ components:
         description:
           type: string
           maxLength: 255
-          description: What the agent said the card is for, such as the merchant and item. Shown to the customer when they approve the card. Supplied by the agent and not verified by Grid.
+          description: What the agent said the card is for, such as the merchant and item. On an increase action, the agent's `reason` for the higher amount. Shown to the customer when they approve the card or the increase. Supplied by the agent and not verified by Grid.
           example: Running shoes from example-store.com
         fundingSource:
           type: string
@@ -32271,7 +32361,7 @@ components:
           description: The claimable payout the agent asked to send, so an approval decision can show its amount and recipient. Present for `CLAIMABLE_PAYOUT`. Approving the action makes the payout `AWAITING_CLAIM`; rejecting it, or letting it expire, ends the payout and releases its hold.
         cardId:
           type: string
-          description: The purchase card the action issued. Present for an `ISSUE_PURCHASE_CARD` action once it is `APPROVED` and the card is issued; read it with `GET /agents/me/cards/{cardId}`.
+          description: The purchase card the action issued, or for an increase the card whose amount it raised. Present for an `ISSUE_PURCHASE_CARD` action once it is `APPROVED` and the card is issued or increased; read it with `GET /agents/me/cards/{cardId}`.
           example: Card:019542f5-b3e7-1d02-0000-000000000011
         transaction:
           allOf:
@@ -33573,6 +33663,25 @@ components:
           format: date-time
           description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
           example: '2026-05-08T14:16:00Z'
+    AgentPurchaseCardIncreaseRequest:
+      type: object
+      description: Increase an unused single-use purchase card's amount before checkout.
+      required:
+        - amount
+        - reason
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: New purchase amount in USD cents, strictly above the current amount.
+          example: 5999
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Why the purchase needs a higher amount, as reported by the app. The increase action returns it as `purchaseCard.description`, which is shown to the customer when they approve the increase.
+          example: Shipping was added at checkout.
     CardVelocityMetric:
       type: string
       description: ATTEMPTS counts every real-time authorization request, including declined requests. APPROVED counts distinct approved authorizations, including zero-amount authorizations, and can also cap the amount they hold.

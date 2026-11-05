@@ -34,7 +34,8 @@ post:
     matching `failureReason`, and one past its `expiresAt` with `APPROVAL_EXPIRED`.
 
     For `ISSUE_PURCHASE_CARD` actions, approval issues the purchase card and the action
-    carries its `cardId`. The card's limit is checked against the agent's policy again
+    carries its `cardId`. When `purchaseCard.increaseCardId` is set, approval instead
+    raises that existing card to the new amount and limit. The card's limit is checked against the agent's policy again
     first; an action past its `expiresAt` fails with `APPROVAL_EXPIRED`, one the policy now
     denies with `POLICY_DENIED`, a paused or deleted agent with `AGENT_INACTIVE`, and one
     the card issuer refuses with `EXECUTION_FAILED`.

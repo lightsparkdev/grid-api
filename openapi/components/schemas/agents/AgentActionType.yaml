@@ -9,5 +9,5 @@ description: |
   | Type | Description |
   |------|-------------|
   | `EXECUTE_QUOTE` | Execute a quote |
-  | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. See `purchaseCard` |
+  | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. When `purchaseCard.increaseCardId` is set, raise the amount of that existing single-use card instead of issuing one. See `purchaseCard` |
   | `CLAIMABLE_PAYOUT` | Send a claimable payout to a person by phone number or email. See `claimablePayout` |

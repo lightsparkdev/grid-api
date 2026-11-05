@@ -75,8 +75,9 @@ properties:
   cardId:
     type: string
     description: >-
-      The purchase card the action issued. Present for an `ISSUE_PURCHASE_CARD`
-      action once it is `APPROVED` and the card is issued; read it with
+      The purchase card the action issued, or for an increase the card whose
+      amount it raised. Present for an `ISSUE_PURCHASE_CARD` action once it is
+      `APPROVED` and the card is issued or increased; read it with
       `GET /agents/me/cards/{cardId}`.
     example: Card:019542f5-b3e7-1d02-0000-000000000011
   transaction:

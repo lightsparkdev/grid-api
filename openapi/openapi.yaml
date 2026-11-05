@@ -529,6 +529,8 @@ paths:
     $ref: paths/agents/agents_me_cards_{cardId}.yaml
   /agents/me/cards/{cardId}/reveal:
     $ref: paths/agents/agents_me_cards_{cardId}_reveal.yaml
+  /agents/me/cards/{cardId}/increase:
+    $ref: paths/agents/agents_me_cards_{cardId}_increase.yaml
   /card-velocity-limits:
     $ref: paths/cards/card-velocity-limits.yaml
   /card-velocity-limits/{id}:
