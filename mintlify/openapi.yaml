@@ -8240,7 +8240,7 @@ paths:
 
         Agents of a `BUSINESS` customer are available only where the platform enables them, and require `actingFor` to name the person the agent acts for. Until the business's KYB status is `APPROVED`, its agents' sends and deposits are held to the same limits as an unverified individual's, counted across the whole business.
 
-        Send an `Idempotency-Key` header to make retries safe: a request carrying a key already used returns the agent the first request created, with a `200` instead of a `201` and a new device code that replaces any unredeemed one. Reusing a key for a different customer, name or policy, for an agent that was deleted, or for one already connected is rejected with `409`. Without a key a retry cannot be recognised, so each request creates its own agent.
+        Send an `Idempotency-Key` header to make retries safe: a request carrying a key already used returns the agent the first request created, with a `200` instead of a `201` and a new device code that replaces any unredeemed one. The request is compared with the agent as it is now, so reusing a key with a different customer, name, policy, `actingFor` or `spendingPoolId`, after the agent's policy or pool was changed, for an agent that was deleted, or for one already connected is rejected with `409`. Without a key a retry cannot be recognised, so each request creates its own agent.
       operationId: createAgent
       tags:
         - Agent Management
@@ -8300,7 +8300,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict - the `Idempotency-Key` was already used for a different customer, name or policy, or for an agent that was since deleted or connected. Use a new key for a new agent.
+          description: Conflict - the `Idempotency-Key` was already used for an agent whose customer, name, policy, `actingFor` or `spendingPoolId` differs from this request, or that was since deleted or connected. Use a new key for a new agent.
           content:
             application/json:
               schema:

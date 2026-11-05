@@ -15,9 +15,11 @@ post:
     Send an `Idempotency-Key` header to make retries safe: a request carrying
     a key already used returns the agent the first request created, with a
     `200` instead of a `201` and a new device code that replaces any
-    unredeemed one. Reusing a key for a different customer, name or policy,
-    for an agent that was deleted, or for one already connected is rejected
-    with `409`. Without a key a retry cannot be recognised, so each request
+    unredeemed one. The request is compared with the agent as it is now, so
+    reusing a key with a different customer, name, policy, `actingFor` or
+    `spendingPoolId`, after the agent's policy or pool was changed, for an
+    agent that was deleted, or for one already connected is rejected with
+    `409`. Without a key a retry cannot be recognised, so each request
     creates its own agent.
   operationId: createAgent
   tags:
@@ -86,9 +88,10 @@ post:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
       description: >-
-        Conflict - the `Idempotency-Key` was already used for a different
-        customer, name or policy, or for an agent that was since deleted or
-        connected. Use a new key for a new agent.
+        Conflict - the `Idempotency-Key` was already used for an agent whose
+        customer, name, policy, `actingFor` or `spendingPoolId` differs from
+        this request, or that was since deleted or connected. Use a new key
+        for a new agent.
       content:
         application/json:
           schema:
