@@ -1,0 +1,74 @@
+@use '../typography/ios-type-mixins' as ios;
+
+.bar {
+  position: absolute;
+  top: 792px;
+  right: 0;
+  left: 0;
+  z-index: 5;
+  height: 48px;
+  color: #fff;
+  pointer-events: none;
+}
+
+// The grey glass of Pat's phone: rgb 172 over white, about 125 over dark text (a 0.77 grey veil on a light blur),
+// a dark hairline round the edge, a lit top rim, a soft haze below.
+.glass {
+  position: absolute;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  height: 48px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: rgb(146 146 146 / 0.77);
+  backdrop-filter: blur(3px);
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.32),
+    inset 0 0.75px 0 rgb(255 255 255 / 0.4),
+    inset 0 -0.5px 0 rgb(255 255 255 / 0.18),
+    0 5px 16px rgb(0 0 0 / 0.08);
+}
+
+.back {
+  left: 33.4px;
+  width: 48.3px;
+}
+
+.tabs {
+  left: 320px;
+  width: 48.3px;
+}
+
+.pill {
+  left: 89.5px;
+  width: 222.5px;
+}
+
+.menu,
+.reload {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  translate: 0 -50%;
+}
+
+.menu {
+  left: 17px;
+}
+
+.reload {
+  right: 15px;
+}
+
+// The domain is centred in the pill, as Safari centres it.
+.host {
+  @include ios.ios-system-font;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 22px;
+  letter-spacing: -0.43px;
+  white-space: nowrap;
+}

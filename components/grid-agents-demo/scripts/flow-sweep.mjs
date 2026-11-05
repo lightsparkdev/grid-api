@@ -29,7 +29,7 @@ const CONNECTORS = process.env.SWEEP_CONNECTORS
   : ALL_CONNECTORS;
 const FLOWS = ['Connect', 'Add funds', 'Set limits', 'Pay someone', 'Buy online', 'Pay an agent', 'Get paid', 'Cash out', 'Balance', 'History'];
 const ALLOW = /^(\s*(Allow|Approve|Connect|Save))+\s*$/;
-const DENY = /^(\s*(Deny|Decline|Not now|Cancel))+\s*$/;
+const DENY = /^(\s*(Deny|Decline|Not\s+now|Cancel))+\s*$/;
 
 const browser = await engine.launch();
 const page = await browser.newPage({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 });
@@ -58,10 +58,17 @@ for (const connector of CONNECTORS) {
     while (Date.now() - t0 < 60_000) {
       await page.waitForTimeout(500);
       if ((await activeTile().count()) === 0) break;
-      const ask = page.locator('[data-screen-body] button:enabled', { hasText: deny ? DENY : ALLOW }).last();
+      const ask = page.locator('[data-screen-body] button:enabled:visible', { hasText: deny ? DENY : ALLOW }).last();
       if (await ask.count()) {
         await ask.click({ timeout: 1000 }).catch(() => {});
         answered += 1;
+        continue;
+      }
+      // Instinct's approvals are links that open Safari.
+      const link = page.locator('[data-screen-body] [data-open-link]:enabled:visible').last();
+      if (await link.count()) {
+        await link.click({ timeout: 1000 }).catch(() => {});
+        await page.waitForTimeout(1200);
         continue;
       }
       const chip = page.locator('[data-screen-body] button:enabled:is([class*="chip"], [class*="choice"])').first();

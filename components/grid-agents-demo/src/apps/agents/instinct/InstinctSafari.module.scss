@@ -1,0 +1,263 @@
+// Instinct's site palette (instinct.com): warm paper, clay rules, ink near-black, a serif display face.
+.page {
+  --in-paper: #fdfcfb;
+  --in-card: #fff;
+  --in-sand: #f4efec;
+  --in-clay: #e1d5cd;
+  --in-ink: #231f20;
+  --in-muted: #7a7274;
+  --in-button: #231f20;
+  --in-button-text: #fdfcfb;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--in-paper);
+  color: var(--in-ink);
+  font-family: var(--font-family-sf-pro);
+  -webkit-font-smoothing: antialiased;
+
+  :global([data-theme='dark']) & {
+    --in-paper: #141213;
+    --in-card: #1d1a1b;
+    --in-sand: #262223;
+    --in-clay: #3a3436;
+    --in-ink: #f4efec;
+    --in-muted: #a39a9c;
+    --in-button: #f4efec;
+    --in-button-text: #141213;
+  }
+}
+
+// "◀ Messages" under the status bar's time, the way back to the app that opened Safari.
+.breadcrumb {
+  position: absolute;
+  top: 33px;
+  left: 13.3px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--in-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 14px;
+  letter-spacing: -0.08px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 76px;
+  font-family: 'New York', ui-serif, Georgia, serif;
+  font-size: 20px;
+  letter-spacing: -0.2px;
+}
+
+.mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--in-ink);
+
+  img {
+    filter: invert(1);
+
+    :global([data-theme='dark']) & {
+      filter: none;
+    }
+  }
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  margin: 26px 16px 0;
+  padding: 24px 20px 20px;
+  border: 1px solid var(--in-clay);
+  border-radius: 24px;
+  background: var(--in-card);
+}
+
+.eyebrow {
+  color: var(--in-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 8px 0 0;
+  font-family: 'New York', ui-serif, Georgia, serif;
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 32px;
+  letter-spacing: -0.4px;
+  text-wrap: balance;
+}
+
+.amount {
+  margin: 10px 0 0;
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--in-sand);
+}
+
+.whoMark {
+  display: grid;
+  overflow: hidden;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--in-clay);
+  font-weight: 600;
+}
+
+.whoText,
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  font-size: 16px;
+  line-height: 21px;
+
+  small {
+    color: var(--in-muted);
+    font-size: 13px;
+    line-height: 17px;
+  }
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+
+    & + li {
+      border-top: 1px solid var(--in-sand);
+    }
+  }
+}
+
+.rowLead {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--in-sand);
+}
+
+.summary {
+  margin: 14px 0 0;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    font-size: 15px;
+  }
+
+  dt {
+    color: var(--in-muted);
+  }
+
+  dd {
+    margin: 0;
+    text-align: right;
+  }
+}
+
+.note {
+  margin: 14px 0 0;
+  color: var(--in-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+
+  button {
+    display: grid;
+    place-items: center;
+    height: 50px;
+    border: 0;
+    border-radius: 999px;
+    corner-shape: round;
+    font: inherit;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: scale 0.15s ease, opacity 0.3s ease, background 0.3s ease, color 0.3s ease;
+
+    &:disabled {
+      cursor: default;
+    }
+  }
+}
+
+.allow {
+  background: var(--in-button);
+  color: var(--in-button-text);
+
+  &[data-pressing] {
+    scale: 0.97;
+  }
+
+  &[data-done] {
+    background: var(--in-sand);
+    color: var(--in-ink);
+  }
+}
+
+.deny {
+  background: transparent;
+  color: var(--in-ink);
+  box-shadow: inset 0 0 0 1px var(--in-clay);
+}
+
+.actions[data-state='denied'] .allow,
+.actions[data-state='done'] .deny,
+.actions[data-state='expired'] button {
+  opacity: 0.4;
+}

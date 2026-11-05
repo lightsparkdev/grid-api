@@ -77,3 +77,9 @@
   width: 27.328px;
   height: 13px;
 }
+
+/* An app opened from another shows the way back ("◀ Messages") under the time,
+   which moves up to make room (iOS: 25pt to its centre). */
+.statusBar:has(~ [data-screen-body] [data-status-back]) .timeSlot {
+  translate: 0 -8px;
+}
