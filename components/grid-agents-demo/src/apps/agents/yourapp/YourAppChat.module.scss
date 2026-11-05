@@ -179,3 +179,22 @@
     scale: 0.88;
   }
 }
+
+// The platform's balance: the website card in plain iOS colors.
+.accountSkin {
+  --acct-radius: 20px;
+  --acct-bg: #fff;
+  --acct-ink: #000;
+  --acct-ink-2: #8e8e93;
+  --acct-button: #f2f2f7;
+  --acct-button-radius: 12px;
+  --acct-accent: #0a84ff;
+  --acct-edge: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+
+  :global([data-theme='dark']) & {
+    --acct-bg: #1c1c1e;
+    --acct-ink: #fff;
+    --acct-button: #2c2c2e;
+    --acct-edge: none;
+  }
+}

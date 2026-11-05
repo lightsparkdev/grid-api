@@ -4,7 +4,7 @@ import { GridLogoMark } from '@/components/GridWordmark';
 import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
-import { AskCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, WorkLine } from '../parts';
+import { AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, WorkLine } from '../parts';
 import type { AgentChatProps } from '../types';
 import styles from './YourAppChat.module.scss';
 
@@ -26,7 +26,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
       case 'ask':
         return <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':
-        return <NoteCard note={m.card} />;
+        return m.card.balance ? <BalanceCard balance={m.card.balance} className={styles.accountSkin} /> : <NoteCard note={m.card} />;
       case 'chips':
         return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.pick} expired={m.expired} />;
       case 'tag':

@@ -152,3 +152,48 @@
     cursor: default;
   }
 }
+
+.amount {
+  margin: 10px 0 0;
+  font-family: 'New York', ui-serif, Georgia, serif;
+  font-size: 44px;
+  line-height: 48px;
+  letter-spacing: -1px;
+  text-align: center;
+}
+
+.activity {
+  display: flex;
+  flex-direction: column;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--in-field);
+    font-size: 14px;
+
+    span {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  small {
+    color: var(--in-muted);
+    font-size: 12px;
+  }
+
+  b {
+    font-weight: 500;
+
+    &[data-in] {
+      color: #1d6b2c;
+    }
+  }
+}

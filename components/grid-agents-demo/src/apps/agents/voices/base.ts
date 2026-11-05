@@ -1,4 +1,4 @@
-import type { AgentAsk, AgentMeta, AgentNote, Params, Product } from '../conversation';
+import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, Params, Product } from '../conversation';
 import { ADDRESS, BUY_OPTIONS, HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
 
 /* The neutral voice: every line, ask and note a flow can produce, written so
@@ -181,11 +181,31 @@ export const ASKS = {
 
 export type AskKey = keyof typeof ASKS;
 
+/** The balance card's numbers, from a flow's params. */
+function balanceOf(p: Params | undefined, note: string): AgentBalance {
+  const daily = n(p, 'daily');
+  const spent = n(p, 'spent');
+  const wallet = s(p, 'wallet');
+  return {
+    wallet: wallet.charAt(0).toUpperCase() + wallet.slice(1),
+    amount: usd2(n(p, 'balance')),
+    note,
+    spent: { today: usd2(spent), limit: usd(daily), ratio: daily > 0 ? Math.min(1, spent / daily) : 0 },
+    stats: [
+      { label: 'Left today', value: usd2(Math.max(0, daily - spent)) },
+      { label: 'Per payment', value: usd(n(p, 'perTx')) },
+      { label: 'Asks above', value: usd(n(p, 'approve')) },
+    ],
+    activity: JSON.parse(s(p, 'rows') || '[]'),
+  };
+}
+
 export const NOTES = {
   'account.ready': (p) => ({
-    title: 'Account ready',
-    lines: [`${s(p, 'agent')} · •••• 4417`, `Balance ${usd2(n(p, 'balance'))}`],
+    title: `${s(p, 'wallet')} is on`,
+    lines: [`Balance ${usd2(n(p, 'balance'))}`],
     done: true,
+    balance: balanceOf(p, 'Ready to spend'),
   }),
   deposit: (p) => {
     const lightning = s(p, 'network') === 'LIGHTNING';
@@ -241,6 +261,7 @@ export const NOTES = {
       `Up to ${usd(n(p, 'perTx'))} a payment`,
       `Asks you above ${usd(n(p, 'approve'))}`,
     ],
+    balance: balanceOf(p, 'Available to spend'),
   }),
   history: (p) => ({
     title: 'Recent activity',

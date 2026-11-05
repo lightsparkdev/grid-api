@@ -5,9 +5,9 @@ import { playAppSwitch, WALLPAPER } from '@/apps/shared/appSwitch';
 import { SfSymbol } from '@/apps/shared/icons';
 import { ChatFrame, ComposerField, NATIVE_IN, Said, TypingDots, type RowMotion } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
-import type { AgentAsk, AgentNote, Message, Product } from '../conversation';
+import type { AgentAsk, AgentBalance, AgentNote, Message, Product } from '../conversation';
 import type { AgentChatProps } from '../types';
-import { INSTINCT_HOST, InstinctSafari } from './InstinctSafari';
+import { INSTINCT_HOST, InstinctBalancePage, InstinctSafari } from './InstinctSafari';
 import styles from './InstinctChat.module.scss';
 
 /**
@@ -88,6 +88,23 @@ function InstinctImage({ note }: { note: AgentNote }) {
   );
 }
 
+/** The balance, as the image Instinct sends: the big number in its serif. Tap it for the page in Safari. */
+function BalanceImage({ balance, onOpen }: { balance: AgentBalance; onOpen: () => void }) {
+  return (
+    <button type="button" className={`${styles.image} ${styles.balanceImage}`} onClick={onOpen} aria-label={`${balance.wallet} ${balance.amount}`}>
+      <span className={styles.imageTop}>
+        <span className={styles.wordmark}>Instinct</span>
+        <span>{today()}</span>
+      </span>
+      <span className={styles.balanceLabel}>{balance.wallet}</span>
+      <strong className={styles.balanceAmount}>{balance.amount}</strong>
+      <span className={styles.imageLine}>
+        {balance.spent.today} of {balance.spent.limit} spent today
+      </span>
+    </button>
+  );
+}
+
 /** What Instinct found, as the product image it sends: the photo, how many it found, brand, title, price. */
 function ProductImage({ products }: { products: Product[] }) {
   const p = products.find((x) => x.pick) ?? products[0];
@@ -139,11 +156,19 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
   const [view, setView] = useState<'messages' | 'safari'>('messages');
   const [switchTo, setSwitchTo] = useState<'messages' | 'safari' | null>(null);
   const [linkId, setLinkId] = useState<number | null>(null);
+  const [page, setPage] = useState<AgentBalance | null>(null);
   const open = chat.messages.find((m): m is Ask => m.kind === 'ask' && m.id === linkId);
 
   const openLink = (id: number) => {
     if (switchTo || view !== 'messages') return;
+    setPage(null);
     setLinkId(id);
+    setSwitchTo('safari');
+  };
+  const openBalance = (b: AgentBalance) => {
+    if (switchTo || view !== 'messages') return;
+    setLinkId(null);
+    setPage(b);
     setSwitchTo('safari');
   };
   const back = useCallback(() => {
@@ -166,6 +191,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
       if (!live) return;
       setView(switchTo);
       setSwitchTo(null);
+      if (switchTo === 'messages') setPage(null);
     });
     return () => {
       live = false;
@@ -223,8 +249,10 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
             {!theirsNext && <span className={styles.tailIn} />}
           </div>
         );
-      case 'card':
-        return <InstinctImage note={m.card} />;
+      case 'card': {
+        const b = m.card.balance;
+        return b ? <BalanceImage balance={b} onOpen={() => openBalance(b)} /> : <InstinctImage note={m.card} />;
+      }
       case 'ask':
         return m.ask.rows ? (
           <VaultLink m={m} onOpen={() => openLink(m.id)} />
@@ -297,7 +325,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
   };
 
   const tone = dark ? 'light' : 'default';
-  const showSafari = (view === 'safari' || switchTo !== null) && open;
+  const showSafari = (view === 'safari' || switchTo !== null) && (open || page);
 
   return (
     <div className={styles.stage}>
@@ -368,7 +396,11 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
       </div>
       {showSafari && (
         <div ref={safariCard} className={styles.card} data-switching={switchTo !== null || undefined}>
-          <InstinctSafari ask={open.ask} state={open.state} onAllow={chat.allow} onDeny={chat.deny} onBack={back} />
+          {open ? (
+            <InstinctSafari ask={open.ask} state={open.state} onAllow={chat.allow} onDeny={chat.deny} onBack={back} />
+          ) : (
+            page && <InstinctBalancePage balance={page} onBack={back} />
+          )}
           {switchTo && (
             <div className={styles.cardStatus}>
               <PhoneStatusBar tone={tone} />

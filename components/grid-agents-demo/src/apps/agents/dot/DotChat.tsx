@@ -7,8 +7,8 @@ import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-st
 import { Flag } from '@/apps/shared/Flag';
 import { ChatFrame, ComposerField, NATIVE_IN, Said, TypingDots } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
-import type { AgentAsk, Message, Product } from '../conversation';
-import { Divider, MetaLine, NoteCard } from '../parts';
+import type { AgentAsk, AgentBalance, Message, Product } from '../conversation';
+import { BalanceCard, BalanceDetail, Divider, MetaLine, NoteCard } from '../parts';
 import { AppSheet } from '../sheet';
 import { ADDRESS, PERSON } from '../story';
 import type { AgentChatProps } from '../types';
@@ -215,6 +215,26 @@ function PaySheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow: (
   );
 }
 
+/** Dots balance's sheet: the floating card with the amount, the limits, recent activity and Add money. */
+function BalanceSheet({ balance, onClose }: { balance: AgentBalance; onClose: () => void }) {
+  return (
+    <div className={styles.setup}>
+      <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
+        <IconCrossMedium size={18} />
+      </button>
+      <span className={styles.setupMarks}>
+        <DotsMark size={44} />
+      </span>
+      <span className={styles.balanceLabel}>{balance.wallet}</span>
+      <strong className={styles.balanceAmount}>{balance.amount}</strong>
+      <BalanceDetail balance={balance} className={styles.balanceDetail} />
+      <button type="button" className={styles.black} onClick={onClose}>
+        Add money
+      </button>
+    </div>
+  );
+}
+
 /** A payment waiting on you, as its pill in the thread: tap to review it in Dots. */
 function PayPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
   const { ask, state } = m;
@@ -243,6 +263,8 @@ export function DotChat({ chat }: AgentChatProps) {
   const [multiline, setMultiline] = useState(false);
   const [sheet, setSheet] = useState<{ id: number; ask: AgentAsk } | null>(null);
   const [shown, setShown] = useState(false);
+  const [balance, setBalance] = useState<AgentBalance | null>(null);
+  const [balanceShown, setBalanceShown] = useState(false);
   const sheetOpen = shown && !!sheet && chat.messages.some((m) => m.kind === 'ask' && m.id === sheet.id && m.state === 'open');
   const open = (m: Ask) => {
     setSheet({ id: m.id, ask: m.ask });
@@ -307,8 +329,22 @@ export function DotChat({ chat }: AgentChatProps) {
         );
       case 'ask':
         return m.ask.rows ? <ActionPill m={m} onOpen={() => open(m)} /> : <PayPill m={m} onOpen={() => open(m)} />;
-      case 'card':
-        return <NoteCard note={m.card} />;
+      case 'card': {
+        const b = m.card.balance;
+        return b ? (
+          <BalanceCard
+            balance={b}
+            track
+            className={styles.accountSkin}
+            onOpen={() => {
+              setBalance(b);
+              setBalanceShown(true);
+            }}
+          />
+        ) : (
+          <NoteCard note={m.card} />
+        );
+      }
       case 'stamp':
       case 'tag': {
         const [day, ...time] = m.text.split(' ');
@@ -403,6 +439,9 @@ export function DotChat({ chat }: AgentChatProps) {
           ) : (
             <PaySheet key={sheet.id} ask={sheet.ask} onAllow={allow} onDeny={deny} onClose={close} />
           ))}
+      </AppSheet>
+      <AppSheet open={balanceShown} present={SHEET_IN} className={styles.setupPanel} onDismiss={() => setBalanceShown(false)}>
+        {balance && <BalanceSheet balance={balance} onClose={() => setBalanceShown(false)} />}
       </AppSheet>
     </div>
   );

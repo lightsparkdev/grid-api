@@ -740,3 +740,30 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   font-family: 'New York', ui-serif, Georgia, serif;
   font-size: 15px;
 }
+
+.balanceImage {
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: scale 0.15s ease;
+
+  &:active {
+    scale: 0.98;
+  }
+}
+
+.balanceLabel {
+  margin-top: 20px;
+  color: #7a7274;
+  font-size: 13px;
+}
+
+.balanceAmount {
+  font-family: 'New York', ui-serif, Georgia, serif;
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 46px;
+  letter-spacing: -0.8px;
+}

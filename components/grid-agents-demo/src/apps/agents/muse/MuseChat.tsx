@@ -4,7 +4,7 @@ import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke
 import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
 import { ChatFrame, ComposerField, NATIVE_IN, Said, TypingDots } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
-import type { AskRow, Chip, Message, Product } from '../conversation';
+import type { AgentBalance, AskRow, Chip, Message, Product } from '../conversation';
 import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph } from '../parts';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
@@ -35,6 +35,48 @@ function BrowserCard({ status, waiting }: { status: string; waiting?: boolean })
         <span className={styles.previewLine} data-short />
       </div>
       <span className={styles.openBrowser}>Open browser</span>
+    </div>
+  );
+}
+
+/** Muse balance as one of Muse's artifacts: dark stat tiles, the activity under them, then the actions. */
+function BalanceArtifact({ balance }: { balance: AgentBalance }) {
+  return (
+    <div className={styles.artifact}>
+      <span className={styles.artifactHead}>{balance.wallet}</span>
+      <div className={styles.tiles}>
+        <span className={styles.tileBig}>
+          <small>Balance</small>
+          <b>{balance.amount}</b>
+          <em>{balance.note}</em>
+        </span>
+        <span className={styles.tile}>
+          <small>Spent today</small>
+          <b>{balance.spent.today}</b>
+        </span>
+        <span className={styles.tile}>
+          <small>Daily limit</small>
+          <b>{balance.spent.limit}</b>
+        </span>
+      </div>
+      {balance.activity.length > 0 && (
+        <div className={styles.artifactRows}>
+          {balance.activity.map((r, i) => (
+            <span key={`${r.title}-${i}`}>
+              <span>
+                {r.title}
+                <small>{r.detail}</small>
+              </span>
+              <b data-in={r.incoming || undefined}>{r.amount}</b>
+            </span>
+          ))}
+        </div>
+      )}
+      <span className={styles.artifactActions}>
+        <span data-primary>Add money</span>
+        <span>Card</span>
+        <span>Send</span>
+      </span>
     </div>
   );
 }
@@ -297,6 +339,7 @@ export function MuseChat({ chat }: AgentChatProps) {
       case 'ask':
         return <ApprovalCard m={m} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':
+        if (m.card.balance) return <BalanceArtifact balance={m.card.balance} />;
         return (
           <div className={styles.noteWrap} data-pos={groupPosition(i, all)}>
             <NoteCard note={m.card} className={styles.note} />

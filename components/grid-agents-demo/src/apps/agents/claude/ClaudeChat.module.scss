@@ -386,3 +386,23 @@
 .rowGlyph {
   margin-bottom: 6px;
 }
+
+// Duet balance, in the website card's Claude skin.
+.accountSkin {
+  --acct-radius: 22px;
+  --acct-bg: #fff;
+  --acct-ink: #141413;
+  --acct-ink-2: #73726c;
+  --acct-button: #f0eee6;
+  --acct-button-radius: 10px;
+  --acct-accent: #d97757;
+  --acct-edge: inset 0 0 0 1px rgba(20, 20, 19, 0.08);
+
+  :global([data-theme='dark']) & {
+    --acct-bg: #262624;
+    --acct-ink: #faf9f5;
+    --acct-ink-2: #9c9a92;
+    --acct-button: #30302e;
+    --acct-edge: none;
+  }
+}

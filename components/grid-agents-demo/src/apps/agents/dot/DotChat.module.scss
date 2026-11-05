@@ -735,3 +735,40 @@
   background: var(--dot-text);
   mask: no-repeat center / contain;
 }
+
+// ── Dots balance: the widget in the chat, and its sheet ────────────────
+.accountSkin {
+  --acct-radius: 22px;
+  --acct-bg: #edf3ff;
+  --acct-ink: #0b1b3f;
+  --acct-ink-2: #5b6b8c;
+  --acct-button: #fff;
+  --acct-button-radius: 999px;
+  --acct-accent: var(--dot-blue);
+
+  :global([data-theme='dark']) & {
+    --acct-bg: #17213d;
+    --acct-ink: #fff;
+    --acct-ink-2: #8fa3cc;
+    --acct-button: #22305a;
+  }
+}
+
+.balanceLabel {
+  margin-top: 12px;
+  color: var(--dot-secondary);
+  font-size: 15px;
+}
+
+.balanceAmount {
+  font-size: 40px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 46px;
+}
+
+.balanceDetail {
+  align-self: stretch;
+  margin-top: 20px;
+}

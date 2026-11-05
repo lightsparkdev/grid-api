@@ -808,3 +808,123 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
   border-radius: 3px;
   background: #121114;
 }
+
+// ── Muse balance: an artifact of dark stat tiles ───────────────────────
+.artifact {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 345px;
+  padding: 12px;
+  border-radius: 24px;
+  background: #121316;
+  color: #f5f5f7;
+}
+
+.artifactHead {
+  padding: 2px 4px 0;
+  color: #9a9ca3;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+
+  small {
+    color: #9a9ca3;
+    font-size: 12px;
+  }
+
+  b {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.tile,
+.tileBig {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #1e2024;
+
+  b {
+    font-size: 20px;
+    line-height: 24px;
+  }
+}
+
+.tileBig {
+  grid-column: 1 / -1;
+
+  b {
+    font-size: 34px;
+    letter-spacing: -0.02em;
+    line-height: 40px;
+  }
+
+  em {
+    color: #9a9ca3;
+    font-size: 13px;
+    font-style: normal;
+  }
+}
+
+.artifactRows {
+  display: flex;
+  flex-direction: column;
+  padding: 0 4px;
+
+  > span {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 15px;
+
+    > span {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  small {
+    color: #9a9ca3;
+    font-size: 12px;
+  }
+
+  b {
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+
+    &[data-in] {
+      color: #4cd07d;
+    }
+  }
+}
+
+.artifactActions {
+  display: flex;
+  gap: 6px;
+
+  span {
+    flex: 1;
+    padding: 10px 0;
+    border-radius: 999px;
+    background: #1e2024;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  span[data-primary] {
+    background: #0866ff;
+  }
+}

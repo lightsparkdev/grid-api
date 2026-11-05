@@ -18,6 +18,26 @@ export interface FlowContext {
 
 const limitParams = (ctx: FlowContext) => ({ limit: ctx.account().limits.approvalAbove });
 
+/** What the balance card reads: the balance, today's spend against the limits, recent activity. */
+function balanceParams(ctx: FlowContext) {
+  const a = ctx.account();
+  const rows = a.ledger.slice(0, 4).map((l) => ({
+    title: l.title,
+    detail: l.detail,
+    amount: `${l.cents >= 0 ? '+' : '−'}${usd2(l.cents)}`,
+    incoming: l.cents >= 0,
+  }));
+  return {
+    balance: a.balanceCents,
+    spent: a.spentTodayCents,
+    daily: a.limits.daily,
+    leftToday: Math.max(0, a.limits.daily - a.spentTodayCents),
+    perTx: a.limits.perTransaction,
+    approve: a.limits.approvalAbove,
+    rows: JSON.stringify(rows),
+  };
+}
+
 /** Held for the person over the threshold; carried out on the agent's own authority under it. */
 function approvalOr(
   ctx: FlowContext,
@@ -51,7 +71,7 @@ const connect = (ctx: FlowContext): Beat[] => {
         { work: 'setup', ms: 1100 },
         { emit: { type: 'connect' } },
         { say: 'connect.done' },
-        { when: () => [{ card: 'account.ready', params: { balance: ctx.account().balanceCents } }] },
+        { when: () => [{ card: 'account.ready', params: balanceParams(ctx) }] },
       ],
       deny: [{ say: 'connect.denied' }],
     },
@@ -231,13 +251,7 @@ const balance = (ctx: FlowContext): Beat[] => [
   { emit: { type: 'account.overview' } },
   {
     when: () => {
-      const a = ctx.account();
-      const params = {
-        balance: a.balanceCents,
-        leftToday: Math.max(0, a.limits.daily - a.spentTodayCents),
-        perTx: a.limits.perTransaction,
-        approve: a.limits.approvalAbove,
-      };
+      const params = balanceParams(ctx);
       return [{ say: 'balance.answer', params }, { card: 'balance', params }];
     },
   },

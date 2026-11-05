@@ -63,6 +63,18 @@ export interface AgentAsk {
   form?: AgentForm;
 }
 
+/** The app's own balance: the website card's anatomy, plus what each app shows natively. */
+export interface AgentBalance {
+  /** What the app calls it: "Bot balance", "Dots balance". */
+  wallet: string;
+  amount: string;
+  note: string;
+  /** Spent today against the daily limit, 0..1, for the apps that draw a track. */
+  spent: { today: string; limit: string; ratio: number };
+  stats: { label: string; value: string }[];
+  activity: { title: string; detail: string; amount: string; incoming: boolean }[];
+}
+
 /** An info card in the thread: a receipt, an address, a summary, a list. */
 export interface AgentNote {
   title: string;
@@ -73,6 +85,8 @@ export interface AgentNote {
   code?: string;
   /** A list of rows (History): title, detail, and a signed amount. */
   rows?: { title: string; detail: string; amount: string; incoming: boolean }[];
+  /** The app's balance card (Balance, and the account a connect sets up). */
+  balance?: AgentBalance;
 }
 
 /** A product the agent found: a card in a carousel, an image Instinct sends, a line in a list. */

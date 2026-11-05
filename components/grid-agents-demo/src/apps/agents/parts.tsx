@@ -2,7 +2,7 @@ import { TextMorph } from 'torph/react';
 import { Flag } from '@/apps/shared/Flag';
 import { SfSymbol } from '@/apps/shared/icons';
 import { cubicBezierCss, easeOutSnappy } from '@/lib/easing';
-import type { AgentAsk, AgentMeta, AgentNote, AskRow, AskState, Chip, Product } from './conversation';
+import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, AskRow, AskState, Chip, Product } from './conversation';
 import styles from './parts.module.scss';
 
 /* The pieces a skin draws when it has no bespoke design for them. Each reads
@@ -48,6 +48,81 @@ export function NoteCard({ note, className }: { note: AgentNote; className?: str
       {note.rows && (
         <div className={styles.noteRows}>
           {note.rows.map((r, i) => (
+            <div key={`${r.title}-${i}`} className={styles.noteRow}>
+              <span className={styles.noteRowText}>
+                <span>{r.title}</span>
+                <small>{r.detail}</small>
+              </span>
+              <span className={styles.noteRowAmount} data-incoming={r.incoming || undefined}>
+                {r.amount}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The app's balance, in the website card's anatomy ("{App} balance", the
+ * amount, a note, then Add money / Card / Send), skinned by the host app
+ * through the --acct-* variables. Apps add their own native depth around it:
+ * a spending track, a detail sheet on tap.
+ */
+export function BalanceCard({
+  balance,
+  track,
+  onOpen,
+  className,
+}: {
+  balance: AgentBalance;
+  /** Draw today's spend against the daily limit. */
+  track?: boolean;
+  onOpen?: () => void;
+  className?: string;
+}) {
+  const Root = onOpen ? 'button' : 'div';
+  return (
+    <Root type={onOpen ? 'button' : undefined} className={`${styles.account} ${className ?? ''}`} onClick={onOpen} data-kind="account">
+      <span className={styles.accountLabel}>{balance.wallet}</span>
+      <strong className={styles.accountAmount}>{balance.amount}</strong>
+      <span className={styles.accountNote}>{balance.note}</span>
+      {track && (
+        <span className={styles.accountTrack}>
+          <span className={styles.accountBar}>
+            <i style={{ width: `${Math.max(2, balance.spent.ratio * 100)}%` }} />
+          </span>
+          <small>
+            {balance.spent.today} of {balance.spent.limit} today
+          </small>
+        </span>
+      )}
+      <span className={styles.accountActions}>
+        <span data-primary>Add money</span>
+        <span>Card</span>
+        <span>Send</span>
+      </span>
+    </Root>
+  );
+}
+
+/** A balance's limits and recent activity: the inside of each app's balance sheet or page. */
+export function BalanceDetail({ balance, className }: { balance: AgentBalance; className?: string }) {
+  return (
+    <div className={`${styles.detail} ${className ?? ''}`}>
+      <div className={styles.detailStats}>
+        {balance.stats.map((st) => (
+          <span key={st.label}>
+            <small>{st.label}</small>
+            <b>{st.value}</b>
+          </span>
+        ))}
+      </div>
+      {balance.activity.length > 0 && (
+        <div className={styles.detailActivity}>
+          <span className={styles.detailHead}>Activity</span>
+          {balance.activity.map((r, i) => (
             <div key={`${r.title}-${i}`} className={styles.noteRow}>
               <span className={styles.noteRowText}>
                 <span>{r.title}</span>
