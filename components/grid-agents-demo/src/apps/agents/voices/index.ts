@@ -1,5 +1,5 @@
 import type { ConnectorId } from '@/data/connectors';
-import type { AgentAsk, AgentMeta, AgentNote, Message, Params, Product, StoredMessage } from '../conversation';
+import type { AgentAsk, AgentMeta, AgentNote, Message, Params, Product, StoredMessage, SubAgent } from '../conversation';
 import {
   ASKS,
   LINES,
@@ -7,12 +7,14 @@ import {
   NOTES,
   PRODUCTS,
   STATUS,
+  SUBAGENTS,
   type AskKey,
   type LineKey,
   type MetaKey,
   type NoteKey,
   type ProductsKey,
   type StatusKey,
+  type SubAgentKey,
 } from './base';
 import { VOICES } from './apps';
 
@@ -24,6 +26,7 @@ export interface Voice {
   status(key: string, params?: Params): string;
   products(key: string): Product[];
   meta(key: string, params?: Params): AgentMeta;
+  subagent(key: string, params?: Params): SubAgent;
 }
 
 /** An app's voice: its own lines where it has them, the neutral ones otherwise. */
@@ -37,6 +40,10 @@ export function voiceFor(connector: ConnectorId): Voice {
     note: (key, params) => (v.notes?.[key as NoteKey] ?? NOTES[key as NoteKey])(withName(params)),
     status: (key, params) => (v.status?.[key as StatusKey] ?? STATUS[key as StatusKey] ?? (() => key))(withName(params)),
     products: (key) => PRODUCTS[key as ProductsKey]?.() ?? [],
+    subagent: (key, params) => {
+      const sub: (p?: Params) => SubAgent = SUBAGENTS[key as SubAgentKey];
+      return sub(withName(params));
+    },
     meta: (key, params) => {
       const meta: (p?: Params) => AgentMeta = METAS[key as MetaKey];
       return meta(withName(params));
@@ -72,6 +79,8 @@ export function renderThread(messages: StoredMessage[], voice: Voice): Message[]
         return { id: m.id, kind: 'products', products: voice.products(m.key) };
       case 'meta':
         return { id: m.id, kind: 'meta', meta: voice.meta(m.key, m.params) };
+      case 'subagent':
+        return { id: m.id, kind: 'subagent', agent: voice.subagent(m.key, m.params), done: m.done };
       default: {
         const exhaustive: never = m;
         return exhaustive;

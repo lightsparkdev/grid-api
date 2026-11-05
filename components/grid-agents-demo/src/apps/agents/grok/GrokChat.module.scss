@@ -1029,3 +1029,11 @@
 .actionSecondary {
   background: var(--grok-soft);
 }
+
+// The sub-agent row, in the status row's type.
+.subRow {
+  background: none;
+  padding-left: 6px;
+  font-size: 17px;
+  line-height: 22px;
+}

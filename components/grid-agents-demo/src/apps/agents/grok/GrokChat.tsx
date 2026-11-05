@@ -13,7 +13,7 @@ import { Flag } from '@/apps/shared/Flag';
 import { ChatFrame, ComposerField, NATIVE_IN, type RowMotion } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
 import type { AgentAsk, AgentBalance, Chip, Message, Product } from '../conversation';
-import { BalanceCard, BalanceDetail, Divider, NoteCard } from '../parts';
+import { BalanceCard, BalanceDetail, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
 import { AppSheet } from '../sheet';
 import type { AgentChatProps } from '../types';
 import { GrokEyes } from './GrokEyes';
@@ -300,6 +300,7 @@ export function GrokChat({ chat }: AgentChatProps) {
   const working = chat.busy || chat.messages.some((m) => m.kind === 'work');
   const [balance, setBalance] = useState<AgentBalance | null>(null);
   const [balanceShown, setBalanceShown] = useState(false);
+  const sub = useSubAgentSheet(chat.messages, SHEET_IN);
 
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
@@ -370,6 +371,8 @@ export function GrokChat({ chat }: AgentChatProps) {
       case 'tag':
       case 'stamp':
         return <span className={styles.stamp}>{m.text}</span>;
+      case 'subagent':
+        return <SubAgentRow className={styles.subRow} agent={m.agent} done={m.done} onOpen={() => sub.open(m.id)} />;
       default: {
         const exhaustive: never = m;
         return exhaustive;
@@ -463,6 +466,7 @@ export function GrokChat({ chat }: AgentChatProps) {
           />
         )}
       </AppSheet>
+      {sub.sheet}
       <AppSheet open={balanceShown} present={SHEET_IN} dim={0.2} className={styles.sheetPanel} onDismiss={() => setBalanceShown(false)}>
         {balance && <BalanceSheet balance={balance} onDone={() => setBalanceShown(false)} />}
       </AppSheet>

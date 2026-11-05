@@ -185,10 +185,10 @@ const buy = (ctx: FlowContext): Beat[] => {
 };
 
 const agent = (ctx: FlowContext): Beat[] => [
-  { say: 'agent.intro' },
-  { say: 'agent.offer', sender: `${HOTEL.name}’s agent` },
-  { say: 'agent.accept' },
+  { react: '👍' },
+  { subagent: 'hotel', ms: 4200, params: { approve: ctx.account().limits.approvalAbove } },
   { emit: { type: 'agent.quote', to: HOTEL } },
+  { say: 'agent.intro' },
   { emit: { type: 'agent.execute' } },
   ...approvalOr(
     ctx,

@@ -1,8 +1,13 @@
+import { useRef, useState } from 'react';
 import { TextMorph } from 'torph/react';
+import type { Transition } from 'motion/react';
+import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
+import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
 import { Flag } from '@/apps/shared/Flag';
 import { SfSymbol } from '@/apps/shared/icons';
 import { cubicBezierCss, easeOutSnappy } from '@/lib/easing';
-import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, AskRow, AskState, Chip, Product } from './conversation';
+import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, AskRow, AskState, Chip, Message, Product, SubAgent } from './conversation';
+import { AppSheet } from './sheet';
 import styles from './parts.module.scss';
 
 /* The pieces a skin draws when it has no bespoke design for them. Each reads
@@ -137,6 +142,120 @@ export function BalanceDetail({ balance, className }: { balance: AgentBalance; c
       )}
     </div>
   );
+}
+
+/** The sub-agent at work: its mark, what it's doing (shimmering until it's done), and a chevron to look inside. */
+export function SubAgentRow({
+  agent,
+  done,
+  onOpen,
+  className,
+}: {
+  agent: SubAgent;
+  done: boolean;
+  onOpen: () => void;
+  className?: string;
+}) {
+  return (
+    <button type="button" className={`${styles.sub} ${className ?? ''}`} onClick={onOpen} data-done={done || undefined} data-subagent>
+      <span className={styles.subMark}>{agent.initial}</span>
+      <span className={styles.subLabel}>{done ? agent.done : <span className={styles.subShimmer}>{agent.working}…</span>}</span>
+      <IconChevronRight size={14} />
+    </button>
+  );
+}
+
+/** Inside the sub-agent: its chain of thought, a step at a time (each opens), then what the two agents said. */
+export function SubAgentDetail({ agent, done }: { agent: SubAgent; done: boolean }) {
+  const [open, setOpen] = useState<number | null>(null);
+  const finished = done ? agent.steps.length : 2;
+  return (
+    <div className={styles.subDetail}>
+      <div className={styles.subHead}>
+        <span className={styles.subMark} data-big>
+          {agent.initial}
+        </span>
+        <span>
+          <b>{agent.name}</b>
+          <small>{done ? 'Finished' : 'Working…'}</small>
+        </span>
+      </div>
+      <span className={styles.detailHead}>Thinking</span>
+      <ol className={styles.steps}>
+        {agent.steps.map((st, i) => (
+          <li key={st.title} data-pending={i >= finished || undefined}>
+            <button type="button" aria-expanded={open === i} onClick={() => setOpen(open === i ? null : i)}>
+              <span className={styles.stepMark}>{i < finished ? <IconCheckmark1 size={11} /> : <i />}</span>
+              <span className={styles.stepTitle}>{st.title}</span>
+              <IconChevronRight size={12} className={styles.stepChevron} />
+            </button>
+            {open === i && <p>{st.detail}</p>}
+          </li>
+        ))}
+      </ol>
+      <span className={styles.detailHead}>Messages</span>
+      <div className={styles.subMessages}>
+        {agent.messages.slice(0, done ? undefined : 3).map((m, i) => (
+          <span key={i} data-from={m.from}>
+            {m.text}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const SHEET_IN: Transition = { duration: 0.45, ease: [0.3, 0.7, 0.2, 1] };
+
+/** The sub-agent's sheet, in the skin's colors (its --part-* tokens): the name, Done, and the detail. */
+export function SubAgentSheet({
+  agent,
+  done,
+  open,
+  onClose,
+  present = SHEET_IN,
+  className,
+}: {
+  agent: SubAgent | null;
+  done: boolean;
+  open: boolean;
+  onClose: () => void;
+  present?: Transition;
+  className?: string;
+}) {
+  return (
+    <AppSheet open={open} present={present} dim={0.2} className={styles.subPanel} onDismiss={onClose}>
+      {agent && (
+        <div className={`${styles.subSheet} ${className ?? ''}`}>
+          <div className={styles.subBar}>
+            <span />
+            <strong>Agent conversation</strong>
+            <button type="button" onClick={onClose}>
+              Done
+            </button>
+          </div>
+          <SubAgentDetail agent={agent} done={done} />
+        </div>
+      )}
+    </AppSheet>
+  );
+}
+
+/** A skin's sub-agent sheet: `open(id)` from the row, and the sheet to render in the skin's screen. */
+export function useSubAgentSheet(messages: Message[], present?: Transition) {
+  const [id, setId] = useState<number | null>(null);
+  const [shown, setShown] = useState(false);
+  const m = messages.find((x): x is Extract<Message, { kind: 'subagent' }> => x.kind === 'subagent' && x.id === id);
+  // The sheet keeps its agent while it slides away.
+  const last = useRef<SubAgent | null>(null);
+  if (m) last.current = m.agent;
+  return {
+    open: (next: number) => {
+      setId(next);
+      setShown(true);
+    },
+    sheet: <SubAgentSheet agent={last.current} done={m?.done ?? true} open={shown && !!m} onClose={() => setShown(false)} present={present} />,
+  };
 }
 
 const META_SYMBOL = { routine: 'clock.arrow.trianglehead.counterclockwise.rotate.90', check: 'checkmark' } as const;

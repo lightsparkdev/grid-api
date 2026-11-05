@@ -139,6 +139,12 @@ export function useAgentBrain({
         } else if ('products' in b) {
           show({ kind: 'products', key: b.products });
           await sleep(1200);
+        } else if ('subagent' in b) {
+          const id = show({ kind: 'subagent', key: b.subagent, params: b.params, done: false });
+          await sleep(b.ms);
+          if (run.cancelled) return false;
+          patch(id, (m) => (m.kind === 'subagent' ? { ...m, done: true } : m));
+          await sleep(500);
         } else if ('react' in b) {
           setMessages((list) => {
             const last = [...list].reverse().find((m) => m.kind === 'me');

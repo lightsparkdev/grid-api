@@ -8,7 +8,7 @@ import { Flag } from '@/apps/shared/Flag';
 import { ChatFrame, ComposerField, NATIVE_IN, Said, TypingDots } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
 import type { AgentAsk, AgentBalance, Message, Product } from '../conversation';
-import { BalanceCard, BalanceDetail, Divider, MetaLine, NoteCard } from '../parts';
+import { BalanceCard, BalanceDetail, Divider, MetaLine, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
 import { AppSheet } from '../sheet';
 import { ADDRESS, PERSON } from '../story';
 import type { AgentChatProps } from '../types';
@@ -265,6 +265,7 @@ export function DotChat({ chat }: AgentChatProps) {
   const [shown, setShown] = useState(false);
   const [balance, setBalance] = useState<AgentBalance | null>(null);
   const [balanceShown, setBalanceShown] = useState(false);
+  const sub = useSubAgentSheet(chat.messages, SHEET_IN);
   const sheetOpen = shown && !!sheet && chat.messages.some((m) => m.kind === 'ask' && m.id === sheet.id && m.state === 'open');
   const open = (m: Ask) => {
     setSheet({ id: m.id, ask: m.ask });
@@ -370,6 +371,8 @@ export function DotChat({ chat }: AgentChatProps) {
         return <MetaLine meta={m.meta} />;
       case 'divider':
         return <Divider text={m.text} />;
+      case 'subagent':
+        return <SubAgentRow agent={m.agent} done={m.done} onOpen={() => sub.open(m.id)} />;
       default: {
         const exhaustive: never = m;
         return exhaustive;
@@ -440,6 +443,7 @@ export function DotChat({ chat }: AgentChatProps) {
             <PaySheet key={sheet.id} ask={sheet.ask} onAllow={allow} onDeny={deny} onClose={close} />
           ))}
       </AppSheet>
+      {sub.sheet}
       <AppSheet open={balanceShown} present={SHEET_IN} className={styles.setupPanel} onDismiss={() => setBalanceShown(false)}>
         {balance && <BalanceSheet balance={balance} onClose={() => setBalanceShown(false)} />}
       </AppSheet>

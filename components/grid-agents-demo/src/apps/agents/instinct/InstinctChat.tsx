@@ -5,9 +5,9 @@ import { playAppSwitch, WALLPAPER } from '@/apps/shared/appSwitch';
 import { SfSymbol } from '@/apps/shared/icons';
 import { ChatFrame, ComposerField, NATIVE_IN, Said, TypingDots, type RowMotion } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
-import type { AgentAsk, AgentBalance, AgentNote, Message, Product } from '../conversation';
+import type { AgentAsk, AgentBalance, AgentNote, Message, Product, SubAgent } from '../conversation';
 import type { AgentChatProps } from '../types';
-import { INSTINCT_HOST, InstinctBalancePage, InstinctSafari } from './InstinctSafari';
+import { INSTINCT_HOST, InstinctBalancePage, InstinctSafari, InstinctThreadPage } from './InstinctSafari';
 import styles from './InstinctChat.module.scss';
 
 /**
@@ -156,7 +156,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
   const [view, setView] = useState<'messages' | 'safari'>('messages');
   const [switchTo, setSwitchTo] = useState<'messages' | 'safari' | null>(null);
   const [linkId, setLinkId] = useState<number | null>(null);
-  const [page, setPage] = useState<AgentBalance | null>(null);
+  const [page, setPage] = useState<{ kind: 'balance'; balance: AgentBalance } | { kind: 'thread'; agent: SubAgent } | null>(null);
   const open = chat.messages.find((m): m is Ask => m.kind === 'ask' && m.id === linkId);
 
   const openLink = (id: number) => {
@@ -165,10 +165,10 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
     setLinkId(id);
     setSwitchTo('safari');
   };
-  const openBalance = (b: AgentBalance) => {
+  const openPage = (next: NonNullable<typeof page>) => {
     if (switchTo || view !== 'messages') return;
     setLinkId(null);
-    setPage(b);
+    setPage(next);
     setSwitchTo('safari');
   };
   const back = useCallback(() => {
@@ -251,7 +251,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         );
       case 'card': {
         const b = m.card.balance;
-        return b ? <BalanceImage balance={b} onOpen={() => openBalance(b)} /> : <InstinctImage note={m.card} />;
+        return b ? <BalanceImage balance={b} onOpen={() => openPage({ kind: 'balance', balance: b })} /> : <InstinctImage note={m.card} />;
       }
       case 'ask':
         return m.ask.rows ? (
@@ -309,6 +309,22 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           </div>
         );
       }
+      case 'subagent':
+        // While it works, a text; once it's done, a link to the conversation on app.instinct.com.
+        return m.done ? (
+          <button type="button" className={styles.link} onClick={() => openPage({ kind: 'thread', agent: m.agent })}>
+            <span className={styles.linkHero}>
+              <span className={styles.linkHeadline}>{m.agent.done}</span>
+              <span className={styles.linkWord}>Instinct</span>
+            </span>
+            <span className={styles.linkMeta}>
+              <strong>Conversation with {m.agent.name}</strong>
+              <small>{INSTINCT_HOST}</small>
+            </span>
+          </button>
+        ) : (
+          bubble('sub', `on it. ${m.agent.working.toLowerCase()}…`, !theirsNext)
+        );
       case 'meta':
         return null;
       case 'divider':
@@ -399,7 +415,12 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           {open ? (
             <InstinctSafari ask={open.ask} state={open.state} onAllow={chat.allow} onDeny={chat.deny} onBack={back} />
           ) : (
-            page && <InstinctBalancePage balance={page} onBack={back} />
+            page &&
+            (page.kind === 'balance' ? (
+              <InstinctBalancePage balance={page.balance} onBack={back} />
+            ) : (
+              <InstinctThreadPage agent={page.agent} onBack={back} />
+            ))
           )}
           {switchTo && (
             <div className={styles.cardStatus}>

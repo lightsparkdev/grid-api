@@ -1,4 +1,4 @@
-import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, Params, Product } from '../conversation';
+import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, Params, Product, SubAgent } from '../conversation';
 import { ADDRESS, BUY_OPTIONS, HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
 
 /* The neutral voice: every line, ask and note a flow can produce, written so
@@ -32,6 +32,33 @@ export const PRODUCTS = {
 } satisfies Record<string, () => Product[]>;
 
 export type ProductsKey = keyof typeof PRODUCTS;
+
+export const SUBAGENTS = {
+  hotel: (p) => ({
+    name: `${HOTEL.name}’s agent`,
+    initial: HOTEL.name[0],
+    working: `Talking to ${HOTEL.name}’s agent`,
+    done: `Got a direct rate from ${HOTEL.name}’s agent`,
+    steps: [
+      { title: `Found ${HOTEL.name}’s agent`, detail: 'The hotel takes bookings from agents directly, account to account.' },
+      { title: 'Asked for June 12 to 14, two guests', detail: `It quoted ${usd(HOTEL.listed)} for the two nights, breakfast included.` },
+      { title: 'Asked about paying directly', detail: `Skipping the card fee takes 10% off: ${usd2(HOTEL.amount)}.` },
+      {
+        title: 'Checked it against your limits',
+        detail: `${usd2(HOTEL.amount)} is over the ${usd(n(p, 'approve'))} I can spend alone, so it goes to you to approve.`,
+      },
+    ],
+    messages: [
+      { from: 'us', text: `Hi, booking for ${PERSON.full}: June 12 to 14, two guests. What’s your best rate?` },
+      { from: 'them', text: `${usd(HOTEL.listed)} for the two nights, breakfast included.` },
+      { from: 'us', text: 'Can we pay you directly instead of by card?' },
+      { from: 'them', text: `Pay me directly and I’ll take 10% off: ${usd2(HOTEL.amount)}.` },
+      { from: 'us', text: `Deal. I’ll send it as soon as ${PERSON.first} approves.` },
+    ],
+  }),
+} satisfies Record<string, (p?: Params) => SubAgent>;
+
+export type SubAgentKey = keyof typeof SUBAGENTS;
 
 export const METAS = {
   'buy.tracking': () => ({ text: 'Created routine · Track the delivery', icon: 'routine' }),
@@ -74,9 +101,8 @@ export const LINES = {
   'sub.done': () => `You’re subscribed. The card is locked to ${SUBSCRIPTION.merchant} now, so nobody else can use it.`,
   'sub.denied': () => 'Okay, no subscription.',
 
-  'agent.intro': () => `${HOTEL.name}’s agent quoted ${usd(HOTEL.listed)} for the two nights.`,
-  'agent.offer': () => 'Pay me directly, get 10% off.',
-  'agent.accept': () => 'Deal. Paying directly.',
+  'agent.intro': () =>
+    `${HOTEL.name}’s agent quoted ${usd(HOTEL.listed)} for the two nights, or ${usd2(HOTEL.amount)} if we pay directly. I took the direct rate.`,
   'agent.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m paying now.`,
   'agent.done': () => 'Booked. The confirmation is in your inbox.',
   'agent.denied': () => `Okay, I won’t book it. I told ${HOTEL.name}’s agent we’ll pass.`,

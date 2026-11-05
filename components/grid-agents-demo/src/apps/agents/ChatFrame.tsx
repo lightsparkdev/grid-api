@@ -61,8 +61,11 @@ export function ChatFrame({
   faceId,
   onFaceIdDone,
   rowMotion,
+  overlay,
 }: {
   className?: string;
+  /** Above everything in the screen, in the skin's colors: its sheets. */
+  overlay?: ReactNode;
   messages: Message[];
   /** How each row arrives; defaults to a soft rise. */
   rowMotion?: (m: Message) => RowMotion;
@@ -86,7 +89,7 @@ export function ChatFrame({
   faceId?: boolean;
   onFaceIdDone?: () => void;
 }) {
-  const overlay = useScreenOverlay();
+  const screenOverlay = useScreenOverlay();
   const fade = fadeTop ?? (threadTop !== undefined ? [threadTop - 64, threadTop] : undefined);
   // The composer grows with its text, and the thread's foot rises with it.
   const composerRef = useRef<HTMLDivElement>(null);
@@ -148,7 +151,8 @@ export function ChatFrame({
       <div ref={composerRef} className={styles.composer}>
         {composer}
       </div>
-      {overlay && onFaceIdDone && createPortal(<FaceIdAuth active={!!faceId} onDone={onFaceIdDone} />, overlay)}
+      {overlay}
+      {screenOverlay && onFaceIdDone && createPortal(<FaceIdAuth active={!!faceId} onDone={onFaceIdDone} />, screenOverlay)}
     </div>
   );
 }

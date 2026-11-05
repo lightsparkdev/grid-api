@@ -101,6 +101,16 @@ export interface Product {
   pick?: boolean;
 }
 
+/** Another agent yours worked with: what it thought, step by step, and what they said to each other. */
+export interface SubAgent {
+  name: string;
+  initial: string;
+  working: string;
+  done: string;
+  steps: { title: string; detail: string }[];
+  messages: { from: 'us' | 'them'; text: string }[];
+}
+
 /** A small centered line about the agent itself: a routine it set up, a saved setting. */
 export interface AgentMeta {
   text: string;
@@ -118,6 +128,7 @@ export type Message =
   | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
   | { id: number; kind: 'work'; key: string; status: string }
   | { id: number; kind: 'products'; products: Product[] }
+  | { id: number; kind: 'subagent'; agent: SubAgent; done: boolean }
   | { id: number; kind: 'meta'; meta: AgentMeta }
   | { id: number; kind: 'divider'; text: string }
   | { id: number; kind: 'tag'; text: string }
@@ -136,6 +147,7 @@ export type StoredMessage =
   | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
   | { id: number; kind: 'work'; key: string; params?: Params }
   | { id: number; kind: 'products'; key: string }
+  | { id: number; kind: 'subagent'; key: string; params?: Params; done: boolean }
   | { id: number; kind: 'meta'; key: string; params?: Params }
   | { id: number; kind: 'divider'; text: string }
   | { id: number; kind: 'stamp'; text: string };
@@ -153,6 +165,7 @@ export type Beat =
   | { card: string; params?: Params }
   | { work: string; ms: number; params?: Params }
   | { products: string }
+  | { subagent: string; ms: number; params?: Params }
   | { react: string }
   | { meta: string; params?: Params }
   | { divider: string }

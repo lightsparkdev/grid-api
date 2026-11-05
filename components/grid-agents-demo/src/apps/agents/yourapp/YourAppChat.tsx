@@ -4,12 +4,13 @@ import { GridLogoMark } from '@/components/GridWordmark';
 import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
-import { AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, WorkLine } from '../parts';
+import { AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
 import type { AgentChatProps } from '../types';
 import styles from './YourAppChat.module.scss';
 
 /** A plain chat for the agent a platform builds itself: no brand, just the thread. */
 export function YourAppChat({ chat }: AgentChatProps) {
+  const sub = useSubAgentSheet(chat.messages);
   const render = (m: Message) => {
     switch (m.kind) {
       case 'them':
@@ -40,6 +41,8 @@ export function YourAppChat({ chat }: AgentChatProps) {
         return <MetaLine meta={m.meta} />;
       case 'divider':
         return <Divider text={m.text} />;
+      case 'subagent':
+        return <SubAgentRow agent={m.agent} done={m.done} onOpen={() => sub.open(m.id)} />;
       default: {
         const exhaustive: never = m;
         return exhaustive;
@@ -52,6 +55,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
       className={styles.screen}
       messages={chat.messages}
       render={render}
+      overlay={sub.sheet}
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={8}
