@@ -88,7 +88,7 @@ export const ACTIONS: ActionDef[] = [
   },
   {
     id: 'agent',
-    label: 'Pay agent',
+    label: 'Pay an agent',
     desc: 'Pay another agent’s account directly',
     prompts: ['Book Hotel Alma in Lisbon for the 12th to the 14th'],
   },

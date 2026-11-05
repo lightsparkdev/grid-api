@@ -11,7 +11,7 @@ playground) and shares its chrome, design system, and embed contract:
 - Config panel, glass phone stage, and API panel laid out identically to the cards demo
 
 A visitor picks an agent app (Muse, Grok Bot, Dots, Instinct, Claude Duet, or a plain "Your agent")
-and a flow: Connect, Add funds, Set limits, Pay someone, Buy online, Pay agent, Get paid, Withdraw,
+and a flow: Connect, Add funds, Set limits, Pay someone, Buy online, Pay an agent, Get paid, Withdraw,
 Balance, or History. The flow's tile sends its first line as the visitor's message; the visitor
 then makes every choice in the chat (Approve or Decline, quick replies, Face ID). Anything they
 type goes to a small model with guardrails. The composer grows with the text, up to five lines. The API panel shows each agent tool call with the Grid
