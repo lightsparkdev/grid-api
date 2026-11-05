@@ -227,11 +227,23 @@
     scale: 0.94;
   }
 
-  &[data-done] {
+  &[data-done],
+  &[data-muted] {
     background: var(--grok-soft);
     color: var(--grok-soft-text);
     cursor: default;
   }
+}
+
+.decline {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--grok-text);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
 }
 
 .caption {

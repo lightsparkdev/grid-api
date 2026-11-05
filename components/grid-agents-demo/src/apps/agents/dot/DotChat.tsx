@@ -1,6 +1,6 @@
 import { Flag } from '@/apps/shared/Flag';
 import { SfSymbol } from '@/apps/shared/icons';
-import { ChatFrame, Draft, Said } from '../ChatFrame';
+import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
 import type { Message } from '../conversation';
 import { AskCard, NoteCard } from '../parts';
@@ -17,7 +17,7 @@ const mask = (src: string, width: number, height: number) => ({ maskImage: `url(
 const RESTING_WIDTH = 327;
 const TYPING_WIDTH = 371;
 
-export function DotChat({ chat, dark }: AgentChatProps) {
+export function DotChat({ chat }: AgentChatProps) {
   const lastMe = chat.messages.reduce((id, m) => (m.kind === 'me' ? m.id : id), -1);
 
   const render = (m: Message) => {
@@ -40,14 +40,15 @@ export function DotChat({ chat, dark }: AgentChatProps) {
         );
       case 'chips':
         return (
-          <div className={styles.chips} data-picked={m.picked !== null || undefined}>
+          <div className={styles.chips} data-picked={m.picked !== null || m.expired || undefined}>
             {m.chips.map((c, i) => (
               <button
                 key={c.label}
                 type="button"
                 className={styles.chip}
                 data-picked={m.picked === i || undefined}
-                onClick={chat.answer}
+                disabled={m.picked !== null || m.expired}
+                onClick={() => chat.pick(i)}
               >
                 {c.flag ? (
                   <Flag code={c.flag} size={22} />
@@ -61,7 +62,7 @@ export function DotChat({ chat, dark }: AgentChatProps) {
           </div>
         );
       case 'ask':
-        return <AskCard ask={m.ask} state={m.state} onAnswer={chat.answer} />;
+        return <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':
         return <NoteCard note={m.card} />;
       case 'stamp':
@@ -79,9 +80,6 @@ export function DotChat({ chat, dark }: AgentChatProps) {
       className={styles.screen}
       messages={chat.messages}
       render={render}
-      draft={chat.draft}
-      keys={chat.keys}
-      dark={dark}
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={5}
@@ -106,19 +104,19 @@ export function DotChat({ chat, dark }: AgentChatProps) {
         <GlassPill
           radius={24.25}
           className={styles.composer}
-          style={{ width: chat.draft !== null ? TYPING_WIDTH : RESTING_WIDTH }}
+          style={{ width: chat.composer.length > 0 ? TYPING_WIDTH : RESTING_WIDTH }}
         >
           <span className={styles.composerRow}>
             <span className={styles.slot}>
               <span className={styles.glyph} style={mask(`${A}/plus.svg`, 18, 18)} />
             </span>
-            <Draft draft={chat.draft} placeholder="Message your dot" className={styles.field} />
+            <ComposerField chat={chat} placeholder="Message your dot" className={styles.field} />
             <span className={styles.slot}>
               <span className={styles.glyph} style={mask(`${A}/mic.svg`, 16, 22)} />
             </span>
-            {chat.draft !== null && (
+            {chat.composer.length > 0 && (
               <span className={styles.sendSlot}>
-                <span className={styles.send} data-pressing={chat.sending || undefined}>
+                <span className={styles.send} role="button" onClick={chat.send} data-ready={chat.canSend || undefined}>
                   <SfSymbol name="arrow.up" size={17} />
                 </span>
               </span>

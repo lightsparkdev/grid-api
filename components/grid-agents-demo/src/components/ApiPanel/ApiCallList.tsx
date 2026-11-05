@@ -58,6 +58,8 @@ function methodBadgeVariant(method: ApiCall['method']): 'blue' | 'green' | 'yell
  *  payload Grid delivered / what your endpoint answered for a webhook. */
 const CALL_TAB_LABELS: Record<CodeTab, string> = { request: 'Request', response: 'Response' };
 const WEBHOOK_TAB_LABELS: Record<CodeTab, string> = { request: 'Payload', response: 'Response' };
+/** The agent's tool call: what it passed, and what the app's backend returned. */
+const TOOL_TAB_LABELS: Record<CodeTab, string> = { request: 'Arguments', response: 'Result' };
 
 function CodeTabs({
   tab,
@@ -197,10 +199,13 @@ function EndpointBlock({
   method,
   path,
   inbound,
+  tool,
 }: {
   method: ApiCall['method'];
   path: string;
   inbound?: boolean;
+  /** The agent's tool call inside the app, not a Grid endpoint. */
+  tool?: boolean;
 }) {
   const copyPath = useCallback(async () => {
     await navigator.clipboard.writeText(path);
@@ -232,7 +237,13 @@ function EndpointBlock({
       aria-label={`Copy endpoint ${path}`}
     >
       <div className={styles.endpointScroll}>
-        {inbound ? <Badge variant="blue">WEBHOOK</Badge> : <Badge variant={methodBadgeVariant(method)}>{method}</Badge>}
+        {tool ? (
+          <Badge variant="purple">TOOL</Badge>
+        ) : inbound ? (
+          <Badge variant="blue">WEBHOOK</Badge>
+        ) : (
+          <Badge variant={methodBadgeVariant(method)}>{method}</Badge>
+        )}
         <span className={styles.path}>{path}</span>
       </div>
       <div className={styles.endpointFade} aria-hidden />
@@ -255,6 +266,90 @@ function FeedTimestamp({ timestamp, now }: { timestamp: number; now: number }) {
     <time className={styles.timestamp} dateTime={new Date(timestamp).toISOString()} title={absolute}>
       {relative}
     </time>
+  );
+}
+
+/** The agent's tool call: its name, its arguments and result, and the Grid
+ *  calls the app's backend made for it, nested under it. */
+function ToolCallBlock({
+  entry,
+  children,
+  now,
+  isNew,
+  newKeys,
+}: {
+  entry: Entry;
+  children: Entry[];
+  now: number;
+  isNew: boolean;
+  newKeys: Set<string>;
+}) {
+  const [tab, setTab] = useState<CodeTab>('request');
+  const [open, setOpen] = useState(true);
+  const tool = entry.tool!;
+  const args = useMemo(() => JSON.stringify(tool.args, null, 2), [tool.args]);
+  const result = useMemo(() => JSON.stringify(tool.result, null, 2), [tool.result]);
+  const text = tab === 'request' ? args : result;
+  const highlighted = useMemo(() => highlightJson(text, syntaxClasses), [text]);
+  return (
+    <div className={styles.toolStack}>
+      <div className={styles.callCard}>
+        <div className={styles.entryHeader}>
+          <span className={styles.entryTitleRow}>
+            <TextMorph
+              as="span"
+              className={styles.titleBullet}
+              duration={TITLE_MORPH_MS}
+              ease={cubicBezierCss(easeOutSwift)}
+              aria-hidden
+            >
+              {isNew ? '\u2022\u00A0' : ''}
+            </TextMorph>
+            <span className={styles.entryTitle}>Agent tool call</span>
+          </span>
+          <FeedTimestamp timestamp={entry.createdAt} now={now} />
+        </div>
+        <EndpointBlock method={entry.method} path={tool.name} tool />
+        <div className={styles.codeBlock}>
+          <div className={styles.codeBlockToolbar}>
+            <CodeTabs tab={tab} labels={TOOL_TAB_LABELS} onTabChange={setTab} />
+            <CopyButton text={text} />
+          </div>
+          <div className={styles.codeBlockContent}>
+            <pre className={styles.codePre}>
+              <code>{highlighted}</code>
+            </pre>
+          </div>
+        </div>
+        {children.length > 0 && (
+          <button type="button" className={styles.nestedToggle} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+            <span>
+              {children.length} Grid {children.length === 1 ? 'call' : 'calls'} behind it
+            </span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <path d={open ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
+      </div>
+      <AnimatePresence initial={false}>
+        {open && children.length > 0 && (
+          <motion.div
+            className={styles.nested}
+            initial={EXPAND_HIDDEN}
+            animate={EXPAND_REST}
+            exit={{ ...EXPAND_EXIT, transition: FEED_OUT }}
+            transition={FEED_IN}
+          >
+            <AnimatePresence initial={false}>
+              {children.map((child) => (
+                <FeedEntry key={child.key} entry={child} now={now} isNew={newKeys.has(child.key)} />
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -334,7 +429,20 @@ const EXPAND_EXIT = { height: 0, opacity: 0 };
 // The "new call" bullet is torph-morphed in/out before the title.
 const TITLE_MORPH_MS = 300;
 
-function FeedEntry({ entry, now, isNew }: { entry: Entry; now: number; isNew: boolean }) {
+function FeedEntry({
+  entry,
+  now,
+  isNew,
+  childrenOf,
+  newKeys,
+}: {
+  entry: Entry;
+  now: number;
+  isNew: boolean;
+  /** The Grid calls under each tool call, by its key. */
+  childrenOf?: Map<string, Entry[]>;
+  newKeys?: Set<string>;
+}) {
   return (
     <motion.div
       className={styles.feedEntry}
@@ -344,7 +452,17 @@ function FeedEntry({ entry, now, isNew }: { entry: Entry; now: number; isNew: bo
       transition={FEED_IN}
     >
       <motion.div initial={RISE_HIDDEN} animate={RISE_REST} transition={FEED_IN}>
-        <ApiCallBlock entry={entry} now={now} isNew={isNew} />
+        {entry.tool ? (
+          <ToolCallBlock
+            entry={entry}
+            children={childrenOf?.get(entry.key) ?? []}
+            now={now}
+            isNew={isNew}
+            newKeys={newKeys ?? new Set()}
+          />
+        ) : (
+          <ApiCallBlock entry={entry} now={now} isNew={isNew} />
+        )}
       </motion.div>
     </motion.div>
   );
@@ -359,6 +477,18 @@ function FeedGroup({
   now: number;
   newKeys: Set<string>;
 }) {
+  // Tool calls and the platform's own calls are the rows; a tool call's Grid
+  // calls sit under it, in the order they happened.
+  const { rows, childrenOf } = useMemo(() => {
+    const childrenOf = new Map<string, Entry[]>();
+    for (const e of group.entries) {
+      if (!e.parent) continue;
+      const list = childrenOf.get(e.parent) ?? [];
+      list.unshift(e);
+      childrenOf.set(e.parent, list);
+    }
+    return { rows: group.entries.filter((e) => !e.parent), childrenOf };
+  }, [group.entries]);
   return (
     <motion.article
       className={styles.group}
@@ -381,8 +511,15 @@ function FeedGroup({
               double-animate — the group's own height-expand reveals them. Calls
               added to an existing group expand + rise in one at a time. */}
           <AnimatePresence initial={false}>
-            {group.entries.map((entry) => (
-              <FeedEntry key={entry.key} entry={entry} now={now} isNew={newKeys.has(entry.key)} />
+            {rows.map((entry) => (
+              <FeedEntry
+                key={entry.key}
+                entry={entry}
+                now={now}
+                isNew={newKeys.has(entry.key)}
+                childrenOf={childrenOf}
+                newKeys={newKeys}
+              />
             ))}
           </AnimatePresence>
         </div>

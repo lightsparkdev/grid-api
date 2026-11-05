@@ -53,66 +53,25 @@
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.35, 1);
 }
 
-// The keyboard pushes the thread and the composer up together, as iOS does.
-.screen[data-keyboard] {
-  .stack,
-  .composer {
-    transform: translateY(calc(-1 * var(--lift)));
-    transition-delay: 0.12s;
-  }
-}
-
-.keyboard {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 342px;
-  z-index: 6;
-}
-
-// A short line sits left (its auto margin takes the room); a long one overflows
-// leftward, keeping its newest words in view as the field scrolls.
+// The composer's real input: transparent over the skin's glass, the skin's type.
+// The screen body passes the pointer through; the field takes it back.
 .field {
-  display: flex;
   flex: 1;
-  align-items: center;
   min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.typed {
-  justify-content: flex-end;
-}
-
-.line {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  margin-right: auto;
-  white-space: pre;
-}
-
-.placeholder {
-  overflow: hidden;
-  color: var(--placeholder, #8e8e93);
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  pointer-events: auto;
   text-overflow: ellipsis;
-}
+  caret-color: #0a84ff;
 
-.caret {
-  flex: none;
-  width: 2px;
-  height: 22px;
-  margin: 0 1px;
-  border-radius: 1px;
-  background: #0a84ff;
-  animation: caret 1s steps(1) infinite;
-}
-
-@keyframes caret {
-  50% {
-    opacity: 0;
+  &::placeholder {
+    color: var(--placeholder, #8e8e93);
+    opacity: 1;
   }
 }
 

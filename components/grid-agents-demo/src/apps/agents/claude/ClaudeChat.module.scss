@@ -254,6 +254,11 @@
   }
 }
 
+.spendActions[data-state='denied'] .approve,
+.spendActions[data-state='expired'] button {
+  opacity: 0.4;
+}
+
 .notNow {
   border: 1px solid var(--cl-rule);
   background: var(--cl-card);

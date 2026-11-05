@@ -1,17 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ChatRun } from '@/apps/agents/useAgentChat';
+import type { FlowEntry, FreeTextReply } from '@/apps/agents/brain/useAgentBrain';
+import { NEEDS_CONNECTION, type FlowContext } from '@/apps/agents/flows';
+import { voiceFor } from '@/apps/agents/voices';
 import type { Entry } from '@/components/ApiPanel/types';
-import { actionLabel, initialCompleted, initialWallet, type ActionId, type CompletedFlows, type WalletState } from '@/data/actions';
-import { createAgentSession, type AgentSession } from '@/data/agentApiCalls';
+import { actionLabel, type ActionId } from '@/data/actions';
+import { createAgentSession, type AccountSnapshot, type AgentSession, type CallStep } from '@/data/agentApiCalls';
 import type { AgentEvent } from '@/data/agentEvents';
-import { agentNameFor } from '@/data/agentScripts';
 import type { ConnectorId } from '@/data/connectors';
-import type { ApiCall } from '@/data/flow';
-import { scriptedBrain } from '@/lib/chatBrain';
 
-/** The calls one event makes land one after another, not in a block. */
+/** The calls one step makes land one after another, not in a block. */
 const CALL_STAGGER_MS = 650;
 
 let groupSeq = 0;
@@ -19,31 +18,46 @@ function newGroupId() {
   groupSeq += 1;
   return `g${Date.now().toString(36)}${groupSeq}`;
 }
+let entrySeq = 0;
+function entryKey() {
+  entrySeq += 1;
+  return `e${Date.now().toString(36)}${entrySeq}`;
+}
+
+const NO_RUNS = (): Record<ActionId, number> => ({
+  connect: 0,
+  fund: 0,
+  limits: 0,
+  pay: 0,
+  buy: 0,
+  agent: 0,
+  getpaid: 0,
+  cashout: 0,
+  balance: 0,
+  history: 0,
+});
 
 /**
- * The Agent Accounts playground brain: which agent is connected, the flow
- * playing in its chat, the agent's session with Grid (ids, policy, the action
- * waiting for approval), and the API log. Each flow's calls come from its
- * conversation's events, so the panel shows them at the beat the chat reaches.
+ * The Agent Accounts playground's page state: which app is showing, the
+ * agent's session with Grid (ids, policy, balance, the held action), the API
+ * log, and the tiles' jumps. The conversation itself lives in the phone's
+ * brain (apps/agents/brain), which calls back here at every Grid beat.
+ * Switching apps only changes the face: nothing here resets.
  */
 export function useAgentsDemoLogic() {
   const [connector, setConnector] = useState<ConnectorId>('muse');
-  const [activeFlow, setActiveFlow] = useState<ActionId | null>(null);
-  const [wallet, setWallet] = useState<WalletState>(initialWallet);
-  const [completed, setCompleted] = useState<CompletedFlows>(initialCompleted);
+  const connectorRef = useRef(connector);
+  connectorRef.current = connector;
+  const sessionRef = useRef<AgentSession>(createAgentSession(() => voiceFor(connectorRef.current).name));
+  const [account, setAccount] = useState<AccountSnapshot>(() => sessionRef.current.snapshot());
   const [entries, setEntries] = useState<Entry[]>([]);
-  const [run, setRun] = useState<ChatRun | undefined>(undefined);
-  /** Remounts the chat so its thread starts over from the agent's history. */
+  const [entry, setEntry] = useState<FlowEntry | undefined>(undefined);
+  const [activeFlow, setActiveFlow] = useState<ActionId | null>(null);
+  /** Completed runs per flow: a tile with more than one line offers the next one. */
+  const [runs, setRuns] = useState(NO_RUNS);
+  /** Remounts the phone's conversation on Reset only. */
   const [chatKey, setChatKey] = useState(0);
-
-  const sessionRef = useRef<AgentSession>(createAgentSession(agentNameFor('muse')));
-  const walletRef = useRef(wallet);
-  walletRef.current = wallet;
-  // The group the running flow's calls land in, under its label.
   const groupRef = useRef<{ id: string; label: string } | null>(null);
-  // What the running flow will spend once Grid carries it out, and the deposit it's waiting on.
-  const pendingSpend = useRef(0);
-  const pendingDeposit = useRef(0);
 
   // Delayed pushes; cleared on reset so a late call can't land in a wiped panel.
   const timers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
@@ -55,163 +69,122 @@ export function useAgentsDemoLogic() {
 
   // Pushes stay in order across events: each waits for the one before it.
   const nextAt = useRef(0);
-  const pushCalls = useCallback((calls: ApiCall[]) => {
-    const group = groupRef.current;
-    if (!group || !calls.length) return;
-    calls.forEach((call) => {
-      const now = Date.now();
-      const at = Math.max(now, nextAt.current + CALL_STAGGER_MS);
-      nextAt.current = at;
-      const land = () => {
-        const createdAt = Date.now();
-        setEntries((prev) => [
-          ...prev,
-          {
-            ...call,
-            key: `${createdAt}-${Math.random().toString(36).slice(2, 8)}`,
-            createdAt,
-            groupId: group.id,
-            groupLabel: group.label,
-          },
-        ]);
-      };
-      if (at <= now) {
-        land();
-        return;
-      }
-      const t = setTimeout(() => {
-        timers.current.delete(t);
-        land();
-      }, at - now);
-      timers.current.add(t);
-    });
+  const later = useCallback((land: () => void) => {
+    const now = Date.now();
+    const at = Math.max(now, nextAt.current + CALL_STAGGER_MS);
+    nextAt.current = at;
+    if (at <= now) {
+      land();
+      return;
+    }
+    const t = setTimeout(() => {
+      timers.current.delete(t);
+      land();
+    }, at - now);
+    timers.current.add(t);
   }, []);
 
-  const spend = useCallback(() => {
-    const cents = pendingSpend.current;
-    pendingSpend.current = 0;
-    if (cents) setWallet((w) => ({ ...w, balanceCents: Math.max(0, w.balanceCents - cents) }));
-  }, []);
+  /** A step's tool call, then its Grid calls nested under it, one by one. */
+  const pushSteps = useCallback(
+    (steps: CallStep[]) => {
+      const group = groupRef.current ?? { id: newGroupId(), label: 'Chat' };
+      groupRef.current = group;
+      const base = { groupId: group.id, groupLabel: group.label };
+      for (const step of steps) {
+        const parent = step.tool ? entryKey() : undefined;
+        if (step.tool) {
+          const tool = step.tool;
+          later(() =>
+            setEntries((prev) => [
+              ...prev,
+              { ...base, key: parent!, createdAt: Date.now(), method: 'POST', path: tool.name, status: '', tool },
+            ]),
+          );
+        }
+        for (const call of step.calls) {
+          later(() => setEntries((prev) => [...prev, { ...call, ...base, key: entryKey(), createdAt: Date.now(), parent }]));
+        }
+      }
+    },
+    [later],
+  );
 
   const onEvent = useCallback(
     (event: AgentEvent) => {
-      const session = sessionRef.current;
-      switch (event.type) {
-        case 'connect':
-          setWallet((w) => ({ ...w, connected: true }));
-          break;
-        case 'fund.deposit':
-          pendingDeposit.current = event.amount;
-          break;
-        case 'fund.received': {
-          const cents = pendingDeposit.current;
-          pendingDeposit.current = 0;
-          setWallet((w) => ({ ...w, balanceCents: w.balanceCents + cents }));
-          break;
-        }
-        case 'pay.quote':
-          pendingSpend.current = event.payee.usd;
-          break;
-        case 'agent.quote':
-          pendingSpend.current = event.to.amount;
-          break;
-        case 'pay.execute':
-        case 'agent.execute':
-          if (!session.needsApproval(pendingSpend.current)) spend();
-          break;
-        case 'buy.request':
-          pendingSpend.current = event.purchase.amount;
-          break;
-        case 'buy.checkout':
-        case 'action.approve':
-          spend();
-          break;
-        case 'limits.update':
-          break;
-        default: {
-          const exhaustive: never = event;
-          return exhaustive;
-        }
-      }
-      pushCalls(session.callsFor(event));
+      pushSteps(sessionRef.current.stepsFor(event));
+      setAccount(sessionRef.current.snapshot());
     },
-    [pushCalls, spend],
+    [pushSteps],
   );
 
-  const handleAction = useCallback(
-    (id: ActionId) => {
-      if (activeFlow) return;
-      // Every flow but Connect needs an installed agent: install it silently
-      // (state only, no calls logged), so the playground isn't a linear track.
-      const w = id !== 'connect' && !walletRef.current.connected ? { ...walletRef.current, connected: true } : walletRef.current;
-      if (w !== walletRef.current) setWallet(w);
-      const session = sessionRef.current;
-      groupRef.current = { id: newGroupId(), label: actionLabel(id) };
-      nextAt.current = 0;
-      const ctx = {
-        connector,
-        flow: id,
-        wallet: w,
-        limits: session.limits,
-        needsApproval: session.needsApproval,
-      };
-      setActiveFlow(id);
-      setRun({ nonce: Date.now(), steps: () => scriptedBrain(ctx) });
-    },
-    [activeFlow, connector],
+  const context = useCallback(
+    (): Omit<FlowContext, 'variant'> => ({
+      account: () => sessionRef.current.snapshot(),
+      needsApproval: (usd) => sessionRef.current.needsApproval(usd),
+    }),
+    [],
   );
 
-  const onSettled = useCallback(() => {
-    setActiveFlow((id) => {
-      if (id) setCompleted((c) => (c[id] ? c : { ...c, [id]: true }));
-      return null;
-    });
+  const onRun = useCallback((flow: ActionId) => {
+    groupRef.current = { id: newGroupId(), label: actionLabel(flow) };
+    nextAt.current = 0;
   }, []);
 
-  /** Back to a clean slate for an agent: a new session, its thread from the top, no calls. */
-  const restart = useCallback(
-    (id: ConnectorId, keepLog: boolean) => {
-      clearTimers();
-      sessionRef.current = createAgentSession(agentNameFor(id));
-      groupRef.current = null;
-      pendingSpend.current = 0;
-      pendingDeposit.current = 0;
-      nextAt.current = 0;
-      setActiveFlow(null);
-      setRun(undefined);
-      setCompleted(initialCompleted);
-      setWallet((w) => (keepLog ? { ...w, connected: false } : initialWallet));
-      if (!keepLog) setEntries([]);
-      setChatKey((k) => k + 1);
-    },
-    [clearTimers],
+  const onCompleted = useCallback((flow: ActionId) => {
+    setRuns((r) => ({ ...r, [flow]: r[flow] + 1 }));
+  }, []);
+
+  /** Free text, until the model is wired: the agent points at the flows. */
+  const reply = useCallback(
+    (): Promise<FreeTextReply> => new Promise((resolve) => setTimeout(() => resolve({ said: { key: 'fallback' } }), 900)),
+    [],
   );
 
-  /** Another agent app: a new agent to connect, on the same customer's wallet. The log stays. */
-  const selectConnector = useCallback(
-    (id: ConnectorId) => {
-      if (activeFlow || id === connector) return;
-      setConnector(id);
-      restart(id, true);
+  /** A tile: set up what the flow needs (silently), then put its line in the composer. */
+  const handleAction = useCallback(
+    (id: ActionId) => {
+      const session = sessionRef.current;
+      if (NEEDS_CONNECTION[id] && !session.snapshot().connected) {
+        session.assumeConnected();
+        setAccount(session.snapshot());
+      }
+      setEntry({ nonce: Date.now(), flow: id, variant: runs[id] });
     },
-    [activeFlow, connector, restart],
+    [runs],
   );
 
-  const reset = useCallback(() => restart(connector, false), [connector, restart]);
+  /** Another agent app on the same account: only the face changes. */
+  const selectConnector = useCallback((id: ConnectorId) => setConnector(id), []);
+
+  const reset = useCallback(() => {
+    clearTimers();
+    sessionRef.current = createAgentSession(() => voiceFor(connectorRef.current).name);
+    groupRef.current = null;
+    nextAt.current = 0;
+    setAccount(sessionRef.current.snapshot());
+    setEntries([]);
+    setEntry(undefined);
+    setActiveFlow(null);
+    setRuns(NO_RUNS());
+    setChatKey((k) => k + 1);
+  }, [clearTimers]);
 
   return {
     connector,
     selectConnector,
-    activeFlow,
-    running: activeFlow !== null,
-    wallet,
-    completed,
+    account,
     entries,
-    run,
+    entry,
+    activeFlow,
+    setActiveFlow,
     chatKey,
     handleAction,
     onEvent,
-    onSettled,
+    onRun,
+    onCompleted,
+    context,
+    reply,
     reset,
+    dirty: entries.length > 0 || account.connected,
   };
 }

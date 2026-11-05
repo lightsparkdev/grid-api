@@ -45,6 +45,21 @@ export function NoteCard({ note, className }: { note: AgentNote; className?: str
           {l}
         </span>
       ))}
+      {note.rows && (
+        <div className={styles.noteRows}>
+          {note.rows.map((r, i) => (
+            <div key={`${r.title}-${i}`} className={styles.noteRow}>
+              <span className={styles.noteRowText}>
+                <span>{r.title}</span>
+                <small>{r.detail}</small>
+              </span>
+              <span className={styles.noteRowAmount} data-incoming={r.incoming || undefined}>
+                {r.amount}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -53,18 +68,28 @@ export function NoteCard({ note, className }: { note: AgentNote; className?: str
 export function ChipRow({
   chips,
   picked,
+  expired,
   onPick,
   className,
 }: {
   chips: Chip[];
   picked: number | null;
-  onPick: () => void;
+  expired?: boolean;
+  onPick: (i: number) => void;
   className?: string;
 }) {
+  const settled = picked !== null || expired;
   return (
-    <div className={`${styles.chips} ${className ?? ''}`} data-picked={picked !== null || undefined}>
+    <div className={`${styles.chips} ${className ?? ''}`} data-picked={settled || undefined}>
       {chips.map((c, i) => (
-        <button key={c.label} type="button" className={styles.chip} data-picked={picked === i || undefined} onClick={onPick}>
+        <button
+          key={c.label}
+          type="button"
+          className={styles.chip}
+          data-picked={picked === i || undefined}
+          disabled={settled}
+          onClick={() => onPick(i)}
+        >
           {c.flag ? <Flag code={c.flag} size={20} /> : c.icon ? <img src={c.icon} alt="" width={20} height={20} /> : null}
           {c.label}
         </button>
@@ -74,18 +99,31 @@ export function ChipRow({
 }
 
 /** The plain approval card: what, how much, with what, and Approve. */
+/** Labels and flags for an ask's two buttons in each state. */
+export function askButtons(ask: AgentAsk, state: AskState) {
+  const settled = state === 'done' || state === 'denied' || state === 'expired';
+  return {
+    settled,
+    allowLabel: state === 'done' ? (ask.allowed ?? 'Approved') : (ask.allow ?? 'Approve'),
+    denyLabel: state === 'denied' ? (ask.denied ?? 'Declined') : (ask.deny ?? 'Not now'),
+    pressing: state === 'pressing' || state === 'authing',
+  };
+}
+
 export function AskCard({
   ask,
   state,
-  onAnswer,
+  onAllow,
+  onDeny,
   className,
 }: {
   ask: AgentAsk;
   state: AskState;
-  onAnswer: () => void;
+  onAllow: () => void;
+  onDeny: () => void;
   className?: string;
 }) {
-  const done = state === 'done';
+  const b = askButtons(ask, state);
   return (
     <div className={`${styles.ask} ${className ?? ''}`}>
       <div className={styles.askTop}>
@@ -125,18 +163,25 @@ export function AskCard({
         </div>
       )}
       {ask.method && <span className={styles.askMethod}>{ask.method}</span>}
-      <div className={styles.askActions}>
-        <button type="button" className={styles.askDeny} disabled={done}>
-          {ask.deny ?? 'Not now'}
+      <div className={styles.askActions} data-state={state}>
+        <button
+          type="button"
+          className={styles.askDeny}
+          data-chosen={state === 'denied' || undefined}
+          disabled={b.settled || b.pressing}
+          onClick={onDeny}
+        >
+          <TextMorph {...MORPH}>{b.denyLabel}</TextMorph>
         </button>
         <button
           type="button"
           className={styles.askAllow}
-          data-pressing={state === 'pressing' || state === 'authing' || undefined}
-          data-done={done || undefined}
-          onClick={onAnswer}
+          data-pressing={b.pressing || undefined}
+          data-done={state === 'done' || undefined}
+          disabled={b.settled || b.pressing}
+          onClick={onAllow}
         >
-          <TextMorph {...MORPH}>{done ? (ask.allowed ?? 'Approved') : (ask.allow ?? 'Approve')}</TextMorph>
+          <TextMorph {...MORPH}>{b.allowLabel}</TextMorph>
         </button>
       </div>
     </div>

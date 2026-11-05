@@ -9,8 +9,6 @@ import styles from './ConnectorPicker.module.scss';
 
 interface ConnectorPickerProps {
   selected: ConnectorId;
-  /** A flow is playing: the agent can't change under it. */
-  running: boolean;
   onSelect: (id: ConnectorId) => void;
 }
 
@@ -30,22 +28,21 @@ function Logo({ logo }: { logo: ConnectorDef['logo'] }) {
   );
 }
 
-/** Select connector: the agent app the visitor gives an account to (Figma 124:3873). */
-export function ConnectorPicker({ selected, running, onSelect }: ConnectorPickerProps) {
+/** Select connector: the agent app on the phone (Figma 124:3873). Switching
+ *  mid-flow is fine: the conversation carries on in the next app's look. */
+export function ConnectorPicker({ selected, onSelect }: ConnectorPickerProps) {
   return (
     <LayoutGroup>
       <div className={styles.group}>
         {CONNECTORS.map((c) => {
           const isSelected = selected === c.id;
-          const enabled = !running || isSelected;
           return (
             <button
               key={c.id}
               type="button"
               className={clsx(styles.card, isSelected && styles.cardSelected)}
-              disabled={!enabled}
               aria-pressed={isSelected}
-              {...pressable({ onClick: () => enabled && onSelect(c.id), disabled: !enabled })}
+              {...pressable({ onClick: () => onSelect(c.id) })}
             >
               {isSelected ? (
                 <motion.span

@@ -243,11 +243,25 @@
     opacity: 0.45;
     cursor: default;
   }
+
+  &[data-chosen] {
+    opacity: 1;
+  }
+}
+
+// Settled one way: the other button steps back.
+.askActions[data-state='denied'] .askAllow,
+.askActions[data-state='expired'] button {
+  opacity: 0.4;
 }
 
 .askAllow {
   background: var(--part-accent, #000);
   color: var(--part-accent-text, #fff);
+
+  &:disabled {
+    cursor: default;
+  }
 
   &[data-pressing] {
     scale: 0.96;
@@ -258,4 +272,49 @@
     color: var(--part-done-text, #6b6b6b);
     cursor: default;
   }
+}
+
+.noteRows {
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+}
+
+.noteRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+
+  & + & {
+    border-top: 1px solid var(--part-rule, rgba(0, 0, 0, 0.06));
+  }
+}
+
+.noteRowText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 20px;
+
+  small {
+    color: var(--part-muted, #8a8a8d);
+    font-size: 12px;
+    line-height: 16px;
+  }
+}
+
+.noteRowAmount {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+
+  &[data-incoming] {
+    color: var(--part-success, #34c759);
+  }
+}
+
+.chip:disabled {
+  cursor: default;
 }

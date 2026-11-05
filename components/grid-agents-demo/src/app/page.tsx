@@ -120,7 +120,7 @@ export default function Page() {
           connector={logic.connector}
           onConnectorSelect={logic.selectConnector}
           activeFlow={logic.activeFlow}
-          dirty={logic.entries.length > 0 || logic.wallet.connected}
+          dirty={logic.dirty}
           onAction={onConfigureAction}
           onReset={logic.reset}
         />
@@ -130,9 +130,13 @@ export default function Page() {
           <AppPanel
             chatKey={logic.chatKey}
             connector={logic.connector}
-            run={logic.run}
+            entry={logic.entry}
+            context={logic.context}
             onEvent={logic.onEvent}
-            onSettled={logic.onSettled}
+            onActiveFlow={logic.setActiveFlow}
+            onRun={logic.onRun}
+            onCompleted={logic.onCompleted}
+            reply={logic.reply}
           />
         </div>
         <ColumnResizeHandle onMouseDown={onResizeStart} />

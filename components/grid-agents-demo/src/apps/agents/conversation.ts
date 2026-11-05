@@ -1,5 +1,14 @@
 import type { AgentEvent } from '@/data/agentEvents';
 
+/* Two shapes of the same conversation. The brain stores what was meant (a
+   line's key and its values); each app's voice renders it into what that app
+   would say. Switching apps re-renders the same thread in the new voice. */
+
+/** Values a line, ask or note is written with. */
+export type Params = Record<string, string | number>;
+
+/* ── Rendered: what a skin draws ─────────────────────────────────────── */
+
 /** A quick-reply chip the agent offers. */
 export interface Chip {
   label: string;
@@ -38,11 +47,12 @@ export interface AgentAsk {
   allow?: string;
   allowed?: string;
   deny?: string;
+  denied?: string;
   /** The merchant whose terms the person accepts by allowing (Meta Pay's footnote). */
   legal?: string;
 }
 
-/** An info card in the thread: a receipt, an address, a limits summary. */
+/** An info card in the thread: a receipt, an address, a summary, a list. */
 export interface AgentNote {
   title: string;
   lines: string[];
@@ -50,35 +60,47 @@ export interface AgentNote {
   done?: boolean;
   /** A value to show in mono, such as an address. */
   code?: string;
+  /** A list of rows (History): title, detail, and a signed amount. */
+  rows?: { title: string; detail: string; amount: string; incoming: boolean }[];
 }
 
-/**
- * One beat of an agent conversation. `me` is typed on the keyboard unless
- * `quick` (a chip's reply lands as a message).
- */
-export type Step =
-  | { me: string; quick?: boolean }
-  | { them: string; sender?: string; bullets?: string[] }
-  /** `faceId`: the approval clears Face ID in the island before it lands. */
-  | { ask: AgentAsk; faceId?: boolean }
-  | { card: AgentNote; sender?: string; moment?: boolean }
-  | { chips: Chip[]; pick: number }
-  | { tag: string }
-  | { stamp: string }
-  | { pause: number };
-
-/** A step, or a Grid call the conversation makes happen at that point. */
-export type BrainStep = Step | { emit: AgentEvent };
-
-export type Episode = Step[];
-
-export type AskState = 'open' | 'pressing' | 'authing' | 'done';
+/** open → the visitor taps; pressing/authing → Face ID; done or denied; expired when a new flow replaced it. */
+export type AskState = 'open' | 'pressing' | 'authing' | 'done' | 'denied' | 'expired';
 
 export type Message =
   | { id: number; kind: 'me'; text: string }
   | { id: number; kind: 'them'; text: string; sender?: string; bullets?: string[]; typing: boolean }
   | { id: number; kind: 'ask'; ask: AgentAsk; state: AskState }
   | { id: number; kind: 'card'; card: AgentNote; sender?: string }
-  | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null }
+  | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
   | { id: number; kind: 'tag'; text: string }
   | { id: number; kind: 'stamp'; text: string };
+
+/* ── Stored: what the brain keeps ────────────────────────────────────── */
+
+/** Something said, by key (rendered in the current app's voice) or verbatim (the model's replies). */
+export type Said = { key: string; params?: Params } | { text: string };
+
+export type StoredMessage =
+  | { id: number; kind: 'me'; text: string }
+  | { id: number; kind: 'them'; said: Said; sender?: string; typing: boolean }
+  | { id: number; kind: 'ask'; key: string; params?: Params; state: AskState }
+  | { id: number; kind: 'card'; key: string; params?: Params }
+  | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
+  | { id: number; kind: 'stamp'; text: string };
+
+/* ── Flows: what a conversation does ─────────────────────────────────── */
+
+/**
+ * One beat of a flow. Most play on their own; an ask or chips wait for the
+ * visitor. `when` builds its beats when it's reached, so they read the
+ * account as it is then.
+ */
+export type Beat =
+  | { say: string; params?: Params; sender?: string }
+  | { card: string; params?: Params }
+  | { ask: string; params?: Params; faceId?: boolean; allow: Beat[]; deny: Beat[] }
+  | { chips: Chip[]; reply?: boolean; then: (picked: number) => Beat[] }
+  | { emit: AgentEvent }
+  | { pause: number }
+  | { when: () => Beat[] };

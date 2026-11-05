@@ -1,6 +1,6 @@
 import { ACTIONS, type ActionId } from './actions';
 
-/** The Figma's flow glyphs: colored strokes that read on both themes. */
+/** The Figma's flow glyphs (and four drawn to match): colored strokes that read on both themes. */
 const FLOW_ICON_SRC: Record<ActionId, string> = {
   connect: '/assets/flows/connect.svg',
   fund: '/assets/flows/fund.svg',
@@ -8,9 +8,13 @@ const FLOW_ICON_SRC: Record<ActionId, string> = {
   pay: '/assets/flows/pay-someone.svg',
   buy: '/assets/flows/buy-online.svg',
   agent: '/assets/flows/pay-an-agent.svg',
+  getpaid: '/assets/flows/get-paid.svg',
+  cashout: '/assets/flows/cash-out.svg',
+  balance: '/assets/flows/balance.svg',
+  history: '/assets/flows/history.svg',
 };
 
-export type FlowIconCmp = (props: { size?: number }) => JSX.Element;
+type FlowIconCmp = (props: { size?: number }) => JSX.Element;
 
 /** The 20px glyph sits in a 24px slot, as in the Figma. */
 function flowIcon(id: ActionId): FlowIconCmp {
@@ -27,16 +31,11 @@ function flowIcon(id: ActionId): FlowIconCmp {
 }
 
 /** Shared with FlowPicker and the API feed's section dividers. */
-export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
-  connect: flowIcon('connect'),
-  fund: flowIcon('fund'),
-  limits: flowIcon('limits'),
-  pay: flowIcon('pay'),
-  buy: flowIcon('buy'),
-  agent: flowIcon('agent'),
-};
+export const FLOW_ICONS = Object.fromEntries(
+  ACTIONS.map((a) => [a.id, flowIcon(a.id)]),
+) as Record<ActionId, FlowIconCmp>;
 
-export function actionIdForLabel(label: string): ActionId | undefined {
+function actionIdForLabel(label: string): ActionId | undefined {
   return ACTIONS.find((action) => action.label === label)?.id;
 }
 

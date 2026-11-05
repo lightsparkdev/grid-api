@@ -1,5 +1,7 @@
-// Runs every flow on every connector in a real browser and reports what each
-// one did: how long it took, how many API calls and webhooks it logged, and
+// Runs every flow on every connector in a real browser: clicks the tile, sends
+// the line it prefills, then answers each approval (Approve, or Decline with
+// SWEEP_DENY=1) and picks the first chip, until the flow settles. Reports how
+// long each took, how many tool calls, Grid calls and webhooks it logged, and
 // any console errors. Screenshots of each flow's end state land in
 // .tmp-sweep/ (gitignored).
 //
@@ -7,7 +9,8 @@
 //   (theme light|dark, default dark; base default http://localhost:4003;
 //    the dev server must be up)
 //   SWEEP_ENGINE=webkit runs it in WebKit (Safari's engine);
-//   SWEEP_CONNECTORS="Muse,Dots" limits it to those connectors.
+//   SWEEP_CONNECTORS="Muse,Dots" limits it to those connectors;
+//   SWEEP_DENY=1 declines every approval instead.
 
 import { mkdirSync } from 'node:fs';
 import { chromium, webkit } from 'playwright';
@@ -16,6 +19,7 @@ const theme = process.argv[2] ?? 'dark';
 const base = process.argv[3] ?? 'http://localhost:4003';
 const engineName = process.env.SWEEP_ENGINE === 'webkit' ? 'webkit' : 'chromium';
 const engine = engineName === 'webkit' ? webkit : chromium;
+const deny = process.env.SWEEP_DENY === '1';
 const out = new URL('../.tmp-sweep/', import.meta.url).pathname;
 mkdirSync(out, { recursive: true });
 
@@ -23,11 +27,12 @@ const ALL_CONNECTORS = ['Muse', 'Grok Bot', 'Dots', 'Instinct', 'Claude Duet', '
 const CONNECTORS = process.env.SWEEP_CONNECTORS
   ? ALL_CONNECTORS.filter((c) => process.env.SWEEP_CONNECTORS.split(',').includes(c))
   : ALL_CONNECTORS;
-const FLOWS = ['Connect', 'Fund', 'Set limits', 'Pay someone', 'Buy online', 'Pay an agent'];
-const ANSWERS = ['Allow', 'Approve', 'Connect', 'Save'];
+const FLOWS = ['Connect', 'Add funds', 'Set limits', 'Pay someone', 'Buy online', 'Pay an agent', 'Get paid', 'Cash out', 'Balance', 'History'];
+const ALLOW = /^(\s*(Allow|Approve|Connect|Save))+\s*$/;
+const DENY = /^(\s*(Deny|Decline|Not now|Cancel))+\s*$/;
 
 const browser = await engine.launch();
-const page = await browser.newPage({ viewport: { width: 1392, height: 788 }, deviceScaleFactor: 1 });
+const page = await browser.newPage({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 });
 const errors = [];
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 page.on('pageerror', (e) => errors.push(String(e)));
@@ -35,52 +40,59 @@ page.on('pageerror', (e) => errors.push(String(e)));
 await page.goto(`${base}/?embed=true&theme=${theme}&nav=48`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(1500);
 
-const flowTile = (label) => page.locator('aside button', { hasText: new RegExp(`^${label}$`) });
+const tile = (label) => page.locator('aside button', { hasText: new RegExp(`^${label}$`) });
+const input = () => page.locator('[data-screen-body] input').last();
+const activeTile = () => page.locator('aside button[data-active]');
 
 const rows = [];
 for (const connector of CONNECTORS) {
   await page.locator('aside button', { hasText: new RegExp(`^${connector}$`) }).click();
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(700);
   for (const flow of FLOWS) {
     const before = errors.length;
     const t0 = Date.now();
-    await flowTile(flow).click();
+    await tile(flow).click();
+    await page.waitForTimeout(300);
+    await input().press('Enter');
     let answered = 0;
-    // Until the flow's tile is enabled again, answer any open approval.
-    while (Date.now() - t0 < 90_000) {
-      await page.waitForTimeout(400);
-      if (await flowTile(flow).isEnabled()) break;
-      // Only the phone's own buttons: the left panel has a Connect tile too.
-      // TextMorph renders its label twice (shown, and measured), hence the repeat.
-      for (const label of ANSWERS) {
-        const btn = page.locator('[data-screen-body] button', { hasText: new RegExp(`^(\\s*${label})+\\s*$`) }).last();
-        if ((await btn.count()) && (await btn.isVisible()) && (await btn.isEnabled())) {
-          await btn.click({ timeout: 1000 }).catch(() => {});
-          answered += 1;
-          await page.waitForTimeout(600);
-        }
+    while (Date.now() - t0 < 60_000) {
+      await page.waitForTimeout(500);
+      if ((await activeTile().count()) === 0) break;
+      const ask = page.locator('[data-screen-body] button:enabled', { hasText: deny ? DENY : ALLOW }).last();
+      if (await ask.count()) {
+        await ask.click({ timeout: 1000 }).catch(() => {});
+        answered += 1;
+        continue;
+      }
+      const chip = page.locator('[data-screen-body] button:enabled[class*="chip"]').first();
+      if (await chip.count()) {
+        await chip.click({ timeout: 1000 }).catch(() => {});
+        answered += 1;
       }
     }
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
     const calls = await page.evaluate(() => {
-      const panel = document.querySelector('[class*="ApiPanel_panel"]') ?? document.body;
-      const text = panel.innerText;
-      return { webhooks: (text.match(/WEBHOOK/g) ?? []).length, posts: (text.match(/\b(POST|PATCH|GET)\b/g) ?? []).length };
+      const text = document.querySelector('[class*="ApiPanel_panel"]')?.textContent ?? '';
+      return {
+        tools: (text.match(/TOOL/g) ?? []).length,
+        webhooks: (text.match(/WEBHOOK/g) ?? []).length,
+        grid: (text.match(/\b(POST|PATCH|GET)\b/g) ?? []).length,
+      };
     });
-    const file = `${out}${connector.replace(/\s/g, '-').toLowerCase()}-${flow.replace(/\s/g, '-').toLowerCase()}-${theme}-${engineName}.png`;
+    const file = `${out}${connector.replace(/\s/g, '-').toLowerCase()}-${flow.replace(/\s/g, '-').toLowerCase()}-${theme}-${engineName}${deny ? '-deny' : ''}.png`;
     await page.screenshot({ path: file });
-    rows.push({ connector, flow, secs, answered, ...calls, errors: errors.slice(before) });
+    const stuck = Number(secs) >= 60;
+    rows.push({ connector, flow, secs, answered, ...calls, errors: errors.slice(before), stuck });
     console.log(
-      `${connector.padEnd(12)} ${flow.padEnd(13)} ${secs.padStart(5)}s  answered ${answered}  panel: ${calls.posts} req, ${calls.webhooks} webhooks${errors.length > before ? `  ERRORS: ${errors.slice(before).join(' | ')}` : ''}`,
+      `${connector.padEnd(12)} ${flow.padEnd(13)} ${secs.padStart(5)}s  answered ${answered}  panel: ${calls.tools} tools, ${calls.grid} grid, ${calls.webhooks} webhooks${stuck ? '  STUCK' : ''}${errors.length > before ? `  ERRORS: ${errors.slice(before).join(' | ')}` : ''}`,
     );
   }
-  // Reset between connectors so each starts from a clean log.
   const reset = page.locator('aside button', { hasText: /^Reset$/ });
   if (await reset.count()) await reset.click();
   await page.waitForTimeout(800);
 }
 
 await browser.close();
-const failed = rows.filter((r) => r.errors.length || Number(r.secs) >= 90);
+const failed = rows.filter((r) => r.errors.length || r.stuck);
 console.log(failed.length ? `\n${failed.length} flow(s) with problems` : '\nAll flows settled with no console errors');
 process.exit(failed.length ? 1 : 0);

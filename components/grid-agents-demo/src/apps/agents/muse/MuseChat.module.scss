@@ -351,6 +351,15 @@
     opacity: 0.45;
     cursor: default;
   }
+
+  &[data-chosen] {
+    opacity: 1;
+  }
+}
+
+.actions[data-state='denied'] .allow,
+.actions[data-state='expired'] button {
+  opacity: 0.4;
 }
 
 .allow {

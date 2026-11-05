@@ -28,7 +28,6 @@ export function ConfigurePanel({
   onAction,
   onReset,
 }: ConfigurePanelProps) {
-  const running = activeFlow !== null;
   return (
     <aside className={styles.panel}>
       <div className={styles.body}>
@@ -37,7 +36,7 @@ export function ConfigurePanel({
 
           <section className={styles.section}>
             <SectionDivider label="Select connector" />
-            <ConnectorPicker selected={connector} running={running} onSelect={onConnectorSelect} />
+            <ConnectorPicker selected={connector} onSelect={onConnectorSelect} />
           </section>
 
           <section className={styles.section}>
@@ -45,12 +44,7 @@ export function ConfigurePanel({
               label="Explore flows"
               action={
                 dirty ? (
-                  <button
-                    type="button"
-                    className={styles.resetBtn}
-                    disabled={running}
-                    {...pressable({ onClick: onReset, disabled: running })}
-                  >
+                  <button type="button" className={styles.resetBtn} {...pressable({ onClick: onReset })}>
                     <IconArrowRotateCounterClockwise size={12} aria-hidden />
                     Reset
                   </button>

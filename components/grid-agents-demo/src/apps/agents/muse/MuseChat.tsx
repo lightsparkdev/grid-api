@@ -1,9 +1,9 @@
 import { TextMorph } from 'torph/react';
 import { SfSymbol } from '@/apps/shared/icons';
-import { ChatFrame, Draft, Said } from '../ChatFrame';
+import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
 import type { AskRow, Message } from '../conversation';
-import { ChipRow, MORPH, NoteCard, RowGlyph } from '../parts';
+import { askButtons, ChipRow, MORPH, NoteCard, RowGlyph } from '../parts';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
 
@@ -29,9 +29,17 @@ function RowLead({ row }: { row: AskRow }) {
 }
 
 /** Meta Pay's approval sheet: what the agent wants, the details, the total, Deny or Allow. */
-function ApprovalCard({ m, onAnswer }: { m: Extract<Message, { kind: 'ask' }>; onAnswer: () => void }) {
+function ApprovalCard({
+  m,
+  onAllow,
+  onDeny,
+}: {
+  m: Extract<Message, { kind: 'ask' }>;
+  onAllow: () => void;
+  onDeny: () => void;
+}) {
   const { ask, state } = m;
-  const done = state === 'done';
+  const b = askButtons(ask, state);
   return (
     <div className={styles.card}>
       <div className={styles.cardTitle}>
@@ -100,18 +108,25 @@ function ApprovalCard({ m, onAnswer }: { m: Extract<Message, { kind: 'ask' }>; o
         </div>
       )}
       {!ask.rows && ask.method && <p className={styles.method}>{ask.method}</p>}
-      <div className={styles.actions}>
-        <button type="button" className={styles.deny} disabled={done}>
-          {ask.deny ?? 'Deny'}
+      <div className={styles.actions} data-state={state}>
+        <button
+          type="button"
+          className={styles.deny}
+          data-chosen={state === 'denied' || undefined}
+          disabled={b.settled || b.pressing}
+          onClick={onDeny}
+        >
+          <TextMorph {...MORPH}>{b.denyLabel}</TextMorph>
         </button>
         <button
           type="button"
           className={styles.allow}
-          data-pressing={state === 'pressing' || state === 'authing' || undefined}
-          data-done={done || undefined}
-          onClick={onAnswer}
+          data-pressing={b.pressing || undefined}
+          data-done={state === 'done' || undefined}
+          disabled={b.settled || b.pressing}
+          onClick={onAllow}
         >
-          <TextMorph {...MORPH}>{done ? (ask.allowed ?? 'Allowed') : (ask.allow ?? 'Allow')}</TextMorph>
+          <TextMorph {...MORPH}>{b.allowLabel}</TextMorph>
         </button>
       </div>
       {ask.legal && (
@@ -132,7 +147,7 @@ const TABS = [
   ['tab-library', 326, 811, 22, 21.7],
 ] as const;
 
-export function MuseChat({ chat, dark }: AgentChatProps) {
+export function MuseChat({ chat }: AgentChatProps) {
   const render = (m: Message) => {
     switch (m.kind) {
       case 'them':
@@ -147,11 +162,11 @@ export function MuseChat({ chat, dark }: AgentChatProps) {
       case 'me':
         return <span className={styles.me}>{m.text}</span>;
       case 'ask':
-        return <ApprovalCard m={m} onAnswer={chat.answer} />;
+        return <ApprovalCard m={m} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':
         return <NoteCard note={m.card} />;
       case 'chips':
-        return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.answer} />;
+        return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.pick} expired={m.expired} />;
       case 'tag':
       case 'stamp':
         return <span className={styles.stamp}>{m.text}</span>;
@@ -167,9 +182,6 @@ export function MuseChat({ chat, dark }: AgentChatProps) {
       className={styles.screen}
       messages={chat.messages}
       render={render}
-      draft={chat.draft}
-      keys={chat.keys}
-      dark={dark}
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={10}
@@ -201,13 +213,13 @@ export function MuseChat({ chat, dark }: AgentChatProps) {
             <span className={styles.slot}>
               <span className={styles.icon} style={{ maskImage: `url(${A}/plus.svg)` }} />
             </span>
-            <Draft draft={chat.draft} placeholder="Message" className={styles.field} />
+            <ComposerField chat={chat} placeholder="Message" className={styles.field} />
             <span className={styles.slot}>
               <span className={styles.icon} style={{ maskImage: `url(${A}/mic.svg)` }} />
             </span>
             <span className={styles.slot}>
-              {chat.draft ? (
-                <span className={styles.send} data-pressing={chat.sending || undefined}>
+              {chat.composer ? (
+                <span className={styles.send} role="button" onClick={chat.send} data-ready={chat.canSend || undefined}>
                   <SfSymbol name="arrow.up" size={15} />
                 </span>
               ) : (

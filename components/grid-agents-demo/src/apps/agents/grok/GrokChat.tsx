@@ -1,9 +1,9 @@
 import { TextMorph } from 'torph/react';
 import { Flag } from '@/apps/shared/Flag';
-import { ChatFrame, Draft, Said } from '../ChatFrame';
+import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
 import type { Message } from '../conversation';
-import { AskCard, ChipRow, MORPH, NoteCard } from '../parts';
+import { AskCard, askButtons, ChipRow, MORPH, NoteCard } from '../parts';
 import type { AgentChatProps } from '../types';
 import styles from './GrokChat.module.scss';
 
@@ -13,9 +13,17 @@ const A = '/assets/agents/grok';
 const mask = (src: string) => ({ maskImage: `url(${src})` });
 
 /** Grok's payout row: who, what, and Approve, with its promise under it. */
-function PayoutCard({ m, onAnswer }: { m: Extract<Message, { kind: 'ask' }>; onAnswer: () => void }) {
+function PayoutCard({
+  m,
+  onAllow,
+  onDeny,
+}: {
+  m: Extract<Message, { kind: 'ask' }>;
+  onAllow: () => void;
+  onDeny: () => void;
+}) {
   const { ask, state } = m;
-  const done = state === 'done';
+  const b = askButtons(ask, state);
   const name = ask.who?.name ?? ask.title;
   const detail = ask.who?.detail ?? [ask.amount, ask.method].filter(Boolean).join(' · ');
   return (
@@ -34,19 +42,28 @@ function PayoutCard({ m, onAnswer }: { m: Extract<Message, { kind: 'ask' }>; onA
         <button
           type="button"
           className={styles.approve}
-          data-pressing={state === 'pressing' || state === 'authing' || undefined}
-          data-done={done || undefined}
-          onClick={onAnswer}
+          data-pressing={b.pressing || undefined}
+          data-done={state === 'done' || undefined}
+          data-muted={state === 'denied' || state === 'expired' || undefined}
+          disabled={b.settled || b.pressing}
+          onClick={onAllow}
         >
-          <TextMorph {...MORPH}>{done ? (ask.allowed ?? 'Paid') : (ask.allow ?? 'Approve')}</TextMorph>
+          <TextMorph {...MORPH}>{state === 'denied' ? b.denyLabel : b.allowLabel}</TextMorph>
         </button>
       </div>
-      <p className={styles.caption}>Grok always asks before moving money over your limit. Paid from Grok’s balance.</p>
+      <p className={styles.caption}>
+        Grok always asks before moving money over your limit.{' '}
+        {!b.settled && !b.pressing && (
+          <button type="button" className={styles.decline} onClick={onDeny}>
+            {ask.deny ?? 'Decline'}
+          </button>
+        )}
+      </p>
     </div>
   );
 }
 
-export function GrokChat({ chat, dark }: AgentChatProps) {
+export function GrokChat({ chat }: AgentChatProps) {
   const render = (m: Message) => {
     switch (m.kind) {
       case 'them':
@@ -69,14 +86,14 @@ export function GrokChat({ chat, dark }: AgentChatProps) {
       case 'ask':
         // The payout row is for moving money; an ask with details to read (connecting, limits) is a plain approval.
         return m.ask.rows ? (
-          <AskCard ask={m.ask} state={m.state} onAnswer={chat.answer} />
+          <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />
         ) : (
-          <PayoutCard m={m} onAnswer={chat.answer} />
+          <PayoutCard m={m} onAllow={chat.allow} onDeny={chat.deny} />
         );
       case 'card':
         return <NoteCard note={m.card} />;
       case 'chips':
-        return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.answer} />;
+        return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.pick} expired={m.expired} />;
       case 'tag':
       case 'stamp':
         return <span className={styles.stamp}>{m.text}</span>;
@@ -92,9 +109,6 @@ export function GrokChat({ chat, dark }: AgentChatProps) {
       className={styles.screen}
       messages={chat.messages}
       render={render}
-      draft={chat.draft}
-      keys={chat.keys}
-      dark={dark}
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={9}
@@ -123,9 +137,9 @@ export function GrokChat({ chat, dark }: AgentChatProps) {
             <span className={styles.plus}>
               <span className={styles.glyph} style={{ ...mask(`${A}/plus.svg`), width: 14, height: 14 }} />
             </span>
-            <Draft draft={chat.draft} placeholder="Ask Grok" className={styles.field} />
+            <ComposerField chat={chat} placeholder="Ask Grok" className={styles.field} />
             <span className={styles.glyph} style={{ ...mask(`${A}/mic.svg`), width: 14, height: 20, opacity: 0.6 }} />
-            <span className={styles.voice} data-pressing={chat.sending || undefined}>
+            <span className={styles.voice} role="button" onClick={chat.send} data-ready={chat.canSend || undefined}>
               <span className={styles.voiceGlyph} style={{ ...mask(`${A}/waveform.svg`), width: 16, height: 14 }} />
             </span>
           </span>

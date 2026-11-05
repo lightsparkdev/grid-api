@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { SfSymbol } from '@/apps/shared/icons';
-import { ChatFrame, Draft, Said } from '../ChatFrame';
+import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassDisc, GlassPill } from '../glass';
 import type { Message } from '../conversation';
 import { AskCard, ChipRow, NoteCard } from '../parts';
@@ -23,7 +23,7 @@ const OTHER = 'linear-gradient(180deg, #c7c7cc 0%, #8e8e93 100%)';
 
 function senderOf(m: Message | undefined) {
   if (!m) return undefined;
-  if (m.kind === 'them' || m.kind === 'card') return m.sender;
+  if (m.kind === 'them' || m.kind === 'card') return m.sender ?? INSTINCT;
   // Approvals and quick replies come from Instinct itself.
   if (m.kind === 'ask' || m.kind === 'chips') return INSTINCT;
   return undefined;
@@ -44,7 +44,7 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
-export function InstinctChat({ chat, dark }: AgentChatProps) {
+export function InstinctChat({ chat }: AgentChatProps) {
   // A sender's name heads their run of messages; their avatar (and the bubble's tail) ends it.
   const inGroup = (m: Message, i: number, all: Message[], body: ReactNode, tail: boolean) => {
     const sender = senderOf(m) ?? '';
@@ -84,11 +84,11 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           m,
           i,
           all,
-          <AskCard ask={m.ask} state={m.state} onAnswer={chat.answer} className={styles.ask} />,
+          <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} className={styles.ask} />,
           false,
         );
       case 'chips':
-        return inGroup(m, i, all, <ChipRow chips={m.chips} picked={m.picked} onPick={chat.answer} />, false);
+        return inGroup(m, i, all, <ChipRow chips={m.chips} picked={m.picked} onPick={chat.pick} expired={m.expired} />, false);
       case 'me':
         return (
           <span className={styles.me}>
@@ -108,9 +108,6 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
       className={styles.screen}
       messages={chat.messages}
       render={render}
-      draft={chat.draft}
-      keys={chat.keys}
-      dark={dark}
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={3}
@@ -152,9 +149,9 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           </GlassPill>
           <GlassPill radius={20} absolute className={styles.field}>
             <span className={styles.fieldRow}>
-              <Draft draft={chat.draft} placeholder="iMessage" className={styles.fieldText} />
-              {chat.draft ? (
-                <span className={styles.send} data-pressing={chat.sending || undefined}>
+              <ComposerField chat={chat} placeholder="iMessage" className={styles.fieldText} />
+              {chat.composer ? (
+                <span className={styles.send} role="button" onClick={chat.send} data-ready={chat.canSend || undefined}>
                   <SfSymbol name="arrow.up" size={14} />
                 </span>
               ) : (

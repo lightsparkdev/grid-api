@@ -1,7 +1,7 @@
 import { TextMorph } from 'torph/react';
 import { SfSymbol } from '@/apps/shared/icons';
 import { GridLogoMark } from '@/components/GridWordmark';
-import { ChatFrame, Draft, Said } from '../ChatFrame';
+import { ChatFrame, ComposerField, Said } from '../ChatFrame';
 import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
 import { AskCard, ChipRow, MORPH, NoteCard } from '../parts';
@@ -9,7 +9,7 @@ import type { AgentChatProps } from '../types';
 import styles from './YourAppChat.module.scss';
 
 /** A plain chat for the agent a platform builds itself: no brand, just the thread. */
-export function YourAppChat({ chat, dark }: AgentChatProps) {
+export function YourAppChat({ chat }: AgentChatProps) {
   const render = (m: Message) => {
     switch (m.kind) {
       case 'them':
@@ -24,11 +24,11 @@ export function YourAppChat({ chat, dark }: AgentChatProps) {
       case 'me':
         return <span className={styles.me}>{m.text}</span>;
       case 'ask':
-        return <AskCard ask={m.ask} state={m.state} onAnswer={chat.answer} />;
+        return <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':
         return <NoteCard note={m.card} />;
       case 'chips':
-        return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.answer} />;
+        return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.pick} expired={m.expired} />;
       case 'tag':
       case 'stamp':
         return <span className={styles.stamp}>{m.text}</span>;
@@ -44,9 +44,6 @@ export function YourAppChat({ chat, dark }: AgentChatProps) {
       className={styles.screen}
       messages={chat.messages}
       render={render}
-      draft={chat.draft}
-      keys={chat.keys}
-      dark={dark}
       faceId={chat.authing}
       onFaceIdDone={chat.authed}
       gap={8}
@@ -71,8 +68,8 @@ export function YourAppChat({ chat, dark }: AgentChatProps) {
       composer={
         <GlassPill radius={24} className={styles.composer}>
           <span className={styles.composerRow}>
-            <Draft draft={chat.draft} placeholder="Message your agent" className={styles.field} />
-            <span className={styles.send} data-active={chat.draft ? true : undefined} data-pressing={chat.sending || undefined}>
+            <ComposerField chat={chat} placeholder="Message your agent" className={styles.field} />
+            <span className={styles.send} data-active={chat.composer ? true : undefined} role="button" onClick={chat.send} data-ready={chat.canSend || undefined}>
               <SfSymbol name="arrow.up" size={15} />
             </span>
           </span>

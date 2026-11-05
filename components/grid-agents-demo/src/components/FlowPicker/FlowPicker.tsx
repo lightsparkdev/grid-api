@@ -7,29 +7,27 @@ import { pressable } from '@/lib/sounds';
 import styles from './FlowPicker.module.scss';
 
 interface FlowPickerProps {
-  /** The flow playing now: its tile stays lit while the others wait. */
+  /** The flow in the composer or playing: its tile stays lit. */
   activeFlow: ActionId | null;
   onAction: (id: ActionId) => void;
 }
 
-/** Explore flows: two columns, read across, in the Figma's order. Every flow
- *  is always reachable; one that needs an installed agent installs it first. */
+/** Explore flows: two columns, read across. A tile puts its flow's line in the
+ *  composer; picking another mid-flow starts over there, as in the other
+ *  playgrounds. One that needs an installed agent installs it first. */
 export function FlowPicker({ activeFlow, onAction }: FlowPickerProps) {
-  const running = activeFlow !== null;
   return (
     <div className={styles.group}>
       {ACTIONS.map((action) => {
         const Icon = FLOW_ICONS[action.id];
-        const enabled = !running;
         return (
           <button
             key={action.id}
             type="button"
-            className={clsx(styles.option, enabled && styles.optionEnabled)}
+            className={clsx(styles.option, styles.optionEnabled)}
             data-active={activeFlow === action.id || undefined}
-            disabled={!enabled}
             title={action.desc}
-            {...pressable({ onClick: () => enabled && onAction(action.id), disabled: !enabled })}
+            {...pressable({ onClick: () => onAction(action.id) })}
           >
             <span className={styles.optionIcon}>
               <Icon size={24} />

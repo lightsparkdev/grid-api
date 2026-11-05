@@ -394,3 +394,44 @@
   }
 }
 
+
+/* An agent tool call with the Grid calls behind it: the calls hang under the
+   tool's card on a rule, indented, in the order they happened. */
+.toolStack {
+  display: flex;
+  flex-direction: column;
+}
+
+.nestedToggle {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px var(--row-padding);
+  border-top: 0.5px solid var(--border-tertiary);
+  color: var(--text-secondary);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-xs);
+  line-height: var(--font-leading-18);
+  font-feature-settings: 'salt' 1;
+  cursor: pointer;
+
+  @media (hover: hover) {
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
+}
+
+.nested {
+  margin-left: 14px;
+  padding: var(--spacing-md) 0 0 14px;
+  border-left: 1px solid var(--border-primary);
+  overflow: hidden;
+
+  .feedEntry:last-child {
+    padding-bottom: 0;
+  }
+}
