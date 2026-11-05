@@ -83,14 +83,16 @@ properties:
       - 'null'
     format: date-time
     description: >-
-      Expiration time for a `LIGHTNING` invoice. Omitted or null for standing
-      chain deposit addresses, which do not expire.
+      When the deposit must be paid by: the invoice's expiry for `LIGHTNING`,
+      or the quote's for a chain deposit Grid funds through a quote. Omitted or
+      null for standing chain deposit addresses, which do not expire.
     example: '2026-10-09T18:05:00Z'
   paidAfterExpiry:
     type: boolean
     description: >-
-      Whether a payment for this deposit arrived after `expiresAt`. A chain
-      payment that arrives late is not converted: the deposit stays `EXPIRED`
+      Whether a payment for this deposit arrived after `expiresAt`, so only a
+      deposit with an `expiresAt` can have one. A chain payment that arrives
+      after its quote expired is not converted: the deposit stays `EXPIRED`
       and Lightspark is alerted to recover the funds by hand, so the payment
       must not be sent again. Absent or `false` while no late payment is
       known.

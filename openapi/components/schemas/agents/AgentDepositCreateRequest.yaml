@@ -7,7 +7,10 @@ description: >-
   standing deposit address does not expire. A chain request counts the first
   order the address receives from that network in that currency within 24
   hours of the request; while that window is open with nothing paid, a second
-  request for the same account, network and currency is refused.
+  request for the same account, network and currency is refused. Where Grid
+  funds a chain deposit through a quote instead, the address is the quote's
+  and the deposit carries the quote's `expiresAt`; a payment after it is not
+  converted (see `paidAfterExpiry`).
 required:
   - sourceNetwork
   - sourceCurrency
