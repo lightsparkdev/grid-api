@@ -6,7 +6,7 @@ import { IconLimit } from '@central-icons-react/round-outlined-radius-3-stroke-1
 import { IconPaperPlaneTopRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPaperPlaneTopRight';
 import { IconPlugin1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlugin1';
 import { IconPlusLarge } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusLarge';
-import { IconRobot } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRobot';
+import { IconAiBotHead } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconAiBotHead';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { ACTIONS, type ActionId } from './actions';
 
@@ -19,7 +19,7 @@ export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
   limits: IconLimit,
   pay: IconPaperPlaneTopRight,
   buy: IconCreditCard1,
-  agent: IconRobot,
+  agent: IconAiBotHead,
   getpaid: IconArrowInbox,
   cashout: IconBank2,
   balance: IconWallet1,
