@@ -8542,6 +8542,8 @@ paths:
     post:
       summary: Create a delegated signing key
       description: |
+        Only `GRID_GENERATED` keys are created through this endpoint. Grid creates `PROVIDER_DELEGATED` keys itself, when the cardholder has delegated the wallet at the provider and a card is funded by that wallet.
+
         Delegate Spark token-transaction signing authority for a card funding source or agent backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested owner and internal account to identify the wallet, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
 
         1. Call `POST /auth/delegated-keys` with no signature headers. Grid generates the delegated keypair and the response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
@@ -8598,10 +8600,10 @@ paths:
                   summary: Active delegated key
                   value:
                     id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+                    keySource: GRID_GENERATED
                     cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                     fundingSourceId: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    publicKey: 02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
                     nickname: Card payments key
                     status: ACTIVE
                     createdAt: '2026-04-08T15:30:01Z'
@@ -8644,7 +8646,7 @@ paths:
                 $ref: '#/components/schemas/Error500'
     get:
       summary: List delegated signing keys
-      description: List delegated signing keys for an Embedded Wallet internal account, a card funding source, or both, including `PENDING` keys (user created but policy leg never completed) and `REVOKED` keys. At least one of `accountId` or `fundingSourceId` must be supplied.
+      description: List delegated signing keys for an Embedded Wallet internal account, a crypto external account that carries `providerWallet`, a card funding source, or a combination of these, including `PENDING` keys (user created but policy leg never completed) and `REVOKED` keys. At least one of `accountId` or `fundingSourceId` must be supplied.
       operationId: listDelegatedKeys
       tags:
         - Embedded Wallet Auth
@@ -8654,7 +8656,7 @@ paths:
         - name: accountId
           in: query
           required: false
-          description: The id of the internal account whose delegated keys to list.
+          description: The id of the internal or external account whose delegated keys to list.
           schema:
             type: string
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
@@ -8738,6 +8740,8 @@ paths:
         Revoke an `ACTIVE` delegated signing key, or an agent's `PENDING` key. Revoking a `PENDING` agent key only discards Grid's key material. An active card using this funding source becomes `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`. Frozen and closed cards retain their status. Grid uses the custodied delegated key to authorize deleting its own signer identity. Deleting the identity also removes its API key, after which the delegated key can no longer sign. The response is `204` when revocation completes.
 
         The underlying signing policies are left in place. Their consensus references the now-deleted signer identity, so they can never authorize anything, and deleting them is unnecessary for correctness or security.
+
+        Revoking a `PROVIDER_DELEGATED` key revokes the wallet's whole delegation: every key on that wallet becomes `REVOKED`, and Grid deletes its share and asks the provider to stop reporting the wallet as delegated. No cardholder approval is needed. To stop a single card, freeze or close it instead. When the cardholder delegates the wallet again, Grid creates new keys for the wallet's open cards.
       operationId: revokeDelegatedKey
       tags:
         - Embedded Wallet Auth
@@ -34919,6 +34923,17 @@ components:
           maxLength: 66
           description: 'Client-generated P-256 public key as a compressed SEC1 point in lowercase hex: 66 characters, a `02` or `03` prefix followed by the 32-byte X coordinate. The client keeps the matching private key as the new session signing key. An uppercase or uncompressed key is rejected with `400 INVALID_INPUT`.'
           example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
+    DelegatedKeySource:
+      type: string
+      enum:
+        - GRID_GENERATED
+        - PROVIDER_DELEGATED
+      description: |-
+        Where a delegated key's signing material comes from.
+
+        - `GRID_GENERATED`: A P-256 keypair generated and custodied by Grid for an Embedded Wallet internal account.
+        - `PROVIDER_DELEGATED`: A delegated share of the cardholder's provider wallet, delivered to Grid by the provider when the cardholder delegates the wallet.
+      example: GRID_GENERATED
     DelegatedKeyStatus:
       type: string
       enum:
@@ -34928,27 +34943,29 @@ components:
       description: |-
         Status of a delegated signing key.
 
-        - `PENDING`: The delegated user exists but the policy-creation leg never completed. The key cannot sign.
-        - `ACTIVE`: The policy is granted and the key may stamp quote executions.
-        - `REVOKED`: The delegated user has been deleted and the key can no longer sign.
+        - `PENDING`: The policy-creation leg never completed, so the key cannot sign yet. Only `GRID_GENERATED` keys are ever `PENDING`.
+        - `ACTIVE`: Grid holds material that can sign for the card funding source or agent.
+        - `REVOKED`: The key was revoked through Grid, or the delegation was revoked at the provider. It can no longer sign, and this is terminal.
       example: ACTIVE
     DelegatedKey:
       title: Delegated Key
       type: object
       required:
         - id
+        - keySource
         - accountId
-        - publicKey
         - nickname
         - status
         - createdAt
         - updatedAt
-      description: A delegated signing key for either a card funding source or an agent, backed by an Embedded Wallet internal account. Card keys include `cardId` and `fundingSourceId`; agent keys include `agentId`. Returned from `POST /auth/delegated-keys` (on activation), `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`. The keypair is generated and custodied by Grid; the private key is never returned. While `ACTIVE`, Grid may use the key to authorize Spark token-transaction signing for the selected card funding source or agent in place of a session keypair. `publicKey` is informational metadata identifying the credential.
+      description: A delegated signing key for either a card funding source or an agent. Card keys include `cardId` and `fundingSourceId`; agent keys include `agentId`. Returned from `POST /auth/delegated-keys` (on activation), `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`. `keySource` says where the signing material comes from. For a `GRID_GENERATED` key, backed by an Embedded Wallet internal account, Grid generates and custodies the keypair and never returns the private key. While `ACTIVE`, Grid may use it to authorize Spark token-transaction signing for the selected card funding source or agent in place of a session keypair. A `PROVIDER_DELEGATED` key is backed by a crypto external account that carries `providerWallet`. Grid creates it when the cardholder has delegated the wallet at the provider and the card is funded by that wallet, and while `ACTIVE` uses the delegated share to sign the card's transfers.
       properties:
         id:
           type: string
           description: Grid-issued `DelegatedKey:<uuid>` identifier.
           example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+        keySource:
+          $ref: '#/components/schemas/DelegatedKeySource'
         cardId:
           type: string
           description: The card this key is delegated for. Present only for card keys.
@@ -34963,12 +34980,8 @@ components:
           example: Agent:019542f5-b3e7-1d02-0000-000000000042
         accountId:
           type: string
-          description: The Embedded Wallet internal account this key is delegated for, derived from the card funding source or the agent's customer.
+          description: The account this key is delegated for, derived from the card funding source or the agent's customer. An Embedded Wallet internal account for a `GRID_GENERATED` key, or a crypto external account for a `PROVIDER_DELEGATED` key.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-        publicKey:
-          type: string
-          description: Compressed P-256 public key (hex) of the delegated API keypair.
-          example: 02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
         nickname:
           type: string
           description: Human-readable label for the delegated key.

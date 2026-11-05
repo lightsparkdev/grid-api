@@ -160,10 +160,10 @@ The client stamps the new `payloadToSign`. Retry once more with the new
 ```json
 {
   "id": "DelegatedKey:019542f5-b3e7-1d02-0000-000000000021",
+  "keySource": "GRID_GENERATED",
   "cardId": "Card:019542f5-b3e7-1d02-0000-000000000010",
   "fundingSourceId": "CardFundingSource:019542f5-b3e7-1d02-0000-000000000011",
   "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
-  "publicKey": "02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
   "nickname": "Card payments key",
   "status": "ACTIVE",
   "createdAt": "2026-05-08T14:12:01Z",
@@ -171,8 +171,7 @@ The client stamps the new `payloadToSign`. Retry once more with the new
 }
 ```
 
-The private key never leaves Grid. `publicKey` identifies the credential and
-is not needed for anything else.
+The private key never leaves Grid.
 
 ### Rules
 

@@ -7,11 +7,12 @@ description: >-
   Status of a delegated signing key.
 
 
-  - `PENDING`: The delegated user exists but the policy-creation leg never
-  completed. The key cannot sign.
+  - `PENDING`: The policy-creation leg never completed, so the key cannot sign
+  yet. Only `GRID_GENERATED` keys are ever `PENDING`.
 
-  - `ACTIVE`: The policy is granted and the key may stamp quote executions.
+  - `ACTIVE`: Grid holds material that can sign for the card funding source or
+  agent.
 
-  - `REVOKED`: The delegated user has been deleted and the key can no
-  longer sign.
+  - `REVOKED`: The key was revoked through Grid, or the delegation was revoked
+  at the provider. It can no longer sign, and this is terminal.
 example: ACTIVE
