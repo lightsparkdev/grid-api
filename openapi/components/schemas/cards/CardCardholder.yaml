@@ -1,0 +1,53 @@
+type: object
+description: >-
+  The person a business's card is issued to. The card spends from the
+  business's account, with this person as its authorized user, so their name
+  and contact details are the ones on the card. Each person keeps one
+  authorized user per business: a later card with the same `reference` is
+  issued to the same person, with the details sent on that request.
+required:
+  - reference
+  - firstName
+  - lastName
+  - email
+  - phoneNumber
+  - address
+properties:
+  reference:
+    type: string
+    minLength: 1
+    maxLength: 255
+    description: >-
+      Your own identifier for the person within the business, such as an
+      employee or member id. Grid never interprets it. Cards with the same
+      `reference` are issued to the same person, and an agent whose
+      `actingFor` has the same value issues its cards to that person too.
+    example: member_8f2c1a
+  firstName:
+    type: string
+    description: The person's first name, as printed on the card.
+    minLength: 1
+    maxLength: 255
+    example: Jane
+  lastName:
+    type: string
+    description: The person's last name, as printed on the card.
+    minLength: 1
+    maxLength: 255
+    example: Doe
+  email:
+    type: string
+    description: The person's email address.
+    format: email
+    maxLength: 255
+    example: jane@example.com
+  phoneNumber:
+    type: string
+    description: Phone number in E.164 format.
+    pattern: ^\+[1-9]\d{1,14}$
+    example: '+14155550123'
+  address:
+    $ref: ../common/Address.yaml
+    description: >-
+      The person's residential address. Must be a complete United States
+      address with `city` and `state`.

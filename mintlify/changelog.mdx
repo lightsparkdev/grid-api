@@ -8,6 +8,19 @@ mode: "wide"
 Follow along with the latest additions and improvements to the Grid API. For upcoming
 changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
+<Update label="November 2026">
+
+## Issue a business's card to a named person
+
+`POST /cards` takes an optional `cardholder` for a `BUSINESS` customer: the person the
+card is issued to, with their name, email, phone number and US residential address. The
+card spends from the business's account and carries that person's name and contact
+details, so one business can hold cards for many people. Cards with the same
+`cardholder.reference` go to the same person. Omit `cardholder` to issue the card to the
+business itself, as before.
+
+</Update>
+
 <Update label="October 2026">
 
 ## Sandbox suffix for a paused corridor
