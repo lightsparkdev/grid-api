@@ -2,10 +2,8 @@ type: object
 description: >-
   Update request for `PATCH /cards/{id}`. At least one of `status`,
   `fundingSource`, `maxNetworkRiskScore`, `allowedMccs`, `blockedMccs`,
-  `defaultMccBlocksLifted`, or `threeDSecurePassword` must be supplied;
-  `allowedMccs` and `blockedMccs` count on a card issued for an agent, and on
-  any other card once merchant category controls are enabled for your
-  platform; `defaultMccBlocksLifted` counts only on a card issued for an
+  `defaultMccBlocksLifted`, or `threeDSecurePassword` must be supplied.
+  `defaultMccBlocksLifted` counts only on a card issued for an
   agent. Fields that do not count are ignored. Supplying `status` also requires
   `substatus` and `reason`, so every card state change carries why it
   happened. `status`
@@ -71,9 +69,7 @@ properties:
       - type: 'null'
     description: >-
       Replacement list of merchant category codes the card may spend at.
-      Applies to a card issued for an agent, and to any other card once
-      merchant category controls are enabled for your platform; until then
-      it is ignored on a card without an agent. Supply null to allow every
+      Supply null to allow every
       category not blocked, or omit to leave it unchanged. Rejected with
       `INVALID_INPUT` on a card whose issuer makes authorization decisions.
       Cannot be supplied alongside `status: CLOSED`. Changing or clearing
@@ -89,10 +85,8 @@ properties:
           pattern: ^[0-9]{4}$
       - type: 'null'
     description: >-
-      Replacement list of merchant category codes the card declines. Applies
-      to a card issued for an agent, and to any other card once merchant
-      category controls are enabled for your platform; until then it is
-      ignored on a card without an agent. Supply null to clear it, or omit to
+      Replacement list of merchant category codes the card declines.
+      Supply null to clear it, or omit to
       leave it unchanged. On a card issued for an agent, Grid's default agent
       blocks still apply on top of this list; lift them with
       `defaultMccBlocksLifted`. Rejected with `INVALID_INPUT` on a card whose
