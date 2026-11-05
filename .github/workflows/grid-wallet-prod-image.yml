@@ -111,17 +111,12 @@ jobs:
 
   deploy:
     needs: build
-    # An ARC runner in tooling-prod, whose image bakes a checksum-pinned argocd
-    # CLI (same as golinks/docket) — no install step, and no Docker daemon
-    # needed here, which is why the build job cannot share this runner. The
-    # scale set is org-scoped (githubConfigUrl is the lightsparkdev org), so
-    # grid-api can target it even though no other job in this repo does yet.
-    runs-on: arc-runner-1
-    # No other job in this repo targets an ARC label, so scheduling here is
-    # unproven. Without a bound, a scale set that never provisions leaves this
-    # job queued until the platform limit rather than failing visibly. The two
-    # argocd calls each carry their own --timeout 300, so this only has to
-    # backstop the scheduling and auth phases.
+    # The runner image bakes a checksum-pinned argocd CLI (same as golinks/docket),
+    # so no install step. It has no Docker daemon, which is why the build job
+    # cannot share this runner.
+    runs-on: [servitor, kube, arm64, cpu-0.5, ram-1, disk-10, "event=${{ github.event_name }}"]
+    # The two argocd calls each carry their own --timeout 300, so this only has
+    # to backstop the scheduling and auth phases.
     timeout-minutes: 20
     steps:
       # Fail fast, with the version on record, if the image ever ships without it.
