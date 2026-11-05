@@ -7,10 +7,13 @@ post:
     amount and within the platform's purchase-card maximum. The new issuer
     limit includes the platform's tax and shipping allowance.
 
-    Returns an ISSUE_PURCHASE_CARD action. Above the approval threshold, or
-    when the original card required approval, it waits for the customer's
-    approval through the ordinary action approval endpoint. Otherwise it is
-    applied at once. Approval rechecks the card, limits and platform gate.
+    Returns an ISSUE_PURCHASE_CARD action whose `purchaseCard.increaseCardId`
+    is the card being increased. It waits for the customer's approval through
+    the ordinary action approval endpoint when the agent's current policy
+    requires approval for the new limit (the funding account's execution
+    mode, else the default execution mode, or the approval threshold), or
+    when the original card required approval. Otherwise it is applied at
+    once. Approval rechecks the card, limits and platform gate.
     The full new issuer limit is checked against the agent's current spending
     limits. Increases do not reserve or count spending; authorization counts
     the actual spend. Replaying the same key returns the same
