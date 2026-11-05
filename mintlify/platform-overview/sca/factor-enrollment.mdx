@@ -75,9 +75,9 @@ Passkey enrollment is a standard WebAuthn registration ceremony. Grid issues the
 options, the customer's device produces the credential, and you hand it back.
 
 <Note>
-A customer may have **only one passkey**. If one is already enrolled, starting
-another returns `409` (`PASSKEY_ALREADY_ENROLLED`) — delete the existing passkey
-first (see below). `GET /sca/factors` therefore lists at most one passkey.
+A customer may have **up to two passkeys**. With two enrolled, starting another
+returns `409` (`PASSKEY_ALREADY_ENROLLED`). Delete one first (see below). To
+replace a passkey, enroll the new one before deleting the old one.
 </Note>
 
 <Steps>
