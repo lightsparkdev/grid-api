@@ -45,7 +45,7 @@ description: |
   | `COMPLIANCE_REJECTED` | The payout partner rejected the recipient on compliance grounds — sanctions, watchlist, or KYC/AML screening |
   | `LIGHTNING_PAYMENT_FAILED` | Deprecated — superseded by `QUOTE_EXECUTION_FAILED`. The Lightning settlement leg failed |
   | `COUNTERPARTY_POST_TX_FAILED` | Deprecated — coarse fallback retained for historical transactions when no granular payout reason is available |
-  | `SWEEP_AMOUNT_OUT_OF_RANGE` | The amount was outside the range the corridor to the rule's destination can carry — below its minimum or above its maximum. The rule's `minimumAmount` and `maximumAmount` give the current band |
+  | `SWEEP_AMOUNT_OUT_OF_RANGE` | The amount was outside the range the corridor to the rule's destination can carry — below its minimum or above its maximum |
   | `SWEEP_QUOTE_FAILED` | Grid could not price the sweep to the rule's destination. A sweep that was priced and then failed on the way to settlement reports `QUOTE_EXECUTION_FAILED`, the same as any other payout |
 
   The `SWEEP_*` reasons apply to a payment that settled into a rule-based
