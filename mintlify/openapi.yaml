@@ -1495,9 +1495,9 @@ paths:
         so SMS is always available as a factor with no extra setup and appears
         among the customer's enrolled factors in `GET /sca/factors`.
 
-        A customer may have **only one passkey**. Starting a passkey enrollment when
-        one is already enrolled returns `409` (`PASSKEY_ALREADY_ENROLLED`) — delete it
-        via `DELETE /sca/factors/{credentialId}` first.
+        A customer may have **up to two passkeys**. Starting a passkey enrollment
+        with two already enrolled returns `409` (`PASSKEY_ALREADY_ENROLLED`). Delete
+        one via `DELETE /sca/factors/{credentialId}` first.
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: startScaFactorEnrollment
@@ -1537,7 +1537,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: SCA is not required for this customer (`CONFLICT`), or a passkey enrollment was requested while one is already enrolled (`PASSKEY_ALREADY_ENROLLED`) — only one passkey per customer is supported.
+          description: SCA is not required for this customer (`CONFLICT`), or a passkey enrollment was requested while the customer already has the most passkeys allowed (`PASSKEY_ALREADY_ENROLLED`). A customer may have up to two passkeys.
           content:
             application/json:
               schema:
@@ -18355,7 +18355,7 @@ components:
             | UMA_ADDRESS_EXISTS | UMA address already exists |
             | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
             | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
-            | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
+            | PASSKEY_ALREADY_ENROLLED | The customer already has the most passkeys allowed (two). Delete one before enrolling another |
             | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
             | BENEFICIARY_NOT_TRUSTED | The external account must be a trusted beneficiary before it can be used here. Trust it first via `POST /customers/external-accounts/{externalAccountId}/trust` (and its `/confirm`), then retry |
             | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
