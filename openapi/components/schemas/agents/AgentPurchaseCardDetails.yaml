@@ -57,9 +57,10 @@ properties:
     type: string
     maxLength: 255
     description: >-
-      What the agent said the card is for, such as the merchant and item.
-      Shown to the customer when they approve the card. Supplied by the agent
-      and not verified by Grid.
+      What the agent said the card is for, such as the merchant and item. On
+      an increase action, the agent's `reason` for the higher amount. Shown
+      to the customer when they approve the card or the increase. Supplied by
+      the agent and not verified by Grid.
     example: Running shoes from example-store.com
   fundingSource:
     type: string

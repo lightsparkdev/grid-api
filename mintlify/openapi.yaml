@@ -32115,7 +32115,7 @@ components:
         description:
           type: string
           maxLength: 255
-          description: What the agent said the card is for, such as the merchant and item. Shown to the customer when they approve the card. Supplied by the agent and not verified by Grid.
+          description: What the agent said the card is for, such as the merchant and item. On an increase action, the agent's `reason` for the higher amount. Shown to the customer when they approve the card or the increase. Supplied by the agent and not verified by Grid.
           example: Running shoes from example-store.com
         fundingSource:
           type: string
@@ -33680,7 +33680,7 @@ components:
           type: string
           minLength: 1
           maxLength: 255
-          description: Why the purchase needs a higher amount, as reported by the app.
+          description: Why the purchase needs a higher amount, as reported by the app. The increase action returns it as `purchaseCard.description`, which is shown to the customer when they approve the increase.
           example: Shipping was added at checkout.
     CardVelocityMetric:
       type: string
