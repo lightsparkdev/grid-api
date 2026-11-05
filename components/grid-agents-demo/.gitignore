@@ -15,3 +15,6 @@ public/assets/symbols/
 # Local share store (dev): cards shared from localhost land here.
 .shares/
 .tmp-sweep/
+
+# Downloaded reference pages (third-party code, kept local)
+refs/
