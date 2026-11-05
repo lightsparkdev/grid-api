@@ -12,7 +12,7 @@ import styles from './YourAppChat.module.scss';
 /** A plain chat for the agent a platform builds itself: no brand, just the thread. */
 export function YourAppChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages);
-  const scan = useCardScan({ wallet: 'your balance', onAllow: chat.allow, onDeny: chat.deny });
+  const scan = useCardScan({ wallet: 'your balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
   const render = (m: Message) => {
     switch (m.kind) {
       case 'them':
@@ -27,7 +27,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
       case 'me':
         return <span className={styles.me}>{m.text}</span>;
       case 'ask':
-        if (m.ask.card) return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.ask)} onDeny={chat.deny} />;
+        if (m.ask.card) return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.id, m.ask)} onDeny={chat.deny} />;
         return <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':
         return m.card.balance ? <BalanceCard balance={m.card.balance} className={styles.accountSkin} /> : <NoteCard note={m.card} />;

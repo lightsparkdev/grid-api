@@ -324,7 +324,7 @@ function ApprovalCard({
 
 export function MuseChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages);
-  const scan = useCardScan({ wallet: 'Muse balance', onAllow: chat.allow, onDeny: chat.deny });
+  const scan = useCardScan({ wallet: 'Muse balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
@@ -341,7 +341,7 @@ export function MuseChat({ chat }: AgentChatProps) {
         return <span className={styles.me}>{m.text}</span>;
       case 'ask':
         if (m.ask.card) {
-          return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.ask)} onDeny={chat.deny} className={styles.vaultAsk} />;
+          return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.id, m.ask)} onDeny={chat.deny} className={styles.vaultAsk} />;
         }
         return <ApprovalCard m={m} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':

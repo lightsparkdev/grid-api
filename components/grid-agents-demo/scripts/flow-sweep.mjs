@@ -91,6 +91,13 @@ for (const connector of CONNECTORS) {
           continue;
         }
       }
+      // Declining from a sheet whose only way out is its back button (the card intro).
+      const back = page.locator('[data-screen-body] [role="dialog"] button[aria-label="Back"]:visible').last();
+      if (deny && (await back.count())) {
+        await back.click({ timeout: 1000 }).catch(() => {});
+        answered += 1;
+        continue;
+      }
       const ask = page.locator('[data-screen-body] button:enabled:visible', { hasText: deny ? DENY : ALLOW }).last();
       if (await ask.count()) {
         await ask.click({ timeout: 1000 }).catch(() => {});

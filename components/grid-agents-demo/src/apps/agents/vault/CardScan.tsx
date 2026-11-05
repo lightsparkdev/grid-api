@@ -4,7 +4,7 @@ import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-st
 import { IconChevronLeft } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronLeft';
 import { IconGroup1 } from '@central-icons-react/round-filled-radius-2-stroke-2/IconGroup1';
 import { SfSymbol } from '@/apps/shared/icons';
-import type { AgentAsk, AskState } from '../conversation';
+import type { AgentAsk, AskState, Message } from '../conversation';
 import { GlassPill } from '../glass';
 import { askButtons } from '../parts';
 import { AppSheet } from '../sheet';
@@ -160,9 +160,24 @@ function Reading({ onCancel, onManual }: { onCancel: () => void; onManual: () =>
 }
 
 /** A skin's card flow: `open(ask)` from its card ask, and the layers to render in its screen. */
-export function useCardScan({ wallet, onAllow, onDeny }: { wallet: string; onAllow: () => void; onDeny: () => void }) {
-  const [ask, setAsk] = useState<AgentAsk | null>(null);
+export function useCardScan({
+  wallet,
+  messages,
+  onAllow,
+  onDeny,
+}: {
+  wallet: string;
+  messages: Message[];
+  onAllow: () => void;
+  onDeny: () => void;
+}) {
+  const [ask, setAsk] = useState<{ id: number; ask: AgentAsk } | null>(null);
   const [stage, setStage] = useState<'closed' | 'intro' | 'reading' | 'found'>('closed');
+  // A request that's been answered or replaced (another tile) takes its sheet with it.
+  const live = !!ask && messages.some((m) => m.kind === 'ask' && m.id === ask.id && m.state === 'open');
+  useEffect(() => {
+    if (stage !== 'closed' && !live) setStage('closed');
+  }, [stage, live]);
   useEffect(() => {
     if (stage !== 'reading') return;
     const t = window.setTimeout(() => setStage('found'), READ_MS);
@@ -170,8 +185,8 @@ export function useCardScan({ wallet, onAllow, onDeny }: { wallet: string; onAll
   }, [stage]);
   const close = () => setStage('closed');
   return {
-    open: (next: AgentAsk) => {
-      setAsk(next);
+    open: (id: number, next: AgentAsk) => {
+      setAsk({ id, ask: next });
       setStage('intro');
     },
     sheet: (
@@ -179,7 +194,7 @@ export function useCardScan({ wallet, onAllow, onDeny }: { wallet: string; onAll
         <AppSheet open={stage === 'intro' || stage === 'found'} present={SHEET_IN} dim={0.3} className={styles.panel} onDismiss={close}>
           {ask && (
             <Sheet
-              ask={ask}
+              ask={ask.ask}
               wallet={wallet}
               found={stage === 'found'}
               onContinue={() => setStage('reading')}

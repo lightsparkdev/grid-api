@@ -267,7 +267,7 @@ export function DotChat({ chat }: AgentChatProps) {
   const [balance, setBalance] = useState<AgentBalance | null>(null);
   const [balanceShown, setBalanceShown] = useState(false);
   const sub = useSubAgentSheet(chat.messages, SHEET_IN);
-  const scan = useCardScan({ wallet: 'Dots balance', onAllow: chat.allow, onDeny: chat.deny });
+  const scan = useCardScan({ wallet: 'Dots balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
   const sheetOpen = shown && !!sheet && chat.messages.some((m) => m.kind === 'ask' && m.id === sheet.id && m.state === 'open');
   const open = (m: Ask) => {
     setSheet({ id: m.id, ask: m.ask });
@@ -331,7 +331,7 @@ export function DotChat({ chat }: AgentChatProps) {
           </div>
         );
       case 'ask':
-        if (m.ask.card) return <ActionPill m={m} onOpen={() => scan.open(m.ask)} />;
+        if (m.ask.card) return <ActionPill m={m} onOpen={() => scan.open(m.id, m.ask)} />;
         return m.ask.rows ? <ActionPill m={m} onOpen={() => open(m)} /> : <PayPill m={m} onOpen={() => open(m)} />;
       case 'card': {
         const b = m.card.balance;
