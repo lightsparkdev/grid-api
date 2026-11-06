@@ -2,7 +2,6 @@
 
 import { forwardRef } from 'react';
 import clsx from 'clsx';
-import { BatteryIcon, SignalIcon, WifiIcon } from './StatusBarIcons';
 import { StatusBarTime } from './StatusBarTime';
 import type { StatusBarTone } from './useAdaptiveStatusBarTone';
 import styles from './PhoneStatusBar.module.scss';
@@ -11,7 +10,10 @@ interface PhoneStatusBarProps {
   tone?: StatusBarTone;
 }
 
-/** iOS status bar — Figma phone-gga (2143:19945). */
+/** Cellular bar heights, shortest first (Figma 265:13016:2705). */
+const BARS = [6.333, 8.67, 11, 13.667];
+
+/** iOS 27 status bar (Figma website-q4-2026 265:53338, Status Bar - iPhone 18 Pro). */
 export const PhoneStatusBar = forwardRef<HTMLElement, PhoneStatusBarProps>(function PhoneStatusBar(
   { tone = 'default' },
   ref,
@@ -27,9 +29,13 @@ export const PhoneStatusBar = forwardRef<HTMLElement, PhoneStatusBarProps>(funct
         <StatusBarTime />
       </div>
       <div className={styles.levelsSlot}>
-        <SignalIcon className={styles.signalIcon} />
-        <WifiIcon className={styles.wifiIcon} />
-        <BatteryIcon className={styles.batteryIcon} />
+        <span className={styles.cellular}>
+          {BARS.map((h) => (
+            <span key={h} className={styles.bar} style={{ height: h }} />
+          ))}
+        </span>
+        <span className={styles.wifi} />
+        <span className={styles.battery} />
       </div>
     </header>
   );

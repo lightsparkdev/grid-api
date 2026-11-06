@@ -135,8 +135,8 @@ body {
   --chat-glass-ink: #111112;
   /* iOS 27 glass rim (styles/_glass-rim.scss): a grey hairline, darker on the
      sides (#9c9c9c over #f3f3f3) than the caps (#d9d9d9), white just inside. */
-  --glass-rim-side: rgba(0, 0, 0, 0.24);
-  --glass-rim-cap: rgba(0, 0, 0, 0.14);
+  --glass-rim-side: rgba(0, 0, 0, 0.3);
+  --glass-rim-cap: rgba(0, 0, 0, 0.06);
   --glass-rim-inset: rgba(255, 255, 255, 1);
 }
 
