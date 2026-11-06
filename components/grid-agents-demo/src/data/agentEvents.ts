@@ -36,6 +36,8 @@ export interface Purchase {
   amount: number;
   /** A card that locks to the first merchant that charges it and renews monthly. */
   recurring?: boolean;
+  /** Funded by the person's vaulted card instead of the balance, which stays as it is. */
+  byCard?: boolean;
 }
 
 /** What a single-use card for `amount` may be charged: the amount plus 15% for
@@ -58,7 +60,7 @@ export type AgentEvent =
   | { type: 'connect' }
   /** The agent asks for a deposit address or invoice. */
   | { type: 'fund.deposit'; network: DepositNetwork; currency: string; amount: number }
-  /** The deposit landed. */
+  /** The deposit, or the bank transfer, landed. */
   | { type: 'fund.received' }
   /** The person's credit or debit card goes into the account's PCI vault (the agent only ever sees its id). */
   | { type: 'card.vault' }
@@ -66,8 +68,10 @@ export type AgentEvent =
   | { type: 'fund.card'; amount: number }
   /** The person links their bank as an external account (the agent only ever sees its id). */
   | { type: 'bank.link' }
-  /** A top-up from the linked bank over ACH. */
+  /** A top-up pulled from the linked bank over ACH (a US bank). */
   | { type: 'fund.bank'; amount: number }
+  /** A top-up the person pushes from the linked bank (outside the US): Grid issues the account details to send to. */
+  | { type: 'fund.instructions'; amount: number }
   /** The agent shares where someone can pay the account. */
   | { type: 'getpaid.address'; network: DepositNetwork; currency: string }
   /** Someone paid it. */
@@ -84,6 +88,8 @@ export type AgentEvent =
   | { type: 'cashout.execute' }
   /** The agent asks for a purchase card for one purchase (or one subscription). */
   | { type: 'buy.request'; purchase: Purchase }
+  /** The agent drops the purchase card it asked for: the person chose another way to pay before approving. */
+  | { type: 'buy.withdraw' }
   /** The agent reads the card and checks out; the merchant charges it. */
   | { type: 'buy.checkout' }
   /** The agent quotes a payment to another agent's account, then executes it. */

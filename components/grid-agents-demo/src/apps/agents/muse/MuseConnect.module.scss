@@ -47,6 +47,17 @@ $muse-font: 'Optimistic AI', var(--font-family-sf-pro);
   border-radius: 22px;
   background: var(--muse-them);
   color: var(--muse-text);
+
+  // In a run with the agent's other messages, as MuseChat's bubbles join.
+  &[data-pos='first'],
+  &[data-pos='middle'] {
+    border-bottom-left-radius: 6.5px;
+  }
+
+  &[data-pos='middle'],
+  &[data-pos='last'] {
+    border-top-left-radius: 6.5px;
+  }
 }
 
 .cardHead {
@@ -244,6 +255,120 @@ $muse-font: 'Optimistic AI', var(--font-family-sf-pro);
   font: inherit;
   font-size: 16px;
   font-weight: 500;
+  cursor: pointer;
+}
+
+// The checkout's Pay with: Meta Pay's method list, in the permission sheet's frame.
+.payTitle {
+  margin-top: 16px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 26px;
+}
+
+.payList {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  margin-top: 16px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #f2f2f6;
+
+  :global([data-theme='dark']) & {
+    background: #2c2c2e;
+  }
+}
+
+.payOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  & + & {
+    box-shadow: inset 0 0.5px 0 rgba(0, 0, 0, 0.1);
+
+    :global([data-theme='dark']) & {
+      box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+    }
+  }
+
+  &:disabled {
+    cursor: default;
+
+    .payTile,
+    b {
+      opacity: 0.4;
+    }
+  }
+}
+
+.payTile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #fff;
+  color: #111;
+
+  :global([data-theme='dark']) & {
+    background: #3a3a3c;
+    color: #f5f5f7;
+  }
+}
+
+.payText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+
+  b {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 20px;
+  }
+
+  small {
+    color: #6a6b6e;
+    font-size: 13px;
+    line-height: 17px;
+
+    :global([data-theme='dark']) & {
+      color: #98989f;
+    }
+  }
+}
+
+.payCheck {
+  flex: none;
+  color: #0064e0;
+}
+
+.payAdd {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  justify-content: center;
+  gap: 6px;
+  height: 46px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #0064e0;
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
 }
 

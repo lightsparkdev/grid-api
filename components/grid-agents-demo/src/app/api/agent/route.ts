@@ -227,13 +227,14 @@ function paramsFor(flow: ActionId, a: ModelAnswer, saved: PromptState['recipient
         ...(positive(a.daily, 100_000) ? { daily: a.daily } : {}),
       };
     case 'buy': {
+      const card = a.method === 'card' ? ({ method: 'card' } as const) : undefined;
       if (a.variant !== 'subscription') {
         const query = text(a.query, 40);
-        return query ? { query } : undefined;
+        return query ? { query, ...card } : card;
       }
       const merchant = text(a.merchant, 32);
       const price = positive(a.price, 1_000);
-      return merchant && price ? { merchant, price } : undefined;
+      return merchant && price ? { merchant, price, ...card } : card;
     }
     case 'agent': {
       const city = text(a.city, 40);

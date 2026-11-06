@@ -678,6 +678,86 @@
   gap: 8px;
 }
 
+// The checkout's Pay with, when it can switch: the method, then the saved card and the balance under it.
+.payWith {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  b {
+    flex: 1;
+    font-weight: 400;
+  }
+}
+
+.payChevron {
+  flex: none;
+  color: var(--dot-secondary);
+  transition: rotate 0.2s ease;
+
+  &[data-open] {
+    rotate: 180deg;
+  }
+}
+
+.payOptions {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--dot-fill, rgba(0, 0, 0, 0.04));
+
+  button {
+    padding: 10px 12px;
+
+    & + button {
+      border-top: 1px solid var(--dot-line);
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.45;
+    }
+  }
+
+  b {
+    display: flex;
+    flex-direction: column;
+  }
+
+  small {
+    color: var(--dot-secondary);
+    font-size: 13px;
+    line-height: 17px;
+  }
+
+  svg:last-child {
+    flex: none;
+    color: var(--dot-blue);
+  }
+}
+
+.payAdd.payAdd {
+  justify-content: center;
+  color: var(--dot-blue);
+  font-weight: 600;
+}
+
 .payActions {
   display: flex;
   gap: 10px;

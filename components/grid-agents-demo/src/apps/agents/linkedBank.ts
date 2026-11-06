@@ -54,6 +54,66 @@ export function formatMoney(minor: number, currency: string): string {
   }).format(minor / 100);
 }
 
+/** A US bank tops up by pull (ACH debit); everywhere else the person pushes it from their bank. */
+export const pullsFrom = (bank: LinkedBank) => bank.country.code === 'us';
+
+/** Where a pushed top-up goes: the account Grid issues on a real-time funded quote. */
+export interface DepositDetails {
+  /** What the person sends: their own currency on its local rail, or dollars by international wire. */
+  currency: string;
+  /** In the agent's words ("SPEI", "international wire"). */
+  rail: string;
+  /** Minor units of `currency`. */
+  amount: number;
+  /** Label and value, in the order a bank app asks for them; the first is the one to copy. */
+  rows: [string, string][];
+  reference: string;
+  /** The same account as Grid's `paymentInstructions[].accountOrWalletInfo`. */
+  info: Record<string, unknown>;
+}
+
+/**
+ * The details to push a top-up from the linked bank to, as the Global Accounts playground shows them
+ * (receiveFields). Real-time funded quotes issue local details for MXN, BRL, EUR and COP; any other bank
+ * sends dollars by international wire.
+ */
+export function depositDetails(bank: LinkedBank, usdCents: number): DepositDetails {
+  const reference = `AGT-${bank.country.code.toUpperCase()}-7Q4K2X`;
+  const local = { currency: bank.currency, rail: bank.country.rail, amount: Math.round(usdCents * bank.country.usdToLocal), reference };
+  const rails = [bank.country.rail.toUpperCase().replace(/ /g, '_')];
+  switch (bank.country.accountType) {
+    case 'MXN_ACCOUNT':
+      return { ...local, rows: [['CLABE', '012180001234567895']], info: { accountType: 'MXN_ACCOUNT', paymentRails: rails, clabeNumber: '012180001234567895', reference } };
+    case 'BRL_ACCOUNT':
+      return {
+        ...local,
+        rows: [['PIX key', 'a3f1c2e4-7b9d-4e21-9c6a-2d8f5b1e0a47']],
+        info: { accountType: 'BRL_ACCOUNT', paymentRails: rails, pixKey: 'a3f1c2e4-7b9d-4e21-9c6a-2d8f5b1e0a47', pixKeyType: 'RANDOM', reference },
+      };
+    case 'EUR_ACCOUNT':
+      return {
+        ...local,
+        rows: [['IBAN', 'DE89 3704 0044 0532 0130 00'], ['BIC', 'COBADEFFXXX']],
+        info: { accountType: 'EUR_ACCOUNT', paymentRails: rails, iban: 'DE89370400440532013000', swiftCode: 'COBADEFFXXX', reference },
+      };
+    case 'COP_ACCOUNT':
+      return {
+        ...local,
+        rows: [['Account number', '00012345678'], ['Bank', 'Bancolombia']],
+        info: { accountType: 'COP_ACCOUNT', paymentRails: rails, accountNumber: '00012345678', bankAccountType: 'SAVINGS', bankName: 'Bancolombia', reference },
+      };
+    default:
+      return {
+        currency: 'USD',
+        rail: 'international wire',
+        amount: usdCents,
+        reference,
+        rows: [['Account number', '000123456789'], ['SWIFT', 'CHASUS33']],
+        info: { accountType: 'SWIFT_ACCOUNT', paymentRails: ['SWIFT'], accountHolderName: PERSON.full, swiftCode: 'CHASUS33', accountNumber: '000123456789', country: 'US', reference },
+      };
+  }
+}
+
 /** How long a top-up over the bank's rail takes to land, in the agent's words. */
 export function railTiming(bank: LinkedBank): string {
   switch (bank.country.rail) {

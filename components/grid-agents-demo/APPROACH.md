@@ -218,6 +218,28 @@ the vaulted card with no prompt. Grid has no vault API yet, so
 /customers/{id}/vaulted-cards`, then a quote whose source is the vaulted
 card. Rewrite them when the API lands.
 
+### 2026-11-06: pay with a saved card, Plaid, and bank top-ups by rail
+
+- A saved card is enough on its own (the "lite account"): Buy online can pay
+  with it and leave the balance alone. The agent's purchase card is funded by
+  the vaulted card instead of the wallet (`fundingSource`), so the agent still
+  never holds the card's number. Provisional until the vault API lands.
+- What pays: asked for on the card, the card. With a card saved, Muse and Dots
+  go with what covers it and their checkout's Pay with row switches it (the
+  card, the balance, or Add money); the other apps ask first. With no card
+  and too little in the balance, the agent offers the card instead of a
+  top-up.
+- Linking your own bank starts with "Where's your bank?". A US bank links
+  through Plaid Link, drawn from Muse's recordings in iOS's web sheet with
+  Plaid's own font and logo; anywhere else, the app's own form opens on that
+  country. Either way the agent keeps it for adding money and withdrawing.
+- Adding money from a bank follows the rail: a US bank is pulled over ACH (a
+  quote with the external account as source, executed at once); anywhere else
+  the person sends it to the details a real-time funded quote issues (CLABE,
+  PIX key, IBAN, or a SWIFT wire), as the Global Accounts playground does.
+- Agent runs in Muse join on 6.5pt corners for every kind of message,
+  including cards, checkouts and one-line bubbles.
+
 ### 2026-11-06: approve only, bank marks, and a balance page
 
 - Payment approvals show only Approve. The person asked for the payment, so

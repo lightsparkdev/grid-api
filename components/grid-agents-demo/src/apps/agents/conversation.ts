@@ -20,7 +20,7 @@ export interface Chip {
   glyph?: ChipGlyph;
 }
 
-export type ChipGlyph = 'card' | 'bank' | 'coin' | 'bolt' | 'check';
+export type ChipGlyph = 'card' | 'bank' | 'coin' | 'bolt' | 'check' | 'wallet';
 
 /** A row of an approval card: what, where, who, paid with. */
 export interface AskRow {
@@ -71,11 +71,19 @@ export interface AgentAsk {
   card?: { brand: string; last4: string; expires: string; name: string };
   /** A bank to link for top-ups: the skin opens the bank flow (vault/BankLink), which picks the country and account. */
   bank?: true;
+  /** With `bank`, the person's own: the country they said it's in. The US opens Plaid; another opens the app's form on
+   *  that country; `other` opens the form's country list. */
+  home?: string;
   /** With `bank`: someone else's bank, to pay them. The flow opens on their account, filled in for their country. */
   recipient?: { name: string; first: string; country: string };
   /** The ask as a text, for an app you answer by texting back (Instinct): what it proposes and how to say yes. */
   text?: string;
+  /** A purchase the checkout can switch the payment of: what pays now, and the other ways it could. */
+  pay?: { by: 'card' | 'balance'; card: string; wallet: string; balance: string; enough: boolean };
 }
+
+/** What a checkout's Pay with switches to: the saved card, the balance, or the balance after adding to it. */
+export type PayTo = 'card' | 'balance' | 'topup';
 
 /** The app's own balance: the website card's anatomy, plus what each app shows natively. */
 export interface AgentBalance {
@@ -186,7 +194,7 @@ export type Beat =
   | { react: string }
   | { meta: string; params?: Params }
   | { divider: string }
-  | { ask: string; params?: Params; faceId?: boolean; allow: Beat[]; deny: Beat[] }
+  | { ask: string; params?: Params; faceId?: boolean; allow: Beat[]; deny: Beat[]; swap?: (to: PayTo) => Beat[] }
   | { chips: Chip[]; reply?: boolean; then: (picked: number) => Beat[] }
   /** Waits for a typed dollar amount ("everything" means `all`, in cents); anything else lapses it and goes to the model. */
   | { amount: true; all?: number; then: (usd: number) => Beat[] }

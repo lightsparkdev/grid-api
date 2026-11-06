@@ -15,6 +15,7 @@ import { askButtons } from '../parts';
 import { GlassButton } from '../glass';
 import { AppSheet } from '../sheet';
 import { SheetDisc } from '../SheetPage';
+import { APP_ICONS, opensPlaid, usePlaidLink } from './PlaidLink';
 import { useAskSheet } from './useAskSheet';
 import { BANK_ALL, BANK_POPULAR, bankDoneLabel, bankFields, countryShort, payeeBlurb, useBankPicker } from './useBankPicker';
 import { cardFields, cardLabel, useCardEntry } from './useCardEntry';
@@ -70,6 +71,7 @@ function Field({ label, value, flag }: { label: string; value: string; flag?: st
 export function BankLinkFlow({
   wallet,
   payee,
+  home,
   onLinked,
   onClose,
   className,
@@ -77,12 +79,14 @@ export function BankLinkFlow({
   wallet: string;
   /** Someone else's bank, to pay them: the flow opens on it. */
   payee?: AgentAsk['recipient'];
+  /** The person's own bank: the country they said, to open on. */
+  home?: string;
   onLinked: (bank: LinkedBank) => void;
   onClose?: () => void;
   /** A host page's palette: it can set --bank-surface, --bank-fill, --bank-muted, --bank-line, --bank-cta, --bank-cta-text. */
   className?: string;
 }) {
-  const picker = useBankPicker(onLinked, payee);
+  const picker = useBankPicker(onLinked, payee, home);
   const { bank, back, query, setQuery, results, stage, pick } = picker;
   const step = bank ? 'details' : 'country';
   const slide = { custom: back, variants: SLIDE, initial: 'enter', animate: 'center', exit: 'exit' };
@@ -206,29 +210,40 @@ export function useBankLink({
   useEffect(() => {
     if (open && !live) setOpen(false);
   }, [open, live]);
+  const showForm = (id: number) => {
+    setAsk(id);
+    setOpen(true);
+  };
+  const plaid = usePlaidLink({ app: 'Your app', icon: APP_ICONS.yourapp, messages, onLinked: onAllow, onManual: showForm });
   return {
+    // Your own bank goes through Plaid; someone else's, or one Plaid doesn't have, through the form.
     open: (id: number) => {
-      setAsk(id);
-      setOpen(true);
+      const m = messages.find((x): x is Extract<Message, { kind: 'ask' }> => x.kind === 'ask' && x.id === id);
+      if (m && opensPlaid(m.ask)) plaid.open(id, m.ask);
+      else showForm(id);
     },
     sheet: (
-      <AppSheet open={open} present={SHEET_IN} dim={0.3} className={styles.panel} onDismiss={() => setOpen(false)}>
-        <div className={styles.sheet}>
-          <BankLinkFlow
-            key={ask ?? 0}
-            wallet={wallet}
-            payee={shown?.ask.recipient}
-            onClose={() => {
-              setOpen(false);
-              onDeny();
-            }}
-            onLinked={() => {
-              setOpen(false);
-              onAllow();
-            }}
-          />
-        </div>
-      </AppSheet>
+      <>
+        <AppSheet open={open} present={SHEET_IN} dim={0.3} className={styles.panel} onDismiss={() => setOpen(false)}>
+          <div className={styles.sheet}>
+            <BankLinkFlow
+              key={ask ?? 0}
+              wallet={wallet}
+              payee={shown?.ask.recipient}
+              home={shown?.ask.home}
+              onClose={() => {
+                setOpen(false);
+                onDeny();
+              }}
+              onLinked={() => {
+                setOpen(false);
+                onAllow();
+              }}
+            />
+          </div>
+        </AppSheet>
+        {plaid.overlay}
+      </>
     ),
   };
 }

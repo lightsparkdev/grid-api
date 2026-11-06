@@ -57,7 +57,7 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
                   amount: { type: 'number', description: 'pay: the amount, in `currency`. fund and cashout: the amount in USD.' },
                   currency: { type: 'string', description: 'pay: "USD", or the ISO code of the recipient’s local currency if they gave it in that currency.' },
                   note: { type: 'string', description: 'pay: what it’s for, a few words, if they said.' },
-                  method: { type: 'string', enum: methods, description: 'fund: where the money comes from, if they said.' },
+                  method: { type: 'string', enum: methods, description: 'fund: where the money comes from, if they said. buy: "card" only if they want it on their credit or debit card.' },
                   approve: usd('limits: the most you may spend without asking, USD.'),
                   daily: usd('limits: the daily limit, USD.'),
                   perTx: usd('limits: the per-payment limit, USD.'),

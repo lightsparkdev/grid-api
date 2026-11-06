@@ -8,15 +8,18 @@ import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-st
 import { IconEyeOpen } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyeOpen';
 import { IconGlobe2 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe2';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
+import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusMedium';
 import { IconSettingsSliderHor } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSettingsSliderHor';
+import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { Flag } from '@/apps/shared/Flag';
 import { BankMark } from '../BankMark';
 import { BANK_REACH, type BankCountry } from '@/data/bankCountries';
-import type { AgentAsk, AskState, Message } from '../conversation';
+import type { AgentAsk, AskState, Message, PayTo } from '../conversation';
 import { hasLinkedBank, linkedBank } from '../linkedBank';
 import { GlassButton } from '../glass';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
 import { AppSheet } from '../sheet';
+import { APP_ICONS, opensPlaid, usePlaidLink } from '../vault/PlaidLink';
 import { useAskSheet } from '../vault/useAskSheet';
 import { recipientNamed } from '../recipients';
 import { BANK_ALL, BANK_POPULAR, bankFields, payeeBlurb, railBlurb, railLine, useBankPicker, type BankPicker } from '../vault/useBankPicker';
@@ -36,7 +39,7 @@ const SHEET_IN = { duration: 0.45, ease: [0.3, 0.7, 0.2, 1] } as const;
 const BLUE = '#2a62e3';
 
 /** The connector card in the thread (recording 18:17, 9s at 3x): ~238pt in the bubble gray, a 35pt dark tile. */
-export function ConnectorCard({ ask, state, onOpen }: { ask: AgentAsk; state: AskState; onOpen: () => void }) {
+export function ConnectorCard({ ask, state, pos, onOpen }: { ask: AgentAsk; state: AskState; pos?: string; onOpen: () => void }) {
   const done = state === 'done';
   const payee = ask.recipient;
   const saved = payee ? recipientNamed(payee.name) : undefined;
@@ -49,9 +52,11 @@ export function ConnectorCard({ ask, state, onOpen }: { ask: AgentAsk; state: As
       ? ask.bank
         ? `${linkedBank().bankName} •••• ${linkedBank().last4}`
         : cardLabel(ask)
-      : 'Connector';
+      : ask.bank
+        ? 'Connector'
+        : 'Vault';
   return (
-    <div className={styles.card} data-state={state}>
+    <div className={styles.card} data-state={state} data-pos={pos}>
       <span className={styles.cardHead}>
         {done && payee && saved ? (
           <BankMark bank={saved.bank.bankName} country={saved.bank.country.code} size={35} />
@@ -347,15 +352,28 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
   );
 }
 
-function BankFlow({ payee, onLinked, onClose }: { payee?: AgentAsk['recipient']; onLinked: () => void; onClose: () => void }) {
-  const picker = useBankPicker(onLinked, payee);
+function BankFlow({ payee, home, onLinked, onClose }: { payee?: AgentAsk['recipient']; home?: string; onLinked: () => void; onClose: () => void }) {
+  const picker = useBankPicker(onLinked, payee, home);
   return <BankPages picker={picker} onClose={onClose} />;
 }
 
-/** Muse's bank flow: the permission sheet, then the list. Cancel or a swipe leaves the card waiting. */
+/**
+ * Muse's bank flow: the permission sheet, then Plaid for your own bank (recording 18:17), or the list for someone
+ * else's or a bank Plaid doesn't have. Cancel or a swipe leaves the card waiting.
+ */
 export function useMuseBank({ messages, onAllow }: { messages: Message[]; onAllow: () => void }) {
   const sheet = useAskSheet(messages);
   const [listed, setListed] = useState(false);
+  const plaid = usePlaidLink({
+    app: 'Muse',
+    icon: APP_ICONS.muse,
+    messages,
+    onLinked: onAllow,
+    onManual: (id, ask) => {
+      setListed(true);
+      sheet.show(id, ask);
+    },
+  });
   return {
     open: (id: number, ask: AgentAsk) => {
       setListed(!!ask.recipient);
@@ -364,12 +382,20 @@ export function useMuseBank({ messages, onAllow }: { messages: Message[]; onAllo
     sheet: (
       <>
         <AppSheet open={sheet.open && !listed} present={SHEET_IN} dim={0.3} className={styles.permPanel} onDismiss={sheet.hide}>
-          <Permission onConnect={() => setListed(true)} onCancel={sheet.hide} />
+          <Permission
+            onConnect={() => {
+              if (sheet.ask && !opensPlaid(sheet.ask)) return setListed(true);
+              sheet.hide();
+              if (sheet.ask) plaid.open(sheet.id, sheet.ask);
+            }}
+            onCancel={sheet.hide}
+          />
         </AppSheet>
         <PageSheet open={sheet.open && listed} className={styles.theme} onDismiss={sheet.hide}>
           <BankFlow
             key={sheet.id}
             payee={sheet.ask?.recipient}
+            home={sheet.ask?.home}
             onClose={sheet.hide}
             onLinked={() => {
               sheet.hide();
@@ -377,6 +403,7 @@ export function useMuseBank({ messages, onAllow }: { messages: Message[]; onAllo
             }}
           />
         </PageSheet>
+        {plaid.overlay}
       </>
     ),
   };
@@ -432,6 +459,70 @@ export function useMuseCard({ messages, onAllow }: { messages: Message[]; onAllo
           />
         )}
       </PageSheet>
+    ),
+  };
+}
+
+/** Meta Pay's Pay with: the saved card and the Muse balance (short of the total, it offers Add money), then Cancel. */
+function PayWith({ pay, onPick, onClose }: { pay: NonNullable<AgentAsk['pay']>; onPick: (to: PayTo) => void; onClose: () => void }) {
+  return (
+    <div className={styles.perm}>
+      <span className={styles.grabber} />
+      <strong className={styles.payTitle}>Pay with</strong>
+      <div className={styles.payList}>
+        <button type="button" className={styles.payOption} onClick={() => onPick('card')}>
+          <span className={styles.payTile}>
+            <IconCreditCard1 size={20} />
+          </span>
+          <span className={styles.payText}>
+            <b>{pay.card}</b>
+            <small>Saved card · Expires 09/29</small>
+          </span>
+          {pay.by === 'card' && <IconCheckmark1 size={20} className={styles.payCheck} />}
+        </button>
+        <button type="button" className={styles.payOption} disabled={!pay.enough} onClick={() => onPick('balance')}>
+          <span className={styles.payTile}>
+            <IconWallet1 size={20} />
+          </span>
+          <span className={styles.payText}>
+            <b>{pay.wallet}</b>
+            <small>{pay.enough ? `${pay.balance} available` : `${pay.balance} available · not enough for this`}</small>
+          </span>
+          {pay.by === 'balance' && <IconCheckmark1 size={20} className={styles.payCheck} />}
+        </button>
+      </div>
+      {!pay.enough && (
+        <button type="button" className={styles.payAdd} onClick={() => onPick('topup')}>
+          <IconPlusMedium size={18} />
+          Add money to {pay.wallet}
+        </button>
+      )}
+      <button type="button" className={styles.cancel} onClick={onClose}>
+        Cancel
+      </button>
+    </div>
+  );
+}
+
+/** The checkout's Pay with row opens this; picking another way hands it back to the agent (`onSwap`). */
+export function useMusePayWith({ messages, onSwap }: { messages: Message[]; onSwap: (to: PayTo) => void }) {
+  const sheet = useAskSheet(messages);
+  const pay = sheet.ask?.pay;
+  return {
+    open: sheet.show,
+    sheet: (
+      <AppSheet open={sheet.open && !!pay} present={SHEET_IN} dim={0.3} className={styles.permPanel} onDismiss={sheet.hide}>
+        {pay && (
+          <PayWith
+            pay={pay}
+            onClose={sheet.hide}
+            onPick={(to) => {
+              sheet.hide();
+              if (to !== pay.by) onSwap(to);
+            }}
+          />
+        )}
+      </AppSheet>
     ),
   };
 }

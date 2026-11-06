@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { IconArrowDown } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowDown';
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
 import { IconCoins } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCoins';
@@ -12,6 +12,7 @@ import { BankMark } from '../BankMark';
 import { balanceView, type BalanceAction } from '../BalancePage';
 import type { AgentAsk, AskState, SubAgent } from '../conversation';
 import { askButtons } from '../parts';
+import { APP_ICONS, opensPlaid, PlaidFlow } from '../vault/PlaidLink';
 import { InstinctBank, SiteBar, SiteField } from './InstinctBank';
 import bal from './InstinctBalance.module.scss';
 import styles from './InstinctSafari.module.scss';
@@ -54,10 +55,21 @@ export function InstinctSafari({
 }) {
   const b = askButtons(ask, state);
   const saved = state === 'done';
+  const [manual, setManual] = useState(false);
+  // Your own bank: the page opens Plaid over itself, the web Link (no system sheet, Safari's already open).
+  if (ask.bank && !saved && opensPlaid(ask) && !manual) {
+    return (
+      <Safari onBack={onBack}>
+        <div className={styles.plaid}>
+          <PlaidFlow app="Instinct" icon={APP_ICONS.instinct} onLinked={onAllow} onClose={onBack} onManual={() => setManual(true)} />
+        </div>
+      </Safari>
+    );
+  }
   if (ask.bank && !saved) {
     return (
       <Safari onBack={onBack}>
-        <InstinctBank payee={ask.recipient} onLinked={onAllow} onClose={onBack} />
+        <InstinctBank payee={ask.recipient} home={ask.home} onLinked={onAllow} onClose={onBack} />
       </Safari>
     );
   }

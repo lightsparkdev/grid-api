@@ -70,7 +70,7 @@ export const ACTIONS: ActionDef[] = [
     id: 'card',
     label: 'Add card',
     desc: 'Save a card to the vault to top up from',
-    prompts: ['Save my card so you can top up from it'],
+    prompts: ['Save my card so you can pay with it'],
   },
   {
     id: 'bank',

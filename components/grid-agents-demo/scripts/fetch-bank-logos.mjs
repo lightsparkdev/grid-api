@@ -32,6 +32,9 @@ const TERMS = {
   'Komercni banka': 'KB Klic',
   'Nu México': 'Nu México',
   Chase: 'Chase Mobile',
+  'Bank of America': 'Bank of America Mobile Banking',
+  'Wells Fargo': 'Wells Fargo Mobile',
+  Citibank: 'Citi Mobile',
   Citibanamex: 'Banamex',
   Vietcombank: 'VCB Digibank',
 };

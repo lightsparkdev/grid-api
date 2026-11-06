@@ -136,6 +136,13 @@ $serif: 'New York', ui-serif, Georgia, serif;
   }
 }
 
+// Plaid's web Link over the page: under the status bar, its foot clear of Safari's toolbar.
+.plaid {
+  --plaid-foot-pad: 104px;
+  position: absolute;
+  inset: 54px 0 0;
+}
+
 // "Add login": bold serif, centered, ~40pt under the bar.
 .siteTitle {
   margin: 40px 0 0;

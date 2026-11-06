@@ -83,6 +83,9 @@ export const BANK_LOGOS = new Set<string>([
   "lloyds",
   "monzo",
   "chase",
+  "bank-of-america",
+  "wells-fargo",
+  "citibank",
   "vietcombank",
   "zanaco"
 ]);

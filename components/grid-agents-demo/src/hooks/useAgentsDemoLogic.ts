@@ -15,6 +15,9 @@ import type { ConnectorId } from '@/data/connectors';
 import type { PromptState } from '@/lib/llm/prompt';
 import type { AgentResponse, ChatTurn } from '@/lib/llm/types';
 
+/** Apps whose checkout has a Pay with row to switch the payment; the rest have the agent ask first. */
+const CHECKOUT_PICKER = new Set<ConnectorId>(['muse', 'dot']);
+
 /** The calls one step makes land one after another, not in a block. */
 const CALL_STAGGER_MS = 650;
 
@@ -28,7 +31,9 @@ function prepare(session: AgentSession, id: ActionId): NonNullable<FlowEntry['se
   if (connected) session.assumeConnected();
   const need = flowSpend(id);
   const have = session.snapshot().balanceCents;
-  const funded = need && have < need ? Math.max(FAST_FORWARD_FUND_CENTS, Math.ceil((need - have) / 10_000) * 10_000) : 0;
+  // A purchase goes on the saved card when the balance is short, so there's nothing to top up.
+  const onCard = id === 'buy' && session.snapshot().cardVaulted;
+  const funded = need && have < need && !onCard ? Math.max(FAST_FORWARD_FUND_CENTS, Math.ceil((need - have) / 10_000) * 10_000) : 0;
   if (funded) session.assumeFunded(funded);
   return { connected, funded };
 }
@@ -149,6 +154,7 @@ export function useAgentsDemoLogic() {
     (): Omit<FlowContext, 'variant'> => ({
       account: () => sessionRef.current.snapshot(),
       needsApproval: (usd) => sessionRef.current.needsApproval(usd),
+      picksInCheckout: CHECKOUT_PICKER.has(connectorRef.current),
     }),
     [],
   );

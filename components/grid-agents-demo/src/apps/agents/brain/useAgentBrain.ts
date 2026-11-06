@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ACTIONS, type ActionId } from '@/data/actions';
 import type { AgentEvent } from '@/data/agentEvents';
-import type { Beat, Chip, Said, StoredMessage } from '../conversation';
+import type { Beat, Chip, PayTo, Said, StoredMessage } from '../conversation';
 import { FLOWS, planFor, type FlowContext, type FlowParams } from '../flows';
 
 /** A tile's jump: put this flow's line in the composer. */
@@ -22,13 +22,13 @@ export interface FreeTextReply {
   suggestions?: Chip[];
 }
 
-type Decision = 'allow' | 'deny' | 'cancel';
+type Decision = 'allow' | 'deny' | 'cancel' | { swap: PayTo };
 type NewMessage = StoredMessage extends infer M ? (M extends StoredMessage ? Omit<M, 'id'> : never) : never;
 
 const MAX_MESSAGES = 200;
 
 /** Under the greeting: things to try, so it's clear you can just type. A tap sends one as the person's own message, so each is in their words. */
-const STARTERS: Chip[] = [{ label: 'Set up a balance' }, { label: 'Send money abroad' }, { label: 'What can you do?' }];
+const STARTERS: Chip[] = [{ label: 'Set up a balance' }, { label: 'Add a card' }, { label: 'Send money abroad' }, { label: 'What can you do?' }];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Which option a typed reply picks: its number, or its label; -1 for neither. */
 function typedChoice(text: string, chips: Chip[]) {
@@ -241,6 +241,12 @@ export function useAgentBrain({
           decideRef.current = null;
           if (decision === 'cancel' || run.cancelled) return false;
           setBusy(true);
+          // Paying another way: this checkout goes, and the agent comes back with one for the new way.
+          if (typeof decision === 'object') {
+            setMessages((list) => list.filter((m) => m.id !== id));
+            if (b.swap && !(await play(b.swap(decision.swap), run))) return false;
+            continue;
+          }
           if (decision === 'deny') {
             patch(id, (m) => (m.kind === 'ask' ? { ...m, state: 'denied' } : m));
             await sleep(500);
@@ -439,6 +445,8 @@ export function useAgentBrain({
   /** The visitor's tap on the open ask's primary button. */
   const allow = useCallback(() => decideRef.current?.('allow'), []);
   const deny = useCallback(() => decideRef.current?.('deny'), []);
+  /** The checkout's Pay with switched to another way to pay. */
+  const swap = useCallback((to: PayTo) => decideRef.current?.({ swap: to }), []);
   const pick = useCallback(
     (i: number) => {
       if (pickRef.current) return pickRef.current(i);
@@ -470,6 +478,7 @@ export function useAgentBrain({
     busy,
     allow,
     deny,
+    swap,
     pick,
     prompt,
     authed,

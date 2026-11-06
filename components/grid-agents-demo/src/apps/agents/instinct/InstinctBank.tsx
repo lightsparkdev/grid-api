@@ -85,15 +85,18 @@ const SWAP = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity
 /** Linking a bank on app.instinct.com: the list, then the account as an "Add bank" form. */
 export function InstinctBank({
   payee,
+  home,
   onLinked,
   onClose,
 }: {
   /** Someone else's bank, to pay them: the page opens on it. */
   payee?: AgentAsk['recipient'];
+  /** The person's own bank: the country they said, to open on. */
+  home?: string;
   onLinked: (bank: LinkedBank) => void;
   onClose: () => void;
 }) {
-  const picker = useBankPicker(onLinked, payee);
+  const picker = useBankPicker(onLinked, payee, home);
   const { bank } = picker;
   return (
     <AnimatePresence mode="wait" initial={false}>

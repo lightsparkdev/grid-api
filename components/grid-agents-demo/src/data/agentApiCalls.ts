@@ -29,7 +29,7 @@ import {
   type Payee,
   type Purchase,
 } from './agentEvents';
-import { linkedBank as chosenBank, type LinkedBank } from '@/apps/agents/linkedBank';
+import { linkedBank as chosenBank, depositDetails, formatMoney, type LinkedBank } from '@/apps/agents/linkedBank';
 import type { ApiCall } from './flow';
 
 /* ── Fixtures ─────────────────────────────────────────────────────────── */
@@ -231,6 +231,8 @@ export function createAgentSession(nameOf: () => string): AgentSession {
   const ledger: LedgerEntry[] = seedLedger();
   let quote: Quote | null = null;
   let deposit: { id: string; network: DepositNetwork; currency: string; amount: number } | null = null;
+  /** A top-up the person is pushing from their bank: the real-time funded quote it settles. */
+  let wire: { quoteId: string; currency: string; local: number; amount: number; label: string; rail: string } | null = null;
   let receive: { network: DepositNetwork; currency: string; address: string } | null = null;
   let pending: Pending | null = null;
   let card: { id: string; purchase: Purchase } | null = null;
@@ -249,11 +251,14 @@ export function createAgentSession(nameOf: () => string): AgentSession {
   const record = (title: string, detail: string, cents: number, status: LedgerEntry['status'] = 'COMPLETED') => {
     ledger.unshift({ id: nextId('Transaction'), at: Date.now(), title, detail, cents, status });
   };
-  const spend = (usd: number) => {
-    balance -= usd;
+  const spend = (usd: number, fromBalance = true) => {
+    if (fromBalance) balance -= usd;
     spentToday += usd;
     countToday += 1;
   };
+  /** What a purchase card draws on: the vaulted card when the person pays with it, else the wallet. */
+  const fundingOf = (p: Purchase) => (p.byCard && vaulted ? vaulted : WALLET);
+  const byCardNote = (p: Purchase) => (p.byCard ? ' Funded by the vaulted Visa •••• 4242, so the balance stays as it is.' : '');
 
   const agentResource = () => ({
     id: agent,
@@ -429,7 +434,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
     spendLimit: purchaseSpendLimit(p.amount, p.recurring),
     currency: 'USD',
     description: p.description,
-    fundingSource: WALLET,
+    fundingSource: fundingOf(p),
     ...(p.recurring ? { recurring: true } : {}),
   });
 
@@ -445,7 +450,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
         last4: '4821',
         expMonth: 11,
         expYear: 2029,
-        fundingSource: WALLET,
+        fundingSource: fundingOf(p),
         currency: 'USD',
         createdAt: nowIso(),
         updatedAt: nowIso(),
@@ -528,7 +533,15 @@ export function createAgentSession(nameOf: () => string): AgentSession {
     return { id, target, call };
   };
 
-  const incomingWebhook = (amount: number, currency: string, rail: string, title: string, note: string, depositId?: string) =>
+  const incomingWebhook = (
+    amount: number,
+    currency: string,
+    rail: string,
+    title: string,
+    note: string,
+    depositId?: string,
+    source: Record<string, unknown> = { sourceType: 'REALTIME_FUNDING', currency, paymentRail: rail },
+  ) =>
     webhook(
       'incoming-payment',
       'INCOMING_PAYMENT.COMPLETED',
@@ -538,7 +551,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
         status: 'COMPLETED',
         customerId: CUSTOMER,
         platformCustomerId: PLATFORM_CUSTOMER,
-        source: { sourceType: 'REALTIME_FUNDING', currency, paymentRail: rail },
+        source,
         destination: { destinationType: 'ACCOUNT', accountId: WALLET, currency: 'USDB' },
         receivedAmount: { amount, currency: USDB },
         ...(depositId ? { depositId } : {}),
@@ -574,6 +587,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
   };
 
   const fundReceived = (): CallStep[] => {
+    if (wire) return wireReceived();
     if (!deposit) return [];
     const d = deposit;
     deposit = null;
@@ -639,7 +653,8 @@ export function createAgentSession(nameOf: () => string): AgentSession {
   };
 
   /* Funding from a linked bank, as the Global Accounts playground does it: the bank becomes the customer's
-     external account, and a quote from it into the wallet waits for the bank to push the money. */
+     external account. A US bank is pulled from over ACH; anywhere else, a real-time funded quote issues the
+     account the person pushes the money to from their bank. */
   const bankLink = (): CallStep[] => {
     const bank = chosenBank();
     linkedBank = nextId('ExternalAccount');
@@ -678,28 +693,119 @@ export function createAgentSession(nameOf: () => string): AgentSession {
     linkedBank = from;
     balance += amount;
     const label = `${bank.bankName} •••• ${bank.last4}`;
-    record('Added funds', `${label} · ${bank.country.rail}`, amount);
-    const local = bank.currency !== 'USD';
-    const sending = Math.round(amount * bank.country.usdToLocal);
+    record('Added funds', `${label} · ACH`, amount);
+    const transactionId = nextId('Transaction');
     return [
       {
-        tool: { name: 'add_funds', args: { source: 'linked_bank', amount_usd: dollars(amount) }, result: { status: 'COMPLETED', received: money(amount) } },
+        tool: { name: 'add_funds', args: { source: 'linked_bank', amount_usd: dollars(amount) }, result: { status: 'PROCESSING', amount: money(amount) } },
         calls: [
           {
             method: 'POST',
             path: '/quotes',
-            title: 'Fund from linked bank',
+            title: 'Pull from linked bank',
             reqBody: {
               source: { sourceType: 'ACCOUNT', accountId: from, customerId: CUSTOMER },
               destination: { destinationType: 'ACCOUNT', accountId: WALLET, currency: 'USDB' },
-              lockedCurrencySide: local ? 'RECEIVING' : 'SENDING',
+              lockedCurrencySide: 'SENDING',
+              lockedCurrencyAmount: amount,
+              immediatelyExecute: true,
+            },
+            status: '201 Created',
+            note: `An ACH pull from ${label}, linked through Plaid. It settles in 1–3 business days; sandbox settles it at once.`,
+            resBody: {
+              id: nextId('Quote'),
+              status: 'PROCESSING',
+              source: { sourceType: 'ACCOUNT', accountId: from },
+              sendingCurrency: USD,
+              receivingCurrency: USDB,
+              totalSendingAmount: amount,
+              totalReceivingAmount: amount,
+              exchangeRate: 1,
+              feesIncluded: 0,
+              transactionId,
+              createdAt: nowIso(),
+            },
+          },
+          incomingWebhook(amount, 'USD', 'ACH', 'Pull landed', `INCOMING_PAYMENT.COMPLETED: ${money(amount)} pulled from ${label}.`, undefined, {
+            sourceType: 'ACCOUNT',
+            accountId: from,
+            currency: 'USD',
+            paymentRail: 'ACH',
+          }),
+        ],
+      },
+    ];
+  };
+
+  const fundInstructions = (amount: number): CallStep[] => {
+    const bank = chosenBank();
+    const d = depositDetails(bank, amount);
+    const id = nextId('Quote');
+    const label = `${bank.bankName} •••• ${bank.last4}`;
+    const sending = formatMoney(d.amount, d.currency);
+    wire = { quoteId: id, currency: d.currency, local: d.amount, amount, label, rail: d.rail };
+    const local = d.currency !== 'USD';
+    return [
+      {
+        tool: {
+          name: 'add_funds',
+          args: { source: 'linked_bank', amount_usd: dollars(amount) },
+          result: { status: 'WAITING_FOR_TRANSFER', send: sending, rail: d.rail, reference: d.reference },
+        },
+        calls: [
+          {
+            method: 'POST',
+            path: '/quotes',
+            title: 'Fund by bank transfer',
+            reqBody: {
+              source: { sourceType: 'REALTIME_FUNDING', customerId: CUSTOMER, currency: d.currency },
+              destination: { destinationType: 'ACCOUNT', accountId: WALLET, currency: 'USDB' },
+              lockedCurrencySide: 'RECEIVING',
               lockedCurrencyAmount: amount,
             },
             status: '201 Created',
-            note: `The quote waits for the bank to push the ${bank.country.rail} transfer${local ? ` in ${bank.currency}, converted on arrival` : ''}. In sandbox, POST /sandbox/send stands in for it.`,
-            resBody: { id: nextId('Quote'), status: 'PENDING', sendingCurrency: bank.currency, totalSendingAmount: local ? sending : amount, receivingCurrency: USDB, createdAt: nowIso() },
+            note: `Grid can't pull from ${label}, so the quote issues ${local ? `${bank.country.rail} details in ${d.currency}` : 'wire details in USD'} for the person to send ${sending} to. It converts into the wallet on arrival.`,
+            resBody: {
+              id,
+              status: 'PENDING',
+              expiresAt: toIso(Date.now() + 30 * 60_000),
+              source: { sourceType: 'REALTIME_FUNDING', customerId: CUSTOMER, currency: d.currency },
+              destination: { destinationType: 'ACCOUNT', accountId: WALLET, currency: 'USDB' },
+              sendingCurrency: fiat(d.currency),
+              receivingCurrency: USDB,
+              totalSendingAmount: d.amount,
+              totalReceivingAmount: amount,
+              exchangeRate: Number((amount / d.amount).toFixed(6)),
+              feesIncluded: 0,
+              paymentInstructions: [{ accountOrWalletInfo: d.info, instructionsNotes: `Include reference ${d.reference} with the transfer.`, isPlatformAccount: false }],
+              transactionId: nextId('Transaction'),
+              createdAt: nowIso(),
+            },
           },
-          incomingWebhook(amount, bank.currency, bank.country.rail.toUpperCase().replace(/ /g, '_'), 'Transfer landed', `INCOMING_PAYMENT.COMPLETED: ${money(amount)} from ${label}.`),
+        ],
+      },
+    ];
+  };
+
+  const wireReceived = (): CallStep[] => {
+    const w = wire!;
+    wire = null;
+    balance += w.amount;
+    record('Added funds', `${w.label} · ${w.rail}`, w.amount);
+    return [
+      {
+        tool: { name: 'get_transfer_status', args: { quote_id: w.quoteId }, result: { status: 'COMPLETED', received: money(w.amount) } },
+        calls: [
+          {
+            method: 'POST',
+            path: '/sandbox/send',
+            title: 'Simulate the transfer',
+            reqBody: { quoteId: w.quoteId, currencyCode: w.currency, currencyAmount: w.local },
+            status: '200 OK',
+            note: `Sandbox stands in for the person sending ${formatMoney(w.local, w.currency)} from their bank.`,
+            resBody: { id: nextId('Transaction'), type: 'INCOMING', status: 'PROCESSING', quoteId: w.quoteId, createdAt: nowIso() },
+          },
+          incomingWebhook(w.amount, w.currency, w.rail.toUpperCase().replace(/ /g, '_'), 'Transfer landed', `INCOMING_PAYMENT.COMPLETED: ${money(w.amount)} from ${w.label}.`),
         ],
       },
     ];
@@ -847,7 +953,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
   const buyRequest = (p: Purchase): CallStep[] => {
     const reqBody = {
       kind: 'PURCHASE',
-      fundingSource: WALLET,
+      fundingSource: fundingOf(p),
       amount: p.amount,
       description: p.description,
       ...(p.recurring ? { recurring: true } : {}),
@@ -871,9 +977,10 @@ export function createAgentSession(nameOf: () => string): AgentSession {
               headers,
               reqBody,
               status: '202 Accepted',
-              note: p.recurring
-                ? `A recurring card for ${p.merchant}, up to ${money(p.amount)} a month. Recurring cards always wait for the person.`
-                : `A single-use card for ${money(p.amount)} at ${p.merchant}. Its limit is over the approval threshold, so Grid holds it for the person.`,
+              note:
+                (p.recurring
+                  ? `A recurring card for ${p.merchant}, up to ${money(p.amount)} a month. Recurring cards always wait for the person.`
+                  : `A single-use card for ${money(p.amount)} at ${p.merchant}. Its limit is over the approval threshold, so Grid holds it for the person.`) + byCardNote(p),
               resBody: held,
             },
             webhook('agent-action', 'AGENT_ACTION.PENDING_APPROVAL', held, 'Agent action pending', 'AGENT_ACTION.PENDING_APPROVAL: the payload has the amount, limit and description to show in your approval sheet.'),
@@ -894,7 +1001,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
             headers,
             reqBody,
             status: '201 Created',
-            note: `Under the approval threshold, so the card is issued at once, good for one charge at ${p.merchant}.`,
+            note: `Under the approval threshold, so the card is issued at once, good for one charge at ${p.merchant}.${byCardNote(p)}`,
             resBody: issued,
           },
         ],
@@ -906,8 +1013,9 @@ export function createAgentSession(nameOf: () => string): AgentSession {
     if (!card) return [];
     const c = card;
     card = null;
-    spend(c.purchase.amount);
-    record(c.purchase.merchant, c.purchase.recurring ? 'Subscription · card' : 'One-time card', -c.purchase.amount);
+    const byCard = !!c.purchase.byCard;
+    spend(c.purchase.amount, !byCard);
+    record(c.purchase.merchant, byCard ? 'Visa •••• 4242' : c.purchase.recurring ? 'Subscription · card' : 'One-time card', -c.purchase.amount);
     const txn = {
       type: 'CARD',
       id: nextId('CardTransaction'),
@@ -918,7 +1026,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
       direction: 'DEBIT',
       merchant: { descriptor: c.purchase.merchant.toUpperCase(), mcc: c.purchase.recurring ? '8299' : '5732', country: 'US' },
       authorizedAmount: { amount: c.purchase.amount, currency: USD },
-      accountId: WALLET,
+      ...(byCard ? { fundingSource: fundingOf(c.purchase) } : { accountId: WALLET }),
       authorizedAt: nowIso(),
       createdAt: nowIso(),
       updatedAt: nowIso(),
@@ -945,9 +1053,10 @@ export function createAgentSession(nameOf: () => string): AgentSession {
             'CARD_TRANSACTION.AUTHORIZED',
             txn,
             'Card charged',
-            c.purchase.recurring
+            (c.purchase.recurring
               ? `CARD_TRANSACTION.AUTHORIZED: ${money(c.purchase.amount)} at ${c.purchase.merchant}. The card is now locked to them for next month.`
-              : `CARD_TRANSACTION.AUTHORIZED: ${money(c.purchase.amount)} at ${c.purchase.merchant}. The card closes after this one charge.`,
+              : `CARD_TRANSACTION.AUTHORIZED: ${money(c.purchase.amount)} at ${c.purchase.merchant}. The card closes after this one charge.`) +
+              (byCard ? ' Grid charges the vaulted Visa •••• 4242 for it; the balance is untouched.' : ''),
           ),
         ],
       },
@@ -1126,6 +1235,8 @@ export function createAgentSession(nameOf: () => string): AgentSession {
           return bankLink();
         case 'fund.bank':
           return fundBank(event.amount);
+        case 'fund.instructions':
+          return fundInstructions(event.amount);
         case 'getpaid.address':
           return getpaidAddress(event.network, event.currency);
         case 'getpaid.received':
@@ -1144,6 +1255,10 @@ export function createAgentSession(nameOf: () => string): AgentSession {
           return executeSteps();
         case 'buy.request':
           return buyRequest(event.purchase);
+        case 'buy.withdraw':
+          if (pending?.kind === 'card') pending = null;
+          card = null;
+          return [];
         case 'buy.checkout':
           return buyCheckout();
         case 'agent.quote':

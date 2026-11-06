@@ -10,12 +10,14 @@ import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-st
 import { IconLightning } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLightning';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusMedium';
+import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { Flag } from '@/apps/shared/Flag';
 import { BANK_REACH, type BankCountry } from '@/data/bankCountries';
 import type { AgentAsk, ChipGlyph, Message } from '../conversation';
 import { GlassButton } from '../glass';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
 import { AppSheet } from '../sheet';
+import { APP_ICONS, opensPlaid, usePlaidLink } from '../vault/PlaidLink';
 import { useAskSheet } from '../vault/useAskSheet';
 import { BANK_ALL, BANK_POPULAR, bankFields, payeeBlurb, railLine, useBankPicker, type BankPicker } from '../vault/useBankPicker';
 import { cardFields, useCardEntry } from '../vault/useCardEntry';
@@ -33,6 +35,7 @@ const GLYPHS: Record<ChipGlyph, typeof IconBank> = {
   coin: IconCoin1,
   bolt: IconLightning,
   check: IconCheckCircle2,
+  wallet: IconWallet1,
 };
 
 /** Dots' line glyphs, in the pill's blue (IMG_1891: 20pt). */
@@ -175,8 +178,8 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
   );
 }
 
-function BankFlow({ payee, onLinked, onClose }: { payee?: AgentAsk['recipient']; onLinked: () => void; onClose: () => void }) {
-  const picker = useBankPicker(onLinked, payee);
+function BankFlow({ payee, home, onLinked, onClose }: { payee?: AgentAsk['recipient']; home?: string; onLinked: () => void; onClose: () => void }) {
+  const picker = useBankPicker(onLinked, payee, home);
   return <BankPages picker={picker} onClose={onClose} />;
 }
 
@@ -203,6 +206,16 @@ function Intro({ onStart, onNotNow }: { onStart: () => void; onNotNow: () => voi
 export function useDotBank({ messages, present, onAllow, onDeny }: { messages: Message[]; present: Transition; onAllow: () => void; onDeny: () => void }) {
   const sheet = useAskSheet(messages);
   const [listed, setListed] = useState(false);
+  const plaid = usePlaidLink({
+    app: 'Dots',
+    icon: APP_ICONS.dot,
+    messages,
+    onLinked: onAllow,
+    onManual: (id, ask) => {
+      setListed(true);
+      sheet.show(id, ask);
+    },
+  });
   return {
     open: (id: number, ask: AgentAsk) => {
       setListed(!!ask.recipient);
@@ -212,7 +225,11 @@ export function useDotBank({ messages, present, onAllow, onDeny }: { messages: M
       <>
         <AppSheet open={sheet.open && !listed} present={present} className={styles.introPanel} onDismiss={sheet.hide}>
           <Intro
-            onStart={() => setListed(true)}
+            onStart={() => {
+              if (sheet.ask && !opensPlaid(sheet.ask)) return setListed(true);
+              sheet.hide();
+              if (sheet.ask) plaid.open(sheet.id, sheet.ask);
+            }}
             onNotNow={() => {
               sheet.hide();
               onDeny();
@@ -223,6 +240,7 @@ export function useDotBank({ messages, present, onAllow, onDeny }: { messages: M
           <BankFlow
             key={sheet.id}
             payee={sheet.ask?.recipient}
+            home={sheet.ask?.home}
             onClose={sheet.hide}
             onLinked={() => {
               sheet.hide();
@@ -230,6 +248,7 @@ export function useDotBank({ messages, present, onAllow, onDeny }: { messages: M
             }}
           />
         </PageSheet>
+        {plaid.overlay}
       </>
     ),
   };

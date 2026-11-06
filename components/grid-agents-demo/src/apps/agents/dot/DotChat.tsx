@@ -3,6 +3,8 @@ import { AnimatePresence, motion, type Transition } from 'motion/react';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
 import { IconCheckCircle2 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckCircle2';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
+import { IconChevronDownSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronDownSmall';
+import { IconCreditCard1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCard1';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
 import { IconReceiptBill } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconReceiptBill';
 import { IconRepeat } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRepeat';
@@ -22,7 +24,7 @@ import {
 } from '../ChatFrame';
 import { GlassButton, GlassDisc, GlassPill, NoopButton } from '../glass';
 import { SheetDisc } from '../SheetPage';
-import type { AgentAsk, AgentMeta, Message, Product } from '../conversation';
+import type { AgentAsk, AgentMeta, Message, PayTo, Product } from '../conversation';
 import { linkedBank } from '../linkedBank';
 import { recipientNamed } from '../recipients';
 import { BalanceCard, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
@@ -181,8 +183,21 @@ function SetupSheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow:
 }
 
 /** The pay sheet: Dots' own checkout. It prepares, then shows the payment with Approve (closing it, or saying no, declines). */
-function PaySheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow: () => void; onDeny: () => void; onClose: () => void }) {
+function PaySheet({
+  ask,
+  onAllow,
+  onDeny,
+  onClose,
+  onSwap,
+}: {
+  ask: AgentAsk;
+  onAllow: () => void;
+  onDeny: () => void;
+  onClose: () => void;
+  onSwap: (to: PayTo) => void;
+}) {
   const [ready, setReady] = useState(false);
+  const [picking, setPicking] = useState(false);
   useEffect(() => {
     const t = window.setTimeout(() => setReady(true), PREPARING_MS);
     return () => window.clearTimeout(t);
@@ -257,10 +272,14 @@ function PaySheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow: (
               {method && (
                 <div>
                   <span>Pay with</span>
-                  <p className={styles.balanceRow}>
-                    <DotsMark size={20} />
-                    {method}
-                  </p>
+                  {ask.pay ? (
+                    <PayWith pay={ask.pay} method={method} open={picking} onToggle={() => setPicking((p) => !p)} onSwap={onSwap} />
+                  ) : (
+                    <p className={styles.balanceRow}>
+                      <DotsMark size={20} />
+                      {method}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -277,6 +296,57 @@ function PaySheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow: (
           {ask.allow ?? 'Approve'}
         </GlassButton>
       </div>
+    </div>
+  );
+}
+
+/** The checkout's Pay with, when it can switch: what pays now, and under it the saved card and the Dots balance. */
+function PayWith({
+  pay,
+  method,
+  open,
+  onToggle,
+  onSwap,
+}: {
+  pay: NonNullable<AgentAsk['pay']>;
+  method: string;
+  open: boolean;
+  onToggle: () => void;
+  onSwap: (to: PayTo) => void;
+}) {
+  const pick = (to: PayTo) => (to === pay.by ? onToggle() : onSwap(to));
+  return (
+    <div className={styles.payWith}>
+      <button type="button" className={styles.payNow} onClick={onToggle}>
+        {pay.by === 'card' ? <IconCreditCard1 size={20} /> : <DotsMark size={20} />}
+        <b>{method}</b>
+        <IconChevronDownSmall size={18} className={styles.payChevron} data-open={open || undefined} />
+      </button>
+      {open && (
+        <div className={styles.payOptions}>
+          <button type="button" onClick={() => pick('card')} data-on={pay.by === 'card' || undefined}>
+            <IconCreditCard1 size={20} />
+            <b>
+              {pay.card}
+              <small>Saved card</small>
+            </b>
+            {pay.by === 'card' && <IconCheckmark1 size={18} />}
+          </button>
+          <button type="button" onClick={() => pick('balance')} disabled={!pay.enough} data-on={pay.by === 'balance' || undefined}>
+            <DotsMark size={20} />
+            <b>
+              {pay.wallet}
+              <small>{pay.enough ? `${pay.balance} available` : `${pay.balance} · not enough`}</small>
+            </b>
+            {pay.by === 'balance' && <IconCheckmark1 size={18} />}
+          </button>
+          {!pay.enough && (
+            <button type="button" className={styles.payAdd} onClick={() => onSwap('topup')}>
+              Add money to {pay.wallet}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -482,6 +552,10 @@ export function DotChat({ chat }: AgentChatProps) {
     close();
     chat.deny();
   };
+  const swap = (to: PayTo) => {
+    close();
+    chat.swap(to);
+  };
 
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
@@ -644,7 +718,7 @@ export function DotChat({ chat }: AgentChatProps) {
           (sheet.ask.rows ? (
             <SetupSheet ask={sheet.ask} onAllow={allow} onDeny={deny} onClose={close} />
           ) : (
-            <PaySheet key={sheet.id} ask={sheet.ask} onAllow={allow} onDeny={deny} onClose={close} />
+            <PaySheet key={sheet.id} ask={sheet.ask} onAllow={allow} onDeny={deny} onClose={close} onSwap={swap} />
           ))}
       </AppSheet>
       {sub.sheet}

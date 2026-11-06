@@ -7,6 +7,7 @@ import type { BankCountry } from '@/data/bankCountries';
 import type { AgentAsk, Message } from '../conversation';
 import { GlassPill } from '../glass';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
+import { APP_ICONS, opensPlaid, usePlaidLink } from '../vault/PlaidLink';
 import { useAskSheet } from '../vault/useAskSheet';
 import { BANK_ALL, BANK_INSTANT, BANK_POPULAR, bankFields, payeeBlurb, railLine, useBankPicker, type BankPicker } from '../vault/useBankPicker';
 import styles from './GrokBank.module.scss';
@@ -122,8 +123,8 @@ function DetailsPage({ picker, onClose }: { picker: BankPicker; onClose: () => v
   );
 }
 
-function BankFlow({ payee, onLinked, onClose }: { payee?: AgentAsk['recipient']; onLinked: () => void; onClose: () => void }) {
-  const picker = useBankPicker(onLinked, payee);
+function BankFlow({ payee, home, onLinked, onClose }: { payee?: AgentAsk['recipient']; home?: string; onLinked: () => void; onClose: () => void }) {
+  const picker = useBankPicker(onLinked, payee, home);
   return (
     <SheetSteps step={picker.bank ? 'details' : 'list'} back={picker.back}>
       {picker.bank ? <DetailsPage picker={picker} onClose={onClose} /> : <ListPage picker={picker} onClose={onClose} />}
@@ -134,20 +135,26 @@ function BankFlow({ payee, onLinked, onClose }: { payee?: AgentAsk['recipient'];
 /** Grok's bank flow: the form card's Continue opens it; closing leaves the card waiting. */
 export function useGrokBank({ messages, onAllow }: { messages: Message[]; onAllow: () => void }) {
   const sheet = useAskSheet(messages);
+  const plaid = usePlaidLink({ app: 'Grok', icon: APP_ICONS.grok, messages, onLinked: onAllow, onManual: sheet.show });
   return {
-    open: (id: number, ask: AgentAsk) => sheet.show(id, ask),
+    // Your own bank goes through Plaid; someone else's, or one Plaid doesn't have, through the form.
+    open: (id: number, ask: AgentAsk) => (opensPlaid(ask) ? plaid.open(id, ask) : sheet.show(id, ask)),
     sheet: (
-      <PageSheet open={sheet.open} className={styles.theme} onDismiss={sheet.hide}>
-        <BankFlow
-          key={sheet.id}
-          payee={sheet.ask?.recipient}
-          onClose={sheet.hide}
-          onLinked={() => {
-            sheet.hide();
-            onAllow();
-          }}
-        />
-      </PageSheet>
+      <>
+        <PageSheet open={sheet.open} className={styles.theme} onDismiss={sheet.hide}>
+          <BankFlow
+            key={sheet.id}
+            payee={sheet.ask?.recipient}
+            home={sheet.ask?.home}
+            onClose={sheet.hide}
+            onLinked={() => {
+              sheet.hide();
+              onAllow();
+            }}
+          />
+        </PageSheet>
+        {plaid.overlay}
+      </>
     ),
   };
 }

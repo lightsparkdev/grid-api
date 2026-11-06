@@ -116,7 +116,7 @@ export const BANK_COUNTRIES: BankCountry[] = [
   { code: 'ug', name: 'Uganda', accountType: 'UGX_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 3800, bankName: 'Stanbic Bank' },
   { code: 'ae', name: 'United Arab Emirates', accountType: 'AED_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 3.67, bankName: 'Emirates NBD' },
   { code: 'gb', name: 'United Kingdom', accountType: 'GBP_ACCOUNT', rail: 'Faster Payments', usdToLocal: 0.79, bankName: 'Barclays', popularRank: 6, banks: ['Barclays', 'HSBC', 'Lloyds', 'Monzo'] },
-  { code: 'us', name: 'United States', accountType: 'USD_ACCOUNT', rail: 'ACH', usdToLocal: 1, bankName: 'Chase' },
+  { code: 'us', name: 'United States', accountType: 'USD_ACCOUNT', rail: 'ACH', usdToLocal: 1, bankName: 'Chase', banks: ['Chase', 'Bank of America', 'Wells Fargo', 'Citibank'] },
   { code: 'vn', name: 'Vietnam', accountType: 'VND_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 25400, bankName: 'Vietcombank' },
   { code: 'zm', name: 'Zambia', accountType: 'ZMW_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 26, bankName: 'Zanaco' },
 ];

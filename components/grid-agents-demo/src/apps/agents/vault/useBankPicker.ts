@@ -78,10 +78,15 @@ export function bankDoneLabel(ask: AgentAsk) {
 
 /**
  * The picker's state: the search, the country picked (with its prefilled account), and the link. For someone
- * else's bank (`payee`) it opens on their country, the account in their name, and saves them to pay.
+ * else's bank (`payee`) it opens on their country, the account in their name, and saves them to pay; for the
+ * person's own, on the country they said (`home`).
  */
-export function useBankPicker(onLinked: (bank: LinkedBank) => void, payee?: Payee) {
-  const [bank, setBank] = useState<LinkedBank | null>(() => (payee ? draftRecipient(payee.name, payee.country)?.bank ?? null : null));
+export function useBankPicker(onLinked: (bank: LinkedBank) => void, payee?: Payee, home?: string) {
+  const [bank, setBank] = useState<LinkedBank | null>(() => {
+    if (payee) return draftRecipient(payee.name, payee.country)?.bank ?? null;
+    const country = BANK_ALL.find((c) => c.code === home);
+    return country ? bankFor(country) : null;
+  });
   const [back, setBack] = useState(false);
   const [query, setQuery] = useState('');
   const [stage, setStage] = useState<BankStage>('form');

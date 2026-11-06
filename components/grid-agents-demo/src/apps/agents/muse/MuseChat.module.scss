@@ -185,9 +185,17 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   line-height: 22px;
 }
 
+// One line at 22pt corners is already a capsule; a 999px radius would scale a joined 6.5pt corner away.
+.them[data-pill] {
+  border-radius: 22px;
+}
+
 .them,
 .noteWrap,
-.choices {
+.choices,
+.card,
+.browser,
+.artifact {
   &[data-pos='first'],
   &[data-pos='middle'] {
     border-bottom-left-radius: corners.corner(6.5px);
@@ -451,6 +459,10 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   &[data-pay] {
     height: 83px;
     padding-right: 19.75px;
+  }
+
+  &[data-switch] {
+    cursor: pointer;
   }
 }
 

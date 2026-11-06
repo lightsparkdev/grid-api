@@ -10,7 +10,7 @@ import type { AgentBalance, AskRow, Chip, Message, Product } from '../conversati
 import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { useMuseBalance } from './MuseBalance';
-import { ConnectorCard, useMuseBank, useMuseCard } from './MuseConnect';
+import { ConnectorCard, useMuseBank, useMuseCard, useMusePayWith } from './MuseConnect';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
 
@@ -21,9 +21,9 @@ const A = '/assets/agents/muse';
 const BROWSING = new Set(['searching', 'filling', 'paying']);
 
 /** The Browser card: Muse working a page for you, a blurred look at it, and Open browser. */
-function BrowserCard({ status, waiting }: { status: string; waiting?: boolean }) {
+function BrowserCard({ status, waiting, pos }: { status: string; waiting?: boolean; pos?: string }) {
   return (
-    <div className={styles.browser}>
+    <div className={styles.browser} data-pos={pos}>
       <div className={styles.browserHead}>
         <span className={styles.globe}>
           <IconGlobe size={14} />
@@ -45,9 +45,9 @@ function BrowserCard({ status, waiting }: { status: string; waiting?: boolean })
 }
 
 /** Muse balance as one of Muse's artifacts: the stat tiles; tapping it opens the balance page. */
-function BalanceArtifact({ balance, onOpen }: { balance: AgentBalance; onOpen: () => void }) {
+function BalanceArtifact({ balance, onOpen, pos }: { balance: AgentBalance; onOpen: () => void; pos?: string }) {
   return (
-    <button type="button" className={styles.artifact} data-opens-sheet onClick={onOpen}>
+    <button type="button" className={styles.artifact} data-opens-sheet data-pos={pos} onClick={onOpen}>
       <span className={styles.artifactHead}>
         {balance.wallet}
         <IconChevronRight size={14} />
@@ -72,9 +72,9 @@ function BalanceArtifact({ balance, onOpen }: { balance: AgentBalance; onOpen: (
 }
 
 /** What Muse found, as entity links in its bubble: a thumbnail, the name in bold, the price. */
-function EntityLinks({ products }: { products: Product[] }) {
+function EntityLinks({ products, pos }: { products: Product[]; pos?: string }) {
   return (
-    <div className={styles.them} data-bubble>
+    <div className={styles.them} data-bubble data-pos={pos}>
       {products.map((p, i) => (
         <span key={p.title} className={styles.entityLine}>
           {i > 0 && ' '}
@@ -118,8 +118,8 @@ function MuseAvatar({ mode }: { mode: AvatarMode }) {
   );
 }
 
-/** Agent bubbles, cards and choices join into one run: 6.5pt corners where they meet. */
-const GROUPS = new Set<Message['kind']>(['them', 'card', 'chips']);
+/** Everything the agent sends joins into one run: bubbles, cards, choices, asks, products. 6.5pt corners where they meet. */
+const GROUPS = new Set<Message['kind']>(['them', 'card', 'chips', 'ask', 'products', 'work']);
 
 /** Choices right under a question ride inside its bubble (IMG_1938), so they aren't a row of their own. */
 const inBubble = (i: number, all: Message[]) => {
@@ -127,9 +127,20 @@ const inBubble = (i: number, all: Message[]) => {
   return all[i]?.kind === 'chips' && above?.kind === 'them' && !above.typing;
 };
 
+/** A saved-card or linked-bank line right under its connector card, which already says it: drawn as nothing. */
+const repeatsCard = (i: number, all: Message[]) => {
+  const m = all[i];
+  const prev = all[i - 1];
+  return m?.kind === 'meta' && m.meta.icon === 'check' && prev?.kind === 'ask' && prev.state === 'done' && !!(prev.ask.bank || prev.ask.card);
+};
+
 function groupPosition(i: number, all: Message[]) {
-  const below = inBubble(i + 1, all) ? i + 2 : i + 1;
-  const up = i > 0 && GROUPS.has(all[i - 1].kind);
+  let above = i - 1;
+  while (above >= 0 && repeatsCard(above, all)) above -= 1;
+  let below = i + 1;
+  while (below < all.length && repeatsCard(below, all)) below += 1;
+  if (inBubble(below, all)) below += 1;
+  const up = above >= 0 && GROUPS.has(all[above].kind);
   const down = below < all.length && GROUPS.has(all[below].kind);
   if (up && down) return 'middle';
   if (up) return 'last';
@@ -201,12 +212,17 @@ function Choices({
  */
 function ApprovalCard({
   m,
+  pos,
   onAllow,
   onDeny,
+  onPay,
 }: {
   m: Extract<Message, { kind: 'ask' }>;
+  pos?: string;
   onAllow: () => void;
   onDeny: () => void;
+  /** The Pay with row, when the checkout can switch what pays. */
+  onPay: () => void;
 }) {
   const { ask, state } = m;
   const b = askButtons(ask, state);
@@ -219,7 +235,7 @@ function ApprovalCard({
   // A payment is a checkout Muse is holding open; setting up or changing the balance is Muse asking about itself.
   const checkout = !!(ask.amount || ask.total);
   return (
-    <div className={styles.card} data-ready={ready || undefined}>
+    <div className={styles.card} data-ready={ready || undefined} data-pos={pos}>
       <div className={styles.browserHead}>
         <span className={styles.globe}>{checkout ? <IconGlobe size={14} /> : <IconWallet1 size={14} />}</span>
         <span className={styles.browserTitle}>
@@ -268,6 +284,9 @@ function ApprovalCard({
               className={styles.detail}
               data-tall={(row.sub?.length ?? 0) > 34 || undefined}
               data-pay={row.icon === 'meta' || undefined}
+              data-switch={(row.icon === 'meta' && ask.pay && state === 'open') || undefined}
+              role={row.icon === 'meta' && ask.pay && state === 'open' ? 'button' : undefined}
+              onClick={row.icon === 'meta' && ask.pay && state === 'open' ? onPay : undefined}
             >
               <span className={styles.lead}>
                 <RowLead row={row} />
@@ -296,7 +315,7 @@ function ApprovalCard({
                   </>
                 )}
               </span>
-              {row.icon === 'meta' && <span className={styles.chevron} />}
+              {row.icon === 'meta' && ask.pay && <span className={styles.chevron} />}
             </div>
           ))}
         </div>
@@ -407,6 +426,7 @@ export function MuseChat({ chat }: AgentChatProps) {
   const card = useMuseCard({ messages: chat.messages, onAllow: chat.allow });
   const bank = useMuseBank({ messages: chat.messages, onAllow: chat.allow });
   const balance = useMuseBalance({ account: chat.account, onAction: chat.prompt });
+  const payWith = useMusePayWith({ messages: chat.messages, onSwap: chat.swap });
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them': {
@@ -427,12 +447,12 @@ export function MuseChat({ chat }: AgentChatProps) {
       case 'me':
         return <SentBubble fresh={!openedIds.has(m.id)}>{m.text}</SentBubble>;
       case 'ask':
-        if (m.ask.bank) return <ConnectorCard ask={m.ask} state={m.state} onOpen={() => bank.open(m.id, m.ask)} />;
-        if (m.ask.card) return <ConnectorCard ask={m.ask} state={m.state} onOpen={() => card.open(m.id, m.ask)} />;
-        return <ApprovalCard m={m} onAllow={chat.allow} onDeny={chat.deny} />;
+        if (m.ask.bank) return <ConnectorCard ask={m.ask} state={m.state} pos={groupPosition(i, all)} onOpen={() => bank.open(m.id, m.ask)} />;
+        if (m.ask.card) return <ConnectorCard ask={m.ask} state={m.state} pos={groupPosition(i, all)} onOpen={() => card.open(m.id, m.ask)} />;
+        return <ApprovalCard m={m} pos={groupPosition(i, all)} onAllow={chat.allow} onDeny={chat.deny} onPay={() => payWith.open(m.id, m.ask)} />;
       case 'card': {
         const b = m.card.balance;
-        if (b) return <BalanceArtifact balance={b} onOpen={() => balance.open(b.wallet)} />;
+        if (b) return <BalanceArtifact balance={b} pos={groupPosition(i, all)} onOpen={() => balance.open(b.wallet)} />;
         return (
           <div className={styles.noteWrap} data-pos={groupPosition(i, all)}>
             <NoteCard note={m.card} className={styles.note} />
@@ -455,18 +475,16 @@ export function MuseChat({ chat }: AgentChatProps) {
         return <span className={styles.stamp}>{m.text}</span>;
       case 'work':
         return BROWSING.has(m.key) ? (
-          <BrowserCard status={m.status} />
+          <BrowserCard status={m.status} pos={groupPosition(i, all)} />
         ) : (
           <span className={`${styles.them} ${styles.typing}`} data-bubble>
             <TypingDots />
           </span>
         );
       case 'products':
-        return <EntityLinks products={m.products} />;
+        return <EntityLinks products={m.products} pos={groupPosition(i, all)} />;
       case 'meta': {
-        // A connected card already says what was saved.
-        const prev = all[i - 1];
-        if (m.meta.icon === 'check' && prev?.kind === 'ask' && prev.state === 'done' && (prev.ask.bank || prev.ask.card)) return null;
+        if (repeatsCard(i, all)) return null;
         return <MetaLine meta={m.meta} />;
       }
       case 'divider':
@@ -497,6 +515,7 @@ export function MuseChat({ chat }: AgentChatProps) {
           {card.sheet}
           {bank.sheet}
           {balance.sheet}
+          {payWith.sheet}
         </>
       }
       faceId={chat.authing}
