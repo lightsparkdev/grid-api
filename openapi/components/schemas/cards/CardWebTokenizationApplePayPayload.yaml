@@ -1,0 +1,12 @@
+type: object
+description: What Apple's web script needs to add the card to Apple Wallet.
+required:
+  - jws
+  - state
+properties:
+  jws:
+    $ref: ./CardWebTokenizationAppleJws.yaml
+  state:
+    type: string
+    description: Identifier of this signed object; pass it along with `jws`.
+    example: 7d1c0e9b-3a2f-4b6e-9c8d-1e0f2a3b4c5d

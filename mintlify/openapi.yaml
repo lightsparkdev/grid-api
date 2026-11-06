@@ -12319,6 +12319,115 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
+  /cards/{id}/web-tokenize:
+    parameters:
+      - name: id
+        in: path
+        description: System-generated unique card identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Add a card to a digital wallet from a website
+      description: |-
+        Mint the payload Apple's or Google's web "Add to Wallet" button needs to add the card to the cardholder's wallet from your website (web push provisioning). Call it from your backend when the button asks for the card: from Apple's `jwsResolver`, or from Google's `onSessionCreated` with the three values it supplies. Hand the response straight to the wallet's script.
+
+        The payload is encrypted to the wallet provider's keys, so neither your site nor your servers ever see card data. Do not store or log it; it is valid for one attempt. Authenticate the cardholder before calling.
+
+        Web push provisioning is enabled per website by the card issuer and needs each wallet provider's approval of your site. Until then the call returns `409 CONFLICT`. See [Digital wallet tokenization](/cards/card-management/digital-wallet-tokenization).
+
+        Only `ACTIVE` cards can be added. Every call is audit-logged with the requesting actor and the target wallet.
+      operationId: webTokenizeCard
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebTokenizationRequestOneOf'
+            examples:
+              applePay:
+                summary: Apple Pay
+                value:
+                  wallet: APPLE_PAY
+              googlePay:
+                summary: Google Pay
+                value:
+                  wallet: GOOGLE_PAY
+                  serverSessionId: 8c3b8a7e-2a5d-4b7f-9c1e-6d2f0a1b3c4d
+                  publicDeviceId: 3f1c2b8e-7d4a-4c1e-9b2f-6a5d0e8c7b1a
+                  publicWalletId: 9b7e6d5c-4a3b-4f2e-8d1c-0b9a8f7e6d5c
+      responses:
+        '200':
+          description: Provisioning payload minted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebTokenizationResponseOneOf'
+              examples:
+                applePay:
+                  summary: Apple Pay
+                  value:
+                    wallet: APPLE_PAY
+                    applePay:
+                      jws:
+                        header:
+                          kid: 2f6c8f6a-9a64-4f4e-8a3c-5b0d6e1f2a3b
+                        protected: eyJhbGciOiJFUzI1NiJ9
+                        payload: eyJlbmMiOiIuLi4ifQ
+                        signature: c2lnbmF0dXJl
+                      state: 7d1c0e9b-3a2f-4b6e-9c8d-1e0f2a3b4c5d
+                googlePay:
+                  summary: Google Pay
+                  value:
+                    wallet: GOOGLE_PAY
+                    googlePay:
+                      tspOpc: ZW5jcnlwdGVkLXRzcC1vcGM=
+        '400':
+          description: Invalid input. The body does not match the request shape for its `wallet`, or the wallet provider rejected the values. Start the add-to-wallet flow again on the page to obtain fresh values.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. The session has no attributable actor to audit the request against (for example, an impersonated dashboard session).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. `CARD_NOT_MUTABLE` when the card is `CLOSED`; `CONFLICT` when the card is not `ACTIVE`, its `cardCapabilities.supportsDigitalWalletTokenization` is false, or web push provisioning is not enabled for the card's program.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without a configured card issuer return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /card-disputes/{disputeId}:
     parameters:
       - name: disputeId
@@ -34460,6 +34569,188 @@ components:
           APPLE_PAY: '#/components/schemas/ApplePayTokenizationResponse'
           GOOGLE_PAY: '#/components/schemas/GooglePayTokenizationResponse'
           SAMSUNG_PAY: '#/components/schemas/SamsungPayTokenizationResponse'
+    WebDigitalWallet:
+      type: string
+      enum:
+        - APPLE_PAY
+        - GOOGLE_PAY
+      description: A wallet that can be added to from a website.
+      example: APPLE_PAY
+    WebTokenizationRequest:
+      type: object
+      description: Fields shared by every web add-to-wallet request. Send them from your backend when the wallet provider's web button asks for the card.
+      required:
+        - wallet
+      properties:
+        wallet:
+          $ref: '#/components/schemas/WebDigitalWallet'
+    AppleWebTokenizationRequestFields:
+      type: object
+      required:
+        - wallet
+      properties:
+        wallet:
+          type: string
+          enum:
+            - APPLE_PAY
+          description: Discriminator value identifying an Apple Pay request. Apple's web button needs nothing else from the page.
+          example: APPLE_PAY
+    AppleWebTokenizationRequest:
+      title: Apple Pay Web Tokenization Request
+      allOf:
+        - $ref: '#/components/schemas/WebTokenizationRequest'
+        - $ref: '#/components/schemas/AppleWebTokenizationRequestFields'
+    GoogleWebTokenizationRequestFields:
+      type: object
+      required:
+        - wallet
+        - serverSessionId
+        - publicDeviceId
+        - publicWalletId
+      properties:
+        wallet:
+          type: string
+          enum:
+            - GOOGLE_PAY
+          description: Discriminator value identifying a Google Pay request.
+          example: GOOGLE_PAY
+        serverSessionId:
+          type: string
+          format: uuid
+          description: The `serverSessionId` from Google's `onSessionCreated` callback.
+          example: 8c3b8a7e-2a5d-4b7f-9c1e-6d2f0a1b3c4d
+        publicDeviceId:
+          type: string
+          description: The `publicDeviceId` from Google's `onSessionCreated` callback.
+          example: 3f1c2b8e-7d4a-4c1e-9b2f-6a5d0e8c7b1a
+        publicWalletId:
+          type: string
+          description: The `publicWalletId` from Google's `onSessionCreated` callback.
+          example: 9b7e6d5c-4a3b-4f2e-8d1c-0b9a8f7e6d5c
+    GoogleWebTokenizationRequest:
+      title: Google Pay Web Tokenization Request
+      allOf:
+        - $ref: '#/components/schemas/WebTokenizationRequest'
+        - $ref: '#/components/schemas/GoogleWebTokenizationRequestFields'
+    WebTokenizationRequestOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/AppleWebTokenizationRequest'
+        - $ref: '#/components/schemas/GoogleWebTokenizationRequest'
+      discriminator:
+        propertyName: wallet
+        mapping:
+          APPLE_PAY: '#/components/schemas/AppleWebTokenizationRequest'
+          GOOGLE_PAY: '#/components/schemas/GoogleWebTokenizationRequest'
+    WebTokenizationResponse:
+      type: object
+      description: 'Fields shared by every web add-to-wallet response. The payload is encrypted to the wallet provider''s keys and signed for its web script: hand it to the script unchanged. It is valid for one attempt; do not store or log it.'
+      required:
+        - wallet
+      properties:
+        wallet:
+          $ref: '#/components/schemas/WebDigitalWallet'
+    CardWebTokenizationAppleJws:
+      type: object
+      description: The signed object Apple's `initAddToAppleWallet` script asks your `jwsResolver` for.
+      required:
+        - header
+        - protected
+        - payload
+        - signature
+      properties:
+        header:
+          type: object
+          required:
+            - kid
+          properties:
+            kid:
+              type: string
+              description: Id of the key that signed the object.
+              example: 2f6c8f6a-9a64-4f4e-8a3c-5b0d6e1f2a3b
+        protected:
+          type: string
+          description: Base64url-encoded protected header.
+          example: eyJhbGciOiJFUzI1NiJ9
+        payload:
+          type: string
+          description: Base64url-encoded, encrypted provisioning payload.
+          example: eyJlbmMiOiIuLi4ifQ
+        signature:
+          type: string
+          description: Base64url-encoded signature.
+          example: c2lnbmF0dXJl
+    CardWebTokenizationApplePayPayload:
+      type: object
+      description: What Apple's web script needs to add the card to Apple Wallet.
+      required:
+        - jws
+        - state
+      properties:
+        jws:
+          $ref: '#/components/schemas/CardWebTokenizationAppleJws'
+        state:
+          type: string
+          description: Identifier of this signed object; pass it along with `jws`.
+          example: 7d1c0e9b-3a2f-4b6e-9c8d-1e0f2a3b4c5d
+    AppleWebTokenizationResponseFields:
+      type: object
+      required:
+        - wallet
+        - applePay
+      properties:
+        wallet:
+          type: string
+          enum:
+            - APPLE_PAY
+          description: Discriminator value identifying an Apple Pay response.
+          example: APPLE_PAY
+        applePay:
+          $ref: '#/components/schemas/CardWebTokenizationApplePayPayload'
+    AppleWebTokenizationResponse:
+      title: Apple Pay Web Tokenization Response
+      allOf:
+        - $ref: '#/components/schemas/WebTokenizationResponse'
+        - $ref: '#/components/schemas/AppleWebTokenizationResponseFields'
+    CardWebTokenizationGooglePayPayload:
+      type: object
+      description: What Google's web script needs to add the card. Pass both fields to `googlepay.pushPaymentCredentials` as Google's integration guide describes; either may be absent when Google did not ask for it.
+      properties:
+        googleOpc:
+          type: string
+          description: Base64, encrypted card data that saves the card to the cardholder's Google Account.
+          example: ZW5jcnlwdGVkLWdvb2dsZS1vcGM=
+        tspOpc:
+          type: string
+          description: Base64, encrypted card data that creates the device token.
+          example: ZW5jcnlwdGVkLXRzcC1vcGM=
+    GoogleWebTokenizationResponseFields:
+      type: object
+      required:
+        - wallet
+        - googlePay
+      properties:
+        wallet:
+          type: string
+          enum:
+            - GOOGLE_PAY
+          description: Discriminator value identifying a Google Pay response.
+          example: GOOGLE_PAY
+        googlePay:
+          $ref: '#/components/schemas/CardWebTokenizationGooglePayPayload'
+    GoogleWebTokenizationResponse:
+      title: Google Pay Web Tokenization Response
+      allOf:
+        - $ref: '#/components/schemas/WebTokenizationResponse'
+        - $ref: '#/components/schemas/GoogleWebTokenizationResponseFields'
+    WebTokenizationResponseOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/AppleWebTokenizationResponse'
+        - $ref: '#/components/schemas/GoogleWebTokenizationResponse'
+      discriminator:
+        propertyName: wallet
+        mapping:
+          APPLE_PAY: '#/components/schemas/AppleWebTokenizationResponse'
+          GOOGLE_PAY: '#/components/schemas/GoogleWebTokenizationResponse'
     CardPinSetRequest:
       type: object
       required:

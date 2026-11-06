@@ -1,0 +1,4 @@
+title: Google Pay Web Tokenization Request
+allOf:
+  - $ref: ./WebTokenizationRequest.yaml
+  - $ref: ./GoogleWebTokenizationRequestFields.yaml

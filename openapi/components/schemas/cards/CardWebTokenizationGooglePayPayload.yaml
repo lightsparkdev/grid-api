@@ -1,0 +1,16 @@
+type: object
+description: >-
+  What Google's web script needs to add the card. Pass both fields to
+  `googlepay.pushPaymentCredentials` as Google's integration guide
+  describes; either may be absent when Google did not ask for it.
+properties:
+  googleOpc:
+    type: string
+    description: >-
+      Base64, encrypted card data that saves the card to the cardholder's
+      Google Account.
+    example: ZW5jcnlwdGVkLWdvb2dsZS1vcGM=
+  tspOpc:
+    type: string
+    description: Base64, encrypted card data that creates the device token.
+    example: ZW5jcnlwdGVkLXRzcC1vcGM=
