@@ -4,8 +4,7 @@ get:
   description: >-
     List the rules your platform manages. Without cardId, lists platform-wide
     rules; with cardId, lists only rules configured directly on that card.
-    Lightspark-managed controls are enforced independently and are not exposed
-    by this endpoint. Rules apply to cards whose authorization decisions are
+    Lightspark-managed rules are not exposed by this endpoint. Rules apply to cards whose authorization decisions are
     made by Grid; provider-decided cards are unaffected.
   tags:
     - Cards
