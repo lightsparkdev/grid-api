@@ -6,6 +6,7 @@
   position: absolute;
   inset: 0;
   --grok-sheet: #f4f4f4;
+  --grok-pill: rgba(250, 250, 250, 0.85);
   --grok-field: #e1e0e3;
   --grok-bg: #fcfcfc;
   --grok-edge: 252, 252, 252;
@@ -38,6 +39,7 @@
 
   :global([data-theme='dark']) & {
     --grok-sheet: #1c1c1e;
+    --grok-pill: rgba(58, 58, 60, 0.85);
     --grok-field: #2c2c2e;
     --grok-bg: #000;
     --grok-edge: 0, 0, 0;

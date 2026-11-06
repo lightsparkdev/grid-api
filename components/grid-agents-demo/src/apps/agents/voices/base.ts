@@ -1,5 +1,5 @@
 import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, Params, Product, SubAgent } from '../conversation';
-import { BANK_COUNTRIES } from '@/data/bankCountries';
+import { BANK_REACH } from '@/data/bankCountries';
 import { linkedBank, localAmount, railTiming } from '../linkedBank';
 import { ADDRESS, BUY_OPTIONS, HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
 
@@ -89,7 +89,7 @@ export const LINES = {
     const local = bank.currency === 'USD' ? '' : ` That’s ${localAmount(n(p, 'amount'), bank)} at today’s rate.`;
     return `Requesting ${usd(n(p, 'amount'))} from your ${bank.bankName} •••• ${bank.last4}.${local} ${railTiming(bank)}`;
   },
-  'bank.intro': () => `Link a bank once and you can top up from it any time. It works with banks in ${BANK_COUNTRIES.length} countries.`,
+  'bank.intro': () => `Link a bank once and you can top up from it any time. It works with banks in ${BANK_REACH} countries.`,
   'bank.denied': () => 'Okay, no bank for now. You can link one any time.',
   'fund.done': (p) => `${usd(n(p, 'amount'))} landed. You have ${usd2(n(p, 'balance'))} now.`,
   'fund.card': (p) => `Adding ${usd(n(p, 'amount'))} from your Visa •••• 4242.`,

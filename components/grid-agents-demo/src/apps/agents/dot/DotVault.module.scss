@@ -1,0 +1,298 @@
+// Dots' bank and card sheets (DotVault.tsx), measured at 3x from IMG_1892, IMG_1893 and IMG_1899.
+
+.theme {
+  --sp-bg: #fcfcfc;
+  --sp-text: #000;
+  --sp-muted: #8f8f8f;
+  --sp-title-weight: 600;
+  --dv-box: #fff;
+  --dv-line: #ececec;
+  --dv-tile-line: #e5e6e5;
+  --dv-cta: #000;
+  --dv-cta-text: #fff;
+
+  :global([data-theme='dark']) & {
+    --sp-bg: #0d0d0d;
+    --sp-text: #f5f5f5;
+    --sp-muted: #8e8e93;
+    --dv-box: #1a1a1a;
+    --dv-line: #2a2a2a;
+    --dv-tile-line: #2c2c2e;
+    --dv-cta: #fff;
+    --dv-cta-text: #000;
+  }
+}
+
+.glyph {
+  flex: none;
+}
+
+// ── Plugins list: "Popular ›", then rows of a 48pt tile, the name and its line, and + ──
+.section {
+  padding: 4px 0 8px;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 16.7px 6px;
+  color: var(--sp-muted);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.sectionChevron {
+  width: 7px;
+  height: 12px;
+  background: currentColor;
+  mask: url('/assets/agents/dot/chevron.svg') no-repeat center / contain;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 15.3px;
+  width: 100%;
+  height: 80px;
+  padding: 0 22px 0 16.7px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:active {
+    background: color-mix(in srgb, var(--sp-text) 5%, transparent);
+  }
+}
+
+.tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--dv-tile-line);
+  border-radius: 12px;
+  background: var(--dv-box);
+}
+
+.rowText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.rowTitle {
+  font-size: 17px;
+  line-height: 22px;
+  letter-spacing: -0.43px;
+}
+
+.rowSub {
+  color: var(--sp-muted);
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -0.23px;
+}
+
+.rowEnd {
+  flex: none;
+  color: var(--sp-muted);
+}
+
+.empty {
+  margin: 8px 16.7px;
+  color: var(--sp-muted);
+  font-size: 15px;
+}
+
+// ── Add phone number: white boxes 51pt tall, 17pt apart, the label inside above the value ──
+.boxes {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+  padding: 0 16.7px;
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  min-height: 51px;
+  padding: 6px 16px;
+  border: 1px solid var(--dv-line);
+  border-radius: 12px;
+  background: var(--dv-box);
+}
+
+.boxLabel {
+  color: var(--sp-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.boxValue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  font-size: 17px;
+  line-height: 22px;
+  letter-spacing: -0.43px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fine {
+  text-wrap: pretty;
+  margin: 20px 24px 0;
+  color: var(--sp-muted);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+
+  u {
+    text-underline-offset: 2px;
+  }
+}
+
+.capsule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 50px;
+  border: 0;
+  border-radius: 25px;
+  background: var(--dv-cta);
+  color: var(--dv-cta-text);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.98;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.spin {
+  animation: dv-spin 0.8s linear infinite;
+}
+
+@keyframes dv-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+// ── The Set up texting card, inset 8pt, concentric with the screen's corners ──
+.introPanel {
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+}
+
+.intro.intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 20px 20px;
+  border-radius: 38px 38px calc(var(--screen-corner-radius, 73px) - 8px) calc(var(--screen-corner-radius, 73px) - 8px);
+  corner-shape: round round var(--corner-shape) var(--corner-shape);
+  background: #fff;
+  color: #000;
+
+  :global([data-theme='dark']) & {
+    background: #1a1a1a;
+    color: #f5f5f5;
+  }
+}
+
+.introTile {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 13px;
+  background: #eef3fe;
+  color: #2f50d2;
+
+  :global([data-theme='dark']) & {
+    background: #17213d;
+    color: #8fb0ff;
+  }
+}
+
+.introTitle {
+  margin-top: 14px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 25px;
+}
+
+.introSub {
+  margin: 6px 12px 0;
+  color: #6e6e73;
+  font-size: 15px;
+  line-height: 20px;
+  text-align: center;
+  text-wrap: balance;
+
+  :global([data-theme='dark']) & {
+    color: #9a9a9f;
+  }
+}
+
+.introStart,
+.introNotNow {
+  width: 100%;
+  height: 50px;
+  border: 0;
+  border-radius: 25px;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active {
+    scale: 0.98;
+  }
+}
+
+.introStart {
+  margin-top: 22px;
+  background: #000;
+  color: #fff;
+
+  :global([data-theme='dark']) & {
+    background: #fff;
+    color: #000;
+  }
+}
+
+.introNotNow {
+  margin-top: 10px;
+  background: #f2f2f2;
+  color: #000;
+
+  :global([data-theme='dark']) & {
+    background: #2a2a2a;
+    color: #f5f5f5;
+  }
+}

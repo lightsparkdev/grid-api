@@ -15,7 +15,11 @@ export interface Chip {
   /** Circle flag code (circle-flags), or an icon path. */
   flag?: string;
   icon?: string;
+  /** What it is, for the apps that draw a line glyph ahead of the label (Dots). */
+  glyph?: ChipGlyph;
 }
+
+export type ChipGlyph = 'card' | 'bank' | 'coin' | 'bolt' | 'check';
 
 /** A row of an approval card: what, where, who, paid with. */
 export interface AskRow {

@@ -1,17 +1,33 @@
+import type { ReactNode } from 'react';
 import { SfSymbol } from '@/apps/shared/icons';
 import { SafariBar } from '@/apps/shared/appSwitch';
 import type { AgentAsk, AskState, SubAgent } from '../conversation';
-import { BankLinkFlow } from '../vault/BankLink';
 import { askButtons } from '../parts';
+import { InstinctBank, SiteBar, SiteField } from './InstinctBank';
 import styles from './InstinctSafari.module.scss';
 
 export const INSTINCT_HOST = 'app.instinct.com';
 
+/** Safari over app.instinct.com: "◀ Messages" under the status bar's time, the page, Safari's toolbar. */
+function Safari({ onBack, children }: { onBack: () => void; children: ReactNode }) {
+  return (
+    <div className={styles.page}>
+      <button type="button" className={styles.breadcrumb} data-status-back onClick={onBack}>
+        <svg width="8" height="9" viewBox="0 0 8 9" aria-hidden>
+          <path d="M7.6 0.3v8.4L0.4 4.5z" fill="currentColor" />
+        </svg>
+        Messages
+      </button>
+      {children}
+      <SafariBar host={INSTINCT_HOST} />
+    </div>
+  );
+}
+
 /**
- * Instinct's vault on app.instinct.com, in Safari (recording 6, "Purchase card"):
- * Instinct lives in iMessage, so anything sensitive opens here instead. A small
- * tile, the serif title, labeled beige fields and a black button; once saved,
- * "Saved to your vault" and the way back to iMessage.
+ * Instinct's vault on app.instinct.com, in Safari (IMG_1926–1929, recording 6): Instinct lives in iMessage, so
+ * anything sensitive opens here instead. A card or a setting is an "Add login" form (the serif title, labeled
+ * beige fields, Save); a bank picks its country first. Once saved, "Saved to your vault" and the way back.
  */
 export function InstinctSafari({
   ask,
@@ -30,106 +46,88 @@ export function InstinctSafari({
   const saved = state === 'done';
   if (ask.bank && !saved) {
     return (
-      <div className={styles.page}>
-        <button type="button" className={styles.breadcrumb} data-status-back onClick={onBack}>
-          <svg width="8" height="9" viewBox="0 0 8 9" aria-hidden>
-            <path d="M7.6 0.3v8.4L0.4 4.5z" fill="currentColor" />
-          </svg>
-          Messages
-        </button>
-        <div className={styles.bankPage}>
-          <BankLinkFlow wallet="Instinct balance" className={styles.bankFlow} onLinked={onAllow} />
-        </div>
-        <SafariBar host={INSTINCT_HOST} />
-      </div>
+      <Safari onBack={onBack}>
+        <InstinctBank onLinked={onAllow} />
+      </Safari>
     );
   }
+  if (saved) {
+    return (
+      <Safari onBack={onBack}>
+        <div className={styles.sitePage}>
+          <SiteBar left="menu" />
+          <main className={styles.siteScroll}>
+            <span className={styles.tile} aria-hidden>
+              <SfSymbol name="checkmark" size={16} />
+            </span>
+            <h1 className={styles.siteTitle}>Saved to your vault</h1>
+            <p className={styles.sub}>Instinct can use it now, inside your limits.</p>
+            <button type="button" className={styles.black} onClick={onBack}>
+              Back to iMessage
+            </button>
+          </main>
+        </div>
+      </Safari>
+    );
+  }
+  const busy = b.settled || b.pressing;
   return (
-    <div className={styles.page}>
-      <button type="button" className={styles.breadcrumb} data-status-back onClick={onBack}>
-        <svg width="8" height="9" viewBox="0 0 8 9" aria-hidden>
-          <path d="M7.6 0.3v8.4L0.4 4.5z" fill="currentColor" />
-        </svg>
-        Messages
-      </button>
-      <main className={styles.sheet}>
-        <span className={styles.tile} aria-hidden>
-          <SfSymbol name={saved ? 'checkmark' : 'wallet.pass.fill'} size={16} />
-        </span>
-        <h1 className={styles.title}>{saved ? 'Saved to your vault' : ask.title}</h1>
-        <p className={styles.sub}>
-          {saved ? 'Instinct can use it now, inside your limits.' : 'Only you can change these. Instinct never sees this page.'}
-        </p>
-        {!saved && (
-          <div className={styles.fields}>
+    <Safari onBack={onBack}>
+      <div className={styles.sitePage}>
+        <SiteBar left="close" onLeft={onBack} save={{ enabled: !busy, label: b.pressing ? 'Saving' : 'Save', onClick: onAllow }} />
+        <main className={styles.siteScroll}>
+          <h1 className={styles.siteTitle}>{ask.title}</h1>
+          <div className={styles.siteFields}>
             {ask.rows?.map((r) => (
-              <label key={r.text} className={styles.field}>
-                <span className={styles.label}>
-                  <SfSymbol name="lock.fill" size={10} />
-                  {r.text}
-                </span>
-                <span className={styles.input}>{r.sub}</span>
-              </label>
+              <SiteField key={r.text} label={r.text} value={r.sub ?? ''} icon={r.icon === 'lock' ? <SfSymbol name="lock.fill" size={12} /> : undefined} />
             ))}
           </div>
-        )}
-        {saved ? (
-          <button type="button" className={styles.black} onClick={onBack}>
-            Back to iMessage
+          <p className={styles.siteNote}>Only you can change these. Instinct never sees this page.</p>
+          <button type="button" className={styles.black} data-pressing={b.pressing || undefined} disabled={busy} onClick={onAllow}>
+            {b.pressing ? 'Saving…' : (ask.allow ?? 'Save to vault')}
           </button>
-        ) : (
-          <>
-            <button type="button" className={styles.black} data-pressing={b.pressing || undefined} disabled={b.settled || b.pressing} onClick={onAllow}>
-              {b.pressing ? 'Saving…' : (ask.allow ?? 'Save to vault')}
-            </button>
-            <button type="button" className={styles.notNow} disabled={b.settled || b.pressing} onClick={onDeny}>
-              {state === 'denied' ? (ask.denied ?? 'Not now') : (ask.deny ?? 'Not now')}
-            </button>
-          </>
-        )}
-      </main>
-      <SafariBar host={INSTINCT_HOST} />
-    </div>
+          <button type="button" className={styles.notNow} disabled={busy} onClick={onDeny}>
+            {state === 'denied' ? (ask.denied ?? 'Not now') : (ask.deny ?? 'Not now')}
+          </button>
+        </main>
+      </div>
+    </Safari>
   );
 }
 
 /** The conversation with another agent, on app.instinct.com: what Instinct thought, then what they said. */
 export function InstinctThreadPage({ agent, onBack }: { agent: SubAgent; onBack: () => void }) {
   return (
-    <div className={styles.page}>
-      <button type="button" className={styles.breadcrumb} data-status-back onClick={onBack}>
-        <svg width="8" height="9" viewBox="0 0 8 9" aria-hidden>
-          <path d="M7.6 0.3v8.4L0.4 4.5z" fill="currentColor" />
-        </svg>
-        Messages
-      </button>
-      <main className={`${styles.sheet} ${styles.scroll}`}>
-        <span className={styles.tile} aria-hidden>
-          {agent.initial}
-        </span>
-        <h1 className={styles.title}>{agent.name}</h1>
-        <p className={styles.sub}>{agent.done}</p>
-        <ol className={styles.thinking}>
-          {agent.steps.map((st) => (
-            <li key={st.title}>
-              <b>{st.title}</b>
-              <span>{st.detail}</span>
-            </li>
-          ))}
-        </ol>
-        <div className={styles.exchange}>
-          {agent.messages.map((m, i) => (
-            <p key={i} data-from={m.from}>
-              <small>{m.from === 'us' ? 'Instinct' : agent.name}</small>
-              {m.text}
-            </p>
-          ))}
-        </div>
-        <button type="button" className={styles.black} onClick={onBack}>
-          Back to iMessage
-        </button>
-      </main>
-      <SafariBar host={INSTINCT_HOST} />
-    </div>
+    <Safari onBack={onBack}>
+      <div className={styles.sitePage}>
+        <SiteBar left="menu" />
+        <main className={styles.siteScroll}>
+          <span className={styles.tile} aria-hidden>
+            {agent.initial}
+          </span>
+          <h1 className={styles.siteTitle}>{agent.name}</h1>
+          <p className={styles.sub}>{agent.done}</p>
+          <ol className={styles.thinking}>
+            {agent.steps.map((st) => (
+              <li key={st.title}>
+                <b>{st.title}</b>
+                <span>{st.detail}</span>
+              </li>
+            ))}
+          </ol>
+          <div className={styles.exchange}>
+            {agent.messages.map((m, i) => (
+              <p key={i} data-from={m.from}>
+                <small>{m.from === 'us' ? 'Instinct' : agent.name}</small>
+                {m.text}
+              </p>
+            ))}
+          </div>
+          <button type="button" className={styles.black} onClick={onBack}>
+            Back to iMessage
+          </button>
+        </main>
+      </div>
+    </Safari>
   );
 }

@@ -45,6 +45,7 @@ export interface BankCountry {
 
 export const BANK_COUNTRIES: BankCountry[] = [
   { code: 'at', name: 'Austria', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Erste Bank' },
+  { code: 'bd', name: 'Bangladesh', accountType: 'BDT_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 120, bankName: 'BRAC Bank' },
   { code: 'be', name: 'Belgium', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'KBC' },
   { code: 'bj', name: 'Benin', accountType: 'XOF_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 605, bankName: 'Bank of Africa', region: 'BJ' },
   {
@@ -62,20 +63,25 @@ export const BANK_COUNTRIES: BankCountry[] = [
   { code: 'bg', name: 'Bulgaria', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'DSK Bank' },
   { code: 'cm', name: 'Cameroon', accountType: 'XAF_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 605, bankName: 'Afriland First Bank', region: 'CM' },
   { code: 'cn', name: 'China', accountType: 'CNY_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 7.25, bankName: 'ICBC', popularRank: 8, banks: ['ICBC', 'Bank of China', 'China Construction Bank', 'Agricultural Bank of China'] },
+  { code: 'co', name: 'Colombia', accountType: 'COP_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 4000, bankName: 'Banco de Colombia (Bancolombia)' },
   { code: 'hr', name: 'Croatia', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Zagrebacka banka' },
   { code: 'cy', name: 'Cyprus', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Bank of Cyprus' },
   { code: 'cz', name: 'Czech Republic', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Komercni banka' },
   { code: 'dk', name: 'Denmark', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Danske Bank' },
+  { code: 'eg', name: 'Egypt', accountType: 'EGP_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 48.5, bankName: 'BANQUE MISR' },
   { code: 'ee', name: 'Estonia', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Swedbank' },
   { code: 'fi', name: 'Finland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Nordea' },
   { code: 'fr', name: 'France', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'BNP Paribas' },
   { code: 'de', name: 'Germany', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Deutsche Bank', popularRank: 7, banks: ['Deutsche Bank', 'Commerzbank', 'N26', 'DKB'] },
+  { code: 'gh', name: 'Ghana', accountType: 'GHS_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 15, bankName: 'Gcb Bank Ltd' },
   { code: 'gr', name: 'Greece', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Alpha Bank' },
+  { code: 'ht', name: 'Haiti', accountType: 'HTG_ACCOUNT', rail: 'Mobile Money', usdToLocal: 132, bankName: 'MonCash' },
   { code: 'hu', name: 'Hungary', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'OTP Bank' },
   { code: 'is', name: 'Iceland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Landsbankinn' },
   { code: 'in', name: 'India', accountType: 'INR_ACCOUNT', rail: 'UPI', usdToLocal: 83.3, bankName: 'HDFC Bank', popularRank: 2, banks: ['HDFC Bank', 'ICICI Bank', 'State Bank of India', 'Axis Bank'] },
   { code: 'id', name: 'Indonesia', accountType: 'IDR_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 15800, bankName: 'Bank Mandiri' },
   { code: 'ie', name: 'Ireland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'AIB' },
+  { code: 'il', name: 'Israel', accountType: 'ILS_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 3.7, bankName: 'Bank Leumi Le-Israel B.M' },
   { code: 'it', name: 'Italy', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'UniCredit' },
   { code: 'ci', name: 'Ivory Coast', accountType: 'XOF_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 605, bankName: 'Societe Generale', region: 'CI' },
   { code: 'ke', name: 'Kenya', accountType: 'KES_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 129, bankName: 'Equity Bank' },
@@ -90,6 +96,7 @@ export const BANK_COUNTRIES: BankCountry[] = [
   { code: 'nl', name: 'Netherlands', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'ING' },
   { code: 'ng', name: 'Nigeria', accountType: 'NGN_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 1500, bankName: 'GTBank', popularRank: 4, banks: ['GTBank', 'Access Bank', 'Zenith Bank', 'First Bank'] },
   { code: 'no', name: 'Norway', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'DNB' },
+  { code: 'pk', name: 'Pakistan', accountType: 'PKR_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 280, bankName: 'Habib Bank Limited' },
   { code: 'ph', name: 'Philippines', accountType: 'PHP_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 58, bankName: 'BDO', popularRank: 3, banks: ['BDO', 'BPI', 'Metrobank', 'UnionBank'] },
   { code: 'pl', name: 'Poland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'PKO Bank Polski' },
   { code: 'pt', name: 'Portugal', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Millennium BCP' },
@@ -105,6 +112,7 @@ export const BANK_COUNTRIES: BankCountry[] = [
   { code: 'ch', name: 'Switzerland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'UBS' },
   { code: 'tz', name: 'Tanzania', accountType: 'TZS_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 2600, bankName: 'CRDB Bank' },
   { code: 'th', name: 'Thailand', accountType: 'THB_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 36, bankName: 'Bangkok Bank' },
+  { code: 'tr', name: 'Turkey', accountType: 'TRY_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 34, bankName: 'Ziraat Bankasi' },
   { code: 'ug', name: 'Uganda', accountType: 'UGX_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 3800, bankName: 'Stanbic Bank' },
   { code: 'ae', name: 'United Arab Emirates', accountType: 'AED_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 3.67, bankName: 'Emirates NBD' },
   { code: 'gb', name: 'United Kingdom', accountType: 'GBP_ACCOUNT', rail: 'Faster Payments', usdToLocal: 0.79, bankName: 'Barclays', popularRank: 6, banks: ['Barclays', 'HSBC', 'Lloyds', 'Monzo'] },
@@ -112,6 +120,9 @@ export const BANK_COUNTRIES: BankCountry[] = [
   { code: 'vn', name: 'Vietnam', accountType: 'VND_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 25400, bankName: 'Vietcombank' },
   { code: 'zm', name: 'Zambia', accountType: 'ZMW_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 26, bankName: 'Zanaco' },
 ];
+
+/** How the copy counts coverage: the docs' "65+ countries" (what-is-grid.mdx), not the picker's length. */
+export const BANK_REACH = '65+';
 
 /** ISO 4217 currency for a country, derived from the spec schema (not stored). */
 export function currencyFor(country: BankCountry): string {

@@ -10,9 +10,9 @@
   --dot-secondary: #6e6e73;
   --dot-them: #efefef;
   --dot-blue: #2d59ee;
-  --dot-chip: #edf3ff;
+  --dot-chip: #eef3fe;
   --dot-chip-picked: #dde7ff;
-  --dot-chip-text: #2f57d9;
+  --dot-chip-text: #2f50d2;
   --dot-card: #fff;
   --dot-line: #e5e5e5;
   --part-surface: var(--dot-card);
@@ -257,20 +257,39 @@
   gap: 5px;
 }
 
-.chip {
+// Choices and action pills share Dots' pill (IMG_1891 at 3x): 48pt, light blue, a 20pt glyph 14pt in, the label
+// 19pt after it at 17pt medium, a 5 x 9pt chevron 22pt after the label and 22pt from the end.
+.chip,
+.pill,
+.metaPill {
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 47px;
-  padding: 0 16px 0 14px;
+  gap: 19px;
+  height: 48px;
+  padding: 0 22px 0 14px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 24px;
   background: var(--dot-chip);
   color: var(--dot-chip-text);
   font: inherit;
   font-size: 17px;
   font-weight: 510;
-  line-height: 21px;
+  line-height: 22px;
+  letter-spacing: -0.43px;
+  white-space: nowrap;
+}
+
+.pillLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  + .chevron {
+    margin-left: 3px;
+  }
+}
+
+.chip {
   cursor: pointer;
   transition: opacity 0.3s ease, scale 0.15s ease, background-color 0.2s ease;
 
@@ -286,8 +305,9 @@
 }
 
 .chevron {
-  width: 7px;
-  height: 12px;
+  flex: none;
+  width: 5px;
+  height: 9px;
   background: currentColor;
   mask: url('/assets/agents/dot/chevron.svg') no-repeat center / contain;
 }
@@ -311,18 +331,7 @@
 }
 
 .pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 0 14px 0 9px;
-  border: 1px solid var(--dot-line);
-  border-radius: 20px;
-  background: var(--dot-card);
-  color: var(--dot-text);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 510;
+  max-width: 330px;
   cursor: pointer;
   transition: scale 0.15s ease, opacity 0.2s ease;
 
@@ -340,14 +349,29 @@
   }
 }
 
-.pillEnd {
+.pillLead {
   display: grid;
+  flex: none;
   place-items: center;
-  min-width: 16px;
-  color: var(--dot-secondary);
-  font-size: 20px;
-  font-weight: 300;
-  line-height: 1;
+  width: 20px;
+  height: 20px;
+
+  img {
+    border-radius: 50%;
+  }
+}
+
+// Done: the check sits 34pt after the label and 18pt from the end (IMG_1906, "Shop").
+.pillCheck {
+  flex: none;
+  margin: 0 -4px 0 15px;
+}
+
+// What dot set up, in its gray pill (IMG_1890): dark glyph and label, 16pt in.
+.metaPill {
+  padding-left: 16px;
+  background: var(--dot-them);
+  color: var(--dot-text);
 }
 
 .spinner {

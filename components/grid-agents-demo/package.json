@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start -p 4003",
     "lint": "next lint",
-    "export-sf-symbols": "node scripts/export-sf-symbols.mjs --sync-paths"
+    "export-sf-symbols": "node scripts/export-sf-symbols.mjs --sync-paths",
+    "gen:bank-fields": "node scripts/generate-bank-fields.mjs"
   },
   "dependencies": {
     "@central-icons-react/round-filled-radius-0-stroke-2": "^1.1.267",

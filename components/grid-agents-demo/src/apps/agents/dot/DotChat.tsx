@@ -1,9 +1,12 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, type Transition } from 'motion/react';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
+import { IconCheckCircle2 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckCircle2';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
-import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
+import { IconReceiptBill } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconReceiptBill';
+import { IconRepeat } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRepeat';
+import { IconSettingsSliderHor } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSettingsSliderHor';
 import { Flag } from '@/apps/shared/Flag';
 import {
   ChatFrame,
@@ -18,11 +21,12 @@ import {
   type ScrollCurve,
 } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
-import type { AgentAsk, AgentBalance, Message, Product } from '../conversation';
-import { BalanceCard, BalanceDetail, Divider, MetaLine, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
-import { useBankLink } from '../vault/BankLink';
-import { useCardScan } from '../vault/CardScan';
+import type { AgentAsk, AgentBalance, AgentMeta, Message, Product } from '../conversation';
+import { linkedBank } from '../linkedBank';
+import { BalanceCard, BalanceDetail, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
 import { AppSheet } from '../sheet';
+import { cardLabel } from '../vault/useCardEntry';
+import { DotGlyph, useDotBank, useDotCard } from './DotVault';
 import { ADDRESS, PERSON } from '../story';
 import type { AgentChatProps } from '../types';
 import styles from './DotChat.module.scss';
@@ -85,19 +89,50 @@ function DotsMark({ size }: { size: number }) {
   );
 }
 
-/** The action pill: Dots' mark, what it does, then + (waiting), a spinner (working) or a check. */
-function ActionPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
-  const { ask, state } = m;
+/**
+ * Dots' action pill (IMG_1891, IMG_1906): light blue, 48pt, a 20pt blue glyph, the blue label and a chevron.
+ * Once done the glyph gives way to what it set up (the bank's flag, Dots' mark) and a check takes the chevron's place.
+ */
+function Pill({ m, lead, label, done, onOpen }: { m: Ask; lead: ReactNode; label: string; done: ReactNode; onOpen: () => void }) {
+  const { state } = m;
   const pending = state === 'pressing' || state === 'authing';
-  const label = ask.form?.title ?? ask.title;
   return (
     <button type="button" className={styles.pill} data-state={state} disabled={state !== 'open'} onClick={onOpen} data-opens-sheet>
-      <DotsMark size={22} />
-      <span>{state === 'done' ? (ask.allowed ?? 'Done') : state === 'denied' ? (ask.denied ?? 'Not now') : label}</span>
-      <span className={styles.pillEnd}>
-        {pending ? <i className={styles.spinner} /> : state === 'done' ? <IconCheckmark1 size={16} /> : state === 'open' ? '+' : null}
-      </span>
+      <span className={styles.pillLead}>{state === 'done' ? done : lead}</span>
+      <span className={styles.pillLabel}>{label}</span>
+      {pending ? (
+        <i className={styles.spinner} />
+      ) : state === 'done' ? (
+        <IconCheckmark1 size={18} className={styles.pillCheck} />
+      ) : state === 'open' ? (
+        <span className={styles.chevron} />
+      ) : null}
     </button>
+  );
+}
+
+/** A request to set something up (a bank, a card, turning on the account): its pill, which opens the sheet. */
+function ActionPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
+  const { ask, state } = m;
+  const kind = ask.bank ? 'bank' : ask.card ? 'card' : null;
+  const label =
+    state === 'done'
+      ? ask.bank
+        ? `${linkedBank().bankName} •••• ${linkedBank().last4}`
+        : ask.card
+          ? cardLabel(ask)
+          : (ask.allowed ?? 'Done')
+      : state === 'denied'
+        ? (ask.denied ?? 'Not now')
+        : (ask.form?.title ?? ask.title);
+  return (
+    <Pill
+      m={m}
+      lead={kind ? <DotGlyph glyph={kind} /> : <IconSettingsSliderHor size={20} />}
+      done={ask.bank ? <Flag code={linkedBank().country.code} size={20} /> : kind ? <DotGlyph glyph={kind} /> : <DotsMark size={20} />}
+      label={label}
+      onOpen={onOpen}
+    />
   );
 }
 
@@ -251,7 +286,6 @@ function BalanceSheet({ balance, onClose }: { balance: AgentBalance; onClose: ()
 /** A payment waiting on you, as its pill in the thread: tap to review it in Dots. */
 function PayPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
   const { ask, state } = m;
-  const pending = state === 'pressing' || state === 'authing';
   const label =
     state === 'done'
       ? `${ask.allowed ?? 'Paid'} · ${ask.amount}`
@@ -260,14 +294,18 @@ function PayPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
         : state === 'expired'
           ? 'Expired'
           : `Review payment · ${ask.amount}`;
+  return <Pill m={m} lead={<IconReceiptBill size={20} />} done={<DotsMark size={20} />} label={label} onOpen={onOpen} />;
+}
+
+/** What dot set up or saved, as the gray pill it leaves in the thread (IMG_1890, "Created task"). */
+function MetaPill({ meta }: { meta: AgentMeta }) {
+  const Glyph = meta.icon === 'routine' ? IconRepeat : IconCheckCircle2;
   return (
-    <button type="button" className={styles.pill} data-state={state} disabled={state !== 'open'} onClick={onOpen} data-opens-sheet>
-      <DotsMark size={22} />
-      <span>{label}</span>
-      <span className={styles.pillEnd}>
-        {pending ? <i className={styles.spinner} /> : state === 'done' ? <IconCheckmark1 size={16} /> : state === 'open' ? <IconChevronRight size={14} /> : null}
-      </span>
-    </button>
+    <span className={styles.metaPill}>
+      <Glyph size={20} />
+      <span className={styles.pillLabel}>{meta.text}</span>
+      <span className={styles.chevron} />
+    </span>
   );
 }
 
@@ -421,8 +459,8 @@ export function DotChat({ chat }: AgentChatProps) {
   const [balance, setBalance] = useState<AgentBalance | null>(null);
   const [balanceShown, setBalanceShown] = useState(false);
   const sub = useSubAgentSheet(chat.messages, SHEET_IN);
-  const scan = useCardScan({ wallet: 'Dots balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
-  const bank = useBankLink({ wallet: 'Dots balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
+  const card = useDotCard({ messages: chat.messages, present: SHEET_IN, onAllow: chat.allow });
+  const bank = useDotBank({ messages: chat.messages, present: SHEET_IN, onAllow: chat.allow, onDeny: chat.deny });
   const sheetOpen = shown && !!sheet && chat.messages.some((m) => m.kind === 'ask' && m.id === sheet.id && m.state === 'open');
   const open = (m: Ask) => {
     setSheet({ id: m.id, ask: m.ask });
@@ -434,7 +472,7 @@ export function DotChat({ chat }: AgentChatProps) {
     const ask = [...chat.messages].reverse().find((m): m is Ask => m.kind === 'ask' && m.state === 'open');
     if (!ask || ask.ask.rows || ask.ask.card || opened.current.has(ask.id)) return;
     opened.current.add(ask.id);
-    const t = window.setTimeout(() => (ask.ask.bank ? bank.open(ask.id) : open(ask)), 500);
+    const t = window.setTimeout(() => (ask.ask.bank ? bank.open(ask.id, ask.ask) : open(ask)), 500);
     return () => window.clearTimeout(t);
   }, [chat.messages]);
 
@@ -448,7 +486,7 @@ export function DotChat({ chat }: AgentChatProps) {
     chat.deny();
   };
 
-  const render = (m: Message) => {
+  const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
         return (
@@ -480,16 +518,22 @@ export function DotChat({ chat }: AgentChatProps) {
                 disabled={m.picked !== null || m.expired}
                 onClick={() => chat.pick(i)}
               >
-                {c.flag ? <Flag code={c.flag} size={22} /> : c.icon ? <img src={c.icon} alt="" width={22} height={22} /> : null}
-                {c.label}
+                {c.flag ? (
+                  <Flag code={c.flag} size={20} />
+                ) : c.glyph ? (
+                  <DotGlyph glyph={c.glyph} />
+                ) : c.icon ? (
+                  <img src={c.icon} alt="" width={20} height={20} />
+                ) : null}
+                <span className={styles.pillLabel}>{c.label}</span>
                 <span className={styles.chevron} />
               </button>
             ))}
           </div>
         );
       case 'ask':
-        if (m.ask.card) return <ActionPill m={m} onOpen={() => scan.open(m.id, m.ask)} />;
-        if (m.ask.bank) return <ActionPill m={m} onOpen={() => bank.open(m.id)} />;
+        if (m.ask.card) return <ActionPill m={m} onOpen={() => card.open(m.id, m.ask)} />;
+        if (m.ask.bank) return <ActionPill m={m} onOpen={() => bank.open(m.id, m.ask)} />;
         return m.ask.rows ? <ActionPill m={m} onOpen={() => open(m)} /> : <PayPill m={m} onOpen={() => open(m)} />;
       case 'card': {
         const b = m.card.balance;
@@ -528,8 +572,12 @@ export function DotChat({ chat }: AgentChatProps) {
             <Markdown text={productsText(m.products)} />
           </div>
         );
-      case 'meta':
-        return <MetaLine meta={m.meta} />;
+      case 'meta': {
+        // A done pill already says what was saved; the check line would only repeat it.
+        const prev = all[i - 1];
+        if (m.meta.icon === 'check' && prev?.kind === 'ask' && prev.state === 'done') return null;
+        return <MetaPill meta={m.meta} />;
+      }
       case 'divider':
         return <Divider text={m.text} />;
       case 'subagent':
@@ -606,7 +654,7 @@ export function DotChat({ chat }: AgentChatProps) {
           ))}
       </AppSheet>
       {sub.sheet}
-      {scan.sheet}
+      {card.sheet}
       {bank.sheet}
       <AppSheet open={balanceShown} present={SHEET_IN} className={styles.setupPanel} onDismiss={() => setBalanceShown(false)}>
         {balance && <BalanceSheet balance={balance} onClose={() => setBalanceShown(false)} />}

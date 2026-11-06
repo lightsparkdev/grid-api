@@ -12,11 +12,13 @@ export interface LinkedBank {
   currency: string;
 }
 
+/** As the Global Accounts playground fills it in (useMoneySheet): the spec's sample fields, the country's own bank name. */
 export function bankFor(country: BankCountry): LinkedBank {
   const values = sampleValuesFor(country);
+  if ('bankName' in values) values.bankName = country.bankName;
   return {
     country,
-    bankName: values.bankName || country.bankName,
+    bankName: country.bankName,
     holder: PERSON.full,
     values,
     last4: accountLast4(values),
@@ -25,11 +27,15 @@ export function bankFor(country: BankCountry): LinkedBank {
 }
 
 let linked = bankFor(BANK_COUNTRIES.find((c) => c.code === 'us')!);
+let linkedYet = false;
 
 export const linkedBank = () => linked;
+/** Whether the person has linked one this visit (the default above only stands in for the agent's lines). */
+export const hasLinkedBank = () => linkedYet;
 
 export function linkBank(bank: LinkedBank) {
   linked = bank;
+  linkedYet = true;
 }
 
 /** A USD amount (in cents) in the bank's own currency, at the demo rate. */

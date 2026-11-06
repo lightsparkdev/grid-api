@@ -1,6 +1,6 @@
 import type { ConnectorId } from '@/data/connectors';
 import type { Params } from '../conversation';
-import { BANK_COUNTRIES } from '@/data/bankCountries';
+import { BANK_REACH } from '@/data/bankCountries';
 import { HOTEL, LUCIA, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
 import {
   ASKS,
@@ -119,7 +119,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
         ...ASKS.bank(),
         form: {
           title: 'Link your bank',
-          sub: `Any of ${BANK_COUNTRIES.length} countries. Never shown to your Bot.`,
+          sub: `Banks in ${BANK_REACH} countries. Never shown to your Bot.`,
           sheetTitle: 'Bank account',
           fields: [],
           submitted: 'Linked your bank',

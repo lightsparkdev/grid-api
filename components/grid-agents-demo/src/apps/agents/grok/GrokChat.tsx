@@ -15,7 +15,8 @@ import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentAsk, AgentBalance, Chip, Message, Product } from '../conversation';
 import { BalanceCard, BalanceDetail, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
 import { AppSheet } from '../sheet';
-import { useBankLink } from '../vault/BankLink';
+import { linkedBank } from '../linkedBank';
+import { useGrokBank } from './GrokBank';
 import type { AgentChatProps } from '../types';
 import { GrokEyes } from './GrokEyes';
 import styles from './GrokChat.module.scss';
@@ -167,8 +168,9 @@ function Products({ products }: { products: Product[] }) {
 function FormCard({ m, onOpen }: { m: Ask; onOpen: () => void }) {
   const f = m.ask.form!;
   if (m.state !== 'open') {
+    const submitted = m.ask.bank ? `${linkedBank().bankName} •••• ${linkedBank().last4} linked` : f.submitted;
     const label =
-      m.state === 'denied' ? 'Canceled' : m.state === 'expired' ? 'Expired' : m.state === 'done' ? f.submitted : 'Submitting…';
+      m.state === 'denied' ? 'Canceled' : m.state === 'expired' ? 'Expired' : m.state === 'done' ? submitted : 'Submitting…';
     return (
       <div className={styles.formDone}>
         <IconGlobe size={16} />
@@ -201,7 +203,7 @@ function FormSheet({ ask, onCancel, onDone }: { ask: AgentAsk; onCancel: () => v
     <div className={styles.sheet}>
       <div className={styles.sheetBar}>
         <button type="button" className={styles.sheetButton} onClick={onCancel}>
-          <GlassPill radius={21.33} tint="rgba(250, 250, 250, 0.85)">
+          <GlassPill radius={21.33} tint="var(--grok-pill)">
             <span className={styles.sheetLabel}>Cancel</span>
           </GlassPill>
         </button>
@@ -352,7 +354,7 @@ function settledByOrder(i: number, all: Message[]) {
 export function GrokChat({ chat }: AgentChatProps) {
   const [multiline, setMultiline] = useState(false);
   // The sheet keeps its ask while it slides away.
-  const bank = useBankLink({ wallet: 'Bot balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
+  const bank = useGrokBank({ messages: chat.messages, onAllow: chat.allow });
   const [sheet, setSheet] = useState<{ id: number; ask: AgentAsk } | null>(null);
   const sheetOpen = !!sheet && chat.messages.some((m) => m.kind === 'ask' && m.id === sheet.id && m.state === 'open');
   const [shown, setShown] = useState(false);
@@ -388,7 +390,7 @@ export function GrokChat({ chat }: AgentChatProps) {
           <FormCard
             m={m}
             onOpen={() => {
-              if (m.ask.bank) return bank.open(m.id);
+              if (m.ask.bank) return bank.open(m.id, m.ask);
               setSheet({ id: m.id, ask: m.ask });
               setShown(true);
             }}
@@ -421,6 +423,8 @@ export function GrokChat({ chat }: AgentChatProps) {
       case 'products':
         return <Products products={m.products} />;
       case 'meta':
+        // The folded form already reads what was saved.
+        if (m.meta.icon === 'check' && all[i - 1]?.kind === 'ask') return null;
         return (
           <span className={styles.meta}>
             <IconClock size={13} />

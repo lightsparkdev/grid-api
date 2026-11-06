@@ -1,0 +1,263 @@
+// SheetPage: a page in an app's sheet. Measured on Muse's Connectors, Grok's Vault and Claude's Settings at 3x
+// (IMG_1909, IMG_1922, IMG_1930): 44pt glass discs 16pt in from the sides and 16pt below the sheet's top, the
+// title centered between them at 17pt semibold. Hosts set --sp-bg, --sp-text, --sp-muted, --sp-fill (the pinned
+// search) and --sp-title-weight.
+
+.panel {
+  top: 62px;
+}
+
+.surface {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 38px 38px var(--screen-corner-radius, 73px) var(--screen-corner-radius, 73px);
+  background: var(--sp-bg, #fff);
+  color: var(--sp-text, #000);
+}
+
+.steps {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.step {
+  position: absolute;
+  inset: 0;
+  background: var(--sp-bg, #fff);
+}
+
+.page {
+  --sp-bar: 76px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--sp-bg, #fff);
+  color: var(--sp-text, #000);
+  font-family: var(--font-family-sf-pro);
+}
+
+.scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  padding-top: var(--sp-bar);
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.content {
+  padding-bottom: 40px;
+
+  .page[data-floating] & {
+    padding-bottom: 128px;
+  }
+}
+
+// The large title (Muse): 34pt bold, 16pt in, scrolling away under the bar.
+.large {
+  margin: -6px 16px 12px;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 41px;
+  letter-spacing: 0.4px;
+}
+
+.bar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: var(--sp-bar);
+  padding: 0 16px;
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
+.end {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.trailing {
+  justify-content: flex-end;
+}
+
+.title {
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: var(--sp-title-weight, 600);
+  line-height: 22px;
+  letter-spacing: -0.43px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+
+  &[data-shown] {
+    opacity: 1;
+  }
+}
+
+.disc {
+  width: 44px;
+  height: 44px;
+  color: var(--sp-text, #000);
+}
+
+.discGlass {
+  width: 44px;
+  height: 44px;
+}
+
+.discInner {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+// What's under the bar softens: stacked backdrop blurs, each masked to a band, over a wash of the page.
+@mixin bands($dir, $layers) {
+  > i {
+    position: absolute;
+    inset: 0;
+  }
+
+  @each $n, $blur, $solid, $clear in $layers {
+    > i:nth-child(#{$n}) {
+      -webkit-backdrop-filter: blur($blur);
+      backdrop-filter: blur($blur);
+      -webkit-mask-image: linear-gradient($dir, #000 $solid, transparent $clear);
+      mask-image: linear-gradient($dir, #000 $solid, transparent $clear);
+    }
+  }
+}
+
+.edge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: calc(var(--sp-bar) + 18px);
+  background: linear-gradient(180deg, var(--sp-bg, #fff) 35%, color-mix(in srgb, var(--sp-bg, #fff) 0%, transparent));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+
+  &[data-shown] {
+    opacity: 1;
+  }
+
+  @include bands(180deg, ((1, 1px, 60%, 100%), (2, 2px, 45%, 85%), (3, 4px, 30%, 70%), (4, 8px, 15%, 55%), (5, 12px, 0%, 40%)));
+}
+
+.footEdge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  height: 120px;
+  background: linear-gradient(0deg, var(--sp-bg, #fff) 20%, color-mix(in srgb, var(--sp-bg, #fff) 0%, transparent));
+  pointer-events: none;
+
+  @include bands(0deg, ((1, 1px, 50%, 100%), (2, 3px, 35%, 75%), (3, 6px, 20%, 55%), (4, 10px, 0%, 35%)));
+}
+
+// ── Search ─────────────────────────────────────────────────────────────
+// Sticks just under the bar (sticky insets count from inside the scroller's padding), over the blur.
+.pinned {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 0 var(--sp-search-inset, 16px) 10px;
+  background: var(--sp-bg, #fff);
+}
+
+.searchTop,
+.searchBottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: text;
+}
+
+.searchTop {
+  height: var(--sp-search-h, 36px);
+  padding: 0 var(--sp-search-pad, 10px);
+  border-radius: var(--sp-search-r, 10px);
+  background: var(--sp-fill, rgba(118, 118, 128, 0.12));
+}
+
+.searchGlass {
+  right: 16px;
+  bottom: 34px;
+  left: 16px;
+  z-index: 3;
+  height: 48px;
+}
+
+.searchBottom {
+  height: 100%;
+  padding: 0 14px;
+}
+
+.searchIcon {
+  flex: none;
+  color: var(--sp-muted, #8a8a8e);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 17px;
+  letter-spacing: -0.43px;
+
+  &::placeholder {
+    color: var(--sp-muted, #8a8a8e);
+  }
+}
+
+.clear {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--sp-muted, #8a8a8e);
+  color: var(--sp-bg, #fff);
+  cursor: pointer;
+}
+
+.footer {
+  position: absolute;
+  right: 16px;
+  bottom: 34px;
+  left: 16px;
+  z-index: 3;
+}

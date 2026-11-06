@@ -76,8 +76,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "BRAC Bank"
       },
       {
         "key": "branchCode",
@@ -230,8 +230,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "China Construction Bank"
       },
       {
         "key": "phoneNumber",
@@ -275,8 +275,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "Banco de Colombia (Bancolombia)"
       },
       {
         "key": "phoneNumber",
@@ -336,8 +336,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "BANQUE MISR"
       },
       {
         "key": "phoneNumber",
@@ -372,7 +372,7 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "pattern": "^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$",
         "minLength": 8,
         "maxLength": 11,
-        "description": "The SWIFT/BIC code of the bank",
+        "description": "The SWIFT/BIC code of the bank. When omitted, Grid derives it from the IBAN when possible. Provide it when automatic derivation is unavailable.",
         "example": "DEUTDEFF"
       }
     ]
@@ -422,8 +422,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "Gcb Bank Ltd"
       },
       {
         "key": "phoneNumber",
@@ -467,8 +467,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the beneficiary's bank",
-        "example": "Example Bank"
+        "description": "The name of the beneficiary's bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "Banco Industrial"
       }
     ]
   },
@@ -478,12 +478,12 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
     "fields": [
       {
         "key": "bankName",
-        "required": true,
+        "required": false,
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "Name of the beneficiary's bank. When omitted, resolved from swiftCode via the payout partner bank directory at account creation. Not checked against `GET /discoveries`.",
+        "example": "HSBC Hong Kong"
       },
       {
         "key": "accountNumber",
@@ -532,8 +532,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Bank Central Asia"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "Bank Central Asia (BCA)"
       },
       {
         "key": "accountNumber",
@@ -586,8 +586,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "Bank Leumi Le-Israel B.M"
       }
     ]
   },
@@ -624,24 +624,6 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "maxLength": 11,
         "description": "The Indian Financial System Code (IFSC) of the beneficiary's bank branch (NEFT/RTGS)",
         "example": "HDFC0001234"
-      },
-      {
-        "key": "rail",
-        "required": false,
-        "kind": "text",
-        "minLength": 1,
-        "maxLength": 32,
-        "description": "The payment rail to route the payout over: NEFT or RTGS. Omitted, the payout resolves it by amount.",
-        "example": "NEFT"
-      },
-      {
-        "key": "bankName",
-        "required": false,
-        "kind": "text",
-        "minLength": 1,
-        "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
       }
     ]
   },
@@ -685,8 +667,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "National Commercial Bank Ja Ltd"
       }
     ]
   },
@@ -766,8 +748,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "Maybank"
       },
       {
         "key": "accountNumber",
@@ -810,8 +792,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "Access Bank"
       }
     ]
   },
@@ -820,22 +802,13 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
     "currency": "PHP",
     "fields": [
       {
-        "key": "rail",
-        "required": false,
-        "kind": "text",
-        "minLength": 1,
-        "maxLength": 32,
-        "description": "The payment rail to route the payout over: INSTAPAY or PESONET. Omitted, the payout resolves it by amount.",
-        "example": "INSTAPAY"
-      },
-      {
         "key": "bankName",
         "required": true,
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "Name of the beneficiary's bank",
-        "example": "BDO Unibank"
+        "description": "Name of the beneficiary's bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "Bank of the Philippine Islands (BPI)"
       },
       {
         "key": "accountNumber",
@@ -859,8 +832,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "Habib Bank Limited"
       },
       {
         "key": "accountNumber",
@@ -928,7 +901,7 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "Name of the beneficiary's bank. When omitted, resolved from swiftCode via the payout partner bank directory at account creation.",
+        "description": "Name of the beneficiary's bank. When omitted, resolved from swiftCode via the payout partner bank directory at account creation. Not checked against `GET /discoveries`.",
         "example": "DBS Bank Ltd"
       },
       {
@@ -1061,8 +1034,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "Bangkok Bank Public Company Limited"
       },
       {
         "key": "accountNumber",
@@ -1082,6 +1055,31 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "maxLength": 11,
         "description": "The SWIFT/BIC code of the bank",
         "example": "BKKBTHBK"
+      }
+    ]
+  },
+  "TRY_ACCOUNT": {
+    "accountType": "TRY_ACCOUNT",
+    "currency": "TRY",
+    "fields": [
+      {
+        "key": "iban",
+        "required": true,
+        "kind": "text",
+        "pattern": "^TR[0-9]{2}[0-9A-Z]{22}$",
+        "minLength": 26,
+        "maxLength": 26,
+        "description": "Turkish IBAN (26 characters, starting with TR)",
+        "example": "TR330006100519786457841326"
+      },
+      {
+        "key": "bankName",
+        "required": true,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "<bankName from GET /discoveries>"
       }
     ]
   },
@@ -1164,19 +1162,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 140,
-        "description": "The name of the financial institution holding the account. Optional on every rail, and recommended for wires, where it identifies the beneficiary's institution on the payment message.",
+        "description": "The name of the financial institution holding the account. Optional on every rail, and recommended for wires, where it identifies the beneficiary's institution on the payment message. Not checked against `GET /discoveries`.",
         "example": "Chase Bank"
-      },
-      {
-        "key": "bankAccountType",
-        "required": true,
-        "kind": "select",
-        "enum": [
-          "CHECKING",
-          "SAVINGS"
-        ],
-        "description": "Whether the account is a checking or a savings account. Grid uses this to set the ACH transaction code, so a value that does not match the account causes the receiving bank to return a notification of change.",
-        "example": "CHECKING"
       },
       {
         "key": "intermediaryBankName",
@@ -1204,6 +1191,17 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "maxLength": 210,
         "description": "Bank-to-bank instructions carried alongside the payment. Used on the WIRE rail; ignored on ACH, RTP and FEDNOW.",
         "example": "/BNF/Invoice 4471"
+      },
+      {
+        "key": "bankAccountType",
+        "required": true,
+        "kind": "select",
+        "enum": [
+          "CHECKING",
+          "SAVINGS"
+        ],
+        "description": "Whether the account is a checking or a savings account. Grid uses this to set the ACH transaction code, so a value that does not match the account causes the receiving bank to return a notification of change.",
+        "example": "CHECKING"
       }
     ]
   },
@@ -1217,8 +1215,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "Vietcombank"
       },
       {
         "key": "accountNumber",
@@ -1341,8 +1339,8 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
+        "description": "The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.",
+        "example": "Standard Bank (South Africa)"
       }
     ]
   },

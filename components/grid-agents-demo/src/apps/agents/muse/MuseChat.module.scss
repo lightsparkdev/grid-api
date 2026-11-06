@@ -985,12 +985,6 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
   }
 }
 
-.vaultAsk {
-  --part-surface: var(--muse-browser);
-  width: 345px;
-  border-radius: 22px;
-}
-
 // The iOS 26 tab bar under the composer (IMG_1862; Figma Tab Bar - iPhone, 5 tabs) with Muse's own icons.
 .tabBar {
   position: absolute;

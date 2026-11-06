@@ -6,8 +6,7 @@ import { ChatFrame, ComposerField, ScrollEdge, STILL, TypingDots, useOpenedIds, 
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentBalance, AskRow, Chip, Message, Product } from '../conversation';
 import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useSubAgentSheet } from '../parts';
-import { useBankLink, VaultBankAsk } from '../vault/BankLink';
-import { useCardScan, VaultCardAsk } from '../vault/CardScan';
+import { ConnectorCard, useMuseBank, useMuseCard } from './MuseConnect';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
 
@@ -388,8 +387,8 @@ const TABS = [
 export function MuseChat({ chat }: AgentChatProps) {
   const openedIds = useOpenedIds(chat.messages);
   const sub = useSubAgentSheet(chat.messages);
-  const scan = useCardScan({ wallet: 'Muse balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
-  const bank = useBankLink({ wallet: 'Muse balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
+  const card = useMuseCard({ messages: chat.messages, onAllow: chat.allow });
+  const bank = useMuseBank({ messages: chat.messages, onAllow: chat.allow });
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
@@ -401,10 +400,8 @@ export function MuseChat({ chat }: AgentChatProps) {
       case 'me':
         return <SentBubble fresh={!openedIds.has(m.id)}>{m.text}</SentBubble>;
       case 'ask':
-        if (m.ask.bank) return <VaultBankAsk ask={m.ask} state={m.state} onOpen={() => bank.open(m.id)} onDeny={chat.deny} className={styles.vaultAsk} />;
-        if (m.ask.card) {
-          return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.id, m.ask)} onDeny={chat.deny} className={styles.vaultAsk} />;
-        }
+        if (m.ask.bank) return <ConnectorCard ask={m.ask} state={m.state} onOpen={() => bank.open(m.id, m.ask)} />;
+        if (m.ask.card) return <ConnectorCard ask={m.ask} state={m.state} onOpen={() => card.open(m.id, m.ask)} />;
         return <ApprovalCard m={m} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':
         if (m.card.balance) return <BalanceArtifact balance={m.card.balance} />;
@@ -436,8 +433,12 @@ export function MuseChat({ chat }: AgentChatProps) {
         );
       case 'products':
         return <EntityLinks products={m.products} />;
-      case 'meta':
+      case 'meta': {
+        // A connected card already says what was saved.
+        const prev = all[i - 1];
+        if (m.meta.icon === 'check' && prev?.kind === 'ask' && prev.state === 'done' && (prev.ask.bank || prev.ask.card)) return null;
         return <MetaLine meta={m.meta} />;
+      }
       case 'divider':
         return <Divider text={m.text} />;
       case 'subagent':
@@ -463,7 +464,7 @@ export function MuseChat({ chat }: AgentChatProps) {
       overlay={
         <>
           {sub.sheet}
-          {scan.sheet}
+          {card.sheet}
           {bank.sheet}
         </>
       }

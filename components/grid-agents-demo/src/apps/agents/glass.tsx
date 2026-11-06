@@ -83,15 +83,24 @@ export function GlassDisc({
  * decorative buttons do: the glass swells 2pt a side on hover and 4pt on press, and brightens while held.
  * `size` is the control's width in pt, so wide pills swell by the same few points as discs.
  */
-export function NoopButton({
+export function NoopButton(props: { label: string; size?: number; className?: string; children: ReactNode }) {
+  return <PressButton {...props} />;
+}
+
+/** A glass control that presses like the header ones and does something: a sheet's close, back or save. */
+export function PressButton({
   label,
   size = 44,
   className,
+  disabled,
+  onClick,
   children,
 }: {
   label: string;
   size?: number;
   className?: string;
+  disabled?: boolean;
+  onClick?: () => void;
   children: ReactNode;
 }) {
   return (
@@ -100,6 +109,8 @@ export function NoopButton({
       aria-label={label}
       className={`${styles.noop} ${className ?? ''}`}
       style={{ '--noop-size': size } as CSSProperties}
+      disabled={disabled}
+      onClick={onClick}
     >
       {children}
     </button>

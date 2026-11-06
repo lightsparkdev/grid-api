@@ -3,10 +3,9 @@ import { ChatFrame, ComposerField, Said, ScrollEdge } from '../ChatFrame';
 import { GlassPill, NoopButton } from '../glass';
 import type { Message } from '../conversation';
 import { askButtons, AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
-import { useBankLink, VaultBankAsk } from '../vault/BankLink';
-import { useCardScan, VaultCardAsk } from '../vault/CardScan';
 import type { AgentChatProps } from '../types';
 import { ClaudeMascot } from './ClaudeMascot';
+import { DuetConnector, useDuetBank, useDuetCard } from './DuetVault';
 import type { MascotState } from './mascot';
 import styles from './ClaudeChat.module.scss';
 
@@ -63,9 +62,9 @@ function SpendCard({
 
 export function ClaudeChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages);
-  const scan = useCardScan({ wallet: 'Duet balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
-  const bank = useBankLink({ wallet: 'Duet balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
-  const render = (m: Message) => {
+  const card = useDuetCard({ messages: chat.messages, onAllow: chat.allow });
+  const bank = useDuetBank({ messages: chat.messages, onAllow: chat.allow });
+  const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
         return (
@@ -89,8 +88,8 @@ export function ClaudeChat({ chat }: AgentChatProps) {
           </span>
         );
       case 'ask':
-        if (m.ask.bank) return <VaultBankAsk ask={m.ask} state={m.state} onOpen={() => bank.open(m.id)} onDeny={chat.deny} />;
-        if (m.ask.card) return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.id, m.ask)} onDeny={chat.deny} />;
+        if (m.ask.bank) return <DuetConnector ask={m.ask} state={m.state} onOpen={() => bank.open(m.id, m.ask)} />;
+        if (m.ask.card) return <DuetConnector ask={m.ask} state={m.state} onOpen={() => card.open(m.id, m.ask)} />;
         // The spend card needs an amount; an ask without one (connecting, limits) is a plain approval.
         return m.ask.amount ? (
           <SpendCard m={m} onAllow={chat.allow} onDeny={chat.deny} />
@@ -107,8 +106,12 @@ export function ClaudeChat({ chat }: AgentChatProps) {
         return <WorkLine status={m.status} />;
       case 'products':
         return <ProductRow products={m.products} />;
-      case 'meta':
+      case 'meta': {
+        // A connected card already says what was saved.
+        const prev = all[i - 1];
+        if (m.meta.icon === 'check' && prev?.kind === 'ask' && prev.state === 'done' && (prev.ask.bank || prev.ask.card)) return null;
         return <MetaLine meta={m.meta} />;
+      }
       case 'divider':
         return <Divider text={m.text} />;
       case 'subagent':
@@ -139,7 +142,7 @@ export function ClaudeChat({ chat }: AgentChatProps) {
       overlay={
         <>
           {sub.sheet}
-          {scan.sheet}
+          {card.sheet}
           {bank.sheet}
         </>
       }

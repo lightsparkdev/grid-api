@@ -1,7 +1,7 @@
 import type { ActionId } from '@/data/actions';
 import type { AccountSnapshot } from '@/data/agentApiCalls';
-import { purchaseSpendLimit } from '@/data/agentEvents';
-import type { Beat } from './conversation';
+import { purchaseSpendLimit, type DepositNetwork } from '@/data/agentEvents';
+import type { Beat, ChipGlyph } from './conversation';
 import { CASHOUT, FUND, HOTEL, LUCIA, NEW_LIMITS, RING_LIGHT, SOFIA, SUBSCRIPTION, usd2 } from './story';
 
 /* What each flow does once the visitor sends its line: the agent's beats, the
@@ -17,6 +17,8 @@ export interface FlowContext {
 }
 
 const limitParams = (ctx: FlowContext) => ({ limit: ctx.account().limits.approvalAbove });
+
+const cryptoGlyph = (network: DepositNetwork): ChipGlyph => (network === 'LIGHTNING' ? 'bolt' : 'coin');
 
 /** What the balance card reads: the balance, today's spend against the limits, recent activity. */
 function balanceParams(ctx: FlowContext) {
@@ -132,7 +134,11 @@ const fund = (ctx: FlowContext): Beat[] => [
   { react: '👍' },
   { say: 'fund.ask' },
   {
-    chips: [{ label: FUND.card }, { label: FUND.bank }, ...FUND.crypto.map((o) => ({ label: o.label }))],
+    chips: [
+      { label: FUND.card, glyph: 'card' },
+      { label: FUND.bank, glyph: 'bank' },
+      ...FUND.crypto.map((o) => ({ label: o.label, glyph: cryptoGlyph(o.network) })),
+    ],
     reply: true,
     then: (picked) => {
       if (picked === 0) return cardTopUp(ctx);
@@ -144,7 +150,7 @@ const fund = (ctx: FlowContext): Beat[] => [
         { say: 'fund.address', params },
         { card: 'deposit', params },
         {
-          chips: [{ label: 'I’ve sent it' }],
+          chips: [{ label: 'I’ve sent it', glyph: 'check' }],
           reply: true,
           then: () => [
             { pause: 900 },
@@ -258,7 +264,7 @@ const getpaid = (ctx: FlowContext): Beat[] => [
   { react: '‼️' },
   { say: 'getpaid.ask' },
   {
-    chips: LUCIA.options.map((o) => ({ label: o.label })),
+    chips: LUCIA.options.map((o) => ({ label: o.label, glyph: cryptoGlyph(o.network) })),
     reply: true,
     then: (i) => {
       const o = LUCIA.options[i];

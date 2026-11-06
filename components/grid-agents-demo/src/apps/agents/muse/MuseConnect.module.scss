@@ -1,0 +1,529 @@
+// Muse's connectors (MuseConnect.tsx), measured at 3x from its Plaid recording and IMG_1907–1912.
+
+$muse-font: 'Optimistic AI', var(--font-family-sf-pro);
+
+.theme {
+  --sp-bg: #f3f4f5;
+  --sp-text: #111111;
+  --sp-muted: #7f8083;
+  --sp-fill: #fcfcfc;
+  --sp-title-weight: 600;
+  // IMG_1909: a 43pt pill 20pt in from the sides.
+  --sp-search-h: 43px;
+  --sp-search-r: 999px;
+  --sp-search-inset: 20px;
+  --sp-search-pad: 16px;
+  --mc-card: #fcfcfc;
+  --mc-line: #e5e5e5;
+  --mc-blue: #2962cd;
+  --mc-track: #eeefef;
+  font-family: $muse-font;
+
+  :global([data-theme='dark']) & {
+    --sp-bg: #000;
+    --sp-text: #f5f5f7;
+    --sp-muted: #98989f;
+    --sp-fill: #1c1c1e;
+    --mc-card: #1c1c1e;
+    --mc-line: #38383a;
+    --mc-blue: #4c8dff;
+    --mc-track: #2c2c2e;
+  }
+
+  // The bar's title and the search follow Muse's face, not SF.
+  * {
+    font-family: inherit;
+  }
+}
+
+// ── Connector card in the thread ───────────────────────────────────────
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 238px;
+  padding: 12px 16px 16px;
+  border-radius: 22px;
+  background: var(--muse-them);
+  color: var(--muse-text);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cardTile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 9px;
+  background: #0f1d1f;
+  color: #fff;
+}
+
+.cardText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  strong {
+    overflow: hidden;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: var(--muse-muted);
+    font-size: 13px;
+    line-height: 17px;
+  }
+}
+
+.cardButton {
+  height: 36px;
+  border: 0;
+  border-radius: 18px;
+  background: #f0eff2;
+  color: var(--muse-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: scale 0.15s ease, opacity 0.2s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.98;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  .card[data-state='done'] &,
+  .card[data-state='denied'] &,
+  .card[data-state='expired'] & {
+    color: var(--muse-muted);
+  }
+
+  :global([data-theme='dark']) & {
+    background: #3a3a3c;
+  }
+}
+
+// ── Permission sheet: a floating card inset 8pt ────────────────────────
+.permPanel {
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+}
+
+.perm.perm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 24px 16px;
+  border-radius: 38px 38px calc(var(--screen-corner-radius, 73px) - 8px) calc(var(--screen-corner-radius, 73px) - 8px);
+  corner-shape: round round var(--corner-shape) var(--corner-shape);
+  background: #fff;
+  color: #111111;
+  font-family: $muse-font;
+
+  :global([data-theme='dark']) & {
+    background: #1c1c1e;
+    color: #f5f5f7;
+  }
+}
+
+.grabber {
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(60, 60, 67, 0.3);
+}
+
+.permTile {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-top: 18px;
+  border-radius: 10px;
+  background: #0f1d1f;
+  color: #fff;
+}
+
+.permTitle {
+  margin-top: 10px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.permSub {
+  text-wrap: pretty;
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+}
+
+.promises {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-self: stretch;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    gap: 10px;
+    color: #6a6b6e;
+    font-size: 12px;
+    line-height: 16px;
+
+    :global([data-theme='dark']) & {
+      color: #98989f;
+    }
+
+    > svg {
+      flex: none;
+      margin-top: 1px;
+      color: var(--sp-text, currentColor);
+    }
+  }
+
+  b {
+    display: block;
+    margin-bottom: 2px;
+    color: #111111;
+    font-size: 13px;
+    font-weight: 600;
+
+    :global([data-theme='dark']) & {
+      color: #f5f5f7;
+    }
+  }
+}
+
+.permFine {
+  align-self: stretch;
+  margin: 18px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  color: #6a6b6e;
+  font-size: 11px;
+  line-height: 15px;
+
+  :global([data-theme='dark']) & {
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #98989f;
+  }
+}
+
+// Muse's primary button: the Meta blue sweep, a full-width capsule.
+.blue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 46px;
+  border: 0;
+  border-radius: 23px;
+  background: linear-gradient(90deg, #1d5fd8 0%, #3467ea 100%);
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.98;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  .perm & {
+    margin-top: 14px;
+  }
+}
+
+.cancel {
+  margin-top: 8px;
+  padding: 10px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.spin {
+  animation: mc-spin 0.8s linear infinite;
+}
+
+@keyframes mc-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+// ── The list (IMG_1909 at 3x): 20pt-inset cards, 57pt rows, 32pt tiles, blue actions ──
+.tabs {
+  display: flex;
+  margin: 2px 20px 0;
+  padding: 6px;
+  border: 1px solid var(--mc-track);
+  border-radius: 999px;
+  background: var(--mc-card);
+}
+
+.tab {
+  flex: 1;
+  height: 35px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--sp-text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &[aria-selected='true'] {
+    background: var(--sp-bg);
+  }
+}
+
+.group {
+  margin-top: 22px;
+}
+
+.groupHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 32px 10px;
+
+  h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 22px;
+  }
+}
+
+.seeAll {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--sp-muted);
+  font-size: 15px;
+}
+
+.list {
+  margin: 0 20px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--mc-card);
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 57px;
+  padding: 0 16px 0 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  // The rule starts under the name and stops 16pt short of the card's edge.
+  & + &::before {
+    position: absolute;
+    top: 0;
+    right: 16px;
+    left: 56px;
+    height: 1px;
+    background: var(--mc-line);
+    content: '';
+  }
+
+  &:active {
+    background: color-mix(in srgb, var(--sp-text) 5%, transparent);
+  }
+}
+
+.rowTile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--sp-bg);
+}
+
+.rowName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 17px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowAction {
+  flex: none;
+  color: var(--mc-blue);
+  font-size: 17px;
+  font-weight: 500;
+}
+
+// Featured: a name and its line beside large art, 84pt apart.
+.featured {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 84px;
+  padding: 10px 12px 10px 16px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.featuredText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  strong {
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 22px;
+  }
+
+  small {
+    color: var(--sp-muted);
+    font-size: 15px;
+    line-height: 20px;
+  }
+}
+
+.featuredArt {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  background: var(--sp-bg);
+}
+
+.empty {
+  margin: 24px 32px;
+  color: var(--sp-muted);
+  font-size: 15px;
+  line-height: 20px;
+  text-align: center;
+}
+
+// ── Wallet page (IMG_1911): a 56pt tile, the title centered, a line, the details grouped ──
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 32px 22px;
+  text-align: center;
+}
+
+.heroTile {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--mc-card);
+  color: var(--sp-text);
+}
+
+.heroTitle {
+  margin-top: 14px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.heroSub {
+  margin: 6px 0 0;
+  color: var(--sp-muted);
+  font-size: 15px;
+  line-height: 20px;
+  text-wrap: balance;
+}
+
+.details {
+  padding: 0 16px;
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 11px 0 12px;
+
+  & + & {
+    border-top: 1px solid var(--mc-line);
+  }
+}
+
+.detailLabel {
+  color: var(--sp-muted);
+  font-size: 13px;
+  line-height: 17px;
+}
+
+.detailValue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  font-size: 17px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note {
+  text-wrap: pretty;
+  margin: 14px 36px 0;
+  color: var(--sp-muted);
+  font-size: 13px;
+  line-height: 18px;
+}

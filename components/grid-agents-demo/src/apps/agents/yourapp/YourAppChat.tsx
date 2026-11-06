@@ -5,17 +5,16 @@ import { ChatFrame, ComposerField, Said, ScrollEdge } from '../ChatFrame';
 import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
 import { AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
-import { useBankLink, VaultBankAsk } from '../vault/BankLink';
-import { useCardScan, VaultCardAsk } from '../vault/CardScan';
+import { useBankLink, useCardSheet, VaultBankAsk, VaultCardAsk } from '../vault/BankLink';
 import type { AgentChatProps } from '../types';
 import styles from './YourAppChat.module.scss';
 
 /** A plain chat for the agent a platform builds itself: no brand, just the thread. */
 export function YourAppChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages);
-  const scan = useCardScan({ wallet: 'your balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
+  const card = useCardSheet({ messages: chat.messages, onAllow: chat.allow });
   const bank = useBankLink({ wallet: 'your balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
-  const render = (m: Message) => {
+  const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
         return (
@@ -30,7 +29,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
         return <span className={styles.me} data-bubble>{m.text}</span>;
       case 'ask':
         if (m.ask.bank) return <VaultBankAsk ask={m.ask} state={m.state} onOpen={() => bank.open(m.id)} onDeny={chat.deny} />;
-        if (m.ask.card) return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.id, m.ask)} onDeny={chat.deny} />;
+        if (m.ask.card) return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => card.open(m.id, m.ask)} onDeny={chat.deny} />;
         return <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':
         return m.card.balance ? <BalanceCard balance={m.card.balance} className={styles.accountSkin} /> : <NoteCard note={m.card} />;
@@ -43,8 +42,12 @@ export function YourAppChat({ chat }: AgentChatProps) {
         return <WorkLine status={m.status} />;
       case 'products':
         return <ProductRow products={m.products} />;
-      case 'meta':
+      case 'meta': {
+        // A saved card or linked bank already says so.
+        const prev = all[i - 1];
+        if (m.meta.icon === 'check' && prev?.kind === 'ask' && prev.state === 'done' && (prev.ask.bank || prev.ask.card)) return null;
         return <MetaLine meta={m.meta} />;
+      }
       case 'divider':
         return <Divider text={m.text} />;
       case 'subagent':
@@ -64,7 +67,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
       overlay={
         <>
           {sub.sheet}
-          {scan.sheet}
+          {card.sheet}
           {bank.sheet}
         </>
       }
