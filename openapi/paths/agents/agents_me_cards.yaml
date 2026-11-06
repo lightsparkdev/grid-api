@@ -145,11 +145,6 @@ post:
     `POST /agents/me/cards/{cardId}/reveal`.
 
 
-    An agent created with `actingFor` on an `INDIVIDUAL` customer cannot be
-    issued a card of either kind: it would be the customer's own card. Such a
-    request is rejected with `400`.
-
-
     Card issuance cannot be reversed, so an `Idempotency-Key` header is
     required. Keys are scoped to the agent: a retry by the same agent with the
     same key returns what the first request created, whatever has changed

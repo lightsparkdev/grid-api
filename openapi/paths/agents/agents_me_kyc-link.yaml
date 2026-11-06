@@ -3,8 +3,7 @@ post:
   description: >-
     Generate a single-use hosted KYC link for the authenticated agent's
     individual customer. Requires the MANAGE_IDENTITY permission in the agent's
-    policy. An agent created with `actingFor` is refused with `400`: it acts for
-    someone other than the customer.
+    policy.
   operationId: agentCreateKycLink
   tags:
     - Agent Operations

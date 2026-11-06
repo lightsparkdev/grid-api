@@ -9,9 +9,7 @@ get:
   summary: Get agent transaction by ID
   description: >
     Retrieve a specific transaction belonging to the authenticated agent's customer.
-    Returns 404 if the transaction exists but belongs to a different customer,
-    or, for an agent created with `actingFor` on an `INDIVIDUAL` customer, if
-    it was not made by one of the customer's agents acting for the same person.
+    Returns 404 if the transaction exists but belongs to a different customer.
   operationId: agentGetTransaction
   tags:
     - Agent Operations
