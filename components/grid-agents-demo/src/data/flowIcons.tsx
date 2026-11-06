@@ -1,6 +1,8 @@
 import { IconArrowInbox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowInbox';
+import { IconArrowOutOfBox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowOutOfBox';
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
 import { IconCreditCard1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCard1';
+import { IconCreditCardAdd } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCardAdd';
 import { IconHistory } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHistory';
 import { IconLimit } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLimit';
 import { IconPaperPlaneTopRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPaperPlaneTopRight';
@@ -15,13 +17,15 @@ export type FlowIconCmp = typeof IconPlugin1;
 /** Shared with FlowPicker + API feed section dividers. */
 export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
   connect: IconPlugin1,
+  card: IconCreditCardAdd,
+  bank: IconBank,
   fund: IconPlusLarge,
   limits: IconLimit,
   pay: IconPaperPlaneTopRight,
   buy: IconCreditCard1,
   agent: IconAiBotHead,
   getpaid: IconArrowInbox,
-  cashout: IconBank,
+  cashout: IconArrowOutOfBox,
   balance: IconWallet1,
   history: IconHistory,
 };
@@ -31,8 +35,10 @@ export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
  *  --color-blue-500, --icon-info) with steps between for the extra rows. */
 export const FLOW_ICON_COLORS: Record<ActionId, string> = {
   connect: '#34C759',
-  limits: '#22B96C',
-  fund: 'var(--icon-success)',
+  limits: '#2ABD66',
+  card: '#22B96C',
+  bank: 'var(--icon-success)',
+  fund: '#10AE84',
   cashout: '#0BAB8F',
   balance: '#05AEB8',
   history: 'var(--color-sky-500)',

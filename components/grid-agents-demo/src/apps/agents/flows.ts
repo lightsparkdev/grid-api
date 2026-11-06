@@ -175,6 +175,36 @@ const bankTopUp = (ctx: FlowContext, amount: number): Beat[] => [
   },
 ];
 
+/** Add a card on its own: into the vault, each app's own way, to top up from later. */
+const card = (ctx: FlowContext): Beat[] => {
+  if (ctx.account().cardVaulted) return [{ react: '👍' }, { say: 'card.already' }];
+  return [
+    { react: '👍' },
+    { say: 'card.intro' },
+    {
+      ask: 'vault',
+      faceId: true,
+      allow: [{ emit: { type: 'card.vault' } }, { meta: 'card.saved' }, { say: 'card.done' }],
+      deny: [{ say: 'card.denied' }],
+    },
+  ];
+};
+
+/** Link a bank on its own: the app's consent, then it's there to top up from and cash out to. */
+const bank = (ctx: FlowContext): Beat[] => {
+  if (ctx.account().bankLinked) return [{ react: '👍' }, { say: 'bank.already' }];
+  return [
+    { react: '👍' },
+    { say: 'bank.intro' },
+    {
+      ask: 'bank',
+      faceId: true,
+      allow: [{ emit: { type: 'bank.link' } }, { meta: 'bank.linked' }, { say: 'bank.done' }],
+      deny: [{ say: 'bank.denied' }],
+    },
+  ];
+};
+
 /** Add funds' sources, in its chips' order. */
 const FUND_METHODS: FundMethod[] = ['card', 'bank', 'usdc', 'bitcoin'];
 
@@ -526,6 +556,8 @@ const history = (ctx: FlowContext): Beat[] => [
 
 export const FLOWS: Record<ActionId, (ctx: FlowContext) => Beat[]> = {
   connect,
+  card,
+  bank,
   fund,
   limits,
   pay,
@@ -561,6 +593,8 @@ export function planFor(flow: ActionId, ctx: FlowContext): Beat[] {
 /** Flows a short balance tops up for. Withdrawing more than you have is a no, not a reason to add money. */
 const TOPS_UP: Record<ActionId, boolean> = {
   connect: false,
+  card: false,
+  bank: false,
   fund: false,
   limits: false,
   pay: true,
@@ -587,6 +621,8 @@ export function flowSpend(flow: ActionId, params?: FlowParams): number {
     case 'cashout':
       return cents(params?.amount) ?? CASHOUT_AMOUNT;
     case 'connect':
+    case 'card':
+    case 'bank':
     case 'fund':
     case 'limits':
     case 'getpaid':
@@ -603,6 +639,8 @@ export function flowSpend(flow: ActionId, params?: FlowParams): number {
 /** Flows that need an installed agent: everything but Connect. */
 export const NEEDS_CONNECTION: Record<ActionId, boolean> = {
   connect: false,
+  card: true,
+  bank: true,
   fund: true,
   limits: true,
   pay: true,

@@ -250,6 +250,8 @@ function paramsFor(flow: ActionId, a: ModelAnswer, saved: PromptState['recipient
       return amount ? { name, amount } : null;
     }
     case 'connect':
+    case 'card':
+    case 'bank':
     case 'balance':
     case 'history':
       return undefined;

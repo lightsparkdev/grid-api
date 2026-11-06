@@ -4,6 +4,8 @@
 
 export type ActionId =
   | 'connect'
+  | 'card'
+  | 'bank'
   | 'fund'
   | 'limits'
   | 'pay'
@@ -34,6 +36,8 @@ export type CompletedFlows = Record<ActionId, boolean>;
 
 export const initialCompleted: CompletedFlows = {
   connect: false,
+  card: false,
+  bank: false,
   fund: false,
   limits: false,
   pay: false,
@@ -61,6 +65,18 @@ export const ACTIONS: ActionDef[] = [
     label: 'Connect',
     desc: 'Give the agent its own account, with a policy',
     prompts: ['Set up a balance so you can pay for things'],
+  },
+  {
+    id: 'card',
+    label: 'Add card',
+    desc: 'Save a card to the vault to top up from',
+    prompts: ['Save my card so you can top up from it'],
+  },
+  {
+    id: 'bank',
+    label: 'Link bank',
+    desc: 'Link a bank to move money in and out',
+    prompts: ['Link my bank account'],
   },
   {
     id: 'fund',
@@ -125,6 +141,6 @@ export function actionLabel(id: ActionId): string {
 /** The picker's sections: the agent's account as a two-column grid read across,
  *  related flows sharing a row, then its payments as a list. */
 export const FLOW_GROUPS: { label: string; flows: ActionId[]; columns?: 1 | 2 }[] = [
-  { label: 'Account', flows: ['connect', 'limits', 'fund', 'cashout', 'balance', 'history'] },
+  { label: 'Account', flows: ['connect', 'limits', 'card', 'bank', 'fund', 'cashout', 'balance', 'history'] },
   { label: 'Payments', flows: ['pay', 'getpaid', 'buy', 'agent'], columns: 1 },
 ];

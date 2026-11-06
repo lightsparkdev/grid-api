@@ -52,6 +52,8 @@ function entryKey() {
 
 const NO_RUNS = (): Record<ActionId, number> => ({
   connect: 0,
+  card: 0,
+  bank: 0,
   fund: 0,
   limits: 0,
   pay: 0,

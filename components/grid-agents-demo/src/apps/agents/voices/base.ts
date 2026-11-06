@@ -118,12 +118,16 @@ export const LINES = {
     const local = bank.currency === 'USD' ? '' : ` That’s ${localAmount(n(p, 'amount'), bank)} at today’s rate.`;
     return `Requesting ${usd(n(p, 'amount'))} from your ${bank.bankName} •••• ${bank.last4}.${local} ${railTiming(bank)}`;
   },
-  'bank.intro': () => `Link a bank once and you can top up from it any time. It works with banks in ${BANK_REACH} countries.`,
+  'bank.intro': () => `Link a bank once and you can move money in and out any time. It works with banks in ${BANK_REACH} countries.`,
   'bank.denied': () => 'Okay, no bank for now. You can link one any time.',
   'fund.done': (p) => `${usd(n(p, 'amount'))} landed. You have ${usd2(n(p, 'balance'))} now.`,
   'fund.card': (p) => `Adding ${usd(n(p, 'amount'))} from your Visa •••• 4242.`,
   'card.intro': (p) => `Add a card once and I can top up ${yours(p)} from it whenever you ask.`,
   'card.denied': () => 'Okay, no card for now. You can add one any time.',
+  'card.done': () => 'Saved. I can top up from your Visa •••• 4242 whenever you ask, and I never see the number.',
+  'card.already': () => 'Your Visa •••• 4242 is already in the vault. Say the word and I’ll top up from it.',
+  'bank.done': (p) => `Linked. Money moves over ${linkedBank().country.rail} in and out of ${yours(p)}, only when you ask.`,
+  'bank.already': () => `Your ${linkedBank().bankName} •••• ${linkedBank().last4} is already linked. I can top up from it or cash out to it.`,
 
   'limits.intro': () => 'I can’t change my own limits, so I sent it to you to confirm.',
   'limits.done': (p) => `Done. I’ll handle anything up to ${usd(n(p, 'approve'))} and ask you above it.`,
