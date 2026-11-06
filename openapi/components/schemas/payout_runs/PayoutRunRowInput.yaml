@@ -1,0 +1,31 @@
+type: object
+required:
+  - clientRowId
+  - lockedCurrencySide
+  - lockedCurrencyAmount
+  - destination
+properties:
+  clientRowId:
+    type: string
+    minLength: 1
+    maxLength: 64
+    description: The platform's identifier for the row, unique within the run.
+    example: contractor-0042
+  lockedCurrencySide:
+    $ref: ../quotes/QuoteLockSide.yaml
+  lockedCurrencyAmount:
+    type: integer
+    format: int64
+    minimum: 1
+    maximum: 9000000000000000
+    description: The amount of the locked side, in the smallest unit of its currency, with the same meaning as on a quote. A `CONTACT` row must lock the `SENDING` side.
+    example: 125000
+  destination:
+    $ref: ./PayoutRunRowDestination.yaml
+  description:
+    type: string
+    maxLength: 1024
+    description: Memo for the payment, passed to the row's quote.
+    example: October invoice
+  purposeOfPayment:
+    $ref: ../quotes/PurposeOfPayment.yaml

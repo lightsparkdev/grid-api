@@ -1,0 +1,66 @@
+type: object
+required:
+  - id
+  - payoutRunId
+  - clientRowId
+  - rowIndex
+  - state
+  - lockedCurrencySide
+  - lockedCurrencyAmount
+  - destination
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique row identifier
+    example: PayoutRunRow:019542f5-b3e7-1d02-0000-000000000002
+  payoutRunId:
+    type: string
+    example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+  clientRowId:
+    type: string
+    example: contractor-0042
+  rowIndex:
+    type: integer
+    description: The row's zero-based position in the create request.
+    example: 41
+  state:
+    $ref: ./PayoutRunRowState.yaml
+  lockedCurrencySide:
+    $ref: ../quotes/QuoteLockSide.yaml
+  lockedCurrencyAmount:
+    type: integer
+    format: int64
+    example: 125000
+  destination:
+    $ref: ./PayoutRunRowDestination.yaml
+  description:
+    type: string
+    example: October invoice
+  purposeOfPayment:
+    $ref: ../quotes/PurposeOfPayment.yaml
+  quoteId:
+    type: string
+    description: The quote that pays this row, once its payment has started.
+    example: Quote:019542f5-b3e7-1d02-0000-000000000006
+  transactionId:
+    type: string
+    description: The transaction that pays this row, once its payment has started.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+  failureCode:
+    type: string
+    description: Why the row failed. A Grid error code (for example `INSUFFICIENT_FUNDS` or `ACCOUNT_NOT_FOUND`) when the row was refused before any money moved, or `TRANSACTION_FAILED` when its transaction failed; the transaction carries the details.
+    example: INSUFFICIENT_FUNDS
+  failureReason:
+    type: string
+    description: A human-readable explanation of `failureCode`.
+    example: Insufficient balance on the source account.
+  createdAt:
+    type: string
+    format: date-time
+    example: '2026-11-04T22:00:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    example: '2026-11-05T02:14:00Z'

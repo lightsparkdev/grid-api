@@ -1,0 +1,71 @@
+post:
+  summary: Payout run finished webhook
+  description: |
+    Fired when no row of a payout run is left to pay: `PAYOUT_RUN.COMPLETED`, `PAYOUT_RUN.PARTIALLY_FAILED` or `PAYOUT_RUN.FAILED`, with the run and its row counts. A cancelled run sends none. Each row's transaction sends its own `OUTGOING_PAYMENT.*` webhooks.
+    This endpoint should be implemented by clients of the Grid API.
+
+    ### Authentication
+    The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+    To verify the signature:
+    1. Get the Grid public key provided to you during integration
+    2. Decode the base64 signature from the header
+    3. Create a SHA-256 hash of the request body
+    4. Verify the signature using the public key and the hash
+
+    If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+  operationId: payoutRunWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/webhooks/PayoutRunWebhook.yaml
+        examples:
+          partiallyFailed:
+            summary: A run with failed rows
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000030
+              type: PAYOUT_RUN.PARTIALLY_FAILED
+              timestamp: '2026-11-05T02:14:00Z'
+              data:
+                id: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+                status: PARTIALLY_FAILED
+                source:
+                  accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                allOrNothing: false
+                rowCounts:
+                  total: 1000
+                  pending: 0
+                  pendingClaim: 12
+                  processing: 0
+                  completed: 980
+                  failed: 8
+                  skipped: 0
+                createdAt: '2026-11-04T22:00:00Z'
+                updatedAt: '2026-11-05T02:14:00Z'
+                finishedAt: '2026-11-05T02:14:00Z'
+  responses:
+    '200':
+      description: Webhook received successfully
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Signature validation failed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - Webhook has already been processed (duplicate id)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error409.yaml

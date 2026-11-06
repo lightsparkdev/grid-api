@@ -1,0 +1,12 @@
+type: object
+required:
+  - accountId
+properties:
+  accountId:
+    type: string
+    description: The internal account that funds every row. It must be an open `INTERNAL_FIAT` or `INTERNAL_CRYPTO` account of the platform or of one of its customers.
+    example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+  customerId:
+    type: string
+    description: The customer the payouts are made on behalf of, with the same meaning as `customerId` on an `ACCOUNT` quote source. Optional for a platform account; for a customer's account it must be the owner or omitted.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001

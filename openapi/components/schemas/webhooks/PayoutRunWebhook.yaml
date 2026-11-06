@@ -1,0 +1,10 @@
+allOf:
+  - $ref: ./BaseWebhook.yaml
+  - type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: ../payout_runs/PayoutRun.yaml
+      type:
+        $ref: ./PayoutRunWebhookEventType.yaml

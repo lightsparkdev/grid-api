@@ -1,0 +1,86 @@
+post:
+  summary: Create a payout run
+  description: |
+    Pay many recipients from one internal account in one request. Grid
+    validates every row before it stores the run and answers with the run
+    and the rows it rejected. The accepted rows are then paid in the
+    background, each through its own quote, so each emits the usual
+    `OUTGOING_PAYMENT.*` webhooks. A `PAYOUT_RUN.*` webhook reports the run
+    when no row is left to pay.
+
+    **Funding:** the source must be an open `INTERNAL_FIAT` or
+    `INTERNAL_CRYPTO` account of the platform or of one of its customers.
+
+    **Validation:** a rejected row is returned with its `failureCode` and
+    `failureReason` and stored as `FAILED`. The run pays the accepted rows
+    unless `allOrNothing` is set, in which case any rejection fails the run
+    and skips every row. Every rule is enforced again when a row is paid,
+    so a row can still fail then, for example on insufficient funds.
+
+    **Rows to a contact:** a row addressed to a phone number or email is
+    accepted and held as `PENDING_CLAIM`. Grid does not pay it.
+
+    Requires an API token with the `UMA_TRANSACT` permission.
+  operationId: createPayoutRun
+  tags:
+    - Payout Runs
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: true
+      description: Unique identifier for this run. A retry with the same key and body returns the stored run; the same key with a different body is rejected.
+      schema:
+        type: string
+        maxLength: 255
+        example: payroll-2026-11-04
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/payout_runs/PayoutRunCreateRequest.yaml
+  responses:
+    '200':
+      description: The run this Idempotency-Key already created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/payout_runs/PayoutRunCreateResponse.yaml
+    '201':
+      description: Payout run created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/payout_runs/PayoutRunCreateResponse.yaml
+    '400':
+      description: Bad request - The body is invalid, the funding account cannot fund a run, or the Idempotency-Key was used for a different run
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Payout runs are not enabled for the platform, or the caller is not an API token with the UMA_TRANSACT permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - The funding account or the customer does not exist
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

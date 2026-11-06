@@ -1,0 +1,32 @@
+title: Contact
+type: object
+description: A person addressed by phone number or email, with the same fields as a claimable payout's recipient. Exactly one of `phoneNumber` and `email` is set.
+required:
+  - destinationType
+  - name
+properties:
+  destinationType:
+    type: string
+    enum:
+      - CONTACT
+  name:
+    type: string
+    minLength: 1
+    maxLength: 100
+    description: What the platform calls the recipient.
+    example: Maria
+  phoneNumber:
+    type: string
+    description: The recipient's mobile number in E.164 format.
+    example: '+639171234567'
+  email:
+    type: string
+    format: email
+    maxLength: 254
+    description: The recipient's email address.
+    example: maria@example.com
+  country:
+    type: string
+    pattern: ^[A-Z]{2}$
+    description: ISO 3166-1 alpha-2 country the recipient is paid in. Defaults to the country of `phoneNumber`'s dialing code; required with `email`.
+    example: PH
