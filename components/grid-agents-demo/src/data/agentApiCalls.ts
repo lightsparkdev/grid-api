@@ -785,8 +785,8 @@ export function createAgentSession(nameOf: () => string): AgentSession {
     ];
   };
 
-  const payoutQuote = (p: Payee, toolName: string, title: string): CallStep[] => {
-    const destination = { destinationType: 'ACCOUNT', accountId: payeeAccount(p.name), currency: p.currency, paymentRail: p.rail };
+  const payoutQuote = (p: Payee, toolName: string, title: string, accountId = payeeAccount(p.name)): CallStep[] => {
+    const destination = { destinationType: 'ACCOUNT', accountId, currency: p.currency, paymentRail: p.rail };
     const local = money(p.amount, fiat(p.currency).symbol);
     const rail = p.rail.replace('_', ' ');
     return [
@@ -1137,7 +1137,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
         case 'pay.quote':
           return payoutQuote(event.payee, 'quote_send', event.payee.name);
         case 'cashout.quote':
-          return payoutQuote(event.payee, 'quote_bank_send', `To ${event.payee.name}`);
+          return payoutQuote(event.payee, 'quote_bank_send', `To ${event.payee.name}`, linkedBank ?? undefined);
         case 'pay.execute':
         case 'cashout.execute':
         case 'agent.execute':

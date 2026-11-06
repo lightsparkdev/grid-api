@@ -102,7 +102,7 @@ export const ACTIONS: ActionDef[] = [
     id: 'cashout',
     label: 'Withdraw',
     desc: 'Move money to a bank or mobile wallet',
-    prompts: ['Move $200 to my bank'],
+    prompts: ['Move money to my bank'],
   },
   {
     id: 'balance',

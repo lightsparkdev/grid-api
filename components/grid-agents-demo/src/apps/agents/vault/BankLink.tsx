@@ -112,7 +112,7 @@ export function BankLinkFlow({
                 </span>
                 <h2 className={styles.title}>Link a bank</h2>
                 <p className={styles.sub}>
-                  Top up your {wallet} from a bank in {BANK_REACH} countries, over its local rails.
+                  Move money between your {wallet} and a bank in {BANK_REACH} countries, over its local rails.
                 </p>
                 <label className={styles.search}>
                   <IconMagnifyingGlass size={18} className={styles.searchIcon} />
@@ -152,7 +152,7 @@ export function BankLinkFlow({
                   <p className={styles.sub}>
                     {payee
                       ? `${payeeBlurb(bank, payee.first)} Your agent pays by account and never sees these numbers.`
-                      : `Top-ups arrive over ${bank.country.rail} in ${bank.currency} and land in your ${wallet}.`}
+                      : `Money moves over ${bank.country.rail} in ${bank.currency}, in and out of your ${wallet}.`}
                   </p>
                   <div className={styles.fields}>
                     {bankFields(bank).map((f) => (

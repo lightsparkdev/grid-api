@@ -68,7 +68,7 @@ function ListPage({ picker, onClose }: { picker: BankPicker; onClose: () => void
       )}
       <p className={styles.help}>
         {list.length
-          ? 'Grok Bot never sees your bank login. It can top up your Bot balance from it only when you ask.'
+          ? 'Grok Bot never sees your bank login. It only moves money to or from it when you ask.'
           : `No banks in “${picker.query}” yet.`}
       </p>
     </SheetPage>
@@ -116,7 +116,7 @@ function DetailsPage({ picker, onClose }: { picker: BankPicker; onClose: () => v
       <p className={styles.help}>
         {picker.payee
           ? `${payeeBlurb(bank, picker.payee.first)} Your Bot pays by account and never sees these numbers.`
-          : `Top-ups arrive over ${railLine(bank.country).replace(' · ', ' in ')} and land in your Bot balance.`}
+          : `Money moves over ${railLine(bank.country).replace(' · ', ' in ')}, in and out of your Bot balance.`}
       </p>
     </SheetPage>
   );

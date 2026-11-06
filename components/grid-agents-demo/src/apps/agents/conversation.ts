@@ -188,8 +188,8 @@ export type Beat =
   | { divider: string }
   | { ask: string; params?: Params; faceId?: boolean; allow: Beat[]; deny: Beat[] }
   | { chips: Chip[]; reply?: boolean; then: (picked: number) => Beat[] }
-  /** Waits for a typed dollar amount; anything else lapses it and goes to the model. */
-  | { amount: true; then: (usd: number) => Beat[] }
+  /** Waits for a typed dollar amount ("everything" means `all`, in cents); anything else lapses it and goes to the model. */
+  | { amount: true; all?: number; then: (usd: number) => Beat[] }
   | { emit: AgentEvent }
   | { pause: number }
   | { when: () => Beat[] };

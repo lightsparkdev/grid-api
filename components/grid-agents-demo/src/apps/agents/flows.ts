@@ -1,11 +1,11 @@
 import type { ActionId } from '@/data/actions';
 import type { AccountSnapshot } from '@/data/agentApiCalls';
-import { purchaseSpendLimit, type DepositNetwork, type Limits, type Purchase } from '@/data/agentEvents';
+import { purchaseSpendLimit, type DepositNetwork, type Limits, type Payee, type Purchase } from '@/data/agentEvents';
 import type { Beat, ChipGlyph, Params } from './conversation';
-import { formatMoney } from './linkedBank';
+import { formatMoney, linkedBank } from './linkedBank';
 import { draftRecipient, payeeFor, recipientNamed, type Recipient } from './recipients';
 import { merchantFor, stayFor, stayParams } from './hotels';
-import { CASHOUT, FUND, LUCIA, NEW_LIMITS, RING_LIGHT, SUBSCRIPTION, usd2 } from './story';
+import { CASHOUT_AMOUNT, FUND, LUCIA, NEW_LIMITS, RING_LIGHT, SUBSCRIPTION, usd2 } from './story';
 
 /* What each flow does once the visitor sends its line: the agent's beats, the
    Grid events at each beat, and the points where it waits on the visitor.
@@ -433,35 +433,52 @@ const getpaid = (ctx: FlowContext): Beat[] => {
   ];
 };
 
-const cashout = (ctx: FlowContext): Beat[] => [
-  { react: '👍' },
-  { say: 'cashout.ask' },
-  {
-    chips: CASHOUT.map((c) => ({ label: c.chip, flag: c.flag })),
-    reply: true,
-    then: (i) => {
-      const story = CASHOUT[i];
-      const usd = cents(ctx.params?.amount) ?? story.usd;
-      const amount = Math.round((story.amount * usd) / story.usd);
-      const p = { ...story, usd, amount, local: formatMoney(amount, story.currency) };
-      const params = { local: p.local, to: p.name, rail: p.rail, usd: p.usd, flag: p.flag ?? '' };
-      return [
-        { work: 'quoting', ms: 1000 },
-        { emit: { type: 'cashout.quote', payee: p } },
-        { say: 'cashout.quote', params },
-        { emit: { type: 'cashout.execute' } },
-        ...approvalOr(
-          ctx,
-          ctx.needsApproval(p.usd),
-          { key: 'cashout', params },
-          'cashout.auto',
-          [{ work: 'sending', ms: 900 }, { card: 'receipt.cashout', params }, { say: 'cashout.done' }],
-          'cashout.denied',
-        ),
-      ];
+/** Withdraw goes to the person's own bank: the one they linked, or one they link now in the app's own sheet. */
+const cashout = (ctx: FlowContext): Beat[] => {
+  const balance = ctx.account().balanceCents;
+  const amount = cents(ctx.params?.amount);
+  if (balance <= 0) return [{ react: '👍' }, { say: 'cashout.empty' }];
+  if (amount === undefined) {
+    return [
+      { react: '👍' },
+      { say: 'cashout.amount' },
+      { amount: true, all: balance, then: (usd) => cashout({ ...ctx, params: { ...ctx.params, amount: usd } }).slice(1) },
+    ];
+  }
+  if (amount > balance) return [{ react: '👍' }, { say: 'cashout.over', params: { balance } }];
+  const send = (): Beat[] => {
+    const bank = linkedBank();
+    const local = Math.round(amount * bank.country.usdToLocal);
+    const rail = bank.country.rail;
+    const p: Payee = { name: `${bank.bankName} •••• ${bank.last4}`, currency: bank.currency, amount: local, usd: amount, rail: rail.toUpperCase().replace(/ /g, '_'), bank: bank.bankName };
+    const params = { local: formatMoney(local, bank.currency), to: p.name, rail, usd: amount, flag: bank.country.code };
+    return [
+      { work: 'quoting', ms: 1000 },
+      { emit: { type: 'cashout.quote', payee: p } },
+      { say: 'cashout.quote', params },
+      { emit: { type: 'cashout.execute' } },
+      ...approvalOr(
+        ctx,
+        ctx.needsApproval(amount),
+        { key: 'cashout', params },
+        'cashout.auto',
+        [{ work: 'sending', ms: 900 }, { card: 'receipt.cashout', params }, { say: 'cashout.done' }],
+        'cashout.denied',
+      ),
+    ];
+  };
+  if (ctx.account().bankLinked) return [{ react: '👍' }, { when: send }];
+  return [
+    { react: '👍' },
+    { say: 'cashout.bank' },
+    {
+      ask: 'bank',
+      faceId: true,
+      allow: [{ emit: { type: 'bank.link' } }, { meta: 'bank.linked' }, { when: send }],
+      deny: [{ say: 'bank.denied' }],
     },
-  },
-];
+  ];
+};
 
 const balance = (ctx: FlowContext): Beat[] => [
   { work: 'checking', ms: 700 },
@@ -516,7 +533,7 @@ export function planFor(flow: ActionId, ctx: FlowContext): Beat[] {
   const task = () => quiet(FLOWS[flow](ctx));
   const covered = (): Beat[] => {
     const need = flowSpend(flow, ctx.params) - ctx.account().balanceCents;
-    if (need <= 0 || flow === 'fund') return task();
+    if (need <= 0 || !TOPS_UP[flow]) return task();
     const amount = Math.ceil(need / 5_000) * 5_000;
     return quiet(fund({ ...ctx, params: { amount: amount / 100 }, then: task }));
   };
@@ -524,8 +541,22 @@ export function planFor(flow: ActionId, ctx: FlowContext): Beat[] {
   // Asked for directly, the agent's reply already says it's setting up.
   if (flow === 'connect') return connect(ctx).filter((b) => !('say' in b && b.say === 'connect.intro'));
   const need = flowSpend(flow, ctx.params) - ctx.account().balanceCents;
-  return need > 0 && flow !== 'fund' ? [{ react: '👍' }, ...covered()] : FLOWS[flow](ctx);
+  return need > 0 && TOPS_UP[flow] ? [{ react: '👍' }, ...covered()] : FLOWS[flow](ctx);
 }
+
+/** Flows a short balance tops up for. Withdrawing more than you have is a no, not a reason to add money. */
+const TOPS_UP: Record<ActionId, boolean> = {
+  connect: false,
+  fund: false,
+  limits: false,
+  pay: true,
+  buy: true,
+  agent: true,
+  getpaid: false,
+  cashout: false,
+  balance: false,
+  history: false,
+};
 
 /** The most a run spends (USD cents), so a jump to it can top the balance up first. */
 export function flowSpend(flow: ActionId, params?: FlowParams): number {
@@ -540,7 +571,7 @@ export function flowSpend(flow: ActionId, params?: FlowParams): number {
     case 'agent':
       return stayFor(params).amount;
     case 'cashout':
-      return cents(params?.amount) ?? CASHOUT[0].usd;
+      return cents(params?.amount) ?? CASHOUT_AMOUNT;
     case 'connect':
     case 'fund':
     case 'limits':

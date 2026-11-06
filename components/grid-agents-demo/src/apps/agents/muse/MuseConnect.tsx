@@ -90,7 +90,7 @@ function Permission({ onConnect, onCancel }: { onConnect: () => void; onCancel: 
         <IconBank size={22} />
       </span>
       <strong className={styles.permTitle}>Bank account</strong>
-      <p className={styles.permSub}>Securely link a bank to top up your Muse balance</p>
+      <p className={styles.permSub}>Securely link a bank to move money in and out of your Muse balance</p>
       <ul className={styles.promises}>
         <li>
           <IconGlobe2 size={16} />
@@ -103,14 +103,14 @@ function Permission({ onConnect, onCancel }: { onConnect: () => void; onCancel: 
           <IconSettingsSliderHor size={16} />
           <span>
             <b>You choose what Muse can do</b>
-            By default, Muse asks before any top-up above your limit. Disconnect at any time in Settings.
+            By default, Muse asks before moving anything above your limit. Disconnect at any time in Settings.
           </span>
         </li>
         <li>
           <IconEyeOpen size={16} />
           <span>
             <b>Keep an eye on things</b>
-            Every top-up shows up in your Muse balance activity.
+            Every transfer shows up in your Muse balance activity.
           </span>
         </li>
       </ul>
@@ -196,7 +196,7 @@ function ListPage({ picker, onClose }: { picker: BankPicker; onClose: () => void
                 </button>
               </Group>
             ) : (
-              <p className={styles.empty}>No banks connected yet. Connect one to top up your Muse balance.</p>
+              <p className={styles.empty}>No banks connected yet. Connect one to move money in and out of your Muse balance.</p>
             )
           ) : (
             <>
@@ -312,7 +312,7 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
               <Hero
                 art={<Flag code={bank.country.code} size={40} />}
                 title={bank.bankName}
-                sub={`Top-ups arrive over ${railLine(bank.country).replace(' · ', ' in ')} and land in your Muse balance.`}
+                sub={`Money moves over ${railLine(bank.country).replace(' · ', ' in ')}, in and out of your Muse balance.`}
               />
             }
             leading={
@@ -323,7 +323,7 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
             footer={<BlueButton busy={picker.busy} done={picker.stage === 'linked'} label="Connect" onClick={picker.link} />}
           >
             <Details rows={bankFields(bank)} />
-            <p className={styles.note}>Muse can only top up from this account when you ask. Disconnect at any time in Settings.</p>
+            <p className={styles.note}>Muse only moves money with this account when you ask. Disconnect at any time in Settings.</p>
           </SheetPage>
         )
       ) : (

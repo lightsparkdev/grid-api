@@ -160,8 +160,11 @@ export const LINES = {
   'getpaid.done': (p) => `${LUCIA.first} paid ${usd2(LUCIA.amount)}. You have ${usd2(n(p, 'balance'))} now.`,
   'getpaid.already': () => `${LUCIA.first} already paid ${LUCIA.invoice}, ${usd2(LUCIA.amount)}. Nothing else is outstanding.`,
 
-  'cashout.ask': () => 'Where should it go?',
-  'cashout.quote': (p) => `${s(p, 'local')} to ${s(p, 'to')}, arriving in seconds over ${s(p, 'rail')}.`,
+  'cashout.amount': () => 'How much should I move to your bank?',
+  'cashout.bank': () => 'I’ll need your bank first. Link it once and I can move money there any time.',
+  'cashout.over': (p) => `You have ${usd2(n(p, 'balance'))} in ${yours(p)}, so I can move up to that.`,
+  'cashout.empty': (p) => `There’s nothing in ${yours(p)} to move yet.`,
+  'cashout.quote': (p) => `Moving ${s(p, 'local')} to your ${s(p, 'to')} over ${s(p, 'rail')}. ${railTiming(linkedBank())}`,
   'cashout.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m sending it now.`,
   'cashout.done': () => 'Done. It’s in your account.',
   'cashout.denied': () => 'Okay, the money stays put.',

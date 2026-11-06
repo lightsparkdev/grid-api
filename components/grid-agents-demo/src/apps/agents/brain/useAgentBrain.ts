@@ -41,7 +41,12 @@ function typedChoice(text: string, chips: Chip[]) {
 /** A reply that's just an amount in dollars: "75", "$1,000", "75 bucks", "make it 100", "2k". */
 const AMOUNT = /^\s*(?:(?:add|make it|maybe|about|around|like|just)\s+)*\$?\s*(\d[\d,]*(?:\.\d{1,2})?)\s*(k)?\s*(?:usd|dollars?|bucks)?\s*(?:please|pls)?\s*[.!]*\s*$/i;
 
-function typedAmount(text: string) {
+/** A reply that means all of it. */
+const ALL = /^\s*(?:all|all of it|everything|the whole thing|the whole balance|max)\s*[.!]*\s*$/i;
+
+/** Dollars from a typed reply; "everything" is `all` cents when the question has a ceiling. */
+function typedAmount(text: string, all?: number) {
+  if (all && ALL.test(text)) return all / 100;
   const m = AMOUNT.exec(text);
   if (!m) return undefined;
   const usd = Number(m[1].replace(/,/g, '')) * (m[2] ? 1000 : 1);
@@ -110,7 +115,7 @@ export function useAgentBrain({
   const openChips = useRef<Chip[] | null>(null);
   const pickedByText = useRef(false);
   /** An open question for an amount, waiting on what they type. */
-  const amountRef = useRef<((usd: number) => void) | null>(null);
+  const amountRef = useRef<{ take: (usd: number) => void; all?: number } | null>(null);
   const [awaitingAmount, setAwaitingAmount] = useState(false);
   /** Something said over an open ask that wasn't a yes or a no: answered once the ask is declined and the run ends. */
   const queued = useRef<string | null>(null);
@@ -166,7 +171,7 @@ export function useAgentBrain({
     runRef.current = null;
     decideRef.current?.('cancel');
     pickRef.current?.(-1);
-    amountRef.current?.(-1);
+    amountRef.current?.take(-1);
     authRef.current?.();
     decideRef.current = pickRef.current = amountRef.current = authRef.current = null;
     setAwaitingAmount(false);
@@ -270,7 +275,7 @@ export function useAgentBrain({
         } else if ('amount' in b) {
           setBusy(false);
           setAwaitingAmount(true);
-          const usd = await new Promise<number>((r) => (amountRef.current = r));
+          const usd = await new Promise<number>((r) => (amountRef.current = { take: r, all: b.all }));
           amountRef.current = null;
           setAwaitingAmount(false);
           if (usd <= 0 || run.cancelled) return false;
@@ -388,9 +393,9 @@ export function useAgentBrain({
       return;
     }
     // An open question for an amount takes one; anything else lapses it and the agent answers what they said.
-    const takeAmount = amountRef.current;
-    if (takeAmount) {
-      const usd = typedAmount(text);
+    const open = amountRef.current;
+    if (open) {
+      const usd = typedAmount(text, open.all);
       setComposer('');
       if (usd === undefined) {
         cancelRun();
@@ -399,7 +404,7 @@ export function useAgentBrain({
       }
       amountRef.current = null;
       push({ kind: 'me', text });
-      afterReading(() => takeAmount(usd));
+      afterReading(() => open.take(usd));
       return;
     }
     // An open choice takes a typed option: its number, or its label.

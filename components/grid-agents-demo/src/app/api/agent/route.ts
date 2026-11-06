@@ -123,8 +123,8 @@ export async function POST(req: NextRequest) {
     // A flow missing what it needs doesn't start; the reply stands on its own.
     const flow = params === null ? undefined : started;
     if (params === null && process.env.NODE_ENV === 'development') console.info('[agent] dropped', started, JSON.stringify({ ...answer, replies: undefined }));
-    // A top-up with no amount: the flow asks how much in the app's own voice, so the model's line would only repeat it.
-    const quiet = flow === 'fund' && !params?.amount;
+    // A top-up or withdrawal with no amount: the flow asks how much in the app's own voice, so the model's line would only repeat it.
+    const quiet = (flow === 'fund' || flow === 'cashout') && !params?.amount;
     const replies: Partial<Record<ConnectorId, string>> = {};
     for (const id of CONNECTOR_IDS) {
       const raw = typeof answer.replies[id] === 'string' ? clean(answer.replies[id]) : '';

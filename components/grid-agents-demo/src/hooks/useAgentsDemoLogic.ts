@@ -183,7 +183,7 @@ export function useAgentsDemoLogic() {
       const data = (await res.json()) as AgentResponse;
       if (data.reply || data.flow) {
         return {
-          said: { text: data.reply, voices: data.replies },
+          said: { text: data.reply ?? '', voices: data.replies },
           flow: data.flow ? { id: data.flow, variant: data.variant ?? 0, params: data.params } : undefined,
           suggestions: data.suggestions?.map(suggestionChip),
         };

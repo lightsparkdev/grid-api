@@ -41,7 +41,7 @@ export function DuetConnector({ ask, state, onOpen }: { ask: AgentAsk; state: As
         ? `${linkedBank().bankName} •••• ${linkedBank().last4} is connected.`
         : `${cardLabel(ask)} is saved to your vault.`
       : ask.bank
-        ? `Top up your Duet balance from a bank in ${BANK_REACH} countries.`
+        ? `Move money between your Duet balance and a bank in ${BANK_REACH} countries.`
         : 'Save a card once and Duet can top up from it when you ask.';
   const action = payee ? (done ? 'Saved' : pending ? 'Saving…' : 'Add') : done ? 'Connected' : pending ? 'Connecting…' : 'Connect';
   return (
@@ -189,7 +189,7 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
           <p className={styles.foot}>
             {picker.payee
               ? `${payeeBlurb(bank, picker.payee.first)} Duet pays by account and never sees these numbers.`
-              : `Top-ups arrive over ${bank.country.rail} in ${bank.currency}. Duet only tops up your balance when you ask.`}
+              : `Money moves over ${bank.country.rail} in ${bank.currency}, in and out of your balance. Duet only moves it when you ask.`}
           </p>
         </SheetPage>
       ) : (

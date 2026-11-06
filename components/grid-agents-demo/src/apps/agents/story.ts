@@ -1,4 +1,4 @@
-import type { DepositNetwork, Limits, Payee, Purchase } from '@/data/agentEvents';
+import type { DepositNetwork, Limits, Purchase } from '@/data/agentEvents';
 
 /* The one story every app tells: the same person, the same people they pay,
    the same purchases. Only the voice and the look change between apps. */
@@ -76,30 +76,8 @@ export const LUCIA = {
   ],
 };
 
-export const CASHOUT: (Payee & { flag?: string; local: string; chip: string })[] = [
-  {
-    name: 'Chase •••• 4417',
-    chip: 'Chase •••• 4417',
-    currency: 'USD',
-    amount: 20_000,
-    usd: 20_000,
-    rail: 'RTP',
-    bank: 'Chase',
-    flag: 'us',
-    local: '$200.00',
-  },
-  {
-    name: 'Nubank (PIX)',
-    chip: 'Nubank, PIX',
-    currency: 'BRL',
-    amount: 110_600,
-    usd: 20_000,
-    rail: 'PIX',
-    bank: 'Nubank',
-    flag: 'br',
-    local: 'R$1,106.00',
-  },
-];
+/** What the Withdraw tile needs in the balance, so a fresh account has something to move. */
+export const CASHOUT_AMOUNT = 20_000;
 
 export function usd(cents: number) {
   const whole = cents % 100 === 0;

@@ -189,7 +189,10 @@ the request itself (`planFor` in `flows.ts`). The starter chips lead with
 balance card's Add money, or "add money" typed) asks how much and waits for a
 typed amount ("75", "$1,000", "75 bucks"), then asks where from. Anything else
 typed there drops the question and goes to the model. The model offers no
-chips for amounts: people type those.
+chips for amounts: people type those. Withdraw works the same way ("everything"
+means the whole balance) and goes to the person's own bank: the one they
+linked, or one they link right then in the app's bank sheet. It never tops up
+to cover a withdrawal; asking for more than the balance gets a no.
 
 ### 2026-11-05: fund with and store cards
 

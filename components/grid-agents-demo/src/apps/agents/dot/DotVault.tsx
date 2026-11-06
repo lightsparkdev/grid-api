@@ -133,8 +133,8 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
             </p>
           ) : (
             <p className={styles.fine}>
-              Top-ups arrive over {bank.country.rail} in {bank.currency} and land in your Dots balance. Your dot only tops
-              up when you ask it to. You can remove this bank any time in <u>Settings</u>.
+              Money moves over {bank.country.rail} in {bank.currency}, in and out of your Dots balance. Your dot only moves
+              it when you ask. You can remove this bank any time in <u>Settings</u>.
             </p>
           )}
         </SheetPage>
@@ -188,7 +188,7 @@ function Intro({ onStart, onNotNow }: { onStart: () => void; onNotNow: () => voi
         <IconBank size={30} />
       </span>
       <strong className={styles.introTitle}>Link a bank</strong>
-      <p className={styles.introSub}>Top up your Dots balance from a bank in {BANK_REACH} countries.</p>
+      <p className={styles.introSub}>Move money between your Dots balance and a bank in {BANK_REACH} countries.</p>
       <GlassButton label="Get started" tint="var(--dv-cta)" ink="var(--dv-cta-text)" size={340} className={styles.introStart} onClick={onStart}>
         Get started
       </GlassButton>

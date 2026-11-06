@@ -110,7 +110,7 @@ export function InstinctBank({
             <p className={styles.siteNote}>
               {payee
                 ? `${payeeBlurb(bank, payee.first)} Instinct pays by account and never sees these numbers.`
-                : `Top-ups arrive over ${railLine(bank.country).replace(' · ', ' in ')} and land in your Instinct balance. Instinct only tops up when you ask.`}
+                : `Money moves over ${railLine(bank.country).replace(' · ', ' in ')}, in and out of your Instinct balance. Instinct only moves it when you ask.`}
             </p>
             <button type="button" className={styles.black} data-pressing={picker.busy || undefined} disabled={picker.busy} onClick={picker.link}>
               {picker.stage === 'form' ? (payee ? 'Save' : `Save ${bank.bankName}`) : picker.stage === 'linking' ? 'Saving…' : 'Saved'}
@@ -123,7 +123,7 @@ export function InstinctBank({
           <main className={styles.siteScroll}>
             <Section title="Select country">
               <p className={styles.siteLead}>
-                Where your bank is. Instinct can top up your balance from banks in {BANK_REACH} countries.
+                Where your bank is. Instinct can move money to and from banks in {BANK_REACH} countries.
               </p>
               <label className={styles.siteSearch}>
                 <IconMagnifyingGlass size={16} />
