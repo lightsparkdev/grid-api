@@ -13,7 +13,10 @@ allOf:
         $ref: ./AchRailStatus.yaml
       traceNumber:
         type: string
-        description: 15-digit ACH trace number of the entry.
+        description: >-
+          15-digit ACH trace number of the original entry. A return, dishonor,
+          contest or reversal is a separate entry with its own trace, listed on
+          its item in `events`.
         example: '021000020123456'
       statementDescriptor:
         type: string
@@ -65,3 +68,16 @@ allOf:
         format: date-time
         description: When the originator reversed the entry. Present when `status` is `REVERSED`.
         example: '2026-10-01T14:00:00Z'
+      events:
+        type: array
+        description: >-
+          The entries sent in response to the original one, oldest first: its
+          return, a dishonor of that return, a contest of the dishonor, and a
+          reversal. Each is its own entry on the ACH network, so its
+          `traceNumber`, once the bank reports it, is the one to quote to your
+          bank about that event. Entries answering a reversal are listed in that
+          reversal's own `events`. The fields above (`returnedAt`, `returnCode`,
+          `dishonoredAt` and the rest) describe the original entry's return
+          chain. Empty until the first event.
+        items:
+          $ref: ./AchEntryEvent.yaml
