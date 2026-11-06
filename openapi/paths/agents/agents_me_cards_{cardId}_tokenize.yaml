@@ -1,0 +1,91 @@
+parameters:
+  - name: cardId
+    in: path
+    description: Unique identifier of the card
+    required: true
+    schema:
+      type: string
+post:
+  summary: Add the agent's card to a digital wallet
+  description: >
+    Exchange the values an app on the cardholder's phone received from Apple
+    Pay, Google Pay or Samsung Pay for the encrypted payload that adds one of
+    the agent's `STANDARD` cards to that wallet (in-app push provisioning).
+    The request and response are the same as `POST /cards/{id}/tokenize`.
+    The payload is encrypted to the wallet provider's keys; hand it straight
+    to the wallet SDK and never store or log it.
+
+
+    Confirm with the cardholder before calling: a wallet token spends like the
+    card. Every call is audit-logged with the agent as the actor, and calls
+    are rate limited per agent and per card. Requires the MANAGE_CARDS
+    permission.
+  operationId: agentTokenizeCard
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/cards/CardTokenizationRequestOneOf.yaml
+  responses:
+    '200':
+      description: Provisioning payload minted.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardTokenizationResponseOneOf.yaml
+    '400':
+      description: >-
+        Invalid input. The body does not match the request shape for its
+        `wallet`, or the wallet provider rejected the values. Restart the
+        add-to-wallet flow on the phone to obtain fresh values.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API or agent cards are not enabled for the
+        platform, the agent is paused, the agent does not have the
+        MANAGE_CARDS permission, or the customer is not verified
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `CONFLICT` when the card is not a `STANDARD`
+        card, is not `ACTIVE`, or its program cannot add cards to wallets,
+        and with `CARD_NOT_MUTABLE` when it is closed.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '429':
+      description: Too many requests for this agent or card; retry later
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
