@@ -8985,7 +8985,7 @@ paths:
   /agents/me/customer:
     get:
       summary: Get agent customer
-      description: Retrieve the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      description: 'Retrieve the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent''s policy. An agent created with `actingFor` is refused with `400`: it acts for someone other than the customer.'
       operationId: agentGetCustomer
       tags:
         - Agent Operations
@@ -9018,7 +9018,7 @@ paths:
                 $ref: '#/components/schemas/Error500'
     patch:
       summary: Update agent customer
-      description: 'Update identity information for the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent''s policy. The customer is inferred from the agent and cannot be selected by the request. Agents may update only identity fields: `fullName`, `birthDate`, `nationality`, `address`, `idType`, `identifier`, `countryOfIssuance` and the enhanced-due-diligence fields, plus a `phoneNumber` when the customer has none on file. Any other field, including `email` and a change to a phone number on file (sign-in credentials the customer changes through `PATCH /customers/{customerId}`), returns 400.'
+      description: 'Update identity information for the individual customer associated with the authenticated agent. Requires the MANAGE_IDENTITY permission in the agent''s policy, and is refused with `400` for an agent created with `actingFor`. The customer is inferred from the agent and cannot be selected by the request. Agents may update only identity fields: `fullName`, `birthDate`, `nationality`, `address`, `idType`, `identifier`, `countryOfIssuance` and the enhanced-due-diligence fields, plus a `phoneNumber` when the customer has none on file. Any other field, including `email` and a change to a phone number on file (sign-in credentials the customer changes through `PATCH /customers/{customerId}`), returns 400.'
       operationId: agentUpdateCustomer
       tags:
         - Agent Operations
@@ -9064,7 +9064,7 @@ paths:
   /agents/me/verifications:
     post:
       summary: Submit agent customer for verification
-      description: Submit the authenticated agent's individual customer for KYC verification. The response reports the current status and any identity fields that still need to be supplied. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      description: 'Submit the authenticated agent''s individual customer for KYC verification. The response reports the current status and any identity fields that still need to be supplied. Requires the MANAGE_IDENTITY permission in the agent''s policy. An agent created with `actingFor` is refused with `400`: it acts for someone other than the customer.'
       operationId: agentCreateVerification
       tags:
         - Agent Operations
@@ -9104,7 +9104,7 @@ paths:
   /agents/me/kyc-link:
     post:
       summary: Generate an agent customer KYC link
-      description: Generate a single-use hosted KYC link for the authenticated agent's individual customer. Requires the MANAGE_IDENTITY permission in the agent's policy.
+      description: 'Generate a single-use hosted KYC link for the authenticated agent''s individual customer. Requires the MANAGE_IDENTITY permission in the agent''s policy. An agent created with `actingFor` is refused with `400`: it acts for someone other than the customer.'
       operationId: agentCreateKycLink
       tags:
         - Agent Operations

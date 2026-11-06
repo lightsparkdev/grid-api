@@ -2,7 +2,8 @@ get:
   summary: Get agent customer
   description: >-
     Retrieve the individual customer associated with the authenticated agent.
-    Requires the MANAGE_IDENTITY permission in the agent's policy.
+    Requires the MANAGE_IDENTITY permission in the agent's policy. An agent created with `actingFor` is refused with `400`: it acts for
+    someone other than the customer.
   operationId: agentGetCustomer
   tags:
     - Agent Operations
@@ -40,7 +41,8 @@ patch:
   description: >-
     Update identity information for the individual customer associated with the
     authenticated agent. Requires the MANAGE_IDENTITY permission in the agent's
-    policy. The customer is inferred from the agent and cannot be selected by
+    policy, and is refused with `400` for an agent created with `actingFor`.
+    The customer is inferred from the agent and cannot be selected by
     the request. Agents may update only identity fields: `fullName`,
     `birthDate`, `nationality`, `address`, `idType`, `identifier`,
     `countryOfIssuance` and the enhanced-due-diligence fields, plus a
