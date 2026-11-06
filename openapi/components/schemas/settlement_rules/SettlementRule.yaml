@@ -1,0 +1,59 @@
+type: object
+required:
+  - id
+  - customerId
+  - name
+  - status
+  - priority
+  - currency
+  - match
+  - splits
+  - holdSeconds
+  - achHoldSeconds
+  - limits
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique settlement rule identifier
+    example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+  customerId:
+    type: string
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  name:
+    type: string
+    example: Glossier deal
+  status:
+    $ref: ./SettlementRuleStatus.yaml
+  priority:
+    type: integer
+    format: int32
+    example: 1
+  currency:
+    type: string
+    example: USD
+  match:
+    type: array
+    items:
+      $ref: ./SettlementRuleSelector.yaml
+  splits:
+    type: array
+    items:
+      $ref: ./SettlementRuleSplit.yaml
+  holdSeconds:
+    type: integer
+    example: 0
+  achHoldSeconds:
+    type: integer
+    example: 86400
+  limits:
+    $ref: ./SettlementRuleLimits.yaml
+  createdAt:
+    type: string
+    format: date-time
+    example: '2026-11-06T18:00:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    example: '2026-11-06T18:00:00Z'

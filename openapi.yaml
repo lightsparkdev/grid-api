@@ -62,6 +62,8 @@ tags:
     description: Endpoints for creating and confirming quotes for transfers, both same-currency and cross-currency
   - name: Payout Runs
     description: Endpoints for paying many recipients from one internal account in one request, and for reconciling the result
+  - name: Settlement Rules
+    description: Endpoints for standing instructions that split a customer's matching incoming payments among recipients as soon as the payments complete
   - name: Transactions
     description: Endpoints for retrieving transaction information
   - name: Webhooks
@@ -15356,6 +15358,470 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /settlement-rules:
+    post:
+      summary: Create a settlement rule
+      description: |
+        A standing instruction on a customer's incoming payments. When a
+        payment into one of the customer's internal accounts completes and
+        matches the rule, Grid splits it by the rule's shares and pays each
+        share from the account the payment credited, through a payout run.
+        Each share sends the usual `OUTGOING_PAYMENT.*` webhooks.
+
+        **Matching:** a payment matches when it is in the rule's currency and
+        any selector in `match` matches it. A customer's rules are tried in
+        ascending `priority`, which is unique among its rules that are not
+        `DELETED`. The first `ACTIVE` rule that matches wins, so a payment
+        pays out under at most one rule.
+
+        **Shares:** a `PERCENT` share is the payment times `basisPoints` over
+        10,000, rounded down. A `FIXED` share is `amount`. A `REMAINDER` share
+        is what every other share leaves, wherever its row is; there is at
+        most one. Without one, the customer keeps the rest. Shares are paid,
+        and listed, in row order. The percentages add
+        up to at most 10,000, and to less than 10,000 with a `REMAINDER`
+        share. When a payment is smaller than its fixed and percentage shares
+        together, nothing is paid.
+
+        **Destinations:** the payout run row destinations. An `ACTIVE`
+        external account of the platform or of one of its customers. A
+        contact, held for a claim as on a payout run. An internal account of
+        the platform (`GRID_CUSTOMER`), paid as a transfer between internal
+        accounts under the rules of a quote between them.
+
+        **Limits:** a customer has at most 50 rules that are not `DELETED`,
+        and a rule has at most 20 shares.
+
+        Requires an API token with the `UMA_TRANSACT` permission. The rule's
+        shares are paid as that token. Once the token is deleted, expires or
+        loses the permission, the rule pays nothing more and is paused.
+      operationId: createSettlementRule
+      tags:
+        - Settlement Rules
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Unique identifier for this rule. A retry with the same key and body returns the stored rule; the same key with a different body is rejected.
+          schema:
+            type: string
+            maxLength: 255
+            example: glossier-split
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettlementRuleCreateRequest'
+      responses:
+        '200':
+          description: The rule this Idempotency-Key already created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRule'
+        '201':
+          description: Settlement rule created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRule'
+        '400':
+          description: Bad request - The body is invalid, a share's external account is not active, or the Idempotency-Key was used for a different rule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform, or the caller is not an API token with the UMA_TRANSACT permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - The customer, or an account a share pays, does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - Another of the customer's rules has this priority, or the customer already has 50 rules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List settlement rules
+      description: The platform's settlement rules, oldest first, with their shares.
+      operationId: listSettlementRules
+      tags:
+        - Settlement Rules
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: customerId
+          in: query
+          description: Only the rules of this customer
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Only rules in this status
+          required: false
+          schema:
+            $ref: '#/components/schemas/SettlementRuleStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 100, max 200)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 100
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRuleListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /settlement-rules/{settlementRuleId}:
+    parameters:
+      - name: settlementRuleId
+        in: path
+        required: true
+        description: System-generated unique settlement rule identifier
+        schema:
+          type: string
+        example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+    get:
+      summary: Get a settlement rule
+      description: Retrieve a settlement rule and its shares. A deleted rule is returned with status `DELETED`.
+      operationId: getSettlementRule
+      tags:
+        - Settlement Rules
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRule'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - No settlement rule with this id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update a settlement rule
+      description: |
+        Change the fields sent and leave the rest as they are. `splits`
+        replaces every share, checked as on create. `limits` replaces both
+        limits, so a limit left out of it is removed, and `null` removes both.
+        A change applies to the payments whose execution has not yet fired,
+        held ones included.
+
+        Requires an API token with the `UMA_TRANSACT` permission.
+      operationId: updateSettlementRule
+      tags:
+        - Settlement Rules
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettlementRuleUpdateRequest'
+      responses:
+        '200':
+          description: The updated rule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRule'
+        '400':
+          description: Bad request - The body is invalid or a share's external account is not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform, or the caller is not an API token with the UMA_TRANSACT permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - No settlement rule with this id, or an account a share pays does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The rule is deleted or awaiting approval, or another of the customer's rules has this priority
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Delete a settlement rule
+      description: |
+        The rule becomes `DELETED` and fires on no further payment. Its
+        executions still held are skipped with `CANCELLED`; one already
+        paying finishes. Deleting a deleted rule returns it unchanged.
+
+        Requires an API token with the `UMA_TRANSACT` permission.
+      operationId: deleteSettlementRule
+      tags:
+        - Settlement Rules
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: The deleted rule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRule'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform, or the caller is not an API token with the UMA_TRANSACT permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - No settlement rule with this id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /settlement-rules/{settlementRuleId}/executions:
+    parameters:
+      - name: settlementRuleId
+        in: path
+        required: true
+        description: System-generated unique settlement rule identifier
+        schema:
+          type: string
+        example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+    get:
+      summary: List the executions of a settlement rule
+      description: The payments the rule fired on, newest first, each with what it became, the payout run that paid it and how long the payments took.
+      operationId: listSettlementRuleExecutions
+      tags:
+        - Settlement Rules
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 100, max 200)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 100
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRuleExecutionListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - No settlement rule with this id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /settlement-rules/{settlementRuleId}/executions/{executionId}/cancel:
+    parameters:
+      - name: settlementRuleId
+        in: path
+        required: true
+        description: System-generated unique settlement rule identifier
+        schema:
+          type: string
+        example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+      - name: executionId
+        in: path
+        required: true
+        description: System-generated unique settlement rule execution identifier
+        schema:
+          type: string
+        example: SettlementRuleExecution:019542f5-b3e7-1d02-0000-000000000003
+    post:
+      summary: Cancel a held execution
+      description: |
+        Stop a `HELD` execution before it fires. It becomes `SKIPPED` with
+        `CANCELLED`, nothing is paid, and the customer keeps the payment.
+
+        Requires an API token with the `UMA_TRANSACT` permission.
+      operationId: cancelSettlementRuleExecution
+      tags:
+        - Settlement Rules
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: The cancelled execution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRuleExecution'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform, or the caller is not an API token with the UMA_TRANSACT permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - No settlement rule with this id, or no execution with this id under it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The execution is not held
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -36793,6 +37259,459 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PayoutRunExportRow'
+    SettlementRuleStatus:
+      type: string
+      enum:
+        - PENDING_APPROVAL
+        - ACTIVE
+        - PAUSED
+        - DELETED
+      description: |
+        Status of a settlement rule.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING_APPROVAL` | Proposed by an agent beyond its policy, waiting for the customer's approval. It fires on nothing. |
+        | `ACTIVE` | Fires on the payments it matches. |
+        | `PAUSED` | Fires on nothing. A payment it would have matched is tried against the customer's next rule. |
+        | `DELETED` | Deleted. It fires on nothing and cannot be changed. |
+    SettlementRuleCounterpartyNameMatch:
+      type: object
+      description: |
+        A pattern for the sender name Grid records on a bank deposit (the
+        `accountHolderName` of the deposit's bank account). Set exactly one of
+        `prefix` and `contains`. The comparison ignores case and collapses
+        whitespace, because a bank often truncates the name. A payment with no
+        recorded sender name never matches.
+      properties:
+        prefix:
+          type: string
+          minLength: 1
+          maxLength: 140
+          description: The sender name starts with this.
+          example: GLOSSIER
+        contains:
+          type: string
+          minLength: 1
+          maxLength: 140
+          description: The sender name contains this.
+          example: glossier inc
+    SettlementRuleSelector:
+      type: object
+      description: Conditions a payment must all meet. A selector with no conditions matches every payment in the rule's currency.
+      properties:
+        creditedAccountId:
+          type: string
+          description: The customer's internal account the payment credited.
+          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        ruleBasedAccountId:
+          type: string
+          description: The rule-based account the payment arrived through.
+          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d001
+        counterpartyName:
+          $ref: '#/components/schemas/SettlementRuleCounterpartyNameMatch'
+        receivedAtWalletAddress:
+          type: string
+          description: The deposit address the payment was sent to.
+          example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+        rail:
+          $ref: '#/components/schemas/PaymentRail'
+    SettlementRuleShareType:
+      type: string
+      enum:
+        - PERCENT
+        - FIXED
+        - REMAINDER
+      description: |
+        How a share is sized.
+
+        | Type | Share |
+        |------|-------|
+        | `PERCENT` | `basisPoints` of the payment, rounded down to the smallest unit. |
+        | `FIXED` | `amount`, in the smallest unit of the rule's currency. |
+        | `REMAINDER` | What every other share leaves, in any row. At most one. |
+    SettlementRuleShare:
+      type: object
+      description: How much of a payment a row pays. Set `basisPoints` for a `PERCENT` share, `amount` for a `FIXED` share, and neither for a `REMAINDER` share.
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/SettlementRuleShareType'
+        basisPoints:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          description: The share in basis points of the payment. Set for `PERCENT` shares only.
+          example: 4000
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9000000000000000
+          description: The share in the smallest unit of the rule's currency. Set for `FIXED` shares only.
+          example: 50000
+    SettlementRuleDestination:
+      oneOf:
+        - $ref: '#/components/schemas/PayoutRunExternalAccountDestination'
+        - $ref: '#/components/schemas/PayoutRunContactDestination'
+        - $ref: '#/components/schemas/PayoutRunGridCustomerDestination'
+      discriminator:
+        propertyName: destinationType
+        mapping:
+          EXTERNAL_ACCOUNT: '#/components/schemas/PayoutRunExternalAccountDestination'
+          CONTACT: '#/components/schemas/PayoutRunContactDestination'
+          GRID_CUSTOMER: '#/components/schemas/PayoutRunGridCustomerDestination'
+    SettlementRuleSplitInput:
+      type: object
+      required:
+        - share
+        - destination
+      properties:
+        share:
+          $ref: '#/components/schemas/SettlementRuleShare'
+        destination:
+          $ref: '#/components/schemas/SettlementRuleDestination'
+    SettlementRuleSplit:
+      allOf:
+        - $ref: '#/components/schemas/SettlementRuleSplitInput'
+        - type: object
+          required:
+            - position
+          properties:
+            position:
+              type: integer
+              description: The share's zero-based position in the rule. Shares are paid in this order.
+              example: 0
+    SettlementRuleLimits:
+      type: object
+      description: Caps on what the rule pays, in the smallest unit of its currency. An execution that would go over a cap is skipped with `LIMIT_EXCEEDED`, and the customer keeps the payment.
+      properties:
+        maxAmountPerExecution:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9000000000000000
+          description: The most the shares of one payment may add up to.
+          example: 1000000
+        maxAmountPerDay:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9000000000000000
+          description: The most the rule may pay out for the payments that completed in one UTC day.
+          example: 5000000
+    SettlementRule:
+      type: object
+      required:
+        - id
+        - customerId
+        - name
+        - status
+        - priority
+        - currency
+        - match
+        - splits
+        - holdSeconds
+        - achHoldSeconds
+        - limits
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique settlement rule identifier
+          example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+        customerId:
+          type: string
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        name:
+          type: string
+          example: Glossier deal
+        status:
+          $ref: '#/components/schemas/SettlementRuleStatus'
+        priority:
+          type: integer
+          format: int32
+          example: 1
+        currency:
+          type: string
+          example: USD
+        match:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettlementRuleSelector'
+        splits:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettlementRuleSplit'
+        holdSeconds:
+          type: integer
+          example: 0
+        achHoldSeconds:
+          type: integer
+          example: 86400
+        limits:
+          $ref: '#/components/schemas/SettlementRuleLimits'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T18:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T18:00:00Z'
+    SettlementRuleListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettlementRule'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+        totalCount:
+          type: integer
+          description: Total number of rules matching the filter.
+    SettlementRuleCreateRequest:
+      type: object
+      required:
+        - customerId
+        - name
+        - currency
+        - match
+        - splits
+      properties:
+        customerId:
+          type: string
+          description: The customer whose incoming payments the rule splits.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: What the platform calls the rule. It is the description of each payment the rule sends.
+          example: Glossier deal
+        currency:
+          type: string
+          description: ISO 4217 code of the payments the rule splits. A payment in another currency never matches.
+          example: USD
+        priority:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 2147483647
+          description: Rules are tried in ascending priority. Unique among the customer's rules that are not `DELETED`. Omit it to try the rule after the customer's others, at one more than their highest priority, or 1 when the customer has none.
+          example: 1
+        match:
+          type: array
+          minItems: 1
+          maxItems: 20
+          description: A payment matches when any selector matches it. `[{}]` matches every payment in the rule's currency.
+          items:
+            $ref: '#/components/schemas/SettlementRuleSelector'
+        splits:
+          type: array
+          minItems: 1
+          description: The shares, in the order they are paid. At most 20.
+          items:
+            $ref: '#/components/schemas/SettlementRuleSplitInput'
+        holdSeconds:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          default: 0
+          description: How long after a payment completes the rule waits to pay it, for payments on rails other than ACH.
+          example: 0
+        achHoldSeconds:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          default: 86400
+          description: How long after an ACH payment completes the rule waits to pay it. An ACH payment can be returned after it completes; a return that arrives while the execution is held skips it.
+          example: 86400
+        limits:
+          $ref: '#/components/schemas/SettlementRuleLimits'
+    SettlementRuleUpdateRequest:
+      type: object
+      description: The fields to change. A field left out is unchanged.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Glossier deal
+        status:
+          $ref: '#/components/schemas/SettlementRuleStatus'
+          description: '`ACTIVE` or `PAUSED`.'
+        priority:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 2147483647
+          example: 2
+        match:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/SettlementRuleSelector'
+        splits:
+          type: array
+          minItems: 1
+          description: Every share, replacing the current ones. At most 20.
+          items:
+            $ref: '#/components/schemas/SettlementRuleSplitInput'
+        holdSeconds:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          example: 0
+        achHoldSeconds:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          example: 0
+        limits:
+          anyOf:
+            - $ref: '#/components/schemas/SettlementRuleLimits'
+            - type: 'null'
+          description: Both limits, replacing the current ones. A limit left out is removed; `null` removes both.
+    SettlementRuleExecutionStatus:
+      type: string
+      enum:
+        - HELD
+        - EXECUTING
+        - EXECUTED
+        - FAILED
+        - SKIPPED
+      description: |
+        What a rule's firing on one payment became.
+
+        | Status | Description |
+        |--------|-------------|
+        | `HELD` | Waiting out the rule's hold until `firesAt`. It can be cancelled. |
+        | `EXECUTING` | Its payout run is paying the shares. |
+        | `EXECUTED` | Its payout run finished `COMPLETED` or `PARTIALLY_FAILED`. |
+        | `FAILED` | Its payout run finished `FAILED`. The customer keeps the payment. |
+        | `SKIPPED` | Nothing was paid. See `skipReason`. |
+    SettlementRuleSkipReason:
+      type: string
+      enum:
+        - RULE_PAUSED
+        - INCOMING_PAYMENT_RETURNED
+        - AMOUNT_BELOW_RULE
+        - LIMIT_EXCEEDED
+        - CANCELLED
+        - CREATOR_REVOKED
+      description: |
+        Why an execution paid nothing.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `RULE_PAUSED` | The rule was paused before the execution fired. |
+        | `INCOMING_PAYMENT_RETURNED` | The payment was returned before the execution fired. |
+        | `AMOUNT_BELOW_RULE` | The payment was smaller than the fixed and percentage shares together. |
+        | `LIMIT_EXCEEDED` | Paying it would have gone over one of the rule's `limits`. |
+        | `CANCELLED` | The execution was cancelled, or the rule deleted, while it was held. |
+        | `CREATOR_REVOKED` | The API token that created the rule can no longer send payments. The rule is paused. |
+    SettlementRuleExecution:
+      type: object
+      required:
+        - id
+        - settlementRuleId
+        - status
+        - incomingTransactionId
+        - creditedAccountId
+        - incomingAmount
+        - incomingCompletedAt
+        - firesAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique execution identifier
+          example: SettlementRuleExecution:019542f5-b3e7-1d02-0000-000000000003
+        settlementRuleId:
+          type: string
+          example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+        status:
+          $ref: '#/components/schemas/SettlementRuleExecutionStatus'
+        skipReason:
+          $ref: '#/components/schemas/SettlementRuleSkipReason'
+        incomingTransactionId:
+          type: string
+          description: The incoming transaction the rule fired on.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000004
+        creditedAccountId:
+          type: string
+          description: The customer's internal account the payment credited, which pays the shares.
+          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        incomingAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: The incoming payment, as a `CurrencyAmount` (`amount` in the smallest unit, and `currency`) in the rule's currency.
+        splitAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: What the shares add up to, as a `CurrencyAmount` (`amount` in the smallest unit, and `currency`) in the rule's currency. Set once the execution has fired.
+        payoutRunId:
+          type: string
+          description: The payout run that pays the shares. Set once the execution has fired.
+          example: PayoutRun:019542f5-b3e7-1d02-0000-000000000005
+        incomingCompletedAt:
+          type: string
+          format: date-time
+          description: When the incoming payment completed.
+          example: '2026-11-06T18:00:00Z'
+        firesAt:
+          type: string
+          format: date-time
+          description: When a held execution pays out.
+          example: '2026-11-06T18:00:00Z'
+        firstPaymentSentSeconds:
+          type: number
+          format: double
+          description: Seconds from the incoming payment's completion to the first share's payment being sent. Set once the payout run has finished.
+          example: 1.8
+        lastPaymentSentSeconds:
+          type: number
+          format: double
+          description: Seconds from the incoming payment's completion to the last share's payment being sent. Set once the payout run has finished.
+          example: 2.6
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T18:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T18:00:02Z'
+    SettlementRuleExecutionListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettlementRuleExecution'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+        totalCount:
+          type: integer
+          description: Total number of executions.
     WebhookType:
       type: string
       enum:

@@ -1,0 +1,19 @@
+type: string
+enum:
+  - RULE_PAUSED
+  - INCOMING_PAYMENT_RETURNED
+  - AMOUNT_BELOW_RULE
+  - LIMIT_EXCEEDED
+  - CANCELLED
+  - CREATOR_REVOKED
+description: |
+  Why an execution paid nothing.
+
+  | Reason | Description |
+  |--------|-------------|
+  | `RULE_PAUSED` | The rule was paused before the execution fired. |
+  | `INCOMING_PAYMENT_RETURNED` | The payment was returned before the execution fired. |
+  | `AMOUNT_BELOW_RULE` | The payment was smaller than the fixed and percentage shares together. |
+  | `LIMIT_EXCEEDED` | Paying it would have gone over one of the rule's `limits`. |
+  | `CANCELLED` | The execution was cancelled, or the rule deleted, while it was held. |
+  | `CREATOR_REVOKED` | The API token that created the rule can no longer send payments. The rule is paused. |

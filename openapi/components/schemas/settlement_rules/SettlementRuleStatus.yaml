@@ -1,0 +1,15 @@
+type: string
+enum:
+  - PENDING_APPROVAL
+  - ACTIVE
+  - PAUSED
+  - DELETED
+description: |
+  Status of a settlement rule.
+
+  | Status | Description |
+  |--------|-------------|
+  | `PENDING_APPROVAL` | Proposed by an agent beyond its policy, waiting for the customer's approval. It fires on nothing. |
+  | `ACTIVE` | Fires on the payments it matches. |
+  | `PAUSED` | Fires on nothing. A payment it would have matched is tried against the customer's next rule. |
+  | `DELETED` | Deleted. It fires on nothing and cannot be changed. |

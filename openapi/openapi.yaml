@@ -77,6 +77,10 @@ tags:
     description: >-
       Endpoints for paying many recipients from one internal account in one
       request, and for reconciling the result
+  - name: Settlement Rules
+    description: >-
+      Endpoints for standing instructions that split a customer's matching
+      incoming payments among recipients as soon as the payments complete
   - name: Transactions
     description: Endpoints for retrieving transaction information
   - name: Webhooks
@@ -627,6 +631,14 @@ paths:
     $ref: paths/payout-runs/payout-runs_{payoutRunId}_cancel.yaml
   /payout-runs/{payoutRunId}/export:
     $ref: paths/payout-runs/payout-runs_{payoutRunId}_export.yaml
+  /settlement-rules:
+    $ref: paths/settlement-rules/settlement-rules.yaml
+  /settlement-rules/{settlementRuleId}:
+    $ref: paths/settlement-rules/settlement-rules_{settlementRuleId}.yaml
+  /settlement-rules/{settlementRuleId}/executions:
+    $ref: paths/settlement-rules/settlement-rules_{settlementRuleId}_executions.yaml
+  /settlement-rules/{settlementRuleId}/executions/{executionId}/cancel:
+    $ref: paths/settlement-rules/settlement-rules_{settlementRuleId}_executions_{executionId}_cancel.yaml
 webhooks:
   agent-action:
     $ref: webhooks/agent-action.yaml
