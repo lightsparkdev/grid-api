@@ -36,6 +36,14 @@ properties:
     format: int64
     minimum: 1
     example: 50000
+  approvalThreshold:
+    type: integer
+    format: int64
+    minimum: 0
+    description: >-
+      A payment by one of the pool's agents above this amount waits for
+      approval. Absent means the agents' own policies alone decide.
+    example: 25000
   dailyLimit:
     type: integer
     format: int64

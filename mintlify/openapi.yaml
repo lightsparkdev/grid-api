@@ -10025,7 +10025,7 @@ paths:
       description: |
         Generate a quote for a cross-currency transfer on behalf of the authenticated agent's customer. Accounts referenced in the request must belong to the agent's customer. Requires the CREATE_QUOTES permission in the agent's policy.
         The destination is another embedded wallet or one of the customer's Spark addresses saved with `POST /agents/me/external-accounts` (`ACCOUNT`), an address on another chain (`CHAIN_ADDRESS`), or a BOLT11 Lightning invoice (`LIGHTNING_INVOICE`). Grid answers `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held for review, on any of the customer's records of it, under either prefix and including removed ones. A `CHAIN_ADDRESS` quote sends `USDB`. Grid pays the chain itself at a locked rate, so the amount the recipient receives is fixed when the quote is created and equals the quote's `minimumReceivingAmount`. A `LIGHTNING_INVOICE` quote debits the source wallet and pays exactly the invoice's amount, which it locks on the receiving side in satoshis, through the platform's Lightning invoice quote (`POST /quotes`).
-        If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount exceeds the agent's approvalThresholds, the resulting transaction will require explicit approval before funds move.
+        If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount exceeds the agent's approvalThresholds or the approvalThreshold of the spending pool the agent belongs to, the resulting transaction will require explicit approval before funds move.
       operationId: agentCreateQuote
       tags:
         - Agent Operations
@@ -10640,7 +10640,7 @@ paths:
 
         Grid holds `amount` against the wallet's balance and the agent's spending limits from creation. Funds do not leave the wallet until the recipient claims; while the payout is held, quotes and card payments from the wallet cannot spend the held amount. The hold is released when the payout expires, is cancelled or rejected, or fails.
 
-        The request is evaluated against the agent's policy as a send of the same amount to a bank account: it needs the EXECUTE_QUOTES permission, counts toward the spending limits, and needs the customer's approval above the policy's approval threshold, in `APPROVAL_REQUIRED` mode, or above the platform's limit for bank payouts without approval. A payout that needs approval is created `PENDING_APPROVAL` with a `CLAIMABLE_PAYOUT` agent action, and the `AGENT_ACTION.PENDING_APPROVAL` webhook fires; approving the action makes it `AWAITING_CLAIM`. Otherwise it is created `AWAITING_CLAIM`. Then issue the recipient's link with `POST /claimable-payouts/{claimablePayoutId}/claim-token`.
+        The request is evaluated against the agent's policy as a send of the same amount to a bank account: it needs the EXECUTE_QUOTES permission, counts toward the spending limits, and needs the customer's approval above the policy's approval threshold or its spending pool's `approvalThreshold`, in `APPROVAL_REQUIRED` mode, or above the platform's limit for bank payouts without approval. A payout that needs approval is created `PENDING_APPROVAL` with a `CLAIMABLE_PAYOUT` agent action, and the `AGENT_ACTION.PENDING_APPROVAL` webhook fires; approving the action makes it `AWAITING_CLAIM`. Otherwise it is created `AWAITING_CLAIM`. Then issue the recipient's link with `POST /claimable-payouts/{claimablePayoutId}/claim-token`.
 
         Available only where the platform enables claimable payouts and agent bank payouts, for a customer whose KYC status is `APPROVED`.
       operationId: agentCreateClaimablePayout
@@ -11215,8 +11215,9 @@ paths:
         **Standard card** (`kind` omitted or `STANDARD`): as `POST /cards` with `agentId` does for the platform. While any of the agent's standard cards is not `CLOSED`, including one the platform issued for it, the request is rejected with `AGENT_CARD_EXISTS`. New cards start in `status: "PROCESSING"` and follow the same status transitions and `card.status_change` webhooks as cards issued with `POST /cards`.
 
         **Purchase card** (`kind: PURCHASE`): a single-use card for one online purchase of `amount`, paid from the customer's Embedded Wallet with the agent's delegated key. Available only where the platform enables agent purchase cards. Its limit (`purchase.spendLimit`) is `amount` plus an allowance for tax and shipping, and that limit is evaluated against the agent's policy as a send of the same amount would be:
-        - Under the policy's approval threshold, and with `defaultExecutionMode`
-          `AUTO`, the card is issued at once and returned with `201`.
+        - Under the policy's approval threshold and the approval threshold of the
+          agent's spending pool, if any, and with `defaultExecutionMode` `AUTO`,
+          the card is issued at once and returned with `201`.
 
         - Otherwise the request becomes an `ISSUE_PURCHASE_CARD` agent action in
           `PENDING_APPROVAL`, returned with `202`, and the
@@ -12303,6 +12304,115 @@ paths:
                 $ref: '#/components/schemas/Error404'
         '409':
           description: Conflict. `CARD_NOT_MUTABLE` when the card is `CLOSED`; `CONFLICT` when the card's `cardCapabilities.supportsDigitalWalletTokenization` is false or the card is not `ACTIVE`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without a configured card issuer return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
+  /cards/{id}/web-tokenize:
+    parameters:
+      - name: id
+        in: path
+        description: System-generated unique card identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Add a card to a digital wallet from a website
+      description: |-
+        Mint the payload Apple's or Google's web "Add to Wallet" button needs to add the card to the cardholder's wallet from your website (web push provisioning). Call it from your backend when the button asks for the card: from Apple's `jwsResolver`, or from Google's `onSessionCreated` with the three values it supplies. Hand the response straight to the wallet's script.
+
+        The payload is encrypted to the wallet provider's keys, so neither your site nor your servers ever see card data. Do not store or log it; it is valid for one attempt. Authenticate the cardholder before calling.
+
+        Web push provisioning is enabled per website by the card issuer and needs each wallet provider's approval of your site. Until then the call returns `409 CONFLICT`. See [Digital wallet tokenization](/cards/card-management/digital-wallet-tokenization).
+
+        Only `ACTIVE` cards can be added. Every call is audit-logged with the requesting actor and the target wallet.
+      operationId: webTokenizeCard
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebTokenizationRequestOneOf'
+            examples:
+              applePay:
+                summary: Apple Pay
+                value:
+                  wallet: APPLE_PAY
+              googlePay:
+                summary: Google Pay
+                value:
+                  wallet: GOOGLE_PAY
+                  serverSessionId: 8c3b8a7e-2a5d-4b7f-9c1e-6d2f0a1b3c4d
+                  publicDeviceId: 3f1c2b8e-7d4a-4c1e-9b2f-6a5d0e8c7b1a
+                  publicWalletId: 9b7e6d5c-4a3b-4f2e-8d1c-0b9a8f7e6d5c
+      responses:
+        '200':
+          description: Provisioning payload minted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebTokenizationResponseOneOf'
+              examples:
+                applePay:
+                  summary: Apple Pay
+                  value:
+                    wallet: APPLE_PAY
+                    applePay:
+                      jws:
+                        header:
+                          kid: 2f6c8f6a-9a64-4f4e-8a3c-5b0d6e1f2a3b
+                        protected: eyJhbGciOiJFUzI1NiJ9
+                        payload: eyJlbmMiOiIuLi4ifQ
+                        signature: c2lnbmF0dXJl
+                      state: 7d1c0e9b-3a2f-4b6e-9c8d-1e0f2a3b4c5d
+                googlePay:
+                  summary: Google Pay
+                  value:
+                    wallet: GOOGLE_PAY
+                    googlePay:
+                      tspOpc: ZW5jcnlwdGVkLXRzcC1vcGM=
+        '400':
+          description: Invalid input. The body does not match the request shape for its `wallet`, or the wallet provider rejected the values. Start the add-to-wallet flow again on the page to obtain fresh values.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. The session has no attributable actor to audit the request against (for example, an impersonated dashboard session).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. `CARD_NOT_MUTABLE` when the card is `CLOSED`; `CONFLICT` when the card is not `ACTIVE`, its `cardCapabilities.supportsDigitalWalletTokenization` is false, or web push provisioning is not enabled for the card's program.
           content:
             application/json:
               schema:
@@ -18500,11 +18610,11 @@ components:
               type: string
               maxLength: 100
               writeOnly: true
-              description: The individual's identification number, required to onboard them as a US account holder. Only SSN (format `###-##-####`) and ITIN are currently accepted; other identification types are rejected. Write-only — never returned in customer responses.
+              description: 'The individual''s tax identification number: an SSN (format `###-##-####`) or ITIN, or a non-US tax ID (`idType` `NON_US_TAX_ID`) with its non-US `countryOfIssuance`. US residents must provide an SSN or ITIN. Write-only — never returned in customer responses.'
               example: 123-45-6789
             countryOfIssuance:
               type: string
-              description: 'Country that issued the identification (ISO 3166-1 alpha-2). Optional for an individual account holder: SSN and ITIN are US-issued, so this defaults to `US` and is rejected if set to anything else.'
+              description: Country that issued the identification (ISO 3166-1 alpha-2). For an SSN or ITIN this is optional, defaults to `US`, and is rejected if set to anything else. For a `NON_US_TAX_ID`, set it to the issuing non-US country; `US` is rejected.
               example: US
         - $ref: '#/components/schemas/CustomerEdd'
     IndividualCustomer:
@@ -32801,6 +32911,12 @@ components:
           minimum: 1
           description: The most a single payment may be. Absent for no cap.
           example: 50000
+        approvalThreshold:
+          type: integer
+          format: int64
+          minimum: 0
+          description: A payment by one of the pool's agents above this amount waits for approval, even when the agent's own policy would execute it at once. In the pool's currency. Absent means the agents' own policies alone decide. Card authorizations are never held for approval.
+          example: 25000
         dailyLimit:
           type: integer
           format: int64
@@ -32896,6 +33012,12 @@ components:
           format: int64
           minimum: 1
           example: 50000
+        approvalThreshold:
+          type: integer
+          format: int64
+          minimum: 0
+          description: A payment by one of the pool's agents above this amount waits for approval. Absent means the agents' own policies alone decide.
+          example: 25000
         dailyLimit:
           type: integer
           format: int64
@@ -32919,7 +33041,7 @@ components:
           example: false
     SpendingPoolUpdateRequest:
       type: object
-      description: Partial update to a spending pool. At least one field must be provided. A cap set to `null` is removed. Changing `limitType` to `RECURRING` requires `period`; changing it to `TOTAL` removes `period`. Lowering a limit below what is already spent refuses further payments; it never reverses one.
+      description: Partial update to a spending pool. At least one field must be provided. A cap or `approvalThreshold` set to `null` is removed. Changing `limitType` to `RECURRING` requires `period`; changing it to `TOTAL` removes `period`. Lowering a limit below what is already spent refuses further payments; it never reverses one.
       properties:
         name:
           type: string
@@ -32942,6 +33064,13 @@ components:
           format: int64
           minimum: 1
           example: 50000
+        approvalThreshold:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          minimum: 0
+          example: 25000
         dailyLimit:
           type:
             - integer
@@ -34483,6 +34612,188 @@ components:
           APPLE_PAY: '#/components/schemas/ApplePayTokenizationResponse'
           GOOGLE_PAY: '#/components/schemas/GooglePayTokenizationResponse'
           SAMSUNG_PAY: '#/components/schemas/SamsungPayTokenizationResponse'
+    WebDigitalWallet:
+      type: string
+      enum:
+        - APPLE_PAY
+        - GOOGLE_PAY
+      description: A wallet that can be added to from a website.
+      example: APPLE_PAY
+    WebTokenizationRequest:
+      type: object
+      description: Fields shared by every web add-to-wallet request. Send them from your backend when the wallet provider's web button asks for the card.
+      required:
+        - wallet
+      properties:
+        wallet:
+          $ref: '#/components/schemas/WebDigitalWallet'
+    AppleWebTokenizationRequestFields:
+      type: object
+      required:
+        - wallet
+      properties:
+        wallet:
+          type: string
+          enum:
+            - APPLE_PAY
+          description: Discriminator value identifying an Apple Pay request. Apple's web button needs nothing else from the page.
+          example: APPLE_PAY
+    AppleWebTokenizationRequest:
+      title: Apple Pay Web Tokenization Request
+      allOf:
+        - $ref: '#/components/schemas/WebTokenizationRequest'
+        - $ref: '#/components/schemas/AppleWebTokenizationRequestFields'
+    GoogleWebTokenizationRequestFields:
+      type: object
+      required:
+        - wallet
+        - serverSessionId
+        - publicDeviceId
+        - publicWalletId
+      properties:
+        wallet:
+          type: string
+          enum:
+            - GOOGLE_PAY
+          description: Discriminator value identifying a Google Pay request.
+          example: GOOGLE_PAY
+        serverSessionId:
+          type: string
+          format: uuid
+          description: The `serverSessionId` from Google's `onSessionCreated` callback.
+          example: 8c3b8a7e-2a5d-4b7f-9c1e-6d2f0a1b3c4d
+        publicDeviceId:
+          type: string
+          description: The `publicDeviceId` from Google's `onSessionCreated` callback.
+          example: 3f1c2b8e-7d4a-4c1e-9b2f-6a5d0e8c7b1a
+        publicWalletId:
+          type: string
+          description: The `publicWalletId` from Google's `onSessionCreated` callback.
+          example: 9b7e6d5c-4a3b-4f2e-8d1c-0b9a8f7e6d5c
+    GoogleWebTokenizationRequest:
+      title: Google Pay Web Tokenization Request
+      allOf:
+        - $ref: '#/components/schemas/WebTokenizationRequest'
+        - $ref: '#/components/schemas/GoogleWebTokenizationRequestFields'
+    WebTokenizationRequestOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/AppleWebTokenizationRequest'
+        - $ref: '#/components/schemas/GoogleWebTokenizationRequest'
+      discriminator:
+        propertyName: wallet
+        mapping:
+          APPLE_PAY: '#/components/schemas/AppleWebTokenizationRequest'
+          GOOGLE_PAY: '#/components/schemas/GoogleWebTokenizationRequest'
+    WebTokenizationResponse:
+      type: object
+      description: 'Fields shared by every web add-to-wallet response. The payload is encrypted to the wallet provider''s keys and signed for its web script: hand it to the script unchanged. It is valid for one attempt; do not store or log it.'
+      required:
+        - wallet
+      properties:
+        wallet:
+          $ref: '#/components/schemas/WebDigitalWallet'
+    CardWebTokenizationAppleJws:
+      type: object
+      description: The signed object Apple's `initAddToAppleWallet` script asks your `jwsResolver` for.
+      required:
+        - header
+        - protected
+        - payload
+        - signature
+      properties:
+        header:
+          type: object
+          required:
+            - kid
+          properties:
+            kid:
+              type: string
+              description: Id of the key that signed the object.
+              example: 2f6c8f6a-9a64-4f4e-8a3c-5b0d6e1f2a3b
+        protected:
+          type: string
+          description: Base64url-encoded protected header.
+          example: eyJhbGciOiJFUzI1NiJ9
+        payload:
+          type: string
+          description: Base64url-encoded, encrypted provisioning payload.
+          example: eyJlbmMiOiIuLi4ifQ
+        signature:
+          type: string
+          description: Base64url-encoded signature.
+          example: c2lnbmF0dXJl
+    CardWebTokenizationApplePayPayload:
+      type: object
+      description: What Apple's web script needs to add the card to Apple Wallet.
+      required:
+        - jws
+        - state
+      properties:
+        jws:
+          $ref: '#/components/schemas/CardWebTokenizationAppleJws'
+        state:
+          type: string
+          description: Identifier of this signed object; pass it along with `jws`.
+          example: 7d1c0e9b-3a2f-4b6e-9c8d-1e0f2a3b4c5d
+    AppleWebTokenizationResponseFields:
+      type: object
+      required:
+        - wallet
+        - applePay
+      properties:
+        wallet:
+          type: string
+          enum:
+            - APPLE_PAY
+          description: Discriminator value identifying an Apple Pay response.
+          example: APPLE_PAY
+        applePay:
+          $ref: '#/components/schemas/CardWebTokenizationApplePayPayload'
+    AppleWebTokenizationResponse:
+      title: Apple Pay Web Tokenization Response
+      allOf:
+        - $ref: '#/components/schemas/WebTokenizationResponse'
+        - $ref: '#/components/schemas/AppleWebTokenizationResponseFields'
+    CardWebTokenizationGooglePayPayload:
+      type: object
+      description: What Google's web script needs to add the card. Pass both fields to `googlepay.pushPaymentCredentials` as Google's integration guide describes; either may be absent when Google did not ask for it.
+      properties:
+        googleOpc:
+          type: string
+          description: Base64, encrypted card data that saves the card to the cardholder's Google Account.
+          example: ZW5jcnlwdGVkLWdvb2dsZS1vcGM=
+        tspOpc:
+          type: string
+          description: Base64, encrypted card data that creates the device token.
+          example: ZW5jcnlwdGVkLXRzcC1vcGM=
+    GoogleWebTokenizationResponseFields:
+      type: object
+      required:
+        - wallet
+        - googlePay
+      properties:
+        wallet:
+          type: string
+          enum:
+            - GOOGLE_PAY
+          description: Discriminator value identifying a Google Pay response.
+          example: GOOGLE_PAY
+        googlePay:
+          $ref: '#/components/schemas/CardWebTokenizationGooglePayPayload'
+    GoogleWebTokenizationResponse:
+      title: Google Pay Web Tokenization Response
+      allOf:
+        - $ref: '#/components/schemas/WebTokenizationResponse'
+        - $ref: '#/components/schemas/GoogleWebTokenizationResponseFields'
+    WebTokenizationResponseOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/AppleWebTokenizationResponse'
+        - $ref: '#/components/schemas/GoogleWebTokenizationResponse'
+      discriminator:
+        propertyName: wallet
+        mapping:
+          APPLE_PAY: '#/components/schemas/AppleWebTokenizationResponse'
+          GOOGLE_PAY: '#/components/schemas/GoogleWebTokenizationResponse'
     CardPinSetRequest:
       type: object
       required:

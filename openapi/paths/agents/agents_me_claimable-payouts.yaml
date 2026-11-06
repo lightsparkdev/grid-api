@@ -18,7 +18,8 @@ post:
     The request is evaluated against the agent's policy as a send of the same
     amount to a bank account: it needs the EXECUTE_QUOTES permission, counts
     toward the spending limits, and needs the customer's approval above the
-    policy's approval threshold, in `APPROVAL_REQUIRED` mode, or above the
+    policy's approval threshold or its spending pool's `approvalThreshold`,
+    in `APPROVAL_REQUIRED` mode, or above the
     platform's limit for bank payouts without approval. A payout that needs
     approval is created `PENDING_APPROVAL` with a `CLAIMABLE_PAYOUT` agent
     action, and the `AGENT_ACTION.PENDING_APPROVAL` webhook fires; approving
