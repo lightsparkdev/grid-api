@@ -16,7 +16,7 @@ Personal information, submitted via `POST /customers` (or `PATCH /customers/{cus
 | `birthDate` | `YYYY-MM-DD` |
 | `nationality` | ISO 3166-1 alpha-2 |
 | `address` | `line1`, `postalCode`, and `country` are required; `line2`, `city`, and `state` as applicable |
-| `idType` + `identifier` | Required to onboard a US account holder. Only `SSN` (format `###-##-####`) and `ITIN` are accepted for individuals |
+| `idType` + `identifier` | A tax ID: `SSN` (format `###-##-####`) or `ITIN`, or `NON_US_TAX_ID` with its non-US `countryOfIssuance`. US residents must provide an `SSN` or `ITIN` |
 | `email` / `phoneNumber` | Required in regions that verify a contact channel before verification begins (for example, the EU) |
 
 Documents, uploaded via `POST /documents` — identity documents also require `documentNumber` and `issuingAuthority`:
