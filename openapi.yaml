@@ -15063,6 +15063,10 @@ paths:
         **Rows to a contact:** a row addressed to a phone number or email is
         accepted and held as `PENDING_CLAIM`. Grid does not pay it.
 
+        **Rows to a Grid customer:** a `GRID_CUSTOMER` row pays an internal
+        account on the platform, under the rules of a quote between internal
+        accounts.
+
         Requires an API token with the `UMA_TRANSACT` permission.
       operationId: createPayoutRun
       tags:
@@ -36448,15 +36452,33 @@ components:
           pattern: ^[A-Z]{2}$
           description: ISO 3166-1 alpha-2 country the recipient is paid in. Defaults to the country of `phoneNumber`'s dialing code; required with `email`.
           example: PH
+    PayoutRunGridCustomerDestination:
+      title: Grid Customer
+      type: object
+      description: An internal account on the platform, typically another customer's. The row is paid as a transfer between internal accounts and is held to the same rules as a quote between them.
+      required:
+        - destinationType
+        - accountId
+      properties:
+        destinationType:
+          type: string
+          enum:
+            - GRID_CUSTOMER
+        accountId:
+          type: string
+          description: An internal account of the platform or of one of its customers.
+          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
     PayoutRunRowDestination:
       oneOf:
         - $ref: '#/components/schemas/PayoutRunExternalAccountDestination'
         - $ref: '#/components/schemas/PayoutRunContactDestination'
+        - $ref: '#/components/schemas/PayoutRunGridCustomerDestination'
       discriminator:
         propertyName: destinationType
         mapping:
           EXTERNAL_ACCOUNT: '#/components/schemas/PayoutRunExternalAccountDestination'
           CONTACT: '#/components/schemas/PayoutRunContactDestination'
+          GRID_CUSTOMER: '#/components/schemas/PayoutRunGridCustomerDestination'
     PayoutRunRowInput:
       type: object
       required:
