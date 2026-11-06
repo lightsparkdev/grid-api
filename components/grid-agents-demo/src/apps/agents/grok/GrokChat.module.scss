@@ -1045,9 +1045,10 @@
 }
 
 // The sub-agent row, in the status row's type.
+// Grok's cards: white, a hairline, 20pt corners (the order card's).
 .subRow {
-  background: none;
-  padding-left: 6px;
-  font-size: 17px;
-  line-height: 22px;
+  --sub-bg: var(--grok-card);
+  --sub-border: 1px solid var(--grok-line);
+  --sub-radius: 20px;
+  --sub-width: 325px;
 }

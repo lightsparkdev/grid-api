@@ -87,6 +87,44 @@ export function NoopButton(props: { label: string; size?: number; className?: st
   return <PressButton {...props} />;
 }
 
+/**
+ * A sheet's action on glass: clear for the way out, tinted with the app's color for the way forward (iOS's
+ * prominent glass). `size` is about how wide it lands, so it swells by the same few points as a disc.
+ */
+export function GlassButton({
+  label,
+  tint,
+  ink,
+  height = 50,
+  size = 170,
+  className,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string;
+  /** The glass's fill: the app's accent for a primary action; the sheet's own frost when omitted. */
+  tint?: string;
+  /** The label's color on that fill. */
+  ink?: string;
+  height?: number;
+  size?: number;
+  className?: string;
+  disabled?: boolean;
+  onClick?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <PressButton label={label} size={size} className={`${styles.cta} ${className ?? ''}`} disabled={disabled} onClick={onClick}>
+      <GlassPill radius={height / 2} tint={tint} style={{ height }}>
+        <span className={styles.ctaLabel} style={ink ? ({ '--cta-ink': ink } as CSSProperties) : undefined}>
+          {children}
+        </span>
+      </GlassPill>
+    </PressButton>
+  );
+}
+
 /** A glass control that presses like the header ones and does something: a sheet's close, back or save. */
 export function PressButton({
   label,

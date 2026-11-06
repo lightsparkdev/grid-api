@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FlowEntry, FreeTextReply } from '@/apps/agents/brain/useAgentBrain';
 import type { Chip } from '@/apps/agents/conversation';
-import { flowSpend, NEEDS_CONNECTION, type FlowContext, type FlowParams } from '@/apps/agents/flows';
+import { flowSpend, NEEDS_CONNECTION, type FlowContext } from '@/apps/agents/flows';
 import { resetRecipients, savedRecipients } from '@/apps/agents/recipients';
 import { voiceFor } from '@/apps/agents/voices';
 import type { Entry } from '@/components/ApiPanel/types';
@@ -23,11 +23,14 @@ const CALL_STAGGER_MS = 650;
  * (an installed agent, money to spend) is set up silently, so any tile works
  * from any starting point. State only; nothing is logged for it.
  */
-function prepare(session: AgentSession, id: ActionId, params?: FlowParams) {
-  if (NEEDS_CONNECTION[id] && !session.snapshot().connected) session.assumeConnected();
-  const need = flowSpend(id, params);
+function prepare(session: AgentSession, id: ActionId): NonNullable<FlowEntry['setup']> {
+  const connected = NEEDS_CONNECTION[id] && !session.snapshot().connected;
+  if (connected) session.assumeConnected();
+  const need = flowSpend(id);
   const have = session.snapshot().balanceCents;
-  if (need && have < need) session.assumeFunded(Math.max(FAST_FORWARD_FUND_CENTS, Math.ceil((need - have) / 10_000) * 10_000));
+  const funded = need && have < need ? Math.max(FAST_FORWARD_FUND_CENTS, Math.ceil((need - have) / 10_000) * 10_000) : 0;
+  if (funded) session.assumeFunded(funded);
+  return { connected, funded };
 }
 
 /** A suggested reply as a chip: a country gets its flag. */
@@ -178,11 +181,7 @@ export function useAgentsDemoLogic() {
         body: JSON.stringify({ connector: connectorRef.current, text, history, state }),
       });
       const data = (await res.json()) as AgentResponse;
-      if (data.reply) {
-        if (data.flow) {
-          prepare(sessionRef.current, data.flow, data.params);
-          setAccount(sessionRef.current.snapshot());
-        }
+      if (data.reply || data.flow) {
         return {
           said: { text: data.reply, voices: data.replies },
           flow: data.flow ? { id: data.flow, variant: data.variant ?? 0, params: data.params } : undefined,
@@ -199,9 +198,9 @@ export function useAgentsDemoLogic() {
   const handleAction = useCallback(
     (id: ActionId) => {
       const session = sessionRef.current;
-      prepare(session, id);
+      const setup = prepare(session, id);
       setAccount(session.snapshot());
-      setEntry({ nonce: Date.now(), flow: id, variant: runs[id] });
+      setEntry({ nonce: Date.now(), flow: id, variant: runs[id], setup });
     },
     [runs],
   );

@@ -23,6 +23,8 @@
 }
 
 .flow {
+  // The glass discs ink in the sheet's own text color.
+  --sp-text: currentColor;
   --bank-muted: #8a8a8e;
   --bank-line: rgba(60, 60, 67, 0.14);
   --bank-fill: #f2f2f7;
@@ -49,24 +51,8 @@
   display: flex;
   flex: none;
   align-items: center;
-  height: 56px;
-  padding: 0 12px;
-}
-
-.barButton {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  border-radius: 50%;
-  background: var(--bank-fill);
-  color: inherit;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.4;
-  }
+  height: 64px;
+  padding: 0 16px;
 }
 
 .steps {
@@ -260,29 +246,6 @@
 .cta {
   flex: none;
   padding: 12px 20px var(--bank-cta-foot, 34px);
-}
-
-.link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  height: 52px;
-  border: 0;
-  border-radius: 26px;
-  background: var(--bank-cta);
-  color: var(--bank-cta-text);
-  font: inherit;
-  font-size: 17px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &[data-stage='linked'] {
-    background: #34c759;
-    color: #fff;
-  }
 }
 
 .spin {

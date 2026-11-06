@@ -254,10 +254,11 @@
   cursor: pointer;
 }
 
+// Inset like the page's content (--sp-foot-inset), so the button lines up with the groups above it.
 .footer {
   position: absolute;
-  right: 16px;
+  right: var(--sp-foot-inset, 16px);
   bottom: 34px;
-  left: 16px;
+  left: var(--sp-foot-inset, 16px);
   z-index: 3;
 }

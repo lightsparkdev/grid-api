@@ -1,4 +1,4 @@
-import type { DepositNetwork, Limits, MerchantAgent, Payee, Purchase } from '@/data/agentEvents';
+import type { DepositNetwork, Limits, Payee, Purchase } from '@/data/agentEvents';
 
 /* The one story every app tells: the same person, the same people they pay,
    the same purchases. Only the voice and the look change between apps. */
@@ -6,10 +6,9 @@ import type { DepositNetwork, Limits, MerchantAgent, Payee, Purchase } from '@/d
 export const PERSON = { first: 'Alex', full: 'Alex Rivera', email: 'alex.rivera@gmail.com', phone: '+1 (310) 555-0142' };
 export const ADDRESS = '2140 Ocean Park Blvd, Apt 4, Santa Monica CA 90405, US';
 
-/** Add funds, in the order the product leads with: a debit card, a bank, then crypto (stablecoins, then Bitcoin). */
+/** Add funds, in the order the product leads with: a card, a bank, then crypto (stablecoins, then Bitcoin). */
 export const FUND = {
-  amount: 5_000,
-  card: 'Debit card',
+  card: 'Credit or debit card',
   bank: 'Bank account',
   crypto: [
     { label: 'USDC on Base', network: 'BASE' as DepositNetwork, currency: 'USDC' },
@@ -64,14 +63,6 @@ export const SUBSCRIPTION: Purchase & { item: string } = {
   amount: 1_399,
   recurring: true,
   item: 'Duolingo Max',
-};
-
-export const HOTEL: MerchantAgent & { listed: number; nights: string } = {
-  name: 'Hotel Alma',
-  amount: 37_080,
-  listed: 41_200,
-  description: '2 nights, June 12 to 14, paid agent to agent',
-  nights: 'June 12 to 14',
 };
 
 export const LUCIA = {

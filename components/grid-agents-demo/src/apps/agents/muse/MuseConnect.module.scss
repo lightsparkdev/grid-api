@@ -4,6 +4,7 @@ $muse-font: 'Optimistic AI', var(--font-family-sf-pro);
 
 .theme {
   --sp-bg: #f3f4f5;
+  --sp-foot-inset: 20px;
   --sp-text: #111111;
   --sp-muted: #7f8083;
   --sp-fill: #fcfcfc;
@@ -230,34 +231,8 @@ $muse-font: 'Optimistic AI', var(--font-family-sf-pro);
 }
 
 // Muse's primary button: the Meta blue sweep, a full-width capsule.
-.blue {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  height: 46px;
-  border: 0;
-  border-radius: 23px;
-  background: linear-gradient(90deg, #1d5fd8 0%, #3467ea 100%);
-  color: #fff;
-  font: inherit;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: scale 0.15s ease;
-
-  &:active:not(:disabled) {
-    scale: 0.98;
-  }
-
-  &:disabled {
-    cursor: default;
-  }
-
-  .perm & {
-    margin-top: 14px;
-  }
+.permConnect {
+  margin-top: 14px;
 }
 
 .cancel {

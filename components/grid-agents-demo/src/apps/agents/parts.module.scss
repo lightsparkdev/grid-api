@@ -581,19 +581,20 @@
 }
 
 // ── Sub-agent: the working row, and its sheet ──────────────────────────
+// The agent your agent worked with, as a card: its mark, its name over what they're doing or agreed, a chevron
+// to the conversation. Each app sets the surface (--sub-bg, --sub-border, --sub-radius, --sub-width).
 .sub {
   display: flex;
   align-items: center;
-  gap: 10px;
-  max-width: 340px;
-  padding: 8px 12px 8px 8px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--part-sunk, #f2f2f2);
+  gap: 12px;
+  width: var(--sub-width, 300px);
+  max-width: 100%;
+  padding: 12px 14px 12px 12px;
+  border: var(--sub-border, 0);
+  border-radius: var(--sub-radius, 18px);
+  background: var(--sub-bg, var(--part-sunk, #f2f2f2));
   color: var(--part-text, #000);
   font: inherit;
-  font-size: 15px;
-  line-height: 20px;
   text-align: left;
   cursor: pointer;
   transition: scale 0.15s ease;
@@ -601,24 +602,24 @@
   &:active {
     scale: 0.98;
   }
+}
 
-  > svg {
-    flex: none;
-    color: var(--part-muted, #8a8a8d);
-  }
+.subChevron {
+  flex: none;
+  color: var(--part-muted, #8a8a8d);
 }
 
 .subMark {
   display: grid;
   flex: none;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: #1f3a2f;
   color: #f4efe6;
   font-family: 'New York', ui-serif, Georgia, serif;
-  font-size: 14px;
+  font-size: 18px;
 
   &[data-big] {
     width: 40px;
@@ -628,8 +629,22 @@
 }
 
 .subLabel {
+  display: flex;
   flex: 1;
+  flex-direction: column;
   min-width: 0;
+
+  strong {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
+  }
+
+  small {
+    color: var(--part-muted, #8a8a8d);
+    font-size: 13px;
+    line-height: 18px;
+  }
 }
 
 // The same dark band sweep as the status rows.

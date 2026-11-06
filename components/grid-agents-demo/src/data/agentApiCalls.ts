@@ -181,7 +181,7 @@ function seedLedger(): LedgerEntry[] {
   return [
     { id: nextId('Transaction'), at: now - 1 * day, title: 'Spotify', detail: 'Subscription · card', cents: -1199, status: 'COMPLETED' },
     { id: nextId('Transaction'), at: now - 3 * day, title: 'Blue Bottle Coffee', detail: 'One-time card', cents: -1850, status: 'COMPLETED' },
-    { id: nextId('Transaction'), at: now - 5 * day, title: 'Added funds', detail: 'Debit card •••• 4242', cents: 3049, status: 'COMPLETED' },
+    { id: nextId('Transaction'), at: now - 5 * day, title: 'Added funds', detail: 'Visa •••• 4242', cents: 3049, status: 'COMPLETED' },
   ];
 }
 
@@ -815,7 +815,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
       to.amount,
       {
         title: to.name,
-        detail: 'Agent to agent',
+        detail: to.description,
         done: `${money(to.amount)} settled in ${to.name}'s account. Final, no chargeback window.`,
         note: `${money(to.amount)} straight to ${to.name}'s Embedded Wallet: account to account on the same network, no card in between.`,
       },
@@ -1107,7 +1107,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
     },
     assumeFunded: (cents) => {
       balance += cents;
-      record('Added funds', 'Debit card •••• 4242', cents);
+      record('Added funds', 'Visa •••• 4242', cents);
     },
     snapshot: () => ({ connected, cardVaulted: vaulted !== null, bankLinked: linkedBank !== null, balanceCents: balance, limits: { ...limits }, spentTodayCents: spentToday, ledger: ledger.slice() }),
     stepsFor(event) {

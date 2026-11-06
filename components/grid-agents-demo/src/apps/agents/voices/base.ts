@@ -1,7 +1,7 @@
 import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, Params, Product, SubAgent } from '../conversation';
 import { BANK_REACH } from '@/data/bankCountries';
 import { linkedBank, localAmount, railTiming } from '../linkedBank';
-import { ADDRESS, BUY_OPTIONS, HOTEL, LUCIA, PERSON, RING_LIGHT, usd, usd2 } from '../story';
+import { ADDRESS, BUY_OPTIONS, LUCIA, PERSON, RING_LIGHT, usd, usd2 } from '../story';
 
 /* The neutral voice: every line, ask and note a flow can produce, written so
    it reads right in any app. Each app's voice overrides what it says
@@ -9,6 +9,13 @@ import { ADDRESS, BUY_OPTIONS, HOTEL, LUCIA, PERSON, RING_LIGHT, usd, usd2 } fro
 
 const n = (p: Params | undefined, k: string) => Number(p?.[k] ?? 0);
 const s = (p: Params | undefined, k: string) => String(p?.[k] ?? '');
+/** What a shortcut set up on its own: "I turned on your Muse balance with the default limits and added $1,250". */
+export const setupDone = (p: Params | undefined) => {
+  const parts = [n(p, 'connected') ? `I turned on ${yours(p)} with the default limits` : '', n(p, 'funded') ? `added ${usd(n(p, 'funded'))}` : ''].filter(Boolean);
+  return parts.length === 2 ? `${parts[0]} and ${parts[1]}` : n(p, 'funded') ? `I added ${usd(n(p, 'funded'))} to ${yours(p)}` : parts[0];
+};
+/** "your Muse balance", and Your agent's "your balance" without saying your twice. */
+export const yours = (p: Params | undefined) => (s(p, 'wallet').startsWith('your ') ? s(p, 'wallet') : `your ${s(p, 'wallet')}`);
 
 /** " R$250 is $46.30 right now." for a payment in another currency, nothing in dollars. */
 export const converted = (p: Params | undefined, how = 'right now') => (n(p, 'converted') ? ` ${s(p, 'local')} is ${usd2(n(p, 'usd'))} ${how}.` : '');
@@ -26,7 +33,7 @@ export const STATUS = {
   sending: () => 'Sending the payment',
   setup: (p) => `Setting up ${s(p, 'wallet')}`,
   checking: (p) => `Checking ${s(p, 'wallet')}`,
-  talking: () => `Talking to ${HOTEL.name}’s agent`,
+  talking: (p) => `Talking to ${s(p, 'hotel')}’s agent`,
   watching: () => 'Waiting for the payment',
   adding: () => 'Adding money',
 } satisfies Record<string, LineFn>;
@@ -39,29 +46,43 @@ export const PRODUCTS = {
 
 export type ProductsKey = keyof typeof PRODUCTS;
 
+/** The stay, as the lines say it: "two nights", "two guests". */
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+const count = (k: number, one: string, many: string) => `${WORDS[k] ?? k} ${k === 1 ? one : many}`;
+export const nightsOf = (p?: Params) => count(n(p, 'nights'), 'night', 'nights');
+export const guestsOf = (p?: Params) => count(n(p, 'guests'), 'guest', 'guests');
+
 export const SUBAGENTS = {
-  hotel: (p) => ({
-    name: `${HOTEL.name}’s agent`,
-    initial: HOTEL.name[0],
-    working: `Talking to ${HOTEL.name}’s agent`,
-    done: `Got a direct rate from ${HOTEL.name}’s agent`,
-    steps: [
-      { title: `Found ${HOTEL.name}’s agent`, detail: 'The hotel takes bookings from agents directly, account to account.' },
-      { title: 'Asked for June 12 to 14, two guests', detail: `It quoted ${usd(HOTEL.listed)} for the two nights, breakfast included.` },
-      { title: 'Asked about paying directly', detail: `Skipping the card fee takes 10% off: ${usd2(HOTEL.amount)}.` },
-      {
-        title: 'Checked it against your limits',
-        detail: `${usd2(HOTEL.amount)} is over the ${usd(n(p, 'approve'))} I can spend alone, so it goes to you to approve.`,
-      },
-    ],
-    messages: [
-      { from: 'us', text: 'Hi, booking a room for June 12 to 14, two guests. What’s your best rate?' },
-      { from: 'them', text: `${usd(HOTEL.listed)} for the two nights, breakfast included.` },
-      { from: 'us', text: 'Can we pay you directly instead of by card?' },
-      { from: 'them', text: `Pay me directly and I’ll take 10% off: ${usd2(HOTEL.amount)}.` },
-      { from: 'us', text: 'Deal. I’ll send it as soon as it’s approved.' },
-    ],
-  }),
+  hotel: (p) => {
+    const hotel = s(p, 'hotel');
+    const over = n(p, 'amount') > n(p, 'approve');
+    return {
+      name: `${hotel}’s agent`,
+      initial: hotel[0],
+      working: `Talking to ${hotel}’s agent`,
+      done: `Got a direct rate from ${hotel}’s agent`,
+      status: 'Asking for a direct rate',
+      summary: `Direct rate ${usd2(n(p, 'amount'))}, 10% off`,
+      steps: [
+        { title: `Found ${hotel}’s agent`, detail: `The hotel takes bookings in ${s(p, 'city')} from agents directly, account to account.` },
+        { title: `Asked for ${s(p, 'dates')}, ${guestsOf(p)}`, detail: `It quoted ${usd(n(p, 'listed'))} for the ${nightsOf(p)}, breakfast included.` },
+        { title: 'Asked about paying directly', detail: `Skipping the card fee takes 10% off: ${usd2(n(p, 'amount'))}.` },
+        {
+          title: 'Checked it against your limits',
+          detail: over
+            ? `${usd2(n(p, 'amount'))} is over the ${usd(n(p, 'approve'))} I can spend alone, so it goes to you to approve.`
+            : `${usd2(n(p, 'amount'))} is inside the ${usd(n(p, 'approve'))} I can spend alone, so I can pay it myself.`,
+        },
+      ],
+      messages: [
+        { from: 'us', text: `Hi, booking a room for ${s(p, 'dates')}, ${guestsOf(p)}. What’s your best rate?` },
+        { from: 'them', text: `${usd(n(p, 'listed'))} for the ${nightsOf(p)}, breakfast included.` },
+        { from: 'us', text: 'Can we pay you directly instead of by card?' },
+        { from: 'them', text: `Pay me directly and I’ll take 10% off: ${usd2(n(p, 'amount'))}.` },
+        { from: 'us', text: over ? 'Deal. I’ll send it as soon as it’s approved.' : 'Deal. Sending it now.' },
+      ],
+    };
+  },
 } satisfies Record<string, (p?: Params) => SubAgent>;
 
 export type SubAgentKey = keyof typeof SUBAGENTS;
@@ -77,15 +98,19 @@ export const METAS = {
 export type MetaKey = keyof typeof METAS;
 
 export const LINES = {
-  greeting: () => 'Hi! I can pay, buy and get paid for you, within limits you set. What do you need?',
+  greeting: () => `Hi! I can pay people in ${BANK_REACH} countries, shop and get paid for you. First I’ll need my own account, with limits you set. Start there, or ask me anything.`,
+  'setup.auto': (p) => `Heads up: ${setupDone(p)}, so we can jump right in.`,
   fallback: () => 'I can only help with your account here. Try one of the flows on the left.',
   limited: () => 'Let’s keep going with the flows on the left. I’ve hit my chat limit for now.',
 
   'connect.intro': () => 'I’ll need my own account for that, with limits you set. Here’s what I’m asking for.',
   'connect.done': () => 'Connected. I have my own account now, and I can only spend what you put in it.',
   'connect.denied': () => 'No problem. I won’t touch money until you connect me.',
+  'connect.already': (p) => `I’m already set up. Here’s ${yours(p)}.`,
 
+  'fund.amount': () => 'How much do you want to add?',
   'fund.ask': () => 'How do you want to add it?',
+  'fund.needed': (p) => `I’ll need ${usd(n(p, 'amount'))} in ${yours(p)} to cover that. How do you want to add it?`,
   'fund.address': (p) => `Here’s your ${s(p, 'method')} ${s(p, 'network') === 'LIGHTNING' ? 'invoice' : 'address'}. Whatever you send lands as dollars.`,
   'fund.bank': (p) => {
     const bank = linkedBank();
@@ -96,12 +121,13 @@ export const LINES = {
   'bank.denied': () => 'Okay, no bank for now. You can link one any time.',
   'fund.done': (p) => `${usd(n(p, 'amount'))} landed. You have ${usd2(n(p, 'balance'))} now.`,
   'fund.card': (p) => `Adding ${usd(n(p, 'amount'))} from your Visa •••• 4242.`,
-  'card.intro': (p) => `Add a card once and I can top up your ${s(p, 'wallet')} from it whenever you ask.`,
+  'card.intro': (p) => `Add a card once and I can top up ${yours(p)} from it whenever you ask.`,
   'card.denied': () => 'Okay, no card for now. You can add one any time.',
 
   'limits.intro': () => 'I can’t change my own limits, so I sent it to you to confirm.',
   'limits.done': (p) => `Done. I’ll handle anything up to ${usd(n(p, 'approve'))} and ask you above it.`,
   'limits.denied': () => 'Okay, your limits stay as they are.',
+  'limits.same': (p) => `Those are already my limits: I handle anything up to ${usd(n(p, 'approve'))}, ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day.`,
 
   'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank yet. Add it here once and I’ll send it.`,
   'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so I’ll send it over ${s(p, 'rail')}.${converted(p)}`,
@@ -121,16 +147,18 @@ export const LINES = {
   'sub.done': (p) => `You’re subscribed. The card is locked to ${s(p, 'merchant')} now, so nobody else can use it.`,
   'sub.denied': () => 'Okay, no subscription.',
 
-  'agent.intro': () =>
-    `${HOTEL.name}’s agent quoted ${usd(HOTEL.listed)} for the two nights, or ${usd2(HOTEL.amount)} if we pay directly. I took the direct rate.`,
+  'agent.intro': (p) =>
+    `${s(p, 'hotel')}’s agent quoted ${usd(n(p, 'listed'))} for the ${nightsOf(p)}, or ${usd2(n(p, 'amount'))} if we pay directly. I took the direct rate.`,
   'agent.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m paying now.`,
   'agent.done': () => 'Booked. The confirmation is in your inbox.',
-  'agent.denied': () => `Okay, I won’t book it. I told ${HOTEL.name}’s agent we’ll pass.`,
+  'agent.denied': (p) => `Okay, I won’t book it. I told ${s(p, 'hotel')}’s agent we’ll pass.`,
+  'agent.already': (p) => `You’re already booked at ${s(p, 'hotel')} for ${s(p, 'dates')}. The confirmation is in your inbox.`,
 
   'getpaid.ask': () => `How does ${LUCIA.first} want to pay?`,
   'getpaid.address': (p) =>
     `Here’s where she can send it. I sent it to ${LUCIA.first} with invoice ${LUCIA.invoice}${s(p, 'method') ? ` (${s(p, 'method')})` : ''}.`,
   'getpaid.done': (p) => `${LUCIA.first} paid ${usd2(LUCIA.amount)}. You have ${usd2(n(p, 'balance'))} now.`,
+  'getpaid.already': () => `${LUCIA.first} already paid ${LUCIA.invoice}, ${usd2(LUCIA.amount)}. Nothing else is outstanding.`,
 
   'cashout.ask': () => 'Where should it go?',
   'cashout.quote': (p) => `${s(p, 'local')} to ${s(p, 'to')}, arriving in seconds over ${s(p, 'rail')}.`,
@@ -239,11 +267,11 @@ export const ASKS = {
     deny: 'Decline',
     denied: 'Declined',
   }),
-  agent: () => ({
-    title: `Pay ${HOTEL.name}’s agent`,
-    who: { name: HOTEL.name, detail: `2 nights, ${HOTEL.nights}` },
-    amount: usd2(HOTEL.amount),
-    method: `Account to account · you save ${usd2(HOTEL.listed - HOTEL.amount)}`,
+  agent: (p) => ({
+    title: `Pay ${s(p, 'hotel')}’s agent`,
+    who: { name: s(p, 'hotel'), detail: `${n(p, 'nights')} ${n(p, 'nights') === 1 ? 'night' : 'nights'} in ${s(p, 'city')}, ${s(p, 'dates')}` },
+    amount: usd2(n(p, 'amount')),
+    method: `Account to account · you save ${usd2(n(p, 'listed') - n(p, 'amount'))}`,
     allow: 'Approve',
     allowed: 'Paid',
     deny: 'Decline',
@@ -316,9 +344,9 @@ export const NOTES = {
     lines: [`Recurring Visa · renews monthly, only for ${s(p, 'merchant')}`],
     done: true,
   }),
-  'receipt.agent': () => ({
-    title: `Settled, instant and final · ${usd2(HOTEL.amount)}`,
-    lines: [`To ${HOTEL.name}’s account`, `Saved ${usd2(HOTEL.listed - HOTEL.amount)} by skipping the card`],
+  'receipt.agent': (p) => ({
+    title: `Settled, instant and final · ${usd2(n(p, 'amount'))}`,
+    lines: [`To ${s(p, 'hotel')}’s account · ${s(p, 'dates')}`, `Saved ${usd2(n(p, 'listed') - n(p, 'amount'))} by skipping the card`],
     done: true,
   }),
   'receipt.getpaid': () => ({

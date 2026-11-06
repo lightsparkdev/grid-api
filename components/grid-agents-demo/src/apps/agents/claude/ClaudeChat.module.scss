@@ -1,6 +1,10 @@
 // Figma 91:163, Claude Duet · Supplies budget (virtual card). Dark follows Claude's own.
 @use '../../../styles/corners';
 .screen {
+  // The agent-to-agent card: Claude's white card and hairline ring.
+  --sub-bg: var(--cl-card);
+  --sub-border: 1px solid var(--cl-ring);
+  --sub-radius: 22px;
   --cl-bg: #f9f9f7;
   --cl-edge: 249, 249, 247;
   --cl-text: #0b0b0b;

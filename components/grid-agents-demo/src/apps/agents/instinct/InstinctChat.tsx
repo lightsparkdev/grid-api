@@ -350,6 +350,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
 
   // A payment or a choice waits on a text: the likely answer is drafted, ready to send.
   const drafted = useRef(new Set<number>());
+  const draft = useRef<{ id: number; text: string } | null>(null);
   const { composer, setComposer } = chat;
   useEffect(() => {
     const open = [...chat.messages]
@@ -357,8 +358,22 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
       .find((m) => (m.kind === 'ask' && m.state === 'open' && !linksOut(m.ask)) || (m.kind === 'chips' && m.picked === null && !m.expired));
     if (!open || drafted.current.has(open.id)) return;
     drafted.current.add(open.id);
-    if (!composer) setComposer(open.kind === 'chips' ? open.chips[0].label : 'Yes');
+    // Only an untouched draft gives way to the next one; anything typed stays.
+    if (composer && composer !== draft.current?.text) return;
+    draft.current = { id: open.id, text: open.kind === 'chips' ? open.chips[0].label : 'Yes' };
+    setComposer(draft.current.text);
   }, [chat.messages, composer, setComposer]);
+  // The composer is every app's: a draft left untouched doesn't follow the person into the next app, and is
+  // drafted again on the way back.
+  useEffect(
+    () => () => {
+      const d = draft.current;
+      if (!d) return;
+      drafted.current.delete(d.id);
+      setComposer((c) => (c === d.text ? '' : c));
+    },
+    [setComposer],
+  );
   const lastMe = chat.messages.reduce((id, m) => (m.kind === 'me' ? m.id : id), -1);
 
   const opened = useOpenedIds(chat.messages);
@@ -431,7 +446,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
       case 'me': {
         // A reply to an ask or a choice shows what it answers, as iMessage's inline reply does.
         const answers =
-          prev?.kind === 'ask' && !linksOut(prev.ask) ? prev : prev?.kind === 'chips' ? prev : null;
+          prev?.kind === 'ask' && !linksOut(prev.ask) ? prev : prev?.kind === 'chips' && !prev.expired ? prev : null;
         // Instinct only ever thumbs-ups what you send (recording 2).
         const tapback = m.react || (answers?.kind === 'ask' && answers.state === 'done') ? '👍' : undefined;
         const fresh = !opened.has(m.id);

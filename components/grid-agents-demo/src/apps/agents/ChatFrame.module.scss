@@ -30,6 +30,11 @@
   }
 }
 
+// Marks the sheets for the wheel (they scroll themselves) without boxing them.
+.overlay {
+  display: contents;
+}
+
 // At least the thread's height: a short thread sits at its foot (or under the
 // header, with data-top) and a long one outgrows it and scrolls.
 .stack {

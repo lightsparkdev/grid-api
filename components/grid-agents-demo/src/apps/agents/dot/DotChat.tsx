@@ -20,7 +20,8 @@ import {
   type ScrollCause,
   type ScrollCurve,
 } from '../ChatFrame';
-import { GlassDisc, GlassPill, NoopButton } from '../glass';
+import { GlassButton, GlassDisc, GlassPill, NoopButton } from '../glass';
+import { SheetDisc } from '../SheetPage';
 import type { AgentAsk, AgentMeta, Message, Product } from '../conversation';
 import { linkedBank } from '../linkedBank';
 import { recipientNamed } from '../recipients';
@@ -145,9 +146,11 @@ function ActionPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
 function SetupSheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow: () => void; onDeny: () => void; onClose: () => void }) {
   return (
     <div className={styles.setup}>
-      <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-        <IconCrossMedium size={18} />
-      </button>
+      <span className={styles.close}>
+        <SheetDisc label="Close" onClick={onClose}>
+          <IconCrossMedium size={20} />
+        </SheetDisc>
+      </span>
       <span className={styles.setupMarks}>
         <DotsMark size={52} />
       </span>
@@ -168,9 +171,9 @@ function SetupSheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow:
           {ask.deny}
         </button>
       )}
-      <button type="button" className={styles.black} onClick={onAllow}>
+      <GlassButton label={ask.allow ?? 'Turn on'} tint="var(--dot-cta)" ink="var(--dot-cta-text)" size={340} className={styles.black} onClick={onAllow}>
         {ask.allow ?? 'Turn on'}
-      </button>
+      </GlassButton>
     </div>
   );
 }
@@ -188,13 +191,13 @@ function PaySheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow: (
   return (
     <div className={styles.pay}>
       <div className={styles.payBar}>
-        <button type="button" className={styles.payDisc} aria-label="Close" onClick={onClose}>
-          <IconCrossMedium size={18} />
-        </button>
+        <SheetDisc label="Close" onClick={onClose}>
+          <IconCrossMedium size={20} />
+        </SheetDisc>
         <strong>Dots</strong>
-        <span className={styles.payDisc} aria-hidden>
+        <SheetDisc label="Menu">
           <span className={styles.burger} />
-        </span>
+        </SheetDisc>
       </div>
       <AnimatePresence mode="wait" initial={false}>
         {!ready ? (
@@ -259,12 +262,12 @@ function PaySheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow: (
         )}
       </AnimatePresence>
       <div className={styles.payActions}>
-        <button type="button" className={styles.decline} onClick={onDeny}>
+        <GlassButton label={ask.deny ?? 'Decline'} onClick={onDeny}>
           {ask.deny ?? 'Decline'}
-        </button>
-        <button type="button" className={styles.approve} onClick={onAllow} disabled={!ready}>
+        </GlassButton>
+        <GlassButton label={ask.allow ?? 'Approve'} tint="var(--dot-blue)" ink="#fff" disabled={!ready} onClick={onAllow}>
           {ask.allow ?? 'Approve'}
-        </button>
+        </GlassButton>
       </div>
     </div>
   );

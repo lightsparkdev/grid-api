@@ -13,6 +13,7 @@ import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-3-str
 import { Flag } from '@/apps/shared/Flag';
 import { BANK_REACH, type BankCountry } from '@/data/bankCountries';
 import type { AgentAsk, ChipGlyph, Message } from '../conversation';
+import { GlassButton } from '../glass';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from '../vault/useAskSheet';
@@ -82,7 +83,7 @@ function Box({ label, value, flag }: { label: string; value: string; flag?: stri
 
 function Capsule({ busy, done, onClick, children }: { busy: boolean; done: boolean; onClick: () => void; children: ReactNode }) {
   return (
-    <button type="button" className={styles.capsule} disabled={busy} data-done={done || undefined} onClick={onClick}>
+    <GlassButton label={String(children)} tint="var(--dv-cta)" ink="var(--dv-cta-text)" size={370} onClick={busy ? undefined : onClick}>
       {done ? (
         <>
           <IconCheckmark1 size={20} /> {children}
@@ -92,7 +93,7 @@ function Capsule({ busy, done, onClick, children }: { busy: boolean; done: boole
       ) : (
         children
       )}
-    </button>
+    </GlassButton>
   );
 }
 
@@ -188,12 +189,12 @@ function Intro({ onStart, onNotNow }: { onStart: () => void; onNotNow: () => voi
       </span>
       <strong className={styles.introTitle}>Link a bank</strong>
       <p className={styles.introSub}>Top up your Dots balance from a bank in {BANK_REACH} countries.</p>
-      <button type="button" className={styles.introStart} onClick={onStart}>
+      <GlassButton label="Get started" tint="var(--dv-cta)" ink="var(--dv-cta-text)" size={340} className={styles.introStart} onClick={onStart}>
         Get started
-      </button>
-      <button type="button" className={styles.introNotNow} onClick={onNotNow}>
+      </GlassButton>
+      <GlassButton label="Not now" size={340} className={styles.introNotNow} onClick={onNotNow}>
         Not now
-      </button>
+      </GlassButton>
     </div>
   );
 }

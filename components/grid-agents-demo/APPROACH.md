@@ -165,8 +165,31 @@ same way (`.tmp-sweep/capture.mjs`) and compared frame by frame.
 The account opens at $0, as the Global Accounts playground's wallet does.
 Jumping to a payment (Pay someone, Buy online, Pay an agent, Withdraw) with
 less in the balance than it needs tops it up silently first, the same way a
-jump already installs the agent. Neither step is logged. The seeded History
-nets to zero.
+jump already installs the agent. Neither step is logged, but the agent says
+what it set up ("I turned on your Muse balance with the default limits and
+added $1,250"). The seeded History nets to zero.
+
+Pay an agent books anywhere (2026-11-06). The model only collects the city
+and dates (and guests if mentioned); `hotels.ts` supplies the hotel and the
+rate: an invented boutique hotel for about 18 popular cities, and for any
+other city one generated from its name, so the same city always gets the
+same hotel. Prices never come from the model, so the negotiation, approval,
+receipt and API calls always add up. The tile keeps Hotel Alma in Lisbon,
+June 12 to 14.
+
+Talking over the agent works like a real chat: a message that isn't one of
+the open choices drops the choice and gets answered; one that isn't a yes or
+a no over an open approval declines it, then gets answered.
+
+Tiles are shortcuts; the chat tells the whole story (2026-11-06). A request
+typed or tapped in the chat with no account yet starts with the agent asking
+for one (Connect), then a top-up that covers the request in $50 steps, then
+the request itself (`planFor` in `flows.ts`). The starter chips lead with
+"Set up a balance". Add funds with no amount (the tile, the
+balance card's Add money, or "add money" typed) asks how much and waits for a
+typed amount ("75", "$1,000", "75 bucks"), then asks where from. Anything else
+typed there drops the question and goes to the model. The model offers no
+chips for amounts: people type those.
 
 ### 2026-11-05: fund with and store cards
 
@@ -191,7 +214,9 @@ The thread is a scroller. New content grows at its foot and the whole thread
 scrolls up together on the measured curve (280ms,
 `cubic-bezier(0.28, 0.05, 0.65, 1)`), instead of each row animating its own
 position, which let rows overlap mid-move. Scrolled back to read, it stays put
-until the visitor returns to the foot.
+until the visitor returns to the foot. Any step up leaves the foot, however
+small (a trackpad moves a few pixels at a time), and a wheel over the header,
+tab bar or composer scrolls the thread under them.
 
 ### 2026-11-05: the iOS 27 glass rim
 

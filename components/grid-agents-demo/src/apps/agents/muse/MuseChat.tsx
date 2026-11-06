@@ -116,9 +116,16 @@ function MuseAvatar({ mode }: { mode: AvatarMode }) {
 /** Agent bubbles, cards and choices join into one run: 6.5pt corners where they meet. */
 const GROUPS = new Set<Message['kind']>(['them', 'card', 'chips']);
 
+/** Choices right under a question ride inside its bubble (IMG_1938), so they aren't a row of their own. */
+const inBubble = (i: number, all: Message[]) => {
+  const above = all[i - 1];
+  return all[i]?.kind === 'chips' && above?.kind === 'them' && !above.typing;
+};
+
 function groupPosition(i: number, all: Message[]) {
+  const below = inBubble(i + 1, all) ? i + 2 : i + 1;
   const up = i > 0 && GROUPS.has(all[i - 1].kind);
-  const down = i < all.length - 1 && GROUPS.has(all[i + 1].kind);
+  const down = below < all.length && GROUPS.has(all[below].kind);
   if (up && down) return 'middle';
   if (up) return 'last';
   if (down) return 'first';
@@ -150,16 +157,19 @@ function Choices({
   expired,
   onPick,
   pos,
+  inline,
 }: {
   chips: Chip[];
   picked: number | null;
   expired?: boolean;
   onPick: (i: number) => void;
-  pos: string;
+  pos?: string;
+  /** Inside the question's bubble, under its text. */
+  inline?: boolean;
 }) {
   const settled = picked !== null || !!expired;
   return (
-    <div className={styles.choices} data-pos={pos}>
+    <div className={`${styles.choices} ${inline ? styles.inline : ''}`} data-pos={pos}>
       {chips.map((c, i) => (
         <button
           key={c.label}
@@ -389,12 +399,21 @@ export function MuseChat({ chat }: AgentChatProps) {
   const bank = useMuseBank({ messages: chat.messages, onAllow: chat.allow });
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
-      case 'them':
+      case 'them': {
+        const next = inBubble(i + 1, all) ? all[i + 1] : null;
         return (
-          <div className={`${styles.them} ${m.typing ? styles.typing : ''}`} data-bubble data-pos={groupPosition(i, all)}>
+          <div
+            className={`${styles.them} ${m.typing ? styles.typing : ''}`}
+            data-bubble
+            data-pos={groupPosition(i, all)}
+            data-choices={next ? true : undefined}
+            data-fill={next ? true : undefined}
+          >
             {m.typing ? <TypingDots /> : <Streamed text={m.text} fresh={!openedIds.has(m.id)} />}
+            {next?.kind === 'chips' && <Choices chips={next.chips} picked={next.picked} expired={next.expired} onPick={chat.pick} inline />}
           </div>
         );
+      }
       case 'me':
         return <SentBubble fresh={!openedIds.has(m.id)}>{m.text}</SentBubble>;
       case 'ask':
@@ -409,6 +428,7 @@ export function MuseChat({ chat }: AgentChatProps) {
           </div>
         );
       case 'chips':
+        if (inBubble(i, all)) return null;
         return (
           <Choices
             chips={m.chips}

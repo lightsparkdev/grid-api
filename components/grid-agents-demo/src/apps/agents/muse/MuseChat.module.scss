@@ -1,6 +1,9 @@
 // Muse, from recording 9 (refs/muse/spec.md) over Figma 87:259. Dark: Figma 124:3873.
 @use '../../../styles/corners';
 .screen {
+  // The agent-to-agent card: Muse's bubble gray, its 22pt corners.
+  --sub-bg: var(--muse-them);
+  --sub-radius: 22px;
   --muse-bg: #fafafa;
   --muse-edge: 250, 250, 250;
   --muse-text: #111112;
@@ -304,6 +307,21 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   &:disabled {
     cursor: default;
   }
+}
+
+// In the question's bubble (IMG_1938 at 3x): the bubble goes full width, the choices start 10 under its last
+// line, and sit 16 in from its sides and 18 from its foot.
+.them[data-choices] {
+  width: 348px;
+  padding-bottom: 18px;
+}
+
+.choices.inline {
+  width: auto;
+  margin-top: 10px;
+  padding: 0;
+  border-radius: 0;
+  background: none;
 }
 
 // A 1pt border dashed 2 on, 2 off (CSS `dashed` can't set the dash), drawn half a pixel in so the whole stroke

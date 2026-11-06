@@ -13,6 +13,7 @@ import { Flag } from '@/apps/shared/Flag';
 import { BANK_REACH, type BankCountry } from '@/data/bankCountries';
 import type { AgentAsk, AskState, Message } from '../conversation';
 import { hasLinkedBank, linkedBank } from '../linkedBank';
+import { GlassButton } from '../glass';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from '../vault/useAskSheet';
@@ -30,13 +31,15 @@ import styles from './MuseConnect.module.scss';
  */
 
 const SHEET_IN = { duration: 0.45, ease: [0.3, 0.7, 0.2, 1] } as const;
+/** Muse's blue, the middle of its button's gradient, as the glass's tint. */
+const BLUE = '#2a62e3';
 
 /** The connector card in the thread (recording 18:17, 9s at 3x): ~238pt in the bubble gray, a 35pt dark tile. */
 export function ConnectorCard({ ask, state, onOpen }: { ask: AgentAsk; state: AskState; onOpen: () => void }) {
   const done = state === 'done';
   const payee = ask.recipient;
   const saved = payee ? recipientNamed(payee.name) : undefined;
-  const name = payee ? `${payee.first}’s bank` : ask.bank ? 'Bank account' : 'Debit card';
+  const name = payee ? `${payee.first}’s bank` : ask.bank ? 'Bank account' : 'Credit or debit card';
   const sub = payee
     ? done && saved
       ? `${saved.bank.bankName} •••• ${saved.bank.last4}`
@@ -112,9 +115,9 @@ function Permission({ onConnect, onCancel }: { onConnect: () => void; onCancel: 
         </li>
       </ul>
       <p className={styles.permFine}>Muse never sees your bank login. You can manage this connection in Settings.</p>
-      <button type="button" className={styles.blue} onClick={onConnect}>
+      <GlassButton label="Connect" tint={BLUE} ink="#fff" height={46} size={340} className={styles.permConnect} onClick={onConnect}>
         Connect
-      </button>
+      </GlassButton>
       <button type="button" className={styles.cancel} onClick={onCancel}>
         Cancel
       </button>
@@ -269,7 +272,7 @@ function BlueButton({
   onClick: () => void;
 }) {
   return (
-    <button type="button" className={styles.blue} disabled={busy} data-done={done || undefined} onClick={onClick}>
+    <GlassButton label={label} tint={BLUE} ink="#fff" height={46} size={370} onClick={busy ? undefined : onClick}>
       {done ? (
         <>
           <IconCheckmark1 size={18} /> {doneLabel}
@@ -279,7 +282,7 @@ function BlueButton({
       ) : (
         label
       )}
-    </button>
+    </GlassButton>
   );
 }
 
@@ -377,7 +380,7 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
         </SheetDisc>
       }
       footer={
-        <button type="button" className={styles.blue} disabled={entry.busy} data-done={entry.stage === 'saved' || undefined} onClick={entry.save}>
+        <GlassButton label="Add" tint={BLUE} ink="#fff" height={46} size={370} onClick={entry.busy ? undefined : entry.save}>
           {entry.stage === 'saved' ? (
             <>
               <IconCheckmark1 size={18} /> Added
@@ -387,7 +390,7 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
           ) : (
             'Add'
           )}
-        </button>
+        </GlassButton>
       }
     >
       <Details rows={cardFields(ask)} />

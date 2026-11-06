@@ -121,6 +121,9 @@ export interface SubAgent {
   initial: string;
   working: string;
   done: string;
+  /** Its card's line while they talk, and once they've agreed. */
+  status: string;
+  summary: string;
   steps: { title: string; detail: string }[];
   messages: { from: 'us' | 'them'; text: string }[];
 }
@@ -169,8 +172,8 @@ export type StoredMessage =
 /* ── Flows: what a conversation does ─────────────────────────────────── */
 
 /**
- * One beat of a flow. Most play on their own; an ask or chips wait for the
- * visitor. `when` builds its beats when it's reached, so they read the
+ * One beat of a flow. Most play on their own; an ask, chips or an amount wait
+ * for the visitor. `when` builds its beats when it's reached, so they read the
  * account as it is then. `work` shows what the agent is doing for `ms`, and
  * stays up until the next thing it says or shows.
  */
@@ -185,6 +188,8 @@ export type Beat =
   | { divider: string }
   | { ask: string; params?: Params; faceId?: boolean; allow: Beat[]; deny: Beat[] }
   | { chips: Chip[]; reply?: boolean; then: (picked: number) => Beat[] }
+  /** Waits for a typed dollar amount; anything else lapses it and goes to the model. */
+  | { amount: true; then: (usd: number) => Beat[] }
   | { emit: AgentEvent }
   | { pause: number }
   | { when: () => Beat[] };

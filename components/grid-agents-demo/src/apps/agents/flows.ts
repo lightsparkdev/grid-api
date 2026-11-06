@@ -4,7 +4,8 @@ import { purchaseSpendLimit, type DepositNetwork, type Limits, type Purchase } f
 import type { Beat, ChipGlyph, Params } from './conversation';
 import { formatMoney } from './linkedBank';
 import { draftRecipient, payeeFor, recipientNamed, type Recipient } from './recipients';
-import { CASHOUT, FUND, HOTEL, LUCIA, NEW_LIMITS, RING_LIGHT, SUBSCRIPTION, usd2 } from './story';
+import { merchantFor, stayFor, stayParams } from './hotels';
+import { CASHOUT, FUND, LUCIA, NEW_LIMITS, RING_LIGHT, SUBSCRIPTION, usd2 } from './story';
 
 /* What each flow does once the visitor sends its line: the agent's beats, the
    Grid events at each beat, and the points where it waits on the visitor.
@@ -27,6 +28,11 @@ export interface FlowParams {
   approve?: number;
   daily?: number;
   perTx?: number;
+  /** Pay an agent: where to stay, check-in and check-out (YYYY-MM-DD), and how many people. */
+  city?: string;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: number;
   /** Buy online, subscription: the service and its monthly price in USD. */
   merchant?: string;
   price?: number;
@@ -38,6 +44,8 @@ export interface FlowContext {
   /** Which of the tile's prompts this run started from (Buy online has two). */
   variant: number;
   params?: FlowParams;
+  /** What comes next once this flow has done its part: the task a setup was for. */
+  then?: () => Beat[];
 }
 
 const cents = (usd: number | undefined) => (usd && usd > 0 ? Math.round(usd * 100) : undefined);
@@ -74,6 +82,7 @@ function approvalOr(
   autoLine: string,
   after: Beat[],
   denied: string,
+  deniedParams?: Params,
 ): Beat[] {
   if (!needs) return [{ say: autoLine, params: limitParams(ctx) }, ...after];
   return [
@@ -82,13 +91,17 @@ function approvalOr(
       params: ask.params,
       faceId: true,
       allow: [{ emit: { type: 'action.approve' } }, ...after],
-      deny: [{ emit: { type: 'action.reject' } }, { say: denied }],
+      deny: [{ emit: { type: 'action.reject' } }, { say: denied, params: deniedParams }],
     },
   ];
 }
 
+/** Whether the account has a settled payment to or from `title` (the ledger names the other side). */
+const paid = (ctx: FlowContext, title: string) => ctx.account().ledger.some((l) => l.title === title && l.status === 'COMPLETED');
+
 const connect = (ctx: FlowContext): Beat[] => {
   const l = ctx.account().limits;
+  if (ctx.account().connected) return [{ react: '👍' }, { say: 'connect.already' }, { when: () => [{ card: 'balance', params: balanceParams(ctx) }] }];
   return [
     { react: '❤️' },
     { say: 'connect.intro' },
@@ -100,12 +113,17 @@ const connect = (ctx: FlowContext): Beat[] => {
         { work: 'setup', ms: 1100 },
         { emit: { type: 'connect' } },
         { say: 'connect.done' },
-        { when: () => [{ card: 'account.ready', params: balanceParams(ctx) }] },
+        { when: () => [{ card: 'account.ready', params: balanceParams(ctx) }, ...(ctx.then?.() ?? [])] },
       ],
       deny: [{ say: 'connect.denied' }],
     },
   ];
 };
+
+/** The top-up landed: say so, then carry on with whatever it was for. */
+const landed = (ctx: FlowContext, amount: number): Beat => ({
+  when: () => [{ say: 'fund.done', params: { amount, balance: ctx.account().balanceCents } }, ...(ctx.then?.() ?? [])],
+});
 
 /** Top up from a card: vault it the first time (each app's own way), then charge it. */
 const cardTopUp = (ctx: FlowContext, amount: number): Beat[] => [
@@ -114,7 +132,7 @@ const cardTopUp = (ctx: FlowContext, amount: number): Beat[] => [
       const charge: Beat[] = [
         { work: 'adding', ms: 900 },
         { emit: { type: 'fund.card', amount } },
-        { when: () => [{ say: 'fund.done', params: { amount, balance: ctx.account().balanceCents } }] },
+        landed(ctx, amount),
       ];
       if (ctx.account().cardVaulted) return [{ say: 'fund.card', params: { amount } }, ...charge];
       return [
@@ -138,7 +156,7 @@ const bankTopUp = (ctx: FlowContext, amount: number): Beat[] => [
         { say: 'fund.bank', params: { amount } },
         { work: 'adding', ms: 1100 },
         { emit: { type: 'fund.bank', amount } },
-        { when: () => [{ say: 'fund.done', params: { amount, balance: ctx.account().balanceCents } }] },
+        landed(ctx, amount),
       ];
       if (ctx.account().bankLinked) return transfer;
       return [
@@ -158,7 +176,15 @@ const bankTopUp = (ctx: FlowContext, amount: number): Beat[] => [
 const FUND_METHODS: FundMethod[] = ['card', 'bank', 'usdc', 'bitcoin'];
 
 const fund = (ctx: FlowContext): Beat[] => {
-  const amount = cents(ctx.params?.amount) ?? FUND.amount;
+  const amount = cents(ctx.params?.amount);
+  // Nobody named an amount (the tile): ask, then carry on as if they had.
+  if (amount === undefined) {
+    return [
+      { react: '👍' },
+      { say: 'fund.amount' },
+      { amount: true, then: (usd) => fund({ ...ctx, params: { ...ctx.params, amount: usd } }).slice(1) },
+    ];
+  }
   const from = (picked: number): Beat[] => {
     if (picked === 0) return cardTopUp(ctx, amount);
     if (picked === 1) return bankTopUp(ctx, amount);
@@ -174,7 +200,7 @@ const fund = (ctx: FlowContext): Beat[] => {
         then: () => [
           { pause: 900 },
           { emit: { type: 'fund.received' } },
-          { when: () => [{ say: 'fund.done', params: { amount, balance: ctx.account().balanceCents } }] },
+          landed(ctx, amount),
         ],
       },
     ];
@@ -183,7 +209,8 @@ const fund = (ctx: FlowContext): Beat[] => {
   if (method >= 0) return [{ react: '👍' }, ...from(method)];
   return [
     { react: '👍' },
-    { say: 'fund.ask' },
+    // Topping up for something else, it says what it needs and why.
+    ctx.then ? { say: 'fund.needed', params: { amount } } : { say: 'fund.ask' },
     {
       chips: [
         { label: FUND.card, glyph: 'card' },
@@ -211,6 +238,9 @@ const limits = (ctx: FlowContext): Beat[] => {
   const to = limitsFor(ctx, from);
   // Asked in the chat, the agent has already said it's sending the change over.
   const asked = ctx.params && (ctx.params.approve || ctx.params.daily || ctx.params.perTx);
+  if (to.approvalAbove === from.approvalAbove && to.daily === from.daily && to.perTransaction === from.perTransaction) {
+    return [{ react: '👍' }, { say: 'limits.same', params: { approve: to.approvalAbove, daily: to.daily, perTx: to.perTransaction } }];
+  }
   return [
     { react: '👍' },
     ...(asked ? [] : [{ say: 'limits.intro' } as Beat]),
@@ -354,42 +384,54 @@ const buy = (ctx: FlowContext): Beat[] => {
   ];
 };
 
-const agent = (ctx: FlowContext): Beat[] => [
-  { react: '👍' },
-  { subagent: 'hotel', ms: 4200, params: { approve: ctx.account().limits.approvalAbove } },
-  { emit: { type: 'agent.quote', to: HOTEL } },
-  { say: 'agent.intro' },
-  { emit: { type: 'agent.execute' } },
-  ...approvalOr(
-    ctx,
-    ctx.needsApproval(HOTEL.amount),
-    { key: 'agent' },
-    'agent.auto',
-    [{ card: 'receipt.agent' }, { say: 'agent.done' }],
-    'agent.denied',
-  ),
-];
+/** A stay booked by paying the hotel's own agent: the tile's Hotel Alma, or wherever and whenever someone asked. */
+const agent = (ctx: FlowContext): Beat[] => {
+  const stay = stayFor(ctx.params);
+  const to = merchantFor(stay);
+  const params = stayParams(stay);
+  const booked = ctx.account().ledger.some((l) => l.title === to.name && l.detail === to.description && l.status === 'COMPLETED');
+  if (booked) return [{ react: '👍' }, { say: 'agent.already', params }];
+  return [
+    { react: '👍' },
+    { subagent: 'hotel', ms: 4200, params: { ...params, approve: ctx.account().limits.approvalAbove } },
+    { emit: { type: 'agent.quote', to } },
+    { say: 'agent.intro', params },
+    { emit: { type: 'agent.execute' } },
+    ...approvalOr(
+      ctx,
+      ctx.needsApproval(stay.amount),
+      { key: 'agent', params },
+      'agent.auto',
+      [{ card: 'receipt.agent', params }, { say: 'agent.done', params }],
+      'agent.denied',
+      params,
+    ),
+  ];
+};
 
-const getpaid = (ctx: FlowContext): Beat[] => [
-  { react: '‼️' },
-  { say: 'getpaid.ask' },
-  {
-    chips: LUCIA.options.map((o) => ({ label: o.label, glyph: cryptoGlyph(o.network) })),
-    reply: true,
-    then: (i) => {
-      const o = LUCIA.options[i];
-      const params = { method: o.label, network: o.network };
-      return [
-        { emit: { type: 'getpaid.address', network: o.network, currency: o.currency } },
-        { say: 'getpaid.address', params },
-        { card: 'receive', params },
-        { work: 'watching', ms: 2200 },
-        { emit: { type: 'getpaid.received', from: LUCIA.name, amount: LUCIA.amount } },
-        { when: () => [{ card: 'receipt.getpaid' }, { say: 'getpaid.done', params: { balance: ctx.account().balanceCents } }] },
-      ];
+const getpaid = (ctx: FlowContext): Beat[] => {
+  if (paid(ctx, LUCIA.name)) return [{ react: '👍' }, { say: 'getpaid.already' }];
+  return [
+    { react: '‼️' },
+    { say: 'getpaid.ask' },
+    {
+      chips: LUCIA.options.map((o) => ({ label: o.label, glyph: cryptoGlyph(o.network) })),
+      reply: true,
+      then: (i) => {
+        const o = LUCIA.options[i];
+        const params = { method: o.label, network: o.network };
+        return [
+          { emit: { type: 'getpaid.address', network: o.network, currency: o.currency } },
+          { say: 'getpaid.address', params },
+          { card: 'receive', params },
+          { work: 'watching', ms: 2200 },
+          { emit: { type: 'getpaid.received', from: LUCIA.name, amount: LUCIA.amount } },
+          { when: () => [{ card: 'receipt.getpaid' }, { say: 'getpaid.done', params: { balance: ctx.account().balanceCents } }] },
+        ];
+      },
     },
-  },
-];
+  ];
+};
 
 const cashout = (ctx: FlowContext): Beat[] => [
   { react: '👍' },
@@ -464,6 +506,27 @@ export const FLOWS: Record<ActionId, (ctx: FlowContext) => Beat[]> = {
   history,
 };
 
+/**
+ * A request from the chat, as the product would handle it: no account yet, the agent asks for one first; not
+ * enough in it, it asks for a top-up that covers it (in $50 steps); then the task itself. Each step only
+ * carries on once it's done, so a no anywhere ends the run there.
+ */
+export function planFor(flow: ActionId, ctx: FlowContext): Beat[] {
+  const quiet = (beats: Beat[]) => beats.filter((b) => !('react' in b));
+  const task = () => quiet(FLOWS[flow](ctx));
+  const covered = (): Beat[] => {
+    const need = flowSpend(flow, ctx.params) - ctx.account().balanceCents;
+    if (need <= 0 || flow === 'fund') return task();
+    const amount = Math.ceil(need / 5_000) * 5_000;
+    return quiet(fund({ ...ctx, params: { amount: amount / 100 }, then: task }));
+  };
+  if (NEEDS_CONNECTION[flow] && !ctx.account().connected) return connect({ ...ctx, then: covered });
+  // Asked for directly, the agent's reply already says it's setting up.
+  if (flow === 'connect') return connect(ctx).filter((b) => !('say' in b && b.say === 'connect.intro'));
+  const need = flowSpend(flow, ctx.params) - ctx.account().balanceCents;
+  return need > 0 && flow !== 'fund' ? [{ react: '👍' }, ...covered()] : FLOWS[flow](ctx);
+}
+
 /** The most a run spends (USD cents), so a jump to it can top the balance up first. */
 export function flowSpend(flow: ActionId, params?: FlowParams): number {
   switch (flow) {
@@ -475,7 +538,7 @@ export function flowSpend(flow: ActionId, params?: FlowParams): number {
     case 'buy':
       return Math.max(purchaseSpendLimit(RING_LIGHT.amount), cents(params?.price) ?? 0);
     case 'agent':
-      return HOTEL.amount;
+      return stayFor(params).amount;
     case 'cashout':
       return cents(params?.amount) ?? CASHOUT[0].usd;
     case 'connect':

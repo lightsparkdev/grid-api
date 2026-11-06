@@ -101,10 +101,11 @@ function useStickToEnd(
     };
     const onScroll = () => {
       if (animating || Math.abs(el.scrollTop - placed) < 1) return;
+      // A trackpad moves a few px at a time: any step up leaves the foot, however close to it.
+      const up = el.scrollTop < placed;
       placed = el.scrollTop;
       if (performance.now() - gesture > 500) return;
-      stuck = end() - el.scrollTop < 24;
-      if (stuck) follow();
+      stuck = !up && end() - el.scrollTop < 24;
     };
     const interrupt = () => {
       gestured();
@@ -133,6 +134,36 @@ function useStickToEnd(
       el.removeEventListener('keydown', onKey);
     };
   }, [scroller, content, curveFor]);
+}
+
+/**
+ * The header, scroll edge, tab bar and composer float over the thread, so a wheel
+ * over them would go nowhere: it scrolls the thread instead, unless something under
+ * the pointer scrolls that way itself (the composer's long text) or it's over a sheet.
+ */
+function useWheelThrough(screen: React.RefObject<HTMLDivElement>, thread: React.RefObject<HTMLDivElement>) {
+  useEffect(() => {
+    const root = screen.current;
+    const el = thread.current;
+    if (!root || !el) return;
+    const scrollsItself = (from: Element, dy: number) => {
+      for (let n: Element | null = from; n && n !== root; n = n.parentElement) {
+        if (n.scrollHeight <= n.clientHeight || !/auto|scroll/.test(getComputedStyle(n).overflowY)) continue;
+        if (dy < 0 ? n.scrollTop > 0 : n.scrollTop < n.scrollHeight - n.clientHeight - 1) return true;
+      }
+      return false;
+    };
+    const onWheel = (e: WheelEvent) => {
+      const t = e.target as Element;
+      if (el.contains(t) || t.closest('[data-chat-overlay]') || scrollsItself(t, e.deltaY)) return;
+      e.preventDefault();
+      // As if it landed on the thread: the thread hears the gesture first, so it lets go of the foot.
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: e.deltaY }));
+      el.scrollTop += e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+    };
+    root.addEventListener('wheel', onWheel, { passive: false });
+    return () => root.removeEventListener('wheel', onWheel);
+  }, [screen, thread]);
 }
 
 /** A bubble up to 2.4 radii tall (one line in every skin) is a pill, with true capsule ends. */
@@ -173,7 +204,8 @@ function textWidth(el: HTMLElement) {
 /**
  * Shapes every `[data-bubble]` in the thread as iOS does: the bubble hugs its
  * longest line (CSS sizes wrapped text to the width it wrapped in, leaving a
- * gap on the right), and a one-line bubble is a pill (`data-pill`; see
+ * gap on the right), unless it holds more than text (`data-fill`, sized by its
+ * CSS), and a one-line bubble is a pill (`data-pill`; see
  * styles/_corners.scss). Every corner is then clipped to its app's shape (the
  * CSS radius at `--bubble-smoothing`), a pill's ends as a smooth capsule, which
  * no CSS corner can draw. A corner with a tail (`data-tail`) keeps its CSS
@@ -187,7 +219,7 @@ function useBubbleShapes(stack: React.RefObject<HTMLDivElement>) {
       el.style.width = '';
       const cs = getComputedStyle(el);
       const k = el.getBoundingClientRect().width / el.offsetWidth || 1;
-      const text = textWidth(el);
+      const text = el.hasAttribute('data-fill') ? null : textWidth(el);
       if (text !== null) {
         const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
         const border = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
@@ -345,6 +377,8 @@ export function ChatFrame({
   };
   useStickToEnd(threadRef, stackRef, curveFor);
   useBubbleShapes(stackRef);
+  const screenRef = useRef<HTMLDivElement>(null);
+  useWheelThrough(screenRef, threadRef);
   // The composer grows with its text, and the thread's foot rises with it.
   const composerRef = useRef<HTMLDivElement>(null);
   const [composerH, setComposerH] = useState(composerHeight);
@@ -359,6 +393,7 @@ export function ChatFrame({
   }, [composerHeight]);
   return (
     <div
+      ref={screenRef}
       className={`${styles.screen} ${className ?? ''}`}
       style={
         {
@@ -397,7 +432,9 @@ export function ChatFrame({
       <div ref={composerRef} className={styles.composer}>
         {composer}
       </div>
-      {overlay}
+      <div className={styles.overlay} data-chat-overlay>
+        {overlay}
+      </div>
       {screenOverlay && onFaceIdDone && createPortal(<FaceIdAuth active={!!faceId} onDone={onFaceIdDone} />, screenOverlay)}
     </div>
   );

@@ -11,6 +11,7 @@ import { BANK_REACH, currencyFor, type BankCountry } from '@/data/bankCountries'
 import type { AgentAsk, AskState, Message } from '../conversation';
 import { linkedBank } from '../linkedBank';
 import { recipientNamed } from '../recipients';
+import { GlassPill, PressButton } from '../glass';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
 import { useAskSheet } from '../vault/useAskSheet';
 import { BANK_ALL, BANK_POPULAR, bankFields, payeeBlurb, popularity, railBlurb, useBankPicker, type BankPicker } from '../vault/useBankPicker';
@@ -30,7 +31,7 @@ export function DuetConnector({ ask, state, onOpen }: { ask: AgentAsk; state: As
   const pending = state === 'pressing' || state === 'authing';
   const payee = ask.recipient;
   const saved = payee ? recipientNamed(payee.name) : undefined;
-  const name = payee ? `${payee.first}’s bank` : ask.bank ? 'Bank account' : 'Debit card';
+  const name = payee ? `${payee.first}’s bank` : ask.bank ? 'Bank account' : 'Credit or debit card';
   const line = payee
     ? done && saved
       ? `${saved.bank.bankName} •••• ${saved.bank.last4} is saved. Duet pays it by account.`
@@ -143,9 +144,13 @@ function Rows({ rows }: { rows: { key: string; label: string; value: string; fla
 /** The check disc that saves, dark once there's something to save (IMG_1931). */
 function SaveDisc({ stage, onClick }: { stage: 'form' | 'busy' | 'done'; onClick: () => void }) {
   return (
-    <button type="button" className={styles.saveDisc} aria-label="Save" disabled={stage !== 'form'} onClick={onClick}>
-      {stage === 'busy' ? <IconLoadingCircle size={20} className={styles.spin} /> : <IconCheckmark1 size={22} />}
-    </button>
+    <PressButton label="Save" className={styles.saveDisc} onClick={stage === 'form' ? onClick : undefined}>
+      <GlassPill radius={22} tint="var(--dv-ink)">
+        <span className={styles.saveInk}>
+          {stage === 'busy' ? <IconLoadingCircle size={20} className={styles.spin} /> : <IconCheckmark1 size={22} />}
+        </span>
+      </GlassPill>
+    </PressButton>
   );
 }
 

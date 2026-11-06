@@ -139,8 +139,11 @@ export function SubAgentRow({
   return (
     <button type="button" className={`${styles.sub} ${className ?? ''}`} onClick={onOpen} data-done={done || undefined} data-subagent>
       <span className={styles.subMark}>{agent.initial}</span>
-      <span className={styles.subLabel}>{done ? agent.done : <span className={styles.subShimmer}>{agent.working}…</span>}</span>
-      <IconChevronRight size={14} />
+      <span className={styles.subLabel}>
+        <strong>{agent.name}</strong>
+        <small>{done ? agent.summary : <span className={styles.subShimmer}>{agent.status}…</span>}</small>
+      </span>
+      <IconChevronRight size={16} className={styles.subChevron} />
     </button>
   );
 }

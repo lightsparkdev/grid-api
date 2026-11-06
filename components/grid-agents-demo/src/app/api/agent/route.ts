@@ -122,15 +122,18 @@ export async function POST(req: NextRequest) {
     const params = started ? paramsFor(started, answer, recipients) : undefined;
     // A flow missing what it needs doesn't start; the reply stands on its own.
     const flow = params === null ? undefined : started;
+    if (params === null && process.env.NODE_ENV === 'development') console.info('[agent] dropped', started, JSON.stringify({ ...answer, replies: undefined }));
+    // A top-up with no amount: the flow asks how much in the app's own voice, so the model's line would only repeat it.
+    const quiet = flow === 'fund' && !params?.amount;
     const replies: Partial<Record<ConnectorId, string>> = {};
     for (const id of CONNECTOR_IDS) {
       const raw = typeof answer.replies[id] === 'string' ? clean(answer.replies[id]) : '';
-      if (raw) replies[id] = flow ? statement(raw) : raw;
+      if (raw && !quiet) replies[id] = flow ? statement(raw) : raw;
     }
-    const reply = replies[connector];
-    if (!reply) return fallback('error');
+    const reply = replies[connector] ?? '';
+    if (!reply && !quiet) return fallback('error');
     const variant = flow === 'buy' && answer.variant === 'subscription' ? 1 : 0;
-    // Suggestions are for amounts, countries and choices: guessing someone's name would be odd.
+    // Suggestions are for countries and choices: guessing someone's name would be odd.
     const suggestions = flow || /\bname\b/i.test(reply) ? [] : suggestionsOf(answer.suggestions);
     return NextResponse.json({
       reply,
@@ -160,16 +163,30 @@ function countryNamed(s: string) {
   return BANK_COUNTRIES.find((c) => (code ? c.code === code : c.name.toLowerCase() === q));
 }
 
-/** Up to four short, plain suggestions. Offering countries, only ones a payment can go to, as the list names them. */
+/** Up to four short, plain suggestions, never bare amounts (people type those). Offering countries, only ones a payment can go to, as the list names them. */
 function suggestionsOf(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   const all = raw
     .filter((s): s is string => typeof s === 'string')
     .map((s) => s.replace(/[*_#`>]/g, '').trim())
-    .filter((s) => s && s.length <= 28);
+    .filter((s) => s && s.length <= 28 && !/^[$€£¥₹]?\s*\d[\d,.]*\s*\w{0,4}$/.test(s));
   const countries = all.map(countryNamed);
   const offersCountries = countries.some(Boolean);
   return (offersCountries ? countries.filter((c) => c).map((c) => c!.name) : all).slice(0, 4);
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const DAY = 86_400_000;
+
+/** Nights between two YYYY-MM-DD dates, if it's a real stay: checking in from today to a year out, 1 to 14 nights. */
+function stayNights(checkIn: unknown, checkOut: unknown): number | null {
+  if (typeof checkIn !== 'string' || typeof checkOut !== 'string' || !ISO_DATE.test(checkIn) || !ISO_DATE.test(checkOut)) return null;
+  const from = Date.parse(`${checkIn}T00:00:00Z`);
+  const to = Date.parse(`${checkOut}T00:00:00Z`);
+  const today = Date.parse(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`);
+  const nights = Math.round((to - from) / DAY);
+  if (Number.isNaN(nights) || nights < 1 || nights > 14 || from < today - DAY || from > today + 366 * DAY) return null;
+  return nights;
 }
 
 const positive = (v: unknown, max: number) => (typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= max ? v : undefined);
@@ -215,8 +232,14 @@ function paramsFor(flow: ActionId, a: ModelAnswer, saved: PromptState['recipient
       const price = positive(a.price, 1_000);
       return merchant && price ? { merchant, price } : undefined;
     }
+    case 'agent': {
+      const city = text(a.city, 40);
+      const nights = stayNights(a.checkIn, a.checkOut);
+      if (!city || !nights) return null;
+      const guests = typeof a.guests === 'number' && Number.isInteger(a.guests) && a.guests >= 1 && a.guests <= 8 ? a.guests : undefined;
+      return { city, checkIn: a.checkIn, checkOut: a.checkOut, ...(guests ? { guests } : {}) };
+    }
     case 'connect':
-    case 'agent':
     case 'getpaid':
     case 'balance':
     case 'history':

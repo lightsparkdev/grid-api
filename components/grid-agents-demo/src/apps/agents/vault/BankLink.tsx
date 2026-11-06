@@ -12,7 +12,9 @@ import { BANK_REACH, currencyFor, type BankCountry } from '@/data/bankCountries'
 import type { AgentAsk, AskState, Message } from '../conversation';
 import type { LinkedBank } from '../linkedBank';
 import { askButtons } from '../parts';
+import { GlassButton } from '../glass';
 import { AppSheet } from '../sheet';
+import { SheetDisc } from '../SheetPage';
 import { useAskSheet } from './useAskSheet';
 import { BANK_ALL, BANK_POPULAR, bankDoneLabel, bankFields, countryShort, payeeBlurb, useBankPicker } from './useBankPicker';
 import { cardFields, cardLabel, useCardEntry } from './useCardEntry';
@@ -24,6 +26,8 @@ import styles from './BankLink.module.scss';
  */
 
 const SHEET_IN: Transition = { duration: 0.45, ease: [0.3, 0.7, 0.2, 1] };
+/** The button turns iOS green once it's done. */
+const LINKED = '#34c759';
 const STEP: Transition = { duration: 0.35, ease: [0.2, 0.8, 0.2, 1] };
 /** Steps push like iOS navigation: forward slides in from the right, back from the left. */
 const SLIDE = {
@@ -87,20 +91,14 @@ export function BankLinkFlow({
     <div className={`${styles.flow} ${className ?? ''}`}>
       <header className={styles.bar}>
         {step === 'details' && !payee ? (
-          <button
-            type="button"
-            className={styles.barButton}
-            aria-label="Back"
-            disabled={picker.busy}
-            onClick={picker.unpick}
-          >
+          <SheetDisc label="Back" disabled={picker.busy} onClick={picker.unpick}>
             <IconChevronLeft size={22} />
-          </button>
+          </SheetDisc>
         ) : (
           onClose && (
-            <button type="button" className={styles.barButton} aria-label="Close" onClick={onClose}>
+            <SheetDisc label="Close" onClick={onClose}>
               <IconCrossMedium size={22} />
-            </button>
+            </SheetDisc>
           )
         )}
       </header>
@@ -163,12 +161,13 @@ export function BankLinkFlow({
                   </div>
                 </div>
                 <div className={styles.cta}>
-                  <button
-                    type="button"
-                    className={styles.link}
-                    disabled={picker.busy}
-                    data-stage={stage}
-                    onClick={picker.link}
+                  <GlassButton
+                    label={payee ? 'Save' : `Link ${bank.bankName}`}
+                    tint={stage === 'linked' ? LINKED : 'var(--bank-cta)'}
+                    ink={stage === 'linked' ? '#fff' : 'var(--bank-cta-text)'}
+                    height={52}
+                    size={370}
+                    onClick={picker.busy ? undefined : picker.link}
                   >
                     {stage === 'form' && (payee ? 'Save' : `Link ${bank.bankName}`)}
                     {stage === 'linking' && <IconLoadingCircle size={22} className={styles.spin} />}
@@ -177,7 +176,7 @@ export function BankLinkFlow({
                         <IconCheckmark1 size={20} /> {payee ? 'Saved' : 'Linked'}
                       </>
                     )}
-                  </button>
+                  </GlassButton>
                 </div>
               </motion.div>
             )
@@ -240,9 +239,9 @@ function CardForm({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
   return (
     <div className={styles.flow}>
       <header className={styles.bar}>
-        <button type="button" className={styles.barButton} aria-label="Close" disabled={entry.busy} onClick={onClose}>
+        <SheetDisc label="Close" disabled={entry.busy} onClick={onClose}>
           <IconCrossMedium size={22} />
-        </button>
+        </SheetDisc>
       </header>
       <div className={styles.scroll}>
         <h2 className={styles.title}>Add a card</h2>
@@ -254,7 +253,14 @@ function CardForm({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
         </div>
       </div>
       <div className={styles.cta}>
-        <button type="button" className={styles.link} disabled={entry.busy} data-stage={entry.stage === 'saved' ? 'linked' : undefined} onClick={entry.save}>
+        <GlassButton
+          label={ask.allow ?? 'Save card'}
+          tint={entry.stage === 'saved' ? LINKED : 'var(--bank-cta)'}
+          ink={entry.stage === 'saved' ? '#fff' : 'var(--bank-cta-text)'}
+          height={52}
+          size={370}
+          onClick={entry.busy ? undefined : entry.save}
+        >
           {entry.stage === 'form' && (ask.allow ?? 'Save card')}
           {entry.stage === 'saving' && <IconLoadingCircle size={22} className={styles.spin} />}
           {entry.stage === 'saved' && (
@@ -262,7 +268,7 @@ function CardForm({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
               <IconCheckmark1 size={20} /> Saved
             </>
           )}
-        </button>
+        </GlassButton>
       </div>
     </div>
   );

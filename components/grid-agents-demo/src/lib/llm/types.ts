@@ -29,6 +29,10 @@ export interface ModelAnswer {
   perTx?: number;
   merchant?: string;
   price?: number;
+  city?: string;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: number;
 }
 
 export interface ModelRequest {
