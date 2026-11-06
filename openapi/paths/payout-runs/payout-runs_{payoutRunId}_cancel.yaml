@@ -1,0 +1,53 @@
+parameters:
+  - name: payoutRunId
+    in: path
+    required: true
+    description: System-generated unique payout run identifier
+    schema:
+      type: string
+    example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+post:
+  summary: Cancel a payout run
+  description: Skip every row that has not started. A row whose payment has already started still settles, and its transaction is still reported on the run.
+  operationId: cancelPayoutRun
+  tags:
+    - Payout Runs
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: The cancelled run
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/payout_runs/PayoutRun.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Payout runs are not enabled for the platform, or the caller lacks the UMA_TRANSACT permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - No payout run with this id
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - The run has already finished
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

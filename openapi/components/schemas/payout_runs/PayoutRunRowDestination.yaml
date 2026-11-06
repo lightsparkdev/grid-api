@@ -1,0 +1,8 @@
+oneOf:
+  - $ref: ./PayoutRunExternalAccountDestination.yaml
+  - $ref: ./PayoutRunContactDestination.yaml
+discriminator:
+  propertyName: destinationType
+  mapping:
+    EXTERNAL_ACCOUNT: ./PayoutRunExternalAccountDestination.yaml
+    CONTACT: ./PayoutRunContactDestination.yaml

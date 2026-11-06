@@ -73,6 +73,10 @@ tags:
     description: >-
       Endpoints for creating and confirming quotes for transfers, both
       same-currency and cross-currency
+  - name: Payout Runs
+    description: >-
+      Endpoints for paying many recipients from one internal account in one
+      request, and for reconciling the result
   - name: Transactions
     description: Endpoints for retrieving transaction information
   - name: Webhooks
@@ -613,6 +617,16 @@ paths:
     $ref: paths/care/care_chats_{chatId}_messages.yaml
   /care/chats/{chatId}:
     $ref: paths/care/care_chats_{chatId}.yaml
+  /payout-runs:
+    $ref: paths/payout-runs/payout-runs.yaml
+  /payout-runs/{payoutRunId}:
+    $ref: paths/payout-runs/payout-runs_{payoutRunId}.yaml
+  /payout-runs/{payoutRunId}/rows:
+    $ref: paths/payout-runs/payout-runs_{payoutRunId}_rows.yaml
+  /payout-runs/{payoutRunId}/cancel:
+    $ref: paths/payout-runs/payout-runs_{payoutRunId}_cancel.yaml
+  /payout-runs/{payoutRunId}/export:
+    $ref: paths/payout-runs/payout-runs_{payoutRunId}_export.yaml
 webhooks:
   agent-action:
     $ref: webhooks/agent-action.yaml
@@ -646,6 +660,8 @@ webhooks:
     $ref: webhooks/card-authorization-request.yaml
   wallet-operation:
     $ref: webhooks/wallet-operation.yaml
+  payout-run:
+    $ref: webhooks/payout-run.yaml
 security:
   - BasicAuth: []
   - AgentAuth: []

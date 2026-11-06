@@ -1,0 +1,14 @@
+title: External Account
+type: object
+required:
+  - destinationType
+  - externalAccountId
+properties:
+  destinationType:
+    type: string
+    enum:
+      - EXTERNAL_ACCOUNT
+  externalAccountId:
+    type: string
+    description: An `ACTIVE` external account of the platform or of one of its customers.
+    example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123

@@ -60,6 +60,8 @@ tags:
     description: Deprecated endpoints for transferring funds between internal and external accounts with the same currency. Use the quote endpoints under Cross-Currency Transfers instead, which now serve same-currency transfers as well.
   - name: Cross-Currency Transfers
     description: Endpoints for creating and confirming quotes for transfers, both same-currency and cross-currency
+  - name: Payout Runs
+    description: Endpoints for paying many recipients from one internal account in one request, and for reconciling the result
   - name: Transactions
     description: Endpoints for retrieving transaction information
   - name: Webhooks
@@ -15038,6 +15040,324 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CareError'
+  /payout-runs:
+    post:
+      summary: Create a payout run
+      description: |
+        Pay many recipients from one internal account in one request. Grid
+        validates every row before it stores the run and answers with the run
+        and the rows it rejected. The accepted rows are then paid in the
+        background, each through its own quote, so each emits the usual
+        `OUTGOING_PAYMENT.*` webhooks. A `PAYOUT_RUN.*` webhook reports the run
+        when no row is left to pay.
+
+        **Funding:** the source must be an open `INTERNAL_FIAT` or
+        `INTERNAL_CRYPTO` account of the platform or of one of its customers.
+
+        **Validation:** a rejected row is returned with its `failureCode` and
+        `failureReason` and stored as `FAILED`. The run pays the accepted rows
+        unless `allOrNothing` is set, in which case any rejection fails the run
+        and skips every row. Every rule is enforced again when a row is paid,
+        so a row can still fail then, for example on insufficient funds.
+
+        **Rows to a contact:** a row addressed to a phone number or email is
+        accepted and held as `PENDING_CLAIM`. Grid does not pay it.
+
+        Requires an API token with the `UMA_TRANSACT` permission.
+      operationId: createPayoutRun
+      tags:
+        - Payout Runs
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Unique identifier for this run. A retry with the same key and body returns the stored run; the same key with a different body is rejected.
+          schema:
+            type: string
+            maxLength: 255
+            example: payroll-2026-11-04
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutRunCreateRequest'
+      responses:
+        '200':
+          description: The run this Idempotency-Key already created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutRunCreateResponse'
+        '201':
+          description: Payout run created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutRunCreateResponse'
+        '400':
+          description: Bad request - The body is invalid, the funding account cannot fund a run, or the Idempotency-Key was used for a different run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Payout runs are not enabled for the platform, or the caller is not an API token with the UMA_TRANSACT permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - The funding account or the customer does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /payout-runs/{payoutRunId}:
+    parameters:
+      - name: payoutRunId
+        in: path
+        required: true
+        description: System-generated unique payout run identifier
+        schema:
+          type: string
+        example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+    get:
+      summary: Get a payout run
+      description: Retrieve a payout run and its row counts.
+      operationId: getPayoutRun
+      tags:
+        - Payout Runs
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutRun'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Payout runs are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - No payout run with this id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /payout-runs/{payoutRunId}/rows:
+    parameters:
+      - name: payoutRunId
+        in: path
+        required: true
+        description: System-generated unique payout run identifier
+        schema:
+          type: string
+        example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+    get:
+      summary: List the rows of a payout run
+      description: The run's rows in the order they were submitted, rejected rows included.
+      operationId: listPayoutRunRows
+      tags:
+        - Payout Runs
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: state
+          in: query
+          description: Only rows in this state
+          required: false
+          schema:
+            $ref: '#/components/schemas/PayoutRunRowState'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 100, max 200)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 100
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutRunRowListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Payout runs are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - No payout run with this id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /payout-runs/{payoutRunId}/cancel:
+    parameters:
+      - name: payoutRunId
+        in: path
+        required: true
+        description: System-generated unique payout run identifier
+        schema:
+          type: string
+        example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Cancel a payout run
+      description: Skip every row that has not started. A row whose payment has already started still settles, and its transaction is still reported on the run.
+      operationId: cancelPayoutRun
+      tags:
+        - Payout Runs
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: The cancelled run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutRun'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Payout runs are not enabled for the platform, or the caller lacks the UMA_TRANSACT permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - No payout run with this id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The run has already finished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /payout-runs/{payoutRunId}/export:
+    parameters:
+      - name: payoutRunId
+        in: path
+        required: true
+        description: System-generated unique payout run identifier
+        schema:
+          type: string
+        example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+    get:
+      summary: Export a payout run for reconciliation
+      description: |
+        Every row of the run in submission order, each with the transaction it
+        produced: what was sent and received, the fees, the rate, the
+        provider's reference and why it failed. Amounts are in the smallest
+        unit of their currency. The transaction fields are absent for a row
+        that produced no transaction.
+      operationId: exportPayoutRun
+      tags:
+        - Payout Runs
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: The reconciliation rows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutRunExport'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Payout runs are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - No payout run with this id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
 webhooks:
   agent-action:
     post:
@@ -17177,6 +17497,78 @@ webhooks:
                     resourceType: CUSTOMER
                     resourceId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     status: completed
+      responses:
+        '200':
+          description: Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+  payout-run:
+    post:
+      summary: Payout run finished webhook
+      description: |
+        Fired when no row of a payout run is left to pay: `PAYOUT_RUN.COMPLETED`, `PAYOUT_RUN.PARTIALLY_FAILED` or `PAYOUT_RUN.FAILED`, with the run and its row counts. A cancelled run sends none. Each row's transaction sends its own `OUTGOING_PAYMENT.*` webhooks.
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+      operationId: payoutRunWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutRunWebhook'
+            examples:
+              partiallyFailed:
+                summary: A run with failed rows
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000030
+                  type: PAYOUT_RUN.PARTIALLY_FAILED
+                  timestamp: '2026-11-05T02:14:00Z'
+                  data:
+                    id: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+                    status: PARTIALLY_FAILED
+                    source:
+                      accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    allOrNothing: false
+                    rowCounts:
+                      total: 1000
+                      pending: 0
+                      pendingClaim: 12
+                      processing: 0
+                      completed: 980
+                      failed: 8
+                      skipped: 0
+                    createdAt: '2026-11-04T22:00:00Z'
+                    updatedAt: '2026-11-05T02:14:00Z'
+                    finishedAt: '2026-11-05T02:14:00Z'
       responses:
         '200':
           description: Webhook received successfully
@@ -35995,6 +36387,390 @@ components:
           type: string
           description: Human-readable explanation, for a log or a support ticket. Not for branching, and not always safe to show a cardholder verbatim. The exception is `CARE_MESSAGE_REJECTED`, whose `reason` is written to be shown.
           example: The care session token is not valid.
+    PayoutRunSource:
+      type: object
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+          description: The internal account that funds every row. It must be an open `INTERNAL_FIAT` or `INTERNAL_CRYPTO` account of the platform or of one of its customers.
+          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        customerId:
+          type: string
+          description: The customer the payouts are made on behalf of, with the same meaning as `customerId` on an `ACCOUNT` quote source. Optional for a platform account; for a customer's account it must be the owner or omitted.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    PayoutRunExternalAccountDestination:
+      title: External Account
+      type: object
+      required:
+        - destinationType
+        - externalAccountId
+      properties:
+        destinationType:
+          type: string
+          enum:
+            - EXTERNAL_ACCOUNT
+        externalAccountId:
+          type: string
+          description: An `ACTIVE` external account of the platform or of one of its customers.
+          example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+    PayoutRunContactDestination:
+      title: Contact
+      type: object
+      description: A person addressed by phone number or email, with the same fields as a claimable payout's recipient. Exactly one of `phoneNumber` and `email` is set.
+      required:
+        - destinationType
+        - name
+      properties:
+        destinationType:
+          type: string
+          enum:
+            - CONTACT
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: What the platform calls the recipient.
+          example: Maria
+        phoneNumber:
+          type: string
+          description: The recipient's mobile number in E.164 format.
+          example: '+639171234567'
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: The recipient's email address.
+          example: maria@example.com
+        country:
+          type: string
+          pattern: ^[A-Z]{2}$
+          description: ISO 3166-1 alpha-2 country the recipient is paid in. Defaults to the country of `phoneNumber`'s dialing code; required with `email`.
+          example: PH
+    PayoutRunRowDestination:
+      oneOf:
+        - $ref: '#/components/schemas/PayoutRunExternalAccountDestination'
+        - $ref: '#/components/schemas/PayoutRunContactDestination'
+      discriminator:
+        propertyName: destinationType
+        mapping:
+          EXTERNAL_ACCOUNT: '#/components/schemas/PayoutRunExternalAccountDestination'
+          CONTACT: '#/components/schemas/PayoutRunContactDestination'
+    PayoutRunRowInput:
+      type: object
+      required:
+        - clientRowId
+        - lockedCurrencySide
+        - lockedCurrencyAmount
+        - destination
+      properties:
+        clientRowId:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: The platform's identifier for the row, unique within the run.
+          example: contractor-0042
+        lockedCurrencySide:
+          $ref: '#/components/schemas/QuoteLockSide'
+        lockedCurrencyAmount:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9000000000000000
+          description: The amount of the locked side, in the smallest unit of its currency, with the same meaning as on a quote. A `CONTACT` row must lock the `SENDING` side.
+          example: 125000
+        destination:
+          $ref: '#/components/schemas/PayoutRunRowDestination'
+        description:
+          type: string
+          maxLength: 1024
+          description: Memo for the payment, passed to the row's quote.
+          example: October invoice
+        purposeOfPayment:
+          $ref: '#/components/schemas/PurposeOfPayment'
+    PayoutRunCreateRequest:
+      type: object
+      required:
+        - source
+        - rows
+      properties:
+        source:
+          $ref: '#/components/schemas/PayoutRunSource'
+        scheduledAt:
+          type: string
+          format: date-time
+          description: When to start paying the rows. Omit it, or give a time in the past, to start as soon as the run is created.
+          example: '2026-11-05T02:00:00Z'
+        allOrNothing:
+          type: boolean
+          default: false
+          description: When true, a single rejected row fails the run and no row is paid.
+        rows:
+          type: array
+          minItems: 1
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/PayoutRunRowInput'
+    PayoutRunStatus:
+      type: string
+      enum:
+        - VALIDATING
+        - SCHEDULED
+        - PROCESSING
+        - COMPLETED
+        - PARTIALLY_FAILED
+        - FAILED
+        - CANCELLED
+      description: |
+        Status of a payout run.
+
+        | Status | Description |
+        |--------|-------------|
+        | `VALIDATING` | Grid is validating the rows. No row is paid yet. |
+        | `SCHEDULED` | Accepted, waiting for `scheduledAt`. |
+        | `PROCESSING` | Rows are being paid. |
+        | `COMPLETED` | Every accepted row completed or is held for a claim, and none failed. |
+        | `PARTIALLY_FAILED` | At least one row completed or is held for a claim, and at least one failed. |
+        | `FAILED` | No row completed or is held for a claim. |
+        | `CANCELLED` | Cancelled. Rows that had not started are `SKIPPED`. |
+    PayoutRunRowCounts:
+      type: object
+      required:
+        - total
+        - pending
+        - pendingClaim
+        - processing
+        - completed
+        - failed
+        - skipped
+      properties:
+        total:
+          type: integer
+          description: Rows submitted, rejected rows included.
+          example: 1000
+        pending:
+          type: integer
+          example: 0
+        pendingClaim:
+          type: integer
+          example: 12
+        processing:
+          type: integer
+          example: 0
+        completed:
+          type: integer
+          example: 980
+        failed:
+          type: integer
+          example: 8
+        skipped:
+          type: integer
+          example: 0
+    PayoutRun:
+      type: object
+      required:
+        - id
+        - status
+        - source
+        - allOrNothing
+        - rowCounts
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique payout run identifier
+          example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+        status:
+          $ref: '#/components/schemas/PayoutRunStatus'
+        source:
+          $ref: '#/components/schemas/PayoutRunSource'
+        scheduledAt:
+          type: string
+          format: date-time
+          description: When the run starts paying rows, if it was scheduled.
+          example: '2026-11-05T02:00:00Z'
+        allOrNothing:
+          type: boolean
+          example: false
+        rowCounts:
+          $ref: '#/components/schemas/PayoutRunRowCounts'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-04T22:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-11-05T02:14:00Z'
+        finishedAt:
+          type: string
+          format: date-time
+          description: When the run reached `COMPLETED`, `PARTIALLY_FAILED`, `FAILED` or `CANCELLED`.
+          example: '2026-11-05T02:14:00Z'
+    PayoutRunRowState:
+      type: string
+      enum:
+        - PENDING
+        - PENDING_CLAIM
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+        - SKIPPED
+      description: |
+        State of one row of a payout run.
+
+        | State | Description |
+        |-------|-------------|
+        | `PENDING` | Accepted, not started. |
+        | `PENDING_CLAIM` | Addressed to a contact. Held, and not paid by the run. |
+        | `PROCESSING` | Its payment has started. |
+        | `COMPLETED` | Its transaction completed. |
+        | `FAILED` | Rejected at validation, refused when paid, or its transaction failed. See `failureCode`. |
+        | `SKIPPED` | Not paid, because the run was cancelled or another row was rejected under `allOrNothing`. |
+    PayoutRunRow:
+      type: object
+      required:
+        - id
+        - payoutRunId
+        - clientRowId
+        - rowIndex
+        - state
+        - lockedCurrencySide
+        - lockedCurrencyAmount
+        - destination
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique row identifier
+          example: PayoutRunRow:019542f5-b3e7-1d02-0000-000000000002
+        payoutRunId:
+          type: string
+          example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+        clientRowId:
+          type: string
+          example: contractor-0042
+        rowIndex:
+          type: integer
+          description: The row's zero-based position in the create request.
+          example: 41
+        state:
+          $ref: '#/components/schemas/PayoutRunRowState'
+        lockedCurrencySide:
+          $ref: '#/components/schemas/QuoteLockSide'
+        lockedCurrencyAmount:
+          type: integer
+          format: int64
+          example: 125000
+        destination:
+          $ref: '#/components/schemas/PayoutRunRowDestination'
+        description:
+          type: string
+          example: October invoice
+        purposeOfPayment:
+          $ref: '#/components/schemas/PurposeOfPayment'
+        quoteId:
+          type: string
+          description: The quote that pays this row, once its payment has started.
+          example: Quote:019542f5-b3e7-1d02-0000-000000000006
+        transactionId:
+          type: string
+          description: The transaction that pays this row, once its payment has started.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+        failureCode:
+          type: string
+          description: Why the row failed. A Grid error code (for example `INSUFFICIENT_FUNDS` or `ACCOUNT_NOT_FOUND`) when the row was refused before any money moved, or `TRANSACTION_FAILED` when its transaction failed; the transaction carries the details.
+          example: INSUFFICIENT_FUNDS
+        failureReason:
+          type: string
+          description: A human-readable explanation of `failureCode`.
+          example: Insufficient balance on the source account.
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-04T22:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-11-05T02:14:00Z'
+    PayoutRunCreateResponse:
+      allOf:
+        - $ref: '#/components/schemas/PayoutRun'
+        - type: object
+          required:
+            - rejectedRows
+          properties:
+            rejectedRows:
+              type: array
+              description: The rows Grid rejected at validation, in submission order. Empty when every row was accepted.
+              items:
+                $ref: '#/components/schemas/PayoutRunRow'
+    PayoutRunRowListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayoutRunRow'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+        totalCount:
+          type: integer
+          description: Total number of rows matching the filter.
+    PayoutRunExportRow:
+      allOf:
+        - $ref: '#/components/schemas/PayoutRunRow'
+        - type: object
+          properties:
+            transactionStatus:
+              $ref: '#/components/schemas/OutgoingTransactionStatus'
+            sentAmount:
+              $ref: '#/components/schemas/CurrencyAmount'
+            receivedAmount:
+              $ref: '#/components/schemas/CurrencyAmount'
+            fees:
+              type: integer
+              format: int64
+              minimum: 0
+              description: The fees of the row's transaction, in the smallest unit of the sending currency.
+              example: 150
+            exchangeRate:
+              type: number
+              exclusiveMinimum: 0
+              description: Number of sending currency units per receiving currency unit, fee-exclusive, as on the transaction.
+              example: 0.058
+            providerReference:
+              type: string
+              description: The reference the payment carries at the receiving provider, when there is one.
+              example: TZP-0042-8812
+            settledAt:
+              type: string
+              format: date-time
+              description: When the transaction settled.
+              example: '2026-11-05T02:13:00Z'
+    PayoutRunExport:
+      type: object
+      required:
+        - payoutRunId
+        - rows
+      properties:
+        payoutRunId:
+          type: string
+          example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayoutRunExportRow'
     WebhookType:
       type: string
       enum:
@@ -36042,6 +36818,9 @@ components:
         - CLAIMABLE_PAYOUT.PAID
         - CLAIMABLE_PAYOUT.EXPIRED
         - CLAIMABLE_PAYOUT.FAILED
+        - PAYOUT_RUN.COMPLETED
+        - PAYOUT_RUN.PARTIALLY_FAILED
+        - PAYOUT_RUN.FAILED
         - CARD.STATUS_CHANGE
         - CARD.PIN_STATUS_CHANGE
         - CARD_TRANSACTION.AUTHORIZED
@@ -36586,6 +37365,23 @@ components:
               $ref: '#/components/schemas/WalletOperationWebhookData'
             type:
               $ref: '#/components/schemas/WalletOperationWebhookEventType'
+    PayoutRunWebhookEventType:
+      type: string
+      enum:
+        - PAYOUT_RUN.COMPLETED
+        - PAYOUT_RUN.PARTIALLY_FAILED
+        - PAYOUT_RUN.FAILED
+    PayoutRunWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/PayoutRun'
+            type:
+              $ref: '#/components/schemas/PayoutRunWebhookEventType'
   requestBodies:
     DocumentUploadRequestBody:
       required: true
