@@ -44,12 +44,12 @@ agent answers with a canned line, so the playground works without a key.
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | unset | The model's key. Keep it in `.env.local` (gitignored) or the Vercel project. |
 | `AGENT_MODEL_ENABLED` | unset | Must be `true` for the route to call the model. Set it to anything else to turn the model off. |
-| `AGENT_MODEL` | `claude-haiku-4-5` | The Anthropic model ID. |
-| `AGENT_RATE_LIMIT` | `20` | Model turns per visitor every 10 minutes. |
-| `AGENT_DAILY_CAP` | `2000` | Model turns per day across all visitors. |
+| `AGENT_MODEL` | `claude-haiku-5-5` | The Anthropic model ID. |
+| `AGENT_RATE_LIMIT` | `50` | Model turns per visitor every 10 minutes. |
+| `AGENT_DAILY_CAP` | `20000` | Model turns per day across all visitors. |
 | `KV_REST_API_URL`, `KV_REST_API_TOKEN` | unset | Upstash Redis for the limits. Without them, the limits are per server instance, in memory. |
 
-The route rejects requests from other origins, caps the input at 300 characters, keeps the last 8
+The route rejects requests from other origins, caps the input at 300 characters, keeps the last 12
 turns, forces a structured reply (a short answer plus an optional flow to start), and its prompt
 declines anything that isn't about the account, including coding help.
 

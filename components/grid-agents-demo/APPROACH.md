@@ -85,9 +85,9 @@ and the panel never disagree.
 
 Anything the visitor types goes to
 `/api/agent`. It calls Claude Haiku through an adapter (`src/lib/llm/`) with a
-forced structured reply: up to 3 sentences, and optionally one flow to start.
+forced structured reply: a sentence or two, optionally one flow to start with its details, and taps to offer.
 The model can start a flow but never approves anything; approvals stay in the
-app's UI. The route checks the origin, validates the input (300 characters, 8
+app's UI. The route checks the origin, validates the input (300 characters, 12
 turns of history), rate-limits per visitor and per day, and has a kill switch
 (`AGENT_MODEL_ENABLED`). The prompt keeps it to the account and declines
 coding help, so the key can't be used as a free assistant. Without a key, the
@@ -95,6 +95,28 @@ playground answers with canned lines.
 
 Haiku over a larger model: replies are a sentence or two in a fixed voice, and
 it keeps the per-turn cost low on a public page.
+
+The model writes each reply once per app, in that app's voice, so switching
+apps re-voices its lines the way the scripted ones are (`Said.voices`). The
+rules, the six voices and the country list are a fixed block marked for
+prompt caching; only where things stand (balance, people saved, which app) is
+sent fresh, about 330 tokens a turn against about 3,900 cached.
+
+### 2026-11-06: the agent asks for what it needs, and fills the flows in
+
+Typed requests run the same flows with the visitor's details. The model asks
+for one missing thing at a time (who, where they bank, how much) and offers
+taps for amounts, countries and choices, never for names. Once it has them it
+starts the flow with `params` (`FlowParams` in `flows.ts`); the route keeps
+only values that fit (a country in the picker, its own currency or USD). Pay
+someone pays anyone in the picker's countries: someone new gets their bank
+added once in the app's own sheet, filled in with their country's spec fields
+(`recipients.ts`), and is remembered for the visit, so "send her another 20"
+goes straight to the quote. The model never asks for bank or card numbers,
+and doesn't judge limits (it doesn't know rates): the flow checks the
+per-payment limit after converting. Add funds, Withdraw, Set limits and
+subscriptions take amounts, limits and a service the same way. One-off
+purchases stay the saved ring light, since products need images.
 
 ### 2026-11-05: rebuilt 1:1 from the recordings, with no provider in the phone
 

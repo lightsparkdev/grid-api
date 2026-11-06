@@ -16,7 +16,8 @@ import { hasLinkedBank, linkedBank } from '../linkedBank';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from '../vault/useAskSheet';
-import { BANK_ALL, BANK_POPULAR, bankFields, railBlurb, railLine, useBankPicker, type BankPicker } from '../vault/useBankPicker';
+import { recipientNamed } from '../recipients';
+import { BANK_ALL, BANK_POPULAR, bankFields, payeeBlurb, railBlurb, railLine, useBankPicker, type BankPicker } from '../vault/useBankPicker';
 import { cardFields, cardLabel, useCardEntry } from '../vault/useCardEntry';
 import styles from './MuseConnect.module.scss';
 
@@ -33,19 +34,45 @@ const SHEET_IN = { duration: 0.45, ease: [0.3, 0.7, 0.2, 1] } as const;
 /** The connector card in the thread (recording 18:17, 9s at 3x): ~238pt in the bubble gray, a 35pt dark tile. */
 export function ConnectorCard({ ask, state, onOpen }: { ask: AgentAsk; state: AskState; onOpen: () => void }) {
   const done = state === 'done';
-  const name = ask.bank ? 'Bank account' : 'Debit card';
-  const sub = done ? (ask.bank ? `${linkedBank().bankName} •••• ${linkedBank().last4}` : cardLabel(ask)) : 'Connector';
+  const payee = ask.recipient;
+  const saved = payee ? recipientNamed(payee.name) : undefined;
+  const name = payee ? `${payee.first}’s bank` : ask.bank ? 'Bank account' : 'Debit card';
+  const sub = payee
+    ? done && saved
+      ? `${saved.bank.bankName} •••• ${saved.bank.last4}`
+      : 'To pay them'
+    : done
+      ? ask.bank
+        ? `${linkedBank().bankName} •••• ${linkedBank().last4}`
+        : cardLabel(ask)
+      : 'Connector';
   return (
     <div className={styles.card} data-state={state}>
       <span className={styles.cardHead}>
-        <span className={styles.cardTile}>{ask.bank ? <IconBank size={20} /> : <IconCreditCard1 size={20} />}</span>
+        <span className={styles.cardTile}>
+          {payee ? <Flag code={payee.country} size={24} /> : ask.bank ? <IconBank size={20} /> : <IconCreditCard1 size={20} />}
+        </span>
         <span className={styles.cardText}>
           <strong>{name}</strong>
           <small>{sub}</small>
         </span>
       </span>
       <button type="button" className={styles.cardButton} disabled={state !== 'open'} onClick={onOpen} data-opens-sheet>
-        {done ? 'Connected' : state === 'denied' ? (ask.denied ?? 'Not now') : state === 'pressing' || state === 'authing' ? 'Connecting…' : 'Connect'}
+        {payee
+          ? done
+            ? 'Added'
+            : state === 'denied'
+              ? (ask.denied ?? 'Not now')
+              : state === 'pressing'
+                ? 'Adding…'
+                : 'Add'
+          : done
+            ? 'Connected'
+            : state === 'denied'
+              ? (ask.denied ?? 'Not now')
+              : state === 'pressing' || state === 'authing'
+                ? 'Connecting…'
+                : 'Connect'}
       </button>
     </div>
   );
@@ -228,12 +255,24 @@ function Details({ rows }: { rows: { key: string; label: string; value: string; 
   );
 }
 
-function BlueButton({ busy, done, label, onClick }: { busy: boolean; done: boolean; label: string; onClick: () => void }) {
+function BlueButton({
+  busy,
+  done,
+  label,
+  doneLabel = 'Connected',
+  onClick,
+}: {
+  busy: boolean;
+  done: boolean;
+  label: string;
+  doneLabel?: string;
+  onClick: () => void;
+}) {
   return (
     <button type="button" className={styles.blue} disabled={busy} data-done={done || undefined} onClick={onClick}>
       {done ? (
         <>
-          <IconCheckmark1 size={18} /> Connected
+          <IconCheckmark1 size={18} /> {doneLabel}
         </>
       ) : busy ? (
         <IconLoadingCircle size={20} className={styles.spin} />
@@ -249,25 +288,41 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
   return (
     <SheetSteps step={bank ? 'details' : 'list'} back={picker.back}>
       {bank ? (
-        <SheetPage
-          title={bank.bankName}
-          heading={
-            <Hero
-              art={<Flag code={bank.country.code} size={40} />}
-              title={bank.bankName}
-              sub={`Top-ups arrive over ${railLine(bank.country).replace(' · ', ' in ')} and land in your Muse balance.`}
-            />
-          }
-          leading={
-            <SheetDisc label="Back" onClick={picker.unpick} disabled={picker.busy}>
-              <IconChevronLeft size={22} />
-            </SheetDisc>
-          }
-          footer={<BlueButton busy={picker.busy} done={picker.stage === 'linked'} label="Connect" onClick={picker.link} />}
-        >
-          <Details rows={bankFields(bank)} />
-          <p className={styles.note}>Muse can only top up from this account when you ask. Disconnect at any time in Settings.</p>
-        </SheetPage>
+        picker.payee ? (
+          <SheetPage
+            title={`${picker.payee.first}’s bank`}
+            heading={<Hero art={<Flag code={bank.country.code} size={40} />} title={`${picker.payee.first}’s bank`} sub={payeeBlurb(bank, picker.payee.first)} />}
+            leading={
+              <SheetDisc label="Close" onClick={onClose} disabled={picker.busy}>
+                <IconCrossMedium size={22} />
+              </SheetDisc>
+            }
+            footer={<BlueButton busy={picker.busy} done={picker.stage === 'linked'} label="Save" doneLabel="Saved" onClick={picker.link} />}
+          >
+            <Details rows={bankFields(bank)} />
+            <p className={styles.note}>Muse pays {picker.payee.first} by account and never sees these numbers. Remove them at any time in Settings.</p>
+          </SheetPage>
+        ) : (
+          <SheetPage
+            title={bank.bankName}
+            heading={
+              <Hero
+                art={<Flag code={bank.country.code} size={40} />}
+                title={bank.bankName}
+                sub={`Top-ups arrive over ${railLine(bank.country).replace(' · ', ' in ')} and land in your Muse balance.`}
+              />
+            }
+            leading={
+              <SheetDisc label="Back" onClick={picker.unpick} disabled={picker.busy}>
+                <IconChevronLeft size={22} />
+              </SheetDisc>
+            }
+            footer={<BlueButton busy={picker.busy} done={picker.stage === 'linked'} label="Connect" onClick={picker.link} />}
+          >
+            <Details rows={bankFields(bank)} />
+            <p className={styles.note}>Muse can only top up from this account when you ask. Disconnect at any time in Settings.</p>
+          </SheetPage>
+        )
       ) : (
         <ListPage picker={picker} onClose={onClose} />
       )}
@@ -275,8 +330,8 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
   );
 }
 
-function BankFlow({ onLinked, onClose }: { onLinked: () => void; onClose: () => void }) {
-  const picker = useBankPicker(onLinked);
+function BankFlow({ payee, onLinked, onClose }: { payee?: AgentAsk['recipient']; onLinked: () => void; onClose: () => void }) {
+  const picker = useBankPicker(onLinked, payee);
   return <BankPages picker={picker} onClose={onClose} />;
 }
 
@@ -286,7 +341,7 @@ export function useMuseBank({ messages, onAllow }: { messages: Message[]; onAllo
   const [listed, setListed] = useState(false);
   return {
     open: (id: number, ask: AgentAsk) => {
-      setListed(false);
+      setListed(!!ask.recipient);
       sheet.show(id, ask);
     },
     sheet: (
@@ -297,6 +352,7 @@ export function useMuseBank({ messages, onAllow }: { messages: Message[]; onAllo
         <PageSheet open={sheet.open && listed} className={styles.theme} onDismiss={sheet.hide}>
           <BankFlow
             key={sheet.id}
+            payee={sheet.ask?.recipient}
             onClose={sheet.hide}
             onLinked={() => {
               sheet.hide();

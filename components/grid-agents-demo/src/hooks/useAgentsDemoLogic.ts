@@ -2,30 +2,38 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FlowEntry, FreeTextReply } from '@/apps/agents/brain/useAgentBrain';
-import { NEEDS_CONNECTION, type FlowContext } from '@/apps/agents/flows';
+import type { Chip } from '@/apps/agents/conversation';
+import { flowSpend, NEEDS_CONNECTION, type FlowContext, type FlowParams } from '@/apps/agents/flows';
+import { resetRecipients, savedRecipients } from '@/apps/agents/recipients';
 import { voiceFor } from '@/apps/agents/voices';
 import type { Entry } from '@/components/ApiPanel/types';
 import { actionLabel, type ActionId } from '@/data/actions';
 import { createAgentSession, FAST_FORWARD_FUND_CENTS, type AccountSnapshot, type AgentSession, type CallStep } from '@/data/agentApiCalls';
 import type { AgentEvent } from '@/data/agentEvents';
+import { BANK_COUNTRIES } from '@/data/bankCountries';
 import type { ConnectorId } from '@/data/connectors';
-import type { ChatTurn } from '@/lib/llm/types';
+import type { PromptState } from '@/lib/llm/prompt';
+import type { AgentResponse, ChatTurn } from '@/lib/llm/types';
 
 /** The calls one step makes land one after another, not in a block. */
 const CALL_STAGGER_MS = 650;
-
-/** The most a flow spends (USD cents): jumping to it with less in the balance tops it up first. */
-const SPENDS: Partial<Record<ActionId, number>> = { pay: 4_520, buy: 4_875, agent: 37_080, cashout: 20_000 };
 
 /**
  * Fast-forward, as the Global Accounts playground does: whatever a flow needs
  * (an installed agent, money to spend) is set up silently, so any tile works
  * from any starting point. State only; nothing is logged for it.
  */
-function prepare(session: AgentSession, id: ActionId) {
+function prepare(session: AgentSession, id: ActionId, params?: FlowParams) {
   if (NEEDS_CONNECTION[id] && !session.snapshot().connected) session.assumeConnected();
-  const need = SPENDS[id];
-  if (need && session.snapshot().balanceCents < need) session.assumeFunded(FAST_FORWARD_FUND_CENTS);
+  const need = flowSpend(id, params);
+  const have = session.snapshot().balanceCents;
+  if (need && have < need) session.assumeFunded(Math.max(FAST_FORWARD_FUND_CENTS, Math.ceil((need - have) / 10_000) * 10_000));
+}
+
+/** A suggested reply as a chip: a country gets its flag. */
+function suggestionChip(label: string): Chip {
+  const country = BANK_COUNTRIES.find((c) => c.name.toLowerCase() === label.trim().toLowerCase());
+  return country ? { label: country.name, flag: country.code } : { label };
 }
 
 let groupSeq = 0;
@@ -153,24 +161,33 @@ export function useAgentsDemoLogic() {
   const reply = useCallback(async (text: string, history: ChatTurn[]): Promise<FreeTextReply> => {
     const a = sessionRef.current.snapshot();
     const money = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    const state: PromptState = {
+      connected: a.connected,
+      balance: money(a.balanceCents),
+      approvalAbove: money(a.limits.approvalAbove),
+      perTx: money(a.limits.perTransaction),
+      daily: money(a.limits.daily),
+      cardSaved: a.cardVaulted,
+      bankLinked: a.bankLinked,
+      recipients: savedRecipients().map((r) => ({ name: r.name, country: r.bank.country.code })),
+    };
     try {
       const res = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          connector: connectorRef.current,
-          text,
-          history,
-          state: { connected: a.connected, balance: money(a.balanceCents), approvalAbove: money(a.limits.approvalAbove) },
-        }),
+        body: JSON.stringify({ connector: connectorRef.current, text, history, state }),
       });
-      const data = (await res.json()) as { reply?: string; flow?: ActionId; variant?: number; fallback?: string };
+      const data = (await res.json()) as AgentResponse;
       if (data.reply) {
         if (data.flow) {
-          prepare(sessionRef.current, data.flow);
+          prepare(sessionRef.current, data.flow, data.params);
           setAccount(sessionRef.current.snapshot());
         }
-        return { said: { text: data.reply }, flow: data.flow ? { id: data.flow, variant: data.variant ?? 0 } : undefined };
+        return {
+          said: { text: data.reply, voices: data.replies },
+          flow: data.flow ? { id: data.flow, variant: data.variant ?? 0, params: data.params } : undefined,
+          suggestions: data.suggestions?.map(suggestionChip),
+        };
       }
       return { said: { key: data.fallback === 'visitor' || data.fallback === 'daily' ? 'limited' : 'fallback' } };
     } catch {
@@ -194,6 +211,7 @@ export function useAgentsDemoLogic() {
 
   const reset = useCallback(() => {
     clearTimers();
+    resetRecipients();
     sessionRef.current = createAgentSession(() => voiceFor(connectorRef.current).name);
     groupRef.current = null;
     nextAt.current = 0;

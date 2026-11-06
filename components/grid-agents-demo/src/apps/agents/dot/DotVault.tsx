@@ -16,7 +16,7 @@ import type { AgentAsk, ChipGlyph, Message } from '../conversation';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from '../vault/useAskSheet';
-import { BANK_ALL, BANK_POPULAR, bankFields, railLine, useBankPicker, type BankPicker } from '../vault/useBankPicker';
+import { BANK_ALL, BANK_POPULAR, bankFields, payeeBlurb, railLine, useBankPicker, type BankPicker } from '../vault/useBankPicker';
 import { cardFields, useCardEntry } from '../vault/useCardEntry';
 import styles from './DotVault.module.scss';
 
@@ -102,15 +102,21 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
     <SheetSteps step={bank ? 'details' : 'list'} back={picker.back}>
       {bank ? (
         <SheetPage
-          title="Add bank"
+          title={picker.payee ? `${picker.payee.first}’s bank` : 'Add bank'}
           leading={
-            <SheetDisc label="Back" onClick={picker.unpick} disabled={picker.busy}>
-              <IconChevronLeft size={22} />
-            </SheetDisc>
+            picker.payee ? (
+              <SheetDisc label="Close" onClick={onClose} disabled={picker.busy}>
+                <IconCrossMedium size={22} />
+              </SheetDisc>
+            ) : (
+              <SheetDisc label="Back" onClick={picker.unpick} disabled={picker.busy}>
+                <IconChevronLeft size={22} />
+              </SheetDisc>
+            )
           }
           footer={
             <Capsule busy={picker.busy} done={picker.stage === 'linked'} onClick={picker.link}>
-              {picker.stage === 'linked' ? 'Linked' : `Link ${bank.bankName}`}
+              {picker.payee ? (picker.stage === 'linked' ? 'Saved' : 'Save') : picker.stage === 'linked' ? 'Linked' : `Link ${bank.bankName}`}
             </Capsule>
           }
         >
@@ -119,10 +125,17 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
               <Box key={f.key} label={f.label} value={f.value} flag={f.flag} />
             ))}
           </div>
-          <p className={styles.fine}>
-            Top-ups arrive over {bank.country.rail} in {bank.currency} and land in your Dots balance. Your dot only tops
-            up when you ask it to. You can remove this bank any time in <u>Settings</u>.
-          </p>
+          {picker.payee ? (
+            <p className={styles.fine}>
+              {payeeBlurb(bank, picker.payee.first)} Your dot pays {picker.payee.first} by account, and never sees these
+              numbers.
+            </p>
+          ) : (
+            <p className={styles.fine}>
+              Top-ups arrive over {bank.country.rail} in {bank.currency} and land in your Dots balance. Your dot only tops
+              up when you ask it to. You can remove this bank any time in <u>Settings</u>.
+            </p>
+          )}
         </SheetPage>
       ) : (
         <SheetPage
@@ -161,8 +174,8 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
   );
 }
 
-function BankFlow({ onLinked, onClose }: { onLinked: () => void; onClose: () => void }) {
-  const picker = useBankPicker(onLinked);
+function BankFlow({ payee, onLinked, onClose }: { payee?: AgentAsk['recipient']; onLinked: () => void; onClose: () => void }) {
+  const picker = useBankPicker(onLinked, payee);
   return <BankPages picker={picker} onClose={onClose} />;
 }
 
@@ -191,7 +204,7 @@ export function useDotBank({ messages, present, onAllow, onDeny }: { messages: M
   const [listed, setListed] = useState(false);
   return {
     open: (id: number, ask: AgentAsk) => {
-      setListed(false);
+      setListed(!!ask.recipient);
       sheet.show(id, ask);
     },
     sheet: (
@@ -208,6 +221,7 @@ export function useDotBank({ messages, present, onAllow, onDeny }: { messages: M
         <PageSheet open={sheet.open && listed} present={present} className={styles.theme} onDismiss={sheet.hide}>
           <BankFlow
             key={sheet.id}
+            payee={sheet.ask?.recipient}
             onClose={sheet.hide}
             onLinked={() => {
               sheet.hide();

@@ -53,9 +53,10 @@
   }
 }
 
-// MockMuse's thread rhythm: 4 inside a sender's run, 12 between senders, 16
-// after a timestamp, 20 before an approval.
-$groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
+// MockMuse's thread rhythm: 4 inside a sender's run (bubbles and whatever Muse
+// attaches to them, cards and requests alike), 12 between senders, 16 after a
+// timestamp.
+$groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kind="ask"], [data-kind="products"], [data-kind="subagent"]';
 
 .screen [data-kind] + [data-kind] {
   margin-top: 12px;
@@ -69,10 +70,6 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
 .screen [data-kind='stamp'] + [data-kind],
 .screen [data-kind='tag'] + [data-kind] {
   margin-top: 16px;
-}
-
-.screen [data-kind] + [data-kind='ask'] {
-  margin-top: 20px;
 }
 
 

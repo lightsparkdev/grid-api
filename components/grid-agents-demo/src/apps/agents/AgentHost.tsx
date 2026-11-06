@@ -28,13 +28,13 @@ export interface AgentHostProps extends Omit<BrainOptions, 'reply' | 'readsFor'>
   reply: (text: string, history: ChatTurn[]) => Promise<FreeTextReply>;
 }
 
-const HISTORY_TURNS = 8;
+const HISTORY_TURNS = 12;
 
 /** The last few things said, as the model reads them. */
 function turnsOf(messages: Message[]): ChatTurn[] {
   return messages
     .flatMap((m): ChatTurn[] => {
-      if (m.kind === 'me') return [{ role: 'user', text: m.text }];
+      if (m.kind === 'me') return [{ role: 'user', text: m.meant ?? m.text }];
       if (m.kind === 'them' && !m.typing && m.text) return [{ role: 'assistant', text: m.text }];
       return [];
     })

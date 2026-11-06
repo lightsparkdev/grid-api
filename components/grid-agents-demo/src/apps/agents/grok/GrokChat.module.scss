@@ -398,7 +398,8 @@
   display: flex;
   gap: 10px;
   width: calc(100% + 32px);
-  margin: 0 -16px;
+  // The bottom padding keeps the cards' borders inside the scroller; the margin gives it back to the thread.
+  margin: 0 -16px -2px;
   padding: 0 16px 2px;
   overflow-x: auto;
   scrollbar-width: none;

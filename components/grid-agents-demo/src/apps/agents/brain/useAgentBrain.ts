@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ACTIONS, type ActionId } from '@/data/actions';
 import type { AgentEvent } from '@/data/agentEvents';
 import type { Beat, Chip, Said, StoredMessage } from '../conversation';
-import { FLOWS, type FlowContext } from '../flows';
+import { FLOWS, type FlowContext, type FlowParams } from '../flows';
 
 /** A tile's jump: put this flow's line in the composer. */
 export interface FlowEntry {
@@ -11,11 +11,13 @@ export interface FlowEntry {
   variant: number;
 }
 
-/** What the agent says to anything that isn't a flow's line, until the model is wired. */
+/** What the agent says to anything that isn't a flow's line. */
 export interface FreeTextReply {
   said: Said;
-  /** A flow the reply starts, as if its tile's line had been sent. */
-  flow?: { id: ActionId; variant: number };
+  /** A flow the reply starts, as if its tile's line had been sent, with the details the person gave. */
+  flow?: { id: ActionId; variant: number; params?: FlowParams };
+  /** Replies the person might tap instead of typing, under a question. */
+  suggestions?: Chip[];
 }
 
 type Decision = 'allow' | 'deny' | 'cancel';
@@ -23,6 +25,14 @@ type NewMessage = StoredMessage extends infer M ? (M extends StoredMessage ? Omi
 
 const MAX_MESSAGES = 16;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Which option a typed reply picks: its number, or its label; -1 for neither. */
+function typedChoice(text: string, chips: Chip[]) {
+  const n = Number.parseInt(text, 10);
+  const lower = text.toLowerCase();
+  if (n >= 1 && n <= chips.length) return n - 1;
+  return chips.findIndex((c) => lower.includes(c.label.toLowerCase()) || c.label.toLowerCase().includes(lower));
+}
+
 /** A reply that approves an open ask; anything else declines it. */
 const YES = /^\s*(y|yes|yeah|yep|yup|ok|okay|sure|approve|approved|do it|go ahead|send it)\b/i;
 
@@ -81,6 +91,8 @@ export function useAgentBrain({
   /** The open choice's options, so a typed reply can pick one. */
   const openChips = useRef<Chip[] | null>(null);
   const pickedByText = useRef(false);
+  /** Suggested replies under the agent's last answer: a tap sends one as if typed. */
+  const suggested = useRef<{ id: number; chips: Chip[] } | null>(null);
 
   const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, reply, readsFor });
   cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, reply, readsFor };
@@ -112,6 +124,11 @@ export function useAgentBrain({
 
   /** Stop whatever is playing: open asks and chips expire, typing settles. */
   const cancelRun = useCallback(() => {
+    if (suggested.current) {
+      const id = suggested.current.id;
+      suggested.current = null;
+      setMessages((list) => list.map((m) => (m.id === id && m.kind === 'chips' ? { ...m, expired: true } : m)));
+    }
     const run = runRef.current;
     if (!run) return;
     run.cancelled = true;
@@ -260,18 +277,54 @@ export function useAgentBrain({
   const prompt = useCallback(
     (flow: ActionId) => {
       if (runRef.current) return;
+      cancelRun();
       const def = ACTIONS.find((a) => a.id === flow)!;
       push({ kind: 'me', text: def.prompts[0] });
       const ctx: FlowContext = { ...cb.current.context(), variant: 0 };
       void start(flow, FLOWS[flow](ctx), cb.current.readsFor);
     },
-    [push, start],
+    [push, start, cancelRun],
   );
 
   const activeFlow = running;
   useEffect(() => {
     cb.current.onActiveFlow?.(activeFlow);
   }, [activeFlow]);
+
+  /** Suggestions go stale once the person says anything else. */
+  const dropSuggestions = useCallback(
+    (picked?: number) => {
+      const s = suggested.current;
+      if (!s) return;
+      suggested.current = null;
+      patch(s.id, (m) => (m.kind === 'chips' ? (picked === undefined ? { ...m, expired: true } : { ...m, picked }) : m));
+    },
+    [patch],
+  );
+
+  /** Free text to the model: its reply, then the flow it starts or the replies it suggests. */
+  const ask = useCallback(
+    async (text: string, meant = text) => {
+      push({ kind: 'me', text, ...(meant !== text ? { meant } : {}) });
+      setBusy(true);
+      const replying = cb.current.reply(meant);
+      if (cb.current.readsFor > 0) await sleep(cb.current.readsFor);
+      const typingId = push({ kind: 'them', said: { text: '' }, typing: true });
+      const answer = await replying;
+      patch(typingId, (m) => (m.kind === 'them' ? { ...m, said: answer.said, typing: false } : m));
+      setBusy(false);
+      if (answer.flow) {
+        const ctx: FlowContext = { ...cb.current.context(), variant: answer.flow.variant, params: answer.flow.params };
+        await sleep(700);
+        void start(answer.flow.id, FLOWS[answer.flow.id](ctx));
+      } else if (answer.suggestions?.length) {
+        await sleep(350);
+        const id = push({ kind: 'chips', chips: answer.suggestions, picked: null });
+        suggested.current = { id, chips: answer.suggestions };
+      }
+    },
+    [push, patch, start],
+  );
 
   const send = useCallback(async () => {
     const text = composer.trim();
@@ -290,9 +343,7 @@ export function useAgentBrain({
     const chips = openChips.current;
     const pick = pickRef.current;
     if (chips && pick) {
-      const n = Number.parseInt(text, 10);
-      const lower = text.toLowerCase();
-      const i = n >= 1 && n <= chips.length ? n - 1 : chips.findIndex((c) => lower.includes(c.label.toLowerCase()) || c.label.toLowerCase().includes(lower));
+      const i = typedChoice(text, chips);
       if (i < 0) return;
       pickRef.current = null;
       setComposer('');
@@ -301,27 +352,29 @@ export function useAgentBrain({
       afterReading(() => pick(i));
       return;
     }
-    if (runRef.current) return;
+    if (runRef.current || busy) return;
     setComposer('');
-    push({ kind: 'me', text });
-    setBusy(true);
-    const replying = cb.current.reply(text);
-    if (cb.current.readsFor > 0) await sleep(cb.current.readsFor);
-    const typingId = push({ kind: 'them', said: { text: '' }, typing: true });
-    const answer = await replying;
-    patch(typingId, (m) => (m.kind === 'them' ? { ...m, said: answer.said, typing: false } : m));
-    setBusy(false);
-    if (answer.flow) {
-      const ctx: FlowContext = { ...cb.current.context(), variant: answer.flow.variant };
-      await sleep(700);
-      void start(answer.flow.id, FLOWS[answer.flow.id](ctx));
-    }
-  }, [composer, push, patch, start]);
+    // A typed number picks a suggestion (Instinct lists them as a numbered text); the model reads what it meant.
+    const s = suggested.current;
+    const n = Number.parseInt(text, 10);
+    const i = s && String(n) === text && n >= 1 && n <= s.chips.length ? n - 1 : -1;
+    dropSuggestions(i >= 0 ? i : undefined);
+    await ask(text, i >= 0 ? s!.chips[i].label : text);
+  }, [composer, busy, push, ask, dropSuggestions]);
 
   /** The visitor's tap on the open ask's primary button. */
   const allow = useCallback(() => decideRef.current?.('allow'), []);
   const deny = useCallback(() => decideRef.current?.('deny'), []);
-  const pick = useCallback((i: number) => pickRef.current?.(i), []);
+  const pick = useCallback(
+    (i: number) => {
+      if (pickRef.current) return pickRef.current(i);
+      const s = suggested.current;
+      if (!s || runRef.current || busy || !s.chips[i]) return;
+      dropSuggestions(i);
+      void ask(s.chips[i].label);
+    },
+    [busy, ask, dropSuggestions],
+  );
   /** Face ID finished its scan and checkmark. */
   const authed = useCallback(() => authRef.current?.(), []);
 

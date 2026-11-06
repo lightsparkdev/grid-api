@@ -5,7 +5,8 @@ import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-
 import { Flag } from '@/apps/shared/Flag';
 import { BANK_REACH, type BankCountry } from '@/data/bankCountries';
 import type { LinkedBank } from '../linkedBank';
-import { BANK_ALL, BANK_POPULAR, bankFields, railLine, useBankPicker } from '../vault/useBankPicker';
+import type { AgentAsk } from '../conversation';
+import { BANK_ALL, BANK_POPULAR, bankFields, payeeBlurb, railLine, useBankPicker } from '../vault/useBankPicker';
 import styles from './InstinctSafari.module.scss';
 
 /*
@@ -82,27 +83,37 @@ function Row({ country, onPick }: { country: BankCountry; onPick: (c: BankCountr
 const SWAP = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.18 } };
 
 /** Linking a bank on app.instinct.com: the list, then the account as an "Add bank" form. */
-export function InstinctBank({ onLinked }: { onLinked: (bank: LinkedBank) => void }) {
-  const picker = useBankPicker(onLinked);
+export function InstinctBank({
+  payee,
+  onLinked,
+  onClose,
+}: {
+  /** Someone else's bank, to pay them: the page opens on it. */
+  payee?: AgentAsk['recipient'];
+  onLinked: (bank: LinkedBank) => void;
+  onClose: () => void;
+}) {
+  const picker = useBankPicker(onLinked, payee);
   const { bank } = picker;
   return (
     <AnimatePresence mode="wait" initial={false}>
       {bank ? (
         <motion.div key="details" className={styles.sitePage} {...SWAP}>
-          <SiteBar left="close" onLeft={picker.busy ? undefined : picker.unpick} save={{ enabled: !picker.busy, onClick: picker.link }} />
+          <SiteBar left="close" onLeft={picker.busy ? undefined : payee ? onClose : picker.unpick} save={{ enabled: !picker.busy, onClick: picker.link }} />
           <main className={styles.siteScroll}>
-            <h1 className={styles.siteTitle}>Add bank</h1>
+            <h1 className={styles.siteTitle}>{payee ? `${payee.first}’s bank` : 'Add bank'}</h1>
             <div className={styles.siteFields}>
               {bankFields(bank).map((f) => (
                 <SiteField key={f.key} label={f.label} value={f.value} flag={f.flag} />
               ))}
             </div>
             <p className={styles.siteNote}>
-              Top-ups arrive over {railLine(bank.country).replace(' · ', ' in ')} and land in your Instinct balance. Instinct
-              only tops up when you ask.
+              {payee
+                ? `${payeeBlurb(bank, payee.first)} Instinct pays by account and never sees these numbers.`
+                : `Top-ups arrive over ${railLine(bank.country).replace(' · ', ' in ')} and land in your Instinct balance. Instinct only tops up when you ask.`}
             </p>
             <button type="button" className={styles.black} data-pressing={picker.busy || undefined} disabled={picker.busy} onClick={picker.link}>
-              {picker.stage === 'form' ? `Save ${bank.bankName}` : picker.stage === 'linking' ? 'Saving…' : 'Saved'}
+              {picker.stage === 'form' ? (payee ? 'Save' : `Save ${bank.bankName}`) : picker.stage === 'linking' ? 'Saving…' : 'Saved'}
             </button>
           </main>
         </motion.div>

@@ -10,9 +10,10 @@ import { Flag } from '@/apps/shared/Flag';
 import { BANK_REACH, currencyFor, type BankCountry } from '@/data/bankCountries';
 import type { AgentAsk, AskState, Message } from '../conversation';
 import { linkedBank } from '../linkedBank';
+import { recipientNamed } from '../recipients';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
 import { useAskSheet } from '../vault/useAskSheet';
-import { BANK_ALL, BANK_POPULAR, bankFields, popularity, railBlurb, useBankPicker, type BankPicker } from '../vault/useBankPicker';
+import { BANK_ALL, BANK_POPULAR, bankFields, payeeBlurb, popularity, railBlurb, useBankPicker, type BankPicker } from '../vault/useBankPicker';
 import { cardFields, cardLabel, useCardEntry } from '../vault/useCardEntry';
 import styles from './DuetVault.module.scss';
 
@@ -27,21 +28,30 @@ import styles from './DuetVault.module.scss';
 export function DuetConnector({ ask, state, onOpen }: { ask: AgentAsk; state: AskState; onOpen: () => void }) {
   const done = state === 'done';
   const pending = state === 'pressing' || state === 'authing';
-  const name = ask.bank ? 'Bank account' : 'Debit card';
-  const line = done
-    ? ask.bank
-      ? `${linkedBank().bankName} •••• ${linkedBank().last4} is connected.`
-      : `${cardLabel(ask)} is saved to your vault.`
-    : ask.bank
-      ? `Top up your Duet balance from a bank in ${BANK_REACH} countries.`
-      : 'Save a card once and Duet can top up from it when you ask.';
+  const payee = ask.recipient;
+  const saved = payee ? recipientNamed(payee.name) : undefined;
+  const name = payee ? `${payee.first}’s bank` : ask.bank ? 'Bank account' : 'Debit card';
+  const line = payee
+    ? done && saved
+      ? `${saved.bank.bankName} •••• ${saved.bank.last4} is saved. Duet pays it by account.`
+      : `Add it once and Duet can pay ${payee.first} whenever you ask.`
+    : done
+      ? ask.bank
+        ? `${linkedBank().bankName} •••• ${linkedBank().last4} is connected.`
+        : `${cardLabel(ask)} is saved to your vault.`
+      : ask.bank
+        ? `Top up your Duet balance from a bank in ${BANK_REACH} countries.`
+        : 'Save a card once and Duet can top up from it when you ask.';
+  const action = payee ? (done ? 'Saved' : pending ? 'Saving…' : 'Add') : done ? 'Connected' : pending ? 'Connecting…' : 'Connect';
   return (
     <div className={styles.connector} data-state={state}>
       <span className={styles.connectorHead}>
-        <span className={styles.tile}>{ask.bank ? <IconBank size={18} /> : <IconCreditCard1 size={18} />}</span>
+        <span className={styles.tile}>
+          {payee ? <Flag code={payee.country} size={20} /> : ask.bank ? <IconBank size={18} /> : <IconCreditCard1 size={18} />}
+        </span>
         <strong>{name}</strong>
         <button type="button" className={styles.connect} disabled={state !== 'open'} onClick={onOpen} data-opens-sheet>
-          {done ? 'Connected' : state === 'denied' ? (ask.denied ?? 'Not now') : pending ? 'Connecting…' : 'Connect'}
+          {state === 'denied' ? (ask.denied ?? 'Not now') : action}
         </button>
       </span>
       <span className={styles.connectorLine}>{line}</span>
@@ -153,11 +163,17 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
     <SheetSteps step={bank ? 'details' : 'list'} back={picker.back}>
       {bank ? (
         <SheetPage
-          title={bank.bankName}
+          title={picker.payee ? `${picker.payee.first}’s bank` : bank.bankName}
           leading={
-            <SheetDisc label="Back" onClick={picker.unpick} disabled={picker.busy}>
-              <IconChevronLeft size={22} />
-            </SheetDisc>
+            picker.payee ? (
+              <SheetDisc label="Close" onClick={onClose} disabled={picker.busy}>
+                <IconCrossMedium size={22} />
+              </SheetDisc>
+            ) : (
+              <SheetDisc label="Back" onClick={picker.unpick} disabled={picker.busy}>
+                <IconChevronLeft size={22} />
+              </SheetDisc>
+            )
           }
           trailing={<SaveDisc stage={picker.stage === 'form' ? 'form' : picker.stage === 'linking' ? 'busy' : 'done'} onClick={picker.link} />}
         >
@@ -166,7 +182,9 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
           </Hero>
           <Rows rows={bankFields(bank)} />
           <p className={styles.foot}>
-            Top-ups arrive over {bank.country.rail} in {bank.currency}. Duet only tops up your balance when you ask.
+            {picker.payee
+              ? `${payeeBlurb(bank, picker.payee.first)} Duet pays by account and never sees these numbers.`
+              : `Top-ups arrive over ${bank.country.rail} in ${bank.currency}. Duet only tops up your balance when you ask.`}
           </p>
         </SheetPage>
       ) : (
@@ -176,8 +194,8 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
   );
 }
 
-function BankFlow({ onLinked, onClose }: { onLinked: () => void; onClose: () => void }) {
-  const picker = useBankPicker(onLinked);
+function BankFlow({ payee, onLinked, onClose }: { payee?: AgentAsk['recipient']; onLinked: () => void; onClose: () => void }) {
+  const picker = useBankPicker(onLinked, payee);
   return <BankPages picker={picker} onClose={onClose} />;
 }
 
@@ -190,6 +208,7 @@ export function useDuetBank({ messages, onAllow }: { messages: Message[]; onAllo
       <PageSheet open={sheet.open} className={styles.theme} onDismiss={sheet.hide}>
         <BankFlow
           key={sheet.id}
+          payee={sheet.ask?.recipient}
           onClose={sheet.hide}
           onLinked={() => {
             sheet.hide();

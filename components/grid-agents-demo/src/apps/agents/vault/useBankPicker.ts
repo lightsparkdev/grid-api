@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
 import { BANK_COUNTRIES, currencyFor, type BankCountry } from '@/data/bankCountries';
 import { FUNDING_POPULAR, fieldLabel } from '@/data/bankSamples';
-import { bankFor, linkBank, type LinkedBank } from '../linkedBank';
+import type { AgentAsk } from '../conversation';
+import { bankFor, linkBank, linkedBank, type LinkedBank } from '../linkedBank';
+import { draftRecipient, recipientNamed, saveRecipient } from '../recipients';
 
 /*
  * Linking a bank to top up, as the Global Accounts playground adds one (grid-wallet-demo AddBankSheet): pick the
@@ -57,9 +59,29 @@ export function bankFields(bank: LinkedBank): { key: string; label: string; valu
 
 export type BankStage = 'form' | 'linking' | 'linked';
 
-/** The picker's state: the search, the country picked (with its prefilled account), and the link. */
-export function useBankPicker(onLinked: (bank: LinkedBank) => void) {
-  const [bank, setBank] = useState<LinkedBank | null>(null);
+type Payee = NonNullable<AgentAsk['recipient']>;
+
+/** "Payments to Maria arrive over SPEI in MXN, usually in seconds." */
+export function payeeBlurb(bank: LinkedBank, first: string) {
+  const timing = bank.country.rail === 'ACH' ? 'in 1–3 business days' : bank.country.rail === 'Bank Transfer' ? 'within a business day' : 'usually in seconds';
+  return `Payments to ${first} arrive over ${bank.country.rail} in ${bank.currency}, ${timing}.`;
+}
+
+/** What a bank ask says once it's done: the person's own bank linked, or someone's saved to pay. */
+export function bankDoneLabel(ask: AgentAsk) {
+  if (ask.recipient) {
+    const r = recipientNamed(ask.recipient.name);
+    return r ? `${r.first}’s ${r.bank.bankName} saved` : `${ask.recipient.first}’s bank saved`;
+  }
+  return `${linkedBank().bankName} •••• ${linkedBank().last4} linked`;
+}
+
+/**
+ * The picker's state: the search, the country picked (with its prefilled account), and the link. For someone
+ * else's bank (`payee`) it opens on their country, the account in their name, and saves them to pay.
+ */
+export function useBankPicker(onLinked: (bank: LinkedBank) => void, payee?: Payee) {
+  const [bank, setBank] = useState<LinkedBank | null>(() => (payee ? draftRecipient(payee.name, payee.country)?.bank ?? null : null));
   const [back, setBack] = useState(false);
   const [query, setQuery] = useState('');
   const [stage, setStage] = useState<BankStage>('form');
@@ -97,9 +119,12 @@ export function useBankPicker(onLinked: (bank: LinkedBank) => void) {
     },
     link: () => {
       if (!bank || stage !== 'form') return;
-      linkBank(bank);
+      if (payee) saveRecipient({ name: bank.holder, first: payee.first, bank });
+      else linkBank(bank);
       setStage('linking');
     },
+    /** Whose bank this is when it isn't the person's own. */
+    payee: payee ?? null,
   };
 }
 

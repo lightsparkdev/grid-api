@@ -10,11 +10,11 @@ import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-
 import { Flag } from '@/apps/shared/Flag';
 import { BANK_REACH, currencyFor, type BankCountry } from '@/data/bankCountries';
 import type { AgentAsk, AskState, Message } from '../conversation';
-import { linkedBank, type LinkedBank } from '../linkedBank';
+import type { LinkedBank } from '../linkedBank';
 import { askButtons } from '../parts';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from './useAskSheet';
-import { BANK_ALL, BANK_POPULAR, bankFields, countryShort, useBankPicker } from './useBankPicker';
+import { BANK_ALL, BANK_POPULAR, bankDoneLabel, bankFields, countryShort, payeeBlurb, useBankPicker } from './useBankPicker';
 import { cardFields, cardLabel, useCardEntry } from './useCardEntry';
 import styles from './BankLink.module.scss';
 
@@ -65,17 +65,20 @@ function Field({ label, value, flag }: { label: string; value: string; flag?: st
 /** The two steps and the link: lives in a sheet (useBankLink) or a page (Instinct's Safari). */
 export function BankLinkFlow({
   wallet,
+  payee,
   onLinked,
   onClose,
   className,
 }: {
   wallet: string;
+  /** Someone else's bank, to pay them: the flow opens on it. */
+  payee?: AgentAsk['recipient'];
   onLinked: (bank: LinkedBank) => void;
   onClose?: () => void;
   /** A host page's palette: it can set --bank-surface, --bank-fill, --bank-muted, --bank-line, --bank-cta, --bank-cta-text. */
   className?: string;
 }) {
-  const picker = useBankPicker(onLinked);
+  const picker = useBankPicker(onLinked, payee);
   const { bank, back, query, setQuery, results, stage, pick } = picker;
   const step = bank ? 'details' : 'country';
   const slide = { custom: back, variants: SLIDE, initial: 'enter', animate: 'center', exit: 'exit' };
@@ -83,7 +86,7 @@ export function BankLinkFlow({
   return (
     <div className={`${styles.flow} ${className ?? ''}`}>
       <header className={styles.bar}>
-        {step === 'details' ? (
+        {step === 'details' && !payee ? (
           <button
             type="button"
             className={styles.barButton}
@@ -147,9 +150,11 @@ export function BankLinkFlow({
             bank && (
               <motion.div key="details" className={styles.step} {...slide} transition={STEP}>
                 <div className={styles.scroll}>
-                  <h2 className={styles.title}>Your {countryShort(bank.country)} bank</h2>
+                  <h2 className={styles.title}>{payee ? `${payee.first}’s bank` : `Your ${countryShort(bank.country)} bank`}</h2>
                   <p className={styles.sub}>
-                    Top-ups arrive over {bank.country.rail} in {bank.currency} and land in your {wallet}.
+                    {payee
+                      ? `${payeeBlurb(bank, payee.first)} Your agent pays by account and never sees these numbers.`
+                      : `Top-ups arrive over ${bank.country.rail} in ${bank.currency} and land in your ${wallet}.`}
                   </p>
                   <div className={styles.fields}>
                     {bankFields(bank).map((f) => (
@@ -165,11 +170,11 @@ export function BankLinkFlow({
                     data-stage={stage}
                     onClick={picker.link}
                   >
-                    {stage === 'form' && `Link ${bank.bankName}`}
+                    {stage === 'form' && (payee ? 'Save' : `Link ${bank.bankName}`)}
                     {stage === 'linking' && <IconLoadingCircle size={22} className={styles.spin} />}
                     {stage === 'linked' && (
                       <>
-                        <IconCheckmark1 size={20} /> Linked
+                        <IconCheckmark1 size={20} /> {payee ? 'Saved' : 'Linked'}
                       </>
                     )}
                   </button>
@@ -198,6 +203,7 @@ export function useBankLink({
   const [ask, setAsk] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
   const live = ask !== null && messages.some((m) => m.kind === 'ask' && m.id === ask && m.state === 'open');
+  const shown = messages.find((m): m is Extract<Message, { kind: 'ask' }> => m.kind === 'ask' && m.id === ask);
   useEffect(() => {
     if (open && !live) setOpen(false);
   }, [open, live]);
@@ -212,6 +218,7 @@ export function useBankLink({
           <BankLinkFlow
             key={ask ?? 0}
             wallet={wallet}
+            payee={shown?.ask.recipient}
             onClose={() => {
               setOpen(false);
               onDeny();
@@ -339,13 +346,17 @@ export function VaultBankAsk({
   return (
     <div className={`${styles.ask} ${className ?? ''}`}>
       <span className={styles.askFlags} aria-hidden>
-        {BANK_POPULAR.slice(0, 6).map((c) => (
-          <Flag key={c.code} code={c.code} size={28} />
-        ))}
+        {ask.recipient ? (
+          <Flag code={ask.recipient.country} size={28} />
+        ) : (
+          BANK_POPULAR.slice(0, 6).map((c) => <Flag key={c.code} code={c.code} size={28} />)
+        )}
       </span>
-      <strong className={styles.askTitle}>{state === 'done' ? `${linkedBank().bankName} •••• ${linkedBank().last4} linked` : ask.title}</strong>
+      <strong className={styles.askTitle}>{state === 'done' ? bankDoneLabel(ask) : ask.title}</strong>
       <span className={styles.askNote}>
-        Banks in {BANK_REACH} countries, over local rails like ACH, SEPA, PIX, SPEI and UPI.
+        {ask.recipient
+          ? `Add it once and your agent can pay ${ask.recipient.first} whenever you ask.`
+          : `Banks in ${BANK_REACH} countries, over local rails like ACH, SEPA, PIX, SPEI and UPI.`}
       </span>
       {!b.settled && (
         <span className={styles.askActions}>

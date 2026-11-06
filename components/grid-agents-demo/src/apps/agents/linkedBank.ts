@@ -13,13 +13,13 @@ export interface LinkedBank {
 }
 
 /** As the Global Accounts playground fills it in (useMoneySheet): the spec's sample fields, the country's own bank name. */
-export function bankFor(country: BankCountry): LinkedBank {
+export function bankFor(country: BankCountry, holder = PERSON.full): LinkedBank {
   const values = sampleValuesFor(country);
   if ('bankName' in values) values.bankName = country.bankName;
   return {
     country,
     bankName: country.bankName,
-    holder: PERSON.full,
+    holder,
     values,
     last4: accountLast4(values),
     currency: currencyFor(country),
@@ -41,6 +41,17 @@ export function linkBank(bank: LinkedBank) {
 /** A USD amount (in cents) in the bank's own currency, at the demo rate. */
 export function localAmount(cents: number, bank: LinkedBank): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: bank.currency, maximumFractionDigits: 0 }).format((cents / 100) * bank.country.usdToLocal);
+}
+
+/** Minor units of a currency as people write it: "R$250", "MX$690.50", "€12". */
+export function formatMoney(minor: number, currency: string): string {
+  const whole = minor % 100 === 0;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(minor / 100);
 }
 
 /** How long a top-up over the bank's rail takes to land, in the agent's words. */

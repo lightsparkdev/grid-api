@@ -5,9 +5,9 @@ import { Redis } from '@upstash/redis';
    it (the same KV_REST_* variables the cards demo uses), and in memory
    otherwise: fine locally, per instance in production. */
 
-const PER_VISITOR = Number(process.env.AGENT_RATE_LIMIT ?? 20);
+const PER_VISITOR = Number(process.env.AGENT_RATE_LIMIT ?? 50);
 const WINDOW_SECONDS = 10 * 60;
-const PER_DAY = Number(process.env.AGENT_DAILY_CAP ?? 2000);
+const PER_DAY = Number(process.env.AGENT_DAILY_CAP ?? 20_000);
 
 const redis =
   process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN

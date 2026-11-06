@@ -1,7 +1,7 @@
 import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, Params, Product, SubAgent } from '../conversation';
 import { BANK_REACH } from '@/data/bankCountries';
 import { linkedBank, localAmount, railTiming } from '../linkedBank';
-import { ADDRESS, BUY_OPTIONS, HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
+import { ADDRESS, BUY_OPTIONS, HOTEL, LUCIA, PERSON, RING_LIGHT, usd, usd2 } from '../story';
 
 /* The neutral voice: every line, ask and note a flow can produce, written so
    it reads right in any app. Each app's voice overrides what it says
@@ -9,6 +9,9 @@ import { ADDRESS, BUY_OPTIONS, HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIP
 
 const n = (p: Params | undefined, k: string) => Number(p?.[k] ?? 0);
 const s = (p: Params | undefined, k: string) => String(p?.[k] ?? '');
+
+/** " R$250 is $46.30 right now." for a payment in another currency, nothing in dollars. */
+export const converted = (p: Params | undefined, how = 'right now') => (n(p, 'converted') ? ` ${s(p, 'local')} is ${usd2(n(p, 'usd'))} ${how}.` : '');
 
 export type LineFn = (p?: Params) => string;
 export type AskFn = (p?: Params) => AgentAsk;
@@ -100,10 +103,12 @@ export const LINES = {
   'limits.done': (p) => `Done. I’ll handle anything up to ${usd(n(p, 'approve'))} and ask you above it.`,
   'limits.denied': () => 'Okay, your limits stay as they are.',
 
-  'pay.intro': () => `${SOFIA.first} banks with ${SOFIA.bank}, so I’ll send it over PIX. ${SOFIA.local.replace('.00', '')} is ${usd2(SOFIA.usd)} right now.`,
+  'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank yet. Add it here once and I’ll send it.`,
+  'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so I’ll send it over ${s(p, 'rail')}.${converted(p)}`,
   'pay.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m sending it now.`,
-  'pay.done': () => `Sent. ${SOFIA.first} has it, and I told her it’s from you.`,
+  'pay.done': (p) => `Sent. ${s(p, 'first')} has it, with a note that it’s from you.`,
   'pay.denied': () => 'Okay, I won’t send it.',
+  'pay.over': (p) => `That’s more than the ${usd(n(p, 'perTx'))} I can send in one payment. Raise my limit and I’ll send it.`,
 
   'buy.intro': () => `Found three that fit. The ${RING_LIGHT.merchant} RP10-H is the best of them, ${usd2(RING_LIGHT.amount)} with standard shipping.`,
   'buy.card': () => `I’ll get a one-time card for exactly this order, so ${RING_LIGHT.merchant} never sees your real card.`,
@@ -111,9 +116,9 @@ export const LINES = {
   'buy.done': () => 'Ordered. It arrives Thursday, and the card closed itself after the charge.',
   'buy.denied': () => 'Okay, I won’t place the order. Nothing was charged.',
 
-  'sub.intro': () => `${SUBSCRIPTION.item} is ${usd2(SUBSCRIPTION.amount)} a month.`,
-  'sub.card': () => `I’ll get a card that only ${SUBSCRIPTION.merchant} can charge, up to ${usd2(SUBSCRIPTION.amount)} a month.`,
-  'sub.done': () => `You’re subscribed. The card is locked to ${SUBSCRIPTION.merchant} now, so nobody else can use it.`,
+  'sub.intro': (p) => `${s(p, 'item')} is ${usd2(n(p, 'amount'))} a month.`,
+  'sub.card': (p) => `I’ll get a card that only ${s(p, 'merchant')} can charge, up to ${usd2(n(p, 'amount'))} a month.`,
+  'sub.done': (p) => `You’re subscribed. The card is locked to ${s(p, 'merchant')} now, so nobody else can use it.`,
   'sub.denied': () => 'Okay, no subscription.',
 
   'agent.intro': () =>
@@ -185,11 +190,20 @@ export const ASKS = {
     deny: 'Not now',
     denied: 'Not now',
   }),
+  recipient: (p) => ({
+    title: `Add ${s(p, 'first')}’s bank`,
+    bank: true,
+    recipient: { name: s(p, 'name'), first: s(p, 'first'), country: s(p, 'flag') },
+    allow: 'Save',
+    allowed: 'Saved',
+    deny: 'Not now',
+    denied: 'Not now',
+  }),
   pay: (p) => ({
-    title: `Send ${SOFIA.local} to ${SOFIA.first}`,
-    who: { name: SOFIA.name, flag: SOFIA.flag, detail: `${SOFIA.local} to ${SOFIA.bank} via PIX` },
-    amount: SOFIA.local,
-    method: `From ${s(p, 'wallet')} · ${usd2(SOFIA.usd)}`,
+    title: `Send ${s(p, 'local')} to ${s(p, 'first')}`,
+    who: { name: s(p, 'name'), flag: s(p, 'flag'), detail: `${s(p, 'local')} to ${s(p, 'bank')} via ${s(p, 'rail')}` },
+    amount: s(p, 'local'),
+    method: `From ${s(p, 'wallet')} · ${usd2(n(p, 'usd'))}`,
     allow: 'Approve',
     allowed: 'Paid',
     deny: 'Decline',
@@ -216,10 +230,10 @@ export const ASKS = {
     denied: 'Declined',
   }),
   sub: (p) => ({
-    title: `Subscribe to ${SUBSCRIPTION.item}`,
-    who: { name: SUBSCRIPTION.merchant, detail: `Up to ${usd2(SUBSCRIPTION.amount)} a month · card locked to ${SUBSCRIPTION.merchant}` },
-    amount: `${usd2(SUBSCRIPTION.amount)}/mo`,
-    method: `From ${s(p, 'wallet')} · card only ${SUBSCRIPTION.merchant} can charge`,
+    title: `Subscribe to ${s(p, 'item')}`,
+    who: { name: s(p, 'merchant'), detail: `Up to ${usd2(n(p, 'amount'))} a month · card locked to ${s(p, 'merchant')}` },
+    amount: `${usd2(n(p, 'amount'))}/mo`,
+    method: `From ${s(p, 'wallet')} · card only ${s(p, 'merchant')} can charge`,
     allow: 'Approve',
     allowed: 'Approved',
     deny: 'Decline',
@@ -283,8 +297,8 @@ export const NOTES = {
     lines: [`${usd2(n(p, 'usd'))} from ${s(p, 'wallet')} · fee ${usd2(n(p, 'fee'))}`, 'Quote expires in 5 min'],
   }),
   'receipt.pay': (p) => ({
-    title: `${SOFIA.local} to ${SOFIA.name}`,
-    lines: [`${SOFIA.bank} · PIX`, `${usd2(SOFIA.usd)} from ${s(p, 'wallet')}`],
+    title: `${s(p, 'local')} to ${s(p, 'name')}`,
+    lines: [`${s(p, 'bank')} · ${s(p, 'rail')}`, `${usd2(n(p, 'usd'))} from ${s(p, 'wallet')}`],
     done: true,
   }),
   'receipt.cashout': (p) => ({
@@ -297,9 +311,9 @@ export const NOTES = {
     lines: ['One-time Visa · closed after the charge'],
     done: true,
   }),
-  'receipt.sub': () => ({
-    title: `${usd2(SUBSCRIPTION.amount)} at ${SUBSCRIPTION.merchant}`,
-    lines: ['Recurring Visa · renews monthly, only for Duolingo'],
+  'receipt.sub': (p) => ({
+    title: `${usd2(n(p, 'amount'))} at ${s(p, 'merchant')}`,
+    lines: [`Recurring Visa · renews monthly, only for ${s(p, 'merchant')}`],
     done: true,
   }),
   'receipt.agent': () => ({

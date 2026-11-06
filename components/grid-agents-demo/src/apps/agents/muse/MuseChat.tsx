@@ -202,7 +202,7 @@ function ApprovalCard({
     return () => window.clearTimeout(t);
   }, [ready]);
   // A payment is a checkout Muse is holding open; setting up or changing the balance is Muse asking about itself.
-  const checkout = !!ask.amount;
+  const checkout = !!(ask.amount || ask.total);
   return (
     <div className={styles.card} data-ready={ready || undefined}>
       <div className={styles.browserHead}>

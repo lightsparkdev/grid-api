@@ -23,6 +23,7 @@ import {
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentAsk, AgentMeta, Message, Product } from '../conversation';
 import { linkedBank } from '../linkedBank';
+import { recipientNamed } from '../recipients';
 import { BalanceCard, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
 import { AppSheet } from '../sheet';
 import { cardLabel } from '../vault/useCardEntry';
@@ -115,21 +116,25 @@ function Pill({ m, lead, label, done, onOpen }: { m: Ask; lead: ReactNode; label
 function ActionPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
   const { ask, state } = m;
   const kind = ask.bank ? 'bank' : ask.card ? 'card' : null;
+  const payee = ask.recipient ? recipientNamed(ask.recipient.name) : undefined;
   const label =
     state === 'done'
-      ? ask.bank
-        ? `${linkedBank().bankName} •••• ${linkedBank().last4}`
-        : ask.card
-          ? cardLabel(ask)
-          : (ask.allowed ?? 'Done')
+      ? ask.recipient
+        ? `${ask.recipient.first}’s ${payee?.bank.bankName ?? 'bank'}`
+        : ask.bank
+          ? `${linkedBank().bankName} •••• ${linkedBank().last4}`
+          : ask.card
+            ? cardLabel(ask)
+            : (ask.allowed ?? 'Done')
       : state === 'denied'
         ? (ask.denied ?? 'Not now')
         : (ask.form?.title ?? ask.title);
+  const flag = ask.recipient?.country ?? (ask.bank ? linkedBank().country.code : null);
   return (
     <Pill
       m={m}
-      lead={kind ? <DotGlyph glyph={kind} /> : <IconSettingsSliderHor size={20} />}
-      done={ask.bank ? <Flag code={linkedBank().country.code} size={20} /> : kind ? <DotGlyph glyph={kind} /> : <DotsMark size={20} />}
+      lead={ask.recipient ? <Flag code={ask.recipient.country} size={20} /> : kind ? <DotGlyph glyph={kind} /> : <IconSettingsSliderHor size={20} />}
+      done={flag ? <Flag code={flag} size={20} /> : kind ? <DotGlyph glyph={kind} /> : <DotsMark size={20} />}
       label={label}
       onOpen={onOpen}
     />

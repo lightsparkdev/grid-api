@@ -1,4 +1,5 @@
 import type { AgentEvent } from '@/data/agentEvents';
+import type { ConnectorId } from '@/data/connectors';
 
 /* Two shapes of the same conversation. The brain stores what was meant (a
    line's key and its values); each app's voice renders it into what that app
@@ -70,6 +71,8 @@ export interface AgentAsk {
   card?: { brand: string; last4: string; expires: string; name: string };
   /** A bank to link for top-ups: the skin opens the bank flow (vault/BankLink), which picks the country and account. */
   bank?: true;
+  /** With `bank`: someone else's bank, to pay them. The flow opens on their account, filled in for their country. */
+  recipient?: { name: string; first: string; country: string };
   /** The ask as a text, for an app you answer by texting back (Instinct): what it proposes and how to say yes. */
   text?: string;
 }
@@ -132,7 +135,7 @@ export interface AgentMeta {
 export type AskState = 'open' | 'pressing' | 'authing' | 'done' | 'denied' | 'expired';
 
 export type Message =
-  | { id: number; kind: 'me'; text: string; react?: string }
+  | { id: number; kind: 'me'; text: string; react?: string; meant?: string }
   | { id: number; kind: 'them'; text: string; sender?: string; bullets?: string[]; typing: boolean }
   | { id: number; kind: 'ask'; ask: AgentAsk; state: AskState }
   | { id: number; kind: 'card'; card: AgentNote; sender?: string }
@@ -147,11 +150,11 @@ export type Message =
 
 /* ── Stored: what the brain keeps ────────────────────────────────────── */
 
-/** Something said, by key (rendered in the current app's voice) or verbatim (the model's replies). */
-export type Said = { key: string; params?: Params } | { text: string };
+/** Something said, by key (rendered in the current app's voice) or verbatim (the model's replies, written in every app's voice). */
+export type Said = { key: string; params?: Params } | { text: string; voices?: Partial<Record<ConnectorId, string>> };
 
 export type StoredMessage =
-  | { id: number; kind: 'me'; text: string; react?: string }
+  | { id: number; kind: 'me'; text: string; react?: string; meant?: string }
   | { id: number; kind: 'them'; said: Said; sender?: string; typing: boolean }
   | { id: number; kind: 'ask'; key: string; params?: Params; state: AskState }
   | { id: number; kind: 'card'; key: string; params?: Params }

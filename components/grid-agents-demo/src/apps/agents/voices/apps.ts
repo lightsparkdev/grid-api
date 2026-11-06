@@ -1,7 +1,7 @@
 import type { ConnectorId } from '@/data/connectors';
 import type { Params } from '../conversation';
 import { BANK_REACH } from '@/data/bankCountries';
-import { HOTEL, LUCIA, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
+import { HOTEL, LUCIA, RING_LIGHT, usd, usd2 } from '../story';
 import {
   ASKS,
   MUSE_ORDER,
@@ -29,6 +29,8 @@ export interface VoiceOverrides {
 }
 
 const n = (p: Params | undefined, k: string) => Number(p?.[k] ?? 0);
+const s = (p: Params | undefined, k: string) => String(p?.[k] ?? '');
+const lower = (p: Params | undefined, k: string) => s(p, k).toLowerCase();
 
 /** Claude Duet's spend card: a clock on the request, Approve or Not now, then Paid. */
 const duetSpend =
@@ -47,7 +49,8 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'buy.intro': () => `Here are a few picks. The ${RING_LIGHT.merchant} RP10-H is the one I’d get: ${usd2(RING_LIGHT.amount)} with standard shipping.`,
       'buy.card': () => 'Here’s the final quote. Do these details look correct, and should I place the order with your Muse balance?',
       'buy.done': () => 'Ordered. It arrives Thursday, and tracking is in your inbox.',
-      'pay.done': () => `Sent. ${SOFIA.first} has it, and I let her know it’s from you.`,
+      'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank yet. Add it once and I’ll take it from there.`,
+      'pay.done': (p) => `Sent! ${s(p, 'first')} has it, and I let them know it’s from you.`,
       'agent.done': () => 'You’re booked. The confirmation is in your inbox.',
       fallback: () => 'I can help with your Muse balance here. Try one of the flows on the left.',
     },
@@ -75,8 +78,9 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       greeting: () => 'Hey. Give me the money chores. I’ll stay inside your limits and ask when it matters.',
       'connect.intro': () => 'Sure. I need my own account and a leash. Here’s what I’m asking for.',
       'connect.done': () => 'Connected. My own account, your rules.',
-      'pay.intro': () => `${SOFIA.first} banks with ${SOFIA.bank} in São Paulo, so PIX in reais. ${SOFIA.local.replace('.00', '')} is about ${usd(SOFIA.usd)}.`,
-      'pay.done': () => `Sent. ${SOFIA.first}’s got it, and the receipt is in her inbox.`,
+      'pay.newRecipient': (p) => `No bank on file for ${s(p, 'first')}. Add it once and I’ll send it.`,
+      'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'local')} is about ${usd(n(p, 'usd'))}.` : ''}`,
+      'pay.done': (p) => `Sent. ${s(p, 'first')}’s got it. Receipt’s in your inbox.`,
       'buy.done': () => 'Ordered. Arrives Thursday. The card already self-destructed.',
       'agent.intro': () => `${HOTEL.name}’s agent wanted ${usd(HOTEL.listed)}. Paying directly knocks off 10%: ${usd2(HOTEL.amount)}.`,
       'getpaid.done': (p) => `${LUCIA.first} paid. ${usd2(LUCIA.amount)} in, ${usd2(n(p, 'balance'))} total.`,
@@ -125,6 +129,16 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
           submitted: 'Linked your bank',
         },
       }),
+      recipient: (p) => ({
+        ...ASKS.recipient(p),
+        form: {
+          title: `Add ${s(p, 'first')}’s bank`,
+          sub: `${s(p, 'country')} · ${s(p, 'rail')}. Never shown to your Bot.`,
+          sheetTitle: 'Bank account',
+          fields: [],
+          submitted: `Saved ${s(p, 'first')}’s bank`,
+        },
+      }),
       limits: (p) => ({
         ...ASKS.limits(p),
         form: {
@@ -152,14 +166,16 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'connect.done': () => 'done! your **Dots balance** is on, and i can only spend what you put in it.',
       'fund.ask': () => 'pick what’s easiest:',
       'fund.done': (p) => `${usd(n(p, 'amount'))} landed! you’ve got ${usd2(n(p, 'balance'))} now.`,
-      'pay.done': () => `sent! ${SOFIA.first.toLowerCase()} has it.`,
+      'pay.newRecipient': (p) => `i don’t have ${lower(p, 'first')}’s bank yet! add it here once and i’ll send it.`,
+      'pay.done': (p) => `sent! ${lower(p, 'first')} has it.`,
+      'pay.over': (p) => `that’s more than the ${usd(n(p, 'perTx'))} i can send at once. raise my limit and i’ll send it!`,
       'getpaid.ask': () => `how does ${LUCIA.first.toLowerCase()} want to pay?`,
       'getpaid.done': () => `${LUCIA.first.toLowerCase()} paid! ${usd2(LUCIA.amount)} is in your account. i sent her a receipt and marked the invoice paid.`,
       'cashout.ask': () => 'where to?',
       'buy.intro': () => `found three that fit! the **${RING_LIGHT.merchant} RP10-H** is the best one, ${usd2(RING_LIGHT.amount)} with standard shipping:`,
       'buy.card': () => 'i’ll pay from your **Dots balance** with a one-time card, so the store never sees your real card. opening the checkout for you',
       'buy.done': () => 'ordered! it arrives **thursday**, and the card closed itself after the charge.',
-      'pay.intro': () => `${SOFIA.first.toLowerCase()} banks with **${SOFIA.bank}**, so i’ll send it over PIX. ${SOFIA.local.replace('.00', '')} is **${usd2(SOFIA.usd)}** right now.`,
+      'pay.intro': (p) => `${lower(p, 'first')} banks with **${s(p, 'bank')}**, so i’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'local')} is **${usd2(n(p, 'usd'))}** right now.` : ''}`,
       fallback: () => 'i can only help with your account here! try one of the flows on the left.',
     },
     asks: {
@@ -201,8 +217,10 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'fund.done': (p) => `got it. ${usd2(n(p, 'balance'))} in the account`,
       'limits.intro': () => 'i can’t change my own limits, you have to ok them',
       'limits.done': (p) => `done. i’ll ask you for anything over ${usd(n(p, 'approve'))}`,
-      'pay.intro': () => `${SOFIA.first} banks with ${SOFIA.bank}, so PIX. ${SOFIA.local.replace('.00', '')} ≈ ${usd2(SOFIA.usd)}`,
-      'pay.done': () => `sent, ${SOFIA.first} has it`,
+      'pay.newRecipient': (p) => `need ${lower(p, 'first')}’s bank first. add it here and i’ll send it`,
+      'pay.intro': (p) => `${lower(p, 'first')} banks with ${s(p, 'bank')}, so ${s(p, 'rail')}${n(p, 'converted') ? `. ${s(p, 'local')} ≈ ${usd2(n(p, 'usd'))}` : ''}`,
+      'pay.done': (p) => `sent, ${lower(p, 'first')} has it`,
+      'pay.over': (p) => `that’s over the ${usd(n(p, 'perTx'))} i can send at once. raise my limit and i’ll do it`,
       'pay.denied': () => 'ok, not sending',
       'buy.card': () => 'i’ll pay from your Instinct balance with a one-time card for exactly this order',
       'buy.intro': () => `found 3. the ${RING_LIGHT.merchant} RP10-H is the best one, ${usd2(RING_LIGHT.amount)} with standard shipping`,
@@ -254,10 +272,11 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       greeting: () => 'Payroll ran at 6 AM, all 14 people are paid. What can I take on?',
       'connect.intro': () => 'I’ll need my own account for this, with limits you set. Here’s exactly what I’m asking for.',
       'connect.done': () => 'Connected. I have my own account now, and I’ll stay inside the limits you set.',
-      'pay.intro': () => `${SOFIA.first} banks with ${SOFIA.bank}, so I’ll send it over PIX in reais. ${SOFIA.local.replace('.00', '')} comes to ${usd2(SOFIA.usd)} at today’s rate.`,
+      'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank details yet. Add them here once, and I’ll send it right after.`,
+      'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so I’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'local')} comes to ${usd2(n(p, 'usd'))} at today’s rate.` : ''}`,
       'buy.card': () => 'I’ll pay with a virtual card locked to this one order.',
       'buy.done': () => 'Done. It ships Monday, and the card closed itself after the charge.',
-      'sub.card': () => `I’ll use a card only ${SUBSCRIPTION.merchant} can charge, capped at ${usd2(SUBSCRIPTION.amount)} a month.`,
+      'sub.card': (p) => `I’ll use a card only ${s(p, 'merchant')} can charge, capped at ${usd2(n(p, 'amount'))} a month.`,
       'agent.done': () => 'Booked. I added it to your calendar and filed the receipt.',
       'history.answer': () => 'Here’s what moved this week.',
       fallback: () => 'I can only help with your account here. Try one of the flows on the left.',

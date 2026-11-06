@@ -19,6 +19,7 @@ import {
 import { VOICES } from './apps';
 
 export interface Voice {
+  id: ConnectorId;
   name: string;
   line(key: string, params?: Params): string;
   ask(key: string, params?: Params): AgentAsk;
@@ -34,6 +35,7 @@ export function voiceFor(connector: ConnectorId): Voice {
   const v = VOICES[connector];
   const withName = (p?: Params) => ({ agent: v.name, wallet: v.wallet, ...p });
   return {
+    id: connector,
     name: v.name,
     line: (key, params) => (v.lines?.[key as LineKey] ?? LINES[key as LineKey] ?? (() => key))(withName(params)),
     ask: (key, params) => (v.asks?.[key as AskKey] ?? ASKS[key as AskKey])(withName(params)),
@@ -63,7 +65,7 @@ export function renderThread(messages: StoredMessage[], voice: Voice): Message[]
         return {
           id: m.id,
           kind: 'them',
-          text: 'text' in m.said ? m.said.text : voice.line(m.said.key, m.said.params),
+          text: 'text' in m.said ? (m.said.voices?.[voice.id] ?? m.said.text) : voice.line(m.said.key, m.said.params),
           sender: m.sender,
           typing: m.typing,
         };

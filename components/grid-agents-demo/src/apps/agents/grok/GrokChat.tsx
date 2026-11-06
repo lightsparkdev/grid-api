@@ -15,7 +15,7 @@ import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentAsk, Chip, Message, Product } from '../conversation';
 import { BalanceCard, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
 import { AppSheet } from '../sheet';
-import { linkedBank } from '../linkedBank';
+import { bankDoneLabel } from '../vault/useBankPicker';
 import { useGrokBank } from './GrokBank';
 import type { AgentChatProps } from '../types';
 import { GrokEyes } from './GrokEyes';
@@ -168,7 +168,7 @@ function Products({ products }: { products: Product[] }) {
 function FormCard({ m, onOpen }: { m: Ask; onOpen: () => void }) {
   const f = m.ask.form!;
   if (m.state !== 'open') {
-    const submitted = m.ask.bank ? `${linkedBank().bankName} •••• ${linkedBank().last4} linked` : f.submitted;
+    const submitted = m.ask.bank ? bankDoneLabel(m.ask) : f.submitted;
     const label =
       m.state === 'denied' ? 'Canceled' : m.state === 'expired' ? 'Expired' : m.state === 'done' ? submitted : 'Submitting…';
     return (

@@ -29,7 +29,7 @@ import {
   type Payee,
   type Purchase,
 } from './agentEvents';
-import { linkedBank as chosenBank } from '@/apps/agents/linkedBank';
+import { linkedBank as chosenBank, type LinkedBank } from '@/apps/agents/linkedBank';
 import type { ApiCall } from './flow';
 
 /* ── Fixtures ─────────────────────────────────────────────────────────── */
@@ -131,7 +131,10 @@ function money(cents: number, symbol = '$') {
   return `${symbol}${(Math.abs(cents) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 function fiat(code: string) {
-  return FIAT[code] ?? { code, name: code, symbol: '', decimals: 2 };
+  if (FIAT[code]) return FIAT[code];
+  const parts = new Intl.NumberFormat('en-US', { style: 'currency', currency: code, currencyDisplay: 'narrowSymbol' }).formatToParts(0);
+  const name = new Intl.DisplayNames(['en'], { type: 'currency' }).of(code) ?? code;
+  return { code, name, symbol: parts.find((p) => p.type === 'currency')?.value ?? '', decimals: 2 };
 }
 const dollars = (cents: number) => Number((cents / 100).toFixed(2));
 
@@ -233,6 +236,13 @@ export function createAgentSession(nameOf: () => string): AgentSession {
   let card: { id: string; purchase: Purchase } | null = null;
   let vaulted: string | null = null;
   let linkedBank: string | null = null;
+  /** The external account each person the agent pays was saved as, by name. */
+  const payeeAccounts = new Map<string, string>();
+  const payeeAccount = (name: string) => {
+    const id = payeeAccounts.get(name) ?? nextId('ExternalAccount');
+    payeeAccounts.set(name, id);
+    return id;
+  };
 
   const needsApproval = (usdCents: number) => usdCents > limits.approvalAbove;
 
@@ -742,8 +752,41 @@ export function createAgentSession(nameOf: () => string): AgentSession {
     ];
   };
 
+  /* Someone new to pay: the person adds their bank in the app, and it becomes one of the customer's external
+     accounts with that person as the beneficiary. The agent pays it by id. */
+  const recipientAdd = (name: string, bank: LinkedBank): CallStep[] => {
+    const id = payeeAccount(name);
+    const { region, ...fields } = bank.values;
+    return [
+      {
+        tool: { name: 'add_recipient', args: { name, country: bank.country.code.toUpperCase() }, result: { external_account_id: id, bank: bank.bankName, last4: bank.last4 } },
+        calls: [
+          {
+            method: 'POST',
+            path: '/customers/external-accounts',
+            title: `Add recipient · ${name}`,
+            reqBody: {
+              customerId: CUSTOMER,
+              currency: bank.currency,
+              accountInfo: {
+                accountType: bank.country.accountType,
+                ...fields,
+                ...(region && { region }),
+                ...('bankName' in fields && { bankName: bank.bankName }),
+                beneficiary: { beneficiaryType: 'INDIVIDUAL', fullName: name },
+              },
+            },
+            status: '201 Created',
+            note: `The person added ${name}'s bank in ${bank.country.name} in your app. The agent gets an account id to pay, never the account number.`,
+            resBody: { id, customerId: CUSTOMER, currency: bank.currency, status: 'ACTIVE', accountInfo: { accountType: bank.country.accountType, bankName: bank.bankName, accountNumberLast4: bank.last4 }, createdAt: nowIso() },
+          },
+        ],
+      },
+    ];
+  };
+
   const payoutQuote = (p: Payee, toolName: string, title: string): CallStep[] => {
-    const destination = { destinationType: 'ACCOUNT', accountId: nextId('ExternalAccount'), currency: p.currency, paymentRail: p.rail };
+    const destination = { destinationType: 'ACCOUNT', accountId: payeeAccount(p.name), currency: p.currency, paymentRail: p.rail };
     const local = money(p.amount, fiat(p.currency).symbol);
     const rail = p.rail.replace('_', ' ');
     return [
@@ -1089,6 +1132,8 @@ export function createAgentSession(nameOf: () => string): AgentSession {
           return getpaidReceived(event.from, event.amount);
         case 'limits.update':
           return limitsUpdate(event.limits);
+        case 'recipient.add':
+          return recipientAdd(event.name, event.bank);
         case 'pay.quote':
           return payoutQuote(event.payee, 'quote_send', event.payee.name);
         case 'cashout.quote':

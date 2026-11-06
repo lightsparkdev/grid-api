@@ -272,7 +272,7 @@ function VaultLink({ m, onOpen }: { m: Ask; onOpen: () => void }) {
         <span className={styles.linkWord}>Instinct</span>
         {state !== 'open' && (
           <span className={styles.linkState} data-state={state}>
-            {state === 'done' ? 'Saved to your vault' : state === 'denied' ? 'Not now' : state === 'expired' ? 'Expired' : 'Saving…'}
+            {state === 'done' ? (ask.recipient ? `Saved, Instinct can pay ${ask.recipient.first}` : 'Saved to your vault') : state === 'denied' ? 'Not now' : state === 'expired' ? 'Expired' : 'Saving…'}
           </span>
         )}
       </span>
@@ -445,7 +445,11 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
                 transition={{ duration: 0.2, ease: 'easeOut' }}
               >
                 <span className={styles.quote}>
-                  {answers.kind === 'ask' ? askText(answers.ask) : chipsText(answers).split('\n')[0]}
+                  {answers.kind === 'ask'
+                    ? askText(answers.ask)
+                    : answers.picked !== null
+                      ? `${answers.picked + 1}. ${answers.chips[answers.picked].label}`
+                      : chipsText(answers).split('\n')[0]}
                 </span>
                 <span className={styles.thread} />
               </motion.span>

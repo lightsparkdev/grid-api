@@ -21,18 +21,6 @@ export const FUND = {
 /** What Set limits asks for: act alone under $100, $500 a payment, $1,000 a day. */
 export const NEW_LIMITS: Limits = { perTransaction: 50_000, daily: 100_000, approvalAbove: 10_000 };
 
-export const SOFIA: Payee & { flag: string; local: string; first: string } = {
-  name: 'Sofia Almeida',
-  first: 'Sofia',
-  currency: 'BRL',
-  amount: 25_000,
-  usd: 4_520,
-  rail: 'PIX',
-  bank: 'Nubank',
-  flag: 'br',
-  local: 'R$250.00',
-};
-
 export const RING_LIGHT: Purchase & { item: string; image: string } = {
   merchant: 'NEEWER',
   description: 'NEEWER BASICS RP10-H 10" ring light, standard shipping',

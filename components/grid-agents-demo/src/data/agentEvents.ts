@@ -3,6 +3,8 @@
    requests and webhooks behind it. Nothing here names a path or a field, so
    the calls can follow the spec without touching a flow. */
 
+import type { LinkedBank } from '@/apps/agents/linkedBank';
+
 export type DepositNetwork = 'LIGHTNING' | 'BASE' | 'SOLANA' | 'TRON';
 
 /** A bank account or mobile wallet the agent pays out to, on a local rail. */
@@ -14,7 +16,8 @@ export interface Payee {
   amount: number;
   /** What it costs in the policy's currency, USD cents. */
   usd: number;
-  rail: 'PIX' | 'SPEI' | 'SEPA_INSTANT' | 'UPI' | 'RTP' | 'MPESA';
+  /** The local rail, as the API names it: PIX, SPEI, SEPA_INSTANT, UPI, RTP… */
+  rail: string;
   bank: string;
 }
 
@@ -71,6 +74,8 @@ export type AgentEvent =
   | { type: 'getpaid.received'; from: string; amount: number }
   /** The platform changes the agent's policy. */
   | { type: 'limits.update'; limits: Limits }
+  /** The person adds someone's bank so the agent can pay them (the agent only ever sees its id). */
+  | { type: 'recipient.add'; name: string; bank: LinkedBank }
   /** The agent quotes a payout, then executes it: on its own under the threshold, held above it. */
   | { type: 'pay.quote'; payee: Payee }
   | { type: 'pay.execute' }

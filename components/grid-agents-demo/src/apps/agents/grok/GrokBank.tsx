@@ -8,7 +8,7 @@ import type { AgentAsk, Message } from '../conversation';
 import { GlassPill } from '../glass';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
 import { useAskSheet } from '../vault/useAskSheet';
-import { BANK_ALL, BANK_INSTANT, BANK_POPULAR, bankFields, railLine, useBankPicker, type BankPicker } from '../vault/useBankPicker';
+import { BANK_ALL, BANK_INSTANT, BANK_POPULAR, bankFields, payeeBlurb, railLine, useBankPicker, type BankPicker } from '../vault/useBankPicker';
 import styles from './GrokBank.module.scss';
 
 /*
@@ -86,13 +86,13 @@ function BarPill({ label, blue, disabled, onClick, children }: { label: string; 
   );
 }
 
-function DetailsPage({ picker }: { picker: BankPicker }) {
+function DetailsPage({ picker, onClose }: { picker: BankPicker; onClose: () => void }) {
   const bank = picker.bank!;
   return (
     <SheetPage
-      title={bank.bankName}
+      title={picker.payee ? `${picker.payee.first}’s bank` : bank.bankName}
       leading={
-        <BarPill label="Cancel" disabled={picker.busy} onClick={picker.unpick}>
+        <BarPill label="Cancel" disabled={picker.busy} onClick={picker.payee ? onClose : picker.unpick}>
           Cancel
         </BarPill>
       }
@@ -114,17 +114,19 @@ function DetailsPage({ picker }: { picker: BankPicker }) {
         ))}
       </div>
       <p className={styles.help}>
-        Top-ups arrive over {railLine(bank.country).replace(' · ', ' in ')} and land in your Bot balance.
+        {picker.payee
+          ? `${payeeBlurb(bank, picker.payee.first)} Your Bot pays by account and never sees these numbers.`
+          : `Top-ups arrive over ${railLine(bank.country).replace(' · ', ' in ')} and land in your Bot balance.`}
       </p>
     </SheetPage>
   );
 }
 
-function BankFlow({ onLinked, onClose }: { onLinked: () => void; onClose: () => void }) {
-  const picker = useBankPicker(onLinked);
+function BankFlow({ payee, onLinked, onClose }: { payee?: AgentAsk['recipient']; onLinked: () => void; onClose: () => void }) {
+  const picker = useBankPicker(onLinked, payee);
   return (
     <SheetSteps step={picker.bank ? 'details' : 'list'} back={picker.back}>
-      {picker.bank ? <DetailsPage picker={picker} /> : <ListPage picker={picker} onClose={onClose} />}
+      {picker.bank ? <DetailsPage picker={picker} onClose={onClose} /> : <ListPage picker={picker} onClose={onClose} />}
     </SheetSteps>
   );
 }
@@ -138,6 +140,7 @@ export function useGrokBank({ messages, onAllow }: { messages: Message[]; onAllo
       <PageSheet open={sheet.open} className={styles.theme} onDismiss={sheet.hide}>
         <BankFlow
           key={sheet.id}
+          payee={sheet.ask?.recipient}
           onClose={sheet.hide}
           onLinked={() => {
             sheet.hide();

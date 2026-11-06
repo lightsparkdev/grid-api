@@ -47,7 +47,7 @@ export function InstinctSafari({
   if (ask.bank && !saved) {
     return (
       <Safari onBack={onBack}>
-        <InstinctBank onLinked={onAllow} />
+        <InstinctBank payee={ask.recipient} onLinked={onAllow} onClose={onBack} />
       </Safari>
     );
   }
@@ -60,8 +60,8 @@ export function InstinctSafari({
             <span className={styles.tile} aria-hidden>
               <SfSymbol name="checkmark" size={16} />
             </span>
-            <h1 className={styles.siteTitle}>Saved to your vault</h1>
-            <p className={styles.sub}>Instinct can use it now, inside your limits.</p>
+            <h1 className={styles.siteTitle}>{ask.recipient ? `Saved ${ask.recipient.first}’s bank` : 'Saved to your vault'}</h1>
+            <p className={styles.sub}>{ask.recipient ? `Instinct can pay ${ask.recipient.first} now, inside your limits.` : 'Instinct can use it now, inside your limits.'}</p>
             <button type="button" className={styles.black} onClick={onBack}>
               Back to iMessage
             </button>
