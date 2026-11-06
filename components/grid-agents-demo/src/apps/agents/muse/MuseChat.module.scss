@@ -279,19 +279,14 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
   padding: 0 7px 0 11px;
   border: 0;
   border-radius: 8px;
-  background: no-repeat center / 100% 100%;
+  background: none;
   color: var(--muse-text);
   font: inherit;
   font-size: 15px;
+  position: relative;
   text-align: left;
   cursor: pointer;
   transition: opacity 0.2s ease;
-
-  // A 1pt border dashed 2 on, 2 off (CSS `dashed` can't set the dash).
-  &[data-state='open'],
-  &[data-state='dimmed'] {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' rx='8' fill='none' stroke='%23A3A7AA' stroke-width='2' stroke-dasharray='2 2'/%3E%3C/svg%3E");
-  }
 
   &[data-state='open']:active {
     opacity: 0.55;
@@ -299,6 +294,10 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
 
   &[data-state='selected'] {
     box-shadow: inset 0 0 0 1px var(--muse-text);
+
+    .choiceDash {
+      display: none;
+    }
   }
 
   &[data-state='dimmed'] {
@@ -307,6 +306,29 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
 
   &:disabled {
     cursor: default;
+  }
+}
+
+// A 1pt border dashed 2 on, 2 off (CSS `dashed` can't set the dash), drawn half a pixel in so the whole stroke
+// stays inside the chip at any height.
+.choiceDash {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  rect {
+    x: 0.5px;
+    y: 0.5px;
+    width: calc(100% - 1px);
+    height: calc(100% - 1px);
+    rx: 7.5px;
+    fill: none;
+    stroke: #a3a7aa;
+    stroke-width: 1px;
+    stroke-dasharray: 2 2;
   }
 }
 

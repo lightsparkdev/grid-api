@@ -1,6 +1,7 @@
 import { SfSymbol } from '@/apps/shared/icons';
 import { SafariBar } from '@/apps/shared/appSwitch';
 import type { AgentAsk, AskState, SubAgent } from '../conversation';
+import { BankLinkFlow } from '../vault/BankLink';
 import { askButtons } from '../parts';
 import styles from './InstinctSafari.module.scss';
 
@@ -27,6 +28,22 @@ export function InstinctSafari({
 }) {
   const b = askButtons(ask, state);
   const saved = state === 'done';
+  if (ask.bank && !saved) {
+    return (
+      <div className={styles.page}>
+        <button type="button" className={styles.breadcrumb} data-status-back onClick={onBack}>
+          <svg width="8" height="9" viewBox="0 0 8 9" aria-hidden>
+            <path d="M7.6 0.3v8.4L0.4 4.5z" fill="currentColor" />
+          </svg>
+          Messages
+        </button>
+        <div className={styles.bankPage}>
+          <BankLinkFlow wallet="Instinct balance" className={styles.bankFlow} onLinked={onAllow} />
+        </div>
+        <SafariBar host={INSTINCT_HOST} />
+      </div>
+    );
+  }
   return (
     <div className={styles.page}>
       <button type="button" className={styles.breadcrumb} data-status-back onClick={onBack}>

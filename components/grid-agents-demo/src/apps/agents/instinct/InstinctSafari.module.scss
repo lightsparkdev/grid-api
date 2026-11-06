@@ -1,6 +1,7 @@
 // Instinct's vault on app.instinct.com (recording 6): warm paper, beige fields, a serif title, a black button.
 .page {
   --in-paper: #fdfcfb;
+  --safari-page: rgb(253 252 251 / 0.75);
   --in-field: #f0edea;
   --in-ink: #231f20;
   --in-muted: #7a7274;
@@ -16,6 +17,7 @@
 
   :global([data-theme='dark']) & {
     --in-paper: #141213;
+    --safari-page: rgb(20 18 19 / 0.75);
     --in-field: #262223;
     --in-ink: #f4efec;
     --in-muted: #a39a9c;
@@ -259,4 +261,25 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
   }
+}
+
+// The bank flow (vault/BankLink) as a page on app.instinct.com: under the breadcrumb, above Safari's bar, in
+// Instinct's paper and ink.
+.bankPage {
+  position: absolute;
+  top: 56px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.bankFlow.bankFlow {
+  // The page runs under Safari's toolbar: the list clears it at its end, and the CTA sits above it.
+  --bank-foot: 110px;
+  --bank-cta-foot: 94px;
+  --bank-surface: var(--in-paper);
+  --bank-fill: var(--in-field);
+  --bank-muted: var(--in-muted);
+  --bank-cta: var(--in-button);
+  --bank-cta-text: var(--in-button-text);
 }

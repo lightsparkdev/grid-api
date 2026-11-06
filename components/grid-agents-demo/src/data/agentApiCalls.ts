@@ -29,6 +29,7 @@ import {
   type Payee,
   type Purchase,
 } from './agentEvents';
+import { linkedBank as chosenBank } from '@/apps/agents/linkedBank';
 import type { ApiCall } from './flow';
 
 /* ── Fixtures ─────────────────────────────────────────────────────────── */
@@ -630,31 +631,31 @@ export function createAgentSession(nameOf: () => string): AgentSession {
   /* Funding from a linked bank, as the Global Accounts playground does it: the bank becomes the customer's
      external account, and a quote from it into the wallet waits for the bank to push the money. */
   const bankLink = (): CallStep[] => {
+    const bank = chosenBank();
     linkedBank = nextId('ExternalAccount');
+    const { region, ...fields } = bank.values;
     return [
       {
-        tool: { name: 'link_bank', args: { source: 'customer_consent' }, result: { external_account_id: linkedBank, bank: 'Chase', last4: '6789' } },
+        tool: { name: 'link_bank', args: { source: 'customer_consent' }, result: { external_account_id: linkedBank, bank: bank.bankName, country: bank.country.code.toUpperCase(), last4: bank.last4 } },
         calls: [
           {
             method: 'POST',
             path: '/customers/external-accounts',
-            title: 'Link bank',
+            title: `Link bank · ${bank.country.name}`,
             reqBody: {
               customerId: CUSTOMER,
-              currency: 'USD',
+              currency: bank.currency,
               accountInfo: {
-                accountType: 'USD_ACCOUNT',
-                accountNumber: '000123456789',
-                routingNumber: '021000021',
-                bankName: 'Chase Bank',
-                bankAccountType: 'CHECKING',
-                paymentRails: ['ACH', 'ACH_SAME_DAY', 'RTP'],
-                beneficiary: { beneficiaryType: 'INDIVIDUAL', fullName: 'Alex Rivera' },
+                accountType: bank.country.accountType,
+                ...fields,
+                ...(region && { region }),
+                ...('bankName' in fields && { bankName: bank.bankName }),
+                beneficiary: { beneficiaryType: 'INDIVIDUAL', fullName: bank.holder },
               },
             },
             status: '201 Created',
-            note: 'The person links their own bank. The agent gets an account id, never the account number.',
-            resBody: { id: linkedBank, customerId: CUSTOMER, currency: 'USD', status: 'ACTIVE', accountInfo: { accountType: 'USD_ACCOUNT', bankName: 'Chase Bank', accountNumberLast4: '6789' }, createdAt: nowIso() },
+            note: `The person links their own bank in ${bank.country.name}. The agent gets an account id, never the account number.`,
+            resBody: { id: linkedBank, customerId: CUSTOMER, currency: bank.currency, status: 'ACTIVE', accountInfo: { accountType: bank.country.accountType, bankName: bank.bankName, accountNumberLast4: bank.last4 }, createdAt: nowIso() },
           },
         ],
       },
@@ -662,10 +663,14 @@ export function createAgentSession(nameOf: () => string): AgentSession {
   };
 
   const fundBank = (amount: number): CallStep[] => {
+    const bank = chosenBank();
     const from = linkedBank ?? nextId('ExternalAccount');
     linkedBank = from;
     balance += amount;
-    record('Added funds', 'Chase •••• 6789 · ACH', amount);
+    const label = `${bank.bankName} •••• ${bank.last4}`;
+    record('Added funds', `${label} · ${bank.country.rail}`, amount);
+    const local = bank.currency !== 'USD';
+    const sending = Math.round(amount * bank.country.usdToLocal);
     return [
       {
         tool: { name: 'add_funds', args: { source: 'linked_bank', amount_usd: dollars(amount) }, result: { status: 'COMPLETED', received: money(amount) } },
@@ -677,14 +682,14 @@ export function createAgentSession(nameOf: () => string): AgentSession {
             reqBody: {
               source: { sourceType: 'ACCOUNT', accountId: from, customerId: CUSTOMER },
               destination: { destinationType: 'ACCOUNT', accountId: WALLET, currency: 'USDB' },
-              lockedCurrencySide: 'SENDING',
+              lockedCurrencySide: local ? 'RECEIVING' : 'SENDING',
               lockedCurrencyAmount: amount,
             },
             status: '201 Created',
-            note: 'The quote waits for the bank to push the ACH transfer. In sandbox, POST /sandbox/send stands in for it.',
-            resBody: { id: nextId('Quote'), status: 'PENDING', sendingCurrency: 'USD', totalSendingAmount: amount, receivingCurrency: USDB, createdAt: nowIso() },
+            note: `The quote waits for the bank to push the ${bank.country.rail} transfer${local ? ` in ${bank.currency}, converted on arrival` : ''}. In sandbox, POST /sandbox/send stands in for it.`,
+            resBody: { id: nextId('Quote'), status: 'PENDING', sendingCurrency: bank.currency, totalSendingAmount: local ? sending : amount, receivingCurrency: USDB, createdAt: nowIso() },
           },
-          incomingWebhook(amount, 'USD', 'ACH', 'Transfer landed', `INCOMING_PAYMENT.COMPLETED: ${money(amount)} from Chase •••• 6789.`),
+          incomingWebhook(amount, bank.currency, bank.country.rail.toUpperCase().replace(/ /g, '_'), 'Transfer landed', `INCOMING_PAYMENT.COMPLETED: ${money(amount)} from ${label}.`),
         ],
       },
     ];

@@ -77,7 +77,68 @@
   top: 63px;
   left: 172px;
   z-index: 3;
-  object-fit: contain;
+  width: 78px;
+  height: 62px;
+  pointer-events: none;
+}
+
+// He breathes: ~0.4pt up and down over ~5s (recording 3, 30 to 36s).
+.avatarBody {
+  position: absolute;
+  inset: 0;
+  animation: dot-bob 5s ease-in-out infinite;
+
+  img {
+    position: absolute;
+    inset: 0;
+  }
+}
+
+.lid {
+  opacity: 0;
+
+  &[data-on] {
+    opacity: 1;
+  }
+}
+
+// The bulb sits off his top right (cut from the same render), growing from its base. It warms from pale to orange
+// over ~1.5s, holds, cools over ~3s and rests pale, a ~7.5s cycle (recording 3, 46 to 62s).
+.bulb {
+  position: absolute;
+  top: 4.55px;
+  left: 55.9px;
+  width: 17.2px;
+  height: 25.35px;
+  transform-origin: 50% 90%;
+  animation: dot-bulb 7.5s ease-in-out infinite;
+}
+
+@keyframes dot-bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 0.4px;
+  }
+}
+
+@keyframes dot-bulb {
+  0%,
+  100% {
+    filter: saturate(0.2) brightness(1.12);
+  }
+
+  20%,
+  33% {
+    filter: saturate(1.15) brightness(1.04) drop-shadow(0 0 3px rgba(255, 186, 72, 0.75));
+  }
+
+  73% {
+    filter: saturate(0.2) brightness(1.12);
+  }
 }
 
 .name {

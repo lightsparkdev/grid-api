@@ -3,6 +3,7 @@ import { ChatFrame, ComposerField, Said, ScrollEdge } from '../ChatFrame';
 import { GlassPill, NoopButton } from '../glass';
 import type { Message } from '../conversation';
 import { askButtons, AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
+import { useBankLink, VaultBankAsk } from '../vault/BankLink';
 import { useCardScan, VaultCardAsk } from '../vault/CardScan';
 import type { AgentChatProps } from '../types';
 import { ClaudeMascot } from './ClaudeMascot';
@@ -63,6 +64,7 @@ function SpendCard({
 export function ClaudeChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages);
   const scan = useCardScan({ wallet: 'Duet balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
+  const bank = useBankLink({ wallet: 'Duet balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
   const render = (m: Message) => {
     switch (m.kind) {
       case 'them':
@@ -87,6 +89,7 @@ export function ClaudeChat({ chat }: AgentChatProps) {
           </span>
         );
       case 'ask':
+        if (m.ask.bank) return <VaultBankAsk ask={m.ask} state={m.state} onOpen={() => bank.open(m.id)} onDeny={chat.deny} />;
         if (m.ask.card) return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.id, m.ask)} onDeny={chat.deny} />;
         // The spend card needs an amount; an ask without one (connecting, limits) is a plain approval.
         return m.ask.amount ? (
@@ -137,6 +140,7 @@ export function ClaudeChat({ chat }: AgentChatProps) {
         <>
           {sub.sheet}
           {scan.sheet}
+          {bank.sheet}
         </>
       }
       faceId={chat.authing}

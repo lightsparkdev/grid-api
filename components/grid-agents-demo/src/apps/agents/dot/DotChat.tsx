@@ -20,6 +20,7 @@ import {
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentAsk, AgentBalance, Message, Product } from '../conversation';
 import { BalanceCard, BalanceDetail, Divider, MetaLine, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
+import { useBankLink } from '../vault/BankLink';
 import { useCardScan } from '../vault/CardScan';
 import { AppSheet } from '../sheet';
 import { ADDRESS, PERSON } from '../story';
@@ -79,7 +80,7 @@ function productsText(products: Product[]) {
 function DotsMark({ size }: { size: number }) {
   return (
     <span className={styles.mark} style={{ width: size, height: size }}>
-      <img src={`${A}/avatar.png`} alt="" />
+      <img src={`${A}/body.png`} alt="" />
     </span>
   );
 }
@@ -323,6 +324,54 @@ const RECEIPT = { delivered: 1100, seen: 1580 } as const;
 /** Dots starts typing once it has seen you. */
 export const DOTS_READS_FOR = 2200;
 
+/** One blink (recording 8, 27.33s): half shut for a frame, shut for two, half again, open. */
+const BLINK: { lid: 'half' | 'shut' | null; ms: number }[] = [
+  { lid: 'half', ms: 33 },
+  { lid: 'shut', ms: 67 },
+  { lid: 'half', ms: 50 },
+  { lid: null, ms: 0 },
+];
+
+/**
+ * Your dot (recordings 3 and 8): he bobs about 0.4pt over ~5s and blinks every 11 to 16s. While he works a
+ * lightbulb grows in at his top right (~260ms) and slowly warms and cools, then shrinks away when he's done.
+ */
+function DotAvatar({ thinking }: { thinking: boolean }) {
+  const [lid, setLid] = useState<'half' | 'shut' | null>(null);
+  useEffect(() => {
+    let t: number;
+    const blink = (i: number) => {
+      setLid(BLINK[i].lid);
+      t = i < BLINK.length - 1 ? window.setTimeout(() => blink(i + 1), BLINK[i].ms) : window.setTimeout(() => blink(0), 11000 + Math.random() * 5000);
+    };
+    t = window.setTimeout(() => blink(0), 3000 + Math.random() * 4000);
+    return () => window.clearTimeout(t);
+  }, []);
+  return (
+    <span className={styles.avatar} aria-hidden>
+      <span className={styles.avatarBody}>
+        <img src={`${A}/body.png`} alt="" width={78} height={62} draggable={false} />
+        <img className={styles.lid} src={`${A}/blink-half.png`} alt="" width={78} height={62} draggable={false} data-on={lid === 'half' || undefined} />
+        <img className={styles.lid} src={`${A}/blink-shut.png`} alt="" width={78} height={62} draggable={false} data-on={lid === 'shut' || undefined} />
+      </span>
+      <AnimatePresence>
+        {thinking && (
+          <motion.img
+            key="bulb"
+            className={styles.bulb}
+            src={`${A}/bulb.png`}
+            alt=""
+            draggable={false}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1, transition: { type: 'spring', stiffness: 420, damping: 22 } }}
+            exit={{ scale: 0, transition: { duration: 0.2, ease: [0.4, 0, 1, 1] } }}
+          />
+        )}
+      </AnimatePresence>
+    </span>
+  );
+}
+
 /** Under your last message: Delivered fades up from pale as the thread makes room, then crossfades to Seen. */
 function Receipt({ fresh }: { fresh: boolean }) {
   const [stage, setStage] = useState<'sent' | keyof typeof RECEIPT>(fresh ? 'sent' : 'seen');
@@ -373,6 +422,7 @@ export function DotChat({ chat }: AgentChatProps) {
   const [balanceShown, setBalanceShown] = useState(false);
   const sub = useSubAgentSheet(chat.messages, SHEET_IN);
   const scan = useCardScan({ wallet: 'Dots balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
+  const bank = useBankLink({ wallet: 'Dots balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
   const sheetOpen = shown && !!sheet && chat.messages.some((m) => m.kind === 'ask' && m.id === sheet.id && m.state === 'open');
   const open = (m: Ask) => {
     setSheet({ id: m.id, ask: m.ask });
@@ -382,9 +432,9 @@ export function DotChat({ chat }: AgentChatProps) {
   const opened = useRef(new Set<number>());
   useEffect(() => {
     const ask = [...chat.messages].reverse().find((m): m is Ask => m.kind === 'ask' && m.state === 'open');
-    if (!ask || ask.ask.rows || opened.current.has(ask.id)) return;
+    if (!ask || ask.ask.rows || ask.ask.card || opened.current.has(ask.id)) return;
     opened.current.add(ask.id);
-    const t = window.setTimeout(() => open(ask), 500);
+    const t = window.setTimeout(() => (ask.ask.bank ? bank.open(ask.id) : open(ask)), 500);
     return () => window.clearTimeout(t);
   }, [chat.messages]);
 
@@ -439,6 +489,7 @@ export function DotChat({ chat }: AgentChatProps) {
         );
       case 'ask':
         if (m.ask.card) return <ActionPill m={m} onOpen={() => scan.open(m.id, m.ask)} />;
+        if (m.ask.bank) return <ActionPill m={m} onOpen={() => bank.open(m.id)} />;
         return m.ask.rows ? <ActionPill m={m} onOpen={() => open(m)} /> : <PayPill m={m} onOpen={() => open(m)} />;
       case 'card': {
         const b = m.card.balance;
@@ -515,7 +566,7 @@ export function DotChat({ chat }: AgentChatProps) {
             <NoopButton label="Call" className={styles.call}>
               <GlassDisc label="Call" icon={`${A}/phone.svg`} width={22} height={22} />
             </NoopButton>
-            <img className={styles.avatar} src={`${A}/avatar.png`} alt="" width={78} height={62} draggable={false} />
+            <DotAvatar thinking={chat.busy || chat.messages.some((m) => m.kind === 'work')} />
             <GlassPill radius={18.5} absolute className={styles.name}>
               <span className={styles.nameText}>dot</span>
             </GlassPill>
@@ -556,6 +607,7 @@ export function DotChat({ chat }: AgentChatProps) {
       </AppSheet>
       {sub.sheet}
       {scan.sheet}
+      {bank.sheet}
       <AppSheet open={balanceShown} present={SHEET_IN} className={styles.setupPanel} onDismiss={() => setBalanceShown(false)}>
         {balance && <BalanceSheet balance={balance} onClose={() => setBalanceShown(false)} />}
       </AppSheet>

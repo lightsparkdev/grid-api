@@ -587,6 +587,10 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   height: 10px;
   margin-right: 24px;
   background: #d0d0d3;
+
+  :global([data-theme='dark']) & {
+    background: #3a3a3c;
+  }
 }
 
 // Delivered and Read share one right-aligned line; the cap height sits 6pt under the bubble.

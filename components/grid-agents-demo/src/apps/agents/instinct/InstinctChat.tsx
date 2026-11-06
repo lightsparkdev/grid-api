@@ -198,8 +198,8 @@ export const INSTINCT_READS_FOR = RECEIPT.read + 330;
 
 /**
  * Under your last message. The row opens (the thread rises to make room) as
- * Delivered swells from its center; Delivered fades out, a beat of nothing,
- * then Read and the time fade in.
+ * Delivered fades in; Delivered fades out, a beat of nothing, then Read and
+ * the time fade in.
  */
 function Receipt({ fresh }: { fresh: boolean }) {
   const [stage, setStage] = useState<ReceiptStage>(fresh ? 'sent' : 'read');
@@ -215,11 +215,11 @@ function Receipt({ fresh }: { fresh: boolean }) {
   return (
     <span className={styles.read}>
       <motion.span
-        initial={{ opacity: 0, scale: 0 }}
+        initial={{ opacity: 0 }}
         animate={
           stage === 'delivered'
-            ? { opacity: 1, scale: 1, transition: { duration: 0.5, ease: [0.5, 1, 0.89, 1] } }
-            : { opacity: 0, transition: { duration: 0.1, ease: 'easeIn' } }
+            ? { opacity: 1, transition: { duration: 0.3, ease: 'easeOut' } }
+            : { opacity: 0, transition: { duration: 0.17, ease: 'easeIn' } }
         }
       >
         Delivered
@@ -350,7 +350,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
   useEffect(() => {
     const open = [...chat.messages]
       .reverse()
-      .find((m) => (m.kind === 'ask' && m.state === 'open' && !m.ask.rows) || (m.kind === 'chips' && m.picked === null && !m.expired));
+      .find((m) => (m.kind === 'ask' && m.state === 'open' && !m.ask.rows && !m.ask.bank) || (m.kind === 'chips' && m.picked === null && !m.expired));
     if (!open || drafted.current.has(open.id)) return;
     drafted.current.add(open.id);
     if (!composer) setComposer(open.kind === 'chips' ? open.chips[0].label : 'Yes');
@@ -406,7 +406,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         return b ? bubble('balance', <span className={styles.lines}>{balanceText(b)}</span>, !theirsNext) : <InstinctImage note={m.card} />;
       }
       case 'ask':
-        return m.ask.rows ? (
+        return m.ask.rows || m.ask.bank ? (
           <VaultLink m={m} onOpen={() => openLink(m.id)} />
         ) : (
           bubble('ask', <Detected text={askText(m.ask)} />, !theirsNext)
@@ -427,7 +427,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
       case 'me': {
         // A reply to an ask or a choice shows what it answers, as iMessage's inline reply does.
         const answers =
-          prev?.kind === 'ask' && !prev.ask.rows ? prev : prev?.kind === 'chips' ? prev : null;
+          prev?.kind === 'ask' && !prev.ask.rows && !prev.ask.bank ? prev : prev?.kind === 'chips' ? prev : null;
         // Instinct only ever thumbs-ups what you send (recording 2).
         const tapback = m.react || (answers?.kind === 'ask' && answers.state === 'done') ? '👍' : undefined;
         const fresh = !opened.has(m.id);

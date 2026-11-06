@@ -1,5 +1,7 @@
 import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, Params, Product, SubAgent } from '../conversation';
-import { ADDRESS, BANK, BUY_OPTIONS, HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
+import { BANK_COUNTRIES } from '@/data/bankCountries';
+import { linkedBank, localAmount, railTiming } from '../linkedBank';
+import { ADDRESS, BUY_OPTIONS, HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
 
 /* The neutral voice: every line, ask and note a flow can produce, written so
    it reads right in any app. Each app's voice overrides what it says
@@ -66,7 +68,7 @@ export const METAS = {
   'sub.reminder': () => ({ text: 'Created routine · Remind me before it renews', icon: 'routine' }),
   'connect.limits': () => ({ text: 'Limits saved', icon: 'check' }),
   'card.saved': () => ({ text: 'Visa •••• 4242 saved to your vault', icon: 'check' }),
-  'bank.linked': () => ({ text: `${BANK.name} •••• ${BANK.last4} linked`, icon: 'check' }),
+  'bank.linked': () => ({ text: `${linkedBank().bankName} •••• ${linkedBank().last4} linked`, icon: 'check' }),
 } satisfies Record<string, (p?: Params) => AgentMeta>;
 
 export type MetaKey = keyof typeof METAS;
@@ -82,8 +84,12 @@ export const LINES = {
 
   'fund.ask': () => 'How do you want to add it?',
   'fund.address': (p) => `Here’s your ${s(p, 'method')} ${s(p, 'network') === 'LIGHTNING' ? 'invoice' : 'address'}. Whatever you send lands as dollars.`,
-  'fund.bank': (p) => `Requesting ${usd(n(p, 'amount'))} from your ${BANK.name} •••• ${BANK.last4}. Bank transfers take 1–3 business days.`,
-  'bank.intro': () => `Link your bank once and you can top up from it any time. I only ever see ${BANK.name} •••• ${BANK.last4}, never the account number.`,
+  'fund.bank': (p) => {
+    const bank = linkedBank();
+    const local = bank.currency === 'USD' ? '' : ` That’s ${localAmount(n(p, 'amount'), bank)} at today’s rate.`;
+    return `Requesting ${usd(n(p, 'amount'))} from your ${bank.bankName} •••• ${bank.last4}.${local} ${railTiming(bank)}`;
+  },
+  'bank.intro': () => `Link a bank once and you can top up from it any time. It works with banks in ${BANK_COUNTRIES.length} countries.`,
   'bank.denied': () => 'Okay, no bank for now. You can link one any time.',
   'fund.done': (p) => `${usd(n(p, 'amount'))} landed. You have ${usd2(n(p, 'balance'))} now.`,
   'fund.card': (p) => `Adding ${usd(n(p, 'amount'))} from your Visa •••• 4242.`,
@@ -177,11 +183,7 @@ export const ASKS = {
   }),
   bank: () => ({
     title: 'Link your bank',
-    rows: [
-      { text: BANK.name, sub: `${BANK.type} •••• ${BANK.last4}`, icon: 'wallet' },
-      { text: 'Routing number', sub: BANK.routing, icon: 'lock' },
-      { text: 'Account holder', sub: PERSON.full, icon: 'lock' },
-    ],
+    bank: true,
     allow: 'Link bank',
     allowed: 'Bank linked',
     deny: 'Not now',

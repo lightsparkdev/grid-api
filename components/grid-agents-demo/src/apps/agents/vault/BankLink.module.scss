@@ -1,0 +1,360 @@
+// Linking a bank (BankLink.tsx): grid-wallet-demo's Add bank screen, as a sheet over any of the apps.
+
+.panel {
+  top: 62px;
+}
+
+.sheet {
+  height: 100%;
+  overflow: hidden;
+  border-radius: 38px 38px var(--screen-corner-radius, 73px) var(--screen-corner-radius, 73px);
+  background: #fff;
+  color: #000;
+  font-family: var(--font-family-sf-pro);
+
+  :global([data-theme='dark']) & {
+    background: #1c1c1e;
+    color: #fff;
+  }
+}
+
+.sheet.sheet {
+  corner-shape: round round var(--corner-shape) var(--corner-shape);
+}
+
+.flow {
+  --bank-muted: #8a8a8e;
+  --bank-line: rgba(60, 60, 67, 0.14);
+  --bank-fill: #f2f2f7;
+  --bank-surface: #fff;
+  --bank-cta: #000;
+  --bank-cta-text: #fff;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: inherit;
+  font-family: var(--font-family-sf-pro);
+
+  :global([data-theme='dark']) & {
+    --bank-muted: #98989f;
+    --bank-line: rgba(84, 84, 88, 0.5);
+    --bank-fill: #2c2c2e;
+    --bank-surface: #1c1c1e;
+    --bank-cta: #fff;
+    --bank-cta-text: #000;
+  }
+}
+
+.bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 56px;
+  padding: 0 12px;
+}
+
+.barButton {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bank-fill);
+  color: inherit;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+  }
+}
+
+.steps {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.step {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 0 20px var(--bank-foot, 24px);
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.tile {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  background: var(--bank-fill);
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 34px;
+  letter-spacing: 0.36px;
+}
+
+.sub {
+  margin: 6px 0 0;
+  color: var(--bank-muted);
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.search {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  margin: 18px 0 4px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: var(--bank-fill);
+  box-shadow: 0 -12px 0 8px var(--bank-surface, transparent);
+}
+
+.searchIcon {
+  flex: none;
+  color: var(--bank-muted);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 17px;
+
+  &::placeholder {
+    color: var(--bank-muted);
+  }
+}
+
+.section {
+  margin: 18px 0 4px;
+  color: var(--bank-muted);
+  font-size: 13px;
+  font-weight: 590;
+  letter-spacing: -0.08px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 0.5px solid var(--bank-line);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:active {
+    opacity: 0.6;
+  }
+}
+
+.flag {
+  flex: none;
+  border-radius: 50%;
+}
+
+.rowText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rowTitle {
+  font-size: 17px;
+  line-height: 22px;
+}
+
+.rowSub {
+  color: var(--bank-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.chevron {
+  flex: none;
+  color: var(--bank-muted);
+}
+
+.fields {
+  margin-top: 18px;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 0.5px solid var(--bank-line);
+}
+
+.fieldText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fieldLabel {
+  color: var(--bank-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.fieldValue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  font-size: 17px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bank-fill);
+  color: var(--bank-muted);
+  font-size: 13px;
+  font-weight: 590;
+}
+
+.cta {
+  flex: none;
+  padding: 12px 20px var(--bank-cta-foot, 34px);
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 52px;
+  border: 0;
+  border-radius: 26px;
+  background: var(--bank-cta);
+  color: var(--bank-cta-text);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &[data-stage='linked'] {
+    background: #34c759;
+    color: #fff;
+  }
+}
+
+.spin {
+  animation: bank-spin 0.8s linear infinite;
+}
+
+@keyframes bank-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+// ── The bank ask in the thread ─────────────────────────────────────────
+.ask {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 340px;
+  padding: 12px;
+  border-radius: var(--part-radius, 20px);
+  background: var(--part-surface, #fff);
+  color: var(--part-text, #000);
+}
+
+.askFlags {
+  display: flex;
+
+  img {
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--part-surface, #fff);
+
+    + img {
+      margin-left: -6px;
+    }
+  }
+}
+
+.askTitle {
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 590;
+}
+
+.askNote {
+  color: var(--part-muted, #8a8a8d);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.askActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+
+  button {
+    flex: 1;
+    height: 40px;
+    border: 0;
+    border-radius: 20px;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 590;
+    cursor: pointer;
+  }
+}
+
+.askDeny {
+  background: var(--part-sunk, #f2f2f2);
+  color: var(--part-text, #000);
+}
+
+.askAdd {
+  background: var(--part-accent, #000);
+  color: var(--part-accent-text, #fff);
+}

@@ -1,6 +1,7 @@
 import type { ConnectorId } from '@/data/connectors';
 import type { Params } from '../conversation';
-import { BANK, HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
+import { BANK_COUNTRIES } from '@/data/bankCountries';
+import { HOTEL, LUCIA, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
 import {
   ASKS,
   MUSE_ORDER,
@@ -118,15 +119,9 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
         ...ASKS.bank(),
         form: {
           title: 'Link your bank',
-          sub: 'Never shown to your Bot. Only filled in your Bot’s vault.',
+          sub: `Any of ${BANK_COUNTRIES.length} countries. Never shown to your Bot.`,
           sheetTitle: 'Bank account',
-          fields: [
-            { label: 'Bank', value: `${BANK.name} · ${BANK.type}` },
-            { label: 'Routing number', value: BANK.routing },
-            { label: 'Account number', value: `•••• ${BANK.last4}` },
-            { label: 'Account holder', value: PERSON.full },
-          ],
-          toggle: 'Securely save to your Bot’s vault',
+          fields: [],
           submitted: 'Linked your bank',
         },
       }),
@@ -247,14 +242,6 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       }),
       bank: () => ({
         ...ASKS.bank(),
-        title: 'Link your bank',
-        rows: [
-          { text: 'Bank', sub: `${BANK.name} · ${BANK.type}`, icon: 'wallet' },
-          { text: 'Routing number', sub: BANK.routing, icon: 'lock' },
-          { text: 'Account number', sub: `•••• ${BANK.last4}`, icon: 'lock' },
-          { text: 'Account holder', sub: PERSON.full, icon: 'lock' },
-        ],
-        allow: 'Save to vault',
         allowed: 'Saved',
       }),
       limits: (p) => ({

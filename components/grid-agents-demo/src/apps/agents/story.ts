@@ -17,8 +17,6 @@ export const FUND = {
   ],
 };
 
-/** The bank Alex links once to top up over ACH (Global Accounts' "Fund from a linked bank"). */
-export const BANK = { name: 'Chase', last4: '6789', routing: '021000021', type: 'Checking' };
 
 /** What Set limits asks for: act alone under $100, $500 a payment, $1,000 a day. */
 export const NEW_LIMITS: Limits = { perTransaction: 50_000, daily: 100_000, approvalAbove: 10_000 };

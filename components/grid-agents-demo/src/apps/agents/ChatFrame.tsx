@@ -53,6 +53,24 @@ function useStickToEnd(
     let stuck = true;
     let raf = 0;
     let animating = false;
+    // Where the thread last put itself. Its own writes fire scroll events a frame later, by which time a streamed
+    // chunk may have grown the thread, and the browser scrolls on its own too (a clicked chip focusing into view).
+    // Only a scroll right after the visitor's own gesture can unpin it.
+    let placed = el.scrollTop;
+    let gesture = -Infinity;
+    const gestured = () => {
+      gesture = performance.now();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) gestured();
+    };
+    const onPointer = (e: PointerEvent) => {
+      if (e.target === el) gestured();
+    };
+    const place = (top: number) => {
+      el.scrollTop = top;
+      placed = el.scrollTop;
+    };
     const end = () => el.scrollHeight - el.clientHeight;
     const settle = () => {
       cancelAnimationFrame(raf);
@@ -67,7 +85,7 @@ function useStickToEnd(
       const curve = curveFor.current();
       // The first layout lands without motion.
       if (!el.dataset.ready || curve === 'snap') {
-        el.scrollTop = to;
+        place(to);
         return;
       }
       const ease = bezier(...curve.ease);
@@ -75,17 +93,21 @@ function useStickToEnd(
       const t0 = performance.now();
       const step = (now: number) => {
         const t = Math.min(1, (now - t0) / curve.ms);
-        el.scrollTop = from + (end() - from) * ease(t);
+        place(from + (end() - from) * ease(t));
         if (t < 1) raf = requestAnimationFrame(step);
         else animating = false;
       };
       raf = requestAnimationFrame(step);
     };
     const onScroll = () => {
-      if (animating) return;
+      if (animating || Math.abs(el.scrollTop - placed) < 1) return;
+      placed = el.scrollTop;
+      if (performance.now() - gesture > 500) return;
       stuck = end() - el.scrollTop < 24;
+      if (stuck) follow();
     };
     const interrupt = () => {
+      gestured();
       settle();
       stuck = end() - el.scrollTop < 24;
     };
@@ -97,12 +119,18 @@ function useStickToEnd(
     el.addEventListener('scroll', onScroll, { passive: true });
     el.addEventListener('wheel', interrupt, { passive: true });
     el.addEventListener('touchstart', interrupt, { passive: true });
+    el.addEventListener('touchmove', gestured, { passive: true });
+    el.addEventListener('pointerdown', onPointer);
+    el.addEventListener('keydown', onKey);
     return () => {
       settle();
       ro.disconnect();
       el.removeEventListener('scroll', onScroll);
       el.removeEventListener('wheel', interrupt);
       el.removeEventListener('touchstart', interrupt);
+      el.removeEventListener('touchmove', gestured);
+      el.removeEventListener('pointerdown', onPointer);
+      el.removeEventListener('keydown', onKey);
     };
   }, [scroller, content, curveFor]);
 }

@@ -63,6 +63,8 @@ export interface AgentAsk {
   form?: AgentForm;
   /** A card going into the vault: what the scan finds. */
   card?: { brand: string; last4: string; expires: string; name: string };
+  /** A bank to link for top-ups: the skin opens the bank flow (vault/BankLink), which picks the country and account. */
+  bank?: true;
 }
 
 /** The app's own balance: the website card's anatomy, plus what each app shows natively. */

@@ -5,6 +5,7 @@ import { ChatFrame, ComposerField, Said, ScrollEdge } from '../ChatFrame';
 import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
 import { AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
+import { useBankLink, VaultBankAsk } from '../vault/BankLink';
 import { useCardScan, VaultCardAsk } from '../vault/CardScan';
 import type { AgentChatProps } from '../types';
 import styles from './YourAppChat.module.scss';
@@ -13,6 +14,7 @@ import styles from './YourAppChat.module.scss';
 export function YourAppChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages);
   const scan = useCardScan({ wallet: 'your balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
+  const bank = useBankLink({ wallet: 'your balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
   const render = (m: Message) => {
     switch (m.kind) {
       case 'them':
@@ -27,6 +29,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
       case 'me':
         return <span className={styles.me} data-bubble>{m.text}</span>;
       case 'ask':
+        if (m.ask.bank) return <VaultBankAsk ask={m.ask} state={m.state} onOpen={() => bank.open(m.id)} onDeny={chat.deny} />;
         if (m.ask.card) return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.id, m.ask)} onDeny={chat.deny} />;
         return <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':
@@ -62,6 +65,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
         <>
           {sub.sheet}
           {scan.sheet}
+          {bank.sheet}
         </>
       }
       faceId={chat.authing}

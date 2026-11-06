@@ -6,6 +6,7 @@ import { ChatFrame, ComposerField, ScrollEdge, STILL, TypingDots, useOpenedIds, 
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentBalance, AskRow, Chip, Message, Product } from '../conversation';
 import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useSubAgentSheet } from '../parts';
+import { useBankLink, VaultBankAsk } from '../vault/BankLink';
 import { useCardScan, VaultCardAsk } from '../vault/CardScan';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
@@ -185,6 +186,9 @@ function Choices({
           disabled={settled}
           onClick={() => onPick(i)}
         >
+          <svg className={styles.choiceDash} aria-hidden>
+            <rect />
+          </svg>
           <span>{c.label}</span>
           {picked === i && <span className={styles.choiceCheck} />}
         </button>
@@ -385,6 +389,7 @@ export function MuseChat({ chat }: AgentChatProps) {
   const openedIds = useOpenedIds(chat.messages);
   const sub = useSubAgentSheet(chat.messages);
   const scan = useCardScan({ wallet: 'Muse balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
+  const bank = useBankLink({ wallet: 'Muse balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
@@ -396,6 +401,7 @@ export function MuseChat({ chat }: AgentChatProps) {
       case 'me':
         return <SentBubble fresh={!openedIds.has(m.id)}>{m.text}</SentBubble>;
       case 'ask':
+        if (m.ask.bank) return <VaultBankAsk ask={m.ask} state={m.state} onOpen={() => bank.open(m.id)} onDeny={chat.deny} className={styles.vaultAsk} />;
         if (m.ask.card) {
           return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.id, m.ask)} onDeny={chat.deny} className={styles.vaultAsk} />;
         }
@@ -458,6 +464,7 @@ export function MuseChat({ chat }: AgentChatProps) {
         <>
           {sub.sheet}
           {scan.sheet}
+          {bank.sheet}
         </>
       }
       faceId={chat.authing}

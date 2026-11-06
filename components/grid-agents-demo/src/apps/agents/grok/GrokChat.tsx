@@ -15,6 +15,7 @@ import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentAsk, AgentBalance, Chip, Message, Product } from '../conversation';
 import { BalanceCard, BalanceDetail, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
 import { AppSheet } from '../sheet';
+import { useBankLink } from '../vault/BankLink';
 import type { AgentChatProps } from '../types';
 import { GrokEyes } from './GrokEyes';
 import styles from './GrokChat.module.scss';
@@ -351,6 +352,7 @@ function settledByOrder(i: number, all: Message[]) {
 export function GrokChat({ chat }: AgentChatProps) {
   const [multiline, setMultiline] = useState(false);
   // The sheet keeps its ask while it slides away.
+  const bank = useBankLink({ wallet: 'Bot balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
   const [sheet, setSheet] = useState<{ id: number; ask: AgentAsk } | null>(null);
   const sheetOpen = !!sheet && chat.messages.some((m) => m.kind === 'ask' && m.id === sheet.id && m.state === 'open');
   const [shown, setShown] = useState(false);
@@ -386,6 +388,7 @@ export function GrokChat({ chat }: AgentChatProps) {
           <FormCard
             m={m}
             onOpen={() => {
+              if (m.ask.bank) return bank.open(m.id);
               setSheet({ id: m.id, ask: m.ask });
               setShown(true);
             }}
@@ -526,6 +529,7 @@ export function GrokChat({ chat }: AgentChatProps) {
         )}
       </AppSheet>
       {sub.sheet}
+      {bank.sheet}
       <AppSheet open={balanceShown} present={SHEET_IN} dim={0.2} className={styles.sheetPanel} onDismiss={() => setBalanceShown(false)}>
         {balance && <BalanceSheet balance={balance} onDone={() => setBalanceShown(false)} />}
       </AppSheet>
