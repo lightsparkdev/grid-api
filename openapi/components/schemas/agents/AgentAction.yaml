@@ -72,6 +72,15 @@ properties:
       can show its amount and recipient. Present for `CLAIMABLE_PAYOUT`.
       Approving the action makes the payout `AWAITING_CLAIM`; rejecting it,
       or letting it expire, ends the payout and releases its hold.
+  settlementRule:
+    $ref: ../settlement_rules/SettlementRule.yaml
+    description: >-
+      The settlement rule the agent proposed, so an approval decision can
+      show what it matches, who it pays and its limits. Present for
+      `CREATE_SETTLEMENT_RULE`. Approving the action makes the rule
+      `ACTIVE`; rejecting it, or letting it expire, deletes it. Approving a
+      rule does not approve its payments in advance. Each share is still
+      checked against the agent's policy when it is sent.
   cardId:
     type: string
     description: >-
@@ -108,8 +117,9 @@ properties:
       `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the
       quote's own expiry; a pending action that reaches it fails with
       `QUOTE_EXPIRED`, and approval never creates a replacement quote. For
-      `ISSUE_PURCHASE_CARD`, this is the end of the approval window, after
-      which a pending action fails with `APPROVAL_EXPIRED`.
+      `ISSUE_PURCHASE_CARD` and `CREATE_SETTLEMENT_RULE`, this is the end of
+      the approval window, after which a pending action fails with
+      `APPROVAL_EXPIRED`; a settlement rule's window is seven days.
     example: '2025-10-03T15:05:00Z'
   createdAt:
     type: string

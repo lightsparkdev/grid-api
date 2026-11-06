@@ -8,6 +8,7 @@ enum:
   - MANAGE_IDENTITY
   - MANAGE_CARDS
   - ISSUE_CARDS
+  - MANAGE_SETTLEMENT_RULES
 description: >-
   Permission granted to an agent that determines what actions it can perform.
   VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances.
@@ -18,3 +19,4 @@ description: >-
   MANAGE_IDENTITY: Can read and update customer identity information and start verification.
   MANAGE_CARDS: Can read, tighten, and freeze its cards.
   ISSUE_CARDS: Can issue one standard virtual card for itself while it holds no live standard card, and single-use and recurring purchase cards where the platform enables them.
+  MANAGE_SETTLEMENT_RULES: Can propose settlement rules that split the customer's incoming payments into its Embedded Wallet, read and delete the rules it created, and cancel their held executions.

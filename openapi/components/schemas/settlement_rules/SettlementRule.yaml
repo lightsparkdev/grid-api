@@ -49,6 +49,14 @@ properties:
     example: 86400
   limits:
     $ref: ./SettlementRuleLimits.yaml
+  agentId:
+    type: string
+    description: The agent that created the rule through the agent API. Absent for a rule created with an API token.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000042
+  agentActionId:
+    type: string
+    description: The `CREATE_SETTLEMENT_RULE` agent action awaiting the customer's approval of the rule. Present while the rule is `PENDING_APPROVAL`.
+    example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
   createdAt:
     type: string
     format: date-time
