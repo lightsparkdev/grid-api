@@ -93,13 +93,11 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/platform/internal-accoun
       },
       "fundingPaymentInstructions": [
         {
-          "instructionsNotes": "Include the reference code in your ACH transfer memo",
           "accountOrWalletInfo": {
             "accountType": "USD_ACCOUNT",
             "reference": "FUND-BTC123",
             "accountNumber": "9876543210",
             "routingNumber": "021000021",
-            "accountHolderName": "Lightspark Payments FBO John Doe",
             "bankName": "JP Morgan Chase"
           }
         },
@@ -126,7 +124,7 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/platform/internal-accoun
 }
 ```
 
-The `fundingPaymentInstructions` provide the bank account details and reference code needed to fund this internal account via ACH pull from the customer's bank.
+The `fundingPaymentInstructions` provide the bank account details needed to fund this internal account by bank transfer. The account number is unique to this internal account, and deposits are credited by account number, so you don't need to include the `reference`.
 
 <Note>
   You can also see that there are Spark wallet funding instructions in this
@@ -136,7 +134,7 @@ The `fundingPaymentInstructions` provide the bank account details and reference 
 
 ## Step 2: Fund your Internal Account
 
-You can initiate an ACH transfer from your bank to the account details provided in the funding instructions, making sure to include the reference code `FUND-BTC123` in the transfer memo.
+You can initiate an ACH transfer from your bank to the account details provided in the funding instructions.
 
 <Note>
   In sandbox mode, you can use the `/sandbox/internal-accounts/{accountId}/fund`
