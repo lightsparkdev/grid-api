@@ -33856,7 +33856,7 @@ components:
           example: false
         autoApproved:
           type: boolean
-          description: Whether Grid approved the use without asking, because the customer had chosen to auto-approve this agent at this merchant up to this amount.
+          description: Whether Grid approved the use without asking, because the customer had chosen to auto-approve this agent at this merchant up to this amount. Such a use is created `APPROVED` and sent as an `AGENT_ACTION.APPROVED` webhook, so the platform can tell the customer of every use.
           example: false
         linkIssuedAt:
           type: string
