@@ -1,0 +1,9 @@
+type: object
+required:
+  - share
+  - destination
+properties:
+  share:
+    $ref: ./SettlementRuleShare.yaml
+  destination:
+    $ref: ./SettlementRuleDestination.yaml
