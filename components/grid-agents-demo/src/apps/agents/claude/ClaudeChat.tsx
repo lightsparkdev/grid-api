@@ -5,7 +5,8 @@ import type { Message } from '../conversation';
 import { askButtons, AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
 import type { AgentChatProps } from '../types';
 import { ClaudeMascot } from './ClaudeMascot';
-import { DuetConnector, useDuetBalance, useDuetBank, useDuetCard } from './DuetVault';
+import { useDuetBalance } from './DuetBalance';
+import { DuetConnector, useDuetBank, useDuetCard } from './DuetVault';
 import type { MascotState } from './mascot';
 import styles from './ClaudeChat.module.scss';
 

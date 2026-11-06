@@ -8,7 +8,6 @@ import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-
 import { IconSortArrowUpDown } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSortArrowUpDown';
 import { Flag } from '@/apps/shared/Flag';
 import { BankMark } from '../BankMark';
-import { useBalancePage, type BalancePageOptions } from '../BalancePage';
 import { BANK_REACH, currencyFor, type BankCountry } from '@/data/bankCountries';
 import type { AgentAsk, AskState, Message } from '../conversation';
 import { linkedBank } from '../linkedBank';
@@ -247,9 +246,6 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
     </SheetPage>
   );
 }
-
-/** Duet's balance page, in its settings' colors. */
-export const useDuetBalance = (o: BalancePageOptions) => useBalancePage({ ...o, theme: styles.theme });
 
 /** Duet's card flow: the card as a Profile-style page. */
 export function useDuetCard({ messages, onAllow }: { messages: Message[]; onAllow: () => void }) {

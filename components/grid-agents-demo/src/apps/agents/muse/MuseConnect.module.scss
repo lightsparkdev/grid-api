@@ -18,10 +18,6 @@ $muse-font: 'Optimistic AI', var(--font-family-sf-pro);
   --mc-line: #e5e5e5;
   --mc-blue: #2962cd;
   --mc-track: #eeefef;
-  --bp-card: var(--mc-card);
-  --bp-line: var(--mc-line);
-  --bp-ink: var(--mc-blue);
-  --bp-ink-text: #fff;
   font-family: $muse-font;
 
   :global([data-theme='dark']) & {

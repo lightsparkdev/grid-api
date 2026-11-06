@@ -1,6 +1,6 @@
 import { TextMorph } from 'torph/react';
 import { SfSymbol } from '@/apps/shared/icons';
-import { GridLogoMark } from '@/components/GridWordmark';
+import { IconAiBotHead } from '@central-icons-react/round-filled-radius-2-stroke-2/IconAiBotHead';
 import { ChatFrame, ComposerField, Said, ScrollEdge } from '../ChatFrame';
 import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
@@ -86,7 +86,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
       header={
         <>
           <span className={styles.mark}>
-            <GridLogoMark className={styles.logo} />
+            <IconAiBotHead size={30} className={styles.logo} />
           </span>
           <GlassPill radius={18} absolute className={styles.title}>
             <span className={styles.titleText}>

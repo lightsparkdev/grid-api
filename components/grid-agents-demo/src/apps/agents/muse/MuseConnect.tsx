@@ -11,7 +11,6 @@ import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-
 import { IconSettingsSliderHor } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSettingsSliderHor';
 import { Flag } from '@/apps/shared/Flag';
 import { BankMark } from '../BankMark';
-import { useBalancePage, type BalancePageOptions } from '../BalancePage';
 import { BANK_REACH, type BankCountry } from '@/data/bankCountries';
 import type { AgentAsk, AskState, Message } from '../conversation';
 import { hasLinkedBank, linkedBank } from '../linkedBank';
@@ -413,9 +412,6 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
     </SheetPage>
   );
 }
-
-/** Muse's balance page: a large title, as its Settings pages open. */
-export const useMuseBalance = (o: BalancePageOptions) => useBalancePage({ ...o, theme: styles.theme, large: true });
 
 /** Muse's card flow: the Add a card page, as its Wallet adds a payment method. */
 export function useMuseCard({ messages, onAllow }: { messages: Message[]; onAllow: () => void }) {

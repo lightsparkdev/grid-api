@@ -1,0 +1,223 @@
+// Muse balance (MuseBalance.tsx), measured at 3x from Settings (IMG_1907) and Wallet (IMG_1911).
+// Colors come from MuseConnect's theme: --sp-*, --mc-card, --mc-line, --mc-blue, --mc-track.
+
+// Wallet's header: a 60pt tile, the title, a centered line.
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 36px 22px;
+  text-align: center;
+
+  h1 {
+    margin: 10px 0 0;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 36px;
+    letter-spacing: -0.3px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  p {
+    margin: 0;
+    color: var(--sp-muted);
+    font-size: 15px;
+    line-height: 20px;
+  }
+}
+
+.tile {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: var(--mc-card);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 0 20px;
+}
+
+// The plan card: its name and "1% used", the line under it, a 6pt bar, a hairline, then the blue link.
+.plan {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 20px 0;
+  border-radius: 24px;
+  background: var(--mc-card);
+}
+
+.planHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 17px;
+  line-height: 22px;
+
+  small {
+    color: var(--sp-muted);
+    font-size: 13px;
+  }
+}
+
+.planSub {
+  margin-top: 4px;
+  color: var(--sp-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.bar {
+  height: 6px;
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--mc-track);
+
+  i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--mc-blue);
+  }
+}
+
+.link {
+  margin-top: 18px;
+  padding: 15px 0 17px;
+  border: 0;
+  border-top: 0.5px solid var(--mc-line);
+  background: none;
+  color: var(--mc-blue);
+  font: inherit;
+  font-size: 17px;
+  line-height: 22px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: 0 18px;
+  border-radius: 24px;
+  background: var(--mc-card);
+
+  > * + * {
+    position: relative;
+
+    &::before {
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: 0;
+      height: 0.5px;
+      background: var(--mc-line);
+      content: '';
+    }
+  }
+}
+
+// A 57pt row: the 24pt icon, the label 38pt in from it, a value, the chevron.
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 57px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+button.row {
+  cursor: pointer;
+}
+
+.icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+}
+
+.label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 17px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value {
+  flex: none;
+  color: var(--sp-muted);
+  font-size: 17px;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chevron {
+  flex: none;
+  margin-right: -4px;
+  color: var(--sp-muted);
+}
+
+// "This device": 13pt, muted, over its card.
+.section {
+  margin: 0 0 -16px 2px;
+  color: var(--sp-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.activity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+}
+
+.activityText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 17px;
+  line-height: 22px;
+
+  small {
+    color: var(--sp-muted);
+    font-size: 13px;
+    line-height: 18px;
+  }
+}
+
+.amount {
+  flex: none;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+
+  &[data-incoming] {
+    color: #1f9d55;
+  }
+}
+
+.empty {
+  margin: 0;
+  padding: 18px 0;
+  color: var(--sp-muted);
+  font-size: 15px;
+}

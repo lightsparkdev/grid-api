@@ -231,12 +231,16 @@ card. Rewrite them when the API lands.
   in `TERMS` and a rerun with `--only`.
 - Product photos are generated in the Apple Store style (a studio render on
   white), cut out to transparent, trimmed, and padded to 800x800 WebP.
-- The balance card opens a balance page (`BalancePage.tsx`): the balance with
-  Add money and Move to bank, today's spend against the limits, the linked
-  bank and saved card, and recent activity. It reads the live account. The
-  sheet apps draw it as a page sheet in their own colors (each sheet theme
-  sets `--bp-*`); Instinct links to it on app.instinct.com in Safari. Either
-  action closes the page and asks in the thread, as the tiles do.
+- The balance card opens a balance page: the balance with Add money and Move
+  to bank, today's spend against the limits, the linked bank and saved card,
+  and recent activity, from the live account (`balanceView` in
+  `BalancePage.tsx`). Each app lays it out as its own settings, from the
+  captures: Muse as Settings and Wallet (IMG_1907, IMG_1911), Grok as Settings
+  and Vault (IMG_1919, IMG_1922), Dots as Customize and Scheduled (IMG_1894–
+  1896), Duet as Claude's Settings (IMG_1930), and Instinct as its account
+  pages on app.instinct.com in Safari (IMG_1926, IMG_1929). Your agent gets a
+  plain iOS grouped page. Either action closes the page and asks in the
+  thread, as the tiles do.
 
 ### 2026-11-05: the thread scrolls
 

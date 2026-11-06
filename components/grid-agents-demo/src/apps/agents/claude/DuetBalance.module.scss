@@ -1,0 +1,141 @@
+// Duet balance (DuetBalance.tsx), measured at 3x from the Claude app's Settings (IMG_1930).
+// Colors come from DuetVault's theme: --sp-*, --dv-group, --dv-line, --dv-avatar.
+
+.body {
+  --db-blue: #2f63c9;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 17px;
+
+  :global([data-theme='dark']) & {
+    --db-blue: #82a5f5;
+  }
+}
+
+// White groups 17pt in with 22pt corners; the rule runs 15pt in from either side.
+.group {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--dv-group);
+
+  > * + * {
+    position: relative;
+
+    &::before {
+      position: absolute;
+      top: 0;
+      right: 15px;
+      left: 15px;
+      height: 1px;
+      background: var(--dv-line);
+      content: '';
+    }
+  }
+}
+
+// The account: a 40pt gray disc, the name, the muted line.
+.account {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+
+  strong {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 25px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--dv-avatar);
+}
+
+// A 52pt row: the 22pt line icon 18pt in, the label at 56pt, a value.
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 52px;
+  padding: 8px 18px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 17px;
+  line-height: 22px;
+  text-align: left;
+}
+
+button.row,
+button.solo {
+  cursor: pointer;
+}
+
+.solo {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 0;
+  font: inherit;
+  font-size: 17px;
+  text-align: left;
+}
+
+.blue {
+  color: var(--db-blue);
+}
+
+.icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  small {
+    color: var(--sp-muted);
+    font-size: 15px;
+    line-height: 20px;
+  }
+}
+
+.value {
+  flex: none;
+  color: var(--sp-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chevron {
+  margin-left: auto;
+  color: var(--sp-muted);
+}
+
+// "Account": 15pt, muted, 15pt in from the group.
+.label {
+  margin: 8px 15px -8px;
+  color: var(--sp-muted);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20px;
+}

@@ -29,7 +29,8 @@ import { BalanceCard, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '.
 import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
 import { cardLabel } from '../vault/useCardEntry';
-import { DotGlyph, useDotBalance, useDotBank, useDotCard } from './DotVault';
+import { useDotBalance } from './DotBalance';
+import { DotGlyph, useDotBank, useDotCard } from './DotVault';
 import { ADDRESS, PERSON } from '../story';
 import type { AgentChatProps } from '../types';
 import styles from './DotChat.module.scss';

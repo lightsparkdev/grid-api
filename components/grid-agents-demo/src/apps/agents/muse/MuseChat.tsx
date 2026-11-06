@@ -9,7 +9,8 @@ import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentBalance, AskRow, Chip, Message, Product } from '../conversation';
 import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
-import { ConnectorCard, useMuseBalance, useMuseBank, useMuseCard } from './MuseConnect';
+import { useMuseBalance } from './MuseBalance';
+import { ConnectorCard, useMuseBank, useMuseCard } from './MuseConnect';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
 

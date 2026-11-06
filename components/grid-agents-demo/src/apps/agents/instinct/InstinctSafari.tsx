@@ -1,11 +1,19 @@
 import type { ReactNode } from 'react';
+import { IconArrowDown } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowDown';
+import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
+import { IconCoins } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCoins';
+import { IconCreditCard1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCard1';
+import { IconGauge } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGauge';
+import { IconLock } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLock';
 import { SfSymbol } from '@/apps/shared/icons';
 import { SafariBar } from '@/apps/shared/appSwitch';
 import type { AccountSnapshot } from '@/data/agentApiCalls';
-import { BalanceDetails, type BalanceAction } from '../BalancePage';
+import { BankMark } from '../BankMark';
+import { balanceView, type BalanceAction } from '../BalancePage';
 import type { AgentAsk, AskState, SubAgent } from '../conversation';
 import { askButtons } from '../parts';
 import { InstinctBank, SiteBar, SiteField } from './InstinctBank';
+import bal from './InstinctBalance.module.scss';
 import styles from './InstinctSafari.module.scss';
 
 export const INSTINCT_HOST = 'app.instinct.com';
@@ -99,17 +107,96 @@ export function InstinctSafari({
   );
 }
 
-/** The balance on app.instinct.com, opened from the link under its text: the same details the sheet apps show. */
+function BalanceSection({ title, sub, children }: { title: string; sub: string; children: ReactNode }) {
+  return (
+    <section className={bal.section}>
+      <h2>{title}</h2>
+      <p>{sub}</p>
+      {children}
+    </section>
+  );
+}
+
+function BalanceRow({ icon, title, sub, amount, incoming }: { icon?: ReactNode; title: string; sub: string; amount?: string; incoming?: boolean }) {
+  return (
+    <div className={bal.row}>
+      {icon && <span className={bal.icon}>{icon}</span>}
+      <span className={bal.rowText}>
+        <b>{title}</b>
+        <small>{sub}</small>
+      </span>
+      {amount && (
+        <span className={bal.amount} data-incoming={incoming || undefined}>
+          {amount}
+        </span>
+      )}
+    </div>
+  );
+}
+
+const SEGMENTS = 10;
+
+/**
+ * The balance on app.instinct.com, opened from the link under its text, laid out as the site's account pages
+ * (IMG_1926, IMG_1929): serif sections over a dark rule, the light serif counter with its segmented track
+ * ("0/10 invites used"), a black button and an outlined one, then rows of a glyph and two lines.
+ */
 export function InstinctBalancePage({ account, onAction, onBack }: { account: AccountSnapshot; onAction: (flow: BalanceAction) => void; onBack: () => void }) {
+  const v = balanceView(account);
+  const [whole, cents] = v.amount.split('.');
+  const filled = Math.round(v.ratio * SEGMENTS);
   return (
     <Safari onBack={onBack}>
       <div className={styles.sitePage}>
         <SiteBar left="close" onLeft={onBack} />
         <main className={styles.siteScroll}>
-          <h1 className={styles.siteTitle}>Your balance</h1>
-          <div className={styles.balance}>
-            <BalanceDetails account={account} onAction={onAction} />
-          </div>
+          <BalanceSection title="Balance" sub="What Instinct can spend for you">
+            <div className={bal.counter}>
+              <span className={bal.big}>
+                {whole}
+                <span>.{cents}</span>
+              </span>
+              <small>available · {v.left} left today</small>
+            </div>
+            <div className={bal.track} aria-hidden>
+              {Array.from({ length: SEGMENTS }, (_, i) => (
+                <i key={i} data-on={i < filled || undefined} />
+              ))}
+            </div>
+            <small className={bal.spent}>
+              {v.spent} of {v.daily} spent today
+            </small>
+            <button type="button" className={bal.black} onClick={() => onAction('fund')}>
+              Add money
+            </button>
+            <button type="button" className={bal.outline} onClick={() => onAction('cashout')}>
+              <IconArrowDown size={16} />
+              Move to bank
+            </button>
+          </BalanceSection>
+
+          <BalanceSection title="Limits" sub="Only you can change these. Instinct asks before anything over them.">
+            <BalanceRow icon={<IconCoins size={20} />} title="Per payment" sub={`Up to ${v.perPayment} at a time`} />
+            <BalanceRow icon={<IconGauge size={20} />} title="Daily" sub={`${v.daily} a day · ${v.left} left today`} />
+            <BalanceRow icon={<IconLock size={20} />} title="Approval" sub={`Asks you above ${v.asksAbove}`} />
+          </BalanceSection>
+
+          <BalanceSection title="Linked" sub="Where money comes from and goes back to">
+            <BalanceRow
+              icon={v.bank ? <BankMark bank={v.bank.name} country={v.bank.country} size={28} /> : <IconBank size={20} />}
+              title="Bank"
+              sub={v.bank ? `${v.bank.name} •••• ${v.bank.last4} · ${v.bank.rail}` : 'Not linked'}
+            />
+            <BalanceRow icon={<IconCreditCard1 size={20} />} title="Card" sub={v.card ? `${v.card.brand} •••• ${v.card.last4}` : 'Not saved'} />
+          </BalanceSection>
+
+          <BalanceSection title="Activity" sub="What came in and went out">
+            {v.activity.length ? (
+              v.activity.map((l) => <BalanceRow key={l.id} title={l.title} sub={l.detail} amount={l.amount} incoming={l.incoming} />)
+            ) : (
+              <p className={bal.empty}>Nothing yet.</p>
+            )}
+          </BalanceSection>
         </main>
       </div>
     </Safari>

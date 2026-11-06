@@ -4,7 +4,6 @@ import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-st
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { Flag } from '@/apps/shared/Flag';
 import type { BankCountry } from '@/data/bankCountries';
-import { useBalancePage, type BalancePageOptions } from '../BalancePage';
 import type { AgentAsk, Message } from '../conversation';
 import { GlassPill } from '../glass';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
@@ -131,9 +130,6 @@ function BankFlow({ payee, onLinked, onClose }: { payee?: AgentAsk['recipient'];
     </SheetSteps>
   );
 }
-
-/** Grok's balance page, in its Vault's colors. */
-export const useGrokBalance = (o: BalancePageOptions) => useBalancePage({ ...o, theme: styles.theme });
 
 /** Grok's bank flow: the form card's Continue opens it; closing leaves the card waiting. */
 export function useGrokBank({ messages, onAllow }: { messages: Message[]; onAllow: () => void }) {

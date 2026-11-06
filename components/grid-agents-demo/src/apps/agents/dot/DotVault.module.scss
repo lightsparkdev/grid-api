@@ -11,10 +11,6 @@
   --dv-tile-line: #e5e6e5;
   --dv-cta: #000;
   --dv-cta-text: #fff;
-  --bp-card: var(--dv-box);
-  --bp-line: var(--dv-line);
-  --bp-ink: var(--dv-cta);
-  --bp-ink-text: var(--dv-cta-text);
 
   :global([data-theme='dark']) & {
     --sp-bg: #0d0d0d;

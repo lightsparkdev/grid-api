@@ -17,7 +17,8 @@ import { BalanceCard, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '.
 import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
 import { bankDoneLabel } from '../vault/useBankPicker';
-import { useGrokBalance, useGrokBank } from './GrokBank';
+import { useGrokBalance } from './GrokBalance';
+import { useGrokBank } from './GrokBank';
 import type { AgentChatProps } from '../types';
 import { GrokEyes } from './GrokEyes';
 import styles from './GrokChat.module.scss';
