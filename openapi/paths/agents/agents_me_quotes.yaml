@@ -20,7 +20,8 @@ post:
     (`POST /quotes`).
 
     If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount
-    exceeds the agent's approvalThresholds, the resulting transaction will require
+    exceeds the agent's approvalThresholds or the approvalThreshold of the
+    spending pool the agent belongs to, the resulting transaction will require
     explicit approval before funds move.
   operationId: agentCreateQuote
   tags:
