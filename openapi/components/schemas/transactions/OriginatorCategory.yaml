@@ -1,0 +1,14 @@
+type: string
+enum:
+  - PLATFORM_PAYOUT
+  - OTHER
+description: |-
+  How Grid classified the sender of an external bank deposit when the deposit arrived.
+
+  | Category | Description |
+  |----------|-------------|
+  | `PLATFORM_PAYOUT` | The originator matched a known creator or marketplace platform that pays out earnings, such as OnlyFans, Snapchat or Meta. |
+  | `OTHER` | Any other sender. |
+
+  Set once when the deposit is recorded and never re-derived.
+example: PLATFORM_PAYOUT

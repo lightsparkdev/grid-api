@@ -29198,6 +29198,21 @@ components:
               description: UMA address of the sender
               example: $sender@uma.domain.com
           description: UMA address source details
+    OriginatorCategory:
+      type: string
+      enum:
+        - PLATFORM_PAYOUT
+        - OTHER
+      description: |-
+        How Grid classified the sender of an external bank deposit when the deposit arrived.
+
+        | Category | Description |
+        |----------|-------------|
+        | `PLATFORM_PAYOUT` | The originator matched a known creator or marketplace platform that pays out earnings, such as OnlyFans, Snapchat or Meta. |
+        | `OTHER` | Any other sender. |
+
+        Set once when the deposit is recorded and never re-derived.
+      example: PLATFORM_PAYOUT
     RealtimeFundingTransactionSource:
       title: External Funding Source
       allOf:
@@ -29259,6 +29274,14 @@ components:
               deprecated: true
               description: Deprecated. Use `railDetails.traceNumber` for ACH and `railDetails.imad` for wires. Rail-level tracking identifier for the payment. Still populated on rails without a `railDetails` variant, such as SWIFT.
               example: '021000020123456'
+            originatorCategory:
+              description: How Grid classified the originator when the deposit arrived. Absent for deposits recorded before Grid classified originators, and for sources with no originator.
+              allOf:
+                - $ref: '#/components/schemas/OriginatorCategory'
+            originatorPlatformName:
+              type: string
+              description: The platform Grid matched the originator to when `originatorCategory` is `PLATFORM_PAYOUT`, for example `OnlyFans` for a deposit sent by Fenix International. Absent otherwise.
+              example: OnlyFans
             railDetails:
               $ref: '#/components/schemas/RailDetailsOneOf'
             onChainTransaction:

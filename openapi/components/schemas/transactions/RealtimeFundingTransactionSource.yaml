@@ -86,6 +86,20 @@ allOf:
           tracking identifier for the payment. Still populated on rails without a
           `railDetails` variant, such as SWIFT.
         example: '021000020123456'
+      originatorCategory:
+        description: >-
+          How Grid classified the originator when the deposit arrived. Absent for
+          deposits recorded before Grid classified originators, and for sources with
+          no originator.
+        allOf:
+          - $ref: ./OriginatorCategory.yaml
+      originatorPlatformName:
+        type: string
+        description: >-
+          The platform Grid matched the originator to when `originatorCategory` is
+          `PLATFORM_PAYOUT`, for example `OnlyFans` for a deposit sent by Fenix
+          International. Absent otherwise.
+        example: OnlyFans
       railDetails:
         $ref: ./RailDetailsOneOf.yaml
       onChainTransaction:

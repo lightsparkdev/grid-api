@@ -10,6 +10,14 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
+## Classify who sent a bank deposit
+
+A `REALTIME_FUNDING` transaction source now carries `originatorCategory` and
+`originatorPlatformName`. When the originator of an incoming ACH or wire matches a known
+creator or marketplace platform that pays out earnings, such as Fenix International for
+OnlyFans, `originatorCategory` is `PLATFORM_PAYOUT` and `originatorPlatformName` names the
+platform. Every other sender is `OTHER`. Grid sets both once when the deposit is recorded.
+
 ## Issue a business's card to a named person
 
 `POST /cards` takes an optional `cardholder` for a `BUSINESS` customer: the person the
