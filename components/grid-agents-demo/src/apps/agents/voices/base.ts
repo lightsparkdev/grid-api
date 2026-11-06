@@ -1,6 +1,6 @@
 import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, Params, Product, SubAgent } from '../conversation';
 import { BANK_REACH } from '@/data/bankCountries';
-import { linkedBank, railTiming } from '../linkedBank';
+import { linkedBank, pullsFrom, railTiming } from '../linkedBank';
 import { shelfFor } from '../products';
 import { ADDRESS, PERSON, usd, usd2 } from '../story';
 
@@ -18,6 +18,11 @@ export const setupDone = (p: Params | undefined) => {
 /** "your Muse balance", and Your agent's "your balance" without saying your twice. */
 export const yours = (p: Params | undefined) => (s(p, 'wallet').startsWith('your ') ? s(p, 'wallet') : `your ${s(p, 'wallet')}`);
 
+/** "a Muse balance", or Your agent's "a balance". */
+const a = (p: Params | undefined) => (s(p, 'wallet').startsWith('your ') ? 'a balance' : `a ${s(p, 'wallet')}`);
+/** Withdrawn: on an instant rail it's there; ACH and bank transfers say when it lands. */
+const cashoutDone = (rail: string) =>
+  rail === 'ACH' ? 'Sent. It reaches your bank in 1–3 business days.' : rail === 'Bank Transfer' ? 'Sent. It should land within a business day.' : 'Done. It’s in your account.';
 /** "Your Muse balance", for a line that opens with it. */
 const Yours = (p: Params | undefined) => yours(p).charAt(0).toUpperCase() + yours(p).slice(1);
 /** What a purchase goes on: the saved card, or the app's balance. */
@@ -100,21 +105,23 @@ export const METAS = {
   'buy.tracking': () => ({ text: 'Created routine · Track the delivery', icon: 'routine' }),
   'sub.reminder': () => ({ text: 'Created routine · Remind me before it renews', icon: 'routine' }),
   'connect.limits': () => ({ text: 'Limits saved', icon: 'check' }),
-  'card.saved': () => ({ text: 'Visa •••• 4242 saved to your vault', icon: 'check' }),
+  'card.saved': () => ({ text: 'Visa •••• 4242 saved', icon: 'check' }),
   'bank.linked': () => ({ text: `${linkedBank().bankName} •••• ${linkedBank().last4} linked`, icon: 'check' }),
 } satisfies Record<string, (p?: Params) => AgentMeta>;
 
 export type MetaKey = keyof typeof METAS;
 
 export const LINES = {
-  greeting: () => `Hi! I can pay people in ${BANK_REACH} countries, shop and get paid for you. First I’ll need my own account, with limits you set. Start there, or ask me anything.`,
+  greeting: () => `Hi! I can pay people in ${BANK_REACH} countries, shop and get paid for you. Add a card or set up a balance to start, or ask me anything.`,
   'setup.auto': (p) => `Heads up: ${setupDone(p)}, so we can jump right in.`,
-  fallback: () => 'I can only help with your account here. Try one of the flows on the left.',
-  limited: () => 'Let’s keep going with the flows on the left. I’ve hit my chat limit for now.',
+  fallback: () => 'I can only help with money here: paying people, shopping, and getting paid.',
+  limited: () => 'I’ve hit my chat limit for now. You can still tap any of the things I can do.',
 
-  'connect.intro': () => 'First I’ll need my own account for that, with limits you set. Here’s what I’m asking for.',
-  'connect.done': () => 'Connected. I have my own account now, and I’ll stay inside the limits you set.',
-  'connect.denied': () => 'No problem. I won’t touch money until you connect me.',
+  'connect.intro': (p) =>
+    n(p, 'hasAgent') ? `First I’ll need ${a(p)} for that, with limits you set. Here’s what I’m asking for.` : 'First I’ll need my own account for that, with limits you set. Here’s what I’m asking for.',
+  'connect.self': (p) => (n(p, 'hasAgent') ? `Sure. Here’s ${a(p)} I’d set up, with limits you set.` : 'Sure. I’ll need my own account, with limits you set. Here’s what I’m asking for.'),
+  'connect.done': (p) => (n(p, 'hasAgent') ? `${Yours(p)} is on. I’ll stay inside the limits you set.` : 'Connected. I have my own account now, and I’ll stay inside the limits you set.'),
+  'connect.denied': (p) => (n(p, 'hasAgent') ? `No problem. I’ll keep paying with your ${CARD}.` : 'No problem. I won’t touch money until you connect me.'),
   'connect.already': (p) => `I’m already set up. Here’s ${yours(p)}.`,
 
   'fund.amount': () => 'How much do you want to add?',
@@ -130,36 +137,46 @@ export const LINES = {
   'bank.denied': () => 'Okay, no bank for now. You can link one any time.',
   'fund.done': (p) => `${usd(n(p, 'amount'))} landed. You have ${usd2(n(p, 'balance'))} now.`,
   'fund.card': (p) => `Adding ${usd(n(p, 'amount'))} from your Visa •••• 4242.`,
-  'card.intro': (p) => `Add a card once and I can pay with it or top up ${yours(p)} from it.`,
-  'card.forBuy': () => 'Add your card once and I’ll put this on it.',
+  'card.intro': (p) => (n(p, 'topUp') ? `Add a card once and I can pay with it or top up ${yours(p)} from it.` : 'Add a card once and I can pay with it.'),
+  'card.forBuy': () => 'Add your card once and I’ll take it from there.',
   'card.denied': () => 'Okay, no card for now. You can add one any time.',
-  'card.done': () => `Saved. I can pay with your ${CARD} now, or top up from it.`,
-  'card.already': () => `Your ${CARD} is already saved. I can pay with it or top up from it.`,
+  'card.done': (p) => (n(p, 'topUp') ? `Saved. I can pay with your ${CARD} now, or top up from it.` : `Saved. I can pay with your ${CARD} now.`),
+  'card.already': (p) => (n(p, 'topUp') ? `Your ${CARD} is already saved. I can pay with it or top up from it.` : `Your ${CARD} is already saved. I can pay with it.`),
+  'balance.offer': (p) => `Want a ${s(p, 'wallet').replace(/^your /, '')} too? You could keep money there, get paid into it, and send money abroad.`,
+  'balance.later': () => 'No problem. Just ask when you want one.',
   'bank.done': () => `Linked. I’ll keep your ${linkedBank().bankName} •••• ${linkedBank().last4} connected for next time, for adding money and withdrawing.`,
-  'bank.already': () => `Your ${linkedBank().bankName} •••• ${linkedBank().last4} is already connected. I can add money from it or withdraw to it.`,
+  'bank.already': () =>
+    pullsFrom(linkedBank())
+      ? `Your ${linkedBank().bankName} •••• ${linkedBank().last4} is already connected. I can add money from it or withdraw to it.`
+      : `Your ${linkedBank().bankName} •••• ${linkedBank().last4} is already connected. You can send money from it, and I can withdraw to it.`,
+  'balance.none': (p) => `You don’t have ${a(p)} yet. I pay with your ${CARD}.`,
 
   'limits.intro': () => 'I can’t change my own limits, so I sent it to you to confirm.',
   'limits.done': (p) => `Done. I’ll handle anything up to ${usd(n(p, 'approve'))} and ask you above it.`,
   'limits.denied': () => 'Okay, your limits stay as they are.',
   'limits.same': (p) => `Those are already my limits: I handle anything up to ${usd(n(p, 'approve'))}, ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day.`,
 
+  'pay.where': (p) => `Where does ${s(p, 'first')} bank? I can pay into banks in ${BANK_REACH} countries.`,
   'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank yet. Add it here once and I’ll send it.`,
   'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so I’ll send it over ${s(p, 'rail')}.${converted(p)}`,
   'pay.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m sending it now.`,
   'pay.done': (p) => `Sent. ${s(p, 'first')} has it, with a note that it’s from you.`,
   'pay.denied': () => 'Okay, I won’t send it.',
+  'limit.over': (p) => `That’s more than the ${usd(n(p, 'perTx'))} I can spend in one payment. Raise my limit and I’ll do it.`,
   'pay.over': (p) => `That’s more than the ${usd(n(p, 'perTx'))} I can send in one payment. Raise my limit and I’ll send it.`,
 
   'buy.intro': (p) => `Found three that fit. The ${s(p, 'merchant')} ${s(p, 'model')} is the best of them, ${usd2(n(p, 'amount'))} with standard shipping.`,
+  'buy.which': () => 'Want that one, or one of the others?',
   'buy.payWith': (p) => `Want me to pay from ${yours(p)} or your ${CARD}?`,
   'buy.shortCard': (p) => `${Yours(p)} won’t cover it. Should I put it on your ${CARD}, or do you want to add ${usd(n(p, 'amount'))} first?`,
+  'buy.noBalance': (p) => `I can put this on your card, or set up ${s(p, 'wallet').startsWith('your ') ? 'a balance' : `a ${s(p, 'wallet')}`} you can pay from.`,
   'buy.short': (p) => `You have ${usd2(n(p, 'balance'))} in ${yours(p)}. I can put this on your card instead, or you can add ${usd(n(p, 'amount'))} first.`,
   'buy.card': (p) =>
     n(p, 'card')
       ? `${short(p)}I’ll pay with a one-time card for exactly this order, charged to your ${CARD}.`
-      : `I’ll get a one-time card for exactly this order, so ${s(p, 'merchant')} never sees your real card.`,
+      : `I’ll pay from ${yours(p)} with a one-time card for exactly this order.`,
   'buy.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m checking out.`,
-  'buy.done': () => 'Ordered. It arrives Thursday, and the card closed itself after the charge.',
+  'buy.done': () => 'Ordered. It arrives Thursday.',
   'buy.denied': () => 'Okay, I won’t place the order. Nothing was charged.',
 
   'sub.intro': (p) => `${s(p, 'item')} is ${usd2(n(p, 'amount'))} a month.`,
@@ -186,7 +203,8 @@ export const LINES = {
   'cashout.empty': (p) => `There’s nothing in ${yours(p)} to move yet.`,
   'cashout.quote': (p) => `Moving ${s(p, 'local')} to your ${s(p, 'to')} over ${s(p, 'rail')}. ${railTiming(linkedBank())}`,
   'cashout.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m sending it now.`,
-  'cashout.done': () => 'Done. It’s in your account.',
+  'cashout.done': () => cashoutDone(linkedBank().country.rail),
+  'cashout.noBalance': (p) => `There’s nothing to move yet: you don’t have ${a(p)}. Add money to one and I can send it to your bank.`,
   'cashout.denied': () => 'Okay, the money stays put.',
 
   'balance.answer': (p) => `You have ${usd2(n(p, 'balance'))}. Here’s where things stand.`,
@@ -209,7 +227,8 @@ const limitsRows = (p?: Params): AgentAsk['rows'] => [
 
 export const ASKS = {
   connect: (p) => ({
-    title: `${s(p, 'agent')} wants its own account`,
+    // Already paying with their card, it has its account; this only adds the balance.
+    title: n(p, 'hasAgent') ? `Set up ${yours(p)}` : `${s(p, 'agent')} wants its own account`,
     rows: [
       { text: 'Its own balance', sub: 'Funded by you, separate from your bank', icon: 'wallet' },
       { text: `Up to ${usd(n(p, 'perTx'))} a payment`, sub: `${usd(n(p, 'daily'))} a day`, icon: 'gauge' },
@@ -219,7 +238,7 @@ export const ASKS = {
     allowed: 'Connected',
   }),
   limits: (p) => ({
-    title: `Update ${s(p, 'agent')}’s limits`,
+    title: `Update ${s(p, 'agent').replace(/^Your /, 'your ')}’s limits`,
     rows: limitsRows(p),
     allow: 'Save',
     allowed: 'Saved',
@@ -316,7 +335,7 @@ function balanceOf(p: Params | undefined, note: string): AgentBalance {
     wallet: wallet.charAt(0).toUpperCase() + wallet.slice(1),
     amount: usd2(n(p, 'balance')),
     note,
-    spent: { today: usd2(spent), limit: usd(daily), ratio: daily > 0 ? Math.min(1, spent / daily) : 0 },
+    spent: { today: usd2(spent), limit: usd(daily), ratio: daily > 0 ? Math.min(1, spent / daily) : 0, left: usd2(Math.max(0, daily - spent)) },
     stats: [
       { label: 'Left today', value: usd2(Math.max(0, daily - spent)) },
       { label: 'Per payment', value: usd(n(p, 'perTx')) },

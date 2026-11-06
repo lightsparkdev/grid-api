@@ -58,30 +58,26 @@ $foot: #f4f7fa;
   translate: -50% 0;
 }
 
-// The glass discs: 44pt at the top, 48pt in the toolbar.
+// The glass controls: 44pt discs at the top; a 48pt disc and a 104pt capsule in the toolbar.
 .disc {
-  display: grid;
-  place-items: center;
   width: 44px;
   height: 44px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: rgb(255 255 255 / 0.75);
-  box-shadow:
-    inset 0 0 0 0.5px rgb(255 255 255 / 0.9),
-    0 0 0 0.5px rgb(0 0 0 / 0.06),
-    0 4px 14px rgb(0 0 0 / 0.08);
-  backdrop-filter: blur(12px) saturate(1.6);
-  color: inherit;
+  color: #111;
+}
 
-  &:is(button) {
-    cursor: pointer;
-  }
+.glass {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
 
-  &[data-off] {
-    color: #a8a8a8;
-  }
+.glyphs {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 104px;
+  height: 48px;
 }
 
 .webview {
@@ -107,22 +103,14 @@ $foot: #f4f7fa;
   .disc {
     width: 48px;
     height: 48px;
+    color: #a8a8a8;
   }
 }
 
 .capsule {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
   width: 104px;
   height: 48px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.75);
-  box-shadow:
-    inset 0 0 0 0.5px rgb(255 255 255 / 0.9),
-    0 0 0 0.5px rgb(0 0 0 / 0.06),
-    0 4px 14px rgb(0 0 0 / 0.08);
-  backdrop-filter: blur(12px) saturate(1.6);
+  color: #111;
 }
 
 // ── Plaid's pages ──

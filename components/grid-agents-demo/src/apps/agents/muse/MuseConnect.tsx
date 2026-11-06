@@ -126,7 +126,7 @@ function Permission({ onConnect, onCancel }: { onConnect: () => void; onCancel: 
           </span>
         </li>
       </ul>
-      <p className={styles.permFine}>Muse never sees your bank login. You can manage this connection in Settings.</p>
+      <p className={styles.permFine}>You can manage this connection in Settings.</p>
       <GlassButton label="Connect" tint={BLUE} ink="#fff" height={46} size={340} className={styles.permConnect} onClick={onConnect}>
         Connect
       </GlassButton>
@@ -321,7 +321,7 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
             footer={<BlueButton busy={picker.busy} done={picker.stage === 'linked'} label="Save" doneLabel="Saved" onClick={picker.link} />}
           >
             <Details rows={bankFields(bank)} />
-            <p className={styles.note}>Muse pays {picker.payee.first} by account and never sees these numbers. Remove them at any time in Settings.</p>
+            <p className={styles.note}>Muse pays {picker.payee.first} by account. Remove them at any time in Settings.</p>
           </SheetPage>
         ) : (
           <SheetPage
@@ -414,7 +414,7 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
   return (
     <SheetPage
       title="Add a card"
-      heading={<Hero art={<IconCreditCard1 size={26} />} title="Add a card" sub="Securely save a card for Muse to use when topping up or paying for you." />}
+      heading={<Hero art={<IconCreditCard1 size={26} />} title="Add a card" sub="Securely save a card for Muse to pay with." />}
       leading={
         <SheetDisc label="Close" onClick={onClose} disabled={entry.busy}>
           <IconCrossMedium size={22} />

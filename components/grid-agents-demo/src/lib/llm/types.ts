@@ -34,6 +34,8 @@ export interface ModelAnswer {
   checkIn?: string;
   checkOut?: string;
   guests?: number;
+  /** More flows asked for in the same message, after this one, each with its own details. */
+  then?: (Omit<ModelAnswer, 'replies' | 'suggestions' | 'then'> & { flow: string })[];
 }
 
 export interface ModelRequest {
@@ -61,6 +63,8 @@ export interface AgentResponse {
   flow?: ActionId;
   variant?: number;
   params?: FlowParams;
+  /** Flows asked for in the same message, to run in order once this one finishes. */
+  then?: { flow: ActionId; variant: number; params?: FlowParams }[];
   suggestions?: string[];
   fallback?: string;
 }

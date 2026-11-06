@@ -155,7 +155,7 @@ export function BankLinkFlow({
                   <h2 className={styles.title}>{payee ? `${payee.first}’s bank` : `Your ${countryShort(bank.country)} bank`}</h2>
                   <p className={styles.sub}>
                     {payee
-                      ? `${payeeBlurb(bank, payee.first)} Your agent pays by account and never sees these numbers.`
+                      ? `${payeeBlurb(bank, payee.first)} Your agent pays by account.`
                       : `Money moves over ${bank.country.rail} in ${bank.currency}, in and out of your ${wallet}.`}
                   </p>
                   <div className={styles.fields}>
@@ -260,7 +260,7 @@ function CardForm({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
       </header>
       <div className={styles.scroll}>
         <h2 className={styles.title}>Add a card</h2>
-        <p className={styles.sub}>Save it to your vault to top up from it later. Your agent never sees the number.</p>
+        <p className={styles.sub}>Save it once and your agent can pay with it.</p>
         <div className={styles.fields}>
           {cardFields(ask).map((f) => (
             <Field key={f.key} label={f.label} value={f.value} />
@@ -333,7 +333,7 @@ export function VaultCardAsk({
         <i />
       </span>
       <strong className={styles.askTitle}>{state === 'done' ? `${cardLabel(ask)} saved` : ask.title}</strong>
-      <span className={styles.askNote}>Your agent never sees the card number.</span>
+      <span className={styles.askNote}>Remove it any time in Settings.</span>
       {!b.settled && (
         <span className={styles.askActions}>
           <button type="button" className={styles.askDeny} disabled={b.pressing} onClick={onDeny}>

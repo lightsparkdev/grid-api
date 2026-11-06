@@ -4,6 +4,7 @@ import { BANK_COUNTRIES } from '@/data/bankCountries';
 import { BankMark } from '../BankMark';
 import type { AgentAsk, Message } from '../conversation';
 import { bankFor, linkBank, type LinkedBank } from '../linkedBank';
+import { GlassPill, NoopButton, PressButton } from '../glass';
 import { AppSheet } from '../sheet';
 import styles from './PlaidLink.module.scss';
 
@@ -403,28 +404,41 @@ function MenuGlyph() {
   );
 }
 
-/** The system's web sheet: × and the domain over the page, Back and share-and-reload under it. */
+/** iOS's light glass: Plaid's page stays light in dark mode, so its controls do too. */
+const LIGHT_GLASS = 'rgba(244, 244, 246, 0.6)';
+
+/** The system's web sheet: × and the domain over the page, Back and share-and-reload under it, all on glass. */
 function Browser({ onClose, children }: { onClose: () => void; children: ReactNode }) {
   return (
     <div className={styles.browser}>
       <div className={styles.top}>
-        <button type="button" className={styles.disc} aria-label="Close" onClick={onClose}>
-          <Cross />
-        </button>
+        <PressButton label="Close" className={styles.disc} onClick={onClose}>
+          <GlassPill radius={22} tint={LIGHT_GLASS} className={styles.glass}>
+            <Cross />
+          </GlassPill>
+        </PressButton>
         <span className={styles.domain}>secure.plaid.com</span>
-        <span className={styles.disc} aria-hidden>
-          <MenuGlyph />
-        </span>
+        <NoopButton label="Menu" className={styles.disc}>
+          <GlassPill radius={22} tint={LIGHT_GLASS} className={styles.glass}>
+            <MenuGlyph />
+          </GlassPill>
+        </NoopButton>
       </div>
       <div className={styles.webview}>{children}</div>
-      <div className={styles.bottom} aria-hidden>
-        <span className={styles.disc} data-off>
-          <Chevron />
-        </span>
-        <span className={styles.capsule}>
-          <ShareGlyph />
-          <ReloadGlyph />
-        </span>
+      <div className={styles.bottom}>
+        <NoopButton label="Back" size={48} className={styles.disc}>
+          <GlassPill radius={24} tint={LIGHT_GLASS} className={styles.glass}>
+            <Chevron />
+          </GlassPill>
+        </NoopButton>
+        <NoopButton label="Share and reload" size={104} className={styles.capsule}>
+          <GlassPill radius={24} tint={LIGHT_GLASS} className={styles.glass}>
+            <span className={styles.glyphs}>
+              <ShareGlyph />
+              <ReloadGlyph />
+            </span>
+          </GlassPill>
+        </NoopButton>
       </div>
     </div>
   );

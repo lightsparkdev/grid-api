@@ -237,8 +237,18 @@ card. Rewrite them when the API lands.
   quote with the external account as source, executed at once); anywhere else
   the person sends it to the details a real-time funded quote issues (CLABE,
   PIX key, IBAN, or a SWIFT wire), as the Global Accounts playground does.
-- Agent runs in Muse join on 6.5pt corners for every kind of message,
-  including cards, checkouts and one-line bubbles.
+- Card first, balance later: adding a card creates the agent without a
+  balance, then offers one. Declined, nothing mentions a balance until the
+  person asks for something that holds money (adding money, getting paid,
+  paying someone), which asks for it first; tiles do the same rather than
+  turning it on silently.
+- Asked to find something, the agent recommends one of three and the person
+  picks; something they named (the saved ring light) it buys directly.
+- One message can ask for several things ("$100 from my card and $100 from
+  my bank"); they run in order, and a no anywhere ends the rest.
+- Agent runs join on 6.5pt corners for every kind of message, including
+  cards, checkouts and one-line bubbles; a bubble is reshaped whenever its
+  place in a run changes, not only when it resizes.
 
 ### 2026-11-06: approve only, bank marks, and a balance page
 

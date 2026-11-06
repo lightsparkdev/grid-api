@@ -33,6 +33,12 @@ export const linkedBank = () => linked;
 /** Whether the person has linked one this visit (the default above only stands in for the agent's lines). */
 export const hasLinkedBank = () => linkedYet;
 
+/** Back to the default with nothing linked, as a Reset leaves the account. */
+export function resetLinkedBank() {
+  linked = bankFor(BANK_COUNTRIES.find((c) => c.code === 'us')!);
+  linkedYet = false;
+}
+
 export function linkBank(bank: LinkedBank) {
   linked = bank;
   linkedYet = true;

@@ -102,7 +102,7 @@ export function BalanceCard({
             <i style={{ width: `${Math.max(2, balance.spent.ratio * 100)}%` }} />
           </span>
           <small>
-            {balance.spent.today} of {balance.spent.limit} today
+            {balance.spent.left} left of {balance.spent.limit} today
           </small>
         </span>
       )}

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FlowEntry, FreeTextReply } from '@/apps/agents/brain/useAgentBrain';
 import type { Chip } from '@/apps/agents/conversation';
-import { flowSpend, NEEDS_CONNECTION, type FlowContext } from '@/apps/agents/flows';
+import { flowSpend, needsSetup, type FlowContext } from '@/apps/agents/flows';
+import { resetLinkedBank } from '@/apps/agents/linkedBank';
 import { resetRecipients, savedRecipients } from '@/apps/agents/recipients';
 import { voiceFor } from '@/apps/agents/voices';
 import type { Entry } from '@/components/ApiPanel/types';
@@ -26,10 +27,14 @@ const CALL_STAGGER_MS = 650;
  * (an installed agent, money to spend) is set up silently, so any tile works
  * from any starting point. State only; nothing is logged for it.
  */
-function prepare(session: AgentSession, id: ActionId): NonNullable<FlowEntry['setup']> {
-  const connected = NEEDS_CONNECTION[id] && !session.snapshot().connected;
+function prepare(session: AgentSession, id: ActionId, variant: number): NonNullable<FlowEntry['setup']> {
+  const a = session.snapshot();
+  // A card-only account passed on a balance once: the flow asks for one, as it does when typed, rather than
+  // turning it on behind their back.
+  if (a.connected && !a.balanceOn && needsSetup(id, a)) return { connected: false, funded: 0 };
+  const connected = needsSetup(id, a);
   if (connected) session.assumeConnected();
-  const need = flowSpend(id);
+  const need = flowSpend(id, undefined, variant);
   const have = session.snapshot().balanceCents;
   // A purchase goes on the saved card when the balance is short, so there's nothing to top up.
   const onCard = id === 'buy' && session.snapshot().cardVaulted;
@@ -174,6 +179,7 @@ export function useAgentsDemoLogic() {
     const money = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
     const state: PromptState = {
       connected: a.connected,
+      balanceOn: a.balanceOn,
       balance: money(a.balanceCents),
       approvalAbove: money(a.limits.approvalAbove),
       perTx: money(a.limits.perTransaction),
@@ -193,6 +199,7 @@ export function useAgentsDemoLogic() {
         return {
           said: { text: data.reply ?? '', voices: data.replies },
           flow: data.flow ? { id: data.flow, variant: data.variant ?? 0, params: data.params } : undefined,
+          then: data.then?.map((t) => ({ id: t.flow, variant: t.variant, params: t.params })),
           suggestions: data.suggestions?.map(suggestionChip),
         };
       }
@@ -206,7 +213,7 @@ export function useAgentsDemoLogic() {
   const handleAction = useCallback(
     (id: ActionId) => {
       const session = sessionRef.current;
-      const setup = prepare(session, id);
+      const setup = prepare(session, id, runs[id]);
       setAccount(session.snapshot());
       setEntry({ nonce: Date.now(), flow: id, variant: runs[id], setup });
     },
@@ -220,6 +227,7 @@ export function useAgentsDemoLogic() {
     clearTimers();
     resetRecipients();
     sessionRef.current = createAgentSession(() => voiceFor(connectorRef.current).name);
+    resetLinkedBank();
     groupRef.current = null;
     nextAt.current = 0;
     setAccount(sessionRef.current.snapshot());

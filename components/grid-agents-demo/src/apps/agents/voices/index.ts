@@ -30,6 +30,16 @@ export interface Voice {
   subagent(key: string, params?: Params): SubAgent;
 }
 
+/** Names that keep their capital at the start of a sentence in a lowercase voice. */
+const PROPER = /^(Visa|Muse|Dots|Bot|Grok|Duet|Claude|Instinct|Plaid|Chase|Hotel|PIX|SPEI|ACH|SEPA|UPI|USDC|Bitcoin|[A-Z]{2,})/;
+
+/** A neutral line in a lowercase voice (Dots, Instinct): each sentence opens lowercase, and so does "I". */
+export function casual(text: string): string {
+  return text
+    .replace(/(^|[.!?]\s+)([A-Z][\w’']*)/g, (m, pre: string, word: string) => (PROPER.test(word) ? m : pre + word[0].toLowerCase() + word.slice(1)))
+    .replace(/\bI(?=[’'\s,.!?]|$)/g, 'i');
+}
+
 /** An app's voice: its own lines where it has them, the neutral ones otherwise. */
 export function voiceFor(connector: ConnectorId): Voice {
   const v = VOICES[connector];
@@ -37,7 +47,12 @@ export function voiceFor(connector: ConnectorId): Voice {
   return {
     id: connector,
     name: v.name,
-    line: (key, params) => (v.lines?.[key as LineKey] ?? LINES[key as LineKey] ?? (() => key))(withName(params)),
+    line: (key, params) => {
+      const own = v.lines?.[key as LineKey];
+      if (own) return own(withName(params));
+      const text = (LINES[key as LineKey] ?? (() => key))(withName(params));
+      return v.casual ? casual(text) : text;
+    },
     ask: (key, params) => (v.asks?.[key as AskKey] ?? ASKS[key as AskKey])(withName(params)),
     note: (key, params) => (v.notes?.[key as NoteKey] ?? NOTES[key as NoteKey])(withName(params)),
     status: (key, params) => (v.status?.[key as StatusKey] ?? STATUS[key as StatusKey] ?? (() => key))(withName(params)),

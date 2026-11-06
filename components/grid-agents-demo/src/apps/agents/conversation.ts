@@ -92,7 +92,7 @@ export interface AgentBalance {
   amount: string;
   note: string;
   /** Spent today against the daily limit, 0..1, for the apps that draw a track. */
-  spent: { today: string; limit: string; ratio: number };
+  spent: { today: string; limit: string; ratio: number; left: string };
   stats: { label: string; value: string }[];
   activity: { title: string; detail: string; amount: string; incoming: boolean }[];
 }

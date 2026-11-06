@@ -69,7 +69,7 @@ function ListPage({ picker, onClose }: { picker: BankPicker; onClose: () => void
       )}
       <p className={styles.help}>
         {list.length
-          ? 'Grok Bot never sees your bank login. It only moves money to or from it when you ask.'
+          ? 'Your Bot only moves money to or from it when you ask.'
           : `No banks in “${picker.query}” yet.`}
       </p>
     </SheetPage>
@@ -116,7 +116,7 @@ function DetailsPage({ picker, onClose }: { picker: BankPicker; onClose: () => v
       </div>
       <p className={styles.help}>
         {picker.payee
-          ? `${payeeBlurb(bank, picker.payee.first)} Your Bot pays by account and never sees these numbers.`
+          ? `${payeeBlurb(bank, picker.payee.first)} Your Bot pays by account.`
           : `Money moves over ${railLine(bank.country).replace(' · ', ' in ')}, in and out of your Bot balance.`}
       </p>
     </SheetPage>

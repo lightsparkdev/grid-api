@@ -112,7 +112,7 @@ export function InstinctBank({
             </div>
             <p className={styles.siteNote}>
               {payee
-                ? `${payeeBlurb(bank, payee.first)} Instinct pays by account and never sees these numbers.`
+                ? `${payeeBlurb(bank, payee.first)} Instinct pays by account.`
                 : `Money moves over ${railLine(bank.country).replace(' · ', ' in ')}, in and out of your Instinct balance. Instinct only moves it when you ask.`}
             </p>
             <button type="button" className={styles.black} data-pressing={picker.busy || undefined} disabled={picker.busy} onClick={picker.link}>

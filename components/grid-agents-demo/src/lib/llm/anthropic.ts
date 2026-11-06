@@ -16,6 +16,26 @@ const usd = (description: string) => ({ type: 'number', description });
 export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL || DEFAULT_MODEL): ModelAdapter {
   return {
     async answer({ system, turns, flows, variants, countries, methods, connectors }: ModelRequest): Promise<ModelAnswer> {
+      /** What a flow runs with: the top-level flow's details, and each queued flow's. */
+      const details = {
+        name: { type: 'string', description: 'pay: the person being paid; getpaid: the person paying them. As they were named (e.g. "Maria" or "Maria Lopez").' },
+        country: { type: 'string', enum: countries, description: 'pay: where that person banks.' },
+        amount: { type: 'number', description: 'pay: the amount, in `currency`. fund and cashout: the amount in USD.' },
+        currency: { type: 'string', description: 'pay: "USD", or the ISO code of the recipient’s local currency if they gave it in that currency.' },
+        note: { type: 'string', description: 'pay: what it’s for, a few words, if they said.' },
+        method: { type: 'string', enum: methods, description: 'fund: where the money comes from, if they said. buy: "card" only if they want it on their credit or debit card.' },
+        approve: usd('limits: the most you may spend without asking, USD.'),
+        daily: usd('limits: the daily limit, USD.'),
+        perTx: usd('limits: the per-payment limit, USD.'),
+        merchant: { type: 'string', description: 'buy subscription: the service, as it brands itself (e.g. "Spotify Premium").' },
+        price: usd('buy subscription: its monthly price, USD.'),
+        city: { type: 'string', description: 'agent: the city to stay in, as people name it ("Tokyo", "Mexico City").' },
+        checkIn: { type: 'string', description: 'agent: check-in date, YYYY-MM-DD.' },
+        checkOut: { type: 'string', description: 'agent: check-out date, YYYY-MM-DD.' },
+        guests: { type: 'number', description: 'agent: how many people are staying, only if they said.' },
+        query: { type: 'string', description: 'buy order: what they want to buy, in a few words ("noise cancelling headphones", "running shoes").' },
+        variant: { type: 'string', enum: variants, description: 'buy: "order" for something to buy once, "subscription" for a subscription.' },
+      };
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -52,23 +72,14 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
                     maxItems: 4,
                     description: 'Only when your reply asks a question: up to 4 likely answers the person can tap, each 1 to 3 words.',
                   },
-                  name: { type: 'string', description: 'pay: the person being paid; getpaid: the person paying them. As they were named (e.g. "Maria" or "Maria Lopez").' },
-                  country: { type: 'string', enum: countries, description: 'pay: where that person banks.' },
-                  amount: { type: 'number', description: 'pay: the amount, in `currency`. fund and cashout: the amount in USD.' },
-                  currency: { type: 'string', description: 'pay: "USD", or the ISO code of the recipient’s local currency if they gave it in that currency.' },
-                  note: { type: 'string', description: 'pay: what it’s for, a few words, if they said.' },
-                  method: { type: 'string', enum: methods, description: 'fund: where the money comes from, if they said. buy: "card" only if they want it on their credit or debit card.' },
-                  approve: usd('limits: the most you may spend without asking, USD.'),
-                  daily: usd('limits: the daily limit, USD.'),
-                  perTx: usd('limits: the per-payment limit, USD.'),
-                  merchant: { type: 'string', description: 'buy subscription: the service, as it brands itself (e.g. "Spotify Premium").' },
-                  price: usd('buy subscription: its monthly price, USD.'),
-                  city: { type: 'string', description: 'agent: the city to stay in, as people name it ("Tokyo", "Mexico City").' },
-                  checkIn: { type: 'string', description: 'agent: check-in date, YYYY-MM-DD.' },
-                  checkOut: { type: 'string', description: 'agent: check-out date, YYYY-MM-DD.' },
-                  guests: { type: 'number', description: 'agent: how many people are staying, only if they said.' },
-                  query: { type: 'string', description: 'buy order: what they want to buy, in a few words ("noise cancelling headphones", "running shoes").' },
-                  variant: { type: 'string', enum: variants, description: 'buy: "order" for something to buy once, "subscription" for a subscription.' },
+                  ...details,
+                  then: {
+                    type: 'array',
+                    maxItems: 3,
+                    description:
+                      'Only when one message asks for more than one thing ("add $100 from my card and $100 from my bank"): the other flows after this one, in the order they asked, each with its own details. Your reply covers all of them.',
+                    items: { type: 'object', properties: { flow: { type: 'string', enum: flows }, ...details }, required: ['flow'] },
+                  },
                 },
                 required: ['replies', 'flow'],
               },

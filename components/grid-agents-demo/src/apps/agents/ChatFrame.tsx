@@ -238,6 +238,7 @@ function useBubbleShapes(stack: React.RefObject<HTMLDivElement>) {
       const radii = CORNERS.map(([q, prop]) => (tails.includes(q) ? 0 : parseFloat(cs.getPropertyValue(prop)) || 0));
       const smoothing = parseFloat(cs.getPropertyValue('--bubble-smoothing'));
       el.style.clipPath = smoothShapeClip(w, h, radii as [number, number, number, number], smoothing, true);
+      el.dataset.clip = radii.join(' ');
     };
     const ro = new ResizeObserver((entries) => entries.forEach((e) => shape(e.target as HTMLElement)));
     const seen = new WeakSet<Element>();
@@ -248,8 +249,12 @@ function useBubbleShapes(stack: React.RefObject<HTMLDivElement>) {
         ro.observe(b);
       });
     };
-    const mo = new MutationObserver(watch);
-    mo.observe(root, { childList: true, subtree: true });
+    // A bubble's place in a run (`data-pos`) changes its corners without changing its size, so it's reshaped then too.
+    const mo = new MutationObserver((records) => {
+      watch();
+      records.forEach((r) => r.type === 'attributes' && r.target instanceof HTMLElement && r.target.hasAttribute('data-bubble') && shape(r.target));
+    });
+    mo.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-pos'] });
     watch();
     return () => {
       mo.disconnect();

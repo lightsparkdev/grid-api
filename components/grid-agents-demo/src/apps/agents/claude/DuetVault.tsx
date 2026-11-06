@@ -44,7 +44,7 @@ export function DuetConnector({ ask, state, onOpen }: { ask: AgentAsk; state: As
         : `${cardLabel(ask)} is saved to your vault.`
       : ask.bank
         ? `Move money between your Duet balance and a bank in ${BANK_REACH} countries.`
-        : 'Save a card once and Duet can top up from it when you ask.';
+        : 'Save a card once and Duet can pay with it when you ask.';
   const action = payee ? (done ? 'Saved' : pending ? 'Saving…' : 'Add') : done ? 'Connected' : pending ? 'Connecting…' : 'Connect';
   return (
     <div className={styles.connector} data-state={state}>
@@ -190,7 +190,7 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
           <Rows rows={bankFields(bank)} />
           <p className={styles.foot}>
             {picker.payee
-              ? `${payeeBlurb(bank, picker.payee.first)} Duet pays by account and never sees these numbers.`
+              ? `${payeeBlurb(bank, picker.payee.first)} Duet pays by account.`
               : `Money moves over ${bank.country.rail} in ${bank.currency}, in and out of your balance. Duet only moves it when you ask.`}
           </p>
         </SheetPage>
@@ -249,7 +249,7 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
         <IconCreditCard1 size={36} />
       </Hero>
       <Rows rows={cardFields(ask)} />
-      <p className={styles.foot}>Saved to your vault. Duet can pay with it but never sees the number.</p>
+      <p className={styles.foot}>Saved to your vault. Remove it any time in Settings.</p>
     </SheetPage>
   );
 }

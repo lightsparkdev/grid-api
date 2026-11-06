@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ACTIONS, type ActionId } from '@/data/actions';
 import type { AgentEvent } from '@/data/agentEvents';
 import type { Beat, Chip, PayTo, Said, StoredMessage } from '../conversation';
-import { FLOWS, planFor, type FlowContext, type FlowParams } from '../flows';
+import { FLOWS, needsSetup, planFor, type FlowContext, type FlowParams } from '../flows';
 
 /** A tile's jump: put this flow's line in the composer. */
 export interface FlowEntry {
@@ -18,6 +18,8 @@ export interface FreeTextReply {
   said: Said;
   /** A flow the reply starts, as if its tile's line had been sent, with the details the person gave. */
   flow?: { id: ActionId; variant: number; params?: FlowParams };
+  /** More flows asked for in the same message: each starts once the one before it finishes. */
+  then?: { id: ActionId; variant: number; params?: FlowParams }[];
   /** Replies the person might tap instead of typing, under a question. */
   suggestions?: Chip[];
 }
@@ -119,6 +121,8 @@ export function useAgentBrain({
   const [awaitingAmount, setAwaitingAmount] = useState(false);
   /** Something said over an open ask that wasn't a yes or a no: answered once the ask is declined and the run ends. */
   const queued = useRef<string | null>(null);
+  /** The rest of what one message asked for, in order. A no, or anything new, drops them. */
+  const followUps = useRef<NonNullable<FreeTextReply['then']>>([]);
   const askRef = useRef<((text: string, meant?: string, shown?: boolean) => Promise<void>) | null>(null);
   /** Suggested replies under the agent's last answer: a tap sends one as if typed. */
   const suggested = useRef<{ id: number; chips: Chip[] } | null>({ id: 2, chips: STARTERS });
@@ -165,6 +169,7 @@ export function useAgentBrain({
   /** Stop whatever is playing: open asks and chips expire, typing settles. */
   const cancelRun = useCallback(() => {
     queued.current = null;
+    followUps.current = [];
     const run = runRef.current;
     if (!run) return;
     run.cancelled = true;
@@ -251,7 +256,9 @@ export function useAgentBrain({
             patch(id, (m) => (m.kind === 'ask' ? { ...m, state: 'denied' } : m));
             await sleep(500);
             if (!(await play(b.deny, run))) return false;
-            continue;
+            // A no ends the run: nothing after it plays, and the rest of what the message asked for is dropped.
+            followUps.current = [];
+            return false;
           }
           patch(id, (m) => (m.kind === 'ask' ? { ...m, state: 'pressing' } : m));
           await sleep(160);
@@ -309,12 +316,21 @@ export function useAgentBrain({
       setRunning(null);
       setBusy(false);
       if (finished && flow) cb.current.onCompleted?.(flow);
+      const following = finished ? followUps.current.shift() : undefined;
+      if (!finished) followUps.current = [];
+      if (following) {
+        const ctx: FlowContext = { ...cb.current.context(), variant: following.variant, params: following.params };
+        void startRef.current(following.id, planFor(following.id, ctx).filter((b) => !('react' in b)), 700);
+        return;
+      }
       const next = queued.current;
       queued.current = null;
       if (next) void askRef.current?.(next, next, false);
     },
     [play, clearWork],
   );
+  const startRef = useRef(start);
+  startRef.current = start;
 
   // A tile's jump, applied once: whatever was playing stops, and the tile's line goes out as the visitor's message.
   const lastNonce = useRef(0);
@@ -327,7 +343,8 @@ export function useAgentBrain({
     dropSuggestions();
     push({ kind: 'me', text });
     const ctx: FlowContext = { ...cb.current.context(), variant: entry.variant };
-    const beats = FLOWS[entry.flow](ctx);
+    // Still missing what it needs (a card-only account and a flow that holds money): ask, as the chat would.
+    const beats = needsSetup(entry.flow, ctx.account()) ? planFor(entry.flow, ctx) : FLOWS[entry.flow](ctx);
     // A shortcut that set things up on its own says so, right after it reacts.
     const setup = entry.setup;
     if (setup && (setup.connected || setup.funded > 0)) {
@@ -369,6 +386,7 @@ export function useAgentBrain({
       if (silent) setMessages((list) => list.filter((m) => m.id !== typingId));
       else patch(typingId, (m) => (m.kind === 'them' ? { ...m, said: answer.said, typing: false } : m));
       setBusy(false);
+      followUps.current = answer.then ?? [];
       if (answer.flow) {
         const ctx: FlowContext = { ...cb.current.context(), variant: answer.flow.variant, params: answer.flow.params };
         if (!silent) await sleep(700);

@@ -282,6 +282,8 @@ export interface Shelf {
   options: Product[];
   /** The one the agent buys. */
   pick: { brand: string; model: string; item: string; amount: number; image: string };
+  /** The person named this one (the ring light they saved): the agent buys it without asking which. */
+  named?: boolean;
 }
 
 /** What a request finds: the ring light's real listing for the tile (or a ring light), a category's three, or three made up. */
@@ -292,6 +294,7 @@ export function shelfFor(query?: string): Shelf {
       query: q || 'ring light',
       options: BUY_OPTIONS,
       pick: { brand: RING_LIGHT.merchant, model: 'RP10-H', item: RING_LIGHT.item, amount: RING_LIGHT.amount, image: RING_LIGHT.image },
+      named: true,
     };
   }
   const c = categoryFor(q);
@@ -308,6 +311,14 @@ export function shelfFor(query?: string): Shelf {
   }));
   const first = items[0];
   return { query: q, options, pick: { brand: first.brand, model: first.model, item: first.title, amount: first.price, image: image(0) } };
+}
+
+/** The shelf with another of its options picked, the one the person chose. */
+export function shelfWith(shelf: Shelf, i: number): Shelf {
+  const o = shelf.options[i];
+  if (!o || i === 0) return shelf;
+  const amount = Math.round(Number(o.price.replace(/[^0-9.]/g, '')) * 100);
+  return { ...shelf, pick: { brand: o.merchant, model: o.title.replace(new RegExp(`^${o.merchant}\\s+`), ''), item: o.title, amount, image: o.image } };
 }
 
 /** What the agent asks Grid to buy, and what the lines and cards read. */

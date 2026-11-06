@@ -24,6 +24,8 @@ import {
 export interface VoiceOverrides {
   /** What the agent calls itself. */
   name: string;
+  /** A lowercase voice: neutral lines it hasn't written its own way are lowercased to match (`casual`). */
+  casual?: boolean;
   /** What the app calls the money it holds for you. */
   wallet: string;
   lines?: Partial<Record<LineKey, LineFn>>;
@@ -47,18 +49,23 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     name: 'Muse',
     wallet: 'Muse balance',
     lines: {
-      greeting: () => `Hey! I can pay people in ${BANK_REACH} countries, shop and collect money for you. I’ll just need a Muse balance first, with limits you set. Tap below to start.`,
+      greeting: () => `Hey! I can pay people in ${BANK_REACH} countries, shop and collect money for you. Add a card or set up a Muse balance to start.`,
       'setup.auto': (p) => `Quick note: ${setupDone(p)}, so we can dive right in.`,
       'connect.already': () => 'Already set! Here’s your Muse balance.',
       'connect.intro': () => 'First I’ll set up a Muse balance for it, with limits you choose.',
+      'connect.self': (p) => (n(p, 'hasAgent') ? 'Happy to. Here’s the Muse balance I’d set up, with limits you choose.' : 'Happy to. I’ll set up a Muse balance with limits you choose.'),
       'connect.done': () => 'All set. Your Muse balance is ready, and I’ll always stay inside your limits.',
+      'connect.denied': (p) => (n(p, 'hasAgent') ? `No problem. I’ll keep paying with your ${CARD}.` : 'No problem. I won’t touch money until you set me up.'),
       'buy.intro': (p) => `Here are a few picks. The ${s(p, 'merchant')} ${s(p, 'model')} is the one I’d get: ${usd2(n(p, 'amount'))} with standard shipping.`,
-      'buy.card': (p) => `${short(p)}Here’s the final quote. Do these details look correct, and should I place the order with your ${n(p, 'card') ? CARD : 'Muse balance'}?`,
+      'buy.card': (p) =>
+        n(p, 'needs')
+          ? `${short(p)}Here’s the final quote. Do these details look correct, and should I place the order with your ${n(p, 'card') ? CARD : 'Muse balance'}?`
+          : `${short(p)}Here’s the final quote: ${usd2(n(p, 'amount'))} on your ${n(p, 'card') ? CARD : 'Muse balance'}.`,
       'buy.done': () => 'Ordered. It arrives Thursday, and tracking is in your inbox.',
       'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank yet. Add it once and I’ll take it from there.`,
       'pay.done': (p) => `Sent! ${s(p, 'first')} has it, and I let them know it’s from you.`,
       'agent.done': () => 'You’re booked. The confirmation is in your inbox.',
-      fallback: () => 'I can help with your Muse balance here. Try one of the flows on the left.',
+      fallback: () => 'I can only help with money here: paying people, shopping, and getting paid.',
     },
     asks: {
       buy: (p) => MUSE_ORDER(p),
@@ -81,11 +88,12 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     name: 'Grok Bot',
     wallet: 'Bot balance',
     lines: {
-      greeting: () => `Hey. Give me the money chores: paying people in ${BANK_REACH} countries, subscriptions, getting paid. First I need my own account and a leash. Pick one.`,
+      greeting: () => `Hey. Give me the money chores: paying people in ${BANK_REACH} countries, subscriptions, getting paid. Hand me a card or a balance, plus a leash. Pick one.`,
       'setup.auto': (p) => `FYI: ${setupDone(p)}. Skipped the paperwork.`,
       'connect.already': () => 'Already connected. Here’s the account.',
-      'connect.intro': () => 'First I need my own account and a leash. Here’s what I’m asking for.',
-      'connect.done': () => 'Connected. My own account, your rules.',
+      'connect.intro': (p) => (n(p, 'hasAgent') ? 'That needs a Bot balance. Here’s the deal.' : 'First I need my own account and a leash. Here’s what I’m asking for.'),
+      'connect.self': (p) => (n(p, 'hasAgent') ? 'Sure. Here’s the Bot balance deal.' : 'Sure. I need my own account and a leash. Here’s what I’m asking for.'),
+      'connect.done': (p) => (n(p, 'hasAgent') ? 'Bot balance on. Your rules.' : 'Connected. My own account, your rules.'),
       'pay.newRecipient': (p) => `No bank on file for ${s(p, 'first')}. Add it once and I’ll send it.`,
       'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'local')} is about ${usd(n(p, 'usd'))}.` : ''}`,
       'pay.done': (p) => `Sent. ${s(p, 'first')}’s got it. Receipt’s in your inbox.`,
@@ -93,7 +101,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'agent.intro': (p) => `${s(p, 'hotel')}’s agent wanted ${usd(n(p, 'listed'))}. Paying directly knocks off 10%: ${usd2(n(p, 'amount'))}.`,
       'getpaid.done': (p) => `${s(p, 'first')} paid. ${usd2(n(p, 'amount'))} in, ${usd2(n(p, 'balance'))} total.`,
       'balance.answer': (p) => `${usd2(n(p, 'balance'))}. Here’s the breakdown.`,
-      fallback: () => 'Not my department here. I only handle your account. Pick a flow on the left.',
+      fallback: () => 'Not my department. I only handle money: paying people, shopping, getting paid.',
     },
     asks: {
       connect: (p) => ({
@@ -115,7 +123,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
         ...ASKS.vault(),
         form: {
           title: 'Add your card',
-          sub: 'Never shown to your Bot. Only filled in your Bot’s vault.',
+          sub: 'Saved to your Bot’s vault. Remove it any time in Settings.',
           sheetTitle: 'Card',
           fields: [
             { label: 'Card number', value: '4242 4242 4242 4242' },
@@ -131,7 +139,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
         ...ASKS.bank(p),
         form: {
           title: 'Link your bank',
-          sub: `Banks in ${BANK_REACH} countries. Never shown to your Bot.`,
+          sub: `Banks in ${BANK_REACH} countries.`,
           sheetTitle: 'Bank account',
           fields: [],
           submitted: 'Linked your bank',
@@ -141,7 +149,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
         ...ASKS.recipient(p),
         form: {
           title: `Add ${s(p, 'first')}’s bank`,
-          sub: `${s(p, 'country')} · ${s(p, 'rail')}. Never shown to your Bot.`,
+          sub: `${s(p, 'country')} · ${s(p, 'rail')}.`,
           sheetTitle: 'Bank account',
           fields: [],
           submitted: `Saved ${s(p, 'first')}’s bank`,
@@ -167,17 +175,20 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
   /** OpenAI's dot: casual, lowercase, upbeat. */
   dot: {
     name: 'dot',
+    casual: true,
     wallet: 'Dots balance',
     lines: {
-      greeting: () => `hey! i can pay people in ${BANK_REACH} countries, buy stuff and collect money for you. first i’ll need a Dots balance, with limits you pick. try one of these:`,
+      greeting: () => `hey! i can pay people in ${BANK_REACH} countries, buy stuff and collect money for you. add a card or set up a Dots balance to start. try one of these:`,
       'setup.auto': (p) => `heads up: ${setupDone(p).toLowerCase().replace('dots balance', 'Dots balance')}, so we can jump right in!`,
       'fund.needed': (p) => `i’ll need ${usd(n(p, 'amount'))} in your **Dots balance** to cover that. how do you want to add it?`,
       'connect.already': () => 'already on! here’s your **Dots balance**:',
       'limits.same': (p) => `those are already my limits! i handle anything up to ${usd(n(p, 'approve'))}, ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day.`,
       'agent.already': (p) => `you’re already booked at ${lower(p, 'hotel')} for ${lower(p, 'dates')}! the confirmation’s in your inbox.`,
       'getpaid.already': (p) => `${lower(p, 'first')} already paid that invoice! nothing else is outstanding.`,
-      'connect.intro': () => 'first i’ll need a Dots balance for that, with limits you pick. here’s what i’m asking for:',
+      'connect.intro': () => 'first i’ll need a **Dots balance** for that, with limits you pick. here’s what i’m asking for:',
+      'connect.self': () => 'ooh yes. here’s the **Dots balance** i’d set up, with limits you pick:',
       'connect.done': () => 'done! your **Dots balance** is on, and i’ll stay inside your limits.',
+      'connect.denied': (p) => (n(p, 'hasAgent') ? `no problem! i’ll keep paying with your **${CARD}**.` : 'no problem! i won’t touch money until you set me up.'),
       'fund.amount': () => 'sure! how much should i add?',
       'fund.ask': () => 'pick what’s easiest:',
       'fund.done': (p) => `${usd(n(p, 'amount'))} landed! you’ve got ${usd2(n(p, 'balance'))} now.`,
@@ -191,17 +202,20 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'buy.intro': (p) => `found three that fit! the **${s(p, 'merchant')} ${s(p, 'model')}** is the best one, ${usd2(n(p, 'amount'))} with standard shipping:`,
       'buy.card': (p) =>
         n(p, 'card')
-          ? `${n(p, 'short') ? 'your **Dots balance** won’t cover it, so ' : ''}i’ll put it on your **${CARD}** through a one-time card for exactly this order. opening the checkout for you`
-          : 'i’ll pay from your **Dots balance** with a one-time card, so the store never sees your real card. opening the checkout for you',
+          ? `${n(p, 'short') ? 'your **Dots balance** won’t cover it, so ' : ''}i’ll put it on your **${CARD}** through a one-time card for exactly this order.${n(p, 'needs') ? ' opening the checkout for you' : ''}`
+          : `i’ll pay from your **Dots balance** with a one-time card for exactly this order.${n(p, 'needs') ? ' opening the checkout for you' : ''}`,
       'buy.payWith': () => `want me to pay from your **Dots balance** or your **${CARD}**?`,
       'buy.short': (p) => `you’ve got ${usd2(n(p, 'balance'))} in your **Dots balance**. i can put this on your card instead, or you can add ${usd(n(p, 'amount'))} first!`,
-      'card.forBuy': () => 'add your card once and i’ll put this on it!',
-      'card.done': () => `saved! i can pay with your **${CARD}** now, or top up from it.`,
+      'card.forBuy': () => 'add your card once and i’ll take it from there!',
+      'card.done': (p) => (n(p, 'topUp') ? `saved! i can pay with your **${CARD}** now, or top up from it.` : `saved! i can pay with your **${CARD}** now.`),
+      'balance.offer': () => 'want a **Dots balance** too? you could keep money there, get paid into it, and send money abroad.',
+      'balance.later': () => 'no problem! just ask when you want one.',
+      'buy.noBalance': () => 'i can put this on your card, or set up a **Dots balance** you can pay from.',
       'bank.kept': () => 'i’ll keep this account connected for next time, for adding money and withdrawing.',
       'bank.where': () => 'where’s your bank?',
-      'buy.done': () => 'ordered! it arrives **thursday**, and the card closed itself after the charge.',
+      'buy.done': () => 'ordered! it arrives **thursday**.',
       'pay.intro': (p) => `${lower(p, 'first')} banks with **${s(p, 'bank')}**, so i’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'local')} is **${usd2(n(p, 'usd'))}** right now.` : ''}`,
-      fallback: () => 'i can only help with your account here! try one of the flows on the left.',
+      fallback: () => 'i can only help with money here! paying people, shopping, getting paid.',
     },
     asks: {
       connect: (p) => ({
@@ -232,20 +246,22 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
   /** Instinct over iMessage: short texts, a lot more action than talk. */
   instinct: {
     name: 'Instinct',
+    casual: true,
     wallet: 'Instinct balance',
     lines: {
-      greeting: () => 'hey, it’s Instinct. text me anything money, paying someone abroad, a subscription. first i’ll need an Instinct balance',
+      greeting: () => 'hey, it’s Instinct. text me anything money, paying someone abroad, a subscription. add a card or set up an Instinct balance to start',
       'setup.auto': (p) => `fyi ${setupDone(p).replace(/^I /, 'i ')}`,
-      'fund.needed': (p) => `need ${usd(n(p, 'amount'))} in your Instinct balance to cover that. how do you want to send it?`,
+      'fund.needed': (p) => `need ${usd(n(p, 'amount'))} in your Instinct balance to cover that. how do you want to add it?`,
       'connect.already': () => 'already on. here’s where you’re at',
       'limits.same': (p) => `those are already my limits, ${usd(n(p, 'approve'))} on my own, ${usd(n(p, 'perTx'))} a payment, ${usd(n(p, 'daily'))} a day`,
       'agent.already': (p) => `you’re already booked at ${s(p, 'hotel')}, ${lower(p, 'dates')}`,
       'getpaid.already': (p) => `${s(p, 'first')} already paid, nothing outstanding`,
       'connect.intro': () => 'first i’ll need an Instinct balance for that, with limits you ok',
+      'connect.self': () => 'sure, here’s the Instinct balance i’d set up, with limits you ok',
       'connect.done': () => 'done. your Instinct balance is on, and i’ll stay inside your limits',
-      'connect.denied': () => 'ok, no money stuff then',
+      'connect.denied': (p) => (n(p, 'hasAgent') ? 'ok, no balance. i’ll keep using your card' : 'ok, no money stuff then'),
       'fund.amount': () => 'how much?',
-      'fund.ask': () => 'how do you want to send it?',
+      'fund.ask': () => 'how do you want to add it?',
       'fund.done': (p) => `got it. ${usd2(n(p, 'balance'))} in the account`,
       'limits.intro': () => 'i can’t change my own limits, you have to ok them',
       'limits.done': (p) => `done. i’ll ask you for anything over ${usd(n(p, 'approve'))}`,
@@ -260,7 +276,11 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
           : 'i’ll pay from your Instinct balance with a one-time card for exactly this order',
       'buy.payWith': () => `your Instinct balance or your ${CARD}?`,
       'buy.short': (p) => `you’ve got ${usd2(n(p, 'balance'))} in your Instinct balance. i can put this on your card, or you can add ${usd(n(p, 'amount'))} first`,
-      'card.forBuy': () => 'add your card once and i’ll put this on it',
+      'card.forBuy': () => 'add your card once and i’ve got it',
+      'balance.offer': () => 'want an Instinct balance too? you could keep money there, get paid into it, send money abroad',
+      'balance.later': () => 'ok, just ask when you want one',
+      'buy.noBalance': () => 'i can put this on your card, or set up an Instinct balance you can pay from',
+      'buy.which': () => 'that one, or one of the others?',
       'buy.shortCard': (p) => `your Instinct balance won’t cover it. put it on your ${CARD}, or add ${usd(n(p, 'amount'))} first?`,
       'bank.kept': () => 'i’ll keep it connected for next time, for adding money and withdrawing',
       'bank.where': () => 'where’s your bank?',
@@ -274,7 +294,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'cashout.bank': () => 'need your bank first. link it here',
       'balance.answer': () => 'here’s where you’re at',
       'history.answer': () => 'here’s this week',
-      fallback: () => 'i can only help with your account here. try a flow on the left',
+      fallback: () => 'i only do money here, paying people, shopping, getting paid',
     },
     asks: {
       connect: (p) => ({
@@ -312,18 +332,20 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     name: 'Claude',
     wallet: 'Duet balance',
     lines: {
-      greeting: () => `Payroll ran at 6 AM, all 14 people are paid. I can pay anyone in ${BANK_REACH} countries too, once I have my own account with limits you set.`,
+      greeting: () => `Payroll ran at 6 AM, all 14 people are paid. I can pay anyone in ${BANK_REACH} countries too, once you add a card or set up a balance.`,
       'setup.auto': (p) => `For the record: ${setupDone(p)}, so we could go straight to it.`,
-      'connect.intro': () => 'First I’ll need my own account for this, with limits you set. Here’s exactly what I’m asking for.',
-      'connect.done': () => 'Connected. I have my own account now, and I’ll stay inside the limits you set.',
+      'connect.intro': (p) =>
+        n(p, 'hasAgent') ? 'I’ll need a Duet balance for this, with limits you set. Here’s exactly what I’m asking for.' : 'First I’ll need my own account for this, with limits you set. Here’s exactly what I’m asking for.',
+      'connect.self': (p) => (n(p, 'hasAgent') ? 'Here’s the Duet balance, with limits you set.' : 'I’ll need my own account, with limits you set. Here’s exactly what I’m asking for.'),
+      'connect.done': (p) => (n(p, 'hasAgent') ? 'Your Duet balance is on, and I’ll stay inside the limits you set.' : 'Connected. I have my own account now, and I’ll stay inside the limits you set.'),
       'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank details yet. Add them here once, and I’ll send it right after.`,
       'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so I’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'local')} comes to ${usd2(n(p, 'usd'))} at today’s rate.` : ''}`,
       'buy.card': (p) => `${short(p)}I’ll pay with a virtual card locked to this one order${n(p, 'card') ? `, charged to your ${CARD}` : ''}.`,
-      'buy.done': () => 'Done. It ships Monday, and the card closed itself after the charge.',
+      'buy.done': () => 'Done. It arrives Thursday, and the receipt is filed.',
       'sub.card': (p) => `${short(p)}I’ll use a card only ${s(p, 'merchant')} can charge, capped at ${usd2(n(p, 'amount'))} a month${n(p, 'card') ? `, billed to your ${CARD}` : ''}.`,
       'agent.done': () => 'Booked. I added it to your calendar and filed the receipt.',
       'history.answer': () => 'Here’s what moved this week.',
-      fallback: () => 'I can only help with your account here. Try one of the flows on the left.',
+      fallback: () => 'I can only help with money here: paying people, shopping, and getting paid.',
     },
     asks: {
       pay: duetSpend('pay'),

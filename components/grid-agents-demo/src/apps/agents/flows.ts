@@ -5,7 +5,7 @@ import type { Beat, ChipGlyph, Params, PayTo } from './conversation';
 import { depositDetails, formatMoney, linkedBank, pullsFrom } from './linkedBank';
 import { draftRecipient, payeeFor, recipientNamed, type Recipient } from './recipients';
 import { hash, merchantFor, stayFor, stayParams } from './hotels';
-import { purchaseFor, shelfFor, shelfParams } from './products';
+import { purchaseFor, shelfFor, shelfParams, shelfWith, type Shelf } from './products';
 import { CASHOUT_AMOUNT, FUND, LUCIA, NEW_LIMITS, SUBSCRIPTION, usd2 } from './story';
 
 /* What each flow does once the visitor sends its line: the agent's beats, the
@@ -39,6 +39,8 @@ export interface FlowParams {
   price?: number;
   /** Buy online, an order: what they want, in their words ("noise cancelling headphones"). */
   query?: string;
+  /** Buy online: they just added money to pay from the balance, so it doesn't ask again. */
+  pay?: 'balance';
 }
 
 export interface FlowContext {
@@ -108,21 +110,24 @@ const paid = (ctx: FlowContext, title: string) => ctx.account().ledger.some((l) 
 
 const connect = (ctx: FlowContext): Beat[] => {
   const l = ctx.account().limits;
-  if (ctx.account().connected) return [{ react: '👍' }, { say: 'connect.already' }, { when: () => [{ card: 'balance', params: balanceParams(ctx) }] }];
+  const hasAgent = ctx.account().connected ? 1 : 0;
+  if (ctx.account().balanceOn) return [{ react: '👍' }, { say: 'connect.already' }, { when: () => [{ card: 'balance', params: balanceParams(ctx) }] }];
   return [
     { react: '❤️' },
-    { say: 'connect.intro' },
+    // On the way to something else it's a first step; asked for itself, it's the answer. Paying with their card
+    // already, it only adds a balance (`hasAgent`).
+    { say: ctx.then ? 'connect.intro' : 'connect.self', params: { hasAgent } },
     {
       ask: 'connect',
-      params: { perTx: l.perTransaction, daily: l.daily, approve: l.approvalAbove },
+      params: { perTx: l.perTransaction, daily: l.daily, approve: l.approvalAbove, hasAgent },
       faceId: true,
       allow: [
         { work: 'setup', ms: 1100 },
         { emit: { type: 'connect' } },
-        { say: 'connect.done' },
+        { say: 'connect.done', params: { hasAgent } },
         { when: () => [{ card: 'account.ready', params: balanceParams(ctx) }, ...(ctx.then?.() ?? [])] },
       ],
-      deny: [{ say: 'connect.denied' }],
+      deny: [{ say: 'connect.denied', params: { hasAgent } }],
     },
   ];
 };
@@ -143,7 +148,7 @@ const cardTopUp = (ctx: FlowContext, amount: number): Beat[] => [
       ];
       if (ctx.account().cardVaulted) return [{ say: 'fund.card', params: { amount } }, ...charge];
       return [
-        { say: 'card.intro' },
+        { say: 'card.intro', params: { topUp: 1 } },
         {
           ask: 'vault',
           faceId: true,
@@ -217,8 +222,22 @@ const vaultThen = (intro: string, after: () => Beat[]): Beat[] => [
   {
     ask: 'vault',
     faceId: true,
-    allow: [{ emit: { type: 'card.vault' } }, { meta: 'card.saved' }, { when: after }],
+    allow: [{ emit: { type: 'connect', lite: true } }, { emit: { type: 'card.vault' } }, { meta: 'card.saved' }, { when: after }],
     deny: [{ say: 'card.denied' }],
+  },
+];
+
+/** After a card goes in with no balance yet: the card already works, and a balance is there if they want one. */
+const offerBalance = (ctx: FlowContext): Beat[] => [
+  { say: 'balance.offer' },
+  {
+    chips: [
+      { label: 'Set up a balance', glyph: 'wallet' },
+      { label: 'Not now', glyph: 'card' },
+    ],
+    reply: true,
+    then: (picked) =>
+      picked === 0 ? connect(ctx).filter((b) => !('react' in b) && !('say' in b && b.say === 'connect.intro')) : [{ say: 'balance.later' }],
   },
 ];
 
@@ -227,14 +246,16 @@ const topUpFor = (ctx: FlowContext, spend: number) => Math.ceil((spend - ctx.acc
 
 /**
  * What a purchase is paid with. Asked for on the card, it goes on the card (saved first if it isn't yet). No card
- * saved, the balance. With one saved, an app whose checkout can switch it goes with what covers it (the card when
+ * saved, the balance; a card and no balance, the card. With both, an app whose checkout can switch it goes with what covers it (the card when
  * the balance is short, `short` so the line says why); elsewhere the agent asks: the card or a top-up when the
  * balance is short, the balance or the card when either covers it. On the card, the balance isn't touched.
  */
 function payWith(ctx: FlowContext, spend: number, go: (card: boolean, short?: boolean) => Beat[]): Beat[] {
   const a = ctx.account();
   if (ctx.params?.method === 'card') return a.cardVaulted ? go(true) : vaultThen('card.forBuy', () => go(true));
-  if (!a.cardVaulted) return go(false);
+  if (!a.cardVaulted || ctx.params?.pay === 'balance') return go(false);
+  // A card and no balance (they passed on one): the card, with nothing to say about a balance.
+  if (!a.balanceOn) return go(true);
   const short = a.balanceCents < spend;
   if (ctx.picksInCheckout) return go(short, short);
   if (short) {
@@ -264,16 +285,27 @@ function payWith(ctx: FlowContext, spend: number, go: (card: boolean, short?: bo
   ];
 }
 
-/** Add a card on its own: into the vault, each app's own way, to top up from later. */
+/**
+ * Add a card on its own: into the vault, each app's own way. It's enough to pay with on its own (the agent is
+ * created for it if it isn't yet); with no balance, the agent then offers one.
+ */
 const card = (ctx: FlowContext): Beat[] => {
-  if (ctx.account().cardVaulted) return [{ react: '👍' }, { say: 'card.already' }];
+  const a = ctx.account();
+  const topUp = a.balanceOn ? 1 : 0;
+  if (a.cardVaulted) return [{ react: '👍' }, { say: 'card.already', params: { topUp } }];
   return [
     { react: '👍' },
-    { say: 'card.intro' },
+    { say: 'card.intro', params: { topUp } },
     {
       ask: 'vault',
       faceId: true,
-      allow: [{ emit: { type: 'card.vault' } }, { meta: 'card.saved' }, { say: 'card.done' }],
+      allow: [
+        { emit: { type: 'connect', lite: true } },
+        { emit: { type: 'card.vault' } },
+        { meta: 'card.saved' },
+        { say: 'card.done', params: { topUp } },
+        { when: () => (ctx.account().balanceOn ? [] : offerBalance(ctx)) },
+      ],
       deny: [{ say: 'card.denied' }],
     },
   ];
@@ -343,7 +375,8 @@ function limitsFor(ctx: FlowContext, from: Limits): Limits {
   const approvalAbove = cents(p.approve) ?? from.approvalAbove;
   const perTransaction = cents(p.perTx) ?? Math.max(from.perTransaction, approvalAbove);
   const daily = cents(p.daily) ?? Math.max(from.daily, perTransaction);
-  return { approvalAbove: Math.min(approvalAbove, perTransaction), perTransaction: Math.min(perTransaction, daily), daily };
+  const perTx = Math.min(perTransaction, daily);
+  return { approvalAbove: Math.min(approvalAbove, perTx), perTransaction: perTx, daily };
 }
 
 const limits = (ctx: FlowContext): Beat[] => {
@@ -417,7 +450,7 @@ const pay = (ctx: FlowContext): Beat[] => {
   const known = recipientNamed(p.name ?? '');
   if (known) return [{ react: '👍' }, ...sendTo(ctx, known, p)];
   const draft = draftRecipient(p.name ?? '', p.country ?? '');
-  if (!draft) return [{ say: 'fallback' }];
+  if (!draft) return [{ say: 'pay.where', params: { first: (p.name ?? '').split(' ')[0] } }];
   const params = recipientParams(draft);
   return [
     { react: '👍' },
@@ -445,10 +478,10 @@ function subscriptionFor(ctx: FlowContext): Purchase & { item: string } {
   return { merchant, item: merchant, description: `${merchant}, monthly`, amount: cents(price)!, recurring: true };
 }
 
-/** What a checkout's Pay with reads: the balance, whether a card is saved, and whether the balance covers it. */
+/** What a checkout's Pay with reads: the balance, whether there's a choice (a card and a balance), and whether it covers it. */
 const payParams = (ctx: FlowContext, spend: number) => {
   const a = ctx.account();
-  return { balance: a.balanceCents, saved: a.cardVaulted ? 1 : 0, enough: a.balanceCents >= spend ? 1 : 0 };
+  return { balance: a.balanceCents, saved: a.cardVaulted && a.balanceOn ? 1 : 0, enough: a.balanceCents >= spend ? 1 : 0 };
 };
 
 /**
@@ -456,7 +489,7 @@ const payParams = (ctx: FlowContext, spend: number) => {
  * checkout paid the new way, topping the balance up first if that's what was picked.
  */
 const swapFor = (ctx: FlowContext, spend: number, again: (onCard: boolean) => Beat[]) =>
-  ctx.picksInCheckout && ctx.account().cardVaulted
+  ctx.picksInCheckout && ctx.account().cardVaulted && ctx.account().balanceOn
     ? (to: PayTo): Beat[] => {
         const drop: Beat = { emit: { type: 'buy.withdraw' } };
         if (to !== 'topup') return [drop, ...again(to === 'card')];
@@ -497,16 +530,39 @@ const buy = (ctx: FlowContext): Beat[] => {
     ];
   }
   const shelf = shelfFor(ctx.params?.query);
-  const purchase = purchaseFor(shelf);
-  const params = shelfParams(shelf);
-  const spend = purchaseSpendLimit(purchase.amount);
+  // Something they named, it buys; three it found, it recommends one and they choose.
+  const choose: Beat[] = shelf.named
+    ? order(ctx, shelf)
+    : [
+        { say: 'buy.which' },
+        {
+          chips: shelf.options.map((o) => ({ label: o.title })),
+          reply: true,
+          then: (picked) => order(ctx, shelfWith(shelf, picked)),
+        },
+      ];
   return [
     { react: '👍' },
     { work: 'searching', ms: 1800 },
-    { say: 'buy.intro', params },
+    { say: 'buy.intro', params: shelfParams(shelf) },
     { products: 'buy.options', params: { query: shelf.query } },
+    ...choose,
+  ];
+};
+
+/** Checking out what was chosen: what pays, then the card for it. Short of money with no card, it tops up first. */
+function order(ctx: FlowContext, shelf: Shelf): Beat[] {
+  const purchase = purchaseFor(shelf);
+  const params = shelfParams(shelf);
+  const spend = purchaseSpendLimit(purchase.amount);
+  const a = ctx.account();
+  const need = spend - a.balanceCents;
+  if (need > 0 && a.balanceOn && !a.cardVaulted && ctx.params?.method !== 'card') {
+    return fund({ ...ctx, params: { amount: Math.ceil(need / 5_000) * 50 }, then: () => order(ctx, shelf) }).slice(1);
+  }
+  return [
     ...payWith(ctx, spend, function checkout(onCard: boolean, short = false, again = false): Beat[] {
-      const p = { ...params, card: onCard ? 1 : 0, short: short ? 1 : 0 };
+      const p = { ...params, card: onCard ? 1 : 0, short: short ? 1 : 0, needs: ctx.needsApproval(spend) ? 1 : 0 };
       return [
         ...(again ? [] : [{ say: 'buy.card', params: p }]),
         { emit: { type: 'buy.request', purchase: { ...purchase, byCard: onCard } } },
@@ -528,7 +584,7 @@ const buy = (ctx: FlowContext): Beat[] => {
       ];
     }),
   ];
-};
+}
 
 /** A stay booked by paying the hotel's own agent: the tile's Hotel Alma, or wherever and whenever someone asked. */
 const agent = (ctx: FlowContext): Beat[] => {
@@ -625,7 +681,10 @@ const cashout = (ctx: FlowContext): Beat[] => {
   return [{ react: '👍' }, ...linkOwnBank('cashout.bank', [{ say: 'bank.kept' }, { when: send }])];
 };
 
-const balance = (ctx: FlowContext): Beat[] => [
+const balance = (ctx: FlowContext): Beat[] =>
+  ctx.account().connected && !ctx.account().balanceOn ? [{ react: '👍' }, { say: 'balance.none' }, ...offerBalance(ctx).slice(1)] : balanceShown(ctx);
+
+const balanceShown = (ctx: FlowContext): Beat[] => [
   { work: 'checking', ms: 700 },
   { emit: { type: 'account.overview' } },
   {
@@ -680,34 +739,50 @@ export function planFor(flow: ActionId, ctx: FlowContext): Beat[] {
   const quiet = (beats: Beat[]) => beats.filter((b) => !('react' in b));
   const task = () => quiet(FLOWS[flow](ctx));
   const covered = (): Beat[] => {
-    const need = flowSpend(flow, ctx.params) - ctx.account().balanceCents;
+    const need = flowSpend(flow, ctx.params, ctx.variant) - ctx.account().balanceCents;
     if (need <= 0 || !TOPS_UP[flow]) return task();
     const amount = Math.ceil(need / 5_000) * 5_000;
-    const topUp = (): Beat[] => quiet(fund({ ...ctx, params: { amount: amount / 100 }, then: task }));
+    // Topped up to pay from the balance: a purchase then pays from it without asking again.
+    const fromBalance = (): Beat[] => (flow === 'buy' ? quiet(FLOWS.buy({ ...ctx, params: { ...ctx.params, pay: 'balance' } })) : task());
+    const topUp = (): Beat[] => quiet(fund({ ...ctx, params: { amount: amount / 100 }, then: fromBalance }));
     if (flow !== 'buy') return topUp();
     // A purchase can go on a card instead of the balance: the saved one, or one they add now.
     if (ctx.params?.method === 'card' || ctx.account().cardVaulted) return task();
+    // No balance at all: the card, or a balance to pay from (set up, then topped up).
+    const balanceOn = ctx.account().balanceOn;
     return [
-      { say: 'buy.short', params: { amount, balance: ctx.account().balanceCents } },
+      balanceOn ? { say: 'buy.short', params: { amount, balance: ctx.account().balanceCents } } : { say: 'buy.noBalance' },
       {
         chips: [
           { label: 'Use my card', glyph: 'card' },
-          { label: 'Add money', glyph: 'wallet' },
+          balanceOn ? { label: 'Add money', glyph: 'wallet' } : { label: 'Set up a balance', glyph: 'wallet' },
         ],
         reply: true,
-        then: (picked) =>
-          picked === 0
-            ? vaultThen('card.forBuy', () => quiet(FLOWS.buy({ ...ctx, params: { ...ctx.params, method: 'card' } })))
-            : topUp().map((b) => ('say' in b && b.say === 'fund.needed' ? { say: 'fund.ask' } : b)),
+        then: (picked) => {
+          if (picked === 0) return vaultThen('card.forBuy', () => quiet(FLOWS.buy({ ...ctx, params: { ...ctx.params, method: 'card' } })));
+          if (!balanceOn) return quiet(connect({ ...ctx, then: topUp })).filter((b) => !('say' in b && b.say === 'connect.intro'));
+          return topUp().map((b) => ('say' in b && b.say === 'fund.needed' ? { say: 'fund.ask' } : b));
+        },
       },
     ];
   };
-  if (NEEDS_CONNECTION[flow] && !ctx.account().connected) return connect({ ...ctx, then: covered });
+  const a = ctx.account();
+  // Things that can't happen anyway are said before any setup or top-up: over the per-payment limit, or nothing to move.
+  const spend = flowSpend(flow, ctx.params, ctx.variant);
+  if (OVER_LIMIT[flow] && spend > a.limits.perTransaction) return [{ react: '👍' }, { say: 'limit.over', params: { perTx: a.limits.perTransaction } }];
+  if (flow === 'cashout' && a.balanceOn && a.balanceCents <= 0) return [{ react: '👍' }, { say: 'cashout.empty' }];
+  if (flow === 'cashout' && !a.balanceOn) return [{ react: '👍' }, { say: 'cashout.noBalance' }];
+  // A purchase needs only the agent: a card can stand in for the balance, so it's offered before one is set up.
+  if (flow === 'buy' && !a.connected) return [{ react: '👍' }, ...covered()];
+  if (needsSetup(flow, a)) return connect({ ...ctx, then: covered });
   // Asked for directly, the agent's reply already says it's setting up.
-  if (flow === 'connect') return connect(ctx).filter((b) => !('say' in b && b.say === 'connect.intro'));
-  const need = flowSpend(flow, ctx.params) - ctx.account().balanceCents;
+  if (flow === 'connect') return connect(ctx).filter((b) => !('say' in b && b.say === 'connect.self'));
+  const need = spend - a.balanceCents;
   return need > 0 && TOPS_UP[flow] ? [{ react: '👍' }, ...covered()] : FLOWS[flow](ctx);
 }
+
+/** Flows whose one payment the per-payment limit caps, checked before anything else happens. */
+const OVER_LIMIT: Partial<Record<ActionId, boolean>> = { pay: true, buy: true, agent: true, cashout: true };
 
 /** Flows a short balance tops up for. Withdrawing more than you have is a no, not a reason to add money. */
 const TOPS_UP: Record<ActionId, boolean> = {
@@ -726,7 +801,7 @@ const TOPS_UP: Record<ActionId, boolean> = {
 };
 
 /** The most a run spends (USD cents), so a jump to it can top the balance up first. */
-export function flowSpend(flow: ActionId, params?: FlowParams): number {
+export function flowSpend(flow: ActionId, params?: FlowParams, variant = 0): number {
   switch (flow) {
     case 'pay': {
       const p = params?.name ? params : STORY_PAY;
@@ -734,7 +809,7 @@ export function flowSpend(flow: ActionId, params?: FlowParams): number {
       return r ? payeeFor(r, p.amount ?? 0, p.currency ?? 'USD').usd : 0;
     }
     case 'buy':
-      return Math.max(purchaseSpendLimit(shelfFor(params?.query).pick.amount), cents(params?.price) ?? 0);
+      return variant % 2 === 1 ? (cents(params?.price) ?? SUBSCRIPTION.amount) : purchaseSpendLimit(shelfFor(params?.query).pick.amount);
     case 'agent':
       return stayFor(params).amount;
     case 'cashout':
@@ -755,10 +830,18 @@ export function flowSpend(flow: ActionId, params?: FlowParams): number {
   }
 }
 
-/** Flows that need an installed agent: everything but Connect. */
-export const NEEDS_CONNECTION: Record<ActionId, boolean> = {
+/** Flows that only need the agent, not a balance: a card-only account can use them as it is. */
+const AGENT_ONLY = new Set<ActionId>(['limits', 'history', 'balance']);
+
+/** Whether a flow has to set the account up first: the agent for some, the agent and its balance for the rest. */
+export const needsSetup = (flow: ActionId, a: AccountSnapshot) =>
+  NEEDS_CONNECTION[flow] && (AGENT_ONLY.has(flow) || (flow === 'buy' && a.cardVaulted) ? !a.connected : !a.balanceOn);
+
+/** Flows that need the agent with its balance: everything but Connect, and a card (which sets the agent up on its
+ *  own). A purchase can go on a card instead; `planFor` offers that before a balance. */
+const NEEDS_CONNECTION: Record<ActionId, boolean> = {
   connect: false,
-  card: true,
+  card: false,
   bank: true,
   fund: true,
   limits: true,

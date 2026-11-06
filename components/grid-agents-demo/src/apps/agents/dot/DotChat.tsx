@@ -166,7 +166,7 @@ function SetupSheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow:
           </p>
         ))}
         <p>
-          Your dot can only spend what’s in your Dots balance, inside these limits. You can turn it off any time in{' '}
+          Your dot stays inside these limits. You can turn it off any time in{' '}
           <u>Settings</u>.
         </p>
       </div>

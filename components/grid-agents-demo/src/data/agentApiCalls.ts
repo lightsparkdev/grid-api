@@ -94,7 +94,10 @@ export interface LedgerEntry {
 }
 
 export interface AccountSnapshot {
+  /** The agent exists: created with its policy, its device code redeemed. */
   connected: boolean;
+  /** The person set up a balance for it to hold money in. Without one (a card only), it pays with the card. */
+  balanceOn: boolean;
   /** A credit or debit card is in the account's vault. */
   cardVaulted: boolean;
   /** A bank is linked to top up from over ACH. */
@@ -181,7 +184,7 @@ function seedLedger(): LedgerEntry[] {
   return [
     { id: nextId('Transaction'), at: now - 1 * day, title: 'Spotify', detail: 'Subscription · card', cents: -1199, status: 'COMPLETED' },
     { id: nextId('Transaction'), at: now - 3 * day, title: 'Blue Bottle Coffee', detail: 'One-time card', cents: -1850, status: 'COMPLETED' },
-    { id: nextId('Transaction'), at: now - 5 * day, title: 'Added funds', detail: 'Visa •••• 4242', cents: 3049, status: 'COMPLETED' },
+    { id: nextId('Transaction'), at: now - 5 * day, title: 'Added funds', detail: 'Bank transfer', cents: 3049, status: 'COMPLETED' },
   ];
 }
 
@@ -224,6 +227,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
   const agent = nextId('Agent');
   const createdAt = nowIso();
   let connected = false;
+  let balanceOn = false;
   let limits = { ...DEFAULT_LIMITS };
   let balance = OPENING_BALANCE_CENTS;
   let spentToday = 0;
@@ -464,8 +468,14 @@ export function createAgentSession(nameOf: () => string): AgentSession {
 
   /* ── Events ── */
 
-  const connect = (): CallStep[] => {
+  const connect = (lite = false): CallStep[] => {
+    // Already there for the card: the balance turns on, nothing new to create.
+    if (connected) {
+      balanceOn = balanceOn || !lite;
+      return [];
+    }
     connected = true;
+    balanceOn = !lite;
     const code = base64url(22);
     const deviceCode = { code, agentId: agent, expiresAt: toIso(Date.now() + 15 * 60_000), redeemed: false };
     return [
@@ -478,7 +488,9 @@ export function createAgentSession(nameOf: () => string): AgentSession {
             title: 'Create agent',
             reqBody: { name: nameOf(), customerId: CUSTOMER, policy: policyBody(limits) },
             status: '201 Created',
-            note: 'The person approved in your app; your backend creates the agent with its policy. The device code goes to the agent once.',
+            note: lite
+              ? 'The person saved a card for the agent to pay with; your backend creates the agent with the default policy. No balance yet. The device code goes to the agent once.'
+              : 'The person approved in your app; your backend creates the agent with its policy. The device code goes to the agent once.',
             resBody: { agent: { ...agentResource(), isConnected: false }, deviceCode },
           },
           {
@@ -1213,16 +1225,17 @@ export function createAgentSession(nameOf: () => string): AgentSession {
     needsApproval,
     assumeConnected: () => {
       connected = true;
+      balanceOn = true;
     },
     assumeFunded: (cents) => {
       balance += cents;
-      record('Added funds', 'Visa •••• 4242', cents);
+      record('Added funds', 'Bank transfer', cents);
     },
-    snapshot: () => ({ connected, cardVaulted: vaulted !== null, bankLinked: linkedBank !== null, balanceCents: balance, limits: { ...limits }, spentTodayCents: spentToday, ledger: ledger.slice() }),
+    snapshot: () => ({ connected, balanceOn, cardVaulted: vaulted !== null, bankLinked: linkedBank !== null, balanceCents: balance, limits: { ...limits }, spentTodayCents: spentToday, ledger: ledger.slice() }),
     stepsFor(event) {
       switch (event.type) {
         case 'connect':
-          return connect();
+          return connect(event.lite);
         case 'fund.deposit':
           return fundDeposit(event.network, event.currency, event.amount);
         case 'fund.received':

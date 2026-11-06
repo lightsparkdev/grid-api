@@ -104,7 +104,7 @@ export function InstinctSafari({
               <SiteField key={r.text} label={r.text} value={r.sub ?? ''} icon={r.icon === 'lock' ? <SfSymbol name="lock.fill" size={12} /> : undefined} />
             ))}
           </div>
-          <p className={styles.siteNote}>Only you can change these. Instinct never sees this page.</p>
+          <p className={styles.siteNote}>Only you can change these.</p>
           <button type="button" className={styles.black} data-pressing={b.pressing || undefined} disabled={busy} onClick={onAllow}>
             {b.pressing ? 'Saving…' : (ask.allow ?? 'Save to vault')}
           </button>

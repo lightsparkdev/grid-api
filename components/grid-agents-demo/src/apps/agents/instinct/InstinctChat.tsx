@@ -190,7 +190,7 @@ function InstinctImage({ note }: { note: AgentNote }) {
 
 /** The balance, as Instinct texts it: the number, then what's left of today. */
 function balanceText(b: AgentBalance) {
-  return `${b.amount} in your ${b.wallet}\n${b.spent.today} of ${b.spent.limit} spent today`;
+  return `${b.amount} in your ${b.wallet}\n${b.spent.left} left to spend today`;
 }
 
 /** When the receipt under your bubble changes, in ms from the send (recording 2). */

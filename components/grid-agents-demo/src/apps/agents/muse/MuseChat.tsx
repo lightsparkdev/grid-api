@@ -59,8 +59,8 @@ function BalanceArtifact({ balance, onOpen, pos }: { balance: AgentBalance; onOp
           <em>{balance.note}</em>
         </span>
         <span className={styles.tile}>
-          <small>Spent today</small>
-          <b>{balance.spent.today}</b>
+          <small>Left today</small>
+          <b>{balance.spent.left}</b>
         </span>
         <span className={styles.tile}>
           <small>Daily limit</small>
@@ -239,7 +239,7 @@ function ApprovalCard({
       <div className={styles.browserHead}>
         <span className={styles.globe}>{checkout ? <IconGlobe size={14} /> : <IconWallet1 size={14} />}</span>
         <span className={styles.browserTitle}>
-          <strong>{checkout ? 'Checkout' : 'Muse balance'}</strong>
+          <strong>{checkout ? 'Checkout' : ask.rows?.some((r) => r.icon === 'wallet') ? 'Muse balance' : 'Muse'}</strong>
           <small>
             {state === 'open'
               ? checkout

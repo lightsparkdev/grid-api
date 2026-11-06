@@ -131,8 +131,7 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
           </div>
           {picker.payee ? (
             <p className={styles.fine}>
-              {payeeBlurb(bank, picker.payee.first)} Your dot pays {picker.payee.first} by account, and never sees these
-              numbers.
+              {payeeBlurb(bank, picker.payee.first)} Your dot pays {picker.payee.first} by account.
             </p>
           ) : (
             <p className={styles.fine}>
@@ -276,7 +275,7 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
         ))}
       </div>
       <p className={styles.fine}>
-        Your card is saved to your Dots vault. Your dot can pay with it at checkout, but never sees the number.
+        Your card is saved to your Dots vault. Your dot can pay with it at checkout.
       </p>
     </SheetPage>
   );

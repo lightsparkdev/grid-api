@@ -85,7 +85,7 @@ function GrokBalancePage({ wallet, view: v, onClose, onAction }: BalancePageProp
         {v.bank && <Row lead={<IconBank size={20} className={styles.glyph} />} title={`${v.bank.name} ending ${v.bank.last4}`} sub={`${v.bank.rail} · ${v.bank.currency}`} />}
         {!v.card && !v.bank && <Row lead={<IconBank size={20} className={styles.glyph} />} title="Nothing saved yet" sub="A card or bank you add shows here" />}
       </div>
-      <p className={styles.help}>Grok Bot never sees a saved card&apos;s number or your bank login. It only moves money inside your limits.</p>
+      <p className={styles.help}>Your Bot only moves money inside your limits.</p>
 
       <div className={bank.tabs} role="tablist">
         {tabs.map((t) => (

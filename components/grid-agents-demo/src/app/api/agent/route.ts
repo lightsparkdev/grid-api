@@ -99,6 +99,7 @@ export async function POST(req: NextRequest) {
     .map((r) => ({ name: r.name.slice(0, MAX_NAME), country: r.country }));
   const state: PromptState = {
     connected: Boolean(body.state?.connected),
+    balanceOn: Boolean(body.state?.balanceOn),
     balance: money(body.state?.balance, '$0.00'),
     approvalAbove: money(body.state?.approvalAbove, '$10'),
     perTx: money(body.state?.perTx, '$1,000'),
@@ -133,12 +134,20 @@ export async function POST(req: NextRequest) {
     const reply = replies[connector] ?? '';
     if (!reply && !quiet) return fallback('error');
     const variant = flow === 'buy' && answer.variant === 'subscription' ? 1 : 0;
+    // The rest of what one message asked for, checked like the first; any that can't start are dropped.
+    const then = flow
+      ? (Array.isArray(answer.then) ? answer.then : []).flatMap((t) => {
+          const id = FLOWS.includes(t?.flow) ? (t.flow as ActionId) : undefined;
+          const p = id ? paramsFor(id, { ...t, replies: answer.replies }, recipients) : null;
+          return id && p !== null ? [{ flow: id, variant: id === 'buy' && t.variant === 'subscription' ? 1 : 0, ...(p ? { params: p } : {}) }] : [];
+        })
+      : [];
     // Suggestions are for countries and choices: guessing someone's name would be odd.
     const suggestions = flow || /\bname\b/i.test(reply) ? [] : suggestionsOf(answer.suggestions);
     return NextResponse.json({
       reply,
       replies,
-      ...(flow ? { flow, variant, ...(params ? { params } : {}) } : {}),
+      ...(flow ? { flow, variant, ...(params ? { params } : {}), ...(then.length ? { then } : {}) } : {}),
       ...(suggestions.length ? { suggestions } : {}),
     } satisfies AgentResponse);
   } catch (e) {
