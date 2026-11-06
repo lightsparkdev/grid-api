@@ -292,6 +292,12 @@ paths:
     $ref: paths/customers/customers_end-user-terms.yaml
   /customers/{customerId}/kyc-link:
     $ref: paths/customers/customers_{customerId}_kyc-link.yaml
+  /customers/{customerId}/stored-cards:
+    $ref: paths/customers/customers_{customerId}_stored-cards.yaml
+  /customers/{customerId}/stored-cards/{storedCardId}:
+    $ref: paths/customers/customers_{customerId}_stored-cards_{storedCardId}.yaml
+  /customers/{customerId}/stored-cards/{storedCardId}/agents/{agentId}:
+    $ref: paths/customers/customers_{customerId}_stored-cards_{storedCardId}_agents_{agentId}.yaml
   /customers/{customerId}/verify-email:
     $ref: paths/customers/customers_{customerId}_verify-email.yaml
   /customers/{customerId}/verify-email/confirm:
@@ -541,6 +547,12 @@ paths:
     $ref: paths/agents/agents_me_cards_{cardId}_tokenize.yaml
   /agents/me/cards/{cardId}/increase:
     $ref: paths/agents/agents_me_cards_{cardId}_increase.yaml
+  /agents/me/stored-cards:
+    $ref: paths/agents/agents_me_stored-cards.yaml
+  /agents/me/stored-cards/{storedCardId}/reveal:
+    $ref: paths/agents/agents_me_stored-cards_{storedCardId}_reveal.yaml
+  /stored-card-reveals/{token}:
+    $ref: paths/agents/stored-card-reveals_{token}.yaml
   /card-velocity-limits:
     $ref: paths/cards/card-velocity-limits.yaml
   /card-velocity-limits/{id}:
