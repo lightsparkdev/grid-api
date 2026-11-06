@@ -676,6 +676,8 @@ webhooks:
     $ref: webhooks/wallet-operation.yaml
   payout-run:
     $ref: webhooks/payout-run.yaml
+  settlement-rule:
+    $ref: webhooks/settlement-rule.yaml
 security:
   - BasicAuth: []
   - AgentAuth: []
