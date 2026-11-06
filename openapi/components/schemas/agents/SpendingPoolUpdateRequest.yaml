@@ -1,8 +1,8 @@
 type: object
 description: >-
   Partial update to a spending pool. At least one field must be provided. A
-  cap set to `null` is removed. Changing `limitType` to `RECURRING` requires
-  `period`; changing it to `TOTAL` removes `period`. Lowering a limit below
+  cap or `approvalThreshold` set to `null` is removed. Changing `limitType`
+  to `RECURRING` requires `period`; changing it to `TOTAL` removes `period`. Lowering a limit below
   what is already spent refuses further payments; it never reverses one.
 properties:
   name:
@@ -26,6 +26,13 @@ properties:
     format: int64
     minimum: 1
     example: 50000
+  approvalThreshold:
+    type:
+      - integer
+      - 'null'
+    format: int64
+    minimum: 0
+    example: 25000
   dailyLimit:
     type:
       - integer

@@ -57,6 +57,16 @@ properties:
     minimum: 1
     description: The most a single payment may be. Absent for no cap.
     example: 50000
+  approvalThreshold:
+    type: integer
+    format: int64
+    minimum: 0
+    description: >-
+      A payment by one of the pool's agents above this amount waits for
+      approval, even when the agent's own policy would execute it at once. In
+      the pool's currency. Absent means the agents' own policies alone decide.
+      Card authorizations are never held for approval.
+    example: 25000
   dailyLimit:
     type: integer
     format: int64

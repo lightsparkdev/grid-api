@@ -3,7 +3,9 @@ get:
   description: >
     Retrieve a paginated list of transactions for the authenticated agent's customer.
     Results are automatically scoped to the agent's associated customer — no customer
-    filter is needed or accepted.
+    filter is needed or accepted. For an agent created with `actingFor` on an
+    `INDIVIDUAL` customer, results are further limited to the payments made by
+    the customer's agents acting for the same person.
   operationId: agentListTransactions
   tags:
     - Agent Operations
