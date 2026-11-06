@@ -136,6 +136,19 @@ $serif: 'New York', ui-serif, Georgia, serif;
   }
 }
 
+// The balance page's details (BalancePage.tsx) in the site's paper, beige and 4pt corners.
+.balance {
+  --sp-text: var(--in-ink);
+  --sp-muted: var(--in-muted);
+  --bp-card: var(--in-field);
+  --bp-line: var(--in-hair);
+  --bp-ink: var(--in-button);
+  --bp-ink-text: var(--in-button-text);
+  --bp-radius: 4px;
+  --bp-button-radius: 4px;
+  margin: 8px -16px 0;
+}
+
 // "Add login": bold serif, centered, ~40pt under the bar.
 .siteTitle {
   margin: 40px 0 0;

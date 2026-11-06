@@ -14,9 +14,10 @@ import { ChatFrame, ComposerField, NATIVE_IN, ScrollEdge, type RowMotion, type S
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentAsk, Chip, Message, Product } from '../conversation';
 import { BalanceCard, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
+import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
 import { bankDoneLabel } from '../vault/useBankPicker';
-import { useGrokBank } from './GrokBank';
+import { useGrokBalance, useGrokBank } from './GrokBank';
 import type { AgentChatProps } from '../types';
 import { GrokEyes } from './GrokEyes';
 import styles from './GrokChat.module.scss';
@@ -240,7 +241,13 @@ function OrderCard({ m, onAllow, onDeny }: { m: Ask; onAllow: () => void; onDeny
   const who = ask.who;
   const order = !!who?.icon || ask.allowed === 'Approved';
   const placing = state === 'pressing' || state === 'authing';
-  const tile = who?.flag ? <Flag code={who.flag} size={20} /> : <span>{(who?.name ?? ask.title)[0]}</span>;
+  const tile = who?.bank ? (
+    <BankMark bank={who.bank} country={who.flag} size={24} />
+  ) : who?.flag ? (
+    <Flag code={who.flag} size={20} />
+  ) : (
+    <span>{(who?.name ?? ask.title)[0]}</span>
+  );
   const method = ask.method?.replace(/^From /, '');
   return (
     <div className={styles.order} data-state={state}>
@@ -290,9 +297,11 @@ function OrderCard({ m, onAllow, onDeny }: { m: Ask; onAllow: () => void; onDeny
                 )}
               </div>
               <div className={styles.orderActions}>
-                <button type="button" className={styles.cancel} onClick={onDeny}>
-                  Cancel
-                </button>
+                {ask.deny && (
+                  <button type="button" className={styles.cancel} onClick={onDeny}>
+                    {ask.deny}
+                  </button>
+                )}
                 <button type="button" className={styles.pay} onClick={onAllow}>
                   Pay {ask.amount}
                 </button>
@@ -327,6 +336,7 @@ export function GrokChat({ chat }: AgentChatProps) {
   const [multiline, setMultiline] = useState(false);
   // The sheet keeps its ask while it slides away.
   const bank = useGrokBank({ messages: chat.messages, onAllow: chat.allow });
+  const balance = useGrokBalance({ account: chat.account, onAction: chat.prompt });
   const [sheet, setSheet] = useState<{ id: number; ask: AgentAsk } | null>(null);
   const sheetOpen = !!sheet && chat.messages.some((m) => m.kind === 'ask' && m.id === sheet.id && m.state === 'open');
   const [shown, setShown] = useState(false);
@@ -376,7 +386,7 @@ export function GrokChat({ chat }: AgentChatProps) {
               balance={b}
               track
               className={styles.accountSkin}
-              onAction={chat.prompt}
+              onOpen={() => balance.open(b.wallet)}
             />
           );
         }
@@ -501,6 +511,7 @@ export function GrokChat({ chat }: AgentChatProps) {
       </AppSheet>
       {sub.sheet}
       {bank.sheet}
+      {balance.sheet}
     </div>
   );
 }

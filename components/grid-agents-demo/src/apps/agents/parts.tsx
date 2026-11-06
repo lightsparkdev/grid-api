@@ -4,6 +4,7 @@ import type { Transition } from 'motion/react';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
 import { Flag } from '@/apps/shared/Flag';
+import { BankMark } from './BankMark';
 import { SfSymbol } from '@/apps/shared/icons';
 import { cubicBezierCss, easeOutSnappy } from '@/lib/easing';
 import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, AskRow, AskState, Chip, Message, Product, SubAgent } from './conversation';
@@ -71,26 +72,28 @@ export function NoteCard({ note, className }: { note: AgentNote; className?: str
 
 /**
  * The app's balance, in the website card's anatomy ("{App} balance", the
- * amount, a note, then Add money / Card / Send), skinned by the host app
- * through the --acct-* variables. Apps add their own native depth around it:
- * a spending track, a detail sheet on tap.
+ * amount, a note), skinned by the host app through the --acct-* variables.
+ * The whole card opens the app's balance page, where Add money and Move to
+ * bank live.
  */
 export function BalanceCard({
   balance,
   track,
-  onAction,
+  onOpen,
   className,
 }: {
   balance: AgentBalance;
   /** Draw today's spend against the daily limit. */
   track?: boolean;
-  /** Add money and Activity ask in the thread, as their tiles do. */
-  onAction: (flow: BalanceAction) => void;
+  onOpen: () => void;
   className?: string;
 }) {
   return (
-    <div className={`${styles.account} ${className ?? ''}`} data-kind="account">
-      <span className={styles.accountLabel}>{balance.wallet}</span>
+    <button type="button" className={`${styles.account} ${className ?? ''}`} data-kind="account" data-opens-sheet onClick={onOpen}>
+      <span className={styles.accountLabel}>
+        {balance.wallet}
+        <IconChevronRight size={14} />
+      </span>
       <strong className={styles.accountAmount}>{balance.amount}</strong>
       <span className={styles.accountNote}>{balance.note}</span>
       {track && (
@@ -103,24 +106,7 @@ export function BalanceCard({
           </small>
         </span>
       )}
-      <BalanceActions onAction={onAction} className={styles.accountActions} />
-    </div>
-  );
-}
-
-export type BalanceAction = 'fund' | 'history';
-
-/** A balance's two moves: Add money, and Activity (what it spent and received, asked for in the thread). */
-export function BalanceActions({ onAction, className }: { onAction: (flow: BalanceAction) => void; className?: string }) {
-  return (
-    <span className={className}>
-      <button type="button" data-primary onClick={() => onAction('fund')}>
-        Add money
-      </button>
-      <button type="button" onClick={() => onAction('history')}>
-        Activity
-      </button>
-    </span>
+    </button>
   );
 }
 
@@ -328,13 +314,13 @@ export function ChipRow({
   );
 }
 
-/** The plain approval card: what, how much, with what, and Approve. */
-/** Labels and flags for an ask's two buttons in each state. */
+/** Labels and flags for an ask's buttons in each state. An approval has no decline button (saying no declines it), so its one button reads the outcome either way. */
 export function askButtons(ask: AgentAsk, state: AskState) {
   const settled = state === 'done' || state === 'denied' || state === 'expired';
   return {
     settled,
-    allowLabel: state === 'done' ? (ask.allowed ?? 'Approved') : (ask.allow ?? 'Approve'),
+    allowLabel:
+      state === 'done' ? (ask.allowed ?? 'Approved') : state === 'denied' && !ask.deny ? (ask.denied ?? 'Declined') : (ask.allow ?? 'Approve'),
     denyLabel: state === 'denied' ? (ask.denied ?? 'Declined') : (ask.deny ?? 'Not now'),
     pressing: state === 'pressing' || state === 'authing',
   };
@@ -362,15 +348,19 @@ export function AskCard({
       </div>
       {ask.who && (
         <div className={styles.askWho}>
-          <span className={styles.askWhoMark}>
-            {ask.who.flag ? (
-              <Flag code={ask.who.flag} size={28} />
-            ) : ask.who.icon ? (
-              <img src={ask.who.icon} alt="" width={28} height={28} />
-            ) : (
-              ask.who.name[0]
-            )}
-          </span>
+          {ask.who.bank ? (
+            <BankMark bank={ask.who.bank} country={ask.who.flag} size={36} />
+          ) : (
+            <span className={styles.askWhoMark}>
+              {ask.who.flag ? (
+                <Flag code={ask.who.flag} size={28} />
+              ) : ask.who.icon ? (
+                <img src={ask.who.icon} alt="" width={28} height={28} />
+              ) : (
+                ask.who.name[0]
+              )}
+            </span>
+          )}
           <span className={styles.askWhoText}>
             <span>{ask.who.name}</span>
             <small>{ask.who.detail}</small>

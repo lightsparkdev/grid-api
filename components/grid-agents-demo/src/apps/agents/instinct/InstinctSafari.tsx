@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { SfSymbol } from '@/apps/shared/icons';
 import { SafariBar } from '@/apps/shared/appSwitch';
+import type { AccountSnapshot } from '@/data/agentApiCalls';
+import { BalanceDetails, type BalanceAction } from '../BalancePage';
 import type { AgentAsk, AskState, SubAgent } from '../conversation';
 import { askButtons } from '../parts';
 import { InstinctBank, SiteBar, SiteField } from './InstinctBank';
@@ -91,6 +93,23 @@ export function InstinctSafari({
               {state === 'denied' ? (ask.denied ?? ask.deny) : ask.deny}
             </button>
           )}
+        </main>
+      </div>
+    </Safari>
+  );
+}
+
+/** The balance on app.instinct.com, opened from the link under its text: the same details the sheet apps show. */
+export function InstinctBalancePage({ account, onAction, onBack }: { account: AccountSnapshot; onAction: (flow: BalanceAction) => void; onBack: () => void }) {
+  return (
+    <Safari onBack={onBack}>
+      <div className={styles.sitePage}>
+        <SiteBar left="close" onLeft={onBack} />
+        <main className={styles.siteScroll}>
+          <h1 className={styles.siteTitle}>Your balance</h1>
+          <div className={styles.balance}>
+            <BalanceDetails account={account} onAction={onAction} />
+          </div>
         </main>
       </div>
     </Safari>

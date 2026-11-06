@@ -5,7 +5,7 @@ import type { Message } from '../conversation';
 import { askButtons, AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
 import type { AgentChatProps } from '../types';
 import { ClaudeMascot } from './ClaudeMascot';
-import { DuetConnector, useDuetBank, useDuetCard } from './DuetVault';
+import { DuetConnector, useDuetBalance, useDuetBank, useDuetCard } from './DuetVault';
 import type { MascotState } from './mascot';
 import styles from './ClaudeChat.module.scss';
 
@@ -14,7 +14,7 @@ const A = '/assets/agents/claude';
 
 const mask = (src: string, width: number, height: number) => ({ maskImage: `url(${src})`, width, height });
 
-/** Claude's spend card: the amount and its clock, what for, paid with, Approve or Not now. */
+/** Claude's spend card: the amount and its clock, what for, paid with, Approve. */
 function SpendCard({
   m,
   onAllow,
@@ -52,9 +52,11 @@ function SpendCard({
         >
           <TextMorph {...MORPH}>{b.allowLabel}</TextMorph>
         </button>
-        <button type="button" className={styles.notNow} disabled={b.settled || b.pressing} onClick={onDeny}>
-          <TextMorph {...MORPH}>{b.denyLabel}</TextMorph>
-        </button>
+        {ask.deny && (
+          <button type="button" className={styles.notNow} disabled={b.settled || b.pressing} onClick={onDeny}>
+            <TextMorph {...MORPH}>{b.denyLabel}</TextMorph>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -64,6 +66,7 @@ export function ClaudeChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages);
   const card = useDuetCard({ messages: chat.messages, onAllow: chat.allow });
   const bank = useDuetBank({ messages: chat.messages, onAllow: chat.allow });
+  const balance = useDuetBalance({ account: chat.account, onAction: chat.prompt });
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
@@ -96,8 +99,10 @@ export function ClaudeChat({ chat }: AgentChatProps) {
         ) : (
           <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />
         );
-      case 'card':
-        return m.card.balance ? <BalanceCard balance={m.card.balance} onAction={chat.prompt} className={styles.accountSkin} /> : <NoteCard note={m.card} />;
+      case 'card': {
+        const b = m.card.balance;
+        return b ? <BalanceCard balance={b} onOpen={() => balance.open(b.wallet)} className={styles.accountSkin} /> : <NoteCard note={m.card} />;
+      }
       case 'chips':
         return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.pick} expired={m.expired} />;
       case 'stamp':
@@ -144,6 +149,7 @@ export function ClaudeChat({ chat }: AgentChatProps) {
           {sub.sheet}
           {card.sheet}
           {bank.sheet}
+          {balance.sheet}
         </>
       }
       faceId={chat.authing}

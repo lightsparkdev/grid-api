@@ -227,7 +227,10 @@ function paramsFor(flow: ActionId, a: ModelAnswer, saved: PromptState['recipient
         ...(positive(a.daily, 100_000) ? { daily: a.daily } : {}),
       };
     case 'buy': {
-      if (a.variant !== 'subscription') return undefined;
+      if (a.variant !== 'subscription') {
+        const query = text(a.query, 40);
+        return query ? { query } : undefined;
+      }
       const merchant = text(a.merchant, 32);
       const price = positive(a.price, 1_000);
       return merchant && price ? { merchant, price } : undefined;
@@ -239,8 +242,14 @@ function paramsFor(flow: ActionId, a: ModelAnswer, saved: PromptState['recipient
       const guests = typeof a.guests === 'number' && Number.isInteger(a.guests) && a.guests >= 1 && a.guests <= 8 ? a.guests : undefined;
       return { city, checkIn: a.checkIn, checkOut: a.checkOut, ...(guests ? { guests } : {}) };
     }
+    case 'getpaid': {
+      const name = text(a.name, MAX_NAME);
+      const amount = positive(a.amount, 100_000);
+      // Lucía's invoice is the one on file: naming her alone plays it.
+      if (!name || (/^luc[ií]a\b/i.test(name) && !amount)) return {};
+      return amount ? { name, amount } : null;
+    }
     case 'connect':
-    case 'getpaid':
     case 'balance':
     case 'history':
       return undefined;

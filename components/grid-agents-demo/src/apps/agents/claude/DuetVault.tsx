@@ -7,6 +7,8 @@ import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-st
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { IconSortArrowUpDown } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSortArrowUpDown';
 import { Flag } from '@/apps/shared/Flag';
+import { BankMark } from '../BankMark';
+import { useBalancePage, type BalancePageOptions } from '../BalancePage';
 import { BANK_REACH, currencyFor, type BankCountry } from '@/data/bankCountries';
 import type { AgentAsk, AskState, Message } from '../conversation';
 import { linkedBank } from '../linkedBank';
@@ -182,9 +184,9 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
           }
           trailing={<SaveDisc stage={picker.stage === 'form' ? 'form' : picker.stage === 'linking' ? 'busy' : 'done'} onClick={picker.link} />}
         >
-          <Hero>
-            <Flag code={bank.country.code} size={56} />
-          </Hero>
+          <div className={styles.hero}>
+            <BankMark bank={bank.bankName} country={bank.country.code} size={80} />
+          </div>
           <Rows rows={bankFields(bank)} />
           <p className={styles.foot}>
             {picker.payee
@@ -245,6 +247,9 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
     </SheetPage>
   );
 }
+
+/** Duet's balance page, in its settings' colors. */
+export const useDuetBalance = (o: BalancePageOptions) => useBalancePage({ ...o, theme: styles.theme });
 
 /** Duet's card flow: the card as a Profile-style page. */
 export function useDuetCard({ messages, onAllow }: { messages: Message[]; onAllow: () => void }) {

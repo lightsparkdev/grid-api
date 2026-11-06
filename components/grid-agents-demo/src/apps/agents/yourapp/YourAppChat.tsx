@@ -5,6 +5,7 @@ import { ChatFrame, ComposerField, Said, ScrollEdge } from '../ChatFrame';
 import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
 import { AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
+import { useBalancePage } from '../BalancePage';
 import { useBankLink, useCardSheet, VaultBankAsk, VaultCardAsk } from '../vault/BankLink';
 import type { AgentChatProps } from '../types';
 import styles from './YourAppChat.module.scss';
@@ -14,6 +15,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages);
   const card = useCardSheet({ messages: chat.messages, onAllow: chat.allow });
   const bank = useBankLink({ wallet: 'your balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
+  const balance = useBalancePage({ account: chat.account, onAction: chat.prompt });
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
@@ -31,8 +33,10 @@ export function YourAppChat({ chat }: AgentChatProps) {
         if (m.ask.bank) return <VaultBankAsk ask={m.ask} state={m.state} onOpen={() => bank.open(m.id)} onDeny={chat.deny} />;
         if (m.ask.card) return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => card.open(m.id, m.ask)} onDeny={chat.deny} />;
         return <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />;
-      case 'card':
-        return m.card.balance ? <BalanceCard balance={m.card.balance} onAction={chat.prompt} className={styles.accountSkin} /> : <NoteCard note={m.card} />;
+      case 'card': {
+        const b = m.card.balance;
+        return b ? <BalanceCard balance={b} onOpen={() => balance.open(b.wallet)} className={styles.accountSkin} /> : <NoteCard note={m.card} />;
+      }
       case 'chips':
         return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.pick} expired={m.expired} />;
       case 'tag':
@@ -69,6 +73,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
           {sub.sheet}
           {card.sheet}
           {bank.sheet}
+          {balance.sheet}
         </>
       }
       faceId={chat.authing}

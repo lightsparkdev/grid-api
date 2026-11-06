@@ -50,8 +50,8 @@ export interface AgentAsk {
   title: string;
   /** The merchant's initial (or a short mark) in the card's corner. */
   badge?: string;
-  /** A single counterparty: a person, a bank, an agent. */
-  who?: { name: string; flag?: string; icon?: string; detail: string };
+  /** A single counterparty: a person, a bank, an agent. Money going to a bank names it, so its mark can show (with `flag`, its country). */
+  who?: { name: string; flag?: string; bank?: string; icon?: string; detail: string };
   /** The headline amount. */
   amount?: string;
   rows?: AskRow[];
@@ -163,7 +163,7 @@ export type StoredMessage =
   | { id: number; kind: 'card'; key: string; params?: Params }
   | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
   | { id: number; kind: 'work'; key: string; params?: Params }
-  | { id: number; kind: 'products'; key: string }
+  | { id: number; kind: 'products'; key: string; params?: Params }
   | { id: number; kind: 'subagent'; key: string; params?: Params; done: boolean }
   | { id: number; kind: 'meta'; key: string; params?: Params }
   | { id: number; kind: 'divider'; text: string }
@@ -181,7 +181,7 @@ export type Beat =
   | { say: string; params?: Params; sender?: string }
   | { card: string; params?: Params }
   | { work: string; ms: number; params?: Params }
-  | { products: string }
+  | { products: string; params?: Params }
   | { subagent: string; ms: number; params?: Params }
   | { react: string }
   | { meta: string; params?: Params }

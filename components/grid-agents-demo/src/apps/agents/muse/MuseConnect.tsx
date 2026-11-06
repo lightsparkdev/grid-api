@@ -10,6 +10,8 @@ import { IconGlobe2 } from '@central-icons-react/round-outlined-radius-3-stroke-
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { IconSettingsSliderHor } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSettingsSliderHor';
 import { Flag } from '@/apps/shared/Flag';
+import { BankMark } from '../BankMark';
+import { useBalancePage, type BalancePageOptions } from '../BalancePage';
 import { BANK_REACH, type BankCountry } from '@/data/bankCountries';
 import type { AgentAsk, AskState, Message } from '../conversation';
 import { hasLinkedBank, linkedBank } from '../linkedBank';
@@ -52,9 +54,15 @@ export function ConnectorCard({ ask, state, onOpen }: { ask: AgentAsk; state: As
   return (
     <div className={styles.card} data-state={state}>
       <span className={styles.cardHead}>
-        <span className={styles.cardTile}>
-          {payee ? <Flag code={payee.country} size={24} /> : ask.bank ? <IconBank size={20} /> : <IconCreditCard1 size={20} />}
-        </span>
+        {done && payee && saved ? (
+          <BankMark bank={saved.bank.bankName} country={saved.bank.country.code} size={35} />
+        ) : done && ask.bank && !payee ? (
+          <BankMark bank={linkedBank().bankName} country={linkedBank().country.code} size={35} />
+        ) : (
+          <span className={styles.cardTile}>
+            {payee ? <Flag code={payee.country} size={24} /> : ask.bank ? <IconBank size={20} /> : <IconCreditCard1 size={20} />}
+          </span>
+        )}
         <span className={styles.cardText}>
           <strong>{name}</strong>
           <small>{sub}</small>
@@ -186,9 +194,7 @@ function ListPage({ picker, onClose }: { picker: BankPicker; onClose: () => void
             hasLinkedBank() ? (
               <Group title="Connected">
                 <button type="button" className={styles.row}>
-                  <span className={styles.rowTile}>
-                    <Flag code={linkedBank().country.code} size={22} />
-                  </span>
+                  <BankMark bank={linkedBank().bankName} country={linkedBank().country.code} size={32} />
                   <span className={styles.rowName}>
                     {linkedBank().bankName} •••• {linkedBank().last4}
                   </span>
@@ -232,10 +238,11 @@ function ListPage({ picker, onClose }: { picker: BankPicker; onClose: () => void
 }
 
 /** The Wallet page's header (IMG_1911): a tile, the centered title, a line. */
-function Hero({ art, title, sub }: { art: ReactNode; title: string; sub: string }) {
+/** `bare` art (a bank's own icon) is its own tile. */
+function Hero({ art, title, sub, bare }: { art: ReactNode; title: string; sub: string; bare?: boolean }) {
   return (
     <div className={styles.hero}>
-      <span className={styles.heroTile}>{art}</span>
+      {bare ? art : <span className={styles.heroTile}>{art}</span>}
       <strong className={styles.heroTitle}>{title}</strong>
       <p className={styles.heroSub}>{sub}</p>
     </div>
@@ -294,7 +301,14 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
         picker.payee ? (
           <SheetPage
             title={`${picker.payee.first}’s bank`}
-            heading={<Hero art={<Flag code={bank.country.code} size={40} />} title={`${picker.payee.first}’s bank`} sub={payeeBlurb(bank, picker.payee.first)} />}
+            heading={
+              <Hero
+                bare
+                art={<BankMark bank={bank.bankName} country={bank.country.code} size={56} />}
+                title={`${picker.payee.first}’s bank`}
+                sub={payeeBlurb(bank, picker.payee.first)}
+              />
+            }
             leading={
               <SheetDisc label="Close" onClick={onClose} disabled={picker.busy}>
                 <IconCrossMedium size={22} />
@@ -310,7 +324,8 @@ function BankPages({ picker, onClose }: { picker: BankPicker; onClose: () => voi
             title={bank.bankName}
             heading={
               <Hero
-                art={<Flag code={bank.country.code} size={40} />}
+                bare
+                art={<BankMark bank={bank.bankName} country={bank.country.code} size={56} />}
                 title={bank.bankName}
                 sub={`Money moves over ${railLine(bank.country).replace(' · ', ' in ')}, in and out of your Muse balance.`}
               />
@@ -398,6 +413,9 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
     </SheetPage>
   );
 }
+
+/** Muse's balance page: a large title, as its Settings pages open. */
+export const useMuseBalance = (o: BalancePageOptions) => useBalancePage({ ...o, theme: styles.theme, large: true });
 
 /** Muse's card flow: the Add a card page, as its Wallet adds a payment method. */
 export function useMuseCard({ messages, onAllow }: { messages: Message[]; onAllow: () => void }) {

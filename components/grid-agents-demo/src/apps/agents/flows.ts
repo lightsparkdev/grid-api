@@ -4,8 +4,9 @@ import { purchaseSpendLimit, type DepositNetwork, type Limits, type Payee, type 
 import type { Beat, ChipGlyph, Params } from './conversation';
 import { formatMoney, linkedBank } from './linkedBank';
 import { draftRecipient, payeeFor, recipientNamed, type Recipient } from './recipients';
-import { merchantFor, stayFor, stayParams } from './hotels';
-import { CASHOUT_AMOUNT, FUND, LUCIA, NEW_LIMITS, RING_LIGHT, SUBSCRIPTION, usd2 } from './story';
+import { hash, merchantFor, stayFor, stayParams } from './hotels';
+import { purchaseFor, shelfFor, shelfParams } from './products';
+import { CASHOUT_AMOUNT, FUND, LUCIA, NEW_LIMITS, SUBSCRIPTION, usd2 } from './story';
 
 /* What each flow does once the visitor sends its line: the agent's beats, the
    Grid events at each beat, and the points where it waits on the visitor.
@@ -16,7 +17,7 @@ export type FundMethod = 'card' | 'bank' | 'usdc' | 'bitcoin';
 
 /** The details someone gave in the chat, as the model read them. A tile passes none and plays the story's own. */
 export interface FlowParams {
-  /** Pay someone: who, where they bank (ISO country), how much, in USD or their currency, and what for. */
+  /** Pay someone: who, where they bank (ISO country), how much, in USD or their currency, and what for. Get paid: who's paying, and how much in USD. */
   name?: string;
   country?: string;
   amount?: number;
@@ -36,6 +37,8 @@ export interface FlowParams {
   /** Buy online, subscription: the service and its monthly price in USD. */
   merchant?: string;
   price?: number;
+  /** Buy online, an order: what they want, in their words ("noise cancelling headphones"). */
+  query?: string;
 }
 
 export interface FlowContext {
@@ -359,23 +362,26 @@ const buy = (ctx: FlowContext): Beat[] => {
       ),
     ];
   }
+  const shelf = shelfFor(ctx.params?.query);
+  const purchase = purchaseFor(shelf);
+  const params = shelfParams(shelf);
   return [
     { react: '👍' },
     { work: 'searching', ms: 1800 },
-    { say: 'buy.intro' },
-    { products: 'buy.options' },
-    { say: 'buy.card' },
-    { emit: { type: 'buy.request', purchase: RING_LIGHT } },
+    { say: 'buy.intro', params },
+    { products: 'buy.options', params: { query: shelf.query } },
+    { say: 'buy.card', params },
+    { emit: { type: 'buy.request', purchase } },
     { work: 'filling', ms: 1300 },
     ...approvalOr(
       ctx,
-      ctx.needsApproval(purchaseSpendLimit(RING_LIGHT.amount)),
-      { key: 'buy', params: { balance: ctx.account().balanceCents } },
+      ctx.needsApproval(purchaseSpendLimit(purchase.amount)),
+      { key: 'buy', params: { ...params, balance: ctx.account().balanceCents } },
       'buy.auto',
       [
         { work: 'paying', ms: 1100 },
         { emit: { type: 'buy.checkout' } },
-        { card: 'receipt.buy' },
+        { card: 'receipt.buy', params },
         { say: 'buy.done' },
         { meta: 'buy.tracking' },
       ],
@@ -409,24 +415,32 @@ const agent = (ctx: FlowContext): Beat[] => {
   ];
 };
 
+/** Who's paying: Lucía's invoice from the tile, or whoever they named, for what they said, with an invoice of its own. */
+function payerFor(p?: FlowParams) {
+  const name = p?.name?.trim();
+  if (!name) return { payer: LUCIA.name, first: LUCIA.first, amount: LUCIA.amount, invoice: LUCIA.invoice };
+  return { payer: name, first: name.split(' ')[0], amount: cents(p?.amount) ?? LUCIA.amount, invoice: `INV-${String(43 + (hash(name) % 900)).padStart(4, '0')}` };
+}
+
 const getpaid = (ctx: FlowContext): Beat[] => {
-  if (paid(ctx, LUCIA.name)) return [{ react: '👍' }, { say: 'getpaid.already' }];
+  const who = payerFor(ctx.params);
+  if (paid(ctx, who.payer)) return [{ react: '👍' }, { say: 'getpaid.already', params: who }];
   return [
     { react: '‼️' },
-    { say: 'getpaid.ask' },
+    { say: 'getpaid.ask', params: who },
     {
       chips: LUCIA.options.map((o) => ({ label: o.label, glyph: cryptoGlyph(o.network) })),
       reply: true,
       then: (i) => {
         const o = LUCIA.options[i];
-        const params = { method: o.label, network: o.network };
+        const params = { ...who, method: o.label, network: o.network };
         return [
           { emit: { type: 'getpaid.address', network: o.network, currency: o.currency } },
           { say: 'getpaid.address', params },
           { card: 'receive', params },
           { work: 'watching', ms: 2200 },
-          { emit: { type: 'getpaid.received', from: LUCIA.name, amount: LUCIA.amount } },
-          { when: () => [{ card: 'receipt.getpaid' }, { say: 'getpaid.done', params: { balance: ctx.account().balanceCents } }] },
+          { emit: { type: 'getpaid.received', from: who.payer, amount: who.amount } },
+          { when: () => [{ card: 'receipt.getpaid', params }, { say: 'getpaid.done', params: { ...params, balance: ctx.account().balanceCents } }] },
         ];
       },
     },
@@ -451,7 +465,7 @@ const cashout = (ctx: FlowContext): Beat[] => {
     const local = Math.round(amount * bank.country.usdToLocal);
     const rail = bank.country.rail;
     const p: Payee = { name: `${bank.bankName} •••• ${bank.last4}`, currency: bank.currency, amount: local, usd: amount, rail: rail.toUpperCase().replace(/ /g, '_'), bank: bank.bankName };
-    const params = { local: formatMoney(local, bank.currency), to: p.name, rail, usd: amount, flag: bank.country.code };
+    const params = { local: formatMoney(local, bank.currency), to: p.name, rail, usd: amount, flag: bank.country.code, bank: bank.bankName };
     return [
       { work: 'quoting', ms: 1000 },
       { emit: { type: 'cashout.quote', payee: p } },
@@ -567,7 +581,7 @@ export function flowSpend(flow: ActionId, params?: FlowParams): number {
       return r ? payeeFor(r, p.amount ?? 0, p.currency ?? 'USD').usd : 0;
     }
     case 'buy':
-      return Math.max(purchaseSpendLimit(RING_LIGHT.amount), cents(params?.price) ?? 0);
+      return Math.max(purchaseSpendLimit(shelfFor(params?.query).pick.amount), cents(params?.price) ?? 0);
     case 'agent':
       return stayFor(params).amount;
     case 'cashout':

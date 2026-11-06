@@ -12,6 +12,10 @@
   --dv-ink: #141413;
   --dv-ink-text: #fff;
   --dv-avatar: #e9e8e3;
+  --bp-card: var(--dv-group);
+  --bp-line: var(--dv-line);
+  --bp-ink: var(--dv-ink);
+  --bp-ink-text: var(--dv-ink-text);
   font-family: 'Anthropic Sans', var(--font-family-sf-pro);
 
   :global([data-theme='dark']) & {

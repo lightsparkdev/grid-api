@@ -1,7 +1,7 @@
 import type { ConnectorId } from '@/data/connectors';
 import type { Params } from '../conversation';
 import { BANK_REACH } from '@/data/bankCountries';
-import { LUCIA, RING_LIGHT, usd, usd2 } from '../story';
+import { usd, usd2 } from '../story';
 import {
   ASKS,
   MUSE_ORDER,
@@ -34,10 +34,10 @@ const n = (p: Params | undefined, k: string) => Number(p?.[k] ?? 0);
 const s = (p: Params | undefined, k: string) => String(p?.[k] ?? '');
 const lower = (p: Params | undefined, k: string) => s(p, k).toLowerCase();
 
-/** Claude Duet's spend card: a clock on the request, Approve or Not now, then Paid. */
+/** Claude Duet's spend card: a clock on the request, Approve, then Paid. */
 const duetSpend =
   (key: AskKey): AskFn =>
-  (p) => ({ ...ASKS[key](p), expires: 'Expires in 10 min', allowed: 'Paid', deny: 'Not now', denied: 'Not now' });
+  (p) => ({ ...ASKS[key](p), expires: 'Expires in 10 min', allowed: 'Paid' });
 
 export const VOICES: Record<ConnectorId, VoiceOverrides> = {
   /** Meta's agent: warm, brief, and it pays from its own Muse balance. */
@@ -50,7 +50,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'connect.already': () => 'Already set! Here’s your Muse balance.',
       'connect.intro': () => 'Happy to. I’ll set up a Muse balance for it, with limits you choose.',
       'connect.done': () => 'All set. Your Muse balance is ready, and I’ll always stay inside your limits.',
-      'buy.intro': () => `Here are a few picks. The ${RING_LIGHT.merchant} RP10-H is the one I’d get: ${usd2(RING_LIGHT.amount)} with standard shipping.`,
+      'buy.intro': (p) => `Here are a few picks. The ${s(p, 'merchant')} ${s(p, 'model')} is the one I’d get: ${usd2(n(p, 'amount'))} with standard shipping.`,
       'buy.card': () => 'Here’s the final quote. Do these details look correct, and should I place the order with your Muse balance?',
       'buy.done': () => 'Ordered. It arrives Thursday, and tracking is in your inbox.',
       'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank yet. Add it once and I’ll take it from there.`,
@@ -59,7 +59,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       fallback: () => 'I can help with your Muse balance here. Try one of the flows on the left.',
     },
     asks: {
-      buy: (p) => MUSE_ORDER(n(p, 'balance')),
+      buy: (p) => MUSE_ORDER(p),
     },
     status: {
       searching: () => '🛍️ Searching stores',
@@ -89,7 +89,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'pay.done': (p) => `Sent. ${s(p, 'first')}’s got it. Receipt’s in your inbox.`,
       'buy.done': () => 'Ordered. Arrives Thursday. The card already self-destructed.',
       'agent.intro': (p) => `${s(p, 'hotel')}’s agent wanted ${usd(n(p, 'listed'))}. Paying directly knocks off 10%: ${usd2(n(p, 'amount'))}.`,
-      'getpaid.done': (p) => `${LUCIA.first} paid. ${usd2(LUCIA.amount)} in, ${usd2(n(p, 'balance'))} total.`,
+      'getpaid.done': (p) => `${s(p, 'first')} paid. ${usd2(n(p, 'amount'))} in, ${usd2(n(p, 'balance'))} total.`,
       'balance.answer': (p) => `${usd2(n(p, 'balance'))}. Here’s the breakdown.`,
       fallback: () => 'Not my department here. I only handle your account. Pick a flow on the left.',
     },
@@ -173,7 +173,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'connect.already': () => 'already on! here’s your **Dots balance**:',
       'limits.same': (p) => `those are already my limits! i handle anything up to ${usd(n(p, 'approve'))}, ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day.`,
       'agent.already': (p) => `you’re already booked at ${lower(p, 'hotel')} for ${lower(p, 'dates')}! the confirmation’s in your inbox.`,
-      'getpaid.already': () => `${LUCIA.first.toLowerCase()} already paid that invoice! nothing else is outstanding.`,
+      'getpaid.already': (p) => `${lower(p, 'first')} already paid that invoice! nothing else is outstanding.`,
       'connect.intro': () => 'ooh yes. i’ll need a Dots balance for that, with limits you pick. here’s what i’m asking for:',
       'connect.done': () => 'done! your **Dots balance** is on, and i can only spend what you put in it.',
       'fund.amount': () => 'sure! how much should i add?',
@@ -182,11 +182,11 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'pay.newRecipient': (p) => `i don’t have ${lower(p, 'first')}’s bank yet! add it here once and i’ll send it.`,
       'pay.done': (p) => `sent! ${lower(p, 'first')} has it.`,
       'pay.over': (p) => `that’s more than the ${usd(n(p, 'perTx'))} i can send at once. raise my limit and i’ll send it!`,
-      'getpaid.ask': () => `how does ${LUCIA.first.toLowerCase()} want to pay?`,
-      'getpaid.done': () => `${LUCIA.first.toLowerCase()} paid! ${usd2(LUCIA.amount)} is in your account. i sent her a receipt and marked the invoice paid.`,
+      'getpaid.ask': (p) => `how does ${lower(p, 'first')} want to pay?`,
+      'getpaid.done': (p) => `${lower(p, 'first')} paid! ${usd2(n(p, 'amount'))} is in your account. i sent a receipt and marked the invoice paid.`,
       'cashout.amount': () => 'sure! how much should i move to your bank?',
       'cashout.bank': () => 'i’ll need your bank first! link it once and i can send money there any time.',
-      'buy.intro': () => `found three that fit! the **${RING_LIGHT.merchant} RP10-H** is the best one, ${usd2(RING_LIGHT.amount)} with standard shipping:`,
+      'buy.intro': (p) => `found three that fit! the **${s(p, 'merchant')} ${s(p, 'model')}** is the best one, ${usd2(n(p, 'amount'))} with standard shipping:`,
       'buy.card': () => 'i’ll pay from your **Dots balance** with a one-time card, so the store never sees your real card. opening the checkout for you',
       'buy.done': () => 'ordered! it arrives **thursday**, and the card closed itself after the charge.',
       'pay.intro': (p) => `${lower(p, 'first')} banks with **${s(p, 'bank')}**, so i’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'local')} is **${usd2(n(p, 'usd'))}** right now.` : ''}`,
@@ -229,7 +229,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'connect.already': () => 'already on. here’s where you’re at',
       'limits.same': (p) => `those are already my limits, ${usd(n(p, 'approve'))} on my own, ${usd(n(p, 'perTx'))} a payment, ${usd(n(p, 'daily'))} a day`,
       'agent.already': (p) => `you’re already booked at ${s(p, 'hotel')}, ${lower(p, 'dates')}`,
-      'getpaid.already': () => `${LUCIA.first} already paid, nothing outstanding`,
+      'getpaid.already': (p) => `${s(p, 'first')} already paid, nothing outstanding`,
       'connect.intro': () => 'i’ll need an Instinct balance for that, with limits you ok',
       'connect.done': () => 'done. your Instinct balance is on, and i’ll stay inside your limits',
       'connect.denied': () => 'ok, no money stuff then',
@@ -244,11 +244,11 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'pay.over': (p) => `that’s over the ${usd(n(p, 'perTx'))} i can send at once. raise my limit and i’ll do it`,
       'pay.denied': () => 'ok, not sending',
       'buy.card': () => 'i’ll pay from your Instinct balance with a one-time card for exactly this order',
-      'buy.intro': () => `found 3. the ${RING_LIGHT.merchant} RP10-H is the best one, ${usd2(RING_LIGHT.amount)} with standard shipping`,
+      'buy.intro': (p) => `found 3. the ${s(p, 'merchant')} ${s(p, 'model')} is the best one, ${usd2(n(p, 'amount'))} with standard shipping`,
       'buy.done': () => 'ordered, arrives thursday',
       'agent.intro': (p) => `talked to ${s(p, 'hotel')}’s agent. ${usd2(n(p, 'amount'))} for ${nightsOf(p)} if we pay direct, 10% off`,
       'agent.done': () => 'booked. confirmation’s in your email',
-      'getpaid.done': () => `${LUCIA.first} paid, ${usd2(LUCIA.amount)}`,
+      'getpaid.done': (p) => `${s(p, 'first')} paid, ${usd2(n(p, 'amount'))}`,
       'cashout.done': () => 'done, it’s in your bank',
       'cashout.amount': () => 'how much?',
       'cashout.bank': () => 'need your bank first. link it here',

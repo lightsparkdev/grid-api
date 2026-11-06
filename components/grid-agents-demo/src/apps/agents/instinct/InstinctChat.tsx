@@ -7,7 +7,7 @@ import { ChatFrame, ComposerField, NATIVE_IN, Said, ScrollEdge, STILL, TypingDot
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentAsk, AgentBalance, AgentNote, Message, Product, SubAgent } from '../conversation';
 import type { AgentChatProps } from '../types';
-import { INSTINCT_HOST, InstinctSafari, InstinctThreadPage } from './InstinctSafari';
+import { INSTINCT_HOST, InstinctBalancePage, InstinctSafari, InstinctThreadPage } from './InstinctSafari';
 import styles from './InstinctChat.module.scss';
 
 /**
@@ -290,7 +290,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
   const [view, setView] = useState<'messages' | 'safari'>('messages');
   const [switchTo, setSwitchTo] = useState<'messages' | 'safari' | null>(null);
   const [linkId, setLinkId] = useState<number | null>(null);
-  const [page, setPage] = useState<{ kind: 'thread'; agent: SubAgent } | null>(null);
+  const [page, setPage] = useState<{ kind: 'thread'; agent: SubAgent } | { kind: 'balance' } | null>(null);
   const open = chat.messages.find((m): m is Ask => m.kind === 'ask' && m.id === linkId);
 
   const openLink = (id: number) => {
@@ -422,7 +422,22 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         );
       case 'card': {
         const b = m.card.balance;
-        return b ? bubble('balance', <span className={styles.lines}>{balanceText(b)}</span>, !theirsNext) : <InstinctImage note={m.card} />;
+        if (!b) return <InstinctImage note={m.card} />;
+        return (
+          <>
+            {bubble('balance', <span className={styles.lines}>{balanceText(b)}</span>, false)}
+            <button type="button" className={styles.link} data-open-link onClick={() => openPage({ kind: 'balance' })}>
+              <span className={styles.linkHero}>
+                <span className={styles.linkHeadline}>{b.amount}</span>
+                <span className={styles.linkWord}>Instinct</span>
+              </span>
+              <span className={styles.linkMeta}>
+                <strong>Your balance</strong>
+                <small>{INSTINCT_HOST}</small>
+              </span>
+            </button>
+          </>
+        );
       }
       case 'ask':
         return linksOut(m.ask) ? (
@@ -598,7 +613,19 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           {open ? (
             <InstinctSafari ask={open.ask} state={open.state} onAllow={chat.allow} onDeny={chat.deny} onBack={back} />
           ) : (
-            page && <InstinctThreadPage agent={page.agent} onBack={back} />
+            page &&
+            (page.kind === 'thread' ? (
+              <InstinctThreadPage agent={page.agent} onBack={back} />
+            ) : (
+              <InstinctBalancePage
+                account={chat.account()}
+                onBack={back}
+                onAction={(flow) => {
+                  back();
+                  chat.prompt(flow);
+                }}
+              />
+            ))
           )}
           {switchTo && (
             <div className={styles.cardStatus}>

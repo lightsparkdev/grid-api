@@ -26,9 +26,10 @@ import type { AgentAsk, AgentMeta, Message, Product } from '../conversation';
 import { linkedBank } from '../linkedBank';
 import { recipientNamed } from '../recipients';
 import { BalanceCard, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
+import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
 import { cardLabel } from '../vault/useCardEntry';
-import { DotGlyph, useDotBank, useDotCard } from './DotVault';
+import { DotGlyph, useDotBalance, useDotBank, useDotCard } from './DotVault';
 import { ADDRESS, PERSON } from '../story';
 import type { AgentChatProps } from '../types';
 import styles from './DotChat.module.scss';
@@ -178,7 +179,7 @@ function SetupSheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow:
   );
 }
 
-/** The pay sheet: Dots' own checkout. It prepares, then shows the payment with Decline and Approve. */
+/** The pay sheet: Dots' own checkout. It prepares, then shows the payment with Approve (closing it, or saying no, declines). */
 function PaySheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow: () => void; onDeny: () => void; onClose: () => void }) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -211,7 +212,15 @@ function PaySheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow: (
             <span className={styles.payMarks}>
               <DotsMark size={44} />
               <span className={styles.payWho}>
-                {who?.flag ? <Flag code={who.flag} size={44} /> : who?.icon ? <img src={who.icon} alt="" /> : (who?.name ?? ask.title)[0]}
+                {who?.bank ? (
+                  <BankMark bank={who.bank} country={who.flag} size={44} />
+                ) : who?.flag ? (
+                  <Flag code={who.flag} size={44} />
+                ) : who?.icon ? (
+                  <img src={who.icon} alt="" />
+                ) : (
+                  (who?.name ?? ask.title)[0]
+                )}
               </span>
             </span>
             <strong className={styles.payTitle}>
@@ -262,9 +271,11 @@ function PaySheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow: (
         )}
       </AnimatePresence>
       <div className={styles.payActions}>
-        <GlassButton label={ask.deny ?? 'Decline'} onClick={onDeny}>
-          {ask.deny ?? 'Decline'}
-        </GlassButton>
+        {ask.deny && (
+          <GlassButton label={ask.deny} onClick={onDeny}>
+            {ask.deny}
+          </GlassButton>
+        )}
         <GlassButton label={ask.allow ?? 'Approve'} tint="var(--dot-blue)" ink="#fff" disabled={!ready} onClick={onAllow}>
           {ask.allow ?? 'Approve'}
         </GlassButton>
@@ -449,6 +460,7 @@ export function DotChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages, SHEET_IN);
   const card = useDotCard({ messages: chat.messages, present: SHEET_IN, onAllow: chat.allow });
   const bank = useDotBank({ messages: chat.messages, present: SHEET_IN, onAllow: chat.allow, onDeny: chat.deny });
+  const balance = useDotBalance({ present: SHEET_IN, account: chat.account, onAction: chat.prompt });
   const sheetOpen = shown && !!sheet && chat.messages.some((m) => m.kind === 'ask' && m.id === sheet.id && m.state === 'open');
   const open = (m: Ask) => {
     setSheet({ id: m.id, ask: m.ask });
@@ -530,7 +542,7 @@ export function DotChat({ chat }: AgentChatProps) {
             balance={b}
             track
             className={styles.accountSkin}
-            onAction={chat.prompt}
+            onOpen={() => balance.open(b.wallet)}
           />
         ) : (
           <NoteCard note={m.card} />
@@ -641,6 +653,7 @@ export function DotChat({ chat }: AgentChatProps) {
       {sub.sheet}
       {card.sheet}
       {bank.sheet}
+      {balance.sheet}
     </div>
   );
 }

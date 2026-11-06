@@ -12,6 +12,7 @@ import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-
 import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusMedium';
 import { Flag } from '@/apps/shared/Flag';
 import { BANK_REACH, type BankCountry } from '@/data/bankCountries';
+import { useBalancePage, type BalancePageOptions } from '../BalancePage';
 import type { AgentAsk, ChipGlyph, Message } from '../conversation';
 import { GlassButton } from '../glass';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
@@ -264,6 +265,9 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
 }
 
 /** Dots' card flow: the Add card page, filled in. Closing it leaves the pill waiting in the thread. */
+/** Dots' balance page, in its sheets' colors. */
+export const useDotBalance = (o: BalancePageOptions) => useBalancePage({ ...o, theme: styles.theme });
+
 export function useDotCard({ messages, present, onAllow }: { messages: Message[]; present: Transition; onAllow: () => void }) {
   const sheet = useAskSheet(messages);
   return {

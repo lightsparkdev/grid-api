@@ -1,7 +1,8 @@
 import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, Params, Product, SubAgent } from '../conversation';
 import { BANK_REACH } from '@/data/bankCountries';
 import { linkedBank, localAmount, railTiming } from '../linkedBank';
-import { ADDRESS, BUY_OPTIONS, LUCIA, PERSON, RING_LIGHT, usd, usd2 } from '../story';
+import { shelfFor } from '../products';
+import { ADDRESS, PERSON, usd, usd2 } from '../story';
 
 /* The neutral voice: every line, ask and note a flow can produce, written so
    it reads right in any app. Each app's voice overrides what it says
@@ -41,8 +42,8 @@ export const STATUS = {
 export type StatusKey = keyof typeof STATUS;
 
 export const PRODUCTS = {
-  'buy.options': () => BUY_OPTIONS,
-} satisfies Record<string, () => Product[]>;
+  'buy.options': (p?: Params) => shelfFor(s(p, 'query')).options,
+} satisfies Record<string, (p?: Params) => Product[]>;
 
 export type ProductsKey = keyof typeof PRODUCTS;
 
@@ -136,8 +137,8 @@ export const LINES = {
   'pay.denied': () => 'Okay, I won’t send it.',
   'pay.over': (p) => `That’s more than the ${usd(n(p, 'perTx'))} I can send in one payment. Raise my limit and I’ll send it.`,
 
-  'buy.intro': () => `Found three that fit. The ${RING_LIGHT.merchant} RP10-H is the best of them, ${usd2(RING_LIGHT.amount)} with standard shipping.`,
-  'buy.card': () => `I’ll get a one-time card for exactly this order, so ${RING_LIGHT.merchant} never sees your real card.`,
+  'buy.intro': (p) => `Found three that fit. The ${s(p, 'merchant')} ${s(p, 'model')} is the best of them, ${usd2(n(p, 'amount'))} with standard shipping.`,
+  'buy.card': (p) => `I’ll get a one-time card for exactly this order, so ${s(p, 'merchant')} never sees your real card.`,
   'buy.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m checking out.`,
   'buy.done': () => 'Ordered. It arrives Thursday, and the card closed itself after the charge.',
   'buy.denied': () => 'Okay, I won’t place the order. Nothing was charged.',
@@ -154,11 +155,11 @@ export const LINES = {
   'agent.denied': (p) => `Okay, I won’t book it. I told ${s(p, 'hotel')}’s agent we’ll pass.`,
   'agent.already': (p) => `You’re already booked at ${s(p, 'hotel')} for ${s(p, 'dates')}. The confirmation is in your inbox.`,
 
-  'getpaid.ask': () => `How does ${LUCIA.first} want to pay?`,
+  'getpaid.ask': (p) => `How does ${s(p, 'first')} want to pay?`,
   'getpaid.address': (p) =>
-    `Here’s where she can send it. I sent it to ${LUCIA.first} with invoice ${LUCIA.invoice}${s(p, 'method') ? ` (${s(p, 'method')})` : ''}.`,
-  'getpaid.done': (p) => `${LUCIA.first} paid ${usd2(LUCIA.amount)}. You have ${usd2(n(p, 'balance'))} now.`,
-  'getpaid.already': () => `${LUCIA.first} already paid ${LUCIA.invoice}, ${usd2(LUCIA.amount)}. Nothing else is outstanding.`,
+    `Here’s where ${s(p, 'first')} can send it. I sent it over with invoice ${s(p, 'invoice')}${s(p, 'method') ? ` (${s(p, 'method')})` : ''}.`,
+  'getpaid.done': (p) => `${s(p, 'first')} paid ${usd2(n(p, 'amount'))}. You have ${usd2(n(p, 'balance'))} now.`,
+  'getpaid.already': (p) => `${s(p, 'first')} already paid ${s(p, 'invoice')}, ${usd2(n(p, 'amount'))}. Nothing else is outstanding.`,
 
   'cashout.amount': () => 'How much should I move to your bank?',
   'cashout.bank': () => 'I’ll need your bank first. Link it once and I can move money there any time.',
@@ -197,7 +198,6 @@ export const ASKS = {
     rows: limitsRows(p),
     allow: 'Save',
     allowed: 'Saved',
-    deny: 'Cancel',
     denied: 'Canceled',
   }),
   vault: () => ({
@@ -232,32 +232,29 @@ export const ASKS = {
   }),
   pay: (p) => ({
     title: `Send ${s(p, 'local')} to ${s(p, 'first')}`,
-    who: { name: s(p, 'name'), flag: s(p, 'flag'), detail: `${s(p, 'local')} to ${s(p, 'bank')} via ${s(p, 'rail')}` },
+    who: { name: s(p, 'name'), flag: s(p, 'flag'), bank: s(p, 'bank'), detail: `${s(p, 'local')} to ${s(p, 'bank')} via ${s(p, 'rail')}` },
     amount: s(p, 'local'),
     method: `From ${s(p, 'wallet')} · ${usd2(n(p, 'usd'))}`,
     allow: 'Approve',
     allowed: 'Paid',
-    deny: 'Decline',
     denied: 'Declined',
   }),
   cashout: (p) => ({
     title: `Move ${s(p, 'local')} to ${s(p, 'to')}`,
-    who: { name: s(p, 'to'), flag: s(p, 'flag') || undefined, detail: `${s(p, 'local')} over ${s(p, 'rail')}` },
+    who: { name: s(p, 'to'), flag: s(p, 'flag') || undefined, bank: s(p, 'bank'), detail: `${s(p, 'local')} over ${s(p, 'rail')}` },
     amount: s(p, 'local'),
     method: `From ${s(p, 'wallet')} · ${usd2(n(p, 'usd'))}`,
     allow: 'Approve',
     allowed: 'Sent',
-    deny: 'Decline',
     denied: 'Declined',
   }),
   buy: (p) => ({
-    title: `Buy at ${RING_LIGHT.merchant}`,
-    who: { name: RING_LIGHT.merchant, icon: RING_LIGHT.image, detail: `${RING_LIGHT.item} · one-time card` },
-    amount: usd2(RING_LIGHT.amount),
+    title: `Buy at ${s(p, 'merchant')}`,
+    who: { name: s(p, 'merchant'), icon: s(p, 'image'), detail: `${s(p, 'item')} · one-time card` },
+    amount: usd2(n(p, 'amount')),
     method: `From ${s(p, 'wallet')} · one-time card`,
     allow: 'Approve',
     allowed: 'Approved',
-    deny: 'Decline',
     denied: 'Declined',
   }),
   sub: (p) => ({
@@ -267,7 +264,6 @@ export const ASKS = {
     method: `From ${s(p, 'wallet')} · card only ${s(p, 'merchant')} can charge`,
     allow: 'Approve',
     allowed: 'Approved',
-    deny: 'Decline',
     denied: 'Declined',
   }),
   agent: (p) => ({
@@ -277,7 +273,6 @@ export const ASKS = {
     method: `Account to account · you save ${usd2(n(p, 'listed') - n(p, 'amount'))}`,
     allow: 'Approve',
     allowed: 'Paid',
-    deny: 'Decline',
     denied: 'Declined',
   }),
 } satisfies Record<string, AskFn>;
@@ -321,7 +316,7 @@ export const NOTES = {
   receive: (p) => ({
     title: `Pay ${PERSON.full}`,
     code: s(p, 'network') === 'LIGHTNING' ? 'lnbc4682…h3kq9z' : '0x4f2a…9c1e',
-    lines: [`${usd2(LUCIA.amount)} · ${LUCIA.invoice}`, s(p, 'method')],
+    lines: [`${usd2(n(p, 'amount'))} · ${s(p, 'invoice')}`, s(p, 'method')],
   }),
   quote: (p) => ({
     title: `${s(p, 'local')} to ${s(p, 'to')}`,
@@ -337,8 +332,8 @@ export const NOTES = {
     lines: [s(p, 'rail'), `${usd2(n(p, 'usd'))} from ${s(p, 'wallet')}`],
     done: true,
   }),
-  'receipt.buy': () => ({
-    title: `${usd2(RING_LIGHT.amount)} at ${RING_LIGHT.merchant}`,
+  'receipt.buy': (p) => ({
+    title: `${usd2(n(p, 'amount'))} at ${s(p, 'merchant')}`,
     lines: ['One-time Visa · closed after the charge'],
     done: true,
   }),
@@ -352,9 +347,9 @@ export const NOTES = {
     lines: [`To ${s(p, 'hotel')}’s account · ${s(p, 'dates')}`, `Saved ${usd2(n(p, 'listed') - n(p, 'amount'))} by skipping the card`],
     done: true,
   }),
-  'receipt.getpaid': () => ({
-    title: `${usd2(LUCIA.amount)} from ${LUCIA.name}`,
-    lines: [`${LUCIA.invoice} · paid`],
+  'receipt.getpaid': (p) => ({
+    title: `${usd2(n(p, 'amount'))} from ${s(p, 'payer')}`,
+    lines: [`${s(p, 'invoice')} · paid`],
     done: true,
   }),
   balance: (p) => ({
@@ -375,21 +370,20 @@ export const NOTES = {
 
 export type NoteKey = keyof typeof NOTES;
 
-/** Muse's order sheet for the ring light. */
-export const MUSE_ORDER = (balance: number): AgentAsk => ({
-  title: `The agent wants to place an order at ${RING_LIGHT.merchant}`,
-  badge: 'N',
+/** Muse's order sheet for what it found. */
+export const MUSE_ORDER = (p: Params | undefined): AgentAsk => ({
+  title: `The agent wants to place an order at ${s(p, 'merchant')}`,
+  badge: s(p, 'merchant')[0],
   rows: [
-    { text: RING_LIGHT.item, sub: 'Qty: 1', image: RING_LIGHT.image },
+    { text: s(p, 'item'), sub: 'Qty: 1', image: s(p, 'image') },
     { text: 'Standard by 2 to 5 business days', sub: ADDRESS, icon: 'truck' },
     { text: PERSON.email, sub: PERSON.phone, icon: 'envelope' },
     { text: 'Muse balance', sub: 'Pay with Muse balance', icon: 'meta' },
   ],
-  total: usd2(RING_LIGHT.amount),
-  method: `${usd2(balance)} available`,
-  legal: RING_LIGHT.merchant,
+  total: usd2(n(p, 'amount')),
+  method: `${usd2(n(p, 'balance'))} available`,
+  legal: s(p, 'merchant'),
   allow: 'Allow',
   allowed: 'Allowed',
-  deny: 'Deny',
   denied: 'Denied',
 });

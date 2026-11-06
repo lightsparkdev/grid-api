@@ -1,13 +1,15 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { TextMorph } from 'torph/react';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
+import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
 import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { ChatFrame, ComposerField, ScrollEdge, STILL, TypingDots, useOpenedIds, type ScrollCurve } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentBalance, AskRow, Chip, Message, Product } from '../conversation';
-import { askButtons, BalanceActions, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useSubAgentSheet, type BalanceAction } from '../parts';
-import { ConnectorCard, useMuseBank, useMuseCard } from './MuseConnect';
+import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useSubAgentSheet } from '../parts';
+import { BankMark } from '../BankMark';
+import { ConnectorCard, useMuseBalance, useMuseBank, useMuseCard } from './MuseConnect';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
 
@@ -41,11 +43,14 @@ function BrowserCard({ status, waiting }: { status: string; waiting?: boolean })
   );
 }
 
-/** Muse balance as one of Muse's artifacts: the stat tiles, then Add money and Activity (asked for in the thread). */
-function BalanceArtifact({ balance, onAction }: { balance: AgentBalance; onAction: (flow: BalanceAction) => void }) {
+/** Muse balance as one of Muse's artifacts: the stat tiles; tapping it opens the balance page. */
+function BalanceArtifact({ balance, onOpen }: { balance: AgentBalance; onOpen: () => void }) {
   return (
-    <div className={styles.artifact}>
-      <span className={styles.artifactHead}>{balance.wallet}</span>
+    <button type="button" className={styles.artifact} data-opens-sheet onClick={onOpen}>
+      <span className={styles.artifactHead}>
+        {balance.wallet}
+        <IconChevronRight size={14} />
+      </span>
       <div className={styles.tiles}>
         <span className={styles.tileBig}>
           <small>Balance</small>
@@ -61,8 +66,7 @@ function BalanceArtifact({ balance, onAction }: { balance: AgentBalance; onActio
           <b>{balance.spent.limit}</b>
         </span>
       </div>
-      <BalanceActions onAction={onAction} className={styles.artifactActions} />
-    </div>
+    </button>
   );
 }
 
@@ -242,7 +246,11 @@ function ApprovalCard({
         <div className={styles.details}>
           <div className={styles.detail}>
             <span className={styles.lead}>
-              <span className={styles.productLetter}>{ask.who.name[0]}</span>
+              {ask.who.bank ? (
+                <BankMark bank={ask.who.bank} country={ask.who.flag} size={32} />
+              ) : (
+                <span className={styles.productLetter}>{ask.who.name[0]}</span>
+              )}
             </span>
             <span className={styles.detailText}>
               <span className={styles.oneLine}>{ask.who.name}</span>
@@ -397,6 +405,7 @@ export function MuseChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages);
   const card = useMuseCard({ messages: chat.messages, onAllow: chat.allow });
   const bank = useMuseBank({ messages: chat.messages, onAllow: chat.allow });
+  const balance = useMuseBalance({ account: chat.account, onAction: chat.prompt });
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them': {
@@ -420,13 +429,15 @@ export function MuseChat({ chat }: AgentChatProps) {
         if (m.ask.bank) return <ConnectorCard ask={m.ask} state={m.state} onOpen={() => bank.open(m.id, m.ask)} />;
         if (m.ask.card) return <ConnectorCard ask={m.ask} state={m.state} onOpen={() => card.open(m.id, m.ask)} />;
         return <ApprovalCard m={m} onAllow={chat.allow} onDeny={chat.deny} />;
-      case 'card':
-        if (m.card.balance) return <BalanceArtifact balance={m.card.balance} onAction={chat.prompt} />;
+      case 'card': {
+        const b = m.card.balance;
+        if (b) return <BalanceArtifact balance={b} onOpen={() => balance.open(b.wallet)} />;
         return (
           <div className={styles.noteWrap} data-pos={groupPosition(i, all)}>
             <NoteCard note={m.card} className={styles.note} />
           </div>
         );
+      }
       case 'chips':
         if (inBubble(i, all)) return null;
         return (
@@ -484,6 +495,7 @@ export function MuseChat({ chat }: AgentChatProps) {
           {sub.sheet}
           {card.sheet}
           {bank.sheet}
+          {balance.sheet}
         </>
       }
       faceId={chat.authing}

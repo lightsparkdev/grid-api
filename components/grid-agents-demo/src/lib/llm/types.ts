@@ -29,6 +29,7 @@ export interface ModelAnswer {
   perTx?: number;
   merchant?: string;
   price?: number;
+  query?: string;
   city?: string;
   checkIn?: string;
   checkOut?: string;

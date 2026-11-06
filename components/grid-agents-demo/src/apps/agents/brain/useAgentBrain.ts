@@ -200,7 +200,7 @@ export function useAgentBrain({
           });
           await sleep(b.ms);
         } else if ('products' in b) {
-          show({ kind: 'products', key: b.products });
+          show({ kind: 'products', key: b.products, params: b.params });
           await sleep(1200);
         } else if ('subagent' in b) {
           const id = show({ kind: 'subagent', key: b.subagent, params: b.params, done: false });
@@ -452,6 +452,8 @@ export function useAgentBrain({
   );
   /** Face ID finished its scan and checkmark. */
   const authed = useCallback(() => authRef.current?.(), []);
+  /** The account as it stands, for the balance page. */
+  const account = useCallback(() => cb.current.context().account(), []);
 
   useEffect(() => () => cancelRun(), [cancelRun]);
 
@@ -474,6 +476,7 @@ export function useAgentBrain({
     authing,
     asking,
     activeFlow,
+    account,
   };
 }
 

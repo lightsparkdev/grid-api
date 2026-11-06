@@ -116,7 +116,15 @@ goes straight to the quote. The model never asks for bank or card numbers,
 and doesn't judge limits (it doesn't know rates): the flow checks the
 per-payment limit after converting. Add funds, Withdraw, Set limits and
 subscriptions take amounts, limits and a service the same way. One-off
-purchases stay the saved ring light, since products need images.
+purchases take what the person asked for in their words (`query`); the model
+never names a product, brand or price. `products.ts` holds three invented
+products for each of about 24 categories, each with a photo; anything else
+gets three generated from the request's words, shown in a plain shipping box.
+The tile keeps the saved ring light.
+
+Get paid works for anyone: the model passes the payer's name and the amount,
+and the invoice number comes from the name. The tile keeps Lucía and her
+invoice.
 
 ### 2026-11-05: rebuilt 1:1 from the recordings, with no provider in the phone
 
@@ -131,9 +139,8 @@ same way (`.tmp-sweep/capture.mjs`) and compared frame by frame.
   checkout, a card vault) keep their layouts and carry the host app's brand.
   Merchants stay third-party because they are the payee.
 - The balance card keeps the website's anatomy ("{App} balance", the amount, a
-  note, then Add money, Card, and Send), so the playground and the website's
-  hero read as one product. Each app adds its own depth: Grok's detail sheet,
-  Dots' sheet, Muse's stat-tile artifact, and Instinct's balance page.
+  note), so the playground and the website's hero read as one product. It has
+  no buttons: tapping it opens the balance page (2026-11-06).
 - Grok Bot: animated eyes in the header and the status row, a status row
   with a shimmer, reactions, a lettered choice card, a product carousel, a
   form card with a native sheet for consent and limits, and an order card
@@ -186,7 +193,7 @@ typed or tapped in the chat with no account yet starts with the agent asking
 for one (Connect), then a top-up that covers the request in $50 steps, then
 the request itself (`planFor` in `flows.ts`). The starter chips lead with
 "Set up a balance". Add funds with no amount (the tile, the
-balance card's Add money, or "add money" typed) asks how much and waits for a
+balance page's Add money, or "add money" typed) asks how much and waits for a
 typed amount ("75", "$1,000", "75 bucks"), then asks where from. Anything else
 typed there drops the question and goes to the model. The model offers no
 chips for amounts: people type those. Withdraw works the same way ("everything"
@@ -210,6 +217,26 @@ the vaulted card with no prompt. Grid has no vault API yet, so
 `card.vault` and `fund.card` log a provisional sketch: `POST
 /customers/{id}/vaulted-cards`, then a quote whose source is the vaulted
 card. Rewrite them when the API lands.
+
+### 2026-11-06: approve only, bank marks, and a balance page
+
+- Payment approvals show only Approve. The person asked for the payment, so
+  there's nothing to decline; saying no in the chat declines it, and the card
+  reads Declined. Setup asks (a card, a bank) keep Not now.
+- Wherever a bank shows, its mark is the bank's App Store icon (400x400, from
+  the iTunes Search API) with the country's flag at the bottom right, or a
+  bank glyph with the flag when there's no icon. `scripts/fetch-bank-logos.mjs`
+  fetches one for every default and popular bank in `bankCountries.ts` and
+  writes `src/data/bankLogos.generated.ts`; a wrong match gets a search term
+  in `TERMS` and a rerun with `--only`.
+- Product photos are generated in the Apple Store style (a studio render on
+  white), cut out to transparent, trimmed, and padded to 800x800 WebP.
+- The balance card opens a balance page (`BalancePage.tsx`): the balance with
+  Add money and Move to bank, today's spend against the limits, the linked
+  bank and saved card, and recent activity. It reads the live account. The
+  sheet apps draw it as a page sheet in their own colors (each sheet theme
+  sets `--bp-*`); Instinct links to it on app.instinct.com in Safari. Either
+  action closes the page and asks in the thread, as the tiles do.
 
 ### 2026-11-05: the thread scrolls
 
@@ -243,8 +270,8 @@ zoomed captures at 3x.
   approval page on app.instinct.com in Safari, with "◀ Messages" under the
   clock. Once answered, Safari switches back and Instinct reacts to your
   message.
-- Claude Duet: the spend card ("Expires in 10 min", Approve or Not now, then
-  Paid) and the mascot, ported from the product page's PhoneMock. It morphs
+- Claude Duet: the spend card ("Expires in 10 min", Approve, then Paid) and
+  the mascot, ported from the product page's PhoneMock. It morphs
   between idle, thinking, working, connecting, and waiting on you.
 
 ### 2026-11-05: the chat chrome frosts, it doesn't refract
@@ -298,8 +325,9 @@ breakpoint chosen to match the Figma's three columns at 1392.
 
 ## What is faked and what is real-shaped
 
-Faked: the flows, merchants, amounts, exchange rates, deposit addresses, and
-timing; the merchant agent's offer; Face ID; the app.instinct.com page.
+Faked: the flows, merchants, products and their photos, amounts, exchange
+rates, deposit addresses, and timing; the merchant agent's offer; Face ID; the
+app.instinct.com page.
 
 Real-shaped: every request body, response body, and webhook envelope follows
 the agent schemas on main, except the bank payout destinations noted above.
@@ -310,4 +338,6 @@ the agent schemas on main, except the bank payout destinations noted above.
   Vercel project before free text goes live.
 - The Optimistic AI font is Meta's; confirm the license before shipping it
   publicly.
+- The bank marks are the banks' App Store icons; confirm with legal before the
+  public launch.
 - The OG image is a capture of the playground; swap in designed art.

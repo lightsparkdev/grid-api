@@ -42,7 +42,7 @@ const PATTERNS = ['Hotel {w}', 'Casa {w}', 'The {w}', 'Maison {w}', '{w} House']
 const WORDS = ['Lumen', 'Verde', 'Solace', 'Marlow', 'Oriel', 'Tessa', 'Calma', 'Wren', 'Azul', 'Juniper', 'Linde', 'Halcyon'];
 
 /** A small stable hash, so a city always gets the same made-up hotel. */
-function hash(s: string) {
+export function hash(s: string) {
   let h = 2166136261;
   for (const ch of s.toLowerCase()) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
   return h >>> 0;

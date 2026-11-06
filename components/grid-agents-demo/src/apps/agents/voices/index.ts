@@ -25,7 +25,7 @@ export interface Voice {
   ask(key: string, params?: Params): AgentAsk;
   note(key: string, params?: Params): AgentNote;
   status(key: string, params?: Params): string;
-  products(key: string): Product[];
+  products(key: string, params?: Params): Product[];
   meta(key: string, params?: Params): AgentMeta;
   subagent(key: string, params?: Params): SubAgent;
 }
@@ -41,7 +41,7 @@ export function voiceFor(connector: ConnectorId): Voice {
     ask: (key, params) => (v.asks?.[key as AskKey] ?? ASKS[key as AskKey])(withName(params)),
     note: (key, params) => (v.notes?.[key as NoteKey] ?? NOTES[key as NoteKey])(withName(params)),
     status: (key, params) => (v.status?.[key as StatusKey] ?? STATUS[key as StatusKey] ?? (() => key))(withName(params)),
-    products: (key) => PRODUCTS[key as ProductsKey]?.() ?? [],
+    products: (key, params) => PRODUCTS[key as ProductsKey]?.(params) ?? [],
     subagent: (key, params) => {
       const sub: (p?: Params) => SubAgent = SUBAGENTS[key as SubAgentKey];
       return sub(withName(params));
@@ -78,7 +78,7 @@ export function renderThread(messages: StoredMessage[], voice: Voice): Message[]
       case 'work':
         return { id: m.id, kind: 'work', key: m.key, status: voice.status(m.key, m.params) };
       case 'products':
-        return { id: m.id, kind: 'products', products: voice.products(m.key) };
+        return { id: m.id, kind: 'products', products: voice.products(m.key, m.params) };
       case 'meta':
         return { id: m.id, kind: 'meta', meta: voice.meta(m.key, m.params) };
       case 'subagent':
