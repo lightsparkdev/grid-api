@@ -242,18 +242,17 @@ function OrderCard({ m, onAllow, onDeny }: { m: Ask; onAllow: () => void; onDeny
   const who = ask.who;
   const order = !!who?.icon || ask.allowed === 'Approved';
   const placing = state === 'pressing' || state === 'authing';
+  // A bank's mark is its own tile (an app icon with the flag hanging off it), so it skips the outlined one.
   const tile = who?.bank ? (
-    <BankMark bank={who.bank} country={who.flag} size={24} />
-  ) : who?.flag ? (
-    <Flag code={who.flag} size={20} />
+    <BankMark bank={who.bank} country={who.flag} size={22} />
   ) : (
-    <span>{(who?.name ?? ask.title)[0]}</span>
+    <span className={styles.orderTile}>{who?.flag ? <Flag code={who.flag} size={20} /> : <span>{(who?.name ?? ask.title)[0]}</span>}</span>
   );
   const method = ask.method?.replace(/^From /, '');
   return (
     <div className={styles.order} data-state={state}>
       <div className={styles.orderHead}>
-        <span className={styles.orderTile}>{tile}</span>
+        {tile}
         <span>{who?.name ?? ask.title}</span>
         {state === 'done' && <small>{order ? 'PRP9GNCWF' : 'Settled'}</small>}
       </div>

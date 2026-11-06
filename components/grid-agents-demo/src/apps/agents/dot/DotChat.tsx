@@ -212,17 +212,13 @@ function PaySheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow: (
           <motion.div key="pay" className={styles.payBody} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
             <span className={styles.payMarks}>
               <DotsMark size={44} />
-              <span className={styles.payWho}>
-                {who?.bank ? (
-                  <BankMark bank={who.bank} country={who.flag} size={44} />
-                ) : who?.flag ? (
-                  <Flag code={who.flag} size={44} />
-                ) : who?.icon ? (
-                  <img src={who.icon} alt="" />
-                ) : (
-                  (who?.name ?? ask.title)[0]
-                )}
-              </span>
+              {who?.bank ? (
+                <BankMark bank={who.bank} country={who.flag} size={44} />
+              ) : (
+                <span className={styles.payWho}>
+                  {who?.flag ? <Flag code={who.flag} size={44} /> : who?.icon ? <img src={who.icon} alt="" /> : (who?.name ?? ask.title)[0]}
+                </span>
+              )}
             </span>
             <strong className={styles.payTitle}>
               Pay {ask.amount} to {who?.name ?? ask.title}

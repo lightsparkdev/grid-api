@@ -327,11 +327,12 @@
   border-radius: 28%;
   background: #e8efff;
 
+  // body.png is 240x191 with the mascot at 175x185+5+2: scaled so it's 78% of the tile tall, its box centered.
   img {
     position: absolute;
-    top: -2%;
-    left: -4%;
-    width: 158%;
+    top: 10.2%;
+    left: 11%;
+    width: 101.2%;
     height: auto;
   }
 }
