@@ -78,18 +78,18 @@ export function NoteCard({ note, className }: { note: AgentNote; className?: str
 export function BalanceCard({
   balance,
   track,
-  onOpen,
+  onAction,
   className,
 }: {
   balance: AgentBalance;
   /** Draw today's spend against the daily limit. */
   track?: boolean;
-  onOpen?: () => void;
+  /** Add money and Activity ask in the thread, as their tiles do. */
+  onAction: (flow: BalanceAction) => void;
   className?: string;
 }) {
-  const Root = onOpen ? 'button' : 'div';
   return (
-    <Root type={onOpen ? 'button' : undefined} className={`${styles.account} ${className ?? ''}`} onClick={onOpen} data-kind="account">
+    <div className={`${styles.account} ${className ?? ''}`} data-kind="account">
       <span className={styles.accountLabel}>{balance.wallet}</span>
       <strong className={styles.accountAmount}>{balance.amount}</strong>
       <span className={styles.accountNote}>{balance.note}</span>
@@ -103,44 +103,24 @@ export function BalanceCard({
           </small>
         </span>
       )}
-      <span className={styles.accountActions}>
-        <span data-primary>Add money</span>
-        <span>Card</span>
-        <span>Send</span>
-      </span>
-    </Root>
+      <BalanceActions onAction={onAction} className={styles.accountActions} />
+    </div>
   );
 }
 
-/** A balance's limits and recent activity: the inside of each app's balance sheet or page. */
-export function BalanceDetail({ balance, className }: { balance: AgentBalance; className?: string }) {
+export type BalanceAction = 'fund' | 'history';
+
+/** A balance's two moves: Add money, and Activity (what it spent and received, asked for in the thread). */
+export function BalanceActions({ onAction, className }: { onAction: (flow: BalanceAction) => void; className?: string }) {
   return (
-    <div className={`${styles.detail} ${className ?? ''}`}>
-      <div className={styles.detailStats}>
-        {balance.stats.map((st) => (
-          <span key={st.label}>
-            <small>{st.label}</small>
-            <b>{st.value}</b>
-          </span>
-        ))}
-      </div>
-      {balance.activity.length > 0 && (
-        <div className={styles.detailActivity}>
-          <span className={styles.detailHead}>Activity</span>
-          {balance.activity.map((r, i) => (
-            <div key={`${r.title}-${i}`} className={styles.noteRow}>
-              <span className={styles.noteRowText}>
-                <span>{r.title}</span>
-                <small>{r.detail}</small>
-              </span>
-              <span className={styles.noteRowAmount} data-incoming={r.incoming || undefined}>
-                {r.amount}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <span className={className}>
+      <button type="button" data-primary onClick={() => onAction('fund')}>
+        Add money
+      </button>
+      <button type="button" onClick={() => onAction('history')}>
+        Activity
+      </button>
+    </span>
   );
 }
 
@@ -411,15 +391,17 @@ export function AskCard({
       )}
       {ask.method && <span className={styles.askMethod}>{ask.method}</span>}
       <div className={styles.askActions} data-state={state}>
-        <button
-          type="button"
-          className={styles.askDeny}
-          data-chosen={state === 'denied' || undefined}
-          disabled={b.settled || b.pressing}
-          onClick={onDeny}
-        >
-          <TextMorph {...MORPH}>{b.denyLabel}</TextMorph>
-        </button>
+        {ask.deny && (
+          <button
+            type="button"
+            className={styles.askDeny}
+            data-chosen={state === 'denied' || undefined}
+            disabled={b.settled || b.pressing}
+            onClick={onDeny}
+          >
+            <TextMorph {...MORPH}>{b.denyLabel}</TextMorph>
+          </button>
+        )}
         <button
           type="button"
           className={styles.askAllow}

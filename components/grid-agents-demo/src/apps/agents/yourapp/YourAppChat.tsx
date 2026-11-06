@@ -32,7 +32,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
         if (m.ask.card) return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => card.open(m.id, m.ask)} onDeny={chat.deny} />;
         return <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':
-        return m.card.balance ? <BalanceCard balance={m.card.balance} className={styles.accountSkin} /> : <NoteCard note={m.card} />;
+        return m.card.balance ? <BalanceCard balance={m.card.balance} onAction={chat.prompt} className={styles.accountSkin} /> : <NoteCard note={m.card} />;
       case 'chips':
         return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.pick} expired={m.expired} />;
       case 'tag':

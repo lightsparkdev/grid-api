@@ -496,6 +496,11 @@
     background: #fff;
     color: #000;
   }
+
+  // With nothing to decline, the button sits right under the terms.
+  .setupBody + & {
+    margin-top: 24px;
+  }
 }
 
 // ── Pay sheet: Dots' own checkout, full height ─────────────────────────
@@ -827,38 +832,21 @@
 }
 
 // ── Dots balance: the widget in the chat, and its sheet ────────────────
+// In Dots' own colors: its message gray, the black capsule its sheets lead with, its blue only on the track.
 .accountSkin {
-  --acct-radius: 22px;
-  --acct-bg: #edf3ff;
-  --acct-ink: #0b1b3f;
-  --acct-ink-2: #5b6b8c;
-  --acct-button: #fff;
+  --acct-radius: 24px;
+  --acct-bg: var(--dot-them);
+  --acct-ink: var(--dot-text);
+  --acct-ink-2: var(--dot-secondary);
+  --acct-button: var(--dot-card);
   --acct-button-radius: 999px;
-  --acct-accent: var(--dot-blue);
+  --acct-accent: #000;
+  --acct-accent-ink: #fff;
+  --acct-track: var(--dot-blue);
 
   :global([data-theme='dark']) & {
-    --acct-bg: #17213d;
-    --acct-ink: #fff;
-    --acct-ink-2: #8fa3cc;
-    --acct-button: #22305a;
+    --acct-button: #2f2f2f;
+    --acct-accent: #fff;
+    --acct-accent-ink: #000;
   }
-}
-
-.balanceLabel {
-  margin-top: 12px;
-  color: var(--dot-secondary);
-  font-size: 15px;
-}
-
-.balanceAmount {
-  font-size: 40px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  line-height: 46px;
-}
-
-.balanceDetail {
-  align-self: stretch;
-  margin-top: 20px;
 }

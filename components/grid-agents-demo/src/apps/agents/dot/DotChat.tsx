@@ -21,9 +21,9 @@ import {
   type ScrollCurve,
 } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
-import type { AgentAsk, AgentBalance, AgentMeta, Message, Product } from '../conversation';
+import type { AgentAsk, AgentMeta, Message, Product } from '../conversation';
 import { linkedBank } from '../linkedBank';
-import { BalanceCard, BalanceDetail, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
+import { BalanceCard, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
 import { AppSheet } from '../sheet';
 import { cardLabel } from '../vault/useCardEntry';
 import { DotGlyph, useDotBank, useDotCard } from './DotVault';
@@ -158,9 +158,11 @@ function SetupSheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow:
           <u>Settings</u>.
         </p>
       </div>
-      <button type="button" className={styles.notNow} onClick={onDeny}>
-        {ask.deny ?? 'Not now'}
-      </button>
+      {ask.deny && (
+        <button type="button" className={styles.notNow} onClick={onDeny}>
+          {ask.deny}
+        </button>
+      )}
       <button type="button" className={styles.black} onClick={onAllow}>
         {ask.allow ?? 'Turn on'}
       </button>
@@ -259,26 +261,6 @@ function PaySheet({ ask, onAllow, onDeny, onClose }: { ask: AgentAsk; onAllow: (
           {ask.allow ?? 'Approve'}
         </button>
       </div>
-    </div>
-  );
-}
-
-/** Dots balance's sheet: the floating card with the amount, the limits, recent activity and Add money. */
-function BalanceSheet({ balance, onClose }: { balance: AgentBalance; onClose: () => void }) {
-  return (
-    <div className={styles.setup}>
-      <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-        <IconCrossMedium size={18} />
-      </button>
-      <span className={styles.setupMarks}>
-        <DotsMark size={44} />
-      </span>
-      <span className={styles.balanceLabel}>{balance.wallet}</span>
-      <strong className={styles.balanceAmount}>{balance.amount}</strong>
-      <BalanceDetail balance={balance} className={styles.balanceDetail} />
-      <button type="button" className={styles.black} onClick={onClose}>
-        Add money
-      </button>
     </div>
   );
 }
@@ -456,8 +438,6 @@ export function DotChat({ chat }: AgentChatProps) {
   const [multiline, setMultiline] = useState(false);
   const [sheet, setSheet] = useState<{ id: number; ask: AgentAsk } | null>(null);
   const [shown, setShown] = useState(false);
-  const [balance, setBalance] = useState<AgentBalance | null>(null);
-  const [balanceShown, setBalanceShown] = useState(false);
   const sub = useSubAgentSheet(chat.messages, SHEET_IN);
   const card = useDotCard({ messages: chat.messages, present: SHEET_IN, onAllow: chat.allow });
   const bank = useDotBank({ messages: chat.messages, present: SHEET_IN, onAllow: chat.allow, onDeny: chat.deny });
@@ -542,10 +522,7 @@ export function DotChat({ chat }: AgentChatProps) {
             balance={b}
             track
             className={styles.accountSkin}
-            onOpen={() => {
-              setBalance(b);
-              setBalanceShown(true);
-            }}
+            onAction={chat.prompt}
           />
         ) : (
           <NoteCard note={m.card} />
@@ -656,9 +633,6 @@ export function DotChat({ chat }: AgentChatProps) {
       {sub.sheet}
       {card.sheet}
       {bank.sheet}
-      <AppSheet open={balanceShown} present={SHEET_IN} className={styles.setupPanel} onDismiss={() => setBalanceShown(false)}>
-        {balance && <BalanceSheet balance={balance} onClose={() => setBalanceShown(false)} />}
-      </AppSheet>
     </div>
   );
 }

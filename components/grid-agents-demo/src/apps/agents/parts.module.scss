@@ -554,67 +554,30 @@
   gap: 6px;
   margin-top: 14px;
 
-  span {
+  button {
     flex: 1;
     padding: 9px 0;
+    border: 0;
     border-radius: var(--acct-button-radius, 12px);
     background: var(--acct-button, rgba(255, 255, 255, 0.1));
-    color: var(--acct-ink, #fff);
+    color: var(--acct-button-ink, var(--acct-ink, #fff));
+    font: inherit;
     font-size: 14px;
     font-weight: 500;
     line-height: 18px;
     text-align: center;
+    cursor: pointer;
+    transition: scale 0.15s ease;
+
+    &:active {
+      scale: 0.97;
+    }
   }
 
-  span[data-primary] {
+  button[data-primary] {
     background: var(--acct-accent, #0a84ff);
     color: var(--acct-accent-ink, #fff);
   }
-}
-
-// Inside a balance sheet or page: the limits, then recent activity.
-.detail {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.detailStats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-
-  span {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 12px;
-    border-radius: 14px;
-    background: var(--part-sunk, #f2f2f2);
-  }
-
-  small {
-    color: var(--part-muted, #8a8a8d);
-    font-size: 12px;
-  }
-
-  b {
-    font-size: 17px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-}
-
-.detailActivity {
-  display: flex;
-  flex-direction: column;
-}
-
-.detailHead {
-  margin-bottom: 4px;
-  color: var(--part-muted, #8a8a8d);
-  font-size: 13px;
-  font-weight: 600;
 }
 
 // ── Sub-agent: the working row, and its sheet ──────────────────────────

@@ -256,6 +256,18 @@ export function useAgentBrain({
     void start(entry.flow, FLOWS[entry.flow](ctx), cb.current.readsFor);
   }, [entry, cancelRun, push, start]);
 
+  /** A control in the thread (the balance card's Add money) asks as the visitor would, with its tile's line. */
+  const prompt = useCallback(
+    (flow: ActionId) => {
+      if (runRef.current) return;
+      const def = ACTIONS.find((a) => a.id === flow)!;
+      push({ kind: 'me', text: def.prompts[0] });
+      const ctx: FlowContext = { ...cb.current.context(), variant: 0 };
+      void start(flow, FLOWS[flow](ctx), cb.current.readsFor);
+    },
+    [push, start],
+  );
+
   const activeFlow = running;
   useEffect(() => {
     cb.current.onActiveFlow?.(activeFlow);
@@ -329,6 +341,7 @@ export function useAgentBrain({
     allow,
     deny,
     pick,
+    prompt,
     authed,
     authing,
     asking,

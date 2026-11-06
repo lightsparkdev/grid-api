@@ -86,9 +86,11 @@ export function InstinctSafari({
           <button type="button" className={styles.black} data-pressing={b.pressing || undefined} disabled={busy} onClick={onAllow}>
             {b.pressing ? 'Saving…' : (ask.allow ?? 'Save to vault')}
           </button>
-          <button type="button" className={styles.notNow} disabled={busy} onClick={onDeny}>
-            {state === 'denied' ? (ask.denied ?? 'Not now') : (ask.deny ?? 'Not now')}
-          </button>
+          {ask.deny && (
+            <button type="button" className={styles.notNow} disabled={busy} onClick={onDeny}>
+              {state === 'denied' ? (ask.denied ?? ask.deny) : ask.deny}
+            </button>
+          )}
         </main>
       </div>
     </Safari>

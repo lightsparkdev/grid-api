@@ -60,6 +60,7 @@ export interface AgentAsk {
   expires?: string;
   allow?: string;
   allowed?: string;
+  /** Omitted when there's nothing to decline (the person asked for it): the card shows only the way forward. */
   deny?: string;
   denied?: string;
   /** The merchant whose terms the person accepts by allowing (Muse's footnote). */
@@ -69,6 +70,8 @@ export interface AgentAsk {
   card?: { brand: string; last4: string; expires: string; name: string };
   /** A bank to link for top-ups: the skin opens the bank flow (vault/BankLink), which picks the country and account. */
   bank?: true;
+  /** The ask as a text, for an app you answer by texting back (Instinct): what it proposes and how to say yes. */
+  text?: string;
 }
 
 /** The app's own balance: the website card's anatomy, plus what each app shows natively. */

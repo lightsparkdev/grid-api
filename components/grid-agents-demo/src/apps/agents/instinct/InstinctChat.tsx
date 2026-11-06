@@ -145,11 +145,15 @@ function Detected({ text }: { text: string }) {
 
 /** A money ask, as Instinct texts it: what, how much, from where, and to reply yes. */
 function askText(ask: AgentAsk) {
+  if (ask.text) return ask.text;
   const what = ask.who ? `${ask.who.name}, ${ask.amount}` : `${ask.title}, ${ask.amount}`;
   const from = ask.method ? ` ${ask.method.replace(/^From /, 'from ')}.` : '';
   const verb = ask.who?.icon ? 'place the order' : 'send it';
   return `${what}.${from} reply yes and i’ll ${verb}`;
 }
+
+/** Only what's sensitive (a card, a bank) opens app.instinct.com; everything else is answered by texting back. */
+const linksOut = (ask: AgentAsk) => !!(ask.card || ask.bank);
 
 /** A choice, as a numbered text to answer by typing. */
 function chipsText(m: Extract<Message, { kind: 'chips' }>) {
@@ -350,7 +354,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
   useEffect(() => {
     const open = [...chat.messages]
       .reverse()
-      .find((m) => (m.kind === 'ask' && m.state === 'open' && !m.ask.rows && !m.ask.bank) || (m.kind === 'chips' && m.picked === null && !m.expired));
+      .find((m) => (m.kind === 'ask' && m.state === 'open' && !linksOut(m.ask)) || (m.kind === 'chips' && m.picked === null && !m.expired));
     if (!open || drafted.current.has(open.id)) return;
     drafted.current.add(open.id);
     if (!composer) setComposer(open.kind === 'chips' ? open.chips[0].label : 'Yes');
@@ -406,7 +410,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         return b ? bubble('balance', <span className={styles.lines}>{balanceText(b)}</span>, !theirsNext) : <InstinctImage note={m.card} />;
       }
       case 'ask':
-        return m.ask.rows || m.ask.bank ? (
+        return linksOut(m.ask) ? (
           <VaultLink m={m} onOpen={() => openLink(m.id)} />
         ) : (
           bubble('ask', <Detected text={askText(m.ask)} />, !theirsNext)
@@ -427,7 +431,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
       case 'me': {
         // A reply to an ask or a choice shows what it answers, as iMessage's inline reply does.
         const answers =
-          prev?.kind === 'ask' && !prev.ask.rows && !prev.ask.bank ? prev : prev?.kind === 'chips' ? prev : null;
+          prev?.kind === 'ask' && !linksOut(prev.ask) ? prev : prev?.kind === 'chips' ? prev : null;
         // Instinct only ever thumbs-ups what you send (recording 2).
         const tapback = m.react || (answers?.kind === 'ask' && answers.state === 'done') ? '👍' : undefined;
         const fresh = !opened.has(m.id);

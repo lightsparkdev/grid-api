@@ -12,8 +12,8 @@ import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5
 import { Flag } from '@/apps/shared/Flag';
 import { ChatFrame, ComposerField, NATIVE_IN, ScrollEdge, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
-import type { AgentAsk, AgentBalance, Chip, Message, Product } from '../conversation';
-import { BalanceCard, BalanceDetail, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
+import type { AgentAsk, Chip, Message, Product } from '../conversation';
+import { BalanceCard, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
 import { AppSheet } from '../sheet';
 import { linkedBank } from '../linkedBank';
 import { useGrokBank } from './GrokBank';
@@ -313,34 +313,6 @@ function OrderCard({ m, onAllow, onDeny }: { m: Ask; onAllow: () => void; onDeny
   );
 }
 
-/** The balance's detail sheet: the amount, limits and activity, with Grok's glass action bar at the foot. */
-function BalanceSheet({ balance, onDone }: { balance: AgentBalance; onDone: () => void }) {
-  return (
-    <div className={styles.sheet}>
-      <div className={styles.sheetBar}>
-        <span />
-        <strong>{balance.wallet}</strong>
-        <button type="button" className={`${styles.sheetButton} ${styles.sheetDone}`} onClick={onDone}>
-          <GlassPill radius={21.33} tone="blue">
-            <span className={styles.sheetLabel}>Done</span>
-          </GlassPill>
-        </button>
-      </div>
-      <div className={styles.balanceHero}>
-        <strong>{balance.amount}</strong>
-        <span>{balance.note}</span>
-      </div>
-      <BalanceDetail balance={balance} />
-      <GlassPill radius={28} absolute className={styles.actionBar}>
-        <span className={styles.actionRow}>
-          <span className={styles.actionSecondary}>Send</span>
-          <span className={styles.actionPrimary}>Add money</span>
-        </span>
-      </GlassPill>
-    </div>
-  );
-}
-
 /** A receipt right after the order card it settles would say it twice; the card already tracks it. */
 function settledByOrder(i: number, all: Message[]) {
   for (let j = i - 1; j >= 0; j--) {
@@ -360,8 +332,6 @@ export function GrokChat({ chat }: AgentChatProps) {
   const [shown, setShown] = useState(false);
   const closeSheet = () => setShown(false);
   const working = chat.busy || chat.messages.some((m) => m.kind === 'work');
-  const [balance, setBalance] = useState<AgentBalance | null>(null);
-  const [balanceShown, setBalanceShown] = useState(false);
   const sub = useSubAgentSheet(chat.messages, SHEET_IN);
 
   const render = (m: Message, i: number, all: Message[]) => {
@@ -406,10 +376,7 @@ export function GrokChat({ chat }: AgentChatProps) {
               balance={b}
               track
               className={styles.accountSkin}
-              onOpen={() => {
-                setBalance(b);
-                setBalanceShown(true);
-              }}
+              onAction={chat.prompt}
             />
           );
         }
@@ -534,9 +501,6 @@ export function GrokChat({ chat }: AgentChatProps) {
       </AppSheet>
       {sub.sheet}
       {bank.sheet}
-      <AppSheet open={balanceShown} present={SHEET_IN} dim={0.2} className={styles.sheetPanel} onDismiss={() => setBalanceShown(false)}>
-        {balance && <BalanceSheet balance={balance} onDone={() => setBalanceShown(false)} />}
-      </AppSheet>
     </div>
   );
 }

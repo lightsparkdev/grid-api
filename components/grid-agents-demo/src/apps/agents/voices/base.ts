@@ -148,7 +148,6 @@ const limitsRows = (p?: Params): AgentAsk['rows'] => [
 export const ASKS = {
   connect: (p) => ({
     title: `${s(p, 'agent')} wants its own account`,
-    badge: 'L',
     rows: [
       { text: 'Its own balance', sub: 'Funded by you, separate from your bank', icon: 'wallet' },
       { text: `Up to ${usd(n(p, 'perTx'))} a payment`, sub: `${usd(n(p, 'daily'))} a day`, icon: 'gauge' },
@@ -156,12 +155,9 @@ export const ASKS = {
     ],
     allow: 'Connect',
     allowed: 'Connected',
-    deny: 'Not now',
-    denied: 'Not now',
   }),
   limits: (p) => ({
     title: `Update ${s(p, 'agent')}’s limits`,
-    badge: 'L',
     rows: limitsRows(p),
     allow: 'Save',
     allowed: 'Saved',

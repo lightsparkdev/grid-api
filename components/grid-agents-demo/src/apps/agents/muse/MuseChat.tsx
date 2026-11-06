@@ -2,10 +2,11 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { TextMorph } from 'torph/react';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
 import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
+import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { ChatFrame, ComposerField, ScrollEdge, STILL, TypingDots, useOpenedIds, type ScrollCurve } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentBalance, AskRow, Chip, Message, Product } from '../conversation';
-import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useSubAgentSheet } from '../parts';
+import { askButtons, BalanceActions, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useSubAgentSheet, type BalanceAction } from '../parts';
 import { ConnectorCard, useMuseBank, useMuseCard } from './MuseConnect';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
@@ -40,8 +41,8 @@ function BrowserCard({ status, waiting }: { status: string; waiting?: boolean })
   );
 }
 
-/** Muse balance as one of Muse's artifacts: dark stat tiles, the activity under them, then the actions. */
-function BalanceArtifact({ balance }: { balance: AgentBalance }) {
+/** Muse balance as one of Muse's artifacts: the stat tiles, then Add money and Activity (asked for in the thread). */
+function BalanceArtifact({ balance, onAction }: { balance: AgentBalance; onAction: (flow: BalanceAction) => void }) {
   return (
     <div className={styles.artifact}>
       <span className={styles.artifactHead}>{balance.wallet}</span>
@@ -60,24 +61,7 @@ function BalanceArtifact({ balance }: { balance: AgentBalance }) {
           <b>{balance.spent.limit}</b>
         </span>
       </div>
-      {balance.activity.length > 0 && (
-        <div className={styles.artifactRows}>
-          {balance.activity.map((r, i) => (
-            <span key={`${r.title}-${i}`}>
-              <span>
-                {r.title}
-                <small>{r.detail}</small>
-              </span>
-              <b data-in={r.incoming || undefined}>{r.amount}</b>
-            </span>
-          ))}
-        </div>
-      )}
-      <span className={styles.artifactActions}>
-        <span data-primary>Add money</span>
-        <span>Card</span>
-        <span>Send</span>
-      </span>
+      <BalanceActions onAction={onAction} className={styles.artifactActions} />
     </div>
   );
 }
@@ -217,15 +201,27 @@ function ApprovalCard({
     const t = window.setTimeout(() => setReady(true), 900);
     return () => window.clearTimeout(t);
   }, [ready]);
+  // A payment is a checkout Muse is holding open; setting up or changing the balance is Muse asking about itself.
+  const checkout = !!ask.amount;
   return (
     <div className={styles.card} data-ready={ready || undefined}>
       <div className={styles.browserHead}>
-        <span className={styles.globe}>
-          <IconGlobe size={14} />
-        </span>
+        <span className={styles.globe}>{checkout ? <IconGlobe size={14} /> : <IconWallet1 size={14} />}</span>
         <span className={styles.browserTitle}>
-          <strong>Checkout</strong>
-          <small>{state === 'open' ? 'Waiting for you' : state === 'done' ? 'Done' : state === 'denied' ? 'Stopped' : state === 'expired' ? 'Expired' : 'Working'}</small>
+          <strong>{checkout ? 'Checkout' : 'Muse balance'}</strong>
+          <small>
+            {state === 'open'
+              ? checkout
+                ? 'Waiting for you'
+                : 'Needs you'
+              : state === 'done'
+                ? 'Done'
+                : state === 'denied'
+                  ? 'Stopped'
+                  : state === 'expired'
+                    ? 'Expired'
+                    : 'Working'}
+          </small>
         </span>
       </div>
       <div className={styles.cardTitle}>
@@ -295,15 +291,17 @@ function ApprovalCard({
       )}
       {!ask.rows && ask.method && <p className={styles.method}>{ask.method}</p>}
       <div className={styles.actions} data-state={state}>
-        <button
-          type="button"
-          className={styles.deny}
-          data-chosen={state === 'denied' || undefined}
-          disabled={!ready || b.settled || b.pressing}
-          onClick={onDeny}
-        >
-          <TextMorph {...MORPH}>{b.denyLabel}</TextMorph>
-        </button>
+        {ask.deny && (
+          <button
+            type="button"
+            className={styles.deny}
+            data-chosen={state === 'denied' || undefined}
+            disabled={!ready || b.settled || b.pressing}
+            onClick={onDeny}
+          >
+            <TextMorph {...MORPH}>{b.denyLabel}</TextMorph>
+          </button>
+        )}
         <button
           type="button"
           className={styles.allow}
@@ -404,7 +402,7 @@ export function MuseChat({ chat }: AgentChatProps) {
         if (m.ask.card) return <ConnectorCard ask={m.ask} state={m.state} onOpen={() => card.open(m.id, m.ask)} />;
         return <ApprovalCard m={m} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card':
-        if (m.card.balance) return <BalanceArtifact balance={m.card.balance} />;
+        if (m.card.balance) return <BalanceArtifact balance={m.card.balance} onAction={chat.prompt} />;
         return (
           <div className={styles.noteWrap} data-pos={groupPosition(i, all)}>
             <NoteCard note={m.card} className={styles.note} />

@@ -194,12 +194,12 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     wallet: 'Instinct balance',
     lines: {
       greeting: () => 'hey, it’s Instinct. text me what you need and i’ll handle it',
-      'connect.intro': () => 'i’ll need an Instinct balance for that. set it up in your vault:',
+      'connect.intro': () => 'i’ll need an Instinct balance for that, with limits you ok',
       'connect.done': () => 'done. your Instinct balance is on, and i’ll stay inside your limits',
       'connect.denied': () => 'ok, no money stuff then',
       'fund.ask': () => 'how do you want to send it?',
       'fund.done': (p) => `got it. ${usd2(n(p, 'balance'))} in the account`,
-      'limits.intro': () => 'i can’t change my own limits. confirm them in your vault:',
+      'limits.intro': () => 'i can’t change my own limits, you have to ok them',
       'limits.done': (p) => `done. i’ll ask you for anything over ${usd(n(p, 'approve'))}`,
       'pay.intro': () => `${SOFIA.first} banks with ${SOFIA.bank}, so PIX. ${SOFIA.local.replace('.00', '')} ≈ ${usd2(SOFIA.usd)}`,
       'pay.done': () => `sent, ${SOFIA.first} has it`,
@@ -219,13 +219,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       connect: (p) => ({
         ...ASKS.connect(p),
         title: 'Turn on Instinct balance',
-        rows: [
-          { text: 'Per payment', sub: usd(n(p, 'perTx')), icon: 'gauge' },
-          { text: 'Per day', sub: usd(n(p, 'daily')), icon: 'gauge' },
-          { text: 'Ask me above', sub: usd(n(p, 'approve')), icon: 'lock' },
-        ],
-        allow: 'Save to vault',
-        allowed: 'Saved',
+        text: `here’s what i’d set: up to ${usd(n(p, 'perTx'))} a payment, ${usd(n(p, 'daily'))} a day, and i’ll text you before anything over ${usd(n(p, 'approve'))}. reply yes and i’ll turn it on`,
       }),
       vault: () => ({
         ...ASKS.vault(),
@@ -247,13 +241,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       limits: (p) => ({
         ...ASKS.limits(p),
         title: 'Update your limits',
-        rows: [
-          { text: `Acts alone up to (was ${usd(n(p, 'fromApprove'))})`, sub: usd(n(p, 'approve')), icon: 'lock' },
-          { text: `Per day (was ${usd(n(p, 'fromDaily'))})`, sub: usd(n(p, 'daily')), icon: 'gauge' },
-          { text: `Per payment (was ${usd(n(p, 'fromPerTx'))})`, sub: usd(n(p, 'perTx')), icon: 'gauge' },
-        ],
-        allow: 'Save to vault',
-        allowed: 'Saved',
+        text: `new limits: i’d act alone up to ${usd(n(p, 'approve'))} (was ${usd(n(p, 'fromApprove'))}), ${usd(n(p, 'daily'))} a day (was ${usd(n(p, 'fromDaily'))}), ${usd(n(p, 'perTx'))} a payment (was ${usd(n(p, 'fromPerTx'))}). reply yes to save them`,
       }),
     },
   },

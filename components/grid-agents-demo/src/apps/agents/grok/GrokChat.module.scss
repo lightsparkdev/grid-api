@@ -193,10 +193,19 @@
   }
 }
 
+// A 30pt box pinned to the pill's center (a grid would size its row to the glyph and center it low), drawn in
+// the emoji face's own metrics so the glyph sits in the middle of that box.
 .reactEmoji {
-  position: relative;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   font-size: 30px;
-  line-height: 1;
+  line-height: 30px;
+  text-align: center;
 }
 
 .sender,
@@ -1032,60 +1041,6 @@
   --acct-track: var(--grok-green);
   --acct-edge: inset 0 0 0 1px var(--grok-line);
   width: 325px;
-}
-
-.balanceHero {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 24px 0 22px;
-
-  strong {
-    font-size: 44px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-    line-height: 50px;
-  }
-
-  span {
-    color: var(--grok-muted);
-    font-size: 15px;
-  }
-}
-
-.actionBar {
-  right: 16px;
-  bottom: 34px;
-  left: 16px;
-  height: 56px;
-}
-
-.actionRow {
-  position: relative;
-  display: flex;
-  gap: 8px;
-  height: 56px;
-  padding: 8px;
-}
-
-.actionPrimary,
-.actionSecondary {
-  display: grid;
-  flex: 1;
-  place-items: center;
-  border-radius: 20px;
-  font-size: 17px;
-  font-weight: 510;
-}
-
-.actionPrimary {
-  background: var(--grok-ink);
-  color: var(--grok-ink-text);
-}
-
-.actionSecondary {
-  background: var(--grok-soft);
 }
 
 // The sub-agent row, in the status row's type.
