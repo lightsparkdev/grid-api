@@ -61,6 +61,10 @@ export type AgentEvent =
   | { type: 'card.vault' }
   /** A top-up charged to the vaulted card. */
   | { type: 'fund.card'; amount: number }
+  /** The person links their bank as an external account (the agent only ever sees its id). */
+  | { type: 'bank.link' }
+  /** A top-up from the linked bank over ACH. */
+  | { type: 'fund.bank'; amount: number }
   /** The agent shares where someone can pay the account. */
   | { type: 'getpaid.address'; network: DepositNetwork; currency: string }
   /** Someone paid it. */

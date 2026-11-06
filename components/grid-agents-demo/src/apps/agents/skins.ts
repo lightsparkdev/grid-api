@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import type { ConnectorId } from '@/data/connectors';
 import { ClaudeChat } from './claude/ClaudeChat';
-import { DotChat } from './dot/DotChat';
+import { DOTS_READS_FOR, DotChat } from './dot/DotChat';
 import { GrokChat } from './grok/GrokChat';
 import { INSTINCT_READS_FOR, InstinctChat } from './instinct/InstinctChat';
 import { MuseChat } from './muse/MuseChat';
@@ -22,7 +22,7 @@ export interface AgentSkin {
 export const SKINS: Record<ConnectorId, AgentSkin> = {
   muse: { id: 'muse', Chat: MuseChat },
   grok: { id: 'grok', Chat: GrokChat },
-  dot: { id: 'dot', Chat: DotChat },
+  dot: { id: 'dot', Chat: DotChat, readsFor: DOTS_READS_FOR },
   instinct: { id: 'instinct', Chat: InstinctChat, readsFor: INSTINCT_READS_FOR },
   claude: { id: 'claude', Chat: ClaudeChat },
   yourapp: { id: 'yourapp', Chat: YourAppChat },

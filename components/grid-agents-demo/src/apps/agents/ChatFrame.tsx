@@ -4,6 +4,7 @@ import { AnimatePresence, motion, type TargetAndTransition, type Transition } fr
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { easeOutSnappy, motionTransition } from '@/lib/easing';
+import { smoothShapeClip, type CapsuleQuarter } from '@/lib/squircle/path';
 import type { Message } from './conversation';
 import type { ChatView } from './types';
 import styles from './ChatFrame.module.scss';
@@ -27,16 +28,24 @@ function bezier(x1: number, y1: number, x2: number, y2: number) {
     return at(y1, y2, (lo + hi) / 2);
   };
 }
-const SCROLL_EASE = bezier(0.28, 0.05, 0.65, 1);
-const SCROLL_MS = 280;
+/** How the thread moves to its foot: a timed curve, or at once. */
+export type ScrollCurve = { ms: number; ease: [number, number, number, number] } | 'snap';
+/** What grew the thread: a new row of this kind, the agent starting to type, or a row growing in place (a receipt, a reaction, the composer). */
+export type ScrollCause = Message['kind'] | 'typing' | 'grow';
+
+const DEFAULT_SCROLL: ScrollCurve = { ms: 280, ease: [0.28, 0.05, 0.65, 1] };
 
 /**
  * Keeps a scrolling thread on its newest message: when the content grows (a
  * message, a typing bubble turning into text, the composer growing), the whole
- * thread scrolls up together on the measured curve. Scrolled back to read, it
- * stays put until the visitor returns to the foot.
+ * thread scrolls up together on the curve the skin measured for what grew it.
+ * Scrolled back to read, it stays put until the visitor returns to the foot.
  */
-function useStickToEnd(scroller: React.RefObject<HTMLDivElement>, content: React.RefObject<HTMLDivElement>) {
+function useStickToEnd(
+  scroller: React.RefObject<HTMLDivElement>,
+  content: React.RefObject<HTMLDivElement>,
+  curveFor: React.MutableRefObject<() => ScrollCurve>,
+) {
   useEffect(() => {
     const el = scroller.current;
     const inner = content.current;
@@ -55,16 +64,18 @@ function useStickToEnd(scroller: React.RefObject<HTMLDivElement>, content: React
       const to = end();
       if (Math.abs(to - from) < 1) return;
       settle();
+      const curve = curveFor.current();
       // The first layout lands without motion.
-      if (!el.dataset.ready) {
+      if (!el.dataset.ready || curve === 'snap') {
         el.scrollTop = to;
         return;
       }
+      const ease = bezier(...curve.ease);
       animating = true;
       const t0 = performance.now();
       const step = (now: number) => {
-        const t = Math.min(1, (now - t0) / SCROLL_MS);
-        el.scrollTop = from + (end() - from) * SCROLL_EASE(t);
+        const t = Math.min(1, (now - t0) / curve.ms);
+        el.scrollTop = from + (end() - from) * ease(t);
         if (t < 1) raf = requestAnimationFrame(step);
         else animating = false;
       };
@@ -93,7 +104,105 @@ function useStickToEnd(scroller: React.RefObject<HTMLDivElement>, content: React
       el.removeEventListener('wheel', interrupt);
       el.removeEventListener('touchstart', interrupt);
     };
-  }, [scroller, content]);
+  }, [scroller, content, curveFor]);
+}
+
+/** A bubble up to 2.4 radii tall (one line in every skin) is a pill, with true capsule ends. */
+const PILL_REACH = 1.2;
+const CORNERS: [CapsuleQuarter, string][] = [
+  ['tr', 'border-top-right-radius'],
+  ['br', 'border-bottom-right-radius'],
+  ['bl', 'border-bottom-left-radius'],
+  ['tl', 'border-top-left-radius'],
+];
+
+/** The width of a bubble's text: its longest line, not the width the text wrapped in (absolute decorations aside). */
+function textWidth(el: HTMLElement) {
+  const range = document.createRange();
+  let left = Infinity;
+  let right = -Infinity;
+  const take = (r: DOMRect) => {
+    if (r.width === 0) return;
+    left = Math.min(left, r.left);
+    right = Math.max(right, r.right);
+  };
+  const inFlow = (node: Node) => {
+    for (let p = node.parentElement; p && p !== el; p = p.parentElement) {
+      if (getComputedStyle(p).position === 'absolute') return false;
+    }
+    return true;
+  };
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    if (!n.textContent?.trim() || !inFlow(n)) continue;
+    range.selectNodeContents(n);
+    Array.from(range.getClientRects()).forEach(take);
+  }
+  el.querySelectorAll('img').forEach((img) => inFlow(img) && take(img.getBoundingClientRect()));
+  return right > left ? right - left : null;
+}
+
+/**
+ * Shapes every `[data-bubble]` in the thread as iOS does: the bubble hugs its
+ * longest line (CSS sizes wrapped text to the width it wrapped in, leaving a
+ * gap on the right), and a one-line bubble is a pill (`data-pill`; see
+ * styles/_corners.scss). Every corner is then clipped to its app's shape (the
+ * CSS radius at `--bubble-smoothing`), a pill's ends as a smooth capsule, which
+ * no CSS corner can draw. A corner with a tail (`data-tail`) keeps its CSS
+ * shape, which the tail is drawn to meet.
+ */
+function useBubbleShapes(stack: React.RefObject<HTMLDivElement>) {
+  useEffect(() => {
+    const root = stack.current;
+    if (!root) return;
+    const shape = (el: HTMLElement) => {
+      el.style.width = '';
+      const cs = getComputedStyle(el);
+      const k = el.getBoundingClientRect().width / el.offsetWidth || 1;
+      const text = textWidth(el);
+      if (text !== null) {
+        const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+        const border = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+        const inner = el.offsetWidth - padX - border;
+        const hugged = Math.ceil(text / k + 1);
+        if (hugged < inner) el.style.width = `${cs.boxSizing === 'border-box' ? hugged + padX + border : hugged}px`;
+      }
+      const r = parseFloat(cs.getPropertyValue('--bubble-r')) || 0;
+      if (r <= 0) return;
+      el.toggleAttribute('data-pill', el.offsetHeight <= 2 * r * PILL_REACH + 1);
+      // The exact border box: offsetWidth rounds, and a rounded width shaves a flat off a pill's end.
+      const content = cs.boxSizing !== 'border-box';
+      const w = parseFloat(cs.width) + (content ? el.offsetWidth - el.clientWidth + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) : 0);
+      const h = parseFloat(cs.height) + (content ? el.offsetHeight - el.clientHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) : 0);
+      const tails = (el.dataset.tail ?? '').split(' ');
+      const radii = CORNERS.map(([q, prop]) => (tails.includes(q) ? 0 : parseFloat(cs.getPropertyValue(prop)) || 0));
+      const smoothing = parseFloat(cs.getPropertyValue('--bubble-smoothing'));
+      el.style.clipPath = smoothShapeClip(w, h, radii as [number, number, number, number], smoothing, true);
+    };
+    const ro = new ResizeObserver((entries) => entries.forEach((e) => shape(e.target as HTMLElement)));
+    const seen = new WeakSet<Element>();
+    const watch = () => {
+      root.querySelectorAll<HTMLElement>('[data-bubble]').forEach((b) => {
+        if (seen.has(b)) return;
+        seen.add(b);
+        ro.observe(b);
+      });
+    };
+    const mo = new MutationObserver(watch);
+    mo.observe(root, { childList: true, subtree: true });
+    watch();
+    return () => {
+      mo.disconnect();
+      ro.disconnect();
+    };
+  }, [stack]);
+}
+
+/** The rows already in the thread when the app opened: they're just there, and only newer ones animate. */
+export function useOpenedIds(messages: Message[]) {
+  const opened = useRef<Set<number> | null>(null);
+  opened.current ??= new Set(messages.map((m) => m.id));
+  return opened.current;
 }
 
 /** How a row arrives: where it starts, where it lands, and how it gets there. */
@@ -118,6 +227,26 @@ export const NATIVE_IN: RowMotion = {
   animate: { opacity: 1 },
   transition: { duration: 0.15, ease: [0, 0, 0.2, 1] },
 };
+/**
+ * The thread passing under the header, as the apps draw it (recordings 2, 8, 9, 10): a progressive blur,
+ * heaviest behind the status bar and sharp again ~140pt down, over a wash of the app's background. Stacked
+ * backdrop blurs, each masked to a band, build the gradient; the skin's className sets the height and wash.
+ */
+export function ScrollEdge({ className }: { className?: string }) {
+  return (
+    <div className={`${styles.scrollEdge} ${className ?? ''}`} aria-hidden>
+      <i />
+      <i />
+      <i />
+      <i />
+      <i />
+      <i />
+    </div>
+  );
+}
+
+/** A row that doesn't move on its own: its contents animate themselves (a bubble leaving the composer), or it simply appears. */
+export const STILL: RowMotion = { initial: {}, animate: {}, transition: {} };
 /** The composer takes a sentence, not an essay (the model's guardrails start here). */
 export const COMPOSER_MAX = 300;
 /** The field grows a line at a time to this many, then scrolls. */
@@ -140,13 +269,15 @@ export function ChatFrame({
   composerHeight,
   gap = 8,
   threadTop,
-  fadeTop,
   faceId,
   onFaceIdDone,
   rowMotion,
+  scroll,
   overlay,
 }: {
   className?: string;
+  /** How the thread follows each kind of growth (measured per app); defaults to the ease-in-out most of them use. */
+  scroll?: (cause: ScrollCause) => ScrollCurve;
   /** Above everything in the screen, in the skin's colors: its sheets. */
   overlay?: ReactNode;
   messages: Message[];
@@ -155,12 +286,10 @@ export function ChatFrame({
   /** A message, given the thread around it (group chats show a sender's name and avatar once per run). */
   render: (m: Message, i: number, all: Message[]) => ReactNode;
   header: ReactNode;
-  /** The brand's scroll-edge fade under the header. */
+  /** What the thread passes under at the top: the app's ScrollEdge. */
   edge?: ReactNode;
   /** Where a short thread starts (pt from the top, under the header); it fills down, then scrolls up from the composer. */
   threadTop?: number;
-  /** Fade the thread out under the header: gone above `[0]`, whole from `[1]` (pt from the top). Defaults to the 64pt above `threadTop`. */
-  fadeTop?: [number, number];
   composer: ReactNode;
   tabBar?: ReactNode;
   /** The composer's resting distance from the screen's foot, and its height (pt). */
@@ -175,8 +304,19 @@ export function ChatFrame({
   const screenOverlay = useScreenOverlay();
   const threadRef = useRef<HTMLDivElement>(null);
   const stackRef = useRef<HTMLDivElement>(null);
-  useStickToEnd(threadRef, stackRef);
-  const fade = fadeTop ?? (threadTop !== undefined ? [threadTop - 64, threadTop] : undefined);
+  // The newest row names the growth once; anything after that is the thread growing in place.
+  const last = messages[messages.length - 1];
+  const lastKey = last ? `${last.id}:${last.kind === 'them' && last.typing}` : '';
+  const cause: ScrollCause = !last ? 'grow' : last.kind === 'work' || (last.kind === 'them' && last.typing) ? 'typing' : last.kind;
+  const followed = useRef(lastKey);
+  const curveFor = useRef(() => DEFAULT_SCROLL);
+  curveFor.current = () => {
+    const fresh = followed.current !== lastKey;
+    followed.current = lastKey;
+    return scroll?.(fresh ? cause : 'grow') ?? DEFAULT_SCROLL;
+  };
+  useStickToEnd(threadRef, stackRef, curveFor);
+  useBubbleShapes(stackRef);
   // The composer grows with its text, and the thread's foot rises with it.
   const composerRef = useRef<HTMLDivElement>(null);
   const [composerH, setComposerH] = useState(composerHeight);
@@ -201,15 +341,7 @@ export function ChatFrame({
         } as CSSProperties
       }
     >
-      <div
-        ref={threadRef}
-        className={styles.thread}
-        style={
-          fade && {
-            maskImage: `linear-gradient(180deg, transparent ${fade[0]}px, #000 ${fade[1]}px)`,
-          }
-        }
-      >
+      <div ref={threadRef} className={styles.thread}>
         <div ref={stackRef} className={styles.stack} data-top={threadTop !== undefined || undefined}>
           {messages.map((m, i) => {
             const node = render(m, i, messages);
@@ -342,17 +474,20 @@ export function Said({
   typing,
   className,
   pos,
+  tail,
   children,
 }: {
   typing: boolean;
   className?: string;
   /** Where the bubble sits in a run of the sender's messages, for skins that join corners. */
   pos?: string;
+  /** The corner a tail hangs off, which the bubble's shape leaves to the tail. */
+  tail?: CapsuleQuarter;
   children: ReactNode;
 }) {
   // The dots give way at once and the text fills in from pale (~150ms, as Dots and Muse do it) while the bubble grows.
   return (
-    <div className={className} data-pos={pos} data-typing={typing || undefined}>
+    <div className={className} data-bubble data-pos={pos} data-tail={tail} data-typing={typing || undefined}>
       <AnimatePresence initial={false} mode="popLayout">
         {typing ? (
           <motion.div key="dots" exit={{ opacity: 0 }} transition={{ duration: 0.08 }}>

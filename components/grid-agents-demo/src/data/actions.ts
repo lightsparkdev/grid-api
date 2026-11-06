@@ -65,7 +65,7 @@ export const ACTIONS: ActionDef[] = [
   {
     id: 'fund',
     label: 'Add funds',
-    desc: 'Top up over Lightning or stablecoins',
+    desc: 'Top up from a debit card, a bank or crypto',
     prompts: ['Add $50 to my account'],
   },
   {

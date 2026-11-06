@@ -31,6 +31,15 @@ function at(table: number[], ms: number) {
   return table[i] + (next - table[i]) * (f - i);
 }
 
+/** The clip that shapes the screen `el` sits in, when it's the same size as `el` (the cards fill the screen). */
+function screenClip(el: HTMLElement) {
+  for (let e = el.parentElement; e; e = e.parentElement) {
+    const clip = getComputedStyle(e).clipPath;
+    if (clip && clip !== 'none') return e.offsetWidth === el.offsetWidth && e.offsetHeight === el.offsetHeight ? clip : null;
+  }
+  return null;
+}
+
 /**
  * Plays the switch from `from` to `to`, two full-screen layers in the same stage. `direction` 1 brings `to` in from
  * the right (opening a link); -1 brings it in from the left (the "◀ Back to app" breadcrumb). The first frame is
@@ -47,8 +56,11 @@ export function playAppSwitch(
   const stageBg = stage?.style.background ?? '';
   const width = from.offsetWidth;
   if (stage) stage.style.background = wallpaper;
+  // The cards take the display's own corners: the screen's squircle clip when it has one (a plain round
+  // inset would trace circles, then snap to the squircle as the switch lands).
+  const clip = screenClip(from) ?? `inset(0 round ${radius}px)`;
   for (const c of cards) {
-    c.style.clipPath = `inset(0 round ${radius}px)`;
+    c.style.clipPath = clip;
     c.style.transformOrigin = '50% 50%';
   }
   const paint = (ms: number) => {

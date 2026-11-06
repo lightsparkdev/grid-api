@@ -1,4 +1,5 @@
 // Figma 89:297 (iMessage), as the 1:1 thread with Instinct. Dark is iMessage's dark.
+@use '../../../styles/corners';
 
 // Messages and Safari, two full-screen cards; an app switch slides them over the wallpaper.
 .stage {
@@ -77,14 +78,8 @@
 }
 
 .edge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
   height: 149px;
-  z-index: 2;
-  background: linear-gradient(180deg, rgb(var(--im-edge)) 0%, rgba(var(--im-edge), 0.9) 50%, rgba(var(--im-edge), 0.45) 88%, rgba(var(--im-edge), 0) 100%);
-  pointer-events: none;
+  background: linear-gradient(180deg, rgba(var(--im-edge), 0.72) 0%, rgba(var(--im-edge), 0.4) 45%, rgba(var(--im-edge), 0) 100%);
 }
 
 .nav {
@@ -204,7 +199,7 @@
 .me {
   max-width: 284px;
   padding: 10px 13px 10px 14px;
-  border-radius: 20px;
+  @include corners.bubble(20px);
   font-size: 17px;
   line-height: 20px;
   letter-spacing: -0.43px;
@@ -502,9 +497,13 @@
 // iMessage keeps a sender's run tight and opens up where the sender changes.
 $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kind="ask"]';
 
-.screen [data-kind='me'] + :is(#{$theirs}),
-.screen :is(#{$theirs}) + [data-kind='me'] {
+.screen [data-kind='me'] + :is(#{$theirs}) {
   margin-top: 10px;
+}
+
+// Instinct's bubble to yours: 9.7pt apart (recording 2 at 29.3s).
+.screen :is(#{$theirs}) + [data-kind='me'] {
+  margin-top: 6.7px;
 }
 
 // ── Text-only additions (recordings 1, 2, 4, 6) ────────────────────────
@@ -535,11 +534,12 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  // A tapback lands: the row opens above for it, so the bubble dips and the thread rises back.
+  // A tapback lands: the row opens 28pt above for it (9.7pt to 37.7pt in recording 2, 29.3s to 30.2s),
+  // so the bubble dips and the thread rises back, and the cloud clears the bubble above.
   transition: margin-top 0.1s ease-out;
 
   &[data-tapped] {
-    margin-top: 12px;
+    margin-top: 28px;
   }
 
   .me {
@@ -785,30 +785,4 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   &:active {
     scale: 0.98;
   }
-}
-
-.balanceLabel {
-  color: #7a7274;
-  font-size: 13px;
-}
-
-.balanceAmount {
-  font-family: 'New York', ui-serif, Georgia, serif;
-  font-size: 40px;
-  font-weight: 400;
-  line-height: 46px;
-  letter-spacing: -0.8px;
-}
-
-.balanceHero {
-  justify-content: flex-end;
-  gap: 0;
-  height: 150px;
-  background: #fbf8f5;
-}
-
-.balanceSpent {
-  margin-top: 2px;
-  color: #7a7274;
-  font-size: 13px;
 }

@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { TextMorph } from 'torph/react';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
 import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
-import { ChatFrame, ComposerField, NATIVE_IN, Said, TypingDots } from '../ChatFrame';
-import { GlassDisc, GlassPill } from '../glass';
+import { ChatFrame, ComposerField, ScrollEdge, STILL, TypingDots, useOpenedIds, type ScrollCurve } from '../ChatFrame';
+import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentBalance, AskRow, Chip, Message, Product } from '../conversation';
 import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useSubAgentSheet } from '../parts';
 import { useCardScan, VaultCardAsk } from '../vault/CardScan';
@@ -85,7 +85,7 @@ function BalanceArtifact({ balance }: { balance: AgentBalance }) {
 /** What Muse found, as entity links in its bubble: a thumbnail, the name in bold, the price. */
 function EntityLinks({ products }: { products: Product[] }) {
   return (
-    <div className={styles.them}>
+    <div className={styles.them} data-bubble>
       {products.map((p, i) => (
         <span key={p.title} className={styles.entityLine}>
           {i > 0 && ' '}
@@ -322,23 +322,79 @@ function ApprovalCard({
   );
 }
 
+/** Your bubble as Muse sends it (recording 9, 30.08s): the fill lands pale and its text fades in over ~70ms. */
+function SentBubble({ fresh, children }: { fresh: boolean; children: ReactNode }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!fresh || !el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const css = getComputedStyle(el);
+    const fill = css.backgroundColor;
+    const ink = css.color;
+    const a = el.animate(
+      [
+        { backgroundColor: `color-mix(in srgb, ${fill} 65%, transparent)`, color: 'transparent', offset: 0 },
+        { backgroundColor: `color-mix(in srgb, ${fill} 85%, transparent)`, color: 'transparent', offset: 0.43 },
+        { backgroundColor: fill, color: ink, offset: 1 },
+      ],
+      { duration: 117, easing: 'ease-out' },
+    );
+    return () => a.cancel();
+    // A bubble is sent once, on mount.
+  }, []);
+  return (
+    <span ref={ref} className={styles.me} data-bubble>
+      {children}
+    </span>
+  );
+}
+
+/** Muse streams its replies (recording 9, 62.8s): a short first chunk replaces the dots, then a line or two every ~100ms. */
+const STREAM = { first: 22, chunk: 60, everyMs: 100 } as const;
+
+/** The end of the chunk that starts at `from`, on a word boundary. */
+function chunkEnd(text: string, from: number, size: number) {
+  if (from + size >= text.length) return text.length;
+  const space = text.indexOf(' ', from + size);
+  return space < 0 ? text.length : space;
+}
+
+function Streamed({ text, fresh }: { text: string; fresh: boolean }) {
+  const [shown, setShown] = useState(() => (fresh ? chunkEnd(text, 0, STREAM.first) : text.length));
+  useEffect(() => {
+    if (shown >= text.length) return;
+    const t = window.setTimeout(() => setShown((n) => chunkEnd(text, n, STREAM.chunk)), STREAM.everyMs);
+    return () => window.clearTimeout(t);
+  }, [shown, text]);
+  return <>{text.slice(0, shown)}</>;
+}
+
+/** Muse's thread jumps to its foot: rows, the typing bubble and each streamed chunk land without a scroll animation. */
+const museScroll = (): ScrollCurve => 'snap';
+
+/** Muse's tab bar (IMG_1862, Figma Tab Bar - iPhone): icon, left and top in pt, width, height. */
+const TABS = [
+  ['tab-chat', 52, 811, 25.3, 22.7],
+  ['tab-feed', 122, 810, 22.7, 22.7],
+  ['tab-ideas', 192, 810, 17.7, 23.3],
+  ['tab-goals', 258, 810, 22.7, 22.7],
+  ['tab-library', 326, 811, 22, 21.7],
+] as const;
+
 export function MuseChat({ chat }: AgentChatProps) {
+  const openedIds = useOpenedIds(chat.messages);
   const sub = useSubAgentSheet(chat.messages);
   const scan = useCardScan({ wallet: 'Muse balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
         return (
-          <Said
-            typing={m.typing}
-            className={`${styles.them} ${m.typing ? styles.typing : ''}`}
-            pos={groupPosition(i, all)}
-          >
-            {m.text}
-          </Said>
+          <div className={`${styles.them} ${m.typing ? styles.typing : ''}`} data-bubble data-pos={groupPosition(i, all)}>
+            {m.typing ? <TypingDots /> : <Streamed text={m.text} fresh={!openedIds.has(m.id)} />}
+          </div>
         );
       case 'me':
-        return <span className={styles.me}>{m.text}</span>;
+        return <SentBubble fresh={!openedIds.has(m.id)}>{m.text}</SentBubble>;
       case 'ask':
         if (m.ask.card) {
           return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.id, m.ask)} onDeny={chat.deny} className={styles.vaultAsk} />;
@@ -368,7 +424,7 @@ export function MuseChat({ chat }: AgentChatProps) {
         return BROWSING.has(m.key) ? (
           <BrowserCard status={m.status} />
         ) : (
-          <span className={`${styles.them} ${styles.typing}`}>
+          <span className={`${styles.them} ${styles.typing}`} data-bubble>
             <TypingDots />
           </span>
         );
@@ -396,7 +452,8 @@ export function MuseChat({ chat }: AgentChatProps) {
       className={styles.screen}
       messages={chat.messages}
       render={render}
-      rowMotion={() => NATIVE_IN}
+      rowMotion={() => STILL}
+      scroll={museScroll}
       overlay={
         <>
           {sub.sheet}
@@ -407,16 +464,22 @@ export function MuseChat({ chat }: AgentChatProps) {
       onFaceIdDone={chat.authed}
       gap={0}
       threadTop={178}
-      composerBottom={30}
+      edge={<ScrollEdge className={styles.edge} />}
+      composerBottom={91}
       composerHeight={46}
       header={
         <>
-          <div className={styles.menu}>
+          <NoopButton label="Menu" className={styles.menu}>
             <GlassDisc label="Menu" icon={`${A}/menu.svg`} width={32} height={32} />
-          </div>
-          <GlassPill radius={22} absolute className={styles.invite}>
-            <span className={styles.inviteText}>Invite</span>
-          </GlassPill>
+          </NoopButton>
+          <NoopButton label="Call or send a gift" size={100} className={styles.callGift}>
+            <GlassPill radius={22}>
+              <span className={styles.callGiftRow}>
+                <span className={styles.callGiftIcon} style={{ maskImage: 'url(/assets/agents/dot/phone.svg)', maskSize: '126%' }} />
+                <span className={styles.callGiftIcon} style={{ maskImage: `url(${A}/gift.svg)` }} />
+              </span>
+            </GlassPill>
+          </NoopButton>
           <GlassPill radius={16} absolute className={styles.status}>
             <span className={styles.statusText}>
               <strong>Muse</strong>
@@ -459,6 +522,20 @@ export function MuseChat({ chat }: AgentChatProps) {
             )}
           </span>
         </GlassPill>
+      }
+      tabBar={
+        <div className={styles.tabBar}>
+          <GlassPill radius={29} absolute className={styles.tabPill}>
+            <span className={styles.tabSelected} />
+          </GlassPill>
+          {TABS.map(([icon, x, y, w, h]) => (
+            <span
+              key={icon}
+              className={styles.tabIcon}
+              style={{ left: x, top: y - 779, width: w, height: h, maskImage: `url(${A}/${icon}.png)` }}
+            />
+          ))}
+        </div>
       }
     />
   );

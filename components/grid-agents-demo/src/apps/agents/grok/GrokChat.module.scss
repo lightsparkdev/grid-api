@@ -1,7 +1,12 @@
 // Grok Bot, measured from recordings 10-13 (refs/grok/spec.md). Dark follows Grok's own dark theme.
+@use '../../../styles/glass-rim' as rim;
+@use '../../../styles/corners';
+
 .stage {
   position: absolute;
   inset: 0;
+  --grok-sheet: #f4f4f4;
+  --grok-field: #e1e0e3;
   --grok-bg: #fcfcfc;
   --grok-edge: 252, 252, 252;
   --grok-text: #000;
@@ -32,6 +37,8 @@
   --part-divider: #4a90e2;
 
   :global([data-theme='dark']) & {
+    --grok-sheet: #1c1c1e;
+    --grok-field: #2c2c2e;
     --grok-bg: #000;
     --grok-edge: 0, 0, 0;
     --grok-text: #fff;
@@ -54,14 +61,8 @@
 }
 
 .edge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
   height: 140px;
-  z-index: 2;
-  background: linear-gradient(180deg, rgba(var(--grok-edge), 0.96) 0%, rgba(var(--grok-edge), 0.69) 50%, rgba(var(--grok-edge), 0) 100%);
-  pointer-events: none;
+  background: linear-gradient(180deg, rgba(var(--grok-edge), 0.8) 0%, rgba(var(--grok-edge), 0.4) 50%, rgba(var(--grok-edge), 0) 100%);
 }
 
 // ── Header ──────────────────────────────────────────────────────────────
@@ -103,10 +104,9 @@
 
 // ── Thread ──────────────────────────────────────────────────────────────
 .bubble {
-  --r: 20px;
   max-width: 325px;
   padding: 11px 14px 12px;
-  border-radius: var(--r);
+  @include corners.bubble(20px);
   background: var(--grok-bubble);
   font-size: 17px;
   line-height: 24px;
@@ -118,14 +118,18 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+
+  // The reaction pill hangs 15pt under the bubble, and the next message keeps ~19pt below it (recording 10, 99.0s).
+  &[data-reacted] {
+    padding-bottom: 25px;
+  }
 }
 
 // Sent: the bubble is in place from the first frame and its fill darkens from gray in ~170ms.
 .me {
-  --r: 20px;
   max-width: 290px;
   padding: 11px 14px 12px;
-  border-radius: var(--r);
+  @include corners.bubble(20px);
   background: var(--grok-ink);
   color: var(--grok-ink-text);
   font-size: 17px;
@@ -133,31 +137,24 @@
   animation: grok-sent 0.17s cubic-bezier(0, 0, 0.2, 1);
 }
 
-// One line is a pill; where the same sender's bubbles meet, those corners tighten.
-.bubble,
-.me {
-  &[data-single='true'] {
-    --r: 24px;
-  }
-}
-
+// Where the same sender's bubbles meet, those corners tighten (after the mixin, so pills get them too).
 .bubble {
   &[data-up] {
-    border-top-left-radius: 8px;
+    border-top-left-radius: corners.corner(8px);
   }
 
   &[data-down] {
-    border-bottom-left-radius: 8px;
+    border-bottom-left-radius: corners.corner(8px);
   }
 }
 
 .me {
   &[data-up] {
-    border-top-right-radius: 8px;
+    border-top-right-radius: corners.corner(8px);
   }
 
   &[data-down] {
-    border-bottom-right-radius: 8px;
+    border-bottom-right-radius: corners.corner(8px);
   }
 }
 
@@ -167,20 +164,37 @@
   }
 }
 
+// The reaction on your bubble (recording 10 at 98.3s): a bare 23pt emoji inside its bottom-right corner, no pill.
+// At rest: a 32 x 23 gray pill ringed in the background color, its center 27pt in from the bubble's right edge and
+// 3.5pt below its bottom, holding a 15pt emoji (drawn at 30pt and scaled, so the big landing frame is sharp).
 .react {
-  position: relative;
+  position: absolute;
+  right: 11px;
+  bottom: 10px;
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 24px;
-  margin: -8px 10px 0 0;
-  border: 1px solid var(--grok-bg);
-  border-radius: 12px;
-  background: var(--grok-soft);
-  font-size: 15px;
+  width: 32px;
+  height: 23px;
+  pointer-events: none;
+}
+
+.reactPill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #eeeeef;
+  box-shadow: 0 0 0 1px var(--grok-bg);
+
+  :global([data-theme='dark']) & {
+    background: #2c2c2e;
+  }
+}
+
+.reactEmoji {
+  position: relative;
+  font-size: 30px;
   line-height: 1;
-  transform-origin: 50% 0;
 }
 
 .sender,
@@ -548,28 +562,32 @@
   }
 }
 
-.sheetPanel {
-  top: 54px;
+// The form sheet (IMG_1859): a floating card 8pt in from the screen's sides and foot, its top at 124pt
+// under the thread's header, 36pt top corners and bottom corners concentric with the screen's.
+.sheetPanel.sheetPanel {
+  inset: 124px 8px 8px;
 }
 
 .sheet {
   position: relative;
   height: 100%;
-  padding: 14px 16px 0;
-  border-radius: 38px 38px 0 0;
-  background: var(--grok-card);
+  padding: 15px 15px 0;
+  border-radius: 36px 36px calc(var(--screen-corner-radius, 73px) - 8px) calc(var(--screen-corner-radius, 73px) - 8px);
+  background: var(--grok-sheet);
   color: var(--grok-text);
+  // The sheet's own edge is darker than its buttons' (#5d5d5d sides, #9d9d9d top in IMG_1859).
+  @include rim.glass-rim(0.33px, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.36));
 }
 
 .sheetBar {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  height: 44px;
+  height: 42.67px;
 
   strong {
     font-size: 17px;
-    font-weight: 600;
+    font-weight: 500;
   }
 }
 
@@ -589,31 +607,37 @@
   }
 }
 
+// Cancel and Done: 42.67pt glass pills, 15pt in from the text.
 .sheetLabel {
   position: relative;
   display: flex;
   align-items: center;
-  height: 36px;
-  padding: 0 16px;
+  height: 42.67px;
+  padding: 0 15px;
 }
 
 .sheetDone {
   justify-self: end;
   color: #fff;
-  font-weight: 600;
+  font-weight: 500;
+
+  .sheetLabel {
+    padding: 0 13.5px;
+  }
 }
 
+// Labels 13pt, 5pt over their 46pt fields, 33pt between fields (IMG_1859).
 .fields {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-top: 24px;
+  gap: 33px;
+  margin-top: 33px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   color: var(--grok-muted);
   font-size: 13px;
   line-height: 18px;
@@ -622,16 +646,12 @@
 .input {
   display: flex;
   align-items: center;
-  height: 50px;
-  padding: 0 14px;
+  height: 46px;
+  padding: 0 15px;
   border-radius: 12px;
-  background: #eeeef0;
+  background: var(--grok-field);
   color: var(--grok-text);
   font-size: 17px;
-
-  :global([data-theme='dark']) & {
-    background: #1f1f21;
-  }
 }
 
 .toggleRow {

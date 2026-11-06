@@ -1,6 +1,6 @@
 import { TextMorph } from 'torph/react';
-import { ChatFrame, ComposerField, Said } from '../ChatFrame';
-import { GlassPill } from '../glass';
+import { ChatFrame, ComposerField, Said, ScrollEdge } from '../ChatFrame';
+import { GlassPill, NoopButton } from '../glass';
 import type { Message } from '../conversation';
 import { askButtons, AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
 import { useCardScan, VaultCardAsk } from '../vault/CardScan';
@@ -75,7 +75,7 @@ export function ClaudeChat({ chat }: AgentChatProps) {
           </>
         );
       case 'me':
-        return <span className={styles.me}>{m.text}</span>;
+        return <span className={styles.me} data-bubble>{m.text}</span>;
       case 'tag':
         return (
           <span className={styles.tag}>
@@ -145,22 +145,26 @@ export function ClaudeChat({ chat }: AgentChatProps) {
       threadTop={150}
       composerBottom={108}
       composerHeight={52}
-      edge={<div className={styles.edge} />}
+      edge={<ScrollEdge className={styles.edge} />}
       header={
         <>
-          <GlassPill radius={24} absolute className={styles.menu}>
-            <span className={styles.disc}>
-              <span className={styles.glyph} style={mask(`${A}/menu.svg`, 24, 24)} />
-            </span>
-          </GlassPill>
+          <NoopButton label="Menu" size={48} className={styles.menu}>
+            <GlassPill radius={24}>
+              <span className={styles.disc}>
+                <span className={styles.glyph} style={mask(`${A}/menu.svg`, 24, 24)} />
+              </span>
+            </GlassPill>
+          </NoopButton>
           <GlassPill radius={38} absolute className={styles.mascot}>
             <span className={styles.disc}>
               <ClaudeMascot state={mascotState} />
             </span>
           </GlassPill>
-          <GlassPill radius={24} absolute className={styles.account}>
-            <span className={styles.disc}>M</span>
-          </GlassPill>
+          <NoopButton label="Account" size={48} className={styles.account}>
+            <GlassPill radius={24}>
+              <span className={styles.disc}>M</span>
+            </GlassPill>
+          </NoopButton>
         </>
       }
       composer={

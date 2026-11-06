@@ -1,7 +1,7 @@
 import { TextMorph } from 'torph/react';
 import { SfSymbol } from '@/apps/shared/icons';
 import { GridLogoMark } from '@/components/GridWordmark';
-import { ChatFrame, ComposerField, Said } from '../ChatFrame';
+import { ChatFrame, ComposerField, Said, ScrollEdge } from '../ChatFrame';
 import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
 import { AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
@@ -25,7 +25,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
           </>
         );
       case 'me':
-        return <span className={styles.me}>{m.text}</span>;
+        return <span className={styles.me} data-bubble>{m.text}</span>;
       case 'ask':
         if (m.ask.card) return <VaultCardAsk ask={m.ask} state={m.state} onOpen={() => scan.open(m.id, m.ask)} onDeny={chat.deny} />;
         return <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />;
@@ -70,7 +70,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
       threadTop={172}
       composerBottom={34}
       composerHeight={48}
-      edge={<div className={styles.edge} />}
+      edge={<ScrollEdge className={styles.edge} />}
       header={
         <>
           <span className={styles.mark}>

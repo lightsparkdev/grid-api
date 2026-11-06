@@ -1,4 +1,5 @@
 // Your app: a neutral chat in the playground's own grays.
+@use '../../../styles/corners';
 .screen {
   --ya-bg: #f9f9f9;
   --ya-edge: 249, 249, 249;
@@ -39,14 +40,8 @@
 }
 
 .edge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
   height: 150px;
-  z-index: 2;
-  background: linear-gradient(180deg, rgba(var(--ya-edge), 0.96) 0%, rgba(var(--ya-edge), 0.7) 55%, rgba(var(--ya-edge), 0) 100%);
-  pointer-events: none;
+  background: linear-gradient(180deg, rgba(var(--ya-edge), 0.8) 0%, rgba(var(--ya-edge), 0.4) 50%, rgba(var(--ya-edge), 0) 100%);
 }
 
 .mark {
@@ -106,7 +101,7 @@
 .them,
 .me {
   padding: 10px 15px;
-  border-radius: 20px;
+  @include corners.bubble(20px);
   font-size: 17px;
   line-height: 22px;
 }

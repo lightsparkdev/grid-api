@@ -101,14 +101,14 @@ function Sheet({
         <strong className={styles.title}>{found ? `Visa •••• ${last4}` : 'Debit or Credit Card'}</strong>
         <p className={styles.body}>
           {found
-            ? `Save it to your ${wallet} vault. Your agent only ever sees a card id, never the number.`
+            ? `Save it to your ${wallet} vault to add money from it later.`
             : `Fund your ${wallet} and pay at checkout with a card you already have, without typing the number.`}
         </p>
         <span className={styles.privacy}>
           <IconGroup1 size={28} />
         </span>
         <p className={styles.fine}>
-          Card details are kept in a PCI vault and are never shared with your agent. Your card issuer may be asked to
+          Card details are stored securely and never shared with your agent. Your card issuer may be asked to
           verify the card. <span>See how your data is managed…</span>
         </p>
         <button type="button" className={styles.continue} onClick={found ? onSave : onContinue}>
@@ -237,7 +237,7 @@ export function VaultCardAsk({
     <div className={`${styles.ask} ${className ?? ''}`}>
       <PaymentCard width={316} design={state === 'done' ? 'navy' : 'black'} network="visa" last4={state === 'done' ? last4 : undefined} chip />
       <strong className={styles.askTitle}>{state === 'done' ? `Visa •••• ${last4} saved` : ask.title}</strong>
-      <span className={styles.askNote}>Kept in a PCI vault. Your agent sees a card id, never the number.</span>
+      <span className={styles.askNote}>Your agent never sees the card number.</span>
       {!b.settled && (
         <span className={styles.askActions}>
           <button type="button" className={styles.askDeny} disabled={b.pressing} onClick={onDeny}>

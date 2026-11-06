@@ -15,7 +15,7 @@ const PERSONAS: Record<ConnectorId, string> = {
 /** What each flow does, for the model to match requests against. */
 export const FLOW_GUIDE: Record<string, string> = {
   connect: 'Connect: give you your own account with limits (the person approves).',
-  fund: 'Add funds: top up the account over Lightning or stablecoins.',
+  fund: 'Add funds: top up the account from a debit card, a linked bank account, or crypto (USDC, Bitcoin).',
   limits: 'Set limits: change what you may spend alone and per day.',
   pay: 'Pay someone: send money to Sofia Almeida in Brazil over PIX (the only payee you know).',
   buy: 'Buy online: order the saved ring light with a one-time card ("order"), or subscribe to Duolingo Max with a recurring card ("subscription").',

@@ -1,6 +1,6 @@
 import type { ConnectorId } from '@/data/connectors';
 import type { Params } from '../conversation';
-import { HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
+import { BANK, HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
 import {
   ASKS,
   MUSE_ORDER,
@@ -40,7 +40,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     name: 'Muse',
     wallet: 'Muse balance',
     lines: {
-      greeting: () => `Morning, ${PERSON.first}. Your Thursday is clear after 2. Anything you want me to take care of?`,
+      greeting: () => 'Hey! Your Thursday is clear after 2. Anything you want me to take care of?',
       'connect.intro': () => 'Happy to. I’ll set up a Muse balance for it, with limits you choose.',
       'connect.done': () => 'All set. Your Muse balance is ready, and I’ll always stay inside your limits.',
       'buy.intro': () => `Here are a few picks. The ${RING_LIGHT.merchant} RP10-H is the one I’d get: ${usd2(RING_LIGHT.amount)} with standard shipping.`,
@@ -71,7 +71,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     name: 'Grok Bot',
     wallet: 'Bot balance',
     lines: {
-      greeting: () => `Hey ${PERSON.first}. Give me the money chores. I’ll stay inside your limits and ask when it matters.`,
+      greeting: () => 'Hey. Give me the money chores. I’ll stay inside your limits and ask when it matters.',
       'connect.intro': () => 'Sure. I need my own account and a leash. Here’s what I’m asking for.',
       'connect.done': () => 'Connected. My own account, your rules.',
       'pay.intro': () => `${SOFIA.first} banks with ${SOFIA.bank} in São Paulo, so PIX in reais. ${SOFIA.local.replace('.00', '')} is about ${usd(SOFIA.usd)}.`,
@@ -114,6 +114,22 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
           submitted: 'Saved your card',
         },
       }),
+      bank: () => ({
+        ...ASKS.bank(),
+        form: {
+          title: 'Link your bank',
+          sub: 'Never shown to your Bot. Only filled in your Bot’s vault.',
+          sheetTitle: 'Bank account',
+          fields: [
+            { label: 'Bank', value: `${BANK.name} · ${BANK.type}` },
+            { label: 'Routing number', value: BANK.routing },
+            { label: 'Account number', value: `•••• ${BANK.last4}` },
+            { label: 'Account holder', value: PERSON.full },
+          ],
+          toggle: 'Securely save to your Bot’s vault',
+          submitted: 'Linked your bank',
+        },
+      }),
       limits: (p) => ({
         ...ASKS.limits(p),
         form: {
@@ -136,7 +152,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     name: 'dot',
     wallet: 'Dots balance',
     lines: {
-      greeting: () => `hey ${PERSON.first.toLowerCase()}! i can pay people, buy stuff and collect money for you. what do you need?`,
+      greeting: () => 'hey! i can pay people, buy stuff and collect money for you. what do you need?',
       'connect.intro': () => 'ooh yes. i’ll need a Dots balance for that, with limits you pick. here’s what i’m asking for:',
       'connect.done': () => 'done! your **Dots balance** is on, and i can only spend what you put in it.',
       'fund.ask': () => 'pick what’s easiest:',
@@ -182,7 +198,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     name: 'Instinct',
     wallet: 'Instinct balance',
     lines: {
-      greeting: () => `hey ${PERSON.first}, it’s Instinct. text me what you need and i’ll handle it`,
+      greeting: () => 'hey, it’s Instinct. text me what you need and i’ll handle it',
       'connect.intro': () => 'i’ll need an Instinct balance for that. set it up in your vault:',
       'connect.done': () => 'done. your Instinct balance is on, and i’ll stay inside your limits',
       'connect.denied': () => 'ok, no money stuff then',
@@ -200,7 +216,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'agent.done': () => 'booked. confirmation’s in your email',
       'getpaid.done': () => `${LUCIA.first} paid, ${usd2(LUCIA.amount)}`,
       'cashout.done': () => 'done, it’s in your bank',
-      'balance.answer': (p) => `${usd2(n(p, 'balance'))}`,
+      'balance.answer': () => 'here’s where you’re at',
       'history.answer': () => 'here’s this week',
       fallback: () => 'i can only help with your account here. try a flow on the left',
     },
@@ -229,6 +245,18 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
         allow: 'Save to vault',
         allowed: 'Saved',
       }),
+      bank: () => ({
+        ...ASKS.bank(),
+        title: 'Link your bank',
+        rows: [
+          { text: 'Bank', sub: `${BANK.name} · ${BANK.type}`, icon: 'wallet' },
+          { text: 'Routing number', sub: BANK.routing, icon: 'lock' },
+          { text: 'Account number', sub: `•••• ${BANK.last4}`, icon: 'lock' },
+          { text: 'Account holder', sub: PERSON.full, icon: 'lock' },
+        ],
+        allow: 'Save to vault',
+        allowed: 'Saved',
+      }),
       limits: (p) => ({
         ...ASKS.limits(p),
         title: 'Update your limits',
@@ -248,7 +276,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     name: 'Claude',
     wallet: 'Duet balance',
     lines: {
-      greeting: () => `Morning, ${PERSON.first}. Payroll ran at 6 AM, all 14 people are paid. What can I take on?`,
+      greeting: () => 'Payroll ran at 6 AM, all 14 people are paid. What can I take on?',
       'connect.intro': () => 'I’ll need my own account for this, with limits you set. Here’s exactly what I’m asking for.',
       'connect.done': () => 'Connected. I have my own account now, and I’ll stay inside the limits you set.',
       'pay.intro': () => `${SOFIA.first} banks with ${SOFIA.bank}, so I’ll send it over PIX in reais. ${SOFIA.local.replace('.00', '')} comes to ${usd2(SOFIA.usd)} at today’s rate.`,

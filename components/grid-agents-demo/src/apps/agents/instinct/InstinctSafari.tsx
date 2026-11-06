@@ -1,6 +1,6 @@
 import { SfSymbol } from '@/apps/shared/icons';
 import { SafariBar } from '@/apps/shared/appSwitch';
-import type { AgentAsk, AgentBalance, AskState, SubAgent } from '../conversation';
+import type { AgentAsk, AskState, SubAgent } from '../conversation';
 import { askButtons } from '../parts';
 import styles from './InstinctSafari.module.scss';
 
@@ -70,53 +70,6 @@ export function InstinctSafari({
             </button>
           </>
         )}
-      </main>
-      <SafariBar host={INSTINCT_HOST} />
-    </div>
-  );
-}
-
-/** The Instinct balance page on app.instinct.com: the number in the serif, the limits as fields, recent activity. */
-export function InstinctBalancePage({ balance, onBack }: { balance: AgentBalance; onBack: () => void }) {
-  return (
-    <div className={styles.page}>
-      <button type="button" className={styles.breadcrumb} data-status-back onClick={onBack}>
-        <svg width="8" height="9" viewBox="0 0 8 9" aria-hidden>
-          <path d="M7.6 0.3v8.4L0.4 4.5z" fill="currentColor" />
-        </svg>
-        Messages
-      </button>
-      <main className={styles.sheet}>
-        <span className={styles.tile} aria-hidden>
-          <SfSymbol name="wallet.pass.fill" size={16} />
-        </span>
-        <h1 className={styles.title}>{balance.wallet}</h1>
-        <p className={styles.amount}>{balance.amount}</p>
-        <p className={styles.sub}>{balance.note}</p>
-        <div className={styles.fields}>
-          {balance.stats.map((st) => (
-            <label key={st.label} className={styles.field}>
-              <span className={styles.label}>{st.label}</span>
-              <span className={styles.input}>{st.value}</span>
-            </label>
-          ))}
-        </div>
-        {balance.activity.length > 0 && (
-          <ul className={styles.activity}>
-            {balance.activity.map((r, i) => (
-              <li key={`${r.title}-${i}`}>
-                <span>
-                  {r.title}
-                  <small>{r.detail}</small>
-                </span>
-                <b data-in={r.incoming || undefined}>{r.amount}</b>
-              </li>
-            ))}
-          </ul>
-        )}
-        <button type="button" className={styles.black} onClick={onBack}>
-          Back to iMessage
-        </button>
       </main>
       <SafariBar host={INSTINCT_HOST} />
     </div>

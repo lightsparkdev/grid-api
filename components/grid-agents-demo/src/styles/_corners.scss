@@ -1,0 +1,30 @@
+/* Chat bubble corners, fitted per app to its recording (a multi-line
+   bubble's corner traced at 3x, then matched to candidate shapes):
+   iMessage, Bot and Dots draw iOS continuous corners, Figma smoothing 0.6
+   (20pt; Dots 24pt), all within 0.08pt; Muse draws plain round 22pt corners
+   (smoothing 0, within 0.04pt). A one-line bubble is a pill whose ends ease
+   off its long edges by the same smoothing (Bot's fits 0.6 within 0.13pt).
+
+   Every [data-bubble] is clipped to that shape by ChatFrame
+   (useBubbleShapes), which reads --bubble-r and --bubble-smoothing and marks
+   pills [data-pill]; no CSS corner can draw a smooth capsule, and
+   corner-shape only approximates the rest where the browser has it. CSS
+   draws the round shape the clip trims, which contains the continuous one
+   at the same radius (the clip can only take paint away). Joined corners (a
+   sender's run) use corner() and must come after the mixin so they still
+   apply to a pill. */
+@mixin bubble($r, $smoothing: 0.6) {
+  --bubble-r: #{$r};
+  --bubble-smoothing: #{$smoothing};
+  border-radius: $r;
+  corner-shape: round;
+
+  &[data-pill] {
+    border-radius: 999px;
+  }
+}
+
+/* One corner of a bubble, tighter than the rest. */
+@function corner($r) {
+  @return $r;
+}

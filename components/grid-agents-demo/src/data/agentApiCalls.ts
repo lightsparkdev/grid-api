@@ -96,6 +96,8 @@ export interface AccountSnapshot {
   connected: boolean;
   /** A credit or debit card is in the account's vault. */
   cardVaulted: boolean;
+  /** A bank is linked to top up from over ACH. */
+  bankLinked: boolean;
   balanceCents: number;
   limits: Limits;
   spentTodayCents: number;
@@ -229,6 +231,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
   let pending: Pending | null = null;
   let card: { id: string; purchase: Purchase } | null = null;
   let vaulted: string | null = null;
+  let linkedBank: string | null = null;
 
   const needsApproval = (usdCents: number) => usdCents > limits.approvalAbove;
 
@@ -564,7 +567,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
     const d = deposit;
     deposit = null;
     balance += d.amount;
-    record('Added funds', d.network === 'LIGHTNING' ? 'Lightning' : `${d.currency} on ${d.network[0]}${d.network.slice(1).toLowerCase()}`, d.amount);
+    record('Added funds', d.network === 'LIGHTNING' ? 'Bitcoin (Lightning)' : `${d.currency} on ${d.network[0]}${d.network.slice(1).toLowerCase()}`, d.amount);
     return [
       {
         tool: { name: 'get_deposit_status', args: { deposit_id: d.id }, result: { status: 'COMPLETED', received: money(d.amount) } },
@@ -619,6 +622,69 @@ export function createAgentSession(nameOf: () => string): AgentSession {
             resBody: { id: nextId('Quote'), status: 'COMPLETED', totalReceivingAmount: amount, receivingCurrency: USDB, createdAt: nowIso() },
           },
           incomingWebhook(amount, 'USD', 'CARD', 'Top-up landed', `INCOMING_PAYMENT.COMPLETED: ${money(amount)} from Visa •••• 4242.`),
+        ],
+      },
+    ];
+  };
+
+  /* Funding from a linked bank, as the Global Accounts playground does it: the bank becomes the customer's
+     external account, and a quote from it into the wallet waits for the bank to push the money. */
+  const bankLink = (): CallStep[] => {
+    linkedBank = nextId('ExternalAccount');
+    return [
+      {
+        tool: { name: 'link_bank', args: { source: 'customer_consent' }, result: { external_account_id: linkedBank, bank: 'Chase', last4: '6789' } },
+        calls: [
+          {
+            method: 'POST',
+            path: '/customers/external-accounts',
+            title: 'Link bank',
+            reqBody: {
+              customerId: CUSTOMER,
+              currency: 'USD',
+              accountInfo: {
+                accountType: 'USD_ACCOUNT',
+                accountNumber: '000123456789',
+                routingNumber: '021000021',
+                bankName: 'Chase Bank',
+                bankAccountType: 'CHECKING',
+                paymentRails: ['ACH', 'ACH_SAME_DAY', 'RTP'],
+                beneficiary: { beneficiaryType: 'INDIVIDUAL', fullName: 'Alex Rivera' },
+              },
+            },
+            status: '201 Created',
+            note: 'The person links their own bank. The agent gets an account id, never the account number.',
+            resBody: { id: linkedBank, customerId: CUSTOMER, currency: 'USD', status: 'ACTIVE', accountInfo: { accountType: 'USD_ACCOUNT', bankName: 'Chase Bank', accountNumberLast4: '6789' }, createdAt: nowIso() },
+          },
+        ],
+      },
+    ];
+  };
+
+  const fundBank = (amount: number): CallStep[] => {
+    const from = linkedBank ?? nextId('ExternalAccount');
+    linkedBank = from;
+    balance += amount;
+    record('Added funds', 'Chase •••• 6789 · ACH', amount);
+    return [
+      {
+        tool: { name: 'add_funds', args: { source: 'linked_bank', amount_usd: dollars(amount) }, result: { status: 'COMPLETED', received: money(amount) } },
+        calls: [
+          {
+            method: 'POST',
+            path: '/quotes',
+            title: 'Fund from linked bank',
+            reqBody: {
+              source: { sourceType: 'ACCOUNT', accountId: from, customerId: CUSTOMER },
+              destination: { destinationType: 'ACCOUNT', accountId: WALLET, currency: 'USDB' },
+              lockedCurrencySide: 'SENDING',
+              lockedCurrencyAmount: amount,
+            },
+            status: '201 Created',
+            note: 'The quote waits for the bank to push the ACH transfer. In sandbox, POST /sandbox/send stands in for it.',
+            resBody: { id: nextId('Quote'), status: 'PENDING', sendingCurrency: 'USD', totalSendingAmount: amount, receivingCurrency: USDB, createdAt: nowIso() },
+          },
+          incomingWebhook(amount, 'USD', 'ACH', 'Transfer landed', `INCOMING_PAYMENT.COMPLETED: ${money(amount)} from Chase •••• 6789.`),
         ],
       },
     ];
@@ -995,7 +1061,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
       balance += cents;
       record('Added funds', 'Debit card •••• 4242', cents);
     },
-    snapshot: () => ({ connected, cardVaulted: vaulted !== null, balanceCents: balance, limits: { ...limits }, spentTodayCents: spentToday, ledger: ledger.slice() }),
+    snapshot: () => ({ connected, cardVaulted: vaulted !== null, bankLinked: linkedBank !== null, balanceCents: balance, limits: { ...limits }, spentTodayCents: spentToday, ledger: ledger.slice() }),
     stepsFor(event) {
       switch (event.type) {
         case 'connect':
@@ -1008,6 +1074,10 @@ export function createAgentSession(nameOf: () => string): AgentSession {
           return cardVault();
         case 'fund.card':
           return fundCard(event.amount);
+        case 'bank.link':
+          return bankLink();
+        case 'fund.bank':
+          return fundBank(event.amount);
         case 'getpaid.address':
           return getpaidAddress(event.network, event.currency);
         case 'getpaid.received':

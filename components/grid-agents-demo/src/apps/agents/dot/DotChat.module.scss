@@ -1,4 +1,5 @@
 // Dots, measured from recordings 3, 5, 7 and 8 (refs/dots/spec.md).
+@use '../../../styles/corners';
 .stage {
   position: absolute;
   inset: 0;
@@ -51,14 +52,8 @@
 }
 
 .edge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
   height: 178px;
-  z-index: 2;
-  background: linear-gradient(180deg, rgba(var(--dot-edge), 0.97) 0%, rgba(var(--dot-edge), 0.75) 60%, rgba(var(--dot-edge), 0) 100%);
-  pointer-events: none;
+  background: linear-gradient(180deg, rgba(var(--dot-edge), 0.7) 0%, rgba(var(--dot-edge), 0.3) 55%, rgba(var(--dot-edge), 0) 100%);
 }
 
 // ── Header ──────────────────────────────────────────────────────────────
@@ -120,7 +115,7 @@
 .them,
 .me {
   padding: 11px 16px 12px;
-  border-radius: 20px;
+  @include corners.bubble(24px);
   font-size: 17px;
   line-height: 22px;
 }
@@ -167,7 +162,7 @@
   align-items: center;
   height: 36px;
   padding: 0 16px;
-  border-radius: 18px;
+  @include corners.bubble(18px);
   background: var(--dot-them);
   color: var(--dot-text);
 }
@@ -178,8 +173,16 @@
   font-size: 12px;
 }
 
+// Delivered and Seen share one line, aligned to the bubble's text rather than its edge (IMG_1861), and crossfade.
 .seen {
-  margin-top: 4px;
+  display: grid;
+  justify-items: end;
+  margin-top: 6px;
+  padding-right: 15px;
+
+  > * {
+    grid-area: 1 / 1;
+  }
 }
 
 .sender {

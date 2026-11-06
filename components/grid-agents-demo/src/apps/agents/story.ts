@@ -6,14 +6,19 @@ import type { DepositNetwork, Limits, MerchantAgent, Payee, Purchase } from '@/d
 export const PERSON = { first: 'Alex', full: 'Alex Rivera', email: 'alex.rivera@gmail.com', phone: '+1 (310) 555-0142' };
 export const ADDRESS = '2140 Ocean Park Blvd, Apt 4, Santa Monica CA 90405, US';
 
+/** Add funds, in the order the product leads with: a debit card, a bank, then crypto (stablecoins, then Bitcoin). */
 export const FUND = {
   amount: 5_000,
-  options: [
-    { label: 'Lightning', network: 'LIGHTNING' as DepositNetwork, currency: 'USD' },
+  card: 'Debit card',
+  bank: 'Bank account',
+  crypto: [
     { label: 'USDC on Base', network: 'BASE' as DepositNetwork, currency: 'USDC' },
-    { label: 'USDT on Tron', network: 'TRON' as DepositNetwork, currency: 'USDT' },
+    { label: 'Bitcoin (Lightning)', network: 'LIGHTNING' as DepositNetwork, currency: 'USD' },
   ],
 };
+
+/** The bank Alex links once to top up over ACH (Global Accounts' "Fund from a linked bank"). */
+export const BANK = { name: 'Chase', last4: '6789', routing: '021000021', type: 'Checking' };
 
 /** What Set limits asks for: act alone under $100, $500 a payment, $1,000 a day. */
 export const NEW_LIMITS: Limits = { perTransaction: 50_000, daily: 100_000, approvalAbove: 10_000 };

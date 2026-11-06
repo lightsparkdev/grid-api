@@ -124,6 +124,12 @@ same way (`.tmp-sweep/capture.mjs`) and compared frame by frame.
   (tapbacks, data detectors, inline replies, rich links, and images Instinct
   generates). Payments are approved by replying Yes, which it drafts in the
   composer. Consent and limits go through a vault link in Safari.
+- Each app's bubble motion is fitted frame by frame to its recordings, and the
+  thread follows each kind of growth on its own measured curve (`scroll` on
+  ChatFrame). Dots: your bubble lands a little left of its place and slides
+  in as the blue fills behind it; Delivered, then Seen; it types after Seen.
+  Muse: the thread jumps rather than scrolls, and replies stream in chunks.
+  Grok: reactions sit inside your bubble's corner, no pill.
 - Instinct's motion is fitted frame by frame to recording 2. Your bubble lifts
   out of the field and swells into place. Delivered swells in as the thread
   makes room, then fades out, and Read and the time fade in. Instinct reacts
@@ -142,8 +148,13 @@ nets to zero.
 
 ### 2026-11-05: fund with and store cards
 
-Add funds offers a debit or credit card first, ahead of Lightning and
-stablecoins. The first time, the card goes into the account's PCI vault, and
+Add funds offers a debit card first, then a bank account, then crypto (USDC
+on Base, then Bitcoin over Lightning), the order of the Agent Accounts
+diagram. The bank path follows the Global Accounts playground: the first time,
+the person links the bank in the app's own consent UI (`POST
+/customers/external-accounts`), and each top-up is a quote from that external
+account into the wallet that waits for the ACH push (`POST /sandbox/send` in
+sandbox). The first time, the card goes into the account's PCI vault, and
 each app asks for it its own way: Grok's card sheet with "Securely save to
 your Bot's vault", Instinct's Purchase card page in Safari, and a scan in the
 Apple Wallet style (Hold Near Card) in the others. After that, top-ups charge

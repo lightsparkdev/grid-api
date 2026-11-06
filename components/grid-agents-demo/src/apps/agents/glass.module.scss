@@ -8,6 +8,17 @@
   @include rim.glass-rim;
 }
 
+// Blue glass (IMG_1859's Done at 3x): a flat #3672eb fill, a darker blue hairline, a lighter blue band just
+// inside the top and bottom, and a one-pixel pale cyan halo where the edge meets what's behind.
+.blue {
+  --glass-rim-side: rgba(16, 46, 130, 0.3);
+  --glass-rim-cap: rgba(16, 46, 130, 0.22);
+  --glass-rim-inset: rgba(130, 185, 255, 0.5);
+  box-shadow:
+    0 0 0 0.5px rgba(205, 248, 255, 0.9),
+    rim.$glass-rim-shadow;
+}
+
 .disc {
   width: 44px;
   height: 44px;
@@ -21,4 +32,54 @@
   justify-content: center;
   width: 100%;
   height: 100%;
+}
+
+// NoopButton. The reset has no specificity, so a skin's class still sets the control's type and size. No
+// `filter` for the press: on an ancestor it cuts the frost off from what's behind it, so a wash brightens instead.
+:where(.noop) {
+  position: relative;
+  display: grid;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.noop {
+  border-radius: 999px;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: rgba(255, 255, 255, 0.14);
+    content: '';
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      transform: scale(calc((var(--noop-size) + 4) / var(--noop-size)));
+    }
+  }
+
+  &:active {
+    transform: scale(calc((var(--noop-size) + 8) / var(--noop-size)));
+
+    &::after {
+      opacity: 1;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--chat-glass-ink, currentColor);
+    outline-offset: 3px;
+  }
 }

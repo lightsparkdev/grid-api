@@ -1,4 +1,5 @@
 // Figma 91:163, Claude Duet · Supplies budget (virtual card). Dark follows Claude's own.
+@use '../../../styles/corners';
 .screen {
   --cl-bg: #f9f9f7;
   --cl-edge: 249, 249, 247;
@@ -49,14 +50,8 @@
 
 // The header's soft fall-off over the thread.
 .edge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
   height: 150px;
-  z-index: 2;
-  background: linear-gradient(180deg, rgb(var(--cl-edge)) 0%, rgba(var(--cl-edge), 0.85) 55%, rgba(var(--cl-edge), 0) 100%);
-  pointer-events: none;
+  background: linear-gradient(180deg, rgba(var(--cl-edge), 0.8) 0%, rgba(var(--cl-edge), 0.4) 50%, rgba(var(--cl-edge), 0) 100%);
 }
 
 .menu,
@@ -105,7 +100,7 @@
 .me {
   max-width: 329px;
   padding: 8.5px 14.5px 8.2px;
-  border-radius: 20px;
+  @include corners.bubble(20px);
   font-size: 17px;
   line-height: 23.8px;
   letter-spacing: -0.43px;

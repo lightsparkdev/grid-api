@@ -3,11 +3,11 @@ import { motion } from 'motion/react';
 import { PhoneStatusBar } from '@/apps/shared/AppShell/PhoneStatusBar';
 import { playAppSwitch, WALLPAPER } from '@/apps/shared/appSwitch';
 import { SfSymbol } from '@/apps/shared/icons';
-import { ChatFrame, ComposerField, NATIVE_IN, Said, TypingDots, type RowMotion } from '../ChatFrame';
-import { GlassDisc, GlassPill } from '../glass';
+import { ChatFrame, ComposerField, NATIVE_IN, Said, ScrollEdge, STILL, TypingDots, useOpenedIds } from '../ChatFrame';
+import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentAsk, AgentBalance, AgentNote, Message, Product, SubAgent } from '../conversation';
 import type { AgentChatProps } from '../types';
-import { INSTINCT_HOST, InstinctBalancePage, InstinctSafari, InstinctThreadPage } from './InstinctSafari';
+import { INSTINCT_HOST, InstinctSafari, InstinctThreadPage } from './InstinctSafari';
 import styles from './InstinctChat.module.scss';
 
 /**
@@ -29,9 +29,6 @@ type Ask = Extract<Message, { kind: 'ask' }>;
 const RETURN_MS = 1600;
 
 const TAPBACK = { type: 'spring', duration: 0.32, bounce: 0.25 } as const;
-
-/** Your row doesn't move on its own: the bubble flies out of the field (SentBubble). */
-const STILL: RowMotion = { initial: {}, animate: {}, transition: {} };
 
 type Keys = readonly (readonly [number, number])[];
 
@@ -127,7 +124,7 @@ function SentBubble({ fresh, from, children }: { fresh: boolean; from: () => DOM
   return (
     <>
       {flying && <span ref={ghost} className={styles.ghost} />}
-      <span ref={bubble} className={styles.me}>
+      <span ref={bubble} className={styles.me} data-bubble data-tail="br">
         {children}
       </span>
     </>
@@ -187,24 +184,9 @@ function InstinctImage({ note }: { note: AgentNote }) {
   );
 }
 
-/** The balance, as the rich link to its page on app.instinct.com: the number in the serif, then the title and domain. */
-function BalanceLink({ balance, onOpen }: { balance: AgentBalance; onOpen: () => void }) {
-  return (
-    <button type="button" className={styles.link} onClick={onOpen} aria-label={`${balance.wallet} ${balance.amount}`}>
-      <span className={`${styles.linkHero} ${styles.balanceHero}`}>
-        <span className={styles.balanceLabel}>{balance.wallet}</span>
-        <strong className={styles.balanceAmount}>{balance.amount}</strong>
-        <span className={styles.balanceSpent}>
-          {balance.spent.today} of {balance.spent.limit} spent today
-        </span>
-        <span className={styles.linkWord}>Instinct</span>
-      </span>
-      <span className={styles.linkMeta}>
-        <strong>{balance.wallet}</strong>
-        <small>{INSTINCT_HOST}</small>
-      </span>
-    </button>
-  );
+/** The balance, as Instinct texts it: the number, then what's left of today. */
+function balanceText(b: AgentBalance) {
+  return `${b.amount} in your ${b.wallet}\n${b.spent.today} of ${b.spent.limit} spent today`;
 }
 
 /** When the receipt under your bubble changes, in ms from the send (recording 2). */
@@ -304,7 +286,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
   const [view, setView] = useState<'messages' | 'safari'>('messages');
   const [switchTo, setSwitchTo] = useState<'messages' | 'safari' | null>(null);
   const [linkId, setLinkId] = useState<number | null>(null);
-  const [page, setPage] = useState<{ kind: 'balance'; balance: AgentBalance } | { kind: 'thread'; agent: SubAgent } | null>(null);
+  const [page, setPage] = useState<{ kind: 'thread'; agent: SubAgent } | null>(null);
   const open = chat.messages.find((m): m is Ask => m.kind === 'ask' && m.id === linkId);
 
   const openLink = (id: number) => {
@@ -352,14 +334,15 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
     };
   }, [switchTo]);
 
-  // Once the page has its answer (or the request is gone), Safari hands back to Messages.
+  // Once the vault page has its answer (or the request is gone), Safari hands back to Messages.
+  // A page you opened to read (a sub-agent's conversation) stays until you tap back.
   const askState = open?.state;
   useEffect(() => {
-    if (view !== 'safari' || switchTo) return;
+    if (view !== 'safari' || switchTo || page) return;
     if (askState === 'open' || askState === 'pressing' || askState === 'authing') return;
     const t = window.setTimeout(back, askState === 'done' || askState === 'denied' ? RETURN_MS : 0);
     return () => window.clearTimeout(t);
-  }, [view, switchTo, askState, back]);
+  }, [view, switchTo, askState, back, page]);
 
   // A payment or a choice waits on a text: the likely answer is drafted, ready to send.
   const drafted = useRef(new Set<number>());
@@ -374,9 +357,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
   }, [chat.messages, composer, setComposer]);
   const lastMe = chat.messages.reduce((id, m) => (m.kind === 'me' ? m.id : id), -1);
 
-  // Messages already in the thread when it opens are just there; only new ones animate.
-  const opened = useRef<Set<number> | null>(null);
-  opened.current ??= new Set(chat.messages.map((m) => m.id));
+  const opened = useOpenedIds(chat.messages);
 
   // A bubble flies out of the field as it was when sent (two lines tall, say), not the emptied one.
   const fieldRow = useRef<HTMLSpanElement>(null);
@@ -392,7 +373,9 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
 
   const bubble = (key: string, body: ReactNode, tail: boolean) => (
     <div className={styles.body} key={key}>
-      <div className={styles.bubble}>{body}</div>
+      <div className={styles.bubble} data-bubble data-tail={tail ? 'bl' : undefined}>
+        {body}
+      </div>
       {tail && <span className={styles.tailIn} />}
     </div>
   );
@@ -412,7 +395,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
       case 'them':
         return (
           <div className={styles.body}>
-            <Said typing={m.typing} className={styles.bubble}>
+            <Said typing={m.typing} className={styles.bubble} tail={theirsNext ? undefined : 'bl'}>
               <Detected text={m.text} />
             </Said>
             {!theirsNext && <span className={styles.tailIn} />}
@@ -420,7 +403,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         );
       case 'card': {
         const b = m.card.balance;
-        return b ? <BalanceLink balance={b} onOpen={() => openPage({ kind: 'balance', balance: b })} /> : <InstinctImage note={m.card} />;
+        return b ? bubble('balance', <span className={styles.lines}>{balanceText(b)}</span>, !theirsNext) : <InstinctImage note={m.card} />;
       }
       case 'ask':
         return m.ask.rows ? (
@@ -433,7 +416,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
       case 'work':
         return (
           <div className={styles.body}>
-            <div className={`${styles.bubble} ${styles.typingBubble}`}>
+            <div className={`${styles.bubble} ${styles.typingBubble}`} data-bubble data-tail="bl">
               <TypingDots />
             </div>
             <span className={styles.tailIn} />
@@ -445,8 +428,9 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         // A reply to an ask or a choice shows what it answers, as iMessage's inline reply does.
         const answers =
           prev?.kind === 'ask' && !prev.ask.rows ? prev : prev?.kind === 'chips' ? prev : null;
-        const tapback = m.react ?? (answers?.kind === 'ask' && answers.state === 'done' ? '👍' : undefined);
-        const fresh = !opened.current?.has(m.id);
+        // Instinct only ever thumbs-ups what you send (recording 2).
+        const tapback = m.react || (answers?.kind === 'ask' && answers.state === 'done') ? '👍' : undefined;
+        const fresh = !opened.has(m.id);
         return (
           <div className={styles.meCol} data-tapped={tapback ? true : undefined}>
             {answers && (
@@ -531,18 +515,20 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           threadTop={178}
           composerBottom={28}
           composerHeight={40}
-          edge={<div className={styles.edge} />}
+          edge={<ScrollEdge className={styles.edge} />}
           header={
             <div className={styles.nav}>
-              <GlassPill radius={22} absolute className={styles.back}>
-                <span className={styles.backRow}>
-                  <span className={styles.glyph} style={mask(`${A}/back.svg`, 11, 19)} />
-                  <span className={styles.badge}>233</span>
-                </span>
-              </GlassPill>
-              <div className={styles.facetime}>
+              <NoopButton label="Back" size={96} className={styles.back}>
+                <GlassPill radius={22}>
+                  <span className={styles.backRow}>
+                    <span className={styles.glyph} style={mask(`${A}/back.svg`, 11, 19)} />
+                    <span className={styles.badge}>233</span>
+                  </span>
+                </GlassPill>
+              </NoopButton>
+              <NoopButton label="FaceTime" className={styles.facetime}>
                 <GlassDisc label="FaceTime" icon={`${A}/video.svg`} width={27} height={18} />
-              </div>
+              </NoopButton>
               <div className={styles.contact}>
                 <span className={styles.navInstinct}>
                   <img src={`${A}/logo.png`} alt="" width={10.4} height={28.9} />
@@ -589,12 +575,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           {open ? (
             <InstinctSafari ask={open.ask} state={open.state} onAllow={chat.allow} onDeny={chat.deny} onBack={back} />
           ) : (
-            page &&
-            (page.kind === 'balance' ? (
-              <InstinctBalancePage balance={page.balance} onBack={back} />
-            ) : (
-              <InstinctThreadPage agent={page.agent} onBack={back} />
-            ))
+            page && <InstinctThreadPage agent={page.agent} onBack={back} />
           )}
           {switchTo && (
             <div className={styles.cardStatus}>

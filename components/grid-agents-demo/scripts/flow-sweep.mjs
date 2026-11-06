@@ -13,7 +13,8 @@
 //    the dev server must be up)
 //   SWEEP_ENGINE=webkit runs it in WebKit (Safari's engine);
 //   SWEEP_CONNECTORS="Muse,Dots" limits it to those connectors;
-//   SWEEP_DENY=1 declines every approval instead.
+//   SWEEP_DENY=1 declines every approval instead;
+//   SWEEP_FLOWS="Add funds" limits the flows; SWEEP_PICK=1 picks the second chip (Add funds' bank).
 
 import { mkdirSync } from 'node:fs';
 import { chromium, webkit } from 'playwright';
@@ -23,6 +24,8 @@ const base = process.argv[3] ?? 'http://localhost:4003';
 const engineName = process.env.SWEEP_ENGINE === 'webkit' ? 'webkit' : 'chromium';
 const engine = engineName === 'webkit' ? webkit : chromium;
 const deny = process.env.SWEEP_DENY === '1';
+/** Which chip to pick where there's a choice (SWEEP_PICK=1 takes Add funds' bank path). */
+const pick = Number(process.env.SWEEP_PICK ?? 0);
 const out = new URL('../.tmp-sweep/', import.meta.url).pathname;
 mkdirSync(out, { recursive: true });
 
@@ -30,7 +33,8 @@ const ALL_CONNECTORS = ['Muse', 'Bot', 'Dots', 'Instinct', 'Duet', 'Your agent']
 const CONNECTORS = process.env.SWEEP_CONNECTORS
   ? ALL_CONNECTORS.filter((c) => process.env.SWEEP_CONNECTORS.split(',').includes(c))
   : ALL_CONNECTORS;
-const FLOWS = ['Connect', 'Add funds', 'Set limits', 'Pay someone', 'Buy online', 'Pay an agent', 'Get paid', 'Withdraw', 'Balance', 'History'];
+const ALL_FLOWS = ['Connect', 'Add funds', 'Set limits', 'Pay someone', 'Buy online', 'Pay an agent', 'Get paid', 'Withdraw', 'Balance', 'History'];
+const FLOWS = process.env.SWEEP_FLOWS ? process.env.SWEEP_FLOWS.split(',') : ALL_FLOWS;
 const ALLOW = /^(\s*(Allow|Approve|Connect|Continue|Save|Save card|Save limits|Save to vault|Done|Turn on Dots balance|Pay \$[\d.,]+(\/mo)?))+\s*$/;
 const DENY = /^(\s*(Deny|Decline|Not\s+now|Cancel))+\s*$/;
 
@@ -85,6 +89,7 @@ for (const connector of CONNECTORS) {
         const draft = await field.inputValue().catch(() => '');
         if (draft) {
           if (deny && draft === 'Yes') await field.fill('no');
+          else if (pick && draft !== 'Yes') await field.fill(String(pick + 1));
           await field.press('Enter').catch(() => {});
           answered += 1;
           await page.waitForTimeout(600);
@@ -117,7 +122,8 @@ for (const connector of CONNECTORS) {
         await page.waitForTimeout(1200);
         continue;
       }
-      const chip = page.locator('[data-screen-body] button:enabled:is([class*="chip"], [class*="choice"], [data-chip])').first();
+      const chips = page.locator('[data-screen-body] button:enabled:is([class*="chip"], [class*="choice"], [data-chip])');
+      const chip = (await chips.count()) > pick ? chips.nth(pick) : chips.first();
       if (await chip.count()) {
         await chip.click({ timeout: 1000 }).catch(() => {});
         answered += 1;

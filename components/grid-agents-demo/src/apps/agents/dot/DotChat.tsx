@@ -1,12 +1,23 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, type Transition } from 'motion/react';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
 import { Flag } from '@/apps/shared/Flag';
-import { ChatFrame, ComposerField, NATIVE_IN, Said, TypingDots } from '../ChatFrame';
-import { GlassDisc, GlassPill } from '../glass';
+import {
+  ChatFrame,
+  ComposerField,
+  NATIVE_IN,
+  Said,
+  STILL,
+  TypingDots,
+  ScrollEdge,
+  useOpenedIds,
+  type ScrollCause,
+  type ScrollCurve,
+} from '../ChatFrame';
+import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentAsk, AgentBalance, Message, Product } from '../conversation';
 import { BalanceCard, BalanceDetail, Divider, MetaLine, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
 import { useCardScan } from '../vault/CardScan';
@@ -259,8 +270,102 @@ function PayPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
   );
 }
 
+/**
+ * Your bubble as Dots sends it (recordings 3 and 8): the composer's text
+ * reflows at bubble width a little left of its place, the blue fills in behind
+ * it within ~130ms as the text turns white, and it slides right into place.
+ */
+function SentBubble({ fresh, children }: { fresh: boolean; children: ReactNode }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const screen = el?.closest<HTMLElement>(`.${styles.screen}`);
+    if (!fresh || !el || !screen || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const s = screen.getBoundingClientRect();
+    const k = s.width / screen.offsetWidth || 1;
+    // It starts at ~62% of its distance from the screen's left edge (40pt short at x 106, 28.7pt at x 73).
+    const left = (el.getBoundingClientRect().left - s.left) / k;
+    const css = getComputedStyle(el);
+    const blue = css.backgroundColor;
+    const clear = `color-mix(in srgb, ${blue} 0%, transparent)`;
+    const ink = css.getPropertyValue('--dot-text').trim() || '#000';
+    const slide = el.animate([{ translate: `${-0.385 * left}px 0` }, { translate: '0 0' }], {
+      duration: 200,
+      easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+    });
+    const fill = el.animate(
+      [
+        { backgroundColor: clear, color: ink, offset: 0 },
+        { backgroundColor: clear, color: ink, offset: 0.2 },
+        { backgroundColor: `color-mix(in srgb, ${blue} 11%, transparent)`, color: ink, offset: 0.25 },
+        { backgroundColor: `color-mix(in srgb, ${blue} 65%, transparent)`, color: '#fff', offset: 0.375 },
+        { backgroundColor: `color-mix(in srgb, ${blue} 85%, transparent)`, color: '#fff', offset: 0.5 },
+        { backgroundColor: `color-mix(in srgb, ${blue} 94%, transparent)`, color: '#fff', offset: 0.625 },
+        { backgroundColor: blue, color: '#fff', offset: 1 },
+      ],
+      { duration: 133, easing: 'linear' },
+    );
+    return () => {
+      slide.cancel();
+      fill.cancel();
+    };
+    // A bubble is sent once, on mount.
+  }, []);
+  return (
+    <span ref={ref} className={styles.me} data-bubble>
+      {children}
+    </span>
+  );
+}
+
+/** When the receipt under your bubble changes, in ms from the send (recording 8, 33.74s on). */
+const RECEIPT = { delivered: 1100, seen: 1580 } as const;
+/** Dots starts typing once it has seen you. */
+export const DOTS_READS_FOR = 2200;
+
+/** Under your last message: Delivered fades up from pale as the thread makes room, then crossfades to Seen. */
+function Receipt({ fresh }: { fresh: boolean }) {
+  const [stage, setStage] = useState<'sent' | keyof typeof RECEIPT>(fresh ? 'sent' : 'seen');
+  useEffect(() => {
+    if (!fresh) return;
+    const timers = (Object.keys(RECEIPT) as (keyof typeof RECEIPT)[]).map((s) => window.setTimeout(() => setStage(s), RECEIPT[s]));
+    return () => timers.forEach(window.clearTimeout);
+  }, [fresh]);
+  if (stage === 'sent') return null;
+  const cross = { duration: 0.2, ease: 'easeInOut' } as const;
+  return (
+    <span className={styles.seen}>
+      <motion.span
+        initial={{ opacity: fresh ? 0.4 : 0 }}
+        animate={{ opacity: stage === 'delivered' ? 1 : 0 }}
+        transition={stage === 'delivered' ? { duration: 0.09, ease: 'easeOut' } : cross}
+      >
+        Delivered
+      </motion.span>
+      <motion.span initial={fresh ? { opacity: 0 } : false} animate={{ opacity: stage === 'seen' ? 1 : 0 }} transition={cross}>
+        Seen
+      </motion.span>
+    </span>
+  );
+}
+
+/** How Dots' thread follows each kind of growth (recording 8, fitted per event). */
+function dotsScroll(cause: ScrollCause): ScrollCurve {
+  switch (cause) {
+    case 'me':
+      return { ms: 230, ease: [0.25, 0.3, 0.2, 1] };
+    case 'typing':
+      return { ms: 270, ease: [0.3, 0, 0.6, 0.9] };
+    case 'grow':
+      return { ms: 270, ease: [0.2, 0.1, 0, 0.8] };
+    default:
+      return { ms: 230, ease: [0.5, 0.6, 0.5, 0.9] };
+  }
+}
+
 export function DotChat({ chat }: AgentChatProps) {
   const lastMe = chat.messages.reduce((id, m) => (m.kind === 'me' ? m.id : id), -1);
+  const openedIds = useOpenedIds(chat.messages);
   const [multiline, setMultiline] = useState(false);
   const [sheet, setSheet] = useState<{ id: number; ask: AgentAsk } | null>(null);
   const [shown, setShown] = useState(false);
@@ -304,13 +409,15 @@ export function DotChat({ chat }: AgentChatProps) {
             </Said>
           </>
         );
-      case 'me':
+      case 'me': {
+        const fresh = !openedIds.has(m.id);
         return (
           <>
-            <span className={styles.me}>{m.text}</span>
-            {m.id === lastMe && <span className={styles.seen}>Seen</span>}
+            <SentBubble fresh={fresh}>{m.text}</SentBubble>
+            {m.id === lastMe && <Receipt key={m.id} fresh={fresh} />}
           </>
         );
+      }
       case 'chips':
         return (
           <div className={styles.chips} data-picked={m.picked !== null || m.expired || undefined}>
@@ -360,13 +467,13 @@ export function DotChat({ chat }: AgentChatProps) {
       }
       case 'work':
         return (
-          <span className={styles.typing}>
+          <span className={styles.typing} data-bubble>
             <TypingDots />
           </span>
         );
       case 'products':
         return (
-          <div className={styles.them}>
+          <div className={styles.them} data-bubble>
             <Markdown text={productsText(m.products)} />
           </div>
         );
@@ -391,22 +498,23 @@ export function DotChat({ chat }: AgentChatProps) {
         className={styles.screen}
         messages={chat.messages}
         render={render}
-        rowMotion={() => NATIVE_IN}
+        rowMotion={(m) => (m.kind === 'me' ? STILL : NATIVE_IN)}
+        scroll={dotsScroll}
         faceId={chat.authing}
         onFaceIdDone={chat.authed}
         gap={6}
         threadTop={172}
         composerBottom={38.5}
         composerHeight={48}
-        edge={<div className={styles.edge} />}
+        edge={<ScrollEdge className={styles.edge} />}
         header={
           <>
-            <div className={styles.menu}>
+            <NoopButton label="Menu" className={styles.menu}>
               <GlassDisc label="Menu" icon={`${A}/menu.svg`} width={20} height={14} />
-            </div>
-            <div className={styles.call}>
+            </NoopButton>
+            <NoopButton label="Call" className={styles.call}>
               <GlassDisc label="Call" icon={`${A}/phone.svg`} width={22} height={22} />
-            </div>
+            </NoopButton>
             <img className={styles.avatar} src={`${A}/avatar.png`} alt="" width={78} height={62} draggable={false} />
             <GlassPill radius={18.5} absolute className={styles.name}>
               <span className={styles.nameText}>dot</span>

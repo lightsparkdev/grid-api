@@ -1,5 +1,5 @@
 import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, Params, Product, SubAgent } from '../conversation';
-import { ADDRESS, BUY_OPTIONS, HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
+import { ADDRESS, BANK, BUY_OPTIONS, HOTEL, LUCIA, PERSON, RING_LIGHT, SOFIA, SUBSCRIPTION, usd, usd2 } from '../story';
 
 /* The neutral voice: every line, ask and note a flow can produce, written so
    it reads right in any app. Each app's voice overrides what it says
@@ -50,11 +50,11 @@ export const SUBAGENTS = {
       },
     ],
     messages: [
-      { from: 'us', text: `Hi, booking for ${PERSON.full}: June 12 to 14, two guests. What’s your best rate?` },
+      { from: 'us', text: 'Hi, booking a room for June 12 to 14, two guests. What’s your best rate?' },
       { from: 'them', text: `${usd(HOTEL.listed)} for the two nights, breakfast included.` },
       { from: 'us', text: 'Can we pay you directly instead of by card?' },
       { from: 'them', text: `Pay me directly and I’ll take 10% off: ${usd2(HOTEL.amount)}.` },
-      { from: 'us', text: `Deal. I’ll send it as soon as ${PERSON.first} approves.` },
+      { from: 'us', text: 'Deal. I’ll send it as soon as it’s approved.' },
     ],
   }),
 } satisfies Record<string, (p?: Params) => SubAgent>;
@@ -66,12 +66,13 @@ export const METAS = {
   'sub.reminder': () => ({ text: 'Created routine · Remind me before it renews', icon: 'routine' }),
   'connect.limits': () => ({ text: 'Limits saved', icon: 'check' }),
   'card.saved': () => ({ text: 'Visa •••• 4242 saved to your vault', icon: 'check' }),
+  'bank.linked': () => ({ text: `${BANK.name} •••• ${BANK.last4} linked`, icon: 'check' }),
 } satisfies Record<string, (p?: Params) => AgentMeta>;
 
 export type MetaKey = keyof typeof METAS;
 
 export const LINES = {
-  greeting: () => `Hi ${PERSON.first}. I can pay, buy and get paid for you, within limits you set. What do you need?`,
+  greeting: () => 'Hi! I can pay, buy and get paid for you, within limits you set. What do you need?',
   fallback: () => 'I can only help with your account here. Try one of the flows on the left.',
   limited: () => 'Let’s keep going with the flows on the left. I’ve hit my chat limit for now.',
 
@@ -80,10 +81,13 @@ export const LINES = {
   'connect.denied': () => 'No problem. I won’t touch money until you connect me.',
 
   'fund.ask': () => 'How do you want to add it?',
-  'fund.address': (p) => `Here’s your ${s(p, 'method')} ${s(p, 'method') === 'Lightning' ? 'invoice' : 'address'}. Whatever you send lands as dollars.`,
+  'fund.address': (p) => `Here’s your ${s(p, 'method')} ${s(p, 'network') === 'LIGHTNING' ? 'invoice' : 'address'}. Whatever you send lands as dollars.`,
+  'fund.bank': (p) => `Requesting ${usd(n(p, 'amount'))} from your ${BANK.name} •••• ${BANK.last4}. Bank transfers take 1–3 business days.`,
+  'bank.intro': () => `Link your bank once and you can top up from it any time. I only ever see ${BANK.name} •••• ${BANK.last4}, never the account number.`,
+  'bank.denied': () => 'Okay, no bank for now. You can link one any time.',
   'fund.done': (p) => `${usd(n(p, 'amount'))} landed. You have ${usd2(n(p, 'balance'))} now.`,
   'fund.card': (p) => `Adding ${usd(n(p, 'amount'))} from your Visa •••• 4242.`,
-  'card.intro': (p) => `Add your card once and it stays in your ${s(p, 'wallet')} vault. I only ever see a card id, never the number.`,
+  'card.intro': (p) => `Add a card once and I can top up your ${s(p, 'wallet')} from it whenever you ask.`,
   'card.denied': () => 'Okay, no card for now. You can add one any time.',
 
   'limits.intro': () => 'I can’t change my own limits, so I sent it to you to confirm.',
@@ -168,6 +172,18 @@ export const ASKS = {
     card: { brand: 'VISA', last4: '4242', expires: '09/29', name: PERSON.full },
     allow: 'Save card',
     allowed: 'Card saved',
+    deny: 'Not now',
+    denied: 'Not now',
+  }),
+  bank: () => ({
+    title: 'Link your bank',
+    rows: [
+      { text: BANK.name, sub: `${BANK.type} •••• ${BANK.last4}`, icon: 'wallet' },
+      { text: 'Routing number', sub: BANK.routing, icon: 'lock' },
+      { text: 'Account holder', sub: PERSON.full, icon: 'lock' },
+    ],
+    allow: 'Link bank',
+    allowed: 'Bank linked',
     deny: 'Not now',
     denied: 'Not now',
   }),

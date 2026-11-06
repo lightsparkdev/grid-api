@@ -133,9 +133,10 @@ body {
      the live thread: clear enough that bubbles read through as they pass. */
   --chat-glass-tint: rgba(244, 244, 246, 0.6);
   --chat-glass-ink: #111112;
-  /* iOS 27 glass rim (styles/_glass-rim.scss): dark sides, bright caps. */
-  --glass-rim-side: rgba(0, 0, 0, 0.3);
-  --glass-rim-cap: rgba(255, 255, 255, 1);
+  /* iOS 27 glass rim (styles/_glass-rim.scss): a grey hairline, darker on the
+     sides (#9c9c9c over #f3f3f3) than the caps (#d9d9d9), white just inside. */
+  --glass-rim-side: rgba(0, 0, 0, 0.24);
+  --glass-rim-cap: rgba(0, 0, 0, 0.14);
   --glass-rim-inset: rgba(255, 255, 255, 1);
 }
 

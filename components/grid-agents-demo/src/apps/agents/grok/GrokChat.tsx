@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, type Transition } from 'motion/react';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
@@ -10,8 +10,8 @@ import { IconHome } from '@central-icons-react/round-outlined-radius-3-stroke-1.
 import { IconPaperPlane } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPaperPlane';
 import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconTag';
 import { Flag } from '@/apps/shared/Flag';
-import { ChatFrame, ComposerField, NATIVE_IN, type RowMotion } from '../ChatFrame';
-import { GlassDisc, GlassPill } from '../glass';
+import { ChatFrame, ComposerField, NATIVE_IN, ScrollEdge, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
+import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentAsk, AgentBalance, Chip, Message, Product } from '../conversation';
 import { BalanceCard, BalanceDetail, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
 import { AppSheet } from '../sheet';
@@ -31,28 +31,49 @@ const COMPOSER_SPRING: Transition = { type: 'spring', stiffness: 975, damping: 6
 const SHEET_IN: Transition = { duration: 0.45, ease: [0.3, 0.7, 0.2, 1] };
 /** Your bubble lands in place at once; its fill darkens from gray (see .me). */
 const SENT: RowMotion = { initial: { opacity: 1 }, animate: { opacity: 1 }, transition: { duration: 0 } };
-/** The reaction pop: scale 0 → ~1.2 → 1 in ~200ms. */
-const POP: Transition = { type: 'spring', stiffness: 700, damping: 17, mass: 0.7 };
+/**
+ * Grok's reaction (recording 10, 97.85 to 98.55s): the emoji lands big (~30pt) in your bubble's bottom-right corner,
+ * holds ~350ms, then shrinks to 15pt as it drops ~35pt onto the bubble's bottom edge, where a gray pill pops in
+ * around it.
+ */
+const REACT_LAND = 0.57;
+const REACT_EMOJI: Transition = { duration: REACT_LAND, times: [0, 0.175, 0.65, 0.91, 1], ease: 'easeInOut' };
+const REACT_PILL: Transition = {
+  type: 'spring',
+  stiffness: 500,
+  damping: 22,
+  mass: 0.7,
+  delay: REACT_LAND - 0.05,
+  opacity: { duration: 0.08, ease: 'easeOut', delay: REACT_LAND - 0.05 },
+};
+
+function Reaction({ emoji }: { emoji: string }) {
+  return (
+    <span className={styles.react}>
+      <motion.span className={styles.reactPill} initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={REACT_PILL} />
+      <motion.span
+        className={styles.reactEmoji}
+        initial={{ opacity: 0, scale: 0.75, y: -35 }}
+        animate={{ opacity: [0, 1, 1, 1, 1], scale: [0.75, 1, 1, 0.55, 0.5], y: [-35, -35, -35, -3, 0] }}
+        transition={REACT_EMOJI}
+      >
+        {emoji}
+      </motion.span>
+    </span>
+  );
+}
+
+/** Grok's thread: the status row's swap to Typing… jumps; everything else rises on the shared ease-in-out. */
+const grokScroll = (cause: ScrollCause): ScrollCurve =>
+  cause === 'typing' ? 'snap' : { ms: 280, ease: [0.28, 0.05, 0.65, 1] };
 
 /**
- * A Grok bubble: a pill while it's one line, 20pt corners once it wraps, and
+ * A Grok bubble: a pill while it's one line, 20pt corners once it wraps (ChatFrame shapes it), and
  * tighter corners where it meets another bubble from the same sender.
  */
 function Bubble({ className, up, down, children }: { className: string; up: boolean; down: boolean; children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const measure = () => {
-      el.dataset.single = el.offsetHeight < 52 ? 'true' : 'false';
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
   return (
-    <div ref={ref} className={className} data-up={up || undefined} data-down={down || undefined}>
+    <div className={className} data-bubble data-up={up || undefined} data-down={down || undefined}>
       {children}
     </div>
   );
@@ -179,13 +200,13 @@ function FormSheet({ ask, onCancel, onDone }: { ask: AgentAsk; onCancel: () => v
     <div className={styles.sheet}>
       <div className={styles.sheetBar}>
         <button type="button" className={styles.sheetButton} onClick={onCancel}>
-          <GlassPill radius={18}>
+          <GlassPill radius={21.33} tint="rgba(250, 250, 250, 0.85)">
             <span className={styles.sheetLabel}>Cancel</span>
           </GlassPill>
         </button>
         <strong>{f.sheetTitle}</strong>
         <button type="button" className={`${styles.sheetButton} ${styles.sheetDone}`} onClick={onDone}>
-          <GlassPill radius={18} tint="rgba(28, 124, 244, 0.92)">
+          <GlassPill radius={21.33} tone="blue">
             <span className={styles.sheetLabel}>Done</span>
           </GlassPill>
         </button>
@@ -297,7 +318,7 @@ function BalanceSheet({ balance, onDone }: { balance: AgentBalance; onDone: () =
         <span />
         <strong>{balance.wallet}</strong>
         <button type="button" className={`${styles.sheetButton} ${styles.sheetDone}`} onClick={onDone}>
-          <GlassPill radius={18} tint="rgba(28, 124, 244, 0.92)">
+          <GlassPill radius={21.33} tone="blue">
             <span className={styles.sheetLabel}>Done</span>
           </GlassPill>
         </button>
@@ -353,15 +374,11 @@ export function GrokChat({ chat }: AgentChatProps) {
         );
       case 'me':
         return (
-          <span className={styles.meWrap}>
+          <span className={styles.meWrap} data-reacted={m.react ? true : undefined}>
             <Bubble className={styles.me} {...neighbors(i, all, 'me')}>
               {m.text}
             </Bubble>
-            {m.react && (
-              <motion.span className={styles.react} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={POP}>
-                {m.react}
-              </motion.span>
-            )}
+            {m.react && <Reaction emoji={m.react} />}
           </span>
         );
       case 'ask':
@@ -430,21 +447,22 @@ export function GrokChat({ chat }: AgentChatProps) {
         messages={chat.messages}
         render={render}
         rowMotion={(m) => (m.kind === 'me' ? SENT : NATIVE_IN)}
+        scroll={grokScroll}
         faceId={chat.authing}
         onFaceIdDone={chat.authed}
         gap={9}
         threadTop={124}
         composerBottom={26}
         composerHeight={50}
-        edge={<div className={styles.edge} />}
+        edge={<ScrollEdge className={styles.edge} />}
         header={
           <>
-            <div className={styles.back}>
+            <NoopButton label="Back" className={styles.back}>
               <GlassDisc label="Back" icon={`${A}/back.svg`} width={12} height={20} />
-            </div>
-            <div className={styles.more}>
+            </NoopButton>
+            <NoopButton label="More" className={styles.more}>
               <GlassDisc label="More" icon={`${A}/ellipsis.svg`} width={18} height={4} />
-            </div>
+            </NoopButton>
             <GlassPill radius={22} absolute className={styles.title}>
               <span className={styles.titleRow}>
                 <GrokEyes size={26} header live={working} />

@@ -16,8 +16,6 @@ export interface FlowContext {
   variant: number;
 }
 
-const CARD_OPTION = 'Debit or credit card';
-
 const limitParams = (ctx: FlowContext) => ({ limit: ctx.account().limits.approvalAbove });
 
 /** What the balance card reads: the balance, today's spend against the limits, recent activity. */
@@ -105,15 +103,41 @@ const cardTopUp = (ctx: FlowContext): Beat[] => [
   },
 ];
 
+/** Top up from a bank over ACH: link it the first time (each app's consent), then request the transfer. */
+const bankTopUp = (ctx: FlowContext): Beat[] => [
+  {
+    when: () => {
+      const amount = FUND.amount;
+      const transfer: Beat[] = [
+        { say: 'fund.bank', params: { amount } },
+        { work: 'adding', ms: 1100 },
+        { emit: { type: 'fund.bank', amount } },
+        { when: () => [{ say: 'fund.done', params: { amount, balance: ctx.account().balanceCents } }] },
+      ];
+      if (ctx.account().bankLinked) return transfer;
+      return [
+        { say: 'bank.intro' },
+        {
+          ask: 'bank',
+          faceId: true,
+          allow: [{ emit: { type: 'bank.link' } }, { meta: 'bank.linked' }, ...transfer],
+          deny: [{ say: 'bank.denied' }],
+        },
+      ];
+    },
+  },
+];
+
 const fund = (ctx: FlowContext): Beat[] => [
   { react: '👍' },
   { say: 'fund.ask' },
   {
-    chips: [{ label: CARD_OPTION }, ...FUND.options.map((o) => ({ label: o.label }))],
+    chips: [{ label: FUND.card }, { label: FUND.bank }, ...FUND.crypto.map((o) => ({ label: o.label }))],
     reply: true,
     then: (picked) => {
       if (picked === 0) return cardTopUp(ctx);
-      const o = FUND.options[picked - 1];
+      if (picked === 1) return bankTopUp(ctx);
+      const o = FUND.crypto[picked - 2];
       const params = { method: o.label, network: o.network, currency: o.currency, amount: FUND.amount };
       return [
         { emit: { type: 'fund.deposit', network: o.network, currency: o.currency, amount: FUND.amount } },

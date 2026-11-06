@@ -160,3 +160,30 @@
     transform: translateY(-2px);
   }
 }
+
+// The progressive blur under the header (ScrollEdge): each layer blurs twice the last and covers less of the
+// edge, so the blur builds toward the top. The skin sets the height and paints its wash as the background.
+.scrollEdge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  pointer-events: none;
+
+  > i {
+    position: absolute;
+    inset: 0;
+  }
+
+  @each $n, $blur, $solid, $clear in (1, 0.5px, 70%, 100%), (2, 1px, 55%, 85%), (3, 2px, 40%, 70%), (4, 4px, 25%, 55%),
+    (5, 8px, 10%, 40%), (6, 12px, 0%, 25%)
+  {
+    > i:nth-child(#{$n}) {
+      -webkit-backdrop-filter: blur($blur);
+      backdrop-filter: blur($blur);
+      -webkit-mask-image: linear-gradient(180deg, #000 $solid, transparent $clear);
+      mask-image: linear-gradient(180deg, #000 $solid, transparent $clear);
+    }
+  }
+}

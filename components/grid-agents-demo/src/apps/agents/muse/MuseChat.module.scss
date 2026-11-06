@@ -1,6 +1,8 @@
 // Muse, from recording 9 (refs/muse/spec.md) over Figma 87:259. Dark: Figma 124:3873.
+@use '../../../styles/corners';
 .screen {
   --muse-bg: #fafafa;
+  --muse-edge: 250, 250, 250;
   --muse-text: #111112;
   --muse-muted: #686a6e;
   --muse-them: #e5e4e7;
@@ -33,6 +35,7 @@
 
   :global([data-theme='dark']) & {
     --muse-bg: #000;
+    --muse-edge: 0, 0, 0;
     --muse-text: #f5f5f7;
     --muse-muted: #98989f;
     --muse-them: #2c2c2e;
@@ -73,6 +76,11 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
 }
 
 
+.edge {
+  height: 170px;
+  background: linear-gradient(180deg, rgba(var(--muse-edge), 0.8) 0%, rgba(var(--muse-edge), 0.4) 50%, rgba(var(--muse-edge), 0) 100%);
+}
+
 .menu {
   position: absolute;
   top: 61px;
@@ -80,22 +88,30 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
   z-index: 3;
 }
 
-.invite {
+// Call and gift, one glass capsule (IMG_1862): 100 x 44, each glyph ~22pt, centered 24pt in from its end.
+.callGift {
   position: absolute;
   top: 61px;
   right: 16px;
   z-index: 3;
+  width: 100px;
   height: 44px;
 }
 
-.inviteText {
+.callGiftRow {
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   height: 44px;
-  padding: 0 16px;
-  font-size: 17px;
-  font-weight: 510;
+  padding: 0 13px;
+}
+
+.callGiftIcon {
+  width: 22px;
+  height: 22px;
+  background: var(--muse-glyph);
+  mask: no-repeat center / contain;
 }
 
 .avatar {
@@ -159,12 +175,12 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
   }
 }
 
-// Bubbles: 22pt open corners, 6.5pt where a run joins (the agent's left side).
+// Bubbles: plain round 22pt open corners (recording 9), 6.5pt where a run joins (the agent's left side).
 .them,
 .me {
   max-width: 348px;
   padding: 11px 16px;
-  border-radius: 22px;
+  @include corners.bubble(22px, 0);
   font-size: 17px;
   line-height: 22px;
 }
@@ -174,12 +190,12 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
 .choices {
   &[data-pos='first'],
   &[data-pos='middle'] {
-    border-bottom-left-radius: 6.5px;
+    border-bottom-left-radius: corners.corner(6.5px);
   }
 
   &[data-pos='middle'],
   &[data-pos='last'] {
-    border-top-left-radius: 6.5px;
+    border-top-left-radius: corners.corner(6.5px);
   }
 }
 
@@ -195,7 +211,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
   width: 66px;
   height: 40px;
   padding: 0;
-  border-radius: 20px;
+  @include corners.bubble(20px, 0);
   color: var(--muse-dots);
 
   i {
@@ -809,21 +825,34 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
   background: #121114;
 }
 
-// ── Muse balance: an artifact of dark stat tiles ───────────────────────
+// ── Muse balance: an artifact of stat tiles, light on light and dark on dark ──
 .artifact {
+  --art-bg: var(--muse-card);
+  --art-tile: #f2f1f4;
+  --art-muted: #8a898e;
+  --art-line: rgba(0, 0, 0, 0.07);
   display: flex;
   flex-direction: column;
   gap: 10px;
   width: 345px;
   padding: 12px;
   border-radius: 24px;
-  background: #121316;
-  color: #f5f5f7;
+  background: var(--art-bg);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  color: var(--muse-text);
+
+  :global([data-theme='dark']) & {
+    --art-bg: #121316;
+    --art-tile: #1e2024;
+    --art-muted: #9a9ca3;
+    --art-line: rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+  }
 }
 
 .artifactHead {
   padding: 2px 4px 0;
-  color: #9a9ca3;
+  color: var(--art-muted);
   font-size: 13px;
   font-weight: 600;
 }
@@ -834,7 +863,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
   gap: 8px;
 
   small {
-    color: #9a9ca3;
+    color: var(--art-muted);
     font-size: 12px;
   }
 
@@ -851,7 +880,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
   gap: 4px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: #1e2024;
+  background: var(--art-tile);
 
   b {
     font-size: 20px;
@@ -869,7 +898,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
   }
 
   em {
-    color: #9a9ca3;
+    color: var(--art-muted);
     font-size: 13px;
     font-style: normal;
   }
@@ -886,7 +915,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
     justify-content: space-between;
     gap: 12px;
     padding: 9px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--art-line);
     font-size: 15px;
 
     > span {
@@ -896,7 +925,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
   }
 
   small {
-    color: #9a9ca3;
+    color: var(--art-muted);
     font-size: 12px;
   }
 
@@ -905,7 +934,11 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
     font-variant-numeric: tabular-nums;
 
     &[data-in] {
-      color: #4cd07d;
+      color: #1fa855;
+
+      :global([data-theme='dark']) & {
+        color: #4cd07d;
+      }
     }
   }
 }
@@ -918,7 +951,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
     flex: 1;
     padding: 10px 0;
     border-radius: 999px;
-    background: #1e2024;
+    background: var(--art-tile);
     font-size: 14px;
     font-weight: 500;
     text-align: center;
@@ -926,6 +959,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
 
   span[data-primary] {
     background: #0866ff;
+    color: #fff;
   }
 }
 
@@ -933,4 +967,43 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"]';
   --part-surface: var(--muse-browser);
   width: 345px;
   border-radius: 22px;
+}
+
+// The iOS 26 tab bar under the composer (IMG_1862; Figma Tab Bar - iPhone, 5 tabs) with Muse's own icons.
+.tabBar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  height: 95px;
+  pointer-events: none;
+}
+
+.tabPill {
+  position: absolute;
+  top: 14px;
+  left: 21px;
+  width: 360px;
+  height: 58px;
+}
+
+.tabSelected {
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  width: 78px;
+  height: 50px;
+  border-radius: 25px;
+  background: rgba(0, 0, 0, 0.07);
+
+  :global([data-theme='dark']) & {
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.tabIcon {
+  position: absolute;
+  background: var(--muse-glyph);
+  mask: no-repeat center / contain;
 }
