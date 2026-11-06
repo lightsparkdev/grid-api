@@ -20,6 +20,10 @@ post:
     **Rows to a contact:** a row addressed to a phone number or email is
     accepted and held as `PENDING_CLAIM`. Grid does not pay it.
 
+    **Rows to a Grid customer:** a `GRID_CUSTOMER` row pays an internal
+    account on the platform, under the rules of a quote between internal
+    accounts.
+
     Requires an API token with the `UMA_TRANSACT` permission.
   operationId: createPayoutRun
   tags:
