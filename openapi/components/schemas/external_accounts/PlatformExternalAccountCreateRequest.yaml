@@ -10,7 +10,16 @@ properties:
   platformAccountId:
     type: string
     maxLength: 255
-    description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
+    description: >-
+      Your platform's identifier for the account in your system. This can be
+      used to reference the account by your own identifier. It must be unique
+      across your external accounts. For wallet accounts it is also the
+      duplicate check: the same wallet address, network, and currency can be
+      registered several times under different `platformAccountId` values, and
+      only a reused `platformAccountId` is rejected with
+      `DUPLICATE_EXTERNAL_ACCOUNT`. A wallet registered without a
+      `platformAccountId` is rejected when the same wallet, network, and
+      currency is already registered without one.
     example: ext_acc_123456
   ownershipType:
     $ref: ./OwnershipType.yaml
