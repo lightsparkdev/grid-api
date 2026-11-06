@@ -30,7 +30,10 @@ patch:
   description: >-
     Update platform configuration settings. Configure platform-wide card
     velocity limits through `POST /card-velocity-limits` without cardId.
-    cardConfigs contains card presentation, authentication, and risk settings.
+    cardConfigs contains card presentation, authentication, risk, and merchant
+    category settings. Set `cardConfigs.allowedMccs` and `cardConfigs.blockedMccs`
+    to restrict new authorizations on this platform's cards where Grid makes
+    authorization decisions. Card restrictions and Lightspark's controls also apply.
 
 
     Set `cardConfigs.pinTargetOrigin` to the canonical HTTPS origin of your
