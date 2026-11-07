@@ -1,0 +1,217 @@
+// Dots balance (DotBalance.tsx), measured at 3x from Customize (IMG_1895), a plugin's page (IMG_1896) and
+// Scheduled (IMG_1894). Colors come from DotVault's theme: --sp-*, --dv-box, --dv-line, --dv-tile-line, --dv-cta.
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 17px 0;
+}
+
+// Outlined white cards with 24pt corners.
+%outlined {
+  border: 1px solid var(--dv-tile-line);
+  border-radius: 24px;
+  background: var(--dv-box);
+}
+
+// The plugin's header card: its glyph, a bold title, a muted line.
+.hero {
+  @extend %outlined;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 20px 20px;
+
+  h1 {
+    margin: 14px 0 0;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 32px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  p {
+    margin: 6px 0 0;
+    color: var(--sp-muted);
+    font-size: 15px;
+    line-height: 20px;
+  }
+}
+
+.heroIcon {
+  color: #34c759;
+}
+
+.card {
+  @extend %outlined;
+  overflow: hidden;
+}
+
+// A 54pt row: the glyph 20pt in, the name at 59pt, a status, the chevron; the rule starts under the name.
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 54px;
+  padding: 0 16px 0 20px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+
+  & + &::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 59px;
+    height: 1px;
+    background: var(--dv-line);
+    content: '';
+  }
+}
+
+button.row {
+  cursor: pointer;
+}
+
+.icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+}
+
+.label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 17px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value {
+  flex: none;
+  color: var(--sp-muted);
+  font-size: 17px;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chevron {
+  flex: none;
+  color: var(--sp-muted);
+}
+
+// Active / Paused / Completed: 18pt labels, the selected one on a 40pt gray capsule.
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 6px 0 -4px;
+
+  button {
+    height: 40px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    color: var(--sp-muted);
+    font: inherit;
+    font-size: 18px;
+    cursor: pointer;
+
+    &[aria-selected='true'] {
+      background: color-mix(in srgb, var(--sp-text) 6%, transparent);
+      color: var(--sp-text);
+    }
+  }
+}
+
+// "Recommended": 17pt, muted.
+.section {
+  margin: 0 0 -10px 8px;
+  color: var(--sp-muted);
+  font-size: 17px;
+  line-height: 22px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item {
+  @extend %outlined;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+}
+
+.itemText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 17px;
+  line-height: 22px;
+
+  small {
+    color: var(--sp-muted);
+    font-size: 14px;
+    line-height: 19px;
+  }
+}
+
+.amount {
+  flex: none;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+
+  &[data-incoming] {
+    color: #1f9d55;
+  }
+}
+
+.empty {
+  margin: 0;
+  padding: 8px;
+  color: var(--sp-muted);
+  font-size: 15px;
+}
+
+// "New task": a black 48pt pill at the foot's right.
+.foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pill {
+  height: 48px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--dv-cta);
+  color: var(--dv-cta-text);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active {
+    scale: 0.96;
+  }
+}
+
+:global([data-theme='dark']) .tabs button[aria-selected='true'] {
+  background: color-mix(in srgb, var(--sp-text) 12%, transparent);
+}

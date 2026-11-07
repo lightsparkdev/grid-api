@@ -1,0 +1,799 @@
+// Figma 89:297 (iMessage), as the 1:1 thread with Instinct. Dark is iMessage's dark.
+@use '../../../styles/corners';
+
+// Messages and Safari, two full-screen cards; an app switch slides them over the wallpaper.
+.stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+// Each card keeps its own layer: dropping it as a switch ends leaves stale paint behind in Chrome.
+.card {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  will-change: transform;
+
+  &[data-away] {
+    visibility: hidden;
+  }
+
+  // The breadcrumb arrives with Safari, once its status bar is the phone's again.
+  [data-status-back] {
+    transition: opacity 0.2s ease;
+  }
+
+  &[data-switching] [data-status-back] {
+    opacity: 0;
+  }
+}
+
+.cardStatus {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+
+.screen {
+  --im-bg: #fff;
+  --im-edge: 255, 255, 255;
+  --im-text: #000;
+  --im-muted: #8a8a8d;
+  --im-them: #e9e9eb;
+  --im-blue: #08f;
+  --im-ring: #fff;
+  --im-badge: #0e0e0e;
+  --im-placeholder: #bdbdbf;
+  --part-surface: var(--im-them);
+  --part-sunk: var(--im-bg);
+  --part-text: var(--im-text);
+  --part-muted: var(--im-muted);
+  --part-rule: rgba(0, 0, 0, 0.08);
+  --part-radius: 18px;
+  --part-shadow: none;
+  --part-accent: var(--im-blue);
+  --part-accent-text: #fff;
+  --part-done: var(--im-bg);
+  --part-done-text: var(--im-muted);
+  --part-chip: var(--im-them);
+  --part-chip-text: var(--im-blue);
+  background: var(--im-bg);
+  color: var(--im-text);
+
+  :global([data-theme='dark']) & {
+    --im-bg: #000;
+    --im-edge: 0, 0, 0;
+    --im-text: #fff;
+    --im-muted: #98989f;
+    --im-them: #26252a;
+    --im-ring: #000;
+    --im-badge: #3a3a3c;
+    --im-placeholder: #636366;
+    --part-rule: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.edge {
+  height: 149px;
+  background: linear-gradient(180deg, rgba(var(--im-edge), 0.72) 0%, rgba(var(--im-edge), 0.4) 45%, rgba(var(--im-edge), 0) 100%);
+}
+
+.nav {
+  position: absolute;
+  top: 62px;
+  right: 0;
+  left: 0;
+  z-index: 3;
+  height: 87px;
+}
+
+.back {
+  position: absolute;
+  top: 0;
+  left: 16px;
+  height: 44px;
+}
+
+.backRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 17px 0 13px;
+}
+
+.badge {
+  display: grid;
+  place-items: center;
+  width: 33px;
+  height: 19px;
+  padding-bottom: 1px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--im-badge);
+  color: #fff;
+  font-size: 11.8px;
+  font-weight: 510;
+  letter-spacing: -0.15px;
+}
+
+.facetime {
+  position: absolute;
+  top: 0;
+  right: 17px;
+}
+
+.contact {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 120px;
+  height: 87px;
+  translate: -50% 0;
+}
+
+
+
+
+.navInstinct {
+  position: absolute;
+  top: 0;
+  left: 37px;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 2px solid var(--im-ring);
+  border-radius: 50%;
+  corner-shape: round;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.name {
+  position: absolute;
+  top: 55px;
+  left: 50%;
+  height: 32px;
+  translate: -50% 0;
+}
+
+.nameRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 11px 0 13px;
+  font-size: 17px;
+  font-weight: 590;
+  letter-spacing: -0.43px;
+  white-space: nowrap;
+}
+
+.stamp {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  padding: 12px 0 3px;
+  color: var(--im-muted);
+  font-size: 11px;
+  font-weight: 590;
+  line-height: 13px;
+  letter-spacing: 0.06px;
+  text-align: center;
+}
+
+
+
+.body {
+  position: relative;
+}
+
+.bubble,
+.me {
+  max-width: 284px;
+  padding: 10px 13px 10px 14px;
+  @include corners.bubble(20px);
+  font-size: 17px;
+  line-height: 20px;
+  letter-spacing: -0.43px;
+}
+
+.bubble {
+  background: var(--im-them);
+}
+
+.me {
+  position: relative;
+  padding: 10px 14px 10px 13px;
+  // iMessage's blue runs lighter at the top (recording 6: #37A6F9 to #2B99FA).
+  background: linear-gradient(180deg, #37a6f9 0%, #2b99fa 100%);
+  color: #fff;
+}
+
+// Your bubble with its tapback beside it, so the cloud places against the bubble but outside its clip.
+.meBox {
+  position: relative;
+  display: flex;
+  max-width: 100%;
+}
+
+.tailIn,
+.tailOut {
+  position: absolute;
+  bottom: -7px;
+  width: 24px;
+  height: 17px;
+  mask: no-repeat center / contain;
+}
+
+.tailIn {
+  left: 0;
+  background: var(--im-them);
+  mask-image: url('/assets/agents/instinct/tail-in.svg');
+}
+
+.tailOut {
+  right: 0;
+  bottom: -5px;
+  width: 20px;
+  height: 14px;
+  background: #2b99fa;
+  mask-image: url('/assets/agents/instinct/tail-out.svg');
+}
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 250px;
+  padding: 12px 14px 13px;
+  border-radius: 18px;
+  background: var(--im-them);
+  white-space: nowrap;
+
+  strong {
+    font-size: 15px;
+    font-weight: 590;
+    line-height: 20px;
+    letter-spacing: -0.23px;
+  }
+
+  span {
+    color: var(--im-muted);
+    font-size: 13px;
+    line-height: 17px;
+    letter-spacing: -0.08px;
+  }
+}
+
+
+
+.composer {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0 28px;
+}
+
+.plus {
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+
+.plusIcon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 40px;
+}
+
+.field {
+  flex: 1;
+  min-height: 40px;
+}
+
+.fieldRow {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 12px 6px 16px;
+}
+
+// The dictation glyph, centered on the 28pt send's line.
+.dictation {
+  flex: none;
+  margin-bottom: 6px;
+}
+
+.fieldText {
+  --field-pad: 3px;
+  --placeholder: var(--im-placeholder);
+  font-size: 17px;
+  letter-spacing: -0.43px;
+
+  // Sent, the field holds its height while the text lifts off under its glass, then drops to one line (recording 2: 83–133ms).
+  textarea[data-empty] {
+    transition: height 0.05s ease-in 0.085s;
+  }
+}
+
+.send {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-right: -6px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--im-blue);
+  color: #fff;
+  transition: scale 0.15s ease;
+
+  &[data-pressing] {
+    scale: 0.88;
+  }
+}
+
+.glyph {
+  background: var(--im-text);
+  mask: no-repeat center / contain;
+}
+
+.muted {
+  background: var(--im-placeholder);
+  mask: no-repeat center / contain;
+}
+
+.ask {
+  width: 284px;
+}
+
+.stamp strong {
+  font-weight: 590;
+}
+
+// iMessage's rich link: the page's preview over its title and domain, in one bubble.
+.link {
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+  width: 264px;
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  background: var(--im-them);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: scale 0.15s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.98;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+// The page's own preview: Instinct's paper, its mark, the amount in its serif.
+.linkHero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 6px;
+  height: 160px;
+  padding: 16px 14px;
+  background: #e8e1da;
+  color: #231f20;
+}
+
+.linkMark {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: #231f20;
+
+  img {
+    filter: invert(1);
+  }
+}
+
+.linkHeadline {
+  max-width: 200px;
+  font-family: 'New York', ui-serif, Georgia, serif;
+  font-size: 24px;
+  line-height: 28px;
+  letter-spacing: -0.4px;
+}
+
+.linkState {
+  color: #7a7274;
+  font-size: 13px;
+  font-weight: 500;
+
+  &[data-state='done'] {
+    color: #1d6b2c;
+  }
+}
+
+.linkMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 9px 13px 10px;
+
+  strong {
+    font-size: 15px;
+    font-weight: 590;
+    line-height: 19px;
+    letter-spacing: -0.23px;
+  }
+
+  small {
+    color: var(--im-muted);
+    font-size: 13px;
+    line-height: 16px;
+  }
+}
+
+// Instinct's tapback on your message (recording 2 at 30s): a 34pt cloud over the bubble's
+// top-left corner, ringed in the background, its tail trailing down and out to the left.
+// It grows out of the smallest dot.
+.tapback {
+  position: absolute;
+  top: -27px;
+  left: -14px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--im-them);
+  box-shadow: 0 0 0 1.5px var(--im-bg);
+  font-size: 18px;
+  line-height: 1;
+  transform-origin: -1px 40px;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: var(--im-them);
+  }
+
+  &::before {
+    top: 27px;
+    left: 1px;
+    width: 10px;
+    height: 10px;
+  }
+
+  &::after {
+    top: 37.5px;
+    left: -3px;
+    width: 5px;
+    height: 5px;
+  }
+}
+
+// iMessage keeps a sender's run tight and opens up where the sender changes.
+$theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kind="ask"]';
+
+.screen [data-kind='me'] + :is(#{$theirs}) {
+  margin-top: 10px;
+}
+
+// Instinct's bubble to yours: 9.7pt apart (recording 2 at 29.3s).
+.screen :is(#{$theirs}) + [data-kind='me'] {
+  margin-top: 6.7px;
+}
+
+// ── Text-only additions (recordings 1, 2, 4, 6) ────────────────────────
+.detected {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+
+  .bubble & {
+    color: var(--im-blue);
+  }
+}
+
+.lines {
+  white-space: pre-line;
+}
+
+.typingBubble {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  padding: 0 14px;
+  color: var(--im-muted);
+}
+
+.meCol {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  // A tapback lands: the row opens 28pt above for it (9.7pt to 37.7pt in recording 2, 29.3s to 30.2s),
+  // so the bubble dips and the thread rises back, and the cloud clears the bubble above.
+  transition: margin-top 0.1s ease-out;
+
+  &[data-tapped] {
+    margin-top: 28px;
+  }
+
+  .me {
+    transform-origin: 100% 100%;
+  }
+}
+
+// The field's text as it lifts off: a pale, blurred copy of the field under the composer's glass.
+.ghost {
+  position: absolute;
+  border-radius: 20px;
+  background: #2b99fa;
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+// An inline reply: the quoted text in an outlined bubble, a thread line down to yours.
+.replyTo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-bottom: -2px;
+}
+
+.quote {
+  display: block;
+  max-width: 240px;
+  padding: 7px 12px;
+  overflow: hidden;
+  border: 1px solid #d0d0d3;
+  border-radius: 16px;
+  color: var(--im-muted);
+  font-size: 15px;
+  line-height: 19px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  :global([data-theme='dark']) & {
+    border-color: #3a3a3c;
+  }
+}
+
+.thread {
+  width: 1.5px;
+  height: 10px;
+  margin-right: 24px;
+  background: #d0d0d3;
+
+  :global([data-theme='dark']) & {
+    background: #3a3a3c;
+  }
+}
+
+// Delivered and Read share one right-aligned line; the cap height sits 6pt under the bubble.
+.read {
+  display: grid;
+  justify-items: end;
+  margin: 3px 21px 0 0;
+  color: #7e7d80;
+  font-size: 12px;
+  line-height: 15px;
+  white-space: nowrap;
+
+  > * {
+    grid-area: 1 / 1;
+  }
+
+  b {
+    font-weight: 600;
+  }
+}
+
+// ── Images Instinct sends ──────────────────────────────────────────────
+.image,
+.productImage {
+  display: flex;
+  flex-direction: column;
+  width: 248px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #fbf8f5;
+  color: #231f20;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+}
+
+.imageTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #7a7274;
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.wordmark {
+  color: #231f20;
+  font-family: 'New York', ui-serif, Georgia, serif;
+  font-size: 14px;
+  letter-spacing: -0.2px;
+}
+
+.imageTitle {
+  margin-top: 18px;
+  font-family: 'New York', ui-serif, Georgia, serif;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 28px;
+  letter-spacing: -0.4px;
+}
+
+.imageCode {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #efe9e4;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+}
+
+.imageLine {
+  margin-top: 6px;
+  color: #6b6466;
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.imageRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 18px;
+
+  b {
+    font-weight: 500;
+
+    &[data-in] {
+      color: #1d6b2c;
+    }
+  }
+}
+
+.imageDone {
+  margin-top: 14px;
+  color: #1d6b2c;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.productStack {
+  position: relative;
+  padding: 6px 0 0 6px;
+}
+
+.stackBack {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 248px;
+  height: calc(100% - 6px);
+  border-radius: 18px;
+  background: #efe9e4;
+  rotate: -3deg;
+}
+
+.productImage {
+  position: relative;
+  gap: 2px;
+  padding: 10px 10px 12px;
+
+  strong {
+    font-size: 15px;
+    font-weight: 590;
+    line-height: 19px;
+  }
+
+  .imageTop {
+    margin-top: 10px;
+  }
+}
+
+.productPhoto {
+  position: relative;
+  display: grid;
+  height: 168px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #fff;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+.count {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.productBrand {
+  color: #7a7274;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.productPrice {
+  color: #1d6b2c;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+// The vault link's preview: Instinct's paper, the title in its serif, its wordmark.
+.linkWord {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  font-family: 'New York', ui-serif, Georgia, serif;
+  font-size: 15px;
+}
+
+.balanceImage {
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: scale 0.15s ease;
+
+  &:active {
+    scale: 0.98;
+  }
+}

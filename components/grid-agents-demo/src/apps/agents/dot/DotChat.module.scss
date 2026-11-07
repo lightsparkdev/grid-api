@@ -1,0 +1,873 @@
+// Dots, measured from recordings 3, 5, 7 and 8 (refs/dots/spec.md).
+@use '../../../styles/corners';
+.stage {
+  --sub-bg: var(--dot-them);
+  --sub-radius: 22px;
+  position: absolute;
+  inset: 0;
+  --dot-bg: #fff;
+  --dot-edge: 255, 255, 255;
+  --dot-text: #000;
+  --dot-muted: #a3a3a3;
+  --dot-secondary: #6e6e73;
+  --dot-them: #efefef;
+  --dot-blue: #2d59ee;
+  --dot-chip: #eef3fe;
+  --dot-chip-picked: #dde7ff;
+  --dot-chip-text: #2f50d2;
+  --dot-card: #fff;
+  --dot-line: #e5e5e5;
+  --dot-cta: #000;
+  --dot-cta-text: #fff;
+  --part-surface: var(--dot-card);
+  --part-sunk: var(--dot-them);
+  --part-text: var(--dot-text);
+  --part-muted: #8d8d8d;
+  --part-rule: rgba(0, 0, 0, 0.06);
+  --part-radius: 22px;
+  --part-shadow: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.08));
+  --part-accent: var(--dot-blue);
+  --part-accent-text: #fff;
+  --part-done: var(--dot-chip);
+  --part-done-text: var(--dot-chip-text);
+  --part-chip: var(--dot-chip);
+  --part-chip-text: var(--dot-chip-text);
+
+  :global([data-theme='dark']) & {
+    --dot-bg: #0d0d0d;
+    --dot-edge: 13, 13, 13;
+    --dot-text: #f5f5f5;
+    --dot-muted: #737373;
+    --dot-secondary: #9a9a9f;
+    --dot-them: #232323;
+    --dot-chip: #17213d;
+    --dot-chip-picked: #1f2c52;
+    --dot-chip-text: #8fb0ff;
+    --dot-card: #1a1a1a;
+    --dot-line: #2c2c2e;
+    --dot-cta: #fff;
+    --dot-cta-text: #000;
+    --part-rule: rgba(255, 255, 255, 0.08);
+    --part-shadow: none;
+  }
+}
+
+.screen {
+  background: var(--dot-bg);
+  color: var(--dot-text);
+}
+
+.edge {
+  height: 178px;
+  background: linear-gradient(180deg, rgba(var(--dot-edge), 0.7) 0%, rgba(var(--dot-edge), 0.3) 55%, rgba(var(--dot-edge), 0) 100%);
+}
+
+// ── Header ──────────────────────────────────────────────────────────────
+.menu,
+.call {
+  position: absolute;
+  top: 63px;
+  z-index: 3;
+}
+
+.menu {
+  left: 16px;
+}
+
+.call {
+  right: 16px;
+}
+
+.avatar {
+  position: absolute;
+  top: 63px;
+  left: 172px;
+  z-index: 3;
+  width: 78px;
+  height: 62px;
+  pointer-events: none;
+}
+
+// He breathes: ~0.4pt up and down over ~5s (recording 3, 30 to 36s).
+.avatarBody {
+  position: absolute;
+  inset: 0;
+  animation: dot-bob 5s ease-in-out infinite;
+
+  img {
+    position: absolute;
+    inset: 0;
+  }
+}
+
+.lid {
+  opacity: 0;
+
+  &[data-on] {
+    opacity: 1;
+  }
+}
+
+// The bulb sits off his top right (cut from the same render), growing from its base. It warms from pale to orange
+// over ~1.5s, holds, cools over ~3s and rests pale, a ~7.5s cycle (recording 3, 46 to 62s).
+.bulb {
+  position: absolute;
+  top: 4.55px;
+  left: 55.9px;
+  width: 17.2px;
+  height: 25.35px;
+  transform-origin: 50% 90%;
+  animation: dot-bulb 7.5s ease-in-out infinite;
+}
+
+@keyframes dot-bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 0.4px;
+  }
+}
+
+@keyframes dot-bulb {
+  0%,
+  100% {
+    filter: saturate(0.2) brightness(1.12);
+  }
+
+  20%,
+  33% {
+    filter: saturate(1.15) brightness(1.04) drop-shadow(0 0 3px rgba(255, 186, 72, 0.75));
+  }
+
+  73% {
+    filter: saturate(0.2) brightness(1.12);
+  }
+}
+
+.name {
+  position: absolute;
+  top: 125px;
+  left: 50%;
+  z-index: 3;
+  height: 37px;
+  translate: -50% 0;
+}
+
+.nameText {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 37px;
+  padding: 0 14px;
+  font-size: 17px;
+  font-weight: 590;
+}
+
+// ── Thread ──────────────────────────────────────────────────────────────
+.stamp {
+  align-self: stretch;
+  padding: 6px 0 8px;
+  color: var(--dot-muted);
+  font-size: 12px;
+  text-align: center;
+
+  b {
+    font-weight: 600;
+  }
+}
+
+.them,
+.me {
+  padding: 11px 16px 12px;
+  @include corners.bubble(24px);
+  font-size: 17px;
+  line-height: 22px;
+}
+
+.them {
+  max-width: 315px;
+  background: var(--dot-them);
+
+  p {
+    margin: 0;
+  }
+
+  p + p,
+  p + ul,
+  ul + p {
+    margin-top: 10px;
+  }
+
+  // The reset strips list markers; a markdown list keeps its bullets in the indent.
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding-left: 20px;
+    list-style: disc;
+  }
+
+  li {
+    display: list-item;
+  }
+
+  strong {
+    font-weight: 600;
+  }
+
+  u {
+    text-underline-offset: 2px;
+  }
+}
+
+.me {
+  max-width: 315px;
+  background: var(--dot-blue);
+  color: #fff;
+}
+
+.typing {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16px;
+  @include corners.bubble(18px);
+  background: var(--dot-them);
+  color: var(--dot-text);
+}
+
+.seen,
+.sender {
+  color: var(--dot-muted);
+  font-size: 12px;
+}
+
+// Delivered and Seen share one line, aligned to the bubble's text rather than its edge (IMG_1861), and crossfade.
+.seen {
+  display: grid;
+  justify-items: end;
+  margin-top: 6px;
+  padding-right: 15px;
+
+  > * {
+    grid-area: 1 / 1;
+  }
+}
+
+.sender {
+  margin: 0 0 4px 4px;
+}
+
+.chips {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+// Choices and action pills share Dots' pill (IMG_1891 at 3x): 48pt, light blue, a 20pt glyph 14pt in, the label
+// 19pt after it at 17pt medium, a 5 x 9pt chevron 22pt after the label and 22pt from the end.
+.chip,
+.pill,
+.metaPill {
+  display: flex;
+  align-items: center;
+  gap: 19px;
+  height: 48px;
+  padding: 0 22px 0 14px;
+  border: 0;
+  border-radius: 24px;
+  background: var(--dot-chip);
+  color: var(--dot-chip-text);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 510;
+  line-height: 22px;
+  letter-spacing: -0.43px;
+  white-space: nowrap;
+}
+
+.pillLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  + .chevron {
+    margin-left: 3px;
+  }
+}
+
+.chip {
+  cursor: pointer;
+  transition: opacity 0.3s ease, scale 0.15s ease, background-color 0.2s ease;
+
+  .chips[data-picked] & {
+    opacity: 0.4;
+  }
+
+  .chips[data-picked] &[data-picked] {
+    opacity: 1;
+    scale: 0.97;
+    background: var(--dot-chip-picked);
+  }
+}
+
+.chevron {
+  flex: none;
+  width: 5px;
+  height: 9px;
+  background: currentColor;
+  mask: url('/assets/agents/dot/chevron.svg') no-repeat center / contain;
+}
+
+// ── Action pill ─────────────────────────────────────────────────────────
+.mark {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  overflow: hidden;
+  border-radius: 28%;
+  background: #e8efff;
+
+  // body.png is 240x191 with the mascot at 175x185+5+2: scaled so it's 78% of the tile tall, its box centered.
+  img {
+    position: absolute;
+    top: 10.2%;
+    left: 11%;
+    width: 101.2%;
+    height: auto;
+  }
+}
+
+.pill {
+  max-width: 330px;
+  cursor: pointer;
+  transition: scale 0.15s ease, opacity 0.2s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.97;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &[data-state='denied'],
+  &[data-state='expired'] {
+    opacity: 0.5;
+  }
+}
+
+.pillLead {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+
+  img {
+    border-radius: 50%;
+  }
+}
+
+// Done: the check sits 34pt after the label and 18pt from the end (IMG_1906, "Shop").
+.pillCheck {
+  flex: none;
+  margin: 0 -4px 0 15px;
+}
+
+// What dot set up, in its gray pill (IMG_1890): dark glyph and label, 16pt in.
+.metaPill {
+  padding-left: 16px;
+  background: var(--dot-them);
+  color: var(--dot-text);
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: dot-spin 0.8s linear infinite;
+}
+
+@keyframes dot-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+// ── Setup sheet: a floating card inset 8pt, device corners at the foot ──
+.setupPanel {
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+}
+
+.setup.setup {
+  --sp-text: var(--dot-text);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 24px 24px;
+  // Inset 8pt from the screen, so the foot is concentric with its corners: the same superellipse, 8pt tighter.
+  border-radius: 38px 38px calc(var(--screen-corner-radius, 73px) - 8px) calc(var(--screen-corner-radius, 73px) - 8px);
+  corner-shape: round round var(--corner-shape) var(--corner-shape);
+  background: var(--dot-card);
+  color: var(--dot-text);
+}
+
+.close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.setupMarks {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.setupTitle {
+  margin-top: 14px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.setupBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  color: var(--dot-secondary);
+  font-size: 13px;
+  line-height: 18px;
+
+  p {
+    margin: 0;
+  }
+
+  b {
+    color: var(--dot-text);
+    font-weight: 600;
+  }
+
+  u {
+    text-underline-offset: 2px;
+  }
+}
+
+.notNow {
+  margin-top: 20px;
+  padding: 8px;
+  border: 0;
+  background: none;
+  color: var(--dot-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.black {
+  margin-top: 8px;
+
+  // With nothing to decline, the button sits right under the terms.
+  .setupBody + & {
+    margin-top: 24px;
+  }
+}
+
+// ── Pay sheet: Dots' own checkout, full height ─────────────────────────
+.payPanel {
+  top: 54px;
+}
+
+.pay {
+  --sp-text: var(--dot-text);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 38px 38px 0 0;
+  background: var(--dot-card);
+  color: var(--dot-text);
+}
+
+.payBar {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  padding: 14px 16px 0;
+
+  strong {
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+  }
+}
+
+.burger {
+  width: 16px;
+  height: 12px;
+  background:
+    linear-gradient(currentColor 0 0) 0 0 / 100% 1.8px no-repeat,
+    linear-gradient(currentColor 0 0) 0 50% / 100% 1.8px no-repeat,
+    linear-gradient(currentColor 0 0) 0 100% / 70% 1.8px no-repeat;
+}
+
+.preparing {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding-bottom: 120px;
+  color: var(--dot-secondary);
+
+  strong {
+    color: var(--dot-text);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 34px;
+  }
+}
+
+.payBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 20px 0;
+  overflow: hidden;
+}
+
+.payMarks {
+  display: flex;
+  gap: 10px;
+}
+
+.payWho {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border: 1px solid var(--dot-line);
+  border-radius: 50%;
+  background: #fff;
+  color: #000;
+  font-size: 17px;
+  font-weight: 600;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+.payTitle {
+  margin-top: 16px;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 34px;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.requested {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  color: var(--dot-secondary);
+  font-size: 13px;
+}
+
+.email {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+
+  i {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--dot-them);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 600;
+  }
+}
+
+.total {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--dot-line);
+  border-radius: 16px;
+
+  img {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #f6f6f6;
+    object-fit: contain;
+  }
+
+  span {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  small {
+    color: var(--dot-secondary);
+    font-size: 13px;
+  }
+
+  b {
+    font-size: 17px;
+    font-weight: 600;
+  }
+}
+
+.payRows {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 16px;
+
+  > div {
+    display: flex;
+    gap: 12px;
+    padding: 14px 0;
+    border-top: 1px solid var(--dot-line);
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  span {
+    flex: none;
+    width: 76px;
+    color: var(--dot-secondary);
+  }
+
+  p {
+    flex: 1;
+    margin: 0;
+  }
+}
+
+.balanceRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// The checkout's Pay with, when it can switch: the method, then the saved card and the balance under it.
+.payWith {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  b {
+    flex: 1;
+    font-weight: 400;
+  }
+}
+
+.payChevron {
+  flex: none;
+  color: var(--dot-secondary);
+  transition: rotate 0.2s ease;
+
+  &[data-open] {
+    rotate: 180deg;
+  }
+}
+
+.payOptions {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--dot-fill, rgba(0, 0, 0, 0.04));
+
+  button {
+    padding: 10px 12px;
+
+    & + button {
+      border-top: 1px solid var(--dot-line);
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.45;
+    }
+  }
+
+  b {
+    display: flex;
+    flex-direction: column;
+  }
+
+  small {
+    color: var(--dot-secondary);
+    font-size: 13px;
+    line-height: 17px;
+  }
+
+  svg:last-child {
+    flex: none;
+    color: var(--dot-blue);
+  }
+}
+
+.payAdd.payAdd {
+  justify-content: center;
+  color: var(--dot-blue);
+  font-weight: 600;
+}
+
+.payActions {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px 40px;
+}
+
+// ── Composer ───────────────────────────────────────────────────────────
+.composerBox {
+  width: 370px;
+  margin: 0 auto;
+}
+
+.composer {
+  width: 100%;
+}
+
+.composerGrid {
+  position: relative;
+  display: grid;
+  grid-template-areas: 'plus field tools';
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: end;
+  min-height: 48px;
+  padding: 1.5px 6px 1.5px 0;
+
+  &[data-multiline] {
+    grid-template-areas:
+      'field field field'
+      'plus . tools';
+    padding: 4px 6px 2px 0;
+  }
+}
+
+.fieldSlot {
+  display: flex;
+  grid-area: field;
+  min-width: 0;
+
+  [data-multiline] > & {
+    padding: 0 16px;
+  }
+}
+
+.tools {
+  display: flex;
+  grid-area: tools;
+  align-items: center;
+}
+
+.slot {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 45px;
+}
+
+.field {
+  --field-pad: 11.5px;
+  --placeholder: #8d8d8d;
+  font-size: 17px;
+}
+
+.send {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 2px 0 -4px;
+  border-radius: 50%;
+  background: var(--dot-blue);
+  color: #fff;
+  cursor: pointer;
+  animation: dot-send-in 0.15s ease-out;
+}
+
+@keyframes dot-send-in {
+  from {
+    scale: 0.6;
+    opacity: 0;
+  }
+}
+
+.glyph {
+  background: var(--dot-text);
+  mask: no-repeat center / contain;
+}
+
+// ── Dots balance: the widget in the chat, and its sheet ────────────────
+// In Dots' own colors: its message gray, the black capsule its sheets lead with, its blue only on the track.
+.accountSkin {
+  --acct-radius: 24px;
+  --acct-bg: var(--dot-them);
+  --acct-ink: var(--dot-text);
+  --acct-ink-2: var(--dot-secondary);
+  --acct-button: var(--dot-card);
+  --acct-button-radius: 999px;
+  --acct-accent: #000;
+  --acct-accent-ink: #fff;
+  --acct-track: var(--dot-blue);
+
+  :global([data-theme='dark']) & {
+    --acct-button: #2f2f2f;
+    --acct-accent: #fff;
+    --acct-accent-ink: #000;
+  }
+}

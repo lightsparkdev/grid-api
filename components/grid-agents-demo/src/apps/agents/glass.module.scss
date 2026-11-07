@@ -1,0 +1,147 @@
+@use '../../styles/glass-rim' as rim;
+
+// A grid, so the panel's content wrapper stretches to the glass's full size.
+.pill {
+  display: grid;
+  corner-shape: round;
+  box-shadow: rim.$glass-rim-shadow;
+  @include rim.glass-rim;
+}
+
+// Blue glass (IMG_1859's Done at 3x): a flat #3672eb fill, a darker blue hairline, a lighter blue band just
+// inside the top and bottom, and a one-pixel pale cyan halo where the edge meets what's behind.
+.blue {
+  --glass-rim-side: rgba(16, 46, 130, 0.3);
+  --glass-rim-cap: rgba(16, 46, 130, 0.22);
+  --glass-rim-inset: rgba(130, 185, 255, 0.5);
+  box-shadow:
+    0 0 0 0.5px rgba(205, 248, 255, 0.9),
+    rim.$glass-rim-shadow;
+}
+
+.disc {
+  width: 44px;
+  height: 44px;
+  color: var(--chat-glass-ink);
+}
+
+.discInner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+// NoopButton. The reset has no specificity, so a skin's class still sets the control's type and size. No
+// `filter` for the press: on an ancestor it cuts the frost off from what's behind it, so a wash brightens instead.
+:where(.noop) {
+  position: relative;
+  display: grid;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.noop {
+  border-radius: 999px;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: rgba(255, 255, 255, 0.14);
+    content: '';
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      transform: scale(calc((var(--noop-size) + 4) / var(--noop-size)));
+    }
+  }
+
+  &:active {
+    transform: scale(calc((var(--noop-size) + 8) / var(--noop-size)));
+
+    &::after {
+      opacity: 1;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--chat-glass-ink, currentColor);
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+}
+
+// GlassButton: a full-width sheet action, its label centered in the glass.
+.cta {
+  width: 100%;
+}
+
+.ctaLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  color: var(--cta-ink, var(--chat-glass-ink));
+  font-size: 17px;
+  font-weight: 600;
+}
+
+// ScanButton: a 44pt capsule like a sheet's Cancel and Done, Scan after the camera glyph, in the sheet's own ink.
+.scan {
+  height: 44px;
+  color: inherit;
+}
+
+.scanGlass {
+  height: 44px;
+}
+
+.scanInner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 17px 0 14px;
+  font-size: 17px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.scanGlyph {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 -6px 0 auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}

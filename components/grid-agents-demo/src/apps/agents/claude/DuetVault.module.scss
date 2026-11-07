@@ -1,0 +1,274 @@
+// Duet's bank and card (DuetVault.tsx), measured at 3x from the Claude app's settings (IMG_1930–1937).
+
+.theme {
+  --sp-bg: #fafaf8;
+  --sp-text: #0b0b0b;
+  --sp-muted: #73726c;
+  --sp-title-weight: 600;
+  --dv-card: #f2f2f0;
+  --dv-group: #fff;
+  --dv-line: #e8e7e3;
+  --dv-tile: #fff;
+  --dv-ink: #141413;
+  --dv-ink-text: #fff;
+  --dv-avatar: #e9e8e3;
+  font-family: 'Anthropic Sans', var(--font-family-sf-pro);
+
+  :global([data-theme='dark']) & {
+    --sp-bg: #262624;
+    --sp-text: #f5f4ef;
+    --sp-muted: #a6a39b;
+    --dv-card: #30302e;
+    --dv-group: #1f1e1d;
+    --dv-line: #3a3936;
+    --dv-tile: #1f1e1d;
+    --dv-ink: #f5f4ef;
+    --dv-ink-text: #1f1e1d;
+    --dv-avatar: #3d3c38;
+  }
+
+  * {
+    font-family: inherit;
+  }
+}
+
+.tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--dv-line, rgba(11, 11, 11, 0.1));
+  border-radius: 8px;
+  background: var(--dv-tile, #fff);
+}
+
+// Claude's black capsule: 30pt, 17pt medium.
+.connect {
+  flex: none;
+  height: 30px;
+  margin-left: auto;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--dv-ink, var(--cl-ink));
+  color: var(--dv-ink-text, var(--cl-ink-text));
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: scale 0.15s ease, background-color 0.2s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.96;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+// ── The connector card in the thread ───────────────────────────────────
+.connector {
+  --dv-line: var(--cl-rule);
+  --dv-tile: var(--cl-card);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 340px;
+  padding: 14px 16px 16px;
+  border-radius: 20px;
+  background: var(--cl-card);
+  box-shadow: 0 0 0 1px var(--cl-ring);
+  color: var(--cl-text);
+
+  &[data-state='done'] .connect,
+  &[data-state='denied'] .connect,
+  &[data-state='expired'] .connect {
+    background: var(--cl-bubble);
+    color: var(--cl-muted);
+  }
+}
+
+.connectorHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  strong {
+    font-size: 17px;
+    font-weight: 600;
+  }
+}
+
+.connectorLine {
+  text-wrap: pretty;
+  color: var(--cl-muted);
+  font-size: 14px;
+  line-height: 19px;
+}
+
+// ── Browse: one card per country, 16pt in, 10pt apart ──────────────────
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 16px 0;
+}
+
+.label {
+  margin: 12px 4px 0;
+  color: var(--sp-muted);
+  font-size: 15px;
+  font-weight: 400;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--dv-card);
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active {
+    scale: 0.98;
+  }
+
+  .connect {
+    display: grid;
+    place-items: center;
+  }
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cardName {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  strong {
+    overflow: hidden;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 22px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: var(--sp-muted);
+    font-size: 14px;
+    line-height: 18px;
+  }
+}
+
+.cardLine {
+  text-wrap: pretty;
+  font-size: 15px;
+  line-height: 20px;
+  opacity: 0.85;
+}
+
+// ── Profile: the avatar, then label | value rows in a white group ──────
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px 0 24px;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--dv-avatar);
+  color: var(--sp-text);
+}
+
+.group {
+  margin: 0 16px;
+  padding: 0 16px;
+  border-radius: 20px;
+  background: var(--dv-group);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 53px;
+
+  & + & {
+    border-top: 1px solid var(--dv-line);
+  }
+}
+
+.rowLabel {
+  flex: none;
+  width: 128px;
+  color: var(--sp-muted);
+  font-size: 17px;
+}
+
+.rowValue {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.foot {
+  text-wrap: pretty;
+  margin: 12px 32px 0;
+  color: var(--sp-muted);
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.saveDisc {
+  width: 44px;
+  height: 44px;
+}
+
+.saveInk {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--dv-ink-text);
+}
+
+.spin {
+  animation: dv-spin 0.8s linear infinite;
+}
+
+@keyframes dv-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+// The card form's Scan, at the top right of the fields (the sheet's own top right holds Save).
+// Scan sits on the avatar's lower edge, as a contact's Edit Photo does.
+.heroScan {
+  margin-top: -16px;
+}

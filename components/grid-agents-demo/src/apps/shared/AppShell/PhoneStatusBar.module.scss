@@ -1,0 +1,105 @@
+/* iOS 27 status bar — Figma website-q4-2026 (265:53338): 402 x 62, the time and
+   the levels each centred in a 145.5pt slot either side of the 95pt island, both
+   on a line 32.5pt down. Self-contained: resets Origin/Suisse inheritance (salt,
+   tracking, tabular nums). The glyphs are the Figma assets used as masks, so they
+   take the bar's tone (black, or white over dark content). */
+
+@use '../typography/ios-type-mixins' as ios;
+
+.statusBar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 95px;
+  width: 100%;
+  padding: 21.5px 8px 18.5px;
+  /* Explicit black — don't use --ios-label-primary; it flips white under [data-theme='dark']. */
+  color: #000000;
+  font-feature-settings: normal;
+  letter-spacing: 0;
+  pointer-events: none;
+  transition: color 0.2s ease;
+  /* System chrome — always the system font, never the skin's. */
+  @include ios.ios-system-font;
+}
+
+.statusBarLight {
+  /* Scoped to status bar only — must not flip --ios-label-primary on .screen. */
+  color: #ffffff;
+}
+
+.timeSlot {
+  display: flex;
+  flex: 1 0 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 22px;
+}
+
+.time {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  @include ios.ios-text-status-time;
+  font-size: 17.67px;
+  line-height: 22px;
+  color: inherit;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.levelsSlot {
+  display: flex;
+  flex: 1 0 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  height: 22px;
+}
+
+.cellular {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-end;
+  gap: 2.333px;
+  width: 20.333px;
+  height: 15px;
+  padding-top: 1.333px;
+}
+
+.bar {
+  flex-shrink: 0;
+  width: 3.333px;
+  border-radius: 4px;
+  background: currentColor;
+}
+
+.wifi,
+.battery {
+  flex-shrink: 0;
+  background: currentColor;
+  mask: no-repeat center / 100% 100%;
+}
+
+.wifi {
+  width: 19.333px;
+  height: 14.333px;
+  mask-image: url('/assets/ios/status-bar/wifi.svg');
+}
+
+.battery {
+  width: 29.333px;
+  height: 13.667px;
+  mask-image: url('/assets/ios/status-bar/battery.svg');
+}
+
+/* An app opened from another shows the way back ("◀ Messages") under the time,
+   which moves up to make room (iOS: 25pt to its centre). */
+.statusBar:has(~ [data-screen-body] [data-status-back]) .timeSlot {
+  translate: 0 -8px;
+}

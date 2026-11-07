@@ -1,0 +1,1014 @@
+// Muse, from recording 9 (refs/muse/spec.md) over Figma 87:259. Dark: Figma 124:3873.
+@use '../../../styles/corners';
+.screen {
+  // The agent-to-agent card: Muse's bubble gray, its 22pt corners.
+  --sub-bg: var(--muse-them);
+  --sub-radius: 22px;
+  --muse-bg: #fafafa;
+  --muse-edge: 250, 250, 250;
+  --muse-text: #111112;
+  --muse-muted: #686a6e;
+  --muse-them: #e5e4e7;
+  --muse-me: #add2fc;
+  --muse-browser: #eeeef0;
+  --muse-me-text: #111112;
+  --muse-card: #fff;
+  --muse-sunk: #eeeff0;
+  --muse-rule: #e4e5e7;
+  --muse-glyph: #111112;
+  --muse-accent: #0064d4;
+  --part-surface: var(--muse-card);
+  --part-sunk: var(--muse-sunk);
+  --part-text: var(--muse-text);
+  --part-muted: var(--muse-muted);
+  --part-rule: var(--muse-rule);
+  --part-radius: 22px;
+  --part-shadow: drop-shadow(0 9.5px 22px rgba(0, 0, 0, 0.11));
+  --part-accent: linear-gradient(90deg, #0064d4 0%, #4453e4 100%);
+  --part-accent-text: #fff;
+  --part-done: var(--muse-me);
+  --part-done-text: #0064d4;
+  --part-chip: var(--muse-them);
+  --part-chip-text: var(--muse-text);
+  --muse-choice: #a3a7aa;
+  --muse-dots: #5c5e61;
+  background: var(--muse-bg);
+  color: var(--muse-text);
+  font-family: 'Optimistic AI', var(--font-family-sf-pro);
+
+  :global([data-theme='dark']) & {
+    --muse-bg: #000;
+    --muse-edge: 0, 0, 0;
+    --muse-text: #f5f5f7;
+    --muse-muted: #98989f;
+    --muse-them: #2c2c2e;
+    --muse-me: #add2fc;
+    --muse-browser: #1c1c1e;
+    --muse-me-text: #0b1b33;
+    --muse-card: #1c1c1e;
+    --muse-sunk: #2c2c2e;
+    --muse-rule: #3a3a3c;
+    --muse-glyph: #fff;
+    --muse-accent: #0a84ff;
+    --muse-choice: #636366;
+    --muse-dots: #aeaeb2;
+    --part-done-text: #0a84ff;
+  }
+}
+
+// MockMuse's thread rhythm: 4 inside a sender's run (bubbles and whatever Muse
+// attaches to them, cards and requests alike), 12 between senders, 16 after a
+// timestamp.
+$groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kind="ask"], [data-kind="products"], [data-kind="subagent"]';
+
+.screen [data-kind] + [data-kind] {
+  margin-top: 12px;
+}
+
+.screen :is(#{$groups}) + :is(#{$groups}),
+.screen [data-kind='me'] + [data-kind='me'] {
+  margin-top: 4px;
+}
+
+.screen [data-kind='stamp'] + [data-kind],
+.screen [data-kind='tag'] + [data-kind] {
+  margin-top: 16px;
+}
+
+
+.edge {
+  height: 170px;
+  background: linear-gradient(180deg, rgba(var(--muse-edge), 0.8) 0%, rgba(var(--muse-edge), 0.4) 50%, rgba(var(--muse-edge), 0) 100%);
+}
+
+.menu {
+  position: absolute;
+  top: 61px;
+  left: 16px;
+  z-index: 3;
+}
+
+// Call and gift, one glass capsule (IMG_1862): 100 x 44, each glyph ~22pt, centered 24pt in from its end.
+.callGift {
+  position: absolute;
+  top: 61px;
+  right: 16px;
+  z-index: 3;
+  width: 100px;
+  height: 44px;
+}
+
+.callGiftRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 13px;
+}
+
+.callGiftIcon {
+  width: 22px;
+  height: 22px;
+  background: var(--muse-glyph);
+  mask: no-repeat center / contain;
+}
+
+.avatar {
+  position: absolute;
+  top: 56px;
+  left: 167px;
+  z-index: 3;
+  overflow: hidden;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: #f5f4f6;
+
+  video,
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+
+    &[data-on] {
+      opacity: 1;
+    }
+  }
+}
+
+.status {
+  position: absolute;
+  top: 118px;
+  left: 50%;
+  z-index: 3;
+  translate: -50% 0;
+}
+
+.statusText {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 9px 12px 8.6px;
+  line-height: normal;
+  white-space: nowrap;
+
+  strong {
+    font-size: 15px;
+    font-weight: 550;
+  }
+
+  span {
+    color: var(--muse-muted);
+    font-size: 14px;
+    transition: color 0.3s ease;
+
+    &[data-asking] {
+      color: var(--muse-accent);
+    }
+  }
+}
+
+// Bubbles: plain round 22pt open corners (recording 9), 6.5pt where a run joins (the agent's left side).
+.them,
+.me {
+  max-width: 348px;
+  padding: 11px 16px;
+  @include corners.bubble(22px, 0);
+  font-size: 17px;
+  line-height: 22px;
+}
+
+// One line at 22pt corners is already a capsule; a 999px radius would scale a joined 6.5pt corner away.
+.them[data-pill] {
+  border-radius: 22px;
+}
+
+.them,
+.noteWrap,
+.choices,
+.card,
+.browser,
+.artifact {
+  &[data-pos='first'],
+  &[data-pos='middle'] {
+    border-bottom-left-radius: corners.corner(6.5px);
+  }
+
+  &[data-pos='middle'],
+  &[data-pos='last'] {
+    border-top-left-radius: corners.corner(6.5px);
+  }
+}
+
+.them {
+  background: var(--muse-them);
+}
+
+// The typing bubble is a 66 × 40 capsule of three pulsing dots.
+.them.typing,
+.typing {
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 40px;
+  padding: 0;
+  @include corners.bubble(20px, 0);
+  color: var(--muse-dots);
+}
+
+// Recording 9 (38 to 42s): each dot fades nearly out and back, then bobs up 6pt; the three run 0.15s apart.
+// Scoped under the screen so it outranks the shared dots' pulse.
+.screen .typing i {
+  opacity: 1;
+  animation: think 1.67s ease-in-out infinite;
+
+  &:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+}
+
+@keyframes think {
+  0%,
+  30%,
+  48%,
+  84%,
+  100% {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  13% {
+    opacity: 0.2;
+    translate: 0 0;
+  }
+
+  66% {
+    opacity: 1;
+    translate: 0 -6px;
+  }
+}
+
+.me {
+  background: var(--muse-me);
+  color: var(--muse-me-text);
+}
+
+.stamp {
+  align-self: center;
+  color: var(--muse-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+// Receipts and summaries ride in the agent's bubble, as Muse's own cards do.
+.noteWrap {
+  overflow: hidden;
+  width: 348px;
+  border-radius: 22px;
+  background: var(--muse-them);
+}
+
+.note {
+  --part-surface: transparent;
+  --part-shadow: none;
+  width: 100%;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8.33px;
+  width: 348px;
+  padding: 11px 16px;
+  border-radius: 22px;
+  background: var(--muse-them);
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 37.67px;
+  padding: 0 7px 0 11px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--muse-text);
+  font: inherit;
+  font-size: 15px;
+  position: relative;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+
+  &[data-state='open']:active {
+    opacity: 0.55;
+  }
+
+  &[data-state='selected'] {
+    box-shadow: inset 0 0 0 1px var(--muse-text);
+
+    .choiceDash {
+      display: none;
+    }
+  }
+
+  &[data-state='dimmed'] {
+    color: var(--muse-muted);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+// In the question's bubble (IMG_1938 at 3x): the bubble goes full width, the choices start 10 under its last
+// line, and sit 16 in from its sides and 18 from its foot.
+.them[data-choices] {
+  width: 348px;
+  padding-bottom: 18px;
+}
+
+.choices.inline {
+  width: auto;
+  margin-top: 10px;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+}
+
+// A 1pt border dashed 2 on, 2 off (CSS `dashed` can't set the dash), drawn half a pixel in so the whole stroke
+// stays inside the chip at any height.
+.choiceDash {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  rect {
+    x: 0.5px;
+    y: 0.5px;
+    width: calc(100% - 1px);
+    height: calc(100% - 1px);
+    rx: 7.5px;
+    fill: none;
+    stroke: #a3a7aa;
+    stroke-width: 1px;
+    stroke-dasharray: 2 2;
+  }
+}
+
+.choiceCheck {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  background: var(--muse-text);
+  mask: url('/assets/agents/muse/check-filled.svg') no-repeat center / contain;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  width: 345px;
+  padding: 12px 12px 14px;
+  border-radius: 22px;
+  background: var(--muse-browser);
+
+  .browserHead {
+    margin-bottom: 12px;
+  }
+
+  .details,
+  .total {
+    background: var(--muse-card);
+  }
+
+  .total,
+  .actions {
+    transition: opacity 0.2s ease-out;
+  }
+
+  &:not([data-ready]) {
+    .total {
+      opacity: 0.45;
+    }
+
+    .actions {
+      opacity: 0.5;
+    }
+  }
+}
+
+.cardTitle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 11.7px;
+  font-size: 15px;
+  font-weight: 510;
+  line-height: 20px;
+
+  > span:first-child {
+    flex: 1;
+  }
+}
+
+.merchant,
+.productLetter {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--muse-bg);
+  color: var(--muse-muted);
+  font-size: 13px;
+  font-weight: 510;
+}
+
+.productLetter {
+  border-radius: 7px;
+  background: var(--muse-rule);
+}
+
+.details {
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--muse-sunk);
+
+  & + & {
+    margin-top: 8px;
+  }
+}
+
+.detail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 63.7px;
+  padding: 0 16px 0 8px;
+
+  & + & {
+    border-top: 1px solid var(--muse-rule);
+  }
+
+  &[data-tall] {
+    height: 80px;
+  }
+
+}
+
+.lead {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+}
+
+.product {
+  border-radius: 7px;
+  object-fit: contain;
+}
+
+// Figma's glyphs are masks filled with the theme's ink.
+.glyph {
+  width: 21.3px;
+  height: 17.3px;
+  background: var(--muse-glyph);
+  mask: no-repeat center / contain;
+}
+
+.symbol {
+  display: grid;
+  color: var(--muse-glyph);
+}
+
+.chevron,
+.chevronSmall {
+  flex: none;
+  background: var(--muse-muted);
+  mask: no-repeat center / contain;
+}
+
+.chevron {
+  width: 9px;
+  height: 16px;
+  mask-image: url('/assets/agents/muse/chevron.svg');
+}
+
+.chevronSmall {
+  width: 7px;
+  height: 12px;
+  mask-image: url('/assets/agents/muse/chevron-small.svg');
+}
+
+.method {
+  margin: 10px 4px 0;
+  color: var(--muse-muted);
+  font-size: 13px;
+}
+
+.detailText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 17px;
+  line-height: normal;
+
+  small {
+    color: var(--muse-muted);
+    font-size: 13px;
+  }
+}
+
+.oneLine {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Over Total, built like it: Pay with, then what pays over what it has left, and the chevron.
+.payRow {
+  height: 64px;
+  margin-top: 8px;
+
+  &[data-switch] {
+    cursor: pointer;
+  }
+
+  + .total {
+    margin-top: 8px;
+  }
+}
+
+.payValue {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 22px;
+
+  small {
+    color: var(--muse-muted);
+    font-size: 13px;
+    line-height: 17px;
+  }
+}
+
+.total {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  margin-top: 12px;
+  padding: 0 16px;
+  border-radius: 22px;
+  background: var(--muse-sunk);
+  font-size: 17px;
+
+  > span:first-child {
+    flex: 1;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+
+  button {
+    display: grid;
+    flex: 1;
+    place-items: center;
+    height: 44px;
+    border: 0;
+    border-radius: 999px;
+    corner-shape: round;
+    font: inherit;
+    font-size: 17px;
+    font-weight: 510;
+    letter-spacing: -0.2px;
+    cursor: pointer;
+    transition: scale 0.15s ease, opacity 0.3s ease, background 0.3s ease, color 0.3s ease;
+  }
+}
+
+.deny {
+  background: var(--muse-sunk);
+  color: var(--muse-text);
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  &[data-chosen] {
+    opacity: 1;
+  }
+}
+
+.actions[data-state='denied'] .allow,
+.actions[data-state='expired'] button {
+  opacity: 0.4;
+}
+
+// The app ramps its Allow blue in linear light, not gamma-encoded sRGB.
+.allow {
+  background: linear-gradient(90deg in srgb-linear, #0064d4, #4453e4);
+  color: #fff;
+
+  &[data-pressing] {
+    scale: 0.96;
+  }
+
+  &[data-done] {
+    background: var(--part-done);
+    color: var(--part-done-text);
+    cursor: default;
+  }
+}
+
+.legal {
+  margin: 12px 0 0;
+  color: var(--muse-muted);
+  font-size: 12px;
+  line-height: normal;
+  text-align: center;
+
+  em {
+    color: var(--muse-accent);
+    font-style: normal;
+  }
+}
+
+.composer {
+  width: 370px;
+  min-height: 44px;
+  margin: 0 auto;
+}
+
+// One line sits between + and the trailing controls; once the text wraps, it
+// takes the full width on top and + / send drop to a row along the bottom.
+.composerRow {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  min-height: 44px;
+
+  &:has([data-multiline]) {
+    > :first-child {
+      order: 1;
+    }
+
+    > [data-multiline] {
+      flex-basis: 100%;
+      padding: 5px 16px 0 15px;
+    }
+
+    > [data-multiline] ~ * {
+      order: 2;
+    }
+
+    > [data-multiline] + * {
+      margin-left: auto;
+    }
+  }
+}
+
+.slot {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+}
+
+.field {
+  --field-pad: 11px;
+  --placeholder: #a4a6a9;
+  font-size: 17px;
+  caret-color: var(--muse-accent);
+}
+
+.icon,
+.mic {
+  width: 20px;
+  height: 20px;
+  background: var(--muse-glyph);
+  mask: no-repeat center / contain;
+}
+
+.mic {
+  background: #c6c6c6;
+}
+
+// Send and stop: 32pt circles in the user's bubble blue, glyph in the text ink.
+.circle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--muse-me);
+  transition: scale 0.15s ease;
+  animation: pop 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+
+  [role='button']:active > & {
+    scale: 0.9;
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+}
+
+.sendGlyph {
+  width: 16px;
+  height: 18.67px;
+  background: #111112;
+  mask: url('/assets/agents/muse/send.png') no-repeat center / contain;
+}
+
+.slot[role='button'] {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+// ── Browser card ────────────────────────────────────────────────────────
+.browser {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 345px;
+  padding: 12px;
+  border-radius: 22px;
+  background: var(--muse-browser);
+}
+
+.browserHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.globe {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #0866ff;
+  color: #fff;
+}
+
+.browserTitle {
+  display: flex;
+  flex-direction: column;
+  line-height: 18px;
+
+  strong {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  small {
+    color: var(--muse-muted);
+    font-size: 13px;
+  }
+}
+
+// A blurred look at the page Muse is working.
+.preview {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 180px;
+  padding: 14px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  filter: blur(2.5px);
+
+  :global([data-theme='dark']) & {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+.previewBar,
+.previewHero,
+.previewLine {
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.08);
+
+  :global([data-theme='dark']) & {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.previewBar {
+  height: 14px;
+}
+
+.previewHero {
+  height: 84px;
+  background: linear-gradient(120deg, rgba(8, 102, 255, 0.14), rgba(0, 0, 0, 0.06));
+}
+
+.previewLine {
+  height: 10px;
+
+  &[data-short] {
+    width: 60%;
+  }
+}
+
+.openBrowser {
+  display: grid;
+  place-items: center;
+  height: 40px;
+  border-radius: 20px;
+  background: var(--muse-card);
+  font-size: 15px;
+  font-weight: 510;
+}
+
+// ── Entity links ────────────────────────────────────────────────────────
+.entityThumb {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin: 0 4px -3px 0;
+  border-radius: 4px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.entity {
+  font-weight: 600;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--muse-muted);
+  text-underline-offset: 3px;
+}
+
+// ── Composer discs: blue send with text, light-blue stop while Muse works ──
+.sendCircle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0866ff;
+  color: #fff;
+  transition: scale 0.15s ease;
+  animation: pop 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+
+  [role='button']:active > & {
+    scale: 0.9;
+  }
+}
+
+.stopSquare {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: #121114;
+}
+
+// ── Muse balance: an artifact of stat tiles, light on light and dark on dark ──
+.artifact {
+  --art-bg: var(--muse-card);
+  --art-tile: #f2f1f4;
+  --art-muted: #8a898e;
+  --art-line: rgba(0, 0, 0, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 345px;
+  padding: 12px;
+  border-radius: 24px;
+  background: var(--art-bg);
+  border: 0;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  color: var(--muse-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active {
+    scale: 0.985;
+  }
+
+  :global([data-theme='dark']) & {
+    --art-bg: #121316;
+    --art-tile: #1e2024;
+    --art-muted: #9a9ca3;
+    --art-line: rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+  }
+}
+
+.artifactHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px 0;
+  color: var(--art-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.balanceArtifact {
+  width: 240px;
+}
+
+.tileBig {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--art-tile);
+
+  small {
+    color: var(--art-muted);
+    font-size: 12px;
+  }
+
+  b {
+    font-size: 34px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    line-height: 40px;
+  }
+
+  em {
+    color: var(--art-muted);
+    font-size: 13px;
+    font-style: normal;
+  }
+}
+
+// The iOS 26 tab bar under the composer (IMG_1862; Figma Tab Bar - iPhone, 5 tabs) with Muse's own icons.
+.tabBar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  height: 95px;
+  pointer-events: none;
+}
+
+.tabPill {
+  position: absolute;
+  top: 14px;
+  left: 21px;
+  width: 360px;
+  height: 58px;
+}
+
+.tabSelected {
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  width: 78px;
+  height: 50px;
+  border-radius: 25px;
+  background: rgba(0, 0, 0, 0.07);
+
+  :global([data-theme='dark']) & {
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.tabIcon {
+  position: absolute;
+  background: var(--muse-glyph);
+  mask: no-repeat center / contain;
+}

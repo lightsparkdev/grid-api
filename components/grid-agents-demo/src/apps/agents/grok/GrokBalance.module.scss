@@ -1,0 +1,117 @@
+// Bot balance (GrokBalance.tsx), measured at 3x from Settings (IMG_1919) and Vault (IMG_1922).
+// Colors come from GrokBank's theme: --sp-*, --gb-card, --gb-line.
+
+// A white group 17pt in with 22pt corners; the rule runs 18pt in from either side.
+.group {
+  margin: 0 17px 28px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--gb-card);
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 18px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+
+  & + &::before {
+    position: absolute;
+    top: 0;
+    right: 18px;
+    left: 18px;
+    height: 1px;
+    background: var(--gb-line);
+    content: '';
+  }
+}
+
+button.row {
+  cursor: pointer;
+
+  &:active {
+    background: color-mix(in srgb, var(--sp-text) 5%, transparent);
+  }
+}
+
+// The profile's 40pt gray disc.
+.avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--gb-line);
+  color: var(--sp-muted);
+}
+
+.glyph {
+  flex: none;
+  color: var(--sp-muted);
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  font-size: 17px;
+  line-height: 22px;
+}
+
+.amount {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sub {
+  color: var(--sp-muted);
+  font-size: 13px;
+  line-height: 17px;
+}
+
+.value {
+  flex: none;
+  color: var(--sp-muted);
+  font-size: 17px;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chevron {
+  flex: none;
+  color: var(--sp-muted);
+}
+
+// "Bot": 13pt, fainter than the muted text, over its group.
+.label {
+  display: block;
+  margin: -12px 35px 8px;
+  color: color-mix(in srgb, var(--sp-muted) 65%, transparent);
+  font-size: 13px;
+  line-height: 17px;
+}
+
+// The Vault's note under its card.
+.help {
+  margin: -18px 37px 6px;
+  color: var(--sp-muted);
+  font-size: 13px;
+  line-height: 17px;
+  text-wrap: pretty;
+}

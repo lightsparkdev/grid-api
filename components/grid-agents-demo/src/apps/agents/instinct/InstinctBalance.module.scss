@@ -1,0 +1,177 @@
+// The balance page on app.instinct.com (InstinctBalancePage), measured at 3x from Invites (IMG_1926) and the
+// account page (IMG_1929). Colors come from InstinctSafari's .page: --in-ink, --in-muted, --in-field, --in-hair,
+// --in-button, --in-button-text.
+$serif: 'New York', ui-serif, Georgia, serif;
+
+// "Invites": the 24pt bold serif, a 14pt line, then the dark rule.
+.section {
+  display: flex;
+  flex-direction: column;
+  margin-top: 40px;
+
+  & + & {
+    margin-top: 64px;
+  }
+
+  > h2 {
+    margin: 0;
+    font-family: $serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 30px;
+    letter-spacing: -0.3px;
+  }
+
+  > p {
+    margin: 4px 0 0;
+    padding-bottom: 18px;
+    border-bottom: 1.5px solid var(--in-ink);
+    color: var(--in-label);
+    font-size: 14px;
+    line-height: 19px;
+    text-wrap: pretty;
+  }
+}
+
+// "0/10 invites used · 10 left": the light serif figure, a small line on its baseline.
+.counter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+  margin-top: 20px;
+
+  small {
+    color: var(--in-label);
+    font-size: 13px;
+    line-height: 18px;
+  }
+}
+
+.big {
+  font-family: $serif;
+  font-size: 46px;
+  font-weight: 300;
+  line-height: 52px;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+
+  span {
+    color: var(--in-muted);
+  }
+}
+
+// Ten 6pt segments, today's spend filled in ink.
+.track {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 5px;
+  margin-top: 18px;
+
+  i {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--in-field);
+
+    &[data-on] {
+      background: var(--in-ink);
+    }
+  }
+}
+
+.spent {
+  margin-top: 10px;
+  color: var(--in-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.black,
+.outline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active {
+    scale: 0.98;
+  }
+}
+
+.black {
+  margin-top: 26px;
+  border: 0;
+  background: var(--in-button);
+  color: var(--in-button-text);
+}
+
+// "Invite a friend to Instinct": white, a hairline, the glyph before the label.
+.outline {
+  margin-top: 10px;
+  border: 1px solid var(--in-hair);
+  background: var(--in-paper);
+  color: var(--in-ink);
+}
+
+// A row of the sign-in methods: a 20pt glyph, a 15pt name over a 14pt line, a hairline under.
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 0;
+
+  & + & {
+    border-top: 1px solid var(--in-hair);
+  }
+}
+
+.icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  color: var(--in-label);
+}
+
+.rowText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+
+  b {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
+  }
+
+  small {
+    color: var(--in-muted);
+    font-size: 14px;
+    line-height: 19px;
+  }
+}
+
+.amount {
+  flex: none;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+
+  &[data-incoming] {
+    color: #2f8a4f;
+  }
+}
+
+.empty {
+  margin: 18px 0 0;
+  color: var(--in-muted);
+  font-size: 14px;
+}

@@ -1,0 +1,10 @@
+/* Host for the agent app — fills the phone screen, under the status bar.
+   The screen body passes the pointer through; the chat takes it back. */
+.flow {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}

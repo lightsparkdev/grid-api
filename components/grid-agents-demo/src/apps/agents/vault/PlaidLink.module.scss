@@ -1,0 +1,678 @@
+// Plaid Link (PlaidLink.tsx), measured at 3x from Muse's recordings (ScreenRecording_11-05-2026 18-17-29 and
+// 18-18-29). Plaid's own pages stay light in dark mode, as Plaid does; the system's sheet and alert follow iOS.
+
+@font-face {
+  font-family: 'Plaid Sans';
+  src: url('/assets/agents/plaid/PlaidSansVF.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+$ink: #191f26;
+$muted: #5e6167;
+$line: #dae0e5;
+$navy: #0b2238;
+$off: #7f8893;
+$foot: #f4f7fa;
+
+// ── The system's web sheet: the page runs edge to edge, the glass controls float over it ──
+.panel {
+  top: 56px;
+}
+
+.browser {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: calc(38px * var(--corner-superellipse-scale, 1.2)) calc(38px * var(--corner-superellipse-scale, 1.2)) var(--screen-corner-radius, 73px)
+    var(--screen-corner-radius, 73px);
+  background: #fcfcfc;
+  color: #111;
+  font-family: var(--font-family-sf-pro);
+}
+
+.browser.browser {
+  corner-shape: var(--corner-shape);
+}
+
+.top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  height: 66px;
+  padding: 16px 16px 6px;
+}
+
+.domain {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  line-height: 44px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.43px;
+  translate: -50% 0;
+}
+
+// The glass controls: 44pt discs at the top; a 48pt disc and a 104pt capsule in the toolbar.
+.disc {
+  width: 44px;
+  height: 44px;
+  color: #111;
+}
+
+.glass {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.glyphs {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 104px;
+  height: 48px;
+}
+
+.webview {
+  --plaid-foot-pad: 98px;
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #fcfcfc;
+}
+
+.bottom {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: 76px;
+  padding: 0 23px;
+
+  .disc {
+    width: 48px;
+    height: 48px;
+    color: #a8a8a8;
+  }
+}
+
+.capsule {
+  width: 104px;
+  height: 48px;
+  color: #111;
+}
+
+// ── Plaid's pages ──
+.flow {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fcfcfc;
+  color: $ink;
+  font-family: 'Plaid Sans', var(--font-family-sf-pro);
+  font-variation-settings: normal;
+  -webkit-font-smoothing: antialiased;
+}
+
+// 54pt: the mark and PLAID centered, × at the right, Back at the left on the code step, progress under it.
+.header {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  height: 54px;
+}
+
+.logo {
+  width: 52px;
+  height: auto;
+}
+
+.back,
+.close {
+  position: absolute;
+  top: 5px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: $ink;
+  cursor: pointer;
+}
+
+.back {
+  left: 6px;
+}
+
+.close {
+  right: 7px;
+}
+
+.progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+
+  i {
+    height: 2px;
+    background: #ebe8fb;
+    transition: background 0.3s ease;
+
+    &[data-on] {
+      background: #8fdcd3;
+    }
+  }
+}
+
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.page,
+.center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.center {
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 60px;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: 0 24px;
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// The app's tile and Plaid's, 48pt each with 10pt corners, 43pt under the header.
+.pair {
+  display: flex;
+  margin-top: 43px;
+}
+
+.appTile,
+.plaidTile {
+  width: 48px;
+  height: 48px;
+  border-radius: 11px;
+}
+
+.appTile {
+  object-fit: cover;
+  box-shadow: inset 0 0 0 1px #e6e8e8;
+  outline: 1px solid #e6e8e8;
+  outline-offset: -1px;
+}
+
+.plaidTile {
+  display: grid;
+  place-items: center;
+  background: $navy;
+
+  img {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.title {
+  margin: 16px 0 10px;
+  font-size: 27px;
+  font-weight: 500;
+  line-height: 34px;
+  letter-spacing: -0.3px;
+}
+
+.heading {
+  margin: 28px 0 0;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 33px;
+  letter-spacing: -0.3px;
+}
+
+.sub {
+  margin: 8px 0 0;
+  color: $muted;
+  font-size: 15.5px;
+  line-height: 23px;
+}
+
+// A 59pt field with 12pt corners: the flag, +1, the number.
+.phone {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 59px;
+  padding: 0 16px;
+  border: 1px solid $line;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 18px;
+}
+
+.flag {
+  flex: none;
+}
+
+.dial,
+.value {
+  color: $ink;
+}
+
+.hint {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0 0;
+  color: #5c626b;
+  font-size: 13.5px;
+  line-height: 19px;
+
+  u {
+    color: $ink;
+  }
+}
+
+.bolt {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #efedff;
+  color: #4b56e6;
+
+  svg {
+    width: 9px;
+  }
+}
+
+// The light footer: the terms over a 60pt button, then the plain way out.
+.foot {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 24px var(--plaid-foot-pad, 22px);
+  border-top: 1px solid #e6ebed;
+  background: $foot;
+}
+
+.plain {
+  border-top: 0;
+  background: none;
+}
+
+.legal {
+  margin: 0;
+  color: #4a5059;
+  font-size: 13.5px;
+  line-height: 19.5px;
+
+  u {
+    color: $ink;
+  }
+}
+
+.primary {
+  display: grid;
+  place-items: center;
+  height: 60px;
+  border: 0;
+  border-radius: 14px;
+  background: $navy;
+  color: #fff;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    scale 0.15s ease;
+
+  &:disabled {
+    background: $off;
+    cursor: default;
+  }
+
+  &[data-busy] {
+    background: $navy;
+  }
+
+  &:active:not(:disabled) {
+    scale: 0.985;
+  }
+}
+
+.body > .primary {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.secondary {
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: #2b3138;
+  font: inherit;
+  font-size: 15.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+// "Code": a 59pt field whose label rises once iOS fills it in.
+.code {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 59px;
+  margin-top: 20px;
+  padding: 0 16px;
+  border: 1px solid $line;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.codeLabel {
+  color: #8a9099;
+  font-size: 18px;
+  transition:
+    font-size 0.18s ease,
+    color 0.18s ease;
+
+  .code[data-filled] & {
+    color: #5c626b;
+    font-size: 13px;
+    line-height: 17px;
+  }
+}
+
+.codeValue {
+  font-size: 18px;
+  line-height: 24px;
+  letter-spacing: 0.5px;
+}
+
+.resend {
+  display: table;
+  margin: 18px auto 0;
+  padding: 8px 14px;
+  border: 1px solid $line;
+  border-radius: 10px;
+  color: #a3a9b1;
+  font-size: 13.5px;
+}
+
+// Saved institutions: 74pt cards, a round 32pt logo, the name over "Previously connected", a radio.
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  height: 74px;
+  padding: 0 18px;
+  border: 1px solid $line;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(25 31 38 / 0.05);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+
+  &[data-picked] {
+    border-color: $navy;
+  }
+}
+
+.round img,
+.round span {
+  border-radius: 50%;
+}
+
+.cardText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+
+  strong {
+    font-size: 16.5px;
+    font-weight: 500;
+    line-height: 21px;
+  }
+
+  small {
+    color: #6b7178;
+    font-size: 13.5px;
+    line-height: 18px;
+  }
+}
+
+.instant {
+  display: grid;
+  color: #3d7ff2;
+}
+
+.radio {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid #c5ccd3;
+  border-radius: 50%;
+  transition:
+    border 0.15s ease,
+    background 0.15s ease;
+
+  .card[data-picked] & {
+    border: 8px solid $navy;
+    background: #fff;
+  }
+}
+
+.link {
+  display: table;
+  margin: 18px auto 24px;
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: $ink;
+  font: inherit;
+  font-size: 15.5px;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+// The account to share: a blue-tinted card, checked.
+.account {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 22px;
+  padding: 18px;
+  border: 1px solid #9fd0f2;
+  border-radius: 14px;
+  background: #f0f9fc;
+  box-shadow: 0 2px 10px rgb(48 149 243 / 0.1);
+}
+
+.checkbox {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #39a2f2, #5b8fe0);
+  color: #fff;
+}
+
+.accountLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #4a5059 !important;
+  font-size: 16px !important;
+}
+
+// "Returning to Muse": a 48pt white disc with the check, the line under it.
+.done {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 12px rgb(25 31 38 / 0.12);
+  color: #5b6cf0;
+}
+
+.returning {
+  margin: 18px 0 0;
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 28px;
+  text-align: center;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #e3e7ec;
+  border-top-color: $navy;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+
+  &[data-light] {
+    width: 24px;
+    height: 24px;
+    border-color: rgb(255 255 255 / 0.25);
+    border-top-color: #fff;
+  }
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+// ── iOS's alert: 320pt, 34pt corners, frosted, two capsules ──
+.alertDim {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: rgb(0 0 0 / 0.2);
+  pointer-events: auto;
+}
+
+.alert {
+  position: absolute;
+  top: 353px;
+  left: 41px;
+  width: 320px;
+  padding: 25px 16px 16px;
+  border-radius: 34px;
+  background: rgb(250 250 252 / 0.78);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow:
+    0 12px 40px rgb(0 0 0 / 0.18),
+    inset 0 0 0 0.5px rgb(255 255 255 / 0.8);
+  color: #000;
+  font-family: var(--font-family-sf-pro);
+
+  strong {
+    display: block;
+    padding: 0 13px;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 22px;
+    letter-spacing: -0.43px;
+  }
+
+  p {
+    margin: 6px 0 0;
+    padding: 0 13px;
+    color: #6d6d72;
+    font-size: 15px;
+    line-height: 19px;
+  }
+
+  :global([data-theme='dark']) & {
+    background: rgb(44 44 46 / 0.82);
+    box-shadow:
+      0 12px 40px rgb(0 0 0 / 0.4),
+      inset 0 0 0 0.5px rgb(255 255 255 / 0.1);
+    color: #fff;
+
+    p {
+      color: #98989f;
+    }
+  }
+}
+
+.alertButtons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 22px;
+
+  button {
+    height: 47px;
+    border: 0;
+    border-radius: 999px;
+    background: rgb(120 120 128 / 0.14);
+    color: inherit;
+    font: inherit;
+    font-size: 17px;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:active {
+      background: rgb(120 120 128 / 0.26);
+    }
+  }
+}

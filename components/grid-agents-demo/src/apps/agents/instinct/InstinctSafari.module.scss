@@ -1,0 +1,447 @@
+// app.instinct.com in Safari, measured at 3x from IMG_1926–1929 and recording 6: warm paper, a light serif
+// wordmark over a hairline, bold serif headings, beige fields, black buttons.
+$serif: 'New York', ui-serif, Georgia, serif;
+
+.page {
+  --in-paper: #faf9f8;
+  --safari-page: rgb(250 249 248 / 0.75);
+  --in-field: #f2eeeb;
+  --in-hair: #e6e3e0;
+  --in-ink: #231f20;
+  --in-label: #4c4547;
+  --in-muted: #8a8284;
+  --in-button: #231f20;
+  --in-button-text: #faf9f8;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--in-paper);
+  color: var(--in-ink);
+  font-family: var(--font-family-sf-pro);
+  -webkit-font-smoothing: antialiased;
+
+  :global([data-theme='dark']) & {
+    --in-paper: #141213;
+    --safari-page: rgb(20 18 19 / 0.75);
+    --in-field: #262223;
+    --in-hair: #2f2a2b;
+    --in-ink: #f4efec;
+    --in-label: #cfc6c8;
+    --in-muted: #a39a9c;
+    --in-button: #f4efec;
+    --in-button-text: #141213;
+  }
+}
+
+// "◀ Messages" under the status bar's time, the way back to the app that opened Safari.
+.breadcrumb {
+  position: absolute;
+  top: 33px;
+  left: 13.3px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--in-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 14px;
+  letter-spacing: -0.08px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+// ── The site's chrome ───────────────────────────────────────────────────
+.sitePage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+// 52pt under the status bar, the hairline at its foot; × or ≡ 33pt in, Save 13pt from the right.
+.siteBar {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  margin-top: 54px;
+  border-bottom: 1px solid var(--in-hair);
+}
+
+.siteLeft {
+  position: absolute;
+  top: 50%;
+  left: 22px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--in-ink);
+  translate: 0 -50%;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.wordmark {
+  font-family: $serif;
+  font-size: 30px;
+  font-weight: 300;
+  line-height: 34px;
+  letter-spacing: -0.6px;
+}
+
+.save {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--in-hair);
+  border-radius: 4px;
+  background: none;
+  color: var(--in-ink);
+  font: inherit;
+  font-size: 15px;
+  translate: 0 -50%;
+  pointer-events: auto;
+  cursor: pointer;
+
+  &:disabled {
+    color: var(--in-muted);
+    cursor: default;
+  }
+}
+
+.siteScroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 24px 120px;
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// Plaid's web Link over the page: under the status bar, its foot clear of Safari's toolbar.
+.plaid {
+  --plaid-foot-pad: 104px;
+  position: absolute;
+  inset: 54px 0 0;
+}
+
+// "Add login": bold serif, centered, ~40pt under the bar.
+.siteTitle {
+  margin: 40px 0 0;
+  font-family: $serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 30px;
+  letter-spacing: -0.3px;
+  text-align: center;
+}
+
+.tile {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  margin-top: 36px;
+  border-radius: 6px;
+  background: var(--in-field);
+  color: var(--in-muted);
+
+  + .siteTitle {
+    margin-top: 16px;
+  }
+}
+
+.sub {
+  margin: 8px 0 0;
+  color: var(--in-muted);
+  font-size: 14px;
+  line-height: 19px;
+  text-align: center;
+}
+
+// Fields: a 15pt label 10pt over a 43pt beige box with 4pt corners, 24pt between fields.
+.siteFields {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin-top: 44px;
+}
+
+.siteField {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.siteLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--in-label);
+  font-size: 15px;
+  line-height: 19px;
+}
+
+.siteInput {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 43px;
+  padding: 0 14px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--in-field);
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.siteNote {
+  text-wrap: pretty;
+  margin: 18px 0 0;
+  color: var(--in-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+// Sections: a bold serif heading over a black rule (IMG_1927), rows under it.
+.siteSection {
+  margin-top: 30px;
+}
+
+.siteHeading {
+  margin: 0;
+  padding-bottom: 14px;
+  border-bottom: 1.5px solid var(--in-ink);
+  font-family: $serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 30px;
+  letter-spacing: -0.3px;
+}
+
+// A group under the page's heading: a smaller serif over a hairline.
+.siteSubsection {
+  margin-top: 28px;
+}
+
+.siteSubheading {
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--in-hair);
+  font-family: $serif;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.siteLead {
+  text-wrap: pretty;
+  margin: 14px 0 0;
+  color: var(--in-muted);
+  font-size: 14px;
+  line-height: 19px;
+}
+
+.siteSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 43px;
+  margin-top: 14px;
+  padding: 0 14px;
+  border-radius: 4px;
+  background: var(--in-field);
+  color: var(--in-muted);
+  cursor: text;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    background: none;
+    color: var(--in-ink);
+    font: inherit;
+    font-size: 15px;
+
+    &::placeholder {
+      color: var(--in-muted);
+    }
+  }
+}
+
+.siteRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid var(--in-hair);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:active {
+    opacity: 0.6;
+  }
+}
+
+.siteTile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--in-field);
+}
+
+.siteRowText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+
+  b {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 20px;
+  }
+
+  small {
+    color: var(--in-muted);
+    font-size: 12px;
+    line-height: 16px;
+  }
+}
+
+.siteChevron {
+  flex: none;
+  color: var(--in-muted);
+}
+
+.siteEmpty {
+  margin: 14px 0 0;
+  color: var(--in-muted);
+  font-size: 15px;
+}
+
+.black {
+  flex: none;
+  height: 44px;
+  margin-top: 28px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--in-button);
+  color: var(--in-button-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: opacity 0.2s ease, scale 0.15s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.98;
+  }
+
+  &[data-pressing] {
+    opacity: 0.7;
+  }
+}
+
+.notNow {
+  flex: none;
+  margin-top: 14px;
+  padding: 6px;
+  border: 0;
+  background: none;
+  color: var(--in-muted);
+  font: inherit;
+  font-size: 15px;
+  pointer-events: auto;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+// ── Another agent's conversation ───────────────────────────────────────
+.thinking {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 26px 0 0;
+  padding: 0 0 0 18px;
+  font-size: 14px;
+  line-height: 19px;
+
+  li {
+    padding-left: 4px;
+  }
+
+  b {
+    display: block;
+    font-weight: 600;
+  }
+
+  span {
+    color: var(--in-muted);
+  }
+}
+
+.exchange {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--in-hair);
+
+  p {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 4px;
+    background: var(--in-field);
+    font-size: 14px;
+    line-height: 19px;
+
+    &[data-from='us'] {
+      background: none;
+      box-shadow: inset 0 0 0 1px var(--in-hair);
+    }
+  }
+
+  small {
+    color: var(--in-muted);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+}

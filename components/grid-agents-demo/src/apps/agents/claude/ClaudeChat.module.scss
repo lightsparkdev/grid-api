@@ -1,0 +1,406 @@
+// Figma 91:163, Claude Duet · Supplies budget (virtual card). Dark follows Claude's own.
+@use '../../../styles/corners';
+.screen {
+  // The agent-to-agent card: Claude's white card and hairline ring.
+  --sub-bg: var(--cl-card);
+  --sub-border: 1px solid var(--cl-ring);
+  --sub-radius: 22px;
+  --cl-bg: #f9f9f7;
+  --cl-edge: 249, 249, 247;
+  --cl-text: #0b0b0b;
+  --cl-muted: #5e5d59;
+  --cl-bubble: #ededeb;
+  --cl-me: #e5e2d9;
+  --cl-card: #fff;
+  --cl-ring: rgba(11, 11, 11, 0.06);
+  --cl-rule: rgba(11, 11, 11, 0.12);
+  --cl-ink: #0b0b0b;
+  --cl-ink-text: #fff;
+  --cl-tag: #fae3b8;
+  --part-surface: var(--cl-card);
+  --part-sunk: var(--cl-bubble);
+  --part-text: var(--cl-text);
+  --part-muted: var(--cl-muted);
+  --part-rule: var(--cl-rule);
+  --part-radius: 22px;
+  --part-shadow: drop-shadow(0 0 1px var(--cl-rule));
+  --part-accent: var(--cl-ink);
+  --part-accent-text: var(--cl-ink-text);
+  --part-done: var(--cl-bubble);
+  --part-done-text: var(--cl-muted);
+  --part-chip: var(--cl-me);
+  --part-chip-text: var(--cl-text);
+  --part-success: #2d8a4e;
+  background: var(--cl-bg);
+  color: var(--cl-text);
+
+  :global([data-theme='dark']) & {
+    --cl-bg: #262624;
+    --cl-edge: 38, 38, 36;
+    --cl-text: #f5f4ef;
+    --cl-muted: #a6a39b;
+    --cl-bubble: #30302e;
+    --cl-me: #3d3c38;
+    --cl-card: #1f1e1d;
+    --cl-ring: rgba(255, 255, 255, 0.08);
+    --cl-rule: rgba(255, 255, 255, 0.12);
+    --cl-ink: #f5f4ef;
+    --cl-ink-text: #1f1e1d;
+    --cl-tag: #5a4520;
+  }
+  font-family: 'Anthropic Sans', var(--font-family-sf-pro);
+  font-variation-settings: 'opsz' 16;
+}
+
+// The header's soft fall-off over the thread.
+.edge {
+  height: 150px;
+  background: linear-gradient(180deg, rgba(var(--cl-edge), 0.8) 0%, rgba(var(--cl-edge), 0.4) 50%, rgba(var(--cl-edge), 0) 100%);
+}
+
+.menu,
+.account {
+  position: absolute;
+  top: 72px;
+  z-index: 3;
+  width: 48px;
+  height: 48px;
+}
+
+.menu {
+  left: 16px;
+}
+
+.account {
+  right: 15px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.43px;
+}
+
+.mascot {
+  position: absolute;
+  top: 65.5px;
+  left: 163px;
+  z-index: 3;
+  width: 76px;
+  height: 76px;
+}
+
+.disc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+
+  .mascot & {
+    width: 76px;
+    height: 76px;
+  }
+}
+
+.bubble,
+.me {
+  max-width: 329px;
+  padding: 8.5px 14.5px 8.2px;
+  @include corners.bubble(20px);
+  font-size: 17px;
+  line-height: 23.8px;
+  letter-spacing: -0.43px;
+}
+
+.bubble {
+  max-width: 292px;
+  background: var(--cl-bubble);
+}
+
+.me {
+  max-width: 280px;
+  background: var(--cl-me);
+}
+
+.sender,
+.stamp {
+  color: var(--cl-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.sender {
+  margin: 0 0 4px 4px;
+}
+
+.stamp {
+  align-self: center;
+}
+
+// The context a run of messages belongs to, hung from a thread line.
+.tag {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 44px;
+  margin-bottom: -8px;
+  padding: 0 0 6.6px 31px;
+  color: var(--cl-muted);
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+}
+
+.thread {
+  position: absolute;
+  top: 27px;
+  left: 17px;
+}
+
+.tagIcon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--cl-tag);
+}
+
+.spend {
+  display: flex;
+  flex-direction: column;
+  width: 363px;
+  padding: 16px;
+  border-radius: 22px;
+  background: var(--cl-card);
+  box-shadow: 0 0 0 1px var(--cl-ring);
+}
+
+.spendTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  strong {
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 28px;
+    letter-spacing: -0.06px;
+  }
+
+  span {
+    color: var(--cl-muted);
+    font-size: 15px;
+    line-height: 20px;
+    letter-spacing: -0.23px;
+  }
+}
+
+.spendWhat {
+  color: var(--cl-muted);
+  font-size: 17px;
+  line-height: 23px;
+  letter-spacing: -0.43px;
+}
+
+.spendMethod {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding-right: 4px;
+  border-top: 1px solid var(--cl-rule);
+  font-size: 17px;
+  line-height: 23.8px;
+  letter-spacing: -0.43px;
+}
+
+.spendActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+
+  button {
+    display: grid;
+    place-items: center;
+    height: 42px;
+    border-radius: 999px;
+    corner-shape: round;
+    font: inherit;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 22px;
+    letter-spacing: -0.43px;
+    cursor: pointer;
+    transition: scale 0.15s ease, background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+  }
+}
+
+.approve {
+  border: 0;
+  background: var(--cl-ink);
+  color: var(--cl-ink-text);
+
+  &[data-pressing] {
+    scale: 0.97;
+  }
+
+  &[data-done] {
+    background: var(--cl-bubble);
+    color: var(--cl-muted);
+    cursor: default;
+  }
+}
+
+.spendActions[data-state='denied'] .approve,
+.spendActions[data-state='expired'] button {
+  opacity: 0.4;
+}
+
+.notNow {
+  border: 1px solid var(--cl-rule);
+  background: var(--cl-card);
+  color: var(--cl-text);
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.composer {
+  width: 371px;
+  min-height: 52px;
+  margin: 0 auto;
+}
+
+.composerRow {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 8px 8px 14px;
+}
+
+.field {
+  --field-pad: 7px;
+  --placeholder: #87867f;
+  font-size: 17px;
+  letter-spacing: -0.43px;
+}
+
+.voice {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-left: 2px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--cl-ink);
+  transition: scale 0.15s ease;
+
+  &[data-pressing] {
+    scale: 0.88;
+  }
+}
+
+.tabs {
+  position: absolute;
+  bottom: 32px;
+  left: 39px;
+  z-index: 3;
+  width: 324px;
+  height: 64px;
+}
+
+.tabRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 64px;
+  padding: 0 4px;
+}
+
+.tab {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 54px;
+  border-radius: 27px;
+  color: var(--cl-muted);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 18px;
+  letter-spacing: -0.15px;
+
+  &[data-selected] {
+    background: var(--cl-bubble);
+    color: var(--cl-text);
+  }
+}
+
+.glyph {
+  background: var(--cl-text);
+  mask: no-repeat center / contain;
+}
+
+.voiceGlyph {
+  background: var(--cl-ink-text);
+  mask: no-repeat center / contain;
+}
+
+.tabGlyph {
+  background: currentColor;
+  mask: no-repeat center / contain;
+}
+
+.chevron {
+  background: var(--cl-muted);
+  mask: no-repeat center / contain;
+}
+
+// The mascot's clay blob and ink line (PhoneMock --d-clay, --d-ink).
+.mascotArt {
+  width: 76px;
+  height: 76px;
+  overflow: visible;
+}
+
+.mascotShape {
+  fill: #d97757;
+}
+
+.mascotLine {
+  fill: var(--cl-ink);
+}
+
+// The bare + and mic glyphs, centered on the bottom line's 36pt voice button.
+.rowGlyph {
+  margin-bottom: 6px;
+}
+
+// Duet balance, in the website card's Claude skin.
+.accountSkin {
+  --acct-radius: 22px;
+  --acct-bg: #fff;
+  --acct-ink: #141413;
+  --acct-ink-2: #73726c;
+  --acct-button: #f0eee6;
+  --acct-button-radius: 10px;
+  --acct-accent: #d97757;
+  --acct-edge: inset 0 0 0 1px rgba(20, 20, 19, 0.08);
+
+  :global([data-theme='dark']) & {
+    --acct-bg: #262624;
+    --acct-ink: #faf9f5;
+    --acct-ink-2: #9c9a92;
+    --acct-button: #30302e;
+    --acct-edge: none;
+  }
+}

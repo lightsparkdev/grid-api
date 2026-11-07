@@ -1,0 +1,1056 @@
+// Grok Bot, measured from recordings 10-13 (refs/grok/spec.md). Dark follows Grok's own dark theme.
+@use '../../../styles/glass-rim' as rim;
+@use '../../../styles/corners';
+
+.stage {
+  position: absolute;
+  inset: 0;
+  --grok-sheet: #f4f4f4;
+  --grok-pill: rgba(250, 250, 250, 0.85);
+  --grok-field: #e1e0e3;
+  --grok-bg: #fcfcfc;
+  --grok-edge: 252, 252, 252;
+  --grok-text: #000;
+  --grok-muted: #8e8e93;
+  --grok-faint: #a8a8a8;
+  --grok-bubble: #f1f1f1;
+  --grok-card: #fff;
+  --grok-line: #e8e8e8;
+  --grok-ink: #0d0d0d;
+  --grok-ink-text: #fff;
+  --grok-soft: #ededed;
+  --grok-soft-text: #6b6b6b;
+  --grok-blue: #1c7cf4;
+  --grok-green: #2e6b3f;
+  --part-surface: var(--grok-card);
+  --part-sunk: var(--grok-bubble);
+  --part-text: var(--grok-text);
+  --part-muted: var(--grok-muted);
+  --part-rule: var(--grok-line);
+  --part-radius: 20px;
+  --part-shadow: none;
+  --part-accent: var(--grok-ink);
+  --part-accent-text: var(--grok-ink-text);
+  --part-done: var(--grok-soft);
+  --part-done-text: var(--grok-soft-text);
+  --part-chip: var(--grok-bubble);
+  --part-chip-text: var(--grok-text);
+  --part-divider: #4a90e2;
+
+  :global([data-theme='dark']) & {
+    --grok-sheet: #1c1c1e;
+    --grok-pill: rgba(58, 58, 60, 0.85);
+    --grok-field: #2c2c2e;
+    --grok-bg: #000;
+    --grok-edge: 0, 0, 0;
+    --grok-text: #fff;
+    --grok-muted: #8e8e8e;
+    --grok-faint: #6f6f6f;
+    --grok-bubble: #1d1d1f;
+    --grok-card: #141414;
+    --grok-line: #2a2a2a;
+    --grok-ink: #fff;
+    --grok-ink-text: #000;
+    --grok-soft: #2a2a2a;
+    --grok-soft-text: #9b9b9b;
+    --grok-green: #4fae6a;
+  }
+}
+
+.screen {
+  background: var(--grok-bg);
+  color: var(--grok-text);
+}
+
+.edge {
+  height: 140px;
+  background: linear-gradient(180deg, rgba(var(--grok-edge), 0.8) 0%, rgba(var(--grok-edge), 0.4) 50%, rgba(var(--grok-edge), 0) 100%);
+}
+
+// ── Header ──────────────────────────────────────────────────────────────
+.back,
+.more {
+  position: absolute;
+  top: 61px;
+  z-index: 3;
+}
+
+.back {
+  left: 16px;
+}
+
+.more {
+  right: 16px;
+}
+
+.title {
+  position: absolute;
+  top: 61px;
+  left: 50%;
+  z-index: 3;
+  height: 44px;
+  translate: -50% 0;
+}
+
+.titleRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px 0 9px;
+  font-size: 17px;
+  font-weight: 510;
+  white-space: nowrap;
+}
+
+// ── Thread ──────────────────────────────────────────────────────────────
+.bubble {
+  max-width: 325px;
+  padding: 11px 14px 12px;
+  @include corners.bubble(20px);
+  background: var(--grok-bubble);
+  font-size: 17px;
+  line-height: 24px;
+  white-space: pre-wrap;
+}
+
+.meWrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+  // The reaction pill hangs 15pt under the bubble, and the next message keeps ~19pt below it (recording 10, 99.0s).
+  &[data-reacted] {
+    padding-bottom: 25px;
+  }
+}
+
+// Sent: the bubble is in place from the first frame and its fill darkens from gray in ~170ms.
+.me {
+  max-width: 290px;
+  padding: 11px 14px 12px;
+  @include corners.bubble(20px);
+  background: var(--grok-ink);
+  color: var(--grok-ink-text);
+  font-size: 17px;
+  line-height: 24px;
+  animation: grok-sent 0.17s cubic-bezier(0, 0, 0.2, 1);
+}
+
+// Where the same sender's bubbles meet, those corners tighten (after the mixin, so pills get them too).
+.bubble {
+  &[data-up] {
+    border-top-left-radius: corners.corner(8px);
+  }
+
+  &[data-down] {
+    border-bottom-left-radius: corners.corner(8px);
+  }
+}
+
+.me {
+  &[data-up] {
+    border-top-right-radius: corners.corner(8px);
+  }
+
+  &[data-down] {
+    border-bottom-right-radius: corners.corner(8px);
+  }
+}
+
+@keyframes grok-sent {
+  from {
+    background: #bebebe;
+  }
+}
+
+// The reaction on your bubble (recording 10 at 98.3s): a bare 23pt emoji inside its bottom-right corner, no pill.
+// At rest: a 32 x 23 gray pill ringed in the background color, its center 27pt in from the bubble's right edge and
+// 3.5pt below its bottom, holding a 15pt emoji (drawn at 30pt and scaled, so the big landing frame is sharp).
+.react {
+  position: absolute;
+  right: 11px;
+  bottom: 10px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 23px;
+  pointer-events: none;
+}
+
+.reactPill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #eeeeef;
+  box-shadow: 0 0 0 1px var(--grok-bg);
+
+  :global([data-theme='dark']) & {
+    background: #2c2c2e;
+  }
+}
+
+// A 30pt box pinned to the pill's center (a grid would size its row to the glyph and center it low), drawn in
+// the emoji face's own metrics so the glyph sits in the middle of that box.
+.reactEmoji {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  font-size: 30px;
+  line-height: 30px;
+  text-align: center;
+}
+
+.sender,
+.stamp {
+  color: var(--grok-faint);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.sender {
+  margin: 0 0 4px 4px;
+}
+
+.stamp {
+  align-self: center;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  gap: 5px;
+  color: var(--grok-faint);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.divider {
+  margin: 4px 0;
+}
+
+.note {
+  border: 1px solid var(--grok-line);
+}
+
+// ── Status row ─────────────────────────────────────────────────────────
+.status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 8px;
+  font-size: 17px;
+  line-height: 22px;
+}
+
+// A dark band about seven characters wide sweeps the gray label: 0.75s across, 0.5s rest.
+.shimmer {
+  background: linear-gradient(
+      90deg,
+      var(--grok-muted) 0%,
+      var(--grok-muted) 40%,
+      var(--grok-text) 50%,
+      var(--grok-muted) 60%,
+      var(--grok-muted) 100%
+    )
+    0 0 / 300% 100% no-repeat;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: grok-shimmer 1.25s linear infinite;
+}
+
+@keyframes grok-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  60%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+.typingDots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 26px;
+  height: 26px;
+
+  i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--grok-text);
+    opacity: 0.3;
+    animation: grok-dot 0.78s infinite ease-in-out;
+
+    &:nth-child(2) {
+      animation-delay: 0.13s;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 0.26s;
+    }
+  }
+}
+
+@keyframes grok-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: none;
+  }
+
+  30% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+// ── Choice card ─────────────────────────────────────────────────────────
+.choiceWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 325px;
+}
+
+.choice {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--grok-line);
+  border-radius: 20px;
+  background: var(--grok-card);
+}
+
+.choiceClose {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: var(--grok-faint);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--grok-text);
+  font: inherit;
+  font-size: 17px;
+  text-align: left;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  [data-done] &:not([data-picked]) {
+    opacity: 0.45;
+  }
+}
+
+.key {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--grok-line);
+  border-radius: 6px;
+  color: var(--grok-muted);
+  font-size: 12px;
+  font-weight: 510;
+
+  [data-picked] > & {
+    border-color: var(--grok-ink);
+    background: var(--grok-ink);
+    color: var(--grok-ink-text);
+  }
+}
+
+.hint {
+  align-self: center;
+  color: var(--grok-faint);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+// ── Products ────────────────────────────────────────────────────────────
+.products {
+  display: flex;
+  gap: 10px;
+  width: calc(100% + 32px);
+  // The bottom padding keeps the cards' borders inside the scroller; the margin gives it back to the thread.
+  margin: 0 -16px -2px;
+  padding: 0 16px 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 16px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.product {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 230px;
+  overflow: hidden;
+  border: 1px solid var(--grok-line);
+  border-radius: 18px;
+  background: var(--grok-card);
+  scroll-snap-align: start;
+}
+
+.productImage {
+  position: relative;
+  flex: none;
+  height: 130px;
+  overflow: hidden;
+  background: #f6f6f6;
+
+  img {
+    position: absolute;
+    inset: 8px;
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
+    object-fit: contain;
+    mix-blend-mode: multiply;
+  }
+}
+
+.productText {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px 14px;
+  font-size: 16px;
+  line-height: 21px;
+
+  strong {
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: var(--grok-muted);
+    font-size: 14px;
+    line-height: 18px;
+  }
+}
+
+.productMerchant {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  color: var(--grok-muted);
+  font-size: 14px;
+
+  i {
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    background: var(--grok-ink);
+    color: var(--grok-ink-text);
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 600;
+  }
+}
+
+// ── Form card and sheet ────────────────────────────────────────────────
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 325px;
+  padding: 14px 14px 12px 16px;
+  border: 1px solid var(--grok-line);
+  border-radius: 20px;
+  background: var(--grok-card);
+
+  strong {
+    margin-top: 6px;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 22px;
+  }
+}
+
+.formKind {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--grok-muted);
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.formSub {
+  color: var(--grok-faint);
+  font-size: 17px;
+  line-height: 22px;
+}
+
+.continue,
+.pay,
+.cancel {
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 18px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 510;
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active {
+    scale: 0.96;
+  }
+}
+
+.continue,
+.pay {
+  background: var(--grok-ink);
+  color: var(--grok-ink-text);
+}
+
+.continue {
+  align-self: flex-end;
+  margin-top: 8px;
+}
+
+.cancel {
+  background: var(--grok-soft);
+  color: var(--grok-text);
+}
+
+.formDone {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--grok-line);
+  border-radius: 22px;
+  background: var(--grok-card);
+  color: var(--grok-muted);
+  font-size: 15px;
+
+  span {
+    color: var(--grok-text);
+  }
+
+  small {
+    flex: 1;
+    font-size: 15px;
+  }
+}
+
+// The form sheet (IMG_1859): a floating card 8pt in from the screen's sides and foot, its top at 124pt
+// under the thread's header, 36pt top corners and bottom corners concentric with the screen's.
+.sheetPanel.sheetPanel {
+  inset: 124px 8px 8px;
+}
+
+.sheet {
+  position: relative;
+  height: 100%;
+  padding: 15px 15px 0;
+  border-radius: 36px 36px calc(var(--screen-corner-radius, 73px) - 8px) calc(var(--screen-corner-radius, 73px) - 8px);
+  background: var(--grok-sheet);
+  color: var(--grok-text);
+  // The sheet's own edge is darker than its buttons' (#5d5d5d sides, #9d9d9d top in IMG_1859).
+  @include rim.glass-rim(0.33px, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.36));
+}
+
+.sheetBar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: 42.67px;
+
+  strong {
+    font-size: 17px;
+    font-weight: 500;
+  }
+}
+
+.sheetButton {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--grok-text);
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active {
+    scale: 0.95;
+  }
+}
+
+// Cancel and Done: 42.67pt glass pills, 15pt in from the text.
+.sheetLabel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 42.67px;
+  padding: 0 15px;
+}
+
+.sheetDone {
+  justify-self: end;
+  color: #fff;
+  font-weight: 500;
+
+  .sheetLabel {
+    padding: 0 13.5px;
+  }
+}
+
+// Labels 13pt, 5pt over their 46pt fields, 33pt between fields (IMG_1859).
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 33px;
+  margin-top: 33px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--grok-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.input {
+  display: flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 15px;
+  border-radius: 12px;
+  background: var(--grok-field);
+  color: var(--grok-text);
+  font-size: 17px;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--grok-text);
+  font: inherit;
+  font-size: 17px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 51px;
+  height: 31px;
+  border-radius: 16px;
+  background: #e9e9eb;
+  transition: background-color 0.2s ease;
+
+  i {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    transition: translate 0.25s cubic-bezier(0.3, 0.7, 0.2, 1);
+  }
+
+  &[data-on] {
+    background: #34c759;
+
+    i {
+      translate: 20px 0;
+    }
+  }
+}
+
+// ── Order card ──────────────────────────────────────────────────────────
+.order {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 325px;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--grok-line);
+  border-radius: 20px;
+  background: var(--grok-card);
+}
+
+.orderHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 500;
+
+  small {
+    color: var(--grok-faint);
+    font-size: 16px;
+    font-weight: 400;
+  }
+}
+
+.orderTile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  overflow: hidden;
+  border: 1px solid var(--grok-line);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.orderItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  img {
+    flex: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: #f6f6f6;
+    object-fit: contain;
+  }
+
+  span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  strong {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 21px;
+  }
+
+  small {
+    color: var(--grok-muted);
+    font-size: 14px;
+    line-height: 19px;
+  }
+}
+
+.orderLines {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--grok-line);
+  color: var(--grok-faint);
+  font-size: 15px;
+  line-height: 20px;
+
+  > :nth-child(even) {
+    color: var(--grok-text);
+    text-align: right;
+  }
+
+  strong {
+    font-weight: 600;
+  }
+}
+
+.orderActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.orderFoot {
+  color: var(--grok-faint);
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.orderTitle {
+  margin-top: 4px;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.orderSub {
+  margin-top: -8px;
+  color: var(--grok-muted);
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.track {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 6px;
+  color: var(--grok-muted);
+}
+
+// The bars tuck 1pt under each circle; the circles sit above them, including the rest of the track drawn after.
+.trackEnd,
+.trackMark {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--grok-line);
+  border-radius: 50%;
+  background: var(--grok-card);
+}
+
+.trackMark {
+  order: 2;
+  border-color: var(--grok-green);
+  background: var(--grok-green);
+  color: #fff;
+  animation: grok-mark 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 0.45s backwards;
+}
+
+.trackBar {
+  position: relative;
+  flex: 1;
+  order: 1;
+  height: 6px;
+  margin: 0 -1px;
+  background: var(--grok-soft);
+
+  i {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 22%;
+    background: var(--grok-green);
+    transform-origin: 0 50%;
+    animation: grok-track 0.5s cubic-bezier(0.28, 0.05, 0.65, 1) backwards;
+  }
+}
+
+// The order's track: fill to the tag (processing), the rest to the house.
+.track:not([data-full]) {
+  .trackBar {
+    flex: none;
+    width: 52px;
+    background: none;
+
+    i {
+      width: 100%;
+    }
+  }
+
+  .trackMark {
+    margin-right: -1px;
+  }
+
+  > .trackEnd:last-child {
+    order: 4;
+  }
+
+  &::after {
+    content: '';
+    flex: 1;
+    order: 3;
+    height: 6px;
+    margin: 0 -1px;
+    background: var(--grok-soft);
+  }
+}
+
+.track[data-full] {
+  .trackBar i {
+    width: 100%;
+  }
+
+  .trackMark {
+    order: 3;
+  }
+}
+
+.trackEnd:first-child {
+  order: 0;
+}
+
+@keyframes grok-track {
+  from {
+    scale: 0 1;
+  }
+}
+
+@keyframes grok-mark {
+  from {
+    scale: 0;
+  }
+}
+
+// ── Composer ───────────────────────────────────────────────────────────
+.composerBox {
+  width: 342px;
+  margin: 0 auto;
+}
+
+.composer {
+  width: 100%;
+}
+
+// One row: + | field | mic, voice. Overflowing, it becomes a card: the text on top, the buttons below.
+.composerGrid {
+  position: relative;
+  display: grid;
+  grid-template-areas: 'plus field tools';
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: end;
+  column-gap: 10px;
+  min-height: 50px;
+  padding: 9px 8px 9px 9px;
+
+  &[data-multiline] {
+    grid-template-areas:
+      'field field field'
+      'plus . tools';
+    row-gap: 6px;
+    padding: 10px 8px 8px 9px;
+  }
+}
+
+.plus,
+.micDisc,
+.voice {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.plus {
+  grid-area: plus;
+  background: var(--grok-soft);
+}
+
+.fieldSlot {
+  display: flex;
+  grid-area: field;
+  min-width: 0;
+
+  [data-multiline] > & {
+    padding: 0 6px;
+  }
+}
+
+.tools {
+  display: flex;
+  grid-area: tools;
+  gap: 4px;
+}
+
+.micDisc {
+  opacity: 0.6;
+}
+
+.voice {
+  width: 34px;
+  height: 34px;
+  margin: -1px 0;
+  background: var(--grok-ink);
+  color: var(--grok-ink-text);
+  cursor: pointer;
+}
+
+.voiceIcon {
+  display: grid;
+  place-items: center;
+}
+
+.glyph {
+  background: var(--grok-text);
+  mask: no-repeat center / contain;
+}
+
+.voiceGlyph {
+  background: var(--grok-ink-text);
+  mask: no-repeat center / contain;
+}
+
+.fieldText {
+  --field-pad: 5px;
+  --placeholder: var(--grok-faint);
+  font-size: 17px;
+}
+
+// ── Bot balance ────────────────────────────────────────────────────────
+.accountSkin {
+  --acct-radius: 20px;
+  --acct-bg: var(--grok-card);
+  --acct-ink: var(--grok-text);
+  --acct-ink-2: #6b6b6b;
+  --acct-button: var(--grok-bubble);
+  --acct-button-radius: 999px;
+  --acct-accent: var(--grok-ink);
+  --acct-accent-ink: var(--grok-ink-text);
+  --acct-track: var(--grok-green);
+  --acct-edge: inset 0 0 0 1px var(--grok-line);
+}
+
+// The sub-agent row, in the status row's type.
+// Grok's cards: white, a hairline, 20pt corners (the order card's).
+.subRow {
+  --sub-bg: var(--grok-card);
+  --sub-border: 1px solid var(--grok-line);
+  --sub-radius: 20px;
+  --sub-width: 325px;
+}

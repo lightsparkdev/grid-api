@@ -1,0 +1,5 @@
+/* Each skin fills the screen; the outgoing one fades out over the incoming. */
+.skinLayer {
+  position: absolute;
+  inset: 0;
+}

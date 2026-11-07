@@ -1,0 +1,202 @@
+// Grok Bot's bank sheet (GrokBank.tsx), measured at 3x from its Vault (IMG_1922, IMG_1923) and Add a card form.
+
+.theme {
+  --sp-bg: #f7f7f7;
+  --sp-text: #000;
+  --sp-muted: #8e8e93;
+  --sp-title-weight: 500;
+  --gb-card: #fff;
+  --gb-line: #ececec;
+  --gb-tab: #e7e8e8;
+  --gb-field: #e1e0e3;
+  --gb-pill: rgba(250, 250, 250, 0.85);
+
+  :global([data-theme='dark']) & {
+    --sp-bg: #000;
+    --sp-text: #fff;
+    --sp-muted: #8e8e8e;
+    --gb-card: #1c1c1e;
+    --gb-line: #2c2c2e;
+    --gb-tab: #2c2c2e;
+      --gb-field: #2c2c2e;
+    --gb-pill: rgba(44, 44, 46, 0.85);
+  }
+}
+
+// Pill tabs: 17pt labels, a lighter count, the selected one on a 38pt gray capsule.
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin: 18px 16px 18px;
+}
+
+.tab {
+  height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--sp-muted);
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+
+  span {
+    margin-left: 3px;
+    opacity: 0.6;
+  }
+
+  &[aria-selected='true'] {
+    background: var(--gb-tab);
+    color: var(--sp-text);
+  }
+}
+
+// One white card, 16pt in, 16pt corners; 52pt rows, the rule running from the name to the card's edge.
+.card {
+  margin: 0 16px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--gb-card);
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 56px;
+  padding: 7px 16px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  & + &::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 52px;
+    height: 1px;
+    background: var(--gb-line);
+    content: '';
+  }
+
+  &:active {
+    background: color-mix(in srgb, var(--sp-text) 5%, transparent);
+  }
+}
+
+.flag {
+  flex: none;
+}
+
+.rowText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rowName {
+  font-size: 17px;
+  line-height: 22px;
+}
+
+.rowSub {
+  color: var(--sp-muted);
+  font-size: 13px;
+  line-height: 17px;
+}
+
+.chevron {
+  flex: none;
+  color: var(--sp-muted);
+}
+
+.help {
+  margin: 10px 32px 0;
+  color: var(--sp-muted);
+  font-size: 13px;
+  line-height: 17px;
+  text-wrap: pretty;
+}
+
+// ── The account, as the Add a card form ─────────────────────────────────
+.barPill {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sp-text);
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.95;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.barDone {
+  color: #fff;
+  font-weight: 500;
+}
+
+.barLabel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42.67px;
+  height: 42.67px;
+  padding: 0 15px;
+}
+
+.spin {
+  animation: gb-spin 0.8s linear infinite;
+}
+
+@keyframes gb-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+// Labels 13pt, 5pt over their 46pt fields, 33pt between fields (IMG_1859).
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  margin: 18px 16px 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--sp-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 46px;
+  padding: 0 15px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--gb-field);
+  color: var(--sp-text);
+  font-size: 17px;
+  white-space: nowrap;
+}

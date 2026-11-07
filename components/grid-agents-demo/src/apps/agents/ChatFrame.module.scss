@@ -1,0 +1,194 @@
+// Laid out at the phone's true 402 × 874; the device scales the whole screen.
+.screen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  font-family: var(--font-family-sf-pro);
+  -webkit-font-smoothing: antialiased;
+  text-wrap: pretty;
+}
+
+// The agent apps draw plain circular corners (their Figma radii), not the
+// playground scope's superellipse, so pills, discs and tab bars read truly round.
+.screen.screen,
+.screen.screen * {
+  corner-shape: round;
+}
+
+// The thread scrolls; the stack grows at its foot and the thread follows it (useStickToEnd).
+.thread {
+  position: absolute;
+  inset: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  pointer-events: auto;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// Marks the sheets for the wheel (they scroll themselves) without boxing them.
+.overlay {
+  display: contents;
+}
+
+// At least the thread's height: a short thread sits at its foot (or under the
+// header, with data-top) and a long one outgrows it and scrolls.
+.stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--gap);
+  min-height: 100%;
+  padding: 120px 16px var(--thread-foot);
+  // Something mid-flight (a bubble leaving the field) must not grow the scroll area the thread follows.
+  overflow: clip;
+
+  &[data-top] {
+    justify-content: flex-start;
+    padding-top: var(--thread-top);
+  }
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  &[data-kind='me'] {
+    align-items: flex-end;
+  }
+}
+
+.composer {
+  position: absolute;
+  right: 0;
+  bottom: var(--composer-bottom);
+  left: 0;
+  z-index: 4;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.35, 1);
+}
+
+// The composer's field: a text area over the skin's glass, in the skin's type
+// (its class lands on the wrapper and the field inherits). One line sits
+// centered against the skin's buttons through `--field-pad`; more lines grow
+// it upward. The screen body passes the pointer through; the field takes it back.
+.fieldWrap {
+  position: relative;
+  display: grid;
+  flex: 1;
+  align-self: flex-end;
+  min-width: 0;
+  caret-color: #0a84ff;
+}
+
+.field {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: var(--field-pad, 10px) 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: var(--field-line, 22px);
+  letter-spacing: inherit;
+  caret-color: inherit;
+  resize: none;
+  overflow: hidden;
+  pointer-events: auto;
+  scrollbar-width: none;
+  transition: height 0.18s cubic-bezier(0.4, 0, 0.35, 1);
+
+  // Past the last line it grows to, the text scrolls under a soft top edge.
+  &[data-scrolls] {
+    overflow-y: auto;
+    mask-image: linear-gradient(180deg, transparent 0, #000 calc(var(--field-pad, 10px) + 8px));
+  }
+
+  &::placeholder {
+    color: var(--placeholder, #8e8e93);
+    opacity: 1;
+  }
+}
+
+// Measures the text at the field's width; never seen or focused.
+.twin {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: none;
+}
+
+.dots {
+  display: inline-flex;
+  gap: 5px;
+  padding: 3px 0;
+
+  i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    corner-shape: round;
+    background: currentColor;
+    opacity: 0.35;
+    animation: dot 1.2s infinite ease-in-out;
+  }
+
+  i:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  i:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+}
+
+@keyframes dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: none;
+  }
+
+  30% {
+    opacity: 0.75;
+    transform: translateY(-2px);
+  }
+}
+
+// The progressive blur under the header (ScrollEdge): each layer blurs twice the last and covers less of the
+// edge, so the blur builds toward the top. The skin sets the height and paints its wash as the background.
+.scrollEdge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  pointer-events: none;
+
+  > i {
+    position: absolute;
+    inset: 0;
+  }
+
+  @each $n, $blur, $solid, $clear in (1, 0.5px, 70%, 100%), (2, 1px, 55%, 85%), (3, 2px, 40%, 70%), (4, 4px, 25%, 55%),
+    (5, 8px, 10%, 40%), (6, 12px, 0%, 25%)
+  {
+    > i:nth-child(#{$n}) {
+      -webkit-backdrop-filter: blur($blur);
+      backdrop-filter: blur($blur);
+      -webkit-mask-image: linear-gradient(180deg, #000 $solid, transparent $clear);
+      mask-image: linear-gradient(180deg, #000 $solid, transparent $clear);
+    }
+  }
+}

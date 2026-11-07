@@ -1,0 +1,195 @@
+// Your app: a neutral chat in the playground's own grays.
+@use '../../../styles/corners';
+.screen {
+  --ya-bg: #f9f9f9;
+  --ya-edge: 249, 249, 249;
+  --ya-text: #111;
+  --ya-muted: #8a8a8a;
+  --ya-them: #ececec;
+  --ya-me: #111;
+  --ya-me-text: #fff;
+  --ya-card: #fff;
+  --part-surface: var(--ya-card);
+  --part-sunk: var(--ya-them);
+  --part-text: var(--ya-text);
+  --part-muted: var(--ya-muted);
+  --part-rule: rgba(0, 0, 0, 0.06);
+  --part-radius: 20px;
+  --part-shadow: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.06));
+  --part-accent: var(--ya-me);
+  --part-accent-text: var(--ya-me-text);
+  --part-done: var(--ya-them);
+  --part-done-text: var(--ya-muted);
+  --part-chip: var(--ya-them);
+  --part-chip-text: var(--ya-text);
+  background: var(--ya-bg);
+  color: var(--ya-text);
+
+  :global([data-theme='dark']) & {
+    --ya-bg: #111;
+    --ya-edge: 17, 17, 17;
+    --ya-text: #f5f5f5;
+    --ya-muted: #8a8a8a;
+    --ya-them: #242424;
+    --ya-me: #f5f5f5;
+    --ya-me-text: #111;
+    --ya-card: #1c1c1c;
+    --part-rule: rgba(255, 255, 255, 0.08);
+    --part-shadow: none;
+  }
+}
+
+.edge {
+  height: 150px;
+  background: linear-gradient(180deg, rgba(var(--ya-edge), 0.8) 0%, rgba(var(--ya-edge), 0.4) 50%, rgba(var(--ya-edge), 0) 100%);
+}
+
+.mark {
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--ya-text);
+  color: var(--ya-bg);
+  translate: -50% 0;
+}
+
+.logo {
+  width: 30px;
+  height: 30px;
+}
+
+.title {
+  position: absolute;
+  top: 116px;
+  left: 50%;
+  z-index: 3;
+  translate: -50% 0;
+}
+
+.titleText {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 14px 7px;
+  line-height: normal;
+  white-space: nowrap;
+
+  strong {
+    font-size: 15px;
+    font-weight: 590;
+  }
+
+  span {
+    color: var(--ya-muted);
+    font-size: 13px;
+    transition: color 0.3s ease;
+
+    &[data-asking] {
+      color: #0a84ff;
+    }
+  }
+}
+
+.them,
+.me {
+  padding: 10px 15px;
+  @include corners.bubble(20px);
+  font-size: 17px;
+  line-height: 22px;
+}
+
+.them {
+  max-width: 310px;
+  background: var(--ya-them);
+}
+
+.me {
+  max-width: 290px;
+  background: var(--ya-me);
+  color: var(--ya-me-text);
+}
+
+.sender,
+.stamp {
+  color: var(--ya-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.sender {
+  margin: 0 0 4px 4px;
+}
+
+.stamp {
+  align-self: center;
+}
+
+.composer {
+  width: 370px;
+  min-height: 48px;
+  margin: 0 auto;
+}
+
+.composerRow {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  min-height: 48px;
+  padding: 8px 8px 8px 18px;
+}
+
+.field {
+  --field-pad: 5px;
+  --placeholder: var(--ya-muted);
+  font-size: 17px;
+}
+
+.send {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--ya-them);
+  color: var(--ya-muted);
+  transition: scale 0.15s ease, background-color 0.2s ease, color 0.2s ease;
+
+  &[data-active] {
+    background: var(--ya-me);
+    color: var(--ya-me-text);
+  }
+
+  &[data-pressing] {
+    scale: 0.88;
+  }
+}
+
+// The platform's balance: the website card in plain iOS colors.
+.accountSkin {
+  --acct-radius: 20px;
+  --acct-bg: #fff;
+  --acct-ink: #000;
+  --acct-ink-2: #8e8e93;
+  --acct-button: #f2f2f7;
+  --acct-button-radius: 12px;
+  --acct-accent: #0a84ff;
+  --acct-edge: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+
+  :global([data-theme='dark']) & {
+    --acct-bg: #1c1c1e;
+    --acct-ink: #fff;
+    --acct-button: #2c2c2e;
+    --acct-edge: none;
+  }
+}
