@@ -77,13 +77,11 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accou
       },
       "fundingPaymentInstructions": [
         {
-          "instructionsNotes": "Include the reference code in your ACH transfer memo",
           "accountOrWalletInfo": {
             "reference": "FUND-ABC123",
             "accountType": "USD_ACCOUNT",
             "accountNumber": "9876543210",
             "routingNumber": "021000021",
-            "accountHolderName": "Lightspark Payments FBO John Doe",
             "bankName": "JP Morgan Chase",
             "bankAddress": "270 Park Avenue, New York, NY 10017"
           }
@@ -139,13 +137,11 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
 
     ```json
     {
-      "instructionsNotes": "Include the reference code in your ACH transfer memo",
       "accountOrWalletInfo": {
         "accountType": "USD_ACCOUNT",
         "reference": "FUND-ABC123",
         "accountNumber": "9876543210",
         "routingNumber": "021000021",
-        "accountHolderName": "Lightspark Payments FBO John Doe",
         "bankName": "JP Morgan Chase",
         "bankAddress": "270 Park Avenue, New York, NY 10017"
       }
@@ -153,10 +149,16 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
     ```
 
     <Tip>
-      Each internal account has unique banking details in the `accountOrWalletInfo`
-      field, which ensures deposits are automatically credited to the correct
-      account.
+      Each internal account has its own account number, and deposits are
+      credited by account number. The payer doesn't need to include the
+      `reference`. A deposit sent without it is still credited to this account.
     </Tip>
+
+    The account is held in the account owner's own legal name: the customer's
+    `fullName` for an individual, or `businessInfo.legalName` for a business.
+    A platform internal account is held in your platform's legal name. Show
+    that name to payers as the beneficiary name, and ask them to copy it
+    exactly on wires.
   </Accordion>
 
   <Accordion title="EUR account funding (SEPA)">
@@ -170,7 +172,6 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
         "reference": "FUND-EUR789",
         "iban": "DE89370400440532013000",
         "swiftCode": "DEUTDEFF",
-        "accountHolderName": "Lightspark Payments FBO Maria Garcia",
         "bankName": "Deutsche Bank"
       }
     }

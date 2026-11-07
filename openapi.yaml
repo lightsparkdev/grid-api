@@ -1189,6 +1189,315 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/stored-cards:
+    parameters:
+      - name: customerId
+        in: path
+        description: System-generated unique customer identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Store a card
+      description: |
+        Store a card the customer already owns so the agents they choose can use it. Collect the card with Evervault's Card UI component and send its ciphertext: a number or security code that is not Evervault ciphertext is refused with `400 INVALID_INPUT` and never stored or logged.
+
+        Grid verifies the card with its issuer before storing it: the security code, billing address and name. A card the issuer does not confirm is refused with `400 STORED_CARD_VERIFICATION_FAILED`. The security code is then discarded; Grid never stores it. The new card is shared with no agent: add one with `PUT /customers/{customerId}/stored-cards/{storedCardId}/agents/{agentId}`. Available where the platform enables stored cards, for individual customers.
+      operationId: createStoredCard
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoredCardCreateRequest'
+      responses:
+        '201':
+          description: Card stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoredCard'
+        '400':
+          description: Bad request, including `STORED_CARD_VERIFICATION_FAILED` when the issuer did not confirm the card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`), or the customer is a business
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '429':
+          description: Too many cards added for this customer; retry later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List stored cards
+      description: The customer's `ACTIVE` stored cards, newest first.
+      operationId: listStoredCards
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoredCardListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/stored-cards/{storedCardId}:
+    parameters:
+      - name: customerId
+        in: path
+        description: System-generated unique customer identifier
+        required: true
+        schema:
+          type: string
+      - name: storedCardId
+        in: path
+        description: System-generated unique stored card identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a stored card
+      description: Retrieve one of the customer's stored cards, including a `REMOVED` one.
+      operationId: getStoredCard
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoredCard'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer or stored card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Remove a stored card
+      description: Remove a stored card. Grid erases its encrypted number, holder name and billing address at once, so the card cannot be recovered; every agent loses access, links not yet opened stop working, and uses awaiting approval fail. The card stays readable with its display fields and status `REMOVED`. Removing a removed card succeeds and changes nothing.
+      operationId: removeStoredCard
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Card removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoredCard'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer or stored card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/stored-cards/{storedCardId}/agents/{agentId}:
+    parameters:
+      - name: customerId
+        in: path
+        description: System-generated unique customer identifier
+        required: true
+        schema:
+          type: string
+      - name: storedCardId
+        in: path
+        description: System-generated unique stored card identifier
+        required: true
+        schema:
+          type: string
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+    put:
+      summary: Let an agent use a stored card
+      description: 'Let one of the customer''s own agents use this card. The agent also needs the `USE_STORED_CARDS` permission, which is never granted by default. Every use still waits for the customer''s approval unless they choose to auto-approve a merchant. Granting access is a grant of spending power on the customer''s own card: confirm it with the customer (for example with a passkey or an emailed code) before calling. Granting an agent that already has access succeeds and changes nothing.'
+      operationId: allowStoredCardAgent
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Access granted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoredCard'
+        '400':
+          description: Bad request - the agent belongs to another customer, or is deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer, stored card or agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The stored card is `REMOVED`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Stop an agent using a stored card
+      description: Take the agent's access to this card away, with its auto-approved merchants. Its links not yet opened stop working and its uses awaiting approval fail. Removing access the agent does not have succeeds and changes nothing.
+      operationId: disallowStoredCardAgent
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Access removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoredCard'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer, stored card or agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers/{customerId}/verify-email:
     parameters:
       - name: customerId
@@ -2783,7 +3092,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '409':
-          description: Conflict - External account already exists. When the conflicting account belongs to the customer in `customerId` (a duplicate wallet) or to any account on your platform (a duplicate `platformAccountId`), `details` carries its `externalAccountId` and `platformAccountId` so a retried request can recover it. `details` is omitted when the conflicting account cannot be identified, for example when the `platformAccountId` is already used on another platform.
+          description: Conflict - The `platformAccountId` is already used, or, without one, the wallet is already registered. When the conflicting account belongs to the customer in `customerId` (a duplicate wallet) or to any account on your platform (a duplicate `platformAccountId`), `details` carries its `externalAccountId` and `platformAccountId` so a retried request can recover it. `details` is omitted when the conflicting account cannot be identified, for example when the `platformAccountId` is already used on another platform.
           content:
             application/json:
               schema:
@@ -3152,7 +3461,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '409':
-          description: Conflict - External account already exists. When the conflicting account belongs to your platform, `details` carries its `externalAccountId` and `platformAccountId` so a retried request can recover it. `details` is omitted when the conflicting account cannot be identified, for example when the `platformAccountId` is already used on another platform.
+          description: Conflict - The `platformAccountId` is already used, or, without one, the wallet is already registered. When the conflicting account belongs to your platform, `details` carries its `externalAccountId` and `platformAccountId` so a retried request can recover it. `details` is omitted when the conflicting account cannot be identified, for example when the `platformAccountId` is already used on another platform.
           content:
             application/json:
               schema:
@@ -9635,12 +9944,19 @@ paths:
         For an `EXECUTE_QUOTE` action without `priceTolerance`, note that the underlying quote may have expired between submission and approval — in that case the action will transition to `FAILED` instead.
         An `EXECUTE_QUOTE` action with `priceTolerance` whose quote is still live executes that quote, as shown. Once its quote has expired, approval quotes the send again and runs every check against the new quote and its amount. When the new price is no worse for the customer than `priceTolerance` allows, Grid executes the new quote and the action transitions to `APPROVED` with it as `quote`. When it is worse by more, nothing is sent: the response is `200` with status still `PENDING_APPROVAL`, the new `quote`, and `previousQuote` set to the quote the customer was shown, so they can be asked again; approving again repeats the check against the new quote. A send Grid can no longer quote fails with the matching `failureReason`, and one past its `expiresAt` with `APPROVAL_EXPIRED`.
         For `ISSUE_PURCHASE_CARD` actions, approval issues the purchase card and the action carries its `cardId`. When `purchaseCard.increaseCardId` is set, approval instead raises that existing card to the new amount and limit. The card's limit is checked against the agent's policy again first; an action past its `expiresAt` fails with `APPROVAL_EXPIRED`, one the policy now denies with `POLICY_DENIED`, a paused or deleted agent with `AGENT_INACTIVE`, and one the card issuer refuses with `EXECUTION_FAILED`.
+        For `USE_STORED_CARD` actions, approval lets the agent collect one single-use link to the card's details. A use with `storedCardUse.needsCvc` needs `storedCardCvc`, the security code encrypted by Evervault's Card component; without it the request is refused with `400`. `autoApproveMerchant` also lets the agent use the card at the same merchant again, up to the same amount, without asking. Grid cannot verify the customer here: confirm the decision with them (for example with a passkey or an emailed code) before calling. An action past its `expiresAt` fails with `APPROVAL_EXPIRED`, and one whose card was removed, or whose agent lost access or is paused or deleted, with `AGENT_INACTIVE`.
         This endpoint is called by the platform's backend using platform credentials, not by the agent itself.
       operationId: approveAgentAction
       tags:
         - Agent Management
       security:
         - BasicAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentActionApproveRequest'
       responses:
         '200':
           description: Action approved, or, for an action whose new quote moved past `priceTolerance`, still `PENDING_APPROVAL` with `previousQuote` set. Returns the updated AgentAction.
@@ -11632,6 +11948,159 @@ paths:
                 $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/stored-cards:
+    get:
+      summary: List the stored cards the agent may use
+      description: The customer's `ACTIVE` stored cards the customer allowed this agent to use, with display fields only. Requires the USE_STORED_CARDS permission.
+      operationId: agentListStoredCards
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentStoredCardListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or stored cards are not enabled for the platform, the agent is paused, or the agent does not have the USE_STORED_CARDS permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/stored-cards/{storedCardId}/reveal:
+    parameters:
+      - name: storedCardId
+        in: path
+        description: System-generated unique stored card identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Ask for a stored card's details
+      description: |
+        Ask to use a stored card for one purchase. The agent names the merchant, the amount it expects to be charged and what the purchase is; Grid cannot enforce the amount, since the merchant charges the customer's own card.
+
+        The customer approves every use unless they chose to auto-approve this agent at this merchant up to the amount. A use that waits answers `202` with a `USE_STORED_CARD` action in `PENDING_APPROVAL`; once it is `APPROVED`, call again with only its `actionId` to collect the link. A use with `needsCvc` always waits, since the customer enters the security code when approving.
+
+        An approved use answers `200` with a single-use `detailsUrl`, valid for five minutes. The number reaches the agent through Evervault's Relay, which decrypts it on the way; Grid never sends it. Open the URL once, right away, where the purchase is being made, and never store or log it. Each approved use issues one link: asking again with the same `actionId` is refused with `409`.
+
+        Every use is audit-logged with the agent as the actor. Uses are rate limited per card, per agent and per customer; beyond the limit the request is rejected with `429 RATE_LIMITED`. Requires the USE_STORED_CARDS permission and the customer's permission for this agent to use the card.
+      operationId: agentRevealStoredCard
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentStoredCardRevealRequest'
+      responses:
+        '200':
+          description: Link issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentStoredCardReveal'
+        '202':
+          description: The use waits for the customer's approval
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or stored cards are not enabled for the platform, the agent is paused, or the agent does not have the USE_STORED_CARDS permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Stored card not found, or not one this agent may use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The `actionId` is not an approved use of this card by this agent, or its link was already issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many uses for this card, agent or customer; retry later
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stored-card-reveals/{token}:
+    parameters:
+      - name: token
+        in: path
+        description: The secret part of a `detailsUrl`
+        required: true
+        schema:
+          type: string
+          maxLength: 128
+    get:
+      summary: Open a stored card link
+      description: 'What a stored card''s `detailsUrl` answers, once. Open the `detailsUrl` itself, never this path on Grid''s host: `detailsUrl` goes through Evervault''s Relay, which decrypts `number` and `cvc` on the way, and Grid answers them only as Evervault ciphertext. The token is the only credential. A link that was already opened, has expired, or whose card or agent lost access answers `404`.'
+      operationId: openStoredCardReveal
+      tags:
+        - Agent Operations
+      security: []
+      responses:
+        '200':
+          description: The card's details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoredCardRevealDetails'
+        '404':
+          description: Link not found, already opened, or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
           content:
             application/json:
               schema:
@@ -18988,6 +19457,7 @@ components:
         | `AGENT_PURCHASE_CARDS_DISABLED` | 403 | Agent purchase cards are not enabled for the platform |
         | `AGENT_RECURRING_PURCHASE_CARDS_DISABLED` | 403 | Agent recurring purchase cards are not enabled for the platform |
         | `AGENT_PURCHASE_CARD_POLICY_DENIED` | 403 | The agent's policy denied the purchase card. `details.policyDenialReason` says which rule |
+        | `STORED_CARDS_DISABLED` | 403 | Stored cards are not enabled for the platform |
         | `CARDS_DISABLED` | 403 | Cards are not enabled for the platform |
         | `CARDHOLDER_INFO_MISSING` | 400 | The cardholder record lacks fields a card needs. `details.missingFields` lists them; supply them through the customers API |
         | `CARDHOLDER_BANK_ACCOUNT_NOT_OPEN` | 400 | The cardholder's USD bank account is not open yet, so no card can be issued until it is |
@@ -19047,6 +19517,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+            | STORED_CARD_VERIFICATION_FAILED | The card's issuer did not confirm the card: its security code, billing address or name did not match. Nothing was stored |
             | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
             | ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED | The customer create request omits an accountholder agreement its accounts require |
             | CARDHOLDER_AGREEMENT_NOT_ACCEPTED | The customer has not accepted the cardholder agreement the platform requires before a card is issued |
@@ -19111,6 +19582,7 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_INVALID
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+            - STORED_CARD_VERIFICATION_FAILED
             - CARDHOLDER_KYC_NOT_APPROVED
             - ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED
             - CARDHOLDER_AGREEMENT_NOT_ACCEPTED
@@ -20485,7 +20957,7 @@ components:
             | NOT_YET_AVAILABLE | The request is valid, but its result is not available yet because the data it depends on could still change. Retry later. `reason` says what is outstanding. For balance changes, card settlement for a window boundary has not closed |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform. When the cardholder already holds the one card the platform allows, `details.refusalReason` is `CARDHOLDER_HOLDS_CARD` |
             | DOCUMENT_ALREADY_EXISTS | A document of this type already exists for the holder; replace it with PUT |
-            | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists. When the conflicting account belongs to your platform, `details.externalAccountId` and `details.platformAccountId` identify it; otherwise `details` is omitted |
+            | DUPLICATE_EXTERNAL_ACCOUNT | The `platformAccountId` is already used, or, without one, the wallet is already registered. When the conflicting account belongs to your platform, `details.externalAccountId` and `details.platformAccountId` identify it; otherwise `details` is omitted |
             | DUPLICATE_PAY_REQUEST | A pay request with this idempotency key already exists |
             | OPERATION_IN_PROGRESS | A conflicting Embedded Wallet operation is still in progress |
             | SMS_OTP_CREDENTIAL_SET_CHANGED | The SMS_OTP credential set changed while the request was in flight |
@@ -20898,6 +21370,233 @@ components:
           type: string
           description: Provider-specific token that can be used in place of the hosted URL — for example, to embed the provider's SDK directly in your application. Only returned for providers that support direct SDK integration. Whether to use the hosted URL or the embedded SDK is up to you; both flows result in the same `kycStatus` update on the customer.
           example: _act-sbx-jwt-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    StoredCardBrand:
+      type: string
+      maxLength: 32
+      description: 'The card network, from the issuer''s BIN data. Known values: `VISA`, `MASTERCARD`, `AMERICAN_EXPRESS`, `DISCOVER`, `DINERS_CLUB`, `JCB`, `UNIONPAY`, `UNKNOWN`. Treat an unrecognized value as `UNKNOWN` rather than an error.'
+      example: VISA
+    StoredCardFunding:
+      type: string
+      maxLength: 32
+      description: 'How the card is funded, from the issuer''s BIN data. Known values: `CREDIT`, `DEBIT`, `PREPAID`, `CHARGE`, `DEFERRED_DEBIT`, `UNKNOWN`. Treat an unrecognized value as `UNKNOWN` rather than an error.'
+      example: CREDIT
+    StoredCardDisplay:
+      type: object
+      description: What can be shown about a stored card. None of it is cardholder data a merchant could charge.
+      required:
+        - lastFour
+        - brand
+        - funding
+        - expiryMonth
+        - expiryYear
+      properties:
+        lastFour:
+          type: string
+          pattern: ^[0-9]{4}$
+          minLength: 4
+          maxLength: 4
+          description: Last four digits of the card number.
+          example: '0005'
+        brand:
+          $ref: '#/components/schemas/StoredCardBrand'
+        funding:
+          $ref: '#/components/schemas/StoredCardFunding'
+        issuerCountry:
+          type: string
+          minLength: 2
+          maxLength: 2
+          description: ISO 3166-1 alpha-2 country of the card's issuer, when the BIN data names one.
+          example: US
+        expiryMonth:
+          type: integer
+          minimum: 1
+          maximum: 12
+          description: Expiry month, 1 to 12.
+          example: 8
+        expiryYear:
+          type: integer
+          minimum: 2000
+          maximum: 2199
+          description: Four-digit expiry year.
+          example: 2029
+        nickname:
+          type: string
+          maxLength: 64
+          description: The customer's own label for the card.
+          example: Personal Visa
+    StoredCardStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - REMOVED
+      description: |
+        | Status | Description |
+        |--------|-------------|
+        | `ACTIVE` | The card can be used by the agents it is shared with |
+        | `REMOVED` | The customer removed the card. Grid erased its encrypted number, holder name and billing address; only the display fields remain |
+    StoredCardAutoApproval:
+      type: object
+      description: A merchant where an agent may use the stored card without asking the customer again, set when the customer approves a use with `autoApproveMerchant`.
+      required:
+        - agentId
+        - merchant
+        - maxAmount
+        - currency
+      properties:
+        agentId:
+          type: string
+          maxLength: 64
+          description: The agent.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        merchant:
+          type: string
+          maxLength: 255
+          description: The merchant, as the agent named it, lowercased.
+          example: example-store.com
+        maxAmount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The largest amount, in the smallest unit of `currency`, that a use at this merchant may declare and still be approved without asking.
+          example: 4999
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          description: ISO 4217 code of `maxAmount`.
+          example: USD
+    StoredCard:
+      type: object
+      description: 'A card the customer already owns, stored so their agents can use it. Grid holds the card number only as Evervault ciphertext: no Grid system stores, logs or returns the number itself.'
+      allOf:
+        - $ref: '#/components/schemas/StoredCardDisplay'
+        - type: object
+          required:
+            - id
+            - customerId
+            - status
+            - holderName
+            - agentIds
+            - createdAt
+            - updatedAt
+          properties:
+            id:
+              type: string
+              maxLength: 64
+              description: System-generated unique identifier of the stored card.
+              example: StoredCard:019542f5-b3e7-1d02-0000-000000000077
+            customerId:
+              type: string
+              maxLength: 64
+              description: The customer who owns the card.
+              example: Customer:019542f5-b3e7-1d02-0000-000000000010
+            status:
+              $ref: '#/components/schemas/StoredCardStatus'
+            holderName:
+              type: string
+              maxLength: 255
+              description: The cardholder name, as the customer entered it. Empty once the card is `REMOVED`.
+              example: Jane Doe
+            billingAddress:
+              $ref: '#/components/schemas/Address'
+              description: The card's billing address. Absent once the card is `REMOVED`.
+            agentIds:
+              type: array
+              maxItems: 100
+              description: The agents the customer allowed to use this card. An agent also needs the `USE_STORED_CARDS` permission. Empty once the card is `REMOVED`.
+              items:
+                type: string
+                maxLength: 64
+                example: Agent:019542f5-b3e7-1d02-0000-000000000042
+            autoApprovals:
+              type: array
+              maxItems: 100
+              description: Merchants where the customer chose to let an agent use the card without asking again, each up to an amount. Cleared for an agent when its access is removed. Empty once the card is `REMOVED`.
+              items:
+                $ref: '#/components/schemas/StoredCardAutoApproval'
+            createdAt:
+              type: string
+              format: date-time
+              description: When the card was stored.
+              example: '2026-11-06T15:00:00Z'
+            updatedAt:
+              type: string
+              format: date-time
+              description: When the card was last changed.
+              example: '2026-11-06T15:00:00Z'
+            removedAt:
+              type: string
+              format: date-time
+              description: When the customer removed the card. Present only once it is `REMOVED`.
+              example: '2026-11-07T09:30:00Z'
+    StoredCardListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          description: The customer's stored cards, newest first. `REMOVED` cards are not listed.
+          items:
+            $ref: '#/components/schemas/StoredCard'
+    StoredCardCreateRequest:
+      type: object
+      description: A card collected with Evervault's Card UI component. `number` and `cvc` must be Evervault ciphertext (strings starting `ev:`); a request carrying a plaintext value is refused with `400` and the value is never stored or logged. The CVC is used once, to verify the card with its issuer, and then discarded.
+      required:
+        - number
+        - cvc
+        - lastFour
+        - expiryMonth
+        - expiryYear
+        - holderName
+        - billingAddress
+      properties:
+        number:
+          type: string
+          pattern: '^ev:'
+          maxLength: 2048
+          description: The card number, encrypted by Evervault's Card component.
+          example: ev:Tk9D:number:...$
+        cvc:
+          type: string
+          pattern: '^ev:'
+          maxLength: 2048
+          description: The card's security code, encrypted by Evervault's Card component. Used only for the verification at add time; never stored.
+          example: ev:Tk9D:cvc:...$
+        lastFour:
+          type: string
+          pattern: ^[0-9]{4}$
+          minLength: 4
+          maxLength: 4
+          description: Last four digits of the number, as the Card component reports them.
+          example: '0005'
+        expiryMonth:
+          type: integer
+          minimum: 1
+          maximum: 12
+          description: Expiry month, 1 to 12.
+          example: 8
+        expiryYear:
+          type: integer
+          minimum: 2000
+          maximum: 2199
+          description: Four-digit expiry year.
+          example: 2029
+        holderName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: The name on the card.
+          example: Jane Doe
+        billingAddress:
+          $ref: '#/components/schemas/Address'
+          description: The card's billing address, checked against the issuer's records.
+        nickname:
+          type: string
+          maxLength: 64
+          description: The customer's own label for the card.
+          example: Personal Visa
     ContactVerificationConfirmRequest:
       type: object
       description: Request body for confirming an email or phone verification challenge.
@@ -21859,7 +22558,7 @@ components:
           properties:
             reference:
               type: string
-              description: Unique reference code that must be included with the payment to properly credit it
+              description: Reference code for the payment. On a quote's `paymentInstructions`, include it with the payment, in the memo or remittance information, so Grid can match the payment to the quote. On an internal account's `fundingPaymentInstructions`, the account number is unique to that account and deposits are credited by account number, so the payer doesn't need to include the reference.
               example: UMA-Q12345-REF
             bankAddress:
               type: string
@@ -29166,7 +29865,7 @@ components:
         platformAccountId:
           type: string
           maxLength: 255
-          description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
+          description: Your platform's identifier for the account in your system. Must be unique. A wallet can be registered under several different `platformAccountId` values.
           example: ext_acc_123456
         ownershipType:
           $ref: '#/components/schemas/OwnershipType'
@@ -29291,7 +29990,7 @@ components:
         platformAccountId:
           type: string
           maxLength: 255
-          description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
+          description: Your platform's identifier for the account in your system. Must be unique. A wallet can be registered under several different `platformAccountId` values.
           example: ext_acc_123456
         ownershipType:
           $ref: '#/components/schemas/OwnershipType'
@@ -31611,7 +32310,7 @@ components:
         lookupId:
           type: string
           description: |-
-            Lookup ID from a previous receiver lookup request. If provided, this can make the quote creation more efficient by reusing cached lookup data.
+            Lookup ID from a previous receiver lookup request. If provided and the lookup is still valid, the quote reuses the cached lookup data and keeps the payout partner selected at lookup time. If omitted, or if the lookup is no longer valid, the quote runs a fresh lookup. On corridors with more than one payout partner, a fresh lookup may select a different partner than the earlier lookup, with different sender field requirements.
             NOTE: This is required for UMA destinations due to counterparty institution requirements. See `senderCustomerInfo` for more information.
           example: Lookup:019542f5-b3e7-1d02-0000-000000000009
         source:
@@ -33152,7 +33851,8 @@ components:
         - MANAGE_IDENTITY
         - MANAGE_CARDS
         - ISSUE_CARDS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one standard virtual card for itself while it holds no live standard card, and single-use and recurring purchase cards where the platform enables them.'
+        - USE_STORED_CARDS
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one standard virtual card for itself while it holds no live standard card, and single-use and recurring purchase cards where the platform enables them. USE_STORED_CARDS: Can list the customer''s stored cards it is allowed to use and ask for a single-use link to one''s details. Never granted by default.'
     AgentExecutionMode:
       type: string
       enum:
@@ -33450,6 +34150,7 @@ components:
         - EXECUTE_QUOTE
         - ISSUE_PURCHASE_CARD
         - CLAIMABLE_PAYOUT
+        - USE_STORED_CARD
       description: |
         The type of action the agent is requesting.
 
@@ -33458,6 +34159,7 @@ components:
         | `EXECUTE_QUOTE` | Execute a quote |
         | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. When `purchaseCard.increaseCardId` is set, raise the amount of that existing single-use card instead of issuing one. See `purchaseCard` |
         | `CLAIMABLE_PAYOUT` | Send a claimable payout to a person by phone number or email. See `claimablePayout` |
+        | `USE_STORED_CARD` | Use one of the customer's stored cards for a purchase. See `storedCardUse` |
     AgentSendNetwork:
       type: string
       enum:
@@ -33784,6 +34486,66 @@ components:
           format: date-time
           description: When the payout last changed.
           example: '2025-10-03T15:02:00Z'
+    AgentStoredCardUse:
+      type: object
+      description: A use of a stored card the agent asked for, so an approval decision can show which card, where and for how much. Every value but the card's is supplied by the agent and not verified by Grid.
+      required:
+        - storedCardId
+        - card
+        - merchant
+        - amount
+        - currency
+        - purpose
+        - needsCvc
+        - autoApproved
+      properties:
+        storedCardId:
+          type: string
+          maxLength: 64
+          description: The stored card.
+          example: StoredCard:019542f5-b3e7-1d02-0000-000000000077
+        card:
+          $ref: '#/components/schemas/StoredCardDisplay'
+        merchant:
+          type: string
+          maxLength: 255
+          description: Where the agent said the card will be used.
+          example: example-store.com
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The amount the agent said it expects to be charged, in the smallest unit of `currency`.
+          example: 4999
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          description: ISO 4217 code of `amount`.
+          example: USD
+        purpose:
+          type: string
+          maxLength: 255
+          description: What the agent said the purchase is.
+          example: Running shoes, size 10
+        needsCvc:
+          type: boolean
+          description: Whether the agent asked for the security code. Approving such a use needs `storedCardCvc` on `POST /agents/{agentId}/actions/{actionId}/approve`.
+          example: false
+        autoApproved:
+          type: boolean
+          description: Whether Grid approved the use without asking, because the customer had chosen to auto-approve this agent at this merchant up to this amount. Such a use is created `APPROVED` and sent as an `AGENT_ACTION.APPROVED` webhook, so the platform can tell the customer of every use.
+          example: false
+        linkIssuedAt:
+          type: string
+          format: date-time
+          description: When Grid issued the agent's single-use link. Absent until then.
+          example: '2026-11-06T15:00:30Z'
+        revealedAt:
+          type: string
+          format: date-time
+          description: When the agent opened the link. Absent until then.
+          example: '2026-11-06T15:00:41Z'
     AgentActionFailureReason:
       type: string
       enum:
@@ -33857,6 +34619,9 @@ components:
         claimablePayout:
           $ref: '#/components/schemas/ClaimablePayout'
           description: The claimable payout the agent asked to send, so an approval decision can show its amount and recipient. Present for `CLAIMABLE_PAYOUT`. Approving the action makes the payout `AWAITING_CLAIM`; rejecting it, or letting it expire, ends the payout and releases its hold.
+        storedCardUse:
+          $ref: '#/components/schemas/AgentStoredCardUse'
+          description: The stored card the agent asked to use, where, and for how much, so an approval decision can show them. Present for `USE_STORED_CARD`. Approving the action lets the agent collect a single-use link with `POST /agents/me/stored-cards/{storedCardId}/reveal` and `actionId`.
         cardId:
           type: string
           description: The purchase card the action issued, or for an increase the card whose amount it raised. Present for an `ISSUE_PURCHASE_CARD` action once it is `APPROVED` and the card is issued or increased; read it with `GET /agents/me/cards/{cardId}`.
@@ -33875,7 +34640,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: 'When the action expires. For an `EXECUTE_QUOTE` action with `priceTolerance`, this is the end of the platform''s approval window, independent of the quote''s own expiry: approval executes a live quote and quotes the send again once it has expired, and a pending action that reaches this time fails with `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the quote''s own expiry; a pending action that reaches it fails with `QUOTE_EXPIRED`, and approval never creates a replacement quote. For `ISSUE_PURCHASE_CARD`, this is the end of the approval window, after which a pending action fails with `APPROVAL_EXPIRED`.'
+          description: 'When the action expires. For an `EXECUTE_QUOTE` action with `priceTolerance`, this is the end of the platform''s approval window, independent of the quote''s own expiry: approval executes a live quote and quotes the send again once it has expired, and a pending action that reaches this time fails with `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the quote''s own expiry; a pending action that reaches it fails with `QUOTE_EXPIRED`, and approval never creates a replacement quote. For `ISSUE_PURCHASE_CARD` and `USE_STORED_CARD`, this is the end of the approval window, after which a pending action fails with `APPROVAL_EXPIRED`.'
           example: '2025-10-03T15:05:00Z'
         createdAt:
           type: string
@@ -34685,6 +35450,20 @@ components:
           format: date-time
           description: Last update timestamp
           example: '2026-05-08T14:11:00Z'
+    AgentActionApproveRequest:
+      type: object
+      description: Optional details for approving a `USE_STORED_CARD` action. Refused with `400` on any other action type.
+      properties:
+        storedCardCvc:
+          type: string
+          pattern: '^ev:'
+          maxLength: 2048
+          description: The card's security code, encrypted by Evervault's Card component, when the use has `storedCardUse.needsCvc`. Required for such a use. Grid holds it only until the agent opens its link, or the link expires, and never stores it with the card.
+          example: ev:Tk9D:cvc:...$
+        autoApproveMerchant:
+          type: boolean
+          description: Also let this agent use this card at this merchant again, up to this use's amount, without asking. A later use that needs the security code still asks.
+          example: false
     AgentActionRejectRequest:
       type: object
       properties:
@@ -34811,7 +35590,7 @@ components:
             platformAccountId:
               type: string
               maxLength: 255
-              description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
+              description: Your platform's identifier for the account in your system. Must be unique. A wallet can be registered under several different `platformAccountId` values.
               example: ext_acc_123456
             ownershipType:
               $ref: '#/components/schemas/OwnershipType'
@@ -35430,6 +36209,144 @@ components:
           maxLength: 255
           description: Why the purchase needs a higher amount, as reported by the app. The increase action returns it as `purchaseCard.description`, which is shown to the customer when they approve the increase.
           example: Shipping was added at checkout.
+    AgentStoredCard:
+      type: object
+      description: 'A stored card the agent may use: its display fields only. The number is reached only through `POST /agents/me/stored-cards/{storedCardId}/reveal`.'
+      allOf:
+        - $ref: '#/components/schemas/StoredCardDisplay'
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+              maxLength: 64
+              description: System-generated unique identifier of the stored card.
+              example: StoredCard:019542f5-b3e7-1d02-0000-000000000077
+    AgentStoredCardListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          description: The `ACTIVE` stored cards the customer allowed this agent to use.
+          items:
+            $ref: '#/components/schemas/AgentStoredCard'
+    AgentStoredCardRevealRequest:
+      type: object
+      description: Either the purchase the agent wants the card for (`merchant`, `amount`, `currency`, `purpose` and optionally `needsCvc`), or `actionId` alone, to collect the link for a use the customer has since approved.
+      properties:
+        actionId:
+          type: string
+          maxLength: 64
+          description: An `APPROVED` `USE_STORED_CARD` action of this agent for this card whose link has not been issued yet. Sent alone.
+          example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+        merchant:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'Where the card will be used: the merchant''s website host (for example `example-store.com`) or name. Shown to the customer and used to match merchants they chose to auto-approve. Supplied by the agent and not verified by Grid.'
+          example: example-store.com
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: 'The amount the agent expects to be charged, in the smallest unit of `currency`. Shown to the customer. Grid cannot enforce it: the charge is made by the merchant on the customer''s own card.'
+          example: 4999
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          description: ISO 4217 code of `amount`.
+          example: USD
+        purpose:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: What the purchase is, shown to the customer.
+          example: Running shoes, size 10
+        needsCvc:
+          type: boolean
+          description: 'Whether the checkout asks for the card''s security code. Grid never stores it, so the customer enters it when approving: a use with `needsCvc` always waits for approval.'
+          example: true
+    AgentStoredCardReveal:
+      type: object
+      description: 'A single-use link to the card''s details. Open `detailsUrl` once, right away, where the purchase is being made; it answers once and expires at `expiresAt`. The number reaches the agent through Evervault''s Relay, which decrypts it on the way: Grid never sends it. Never store or log the URL or what it returns.'
+      required:
+        - detailsUrl
+        - expiresAt
+        - actionId
+        - cvcIncluded
+        - card
+        - holderName
+        - billingAddress
+      properties:
+        detailsUrl:
+          type: string
+          format: uri
+          maxLength: 2048
+          description: The single-use link. It answers JSON with `number`, `expiryMonth`, `expiryYear`, `holderName` and, when `cvcIncluded`, `cvc`.
+          example: https://relay.example.com/grid/2025-10-13/stored-card-reveals/abc
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the link stops working, five minutes after it is issued.
+          example: '2026-11-06T15:05:00Z'
+        actionId:
+          type: string
+          maxLength: 64
+          description: The `USE_STORED_CARD` action that records this use.
+          example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+        cvcIncluded:
+          type: boolean
+          description: Whether the link also returns the security code the customer entered when approving.
+          example: false
+        card:
+          $ref: '#/components/schemas/AgentStoredCard'
+        holderName:
+          type: string
+          maxLength: 255
+          description: The name on the card, for the checkout form.
+          example: Jane Doe
+        billingAddress:
+          $ref: '#/components/schemas/Address'
+          description: The card's billing address, for the checkout form.
+    StoredCardRevealDetails:
+      type: object
+      description: What a reveal link answers. Grid answers `number` and `cvc` as Evervault ciphertext; the Evervault Relay in front of the link decrypts them, so the caller of `detailsUrl` receives the card's own values.
+      required:
+        - number
+        - expiryMonth
+        - expiryYear
+        - holderName
+      properties:
+        number:
+          type: string
+          maxLength: 2048
+          description: The card number.
+        cvc:
+          type: string
+          maxLength: 2048
+          description: The security code, present only when the reveal's `cvcIncluded` is true.
+        expiryMonth:
+          type: integer
+          minimum: 1
+          maximum: 12
+          description: Expiry month, 1 to 12.
+          example: 8
+        expiryYear:
+          type: integer
+          minimum: 2000
+          maximum: 2199
+          description: Four-digit expiry year.
+          example: 2029
+        holderName:
+          type: string
+          maxLength: 255
+          description: The name on the card.
+          example: Jane Doe
     CardVelocityMetric:
       type: string
       description: ATTEMPTS counts every real-time authorization request, including declined requests. APPROVED counts distinct approved authorizations, including zero-amount authorizations, and can also cap the amount they hold.

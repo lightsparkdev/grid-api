@@ -47,6 +47,7 @@ properties:
       | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
       | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
       | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+      | STORED_CARD_VERIFICATION_FAILED | The card's issuer did not confirm the card: its security code, billing address or name did not match. Nothing was stored |
       | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
       | ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED | The customer create request omits an accountholder agreement its accounts require |
       | CARDHOLDER_AGREEMENT_NOT_ACCEPTED | The customer has not accepted the cardholder agreement the platform requires before a card is issued |
@@ -111,6 +112,7 @@ properties:
       - STABLECOIN_PROVIDER_ACCOUNT_INVALID
       - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
       - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+      - STORED_CARD_VERIFICATION_FAILED
       - CARDHOLDER_KYC_NOT_APPROVED
       - ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED
       - CARDHOLDER_AGREEMENT_NOT_ACCEPTED

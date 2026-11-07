@@ -1,0 +1,40 @@
+parameters:
+  - name: token
+    in: path
+    description: The secret part of a `detailsUrl`
+    required: true
+    schema:
+      type: string
+      maxLength: 128
+get:
+  summary: Open a stored card link
+  description: >-
+    What a stored card's `detailsUrl` answers, once. Open the `detailsUrl`
+    itself, never this path on Grid's host: `detailsUrl` goes through
+    Evervault's Relay, which decrypts `number` and `cvc` on the way, and Grid
+    answers them only as Evervault ciphertext. The token is the only
+    credential. A link that was already opened, has expired, or whose card or
+    agent lost access answers `404`.
+  operationId: openStoredCardReveal
+  tags:
+    - Agent Operations
+  security: []
+  responses:
+    '200':
+      description: The card's details
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stored_cards/StoredCardRevealDetails.yaml
+    '404':
+      description: Link not found, already opened, or expired
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
