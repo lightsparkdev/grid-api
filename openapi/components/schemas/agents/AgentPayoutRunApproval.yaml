@@ -1,0 +1,13 @@
+type: object
+required:
+  - required
+  - reasons
+properties:
+  required:
+    type: boolean
+    description: Whether the run would be created `PENDING_APPROVAL`.
+  reasons:
+    type: array
+    description: Every reason the run would wait for approval. Empty when it would not.
+    items:
+      $ref: ./AgentPayoutRunApprovalReason.yaml

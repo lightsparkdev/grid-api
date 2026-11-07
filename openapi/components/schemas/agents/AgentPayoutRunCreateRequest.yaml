@@ -1,0 +1,16 @@
+type: object
+required:
+  - sourceAccountId
+  - rows
+properties:
+  sourceAccountId:
+    type: string
+    description: The customer's stablecoin Embedded Wallet that pays every row. It must hold an `ACTIVE` delegated key of this agent.
+    example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+  rows:
+    type: array
+    minItems: 1
+    maxItems: 50
+    description: 'The people to pay. Each pays a `CONTACT` or an `EXTERNAL_ACCOUNT`: one of the customer''s own `ACTIVE` external accounts on the platform. A `GRID_CUSTOMER` row is refused.'
+    items:
+      $ref: ./AgentPayoutRunRowInput.yaml

@@ -1,0 +1,132 @@
+post:
+  summary: Create a payout run
+  description: |
+    Pay up to 50 people at once from the agent's customer's stablecoin Embedded Wallet, in one approved action. Each row pays a contact by phone number or email, through a claimable payout, or one of the customer's own `ACTIVE` external accounts, through a send. The run pays now: there is no schedule, and rows succeed or fail one by one.
+
+    Validation is all or nothing: a row the agent may not send, or a body Grid cannot read, refuses the whole request and creates nothing. A `GRID_CUSTOMER` row is refused with `400`. A row paying an external account the agent may not pay is refused with `DESTINATION_NOT_ALLOWED`.
+
+    The run is checked against the agent's policy as one payment of `total`: it needs the CREATE_QUOTES and EXECUTE_QUOTES permissions, and MANAGE_EXTERNAL_ACCOUNTS when a row pays a contact; `total` counts toward the spending limits as one transaction, and the spending pool is charged for bank payouts. A run the policy refuses is refused with `AGENT_POLICY_DENIED`. A run is created `PROCESSING`, with an `APPROVED` `PAYOUT_RUN` agent action, when the policy runs it without approval, the spending pool does not require approval and no row is above the platform's limit for bank payouts without approval. Otherwise it is created `PENDING_APPROVAL` with a `PENDING_APPROVAL` `PAYOUT_RUN` action, and the `AGENT_ACTION.PENDING_APPROVAL` webhook fires. Approving the action starts the run. Rejecting it, or letting it expire after 24 hours, cancels the run and skips every row.
+
+    The customer's approval of the run covers each row's own approval. Each row is still checked when it is paid: the destination, the agent's delegated key, the wallet's free balance and sanctions screening. `total` is what leaves the wallet; a row's fees come out of what its recipient receives.
+
+    Available only where the platform enables payout runs and agent payout runs, and claimable payouts for runs with a contact row.
+  operationId: agentCreatePayoutRun
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        A unique identifier for the request, scoped to the agent. A retry with the same key and body returns the run the first request created; the same key with a different body is refused with `409`.
+      schema:
+        type: string
+        maxLength: 255
+        example: <uuid>
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentPayoutRunCreateRequest.yaml
+  responses:
+    '201':
+      description: Payout run created, or the run this Idempotency-Key already created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentPayoutRun.yaml
+    '400':
+      description: Bad request - The body is invalid, a row is invalid (the error names it, for example `rows[2].destination`), or there are more than 50 rows
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agent payout runs are not enabled for the platform, the agent policy does not permit the run (`AGENT_POLICY_DENIED`), or a row pays a destination the agent may not pay (`DESTINATION_NOT_ALLOWED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '409':
+      description: Conflict - The Idempotency-Key was already used for a different run
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List payout runs
+  description: |
+    List the payout runs the authenticated agent created, newest first.
+  operationId: agentListPayoutRuns
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: status
+      in: query
+      description: Only runs in this status
+      required: false
+      schema:
+        $ref: ../../components/schemas/payout_runs/PayoutRunStatus.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 50, max 200)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentPayoutRunListResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agent payout runs are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -93,6 +93,14 @@ properties:
       terms. Approving a rule does not approve its payments in advance.
       Each share is still checked against the agent's policy when it is
       sent.
+  payoutRun:
+    $ref: ./AgentActionPayoutRun.yaml
+    description: >-
+      The payout run the agent created, so an approval decision can show
+      every row. Present for `PAYOUT_RUN`. Approving the action starts the
+      run; rejecting it, or letting it expire, cancels the run and skips
+      every row. The approval covers each row's own approval, so no row
+      waits for another.
   cardId:
     type: string
     description: >-
@@ -129,10 +137,11 @@ properties:
       `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the
       quote's own expiry; a pending action that reaches it fails with
       `QUOTE_EXPIRED`, and approval never creates a replacement quote. For
-      `ISSUE_PURCHASE_CARD`, `USE_STORED_CARD`, `CREATE_SETTLEMENT_RULE` and
-      `UPDATE_SETTLEMENT_RULE`, this is the end of the approval window, after
-      which a pending action fails with `APPROVAL_EXPIRED`; a settlement
-      rule's window is seven days.
+      `ISSUE_PURCHASE_CARD`, `USE_STORED_CARD`, `CREATE_SETTLEMENT_RULE`,
+      `UPDATE_SETTLEMENT_RULE` and `PAYOUT_RUN`, this is the end of the
+      approval window, after which a pending action fails with
+      `APPROVAL_EXPIRED`; a settlement rule's window is seven days, and a
+      payout run's 24 hours.
     example: '2025-10-03T15:05:00Z'
   createdAt:
     type: string

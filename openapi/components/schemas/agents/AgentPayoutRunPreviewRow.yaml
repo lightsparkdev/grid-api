@@ -1,0 +1,21 @@
+type: object
+required:
+  - clientRowId
+  - amount
+  - feeSetAtClaim
+properties:
+  clientRowId:
+    type: string
+    example: contractor-0042
+  amount:
+    $ref: ../common/CurrencyAmount.yaml
+    description: What leaves the wallet for this row.
+  estimatedFee:
+    $ref: ../common/CurrencyAmount.yaml
+    description: The row's estimated fee, which comes out of what the recipient receives. Absent when Grid cannot estimate it without quoting the row.
+  estimatedReceiveAmount:
+    $ref: ../common/CurrencyAmount.yaml
+    description: What the recipient would receive, in the receiving currency. Absent when `estimatedFee` is.
+  feeSetAtClaim:
+    type: boolean
+    description: True for a `CONTACT` row, whose fee depends on the account the recipient claims to.

@@ -1,6 +1,7 @@
 type: string
 enum:
   - VALIDATING
+  - PENDING_APPROVAL
   - SCHEDULED
   - PROCESSING
   - COMPLETED
@@ -13,6 +14,7 @@ description: |
   | Status | Description |
   |--------|-------------|
   | `VALIDATING` | Grid is validating the rows. No row is paid yet. |
+  | `PENDING_APPROVAL` | An agent's run waiting for the customer to approve its `PAYOUT_RUN` action. No row is paid yet. Approving it makes the run `PROCESSING`; rejecting it, or letting it expire, makes it `CANCELLED`. |
   | `SCHEDULED` | Accepted, waiting for `scheduledAt`. |
   | `PROCESSING` | Rows are being paid. |
   | `COMPLETED` | Every accepted row completed or is held for a claim, and none failed. |

@@ -8,6 +8,7 @@ enum:
   - ADDRESS_REFUSED
   - APPROVAL_EXPIRED
   - DELETED_BY_AGENT
+  - AGENT_CANCELLED
 description: |
   Why an agent action has status `FAILED`.
 
@@ -19,5 +20,6 @@ description: |
   | `EXECUTION_FAILED` | Grid could not execute the approved action. For `ISSUE_PURCHASE_CARD`, the card issuer did not issue the card |
   | `PRICE_MOVED` | Reserved and legacy. Quotes to a `CHAIN_ADDRESS` pay out at a locked rate and no longer fail with this reason |
   | `ADDRESS_REFUSED` | Grid refused the send's destination before it signed the send: the destination is no longer one the agent may send to (for example, a Spark address removed from the customer's saved addresses), or one of the customer's records of the address was refused or is held for review. A `CHAIN_ADDRESS` that screening refuses fails with `EXECUTION_FAILED` |
-  | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD`, `CREATE_SETTLEMENT_RULE` or `UPDATE_SETTLEMENT_RULE` action, or an `EXECUTE_QUOTE` action with `priceTolerance`, was not approved before its `expiresAt` |
+  | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD`, `CREATE_SETTLEMENT_RULE`, `UPDATE_SETTLEMENT_RULE` or `PAYOUT_RUN` action, or an `EXECUTE_QUOTE` action with `priceTolerance`, was not approved before its `expiresAt` |
   | `DELETED_BY_AGENT` | The agent deleted the settlement rule a `CREATE_SETTLEMENT_RULE` or `UPDATE_SETTLEMENT_RULE` action would make or change before the action was decided |
+  | `AGENT_CANCELLED` | The agent cancelled the payout run a `PAYOUT_RUN` action would start before the action was decided |

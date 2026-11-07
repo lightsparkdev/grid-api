@@ -11179,6 +11179,374 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /agents/me/payout-runs:
+    post:
+      summary: Create a payout run
+      description: |
+        Pay up to 50 people at once from the agent's customer's stablecoin Embedded Wallet, in one approved action. Each row pays a contact by phone number or email, through a claimable payout, or one of the customer's own `ACTIVE` external accounts, through a send. The run pays now: there is no schedule, and rows succeed or fail one by one.
+
+        Validation is all or nothing: a row the agent may not send, or a body Grid cannot read, refuses the whole request and creates nothing. A `GRID_CUSTOMER` row is refused with `400`. A row paying an external account the agent may not pay is refused with `DESTINATION_NOT_ALLOWED`.
+
+        The run is checked against the agent's policy as one payment of `total`: it needs the CREATE_QUOTES and EXECUTE_QUOTES permissions, and MANAGE_EXTERNAL_ACCOUNTS when a row pays a contact; `total` counts toward the spending limits as one transaction, and the spending pool is charged for bank payouts. A run the policy refuses is refused with `AGENT_POLICY_DENIED`. A run is created `PROCESSING`, with an `APPROVED` `PAYOUT_RUN` agent action, when the policy runs it without approval, the spending pool does not require approval and no row is above the platform's limit for bank payouts without approval. Otherwise it is created `PENDING_APPROVAL` with a `PENDING_APPROVAL` `PAYOUT_RUN` action, and the `AGENT_ACTION.PENDING_APPROVAL` webhook fires. Approving the action starts the run. Rejecting it, or letting it expire after 24 hours, cancels the run and skips every row.
+
+        The customer's approval of the run covers each row's own approval. Each row is still checked when it is paid: the destination, the agent's delegated key, the wallet's free balance and sanctions screening. `total` is what leaves the wallet; a row's fees come out of what its recipient receives.
+
+        Available only where the platform enables payout runs and agent payout runs, and claimable payouts for runs with a contact row.
+      operationId: agentCreatePayoutRun
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: |
+            A unique identifier for the request, scoped to the agent. A retry with the same key and body returns the run the first request created; the same key with a different body is refused with `409`.
+          schema:
+            type: string
+            maxLength: 255
+            example: <uuid>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentPayoutRunCreateRequest'
+      responses:
+        '201':
+          description: Payout run created, or the run this Idempotency-Key already created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPayoutRun'
+        '400':
+          description: Bad request - The body is invalid, a row is invalid (the error names it, for example `rows[2].destination`), or there are more than 50 rows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent payout runs are not enabled for the platform, the agent policy does not permit the run (`AGENT_POLICY_DENIED`), or a row pays a destination the agent may not pay (`DESTINATION_NOT_ALLOWED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '409':
+          description: Conflict - The Idempotency-Key was already used for a different run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List payout runs
+      description: |
+        List the payout runs the authenticated agent created, newest first.
+      operationId: agentListPayoutRuns
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Only runs in this status
+          required: false
+          schema:
+            $ref: '#/components/schemas/PayoutRunStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 50, max 200)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPayoutRunListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent payout runs are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/payout-runs/preview:
+    post:
+      summary: Preview a payout run
+      description: |
+        What `POST /agents/me/payout-runs` would do with this body, without doing any of it: nothing is created, held, reserved or quoted. The body is checked as a create checks it, so a body the create would refuse is refused here with the same error.
+
+        The answer gives `total`, which is what leaves the wallet, the wallet's free balance after it, and whether the run would wait for the customer's approval and why. When the agent's policy would refuse the run, `denialReason` says which rule. Each row's fee is an estimate where Grid knows it: a contact row's fee depends on the account the recipient claims to, so it is set at the claim.
+      operationId: agentPreviewPayoutRun
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentPayoutRunCreateRequest'
+      responses:
+        '200':
+          description: The run as it would be created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPayoutRunPreview'
+        '400':
+          description: Bad request - The body is invalid, a row is invalid (the error names it, for example `rows[2].destination`), or there are more than 50 rows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent payout runs are not enabled for the platform, or a row pays a destination the agent may not pay (`DESTINATION_NOT_ALLOWED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '503':
+          description: Service unavailable - Grid could not read the wallet's balance. Retry later.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
+  /agents/me/payout-runs/{payoutRunId}:
+    parameters:
+      - name: payoutRunId
+        in: path
+        required: true
+        description: System-generated unique payout run identifier
+        schema:
+          type: string
+        example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+    get:
+      summary: Get a payout run
+      description: |
+        Retrieve a payout run the authenticated agent created.
+      operationId: agentGetPayoutRun
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPayoutRun'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent payout runs are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - No payout run with this id was created by this agent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/payout-runs/{payoutRunId}/rows:
+    parameters:
+      - name: payoutRunId
+        in: path
+        required: true
+        description: System-generated unique payout run identifier
+        schema:
+          type: string
+        example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+    get:
+      summary: List the rows of a payout run
+      description: The rows of a run the authenticated agent created, in the order they were submitted.
+      operationId: agentListPayoutRunRows
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: state
+          in: query
+          description: Only rows in this state
+          required: false
+          schema:
+            $ref: '#/components/schemas/PayoutRunRowState'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 50, max 200)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutRunRowListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent payout runs are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - No payout run with this id was created by this agent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/payout-runs/{payoutRunId}/cancel:
+    parameters:
+      - name: payoutRunId
+        in: path
+        required: true
+        description: System-generated unique payout run identifier
+        schema:
+          type: string
+        example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Cancel a payout run
+      description: |
+        Cancel everything of the run that has not been sent. A `PENDING` row becomes `SKIPPED` with `failureCode` `CANCELLED`. A contact row whose claimable payout is still `AWAITING_CLAIM` has its payout cancelled, which ends its claim link and releases its hold, and becomes `SKIPPED` with `failureCode` `CANCELLED`. `PROCESSING` and `COMPLETED` rows, and contact rows already claimed, are left to finish. A run still `PENDING_APPROVAL` becomes `CANCELLED`, and its `PAYOUT_RUN` action fails with `AGENT_CANCELLED`. A run that has finished is refused with `409`.
+      operationId: agentCancelPayoutRun
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: The cancelled run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentPayoutRun'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agent payout runs are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - No payout run with this id was created by this agent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The run has already finished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /agents/me/settlement-rules/preview:
     post:
       summary: Preview a settlement rule
@@ -34634,6 +35002,7 @@ components:
         - USE_STORED_CARD
         - CREATE_SETTLEMENT_RULE
         - UPDATE_SETTLEMENT_RULE
+        - PAYOUT_RUN
       description: |
         The type of action the agent is requesting.
 
@@ -34645,6 +35014,7 @@ components:
         | `USE_STORED_CARD` | Use one of the customer's stored cards for a purchase. See `storedCardUse` |
         | `CREATE_SETTLEMENT_RULE` | Make a settlement rule the agent proposed `ACTIVE`. See `settlementRule` |
         | `UPDATE_SETTLEMENT_RULE` | Change the match, shares or limits of a settlement rule the agent created. See `settlementRule` |
+        | `PAYOUT_RUN` | Start a payout run the agent created. See `payoutRun` |
     AgentSendNetwork:
       type: string
       enum:
@@ -35309,6 +35679,89 @@ components:
           type: string
           format: date-time
           example: '2026-11-06T18:00:00Z'
+    PayoutRunStatus:
+      type: string
+      enum:
+        - VALIDATING
+        - PENDING_APPROVAL
+        - SCHEDULED
+        - PROCESSING
+        - COMPLETED
+        - PARTIALLY_FAILED
+        - FAILED
+        - CANCELLED
+      description: |
+        Status of a payout run.
+
+        | Status | Description |
+        |--------|-------------|
+        | `VALIDATING` | Grid is validating the rows. No row is paid yet. |
+        | `PENDING_APPROVAL` | An agent's run waiting for the customer to approve its `PAYOUT_RUN` action. No row is paid yet. Approving it makes the run `PROCESSING`; rejecting it, or letting it expire, makes it `CANCELLED`. |
+        | `SCHEDULED` | Accepted, waiting for `scheduledAt`. |
+        | `PROCESSING` | Rows are being paid. |
+        | `COMPLETED` | Every accepted row completed or is held for a claim, and none failed. |
+        | `PARTIALLY_FAILED` | At least one row completed or is held for a claim, and at least one failed. |
+        | `FAILED` | No row completed or is held for a claim. |
+        | `CANCELLED` | Cancelled. Rows that had not started are `SKIPPED`. |
+    PayoutRunRowDestination:
+      oneOf:
+        - $ref: '#/components/schemas/PayoutRunExternalAccountDestination'
+        - $ref: '#/components/schemas/PayoutRunContactDestination'
+        - $ref: '#/components/schemas/PayoutRunGridCustomerDestination'
+      discriminator:
+        propertyName: destinationType
+        mapping:
+          EXTERNAL_ACCOUNT: '#/components/schemas/PayoutRunExternalAccountDestination'
+          CONTACT: '#/components/schemas/PayoutRunContactDestination'
+          GRID_CUSTOMER: '#/components/schemas/PayoutRunGridCustomerDestination'
+    AgentActionPayoutRunRow:
+      type: object
+      required:
+        - clientRowId
+        - amount
+        - destination
+      properties:
+        clientRowId:
+          type: string
+          example: contractor-0042
+        amount:
+          type: integer
+          format: int64
+          description: What leaves the wallet for this row, in the smallest unit of the run's currency.
+          example: 25000000
+        destination:
+          $ref: '#/components/schemas/PayoutRunRowDestination'
+        description:
+          type: string
+          example: October invoice
+    AgentActionPayoutRun:
+      type: object
+      description: The payout run a `PAYOUT_RUN` action asks to start, with every row, so an approval decision can show who is paid and how much.
+      required:
+        - id
+        - status
+        - sourceAccountId
+        - total
+        - rowCount
+        - rows
+      properties:
+        id:
+          type: string
+          example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+        status:
+          $ref: '#/components/schemas/PayoutRunStatus'
+        sourceAccountId:
+          type: string
+          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        total:
+          $ref: '#/components/schemas/CurrencyAmount'
+        rowCount:
+          type: integer
+          example: 12
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentActionPayoutRunRow'
     AgentActionFailureReason:
       type: string
       enum:
@@ -35320,6 +35773,7 @@ components:
         - ADDRESS_REFUSED
         - APPROVAL_EXPIRED
         - DELETED_BY_AGENT
+        - AGENT_CANCELLED
       description: |
         Why an agent action has status `FAILED`.
 
@@ -35331,8 +35785,9 @@ components:
         | `EXECUTION_FAILED` | Grid could not execute the approved action. For `ISSUE_PURCHASE_CARD`, the card issuer did not issue the card |
         | `PRICE_MOVED` | Reserved and legacy. Quotes to a `CHAIN_ADDRESS` pay out at a locked rate and no longer fail with this reason |
         | `ADDRESS_REFUSED` | Grid refused the send's destination before it signed the send: the destination is no longer one the agent may send to (for example, a Spark address removed from the customer's saved addresses), or one of the customer's records of the address was refused or is held for review. A `CHAIN_ADDRESS` that screening refuses fails with `EXECUTION_FAILED` |
-        | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD`, `CREATE_SETTLEMENT_RULE` or `UPDATE_SETTLEMENT_RULE` action, or an `EXECUTE_QUOTE` action with `priceTolerance`, was not approved before its `expiresAt` |
+        | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD`, `CREATE_SETTLEMENT_RULE`, `UPDATE_SETTLEMENT_RULE` or `PAYOUT_RUN` action, or an `EXECUTE_QUOTE` action with `priceTolerance`, was not approved before its `expiresAt` |
         | `DELETED_BY_AGENT` | The agent deleted the settlement rule a `CREATE_SETTLEMENT_RULE` or `UPDATE_SETTLEMENT_RULE` action would make or change before the action was decided |
+        | `AGENT_CANCELLED` | The agent cancelled the payout run a `PAYOUT_RUN` action would start before the action was decided |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -35390,6 +35845,9 @@ components:
         settlementRule:
           $ref: '#/components/schemas/SettlementRule'
           description: The settlement rule the agent proposed, so an approval decision can show what it matches, who it pays and its limits. Present for `CREATE_SETTLEMENT_RULE` and `UPDATE_SETTLEMENT_RULE`. For `CREATE_SETTLEMENT_RULE`, approving the action makes the rule `ACTIVE`; rejecting it, or letting it expire, deletes it. For `UPDATE_SETTLEMENT_RULE`, it is the rule as the change would make it, with the rule's `id`; approving the action applies the change, and rejecting it, or letting it expire, drops it while the rule keeps its terms. Approving a rule does not approve its payments in advance. Each share is still checked against the agent's policy when it is sent.
+        payoutRun:
+          $ref: '#/components/schemas/AgentActionPayoutRun'
+          description: The payout run the agent created, so an approval decision can show every row. Present for `PAYOUT_RUN`. Approving the action starts the run; rejecting it, or letting it expire, cancels the run and skips every row. The approval covers each row's own approval, so no row waits for another.
         cardId:
           type: string
           description: The purchase card the action issued, or for an increase the card whose amount it raised. Present for an `ISSUE_PURCHASE_CARD` action once it is `APPROVED` and the card is issued or increased; read it with `GET /agents/me/cards/{cardId}`.
@@ -35408,7 +35866,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: 'When the action expires. For an `EXECUTE_QUOTE` action with `priceTolerance`, this is the end of the platform''s approval window, independent of the quote''s own expiry: approval executes a live quote and quotes the send again once it has expired, and a pending action that reaches this time fails with `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the quote''s own expiry; a pending action that reaches it fails with `QUOTE_EXPIRED`, and approval never creates a replacement quote. For `ISSUE_PURCHASE_CARD`, `USE_STORED_CARD`, `CREATE_SETTLEMENT_RULE` and `UPDATE_SETTLEMENT_RULE`, this is the end of the approval window, after which a pending action fails with `APPROVAL_EXPIRED`; a settlement rule''s window is seven days.'
+          description: 'When the action expires. For an `EXECUTE_QUOTE` action with `priceTolerance`, this is the end of the platform''s approval window, independent of the quote''s own expiry: approval executes a live quote and quotes the send again once it has expired, and a pending action that reaches this time fails with `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the quote''s own expiry; a pending action that reaches it fails with `QUOTE_EXPIRED`, and approval never creates a replacement quote. For `ISSUE_PURCHASE_CARD`, `USE_STORED_CARD`, `CREATE_SETTLEMENT_RULE`, `UPDATE_SETTLEMENT_RULE` and `PAYOUT_RUN`, this is the end of the approval window, after which a pending action fails with `APPROVAL_EXPIRED`; a settlement rule''s window is seven days, and a payout run''s 24 hours.'
           example: '2025-10-03T15:05:00Z'
         createdAt:
           type: string
@@ -36411,6 +36869,387 @@ components:
           maxLength: 140
           description: A note for the recipient, shown once she has proved she holds the link.
           example: Happy birthday, Mom
+    PayoutRunSource:
+      type: object
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+          description: The internal account that funds every row. It must be an open `INTERNAL_FIAT` or `INTERNAL_CRYPTO` account of the platform or of one of its customers.
+          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        customerId:
+          type: string
+          description: The customer the payouts are made on behalf of, with the same meaning as `customerId` on an `ACCOUNT` quote source. Optional for a platform account; for a customer's account it must be the owner or omitted.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    PayoutRunRowCounts:
+      type: object
+      required:
+        - total
+        - pending
+        - pendingClaim
+        - processing
+        - completed
+        - failed
+        - skipped
+      properties:
+        total:
+          type: integer
+          description: Rows submitted, rejected rows included.
+          example: 1000
+        pending:
+          type: integer
+          example: 0
+        pendingClaim:
+          type: integer
+          example: 12
+        processing:
+          type: integer
+          example: 0
+        completed:
+          type: integer
+          example: 980
+        failed:
+          type: integer
+          example: 8
+        skipped:
+          type: integer
+          example: 0
+    PayoutRun:
+      type: object
+      required:
+        - id
+        - status
+        - source
+        - allOrNothing
+        - rowCounts
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique payout run identifier
+          example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+        status:
+          $ref: '#/components/schemas/PayoutRunStatus'
+        source:
+          $ref: '#/components/schemas/PayoutRunSource'
+        scheduledAt:
+          type: string
+          format: date-time
+          description: When the run starts paying rows, if it was scheduled.
+          example: '2026-11-05T02:00:00Z'
+        allOrNothing:
+          type: boolean
+          example: false
+        rowCounts:
+          $ref: '#/components/schemas/PayoutRunRowCounts'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-04T22:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-11-05T02:14:00Z'
+        finishedAt:
+          type: string
+          format: date-time
+          description: When the run reached `COMPLETED`, `PARTIALLY_FAILED`, `FAILED` or `CANCELLED`.
+          example: '2026-11-05T02:14:00Z'
+    AgentPayoutRun:
+      allOf:
+        - $ref: '#/components/schemas/PayoutRun'
+        - type: object
+          description: A payout run an agent created. `allOrNothing` is always `false`, and `scheduledAt` is never set.
+          required:
+            - agentId
+            - agentActionId
+            - total
+            - rowCount
+          properties:
+            agentId:
+              type: string
+              description: The agent that created the run.
+              example: Agent:019542f5-b3e7-1d02-0000-000000000042
+            agentActionId:
+              type: string
+              description: The run's `PAYOUT_RUN` agent action, which the customer approves or rejects when the run needs approval.
+              example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+            total:
+              $ref: '#/components/schemas/CurrencyAmount'
+              description: The sum of the rows' amounts, in the source account's currency. This is what leaves the wallet if every row is paid.
+            rowCount:
+              type: integer
+              description: How many rows the run has.
+              example: 12
+    AgentPayoutRunListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentPayoutRun'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+    AgentPayoutRunRowInput:
+      type: object
+      required:
+        - clientRowId
+        - amount
+        - destination
+      properties:
+        clientRowId:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: The agent's identifier for the row, unique within the run.
+          example: contractor-0042
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9000000000000000
+          description: What leaves the wallet for this row, in the smallest unit of the source account's currency. The row's fees come out of what the recipient receives.
+          example: 25000000
+        destination:
+          $ref: '#/components/schemas/PayoutRunRowDestination'
+        description:
+          type: string
+          maxLength: 140
+          description: For a `CONTACT` row, the note on its claimable payout, which the recipient sees once she has proved she holds the link.
+          example: October invoice
+    AgentPayoutRunCreateRequest:
+      type: object
+      required:
+        - sourceAccountId
+        - rows
+      properties:
+        sourceAccountId:
+          type: string
+          description: The customer's stablecoin Embedded Wallet that pays every row. It must hold an `ACTIVE` delegated key of this agent.
+          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        rows:
+          type: array
+          minItems: 1
+          maxItems: 50
+          description: 'The people to pay. Each pays a `CONTACT` or an `EXTERNAL_ACCOUNT`: one of the customer''s own `ACTIVE` external accounts on the platform. A `GRID_CUSTOMER` row is refused.'
+          items:
+            $ref: '#/components/schemas/AgentPayoutRunRowInput'
+    AgentPayoutRunPreviewRow:
+      type: object
+      required:
+        - clientRowId
+        - amount
+        - feeSetAtClaim
+      properties:
+        clientRowId:
+          type: string
+          example: contractor-0042
+        amount:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: What leaves the wallet for this row.
+        estimatedFee:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: The row's estimated fee, which comes out of what the recipient receives. Absent when Grid cannot estimate it without quoting the row.
+        estimatedReceiveAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: What the recipient would receive, in the receiving currency. Absent when `estimatedFee` is.
+        feeSetAtClaim:
+          type: boolean
+          description: True for a `CONTACT` row, whose fee depends on the account the recipient claims to.
+    AgentPayoutRunApprovalReason:
+      type: string
+      enum:
+        - APPROVAL_MODE
+        - LIMIT
+        - BANK_ROW_OVER_THRESHOLD
+        - POOL
+      description: |
+        Why a payout run waits for the customer's approval.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `APPROVAL_MODE` | The agent's policy runs payments from the source account in `APPROVAL_REQUIRED` mode |
+        | `LIMIT` | `total` is above the approval threshold of the agent's policy or of the platform |
+        | `BANK_ROW_OVER_THRESHOLD` | A row is above the platform's limit for bank payouts without approval |
+        | `POOL` | `total` is above the `approvalThreshold` of the agent's spending pool |
+    AgentPayoutRunApproval:
+      type: object
+      required:
+        - required
+        - reasons
+      properties:
+        required:
+          type: boolean
+          description: Whether the run would be created `PENDING_APPROVAL`.
+        reasons:
+          type: array
+          description: Every reason the run would wait for approval. Empty when it would not.
+          items:
+            $ref: '#/components/schemas/AgentPayoutRunApprovalReason'
+    AgentPayoutRunPreview:
+      type: object
+      required:
+        - sourceAccountId
+        - total
+        - walletBalanceAfter
+        - rows
+        - approval
+      properties:
+        sourceAccountId:
+          type: string
+          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        total:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: The sum of the rows' amounts, which is what leaves the wallet if every row is paid. Fees are not added to it.
+        estimatedFees:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: The sum of the rows' known fee estimates. Absent when no row's fee is known.
+        walletBalanceAfter:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: The wallet's free balance, after what is already held for its claimable payouts and payments in flight, minus `total`. Negative when the wallet cannot pay every row.
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentPayoutRunPreviewRow'
+        approval:
+          $ref: '#/components/schemas/AgentPayoutRunApproval'
+        denialReason:
+          $ref: '#/components/schemas/AgentPolicyDenialReason'
+          description: Set when the agent's policy or spending pool would refuse the run, so the create would be refused with `AGENT_POLICY_DENIED`.
+    PayoutRunRowState:
+      type: string
+      enum:
+        - PENDING
+        - PENDING_CLAIM
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+        - SKIPPED
+      description: |
+        State of one row of a payout run.
+
+        | State | Description |
+        |-------|-------------|
+        | `PENDING` | Accepted, not started. |
+        | `PENDING_CLAIM` | Addressed to a contact. On a platform's run, held and not paid by the run. On an agent's run, its claimable payout was sent and waits for the recipient to claim it: see `claimablePayoutId`. |
+        | `PROCESSING` | Its payment has started. |
+        | `COMPLETED` | Its transaction completed. |
+        | `FAILED` | Rejected at validation, refused when paid, or its transaction failed. See `failureCode`. |
+        | `SKIPPED` | Not paid, because the run was cancelled or another row was rejected under `allOrNothing`. On an agent's run, `failureCode` says why: `CANCELLED`, `APPROVAL_REJECTED` or `APPROVAL_EXPIRED`. |
+    PayoutRunRow:
+      type: object
+      required:
+        - id
+        - payoutRunId
+        - clientRowId
+        - rowIndex
+        - state
+        - lockedCurrencySide
+        - lockedCurrencyAmount
+        - destination
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique row identifier
+          example: PayoutRunRow:019542f5-b3e7-1d02-0000-000000000002
+        payoutRunId:
+          type: string
+          example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+        clientRowId:
+          type: string
+          example: contractor-0042
+        rowIndex:
+          type: integer
+          description: The row's zero-based position in the create request.
+          example: 41
+        state:
+          $ref: '#/components/schemas/PayoutRunRowState'
+        lockedCurrencySide:
+          $ref: '#/components/schemas/QuoteLockSide'
+        lockedCurrencyAmount:
+          type: integer
+          format: int64
+          example: 125000
+        destination:
+          $ref: '#/components/schemas/PayoutRunRowDestination'
+        description:
+          type: string
+          example: October invoice
+        purposeOfPayment:
+          $ref: '#/components/schemas/PurposeOfPayment'
+        quoteId:
+          type: string
+          description: The quote that pays this row, once its payment has started.
+          example: Quote:019542f5-b3e7-1d02-0000-000000000006
+        transactionId:
+          type: string
+          description: The transaction that pays this row, once its payment has started.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+        claimablePayoutId:
+          type: string
+          description: The claimable payout that pays a `CONTACT` row of an agent's run, once it is sent.
+          example: ClaimablePayout:019542f5-b3e7-1d02-0000-000000000007
+        failureCode:
+          type: string
+          description: |
+            Why the row failed, or on an agent's run why it was skipped. A Grid error code (for example `INSUFFICIENT_FUNDS` or `ACCOUNT_NOT_FOUND`) when the row was refused before any money moved, or `TRANSACTION_FAILED` when its transaction failed; the transaction carries the details.
+
+            An agent's run uses these codes:
+
+            | Code | Description |
+            |------|-------------|
+            | `SEND_FAILED` | The row's send to an external account failed |
+            | `CLAIM_EXPIRED` | The recipient did not claim the row's claimable payout in time |
+            | `CLAIM_FAILED` | The row's claimable payout failed |
+            | `DESTINATION_NOT_ALLOWED` | The destination is no longer one the agent may pay, or screening refused it |
+            | `INSUFFICIENT_FUNDS` | The wallet did not hold the row's amount on top of what it already holds |
+            | `AGENT_INACTIVE` | The agent was paused or deleted, or lost its delegated key, before the row was paid |
+            | `CANCELLED` | Skipped: the agent cancelled the run before the row was paid |
+            | `APPROVAL_REJECTED` | Skipped: the customer rejected the run |
+            | `APPROVAL_EXPIRED` | Skipped: the run was not approved in time |
+          example: INSUFFICIENT_FUNDS
+        failureReason:
+          type: string
+          description: A human-readable explanation of `failureCode`.
+          example: Insufficient balance on the source account.
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-04T22:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-11-05T02:14:00Z'
+    PayoutRunRowListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayoutRunRow'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+        totalCount:
+          type: integer
+          description: Total number of rows matching the filter.
     SettlementRuleDraft:
       type: object
       description: A rule as it would be created. Only the fields that decide what it pays and what it matches are needed; a `priority` is not.
@@ -39118,30 +39957,6 @@ components:
           type: string
           description: Human-readable explanation, for a log or a support ticket. Not for branching, and not always safe to show a cardholder verbatim. The exception is `CARE_MESSAGE_REJECTED`, whose `reason` is written to be shown.
           example: The care session token is not valid.
-    PayoutRunSource:
-      type: object
-      required:
-        - accountId
-      properties:
-        accountId:
-          type: string
-          description: The internal account that funds every row. It must be an open `INTERNAL_FIAT` or `INTERNAL_CRYPTO` account of the platform or of one of its customers.
-          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-        customerId:
-          type: string
-          description: The customer the payouts are made on behalf of, with the same meaning as `customerId` on an `ACCOUNT` quote source. Optional for a platform account; for a customer's account it must be the owner or omitted.
-          example: Customer:019542f5-b3e7-1d02-0000-000000000001
-    PayoutRunRowDestination:
-      oneOf:
-        - $ref: '#/components/schemas/PayoutRunExternalAccountDestination'
-        - $ref: '#/components/schemas/PayoutRunContactDestination'
-        - $ref: '#/components/schemas/PayoutRunGridCustomerDestination'
-      discriminator:
-        propertyName: destinationType
-        mapping:
-          EXTERNAL_ACCOUNT: '#/components/schemas/PayoutRunExternalAccountDestination'
-          CONTACT: '#/components/schemas/PayoutRunContactDestination'
-          GRID_CUSTOMER: '#/components/schemas/PayoutRunGridCustomerDestination'
     PayoutRunRowInput:
       type: object
       required:
@@ -39197,190 +40012,6 @@ components:
           maxItems: 1000
           items:
             $ref: '#/components/schemas/PayoutRunRowInput'
-    PayoutRunStatus:
-      type: string
-      enum:
-        - VALIDATING
-        - SCHEDULED
-        - PROCESSING
-        - COMPLETED
-        - PARTIALLY_FAILED
-        - FAILED
-        - CANCELLED
-      description: |
-        Status of a payout run.
-
-        | Status | Description |
-        |--------|-------------|
-        | `VALIDATING` | Grid is validating the rows. No row is paid yet. |
-        | `SCHEDULED` | Accepted, waiting for `scheduledAt`. |
-        | `PROCESSING` | Rows are being paid. |
-        | `COMPLETED` | Every accepted row completed or is held for a claim, and none failed. |
-        | `PARTIALLY_FAILED` | At least one row completed or is held for a claim, and at least one failed. |
-        | `FAILED` | No row completed or is held for a claim. |
-        | `CANCELLED` | Cancelled. Rows that had not started are `SKIPPED`. |
-    PayoutRunRowCounts:
-      type: object
-      required:
-        - total
-        - pending
-        - pendingClaim
-        - processing
-        - completed
-        - failed
-        - skipped
-      properties:
-        total:
-          type: integer
-          description: Rows submitted, rejected rows included.
-          example: 1000
-        pending:
-          type: integer
-          example: 0
-        pendingClaim:
-          type: integer
-          example: 12
-        processing:
-          type: integer
-          example: 0
-        completed:
-          type: integer
-          example: 980
-        failed:
-          type: integer
-          example: 8
-        skipped:
-          type: integer
-          example: 0
-    PayoutRun:
-      type: object
-      required:
-        - id
-        - status
-        - source
-        - allOrNothing
-        - rowCounts
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          type: string
-          description: System-generated unique payout run identifier
-          example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
-        status:
-          $ref: '#/components/schemas/PayoutRunStatus'
-        source:
-          $ref: '#/components/schemas/PayoutRunSource'
-        scheduledAt:
-          type: string
-          format: date-time
-          description: When the run starts paying rows, if it was scheduled.
-          example: '2026-11-05T02:00:00Z'
-        allOrNothing:
-          type: boolean
-          example: false
-        rowCounts:
-          $ref: '#/components/schemas/PayoutRunRowCounts'
-        createdAt:
-          type: string
-          format: date-time
-          example: '2026-11-04T22:00:00Z'
-        updatedAt:
-          type: string
-          format: date-time
-          example: '2026-11-05T02:14:00Z'
-        finishedAt:
-          type: string
-          format: date-time
-          description: When the run reached `COMPLETED`, `PARTIALLY_FAILED`, `FAILED` or `CANCELLED`.
-          example: '2026-11-05T02:14:00Z'
-    PayoutRunRowState:
-      type: string
-      enum:
-        - PENDING
-        - PENDING_CLAIM
-        - PROCESSING
-        - COMPLETED
-        - FAILED
-        - SKIPPED
-      description: |
-        State of one row of a payout run.
-
-        | State | Description |
-        |-------|-------------|
-        | `PENDING` | Accepted, not started. |
-        | `PENDING_CLAIM` | Addressed to a contact. Held, and not paid by the run. |
-        | `PROCESSING` | Its payment has started. |
-        | `COMPLETED` | Its transaction completed. |
-        | `FAILED` | Rejected at validation, refused when paid, or its transaction failed. See `failureCode`. |
-        | `SKIPPED` | Not paid, because the run was cancelled or another row was rejected under `allOrNothing`. |
-    PayoutRunRow:
-      type: object
-      required:
-        - id
-        - payoutRunId
-        - clientRowId
-        - rowIndex
-        - state
-        - lockedCurrencySide
-        - lockedCurrencyAmount
-        - destination
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          type: string
-          description: System-generated unique row identifier
-          example: PayoutRunRow:019542f5-b3e7-1d02-0000-000000000002
-        payoutRunId:
-          type: string
-          example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
-        clientRowId:
-          type: string
-          example: contractor-0042
-        rowIndex:
-          type: integer
-          description: The row's zero-based position in the create request.
-          example: 41
-        state:
-          $ref: '#/components/schemas/PayoutRunRowState'
-        lockedCurrencySide:
-          $ref: '#/components/schemas/QuoteLockSide'
-        lockedCurrencyAmount:
-          type: integer
-          format: int64
-          example: 125000
-        destination:
-          $ref: '#/components/schemas/PayoutRunRowDestination'
-        description:
-          type: string
-          example: October invoice
-        purposeOfPayment:
-          $ref: '#/components/schemas/PurposeOfPayment'
-        quoteId:
-          type: string
-          description: The quote that pays this row, once its payment has started.
-          example: Quote:019542f5-b3e7-1d02-0000-000000000006
-        transactionId:
-          type: string
-          description: The transaction that pays this row, once its payment has started.
-          example: Transaction:019542f5-b3e7-1d02-0000-000000000005
-        failureCode:
-          type: string
-          description: Why the row failed. A Grid error code (for example `INSUFFICIENT_FUNDS` or `ACCOUNT_NOT_FOUND`) when the row was refused before any money moved, or `TRANSACTION_FAILED` when its transaction failed; the transaction carries the details.
-          example: INSUFFICIENT_FUNDS
-        failureReason:
-          type: string
-          description: A human-readable explanation of `failureCode`.
-          example: Insufficient balance on the source account.
-        createdAt:
-          type: string
-          format: date-time
-          example: '2026-11-04T22:00:00Z'
-        updatedAt:
-          type: string
-          format: date-time
-          example: '2026-11-05T02:14:00Z'
     PayoutRunCreateResponse:
       allOf:
         - $ref: '#/components/schemas/PayoutRun'
@@ -39393,25 +40024,6 @@ components:
               description: The rows Grid rejected at validation, in submission order. Empty when every row was accepted.
               items:
                 $ref: '#/components/schemas/PayoutRunRow'
-    PayoutRunRowListResponse:
-      type: object
-      required:
-        - data
-        - hasMore
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/PayoutRunRow'
-        hasMore:
-          type: boolean
-          description: Indicates if more results are available beyond this page.
-        nextCursor:
-          type: string
-          description: Cursor to retrieve the next page of results (only present if hasMore is true).
-        totalCount:
-          type: integer
-          description: Total number of rows matching the filter.
     PayoutRunExportRow:
       allOf:
         - $ref: '#/components/schemas/PayoutRunRow'
