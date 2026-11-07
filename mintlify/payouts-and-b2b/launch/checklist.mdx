@@ -59,7 +59,7 @@ Use unchecked checkboxes or an equivalent affirmative action. Pre-checked boxes 
 
 ### Record each acceptance
 
-If you're an unregulated platform moving funds on Lightspark's money transmitter licenses, send evidence of acceptance as `endUserTermsConsent` when you create the customer. For the field reference and the API behavior when consent is missing, see [Disclosures](/payouts-and-b2b/onboarding/disclosures).
+If you're an unregulated platform moving funds on Lightspark's money transmitter licenses, send evidence of acceptance as `agreementConsents` when you create the customer, with one entry per agreement the customer accepted. Call `GET /customers/agreements` for each agreement's `type` and current `version`, and send that `version` as `termsVersion`. Accepting one agreement doesn't imply accepting another, so record each one. The older `endUserTermsConsent` field is deprecated. For the field reference and the API behavior when consent is missing, see [Disclosures](/payouts-and-b2b/onboarding/disclosures).
 
 ## Transaction disclosures and records
 

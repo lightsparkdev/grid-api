@@ -3,6 +3,7 @@ enum:
   - EXECUTE_QUOTE
   - ISSUE_PURCHASE_CARD
   - CLAIMABLE_PAYOUT
+  - USE_STORED_CARD
   - CREATE_SETTLEMENT_RULE
 description: |
   The type of action the agent is requesting.
@@ -12,4 +13,5 @@ description: |
   | `EXECUTE_QUOTE` | Execute a quote |
   | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. When `purchaseCard.increaseCardId` is set, raise the amount of that existing single-use card instead of issuing one. See `purchaseCard` |
   | `CLAIMABLE_PAYOUT` | Send a claimable payout to a person by phone number or email. See `claimablePayout` |
+  | `USE_STORED_CARD` | Use one of the customer's stored cards for a purchase. See `storedCardUse` |
   | `CREATE_SETTLEMENT_RULE` | Make a settlement rule the agent proposed `ACTIVE`. See `settlementRule` |

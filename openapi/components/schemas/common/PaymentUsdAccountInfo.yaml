@@ -9,8 +9,12 @@ allOf:
       reference:
         type: string
         description: >-
-          Unique reference code that must be included with the payment to properly
-          credit it
+          Reference code for the payment. On a quote's `paymentInstructions`,
+          include it with the payment, in the memo or remittance information, so
+          Grid can match the payment to the quote. On an internal account's
+          `fundingPaymentInstructions`, the account number is unique to that
+          account and deposits are credited by account number, so the payer
+          doesn't need to include the reference.
         example: UMA-Q12345-REF
       bankAddress:
         type: string
