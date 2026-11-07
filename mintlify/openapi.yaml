@@ -11439,7 +11439,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SettlementRuleUpdateRequest'
+              $ref: '#/components/schemas/AgentSettlementRuleUpdateRequest'
       responses:
         '200':
           description: The rule, with any change that waits for approval named by `pendingChangeActionId`
@@ -11448,7 +11448,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SettlementRule'
         '400':
-          description: Bad request - The body is invalid, it sets `priority`, a selector does not name the customer's Embedded Wallet, or a share's external account is not active
+          description: Bad request - The body is invalid, a selector does not name the customer's Embedded Wallet, or a share's external account is not active
           content:
             application/json:
               schema:
@@ -36630,7 +36630,7 @@ components:
           example: 86400
         limits:
           $ref: '#/components/schemas/SettlementRuleLimits'
-    SettlementRuleUpdateRequest:
+    AgentSettlementRuleUpdateRequest:
       type: object
       description: The fields to change. A field left out is unchanged.
       properties:
@@ -36642,12 +36642,6 @@ components:
         status:
           $ref: '#/components/schemas/SettlementRuleStatus'
           description: '`ACTIVE` or `PAUSED`.'
-        priority:
-          type: integer
-          format: int32
-          minimum: 0
-          maximum: 2147483647
-          example: 2
         match:
           type: array
           minItems: 1
@@ -39542,6 +39536,51 @@ components:
           example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
         draft:
           $ref: '#/components/schemas/SettlementRuleDraft'
+    SettlementRuleUpdateRequest:
+      type: object
+      description: The fields to change. A field left out is unchanged.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Glossier deal
+        status:
+          $ref: '#/components/schemas/SettlementRuleStatus'
+          description: '`ACTIVE` or `PAUSED`.'
+        priority:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 2147483647
+          example: 2
+        match:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/SettlementRuleSelector'
+        splits:
+          type: array
+          minItems: 1
+          description: Every share, replacing the current ones. At most 20.
+          items:
+            $ref: '#/components/schemas/SettlementRuleSplitInput'
+        holdSeconds:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          example: 0
+        achHoldSeconds:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          example: 0
+        limits:
+          anyOf:
+            - $ref: '#/components/schemas/SettlementRuleLimits'
+            - type: 'null'
+          description: Both limits, replacing the current ones. A limit left out is removed; `null` removes both.
     WebhookType:
       type: string
       enum:

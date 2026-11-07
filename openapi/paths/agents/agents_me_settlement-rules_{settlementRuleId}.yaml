@@ -67,7 +67,7 @@ patch:
     content:
       application/json:
         schema:
-          $ref: ../../components/schemas/settlement_rules/SettlementRuleUpdateRequest.yaml
+          $ref: ../../components/schemas/agents/AgentSettlementRuleUpdateRequest.yaml
   responses:
     '200':
       description: The rule, with any change that waits for approval named by `pendingChangeActionId`
@@ -76,7 +76,7 @@ patch:
           schema:
             $ref: ../../components/schemas/settlement_rules/SettlementRule.yaml
     '400':
-      description: Bad request - The body is invalid, it sets `priority`, a selector does not name the customer's Embedded Wallet, or a share's external account is not active
+      description: Bad request - The body is invalid, a selector does not name the customer's Embedded Wallet, or a share's external account is not active
       content:
         application/json:
           schema:
