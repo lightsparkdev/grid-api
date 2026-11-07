@@ -1,0 +1,9 @@
+type: string
+enum:
+  - ACTIVE
+  - REMOVED
+description: |
+  | Status | Description |
+  |--------|-------------|
+  | `ACTIVE` | The card can be used by the agents it is shared with |
+  | `REMOVED` | The customer removed the card. Grid erased its encrypted number, holder name and billing address; only the display fields remain |

@@ -1,0 +1,35 @@
+get:
+  summary: List the stored cards the agent may use
+  description: >-
+    The customer's `ACTIVE` stored cards the customer allowed this agent to
+    use, with display fields only. Requires the USE_STORED_CARDS permission.
+  operationId: agentListStoredCards
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stored_cards/AgentStoredCardListResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or stored cards are not enabled for the platform, the agent is paused, or the agent does not have the USE_STORED_CARDS permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

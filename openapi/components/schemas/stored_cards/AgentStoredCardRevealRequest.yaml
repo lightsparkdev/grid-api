@@ -1,0 +1,51 @@
+type: object
+description: >-
+  Either the purchase the agent wants the card for (`merchant`, `amount`,
+  `currency`, `purpose` and optionally `needsCvc`), or `actionId` alone, to
+  collect the link for a use the customer has since approved.
+properties:
+  actionId:
+    type: string
+    maxLength: 64
+    description: >-
+      An `APPROVED` `USE_STORED_CARD` action of this agent for this card whose
+      link has not been issued yet. Sent alone.
+    example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+  merchant:
+    type: string
+    minLength: 1
+    maxLength: 255
+    description: >-
+      Where the card will be used: the merchant's website host (for example
+      `example-store.com`) or name. Shown to the customer and used to match
+      merchants they chose to auto-approve. Supplied by the agent and not
+      verified by Grid.
+    example: example-store.com
+  amount:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      The amount the agent expects to be charged, in the smallest unit of
+      `currency`. Shown to the customer. Grid cannot enforce it: the charge is
+      made by the merchant on the customer's own card.
+    example: 4999
+  currency:
+    type: string
+    minLength: 3
+    maxLength: 3
+    description: ISO 4217 code of `amount`.
+    example: USD
+  purpose:
+    type: string
+    minLength: 1
+    maxLength: 255
+    description: What the purchase is, shown to the customer.
+    example: Running shoes, size 10
+  needsCvc:
+    type: boolean
+    description: >-
+      Whether the checkout asks for the card's security code. Grid never
+      stores it, so the customer enters it when approving: a use with
+      `needsCvc` always waits for approval.
+    example: true
