@@ -18609,7 +18609,7 @@ webhooks:
         Fired once when a settlement rule's execution on an incoming payment finishes, with the execution:
 
         - `SETTLEMENT_RULE.EXECUTED`: its payout run finished `COMPLETED` or `PARTIALLY_FAILED`. `payoutRunId` names the run, whose own `PAYOUT_RUN.*` webhook carries the row counts.
-        - `SETTLEMENT_RULE.FAILED`: its payout run finished `FAILED`. The customer keeps the payment.
+        - `SETTLEMENT_RULE.FAILED`: its payout run finished `FAILED`, or was cancelled with `POST /payout-runs/{payoutRunId}/cancel`. The customer keeps what the run did not pay. A cancelled run still pays the shares whose payments had started; its rows say which.
         - `SETTLEMENT_RULE.SKIPPED`: nothing was paid; `skipReason` says why.
 
         Each share's transaction sends its own `OUTGOING_PAYMENT.*` webhooks.
@@ -38874,7 +38874,7 @@ components:
         | `HELD` | Waiting out the rule's hold until `firesAt`. It can be cancelled. |
         | `EXECUTING` | Its payout run is paying the shares. |
         | `EXECUTED` | Its payout run finished `COMPLETED` or `PARTIALLY_FAILED`. |
-        | `FAILED` | Its payout run finished `FAILED`. The customer keeps the payment. |
+        | `FAILED` | Its payout run finished `FAILED`, or was cancelled. The customer keeps what the run did not pay. |
         | `SKIPPED` | Nothing was paid. See `skipReason`. |
     SettlementRuleExecution:
       type: object
