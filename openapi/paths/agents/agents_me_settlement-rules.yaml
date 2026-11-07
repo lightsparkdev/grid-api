@@ -1,0 +1,138 @@
+post:
+  summary: Create a settlement rule
+  description: |
+    Propose a standing split of the customer's incoming payments into its stablecoin Embedded Wallet, paid from that wallet, as `POST /settlement-rules` creates one for the platform. Preview it first with `POST /agents/me/settlement-rules/preview`.
+
+    **The wallet:** every selector in `match` sets `creditedAccountId` to the customer's stablecoin Embedded Wallet that holds this agent's key, so the rule fires only on money landing in a wallet the agent can spend. `currency` is the wallet's.
+
+    **Destinations:** a share pays a person by phone number or email (`CONTACT`), one of the customer's own external accounts (`EXTERNAL_ACCOUNT`), or an Embedded Wallet on the platform (`GRID_CUSTOMER`). Any other destination is refused with `DESTINATION_NOT_ALLOWED`.
+
+    **Approval:** the rule is created `ACTIVE` when `limits.maxAmountPerExecution` is set and within the policy's per-transaction limit for the wallet, `limits.maxAmountPerDay` is set and within its daily limit, no `EXTERNAL_ACCOUNT` share can exceed the platform's limit for bank payouts without approval, and the policy sends from the wallet without approval at `maxAmountPerExecution`. Otherwise it is created `PENDING_APPROVAL` with a `CREATE_SETTLEMENT_RULE` agent action, named by `agentActionId`, and the `AGENT_ACTION.PENDING_APPROVAL` webhook fires. A pending rule holds its priority and fires on nothing. Approving the action makes the rule `ACTIVE`; rejecting it, or letting it expire after seven days, deletes it.
+
+    **Priority:** an omitted `priority` goes after the customer's last rule that is not `DELETED`, the platform's rules included.
+
+    Requires the MANAGE_SETTLEMENT_RULES permission.
+  operationId: agentCreateSettlementRule
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: true
+      description: A unique identifier for the rule, scoped to the agent. A retry with the same key and body returns the rule the first request created; the same key with a different body is rejected.
+      schema:
+        type: string
+        maxLength: 255
+        example: <uuid>
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentSettlementRuleCreateRequest.yaml
+  responses:
+    '200':
+      description: The rule this Idempotency-Key already created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRule.yaml
+    '201':
+      description: Settlement rule created, `ACTIVE` or `PENDING_APPROVAL`
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRule.yaml
+    '400':
+      description: Bad request - The body is invalid, a selector does not name the customer's Embedded Wallet, `currency` is not the wallet's, or the Idempotency-Key was used for a different rule
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform, the agent lacks MANAGE_SETTLEMENT_RULES or has no key for the wallet, or a share pays a destination an agent may not pay (`DESTINATION_NOT_ALLOWED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '409':
+      description: Conflict - Another of the customer's rules has this priority, or the customer already has 50 rules
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List settlement rules
+  description: The settlement rules the authenticated agent created, oldest first, with their shares. Requires the MANAGE_SETTLEMENT_RULES or VIEW_TRANSACTIONS permission.
+  operationId: agentListSettlementRules
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: status
+      in: query
+      description: Only rules in this status
+      required: false
+      schema:
+        $ref: ../../components/schemas/settlement_rules/SettlementRuleStatus.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 100, max 200)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 100
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRuleListResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform, or the agent lacks both permissions
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

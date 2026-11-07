@@ -11179,6 +11179,486 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /agents/me/settlement-rules/preview:
+    post:
+      summary: Preview a settlement rule
+      description: |
+        What a rule the agent drafts would pay on a payment of `amount`, and which of the customer's recent payments it would have fired on, as `POST /settlement-rules/preview` answers for a draft. Nothing is created or paid. The body is the draft's fields and `amount`, with no `customerId`: the rule is for the agent's customer.
+
+        The draft is checked as `POST /agents/me/settlement-rules` checks a rule, so a draft the agent could not create is refused here first: every selector's `creditedAccountId` is the customer's stablecoin Embedded Wallet that holds this agent's key, `currency` is the wallet's, and every share pays a destination an agent may pay, or the preview is refused with `DESTINATION_NOT_ALLOWED`.
+
+        Requires the MANAGE_SETTLEMENT_RULES permission.
+      operationId: agentPreviewSettlementRule
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentSettlementRulePreviewRequest'
+      responses:
+        '200':
+          description: The preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRulePreview'
+        '400':
+          description: Bad request - The body is invalid, a selector does not name the customer's Embedded Wallet, or `currency` is not the wallet's
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform, the agent lacks MANAGE_SETTLEMENT_RULES or has no key for the wallet, or a share pays a destination an agent may not pay (`DESTINATION_NOT_ALLOWED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/settlement-rules:
+    post:
+      summary: Create a settlement rule
+      description: |
+        Propose a standing split of the customer's incoming payments into its stablecoin Embedded Wallet, paid from that wallet, as `POST /settlement-rules` creates one for the platform. Preview it first with `POST /agents/me/settlement-rules/preview`.
+
+        **The wallet:** every selector in `match` sets `creditedAccountId` to the customer's stablecoin Embedded Wallet that holds this agent's key, so the rule fires only on money landing in a wallet the agent can spend. `currency` is the wallet's.
+
+        **Destinations:** a share pays a person by phone number or email (`CONTACT`), one of the customer's own external accounts (`EXTERNAL_ACCOUNT`), or an Embedded Wallet on the platform (`GRID_CUSTOMER`). Any other destination is refused with `DESTINATION_NOT_ALLOWED`.
+
+        **Approval:** the rule is created `ACTIVE` when `limits.maxAmountPerExecution` is set and within the policy's per-transaction limit for the wallet, `limits.maxAmountPerDay` is set and within its daily limit, no `EXTERNAL_ACCOUNT` share can exceed the platform's limit for bank payouts without approval, and the policy sends from the wallet without approval at `maxAmountPerExecution`. Otherwise it is created `PENDING_APPROVAL` with a `CREATE_SETTLEMENT_RULE` agent action, named by `agentActionId`, and the `AGENT_ACTION.PENDING_APPROVAL` webhook fires. A pending rule holds its priority and fires on nothing. Approving the action makes the rule `ACTIVE`; rejecting it, or letting it expire after seven days, deletes it.
+
+        **Priority:** an omitted `priority` goes after the customer's last rule that is not `DELETED`, the platform's rules included.
+
+        Requires the MANAGE_SETTLEMENT_RULES permission.
+      operationId: agentCreateSettlementRule
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: A unique identifier for the rule, scoped to the agent. A retry with the same key and body returns the rule the first request created; the same key with a different body is rejected.
+          schema:
+            type: string
+            maxLength: 255
+            example: <uuid>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentSettlementRuleCreateRequest'
+      responses:
+        '200':
+          description: The rule this Idempotency-Key already created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRule'
+        '201':
+          description: Settlement rule created, `ACTIVE` or `PENDING_APPROVAL`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRule'
+        '400':
+          description: Bad request - The body is invalid, a selector does not name the customer's Embedded Wallet, `currency` is not the wallet's, or the Idempotency-Key was used for a different rule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform, the agent lacks MANAGE_SETTLEMENT_RULES or has no key for the wallet, or a share pays a destination an agent may not pay (`DESTINATION_NOT_ALLOWED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '409':
+          description: Conflict - Another of the customer's rules has this priority, or the customer already has 50 rules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List settlement rules
+      description: The settlement rules the authenticated agent created, oldest first, with their shares. Requires the MANAGE_SETTLEMENT_RULES or VIEW_TRANSACTIONS permission.
+      operationId: agentListSettlementRules
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Only rules in this status
+          required: false
+          schema:
+            $ref: '#/components/schemas/SettlementRuleStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 100, max 200)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 100
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRuleListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform, or the agent lacks both permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/settlement-rules/{settlementRuleId}:
+    parameters:
+      - name: settlementRuleId
+        in: path
+        required: true
+        description: System-generated unique settlement rule identifier
+        schema:
+          type: string
+        example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+    get:
+      summary: Get a settlement rule
+      description: Retrieve a settlement rule the authenticated agent created. A rule another agent or the platform created is not found. Requires the MANAGE_SETTLEMENT_RULES or VIEW_TRANSACTIONS permission.
+      operationId: agentGetSettlementRule
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRule'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform, or the agent lacks both permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - The agent created no settlement rule with this id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update a settlement rule
+      description: |
+        Change a rule the authenticated agent created. Send only the fields to change.
+
+        **At once:** `name`, `status` (`ACTIVE` or `PAUSED`), `holdSeconds` and `achHoldSeconds` apply when the request is made.
+
+        **Changes that can move more money:** `match`, `splits` and `limits` are checked as on create, on the rule as they would make it. When that rule is within the agent's policy, as `POST /agents/me/settlement-rules` decides, the change applies at once. Otherwise it waits for the customer's approval as an `UPDATE_SETTLEMENT_RULE` agent action, named by `pendingChangeActionId`, and the `AGENT_ACTION.PENDING_APPROVAL` webhook fires. Until the action is decided the rule keeps its current `match`, `splits` and `limits`. The fields that apply at once still do, so a request that also sets `status` to `PAUSED` pauses the rule straight away. Approving the action checks the change again and applies it; rejecting it, or letting it expire after seven days, drops it. A rule has at most one change waiting.
+
+        `splits` replaces every share and `limits` replaces both limits, as on `PATCH /settlement-rules/{settlementRuleId}`. An agent cannot change `priority`.
+
+        Requires the MANAGE_SETTLEMENT_RULES permission.
+      operationId: agentUpdateSettlementRule
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentSettlementRuleUpdateRequest'
+      responses:
+        '200':
+          description: The rule, with any change that waits for approval named by `pendingChangeActionId`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRule'
+        '400':
+          description: Bad request - The body is invalid, a selector does not name the customer's Embedded Wallet, or a share's external account is not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform, the agent lacks MANAGE_SETTLEMENT_RULES or has no key for the wallet, or a share pays a destination an agent may not pay (`DESTINATION_NOT_ALLOWED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - The agent created no settlement rule with this id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The rule is deleted or awaiting approval, or a change to it already waits for approval
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Delete a settlement rule
+      description: |
+        The rule becomes `DELETED` and fires on no further payment. Its executions still held are skipped with `CANCELLED`. A rule still `PENDING_APPROVAL` is withdrawn, and a change waiting for approval is dropped: the waiting action fails with `DELETED_BY_AGENT`. Deleting a deleted rule returns it unchanged.
+
+        Requires the MANAGE_SETTLEMENT_RULES permission.
+      operationId: agentDeleteSettlementRule
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: The deleted rule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRule'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform, or the agent lacks MANAGE_SETTLEMENT_RULES
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - The agent created no settlement rule with this id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/settlement-rules/{settlementRuleId}/executions:
+    parameters:
+      - name: settlementRuleId
+        in: path
+        required: true
+        description: System-generated unique settlement rule identifier
+        schema:
+          type: string
+        example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+    get:
+      summary: List the executions of a settlement rule
+      description: The payments a rule the authenticated agent created fired on, newest first. Requires the MANAGE_SETTLEMENT_RULES or VIEW_TRANSACTIONS permission.
+      operationId: agentListSettlementRuleExecutions
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 100, max 200)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 100
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRuleExecutionListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform, or the agent lacks both permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - The agent created no settlement rule with this id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/settlement-rules/{settlementRuleId}/executions/{executionId}/cancel:
+    parameters:
+      - name: settlementRuleId
+        in: path
+        required: true
+        description: System-generated unique settlement rule identifier
+        schema:
+          type: string
+        example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+      - name: executionId
+        in: path
+        required: true
+        description: System-generated unique settlement rule execution identifier
+        schema:
+          type: string
+        example: SettlementRuleExecution:019542f5-b3e7-1d02-0000-000000000003
+    post:
+      summary: Cancel a held execution
+      description: |
+        Stop a `HELD` execution of a rule the authenticated agent created before it fires. It becomes `SKIPPED` with `CANCELLED`, nothing is paid, and the customer keeps the payment.
+
+        Requires the MANAGE_SETTLEMENT_RULES permission.
+      operationId: agentCancelSettlementRuleExecution
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: The cancelled execution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRuleExecution'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform, or the agent lacks MANAGE_SETTLEMENT_RULES
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - The agent created no settlement rule with this id, or no execution with this id under it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The execution is not held
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /claimable-payouts/{claimablePayoutId}/claim-token:
     parameters:
       - name: claimablePayoutId
@@ -18609,7 +19089,7 @@ webhooks:
         Fired once when a settlement rule's execution on an incoming payment finishes, with the execution:
 
         - `SETTLEMENT_RULE.EXECUTED`: its payout run finished `COMPLETED` or `PARTIALLY_FAILED`. `payoutRunId` names the run, whose own `PAYOUT_RUN.*` webhook carries the row counts.
-        - `SETTLEMENT_RULE.FAILED`: its payout run finished `FAILED`. The customer keeps the payment.
+        - `SETTLEMENT_RULE.FAILED`: its payout run finished `FAILED`, or was cancelled with `POST /payout-runs/{payoutRunId}/cancel`. The customer keeps what the run did not pay. A cancelled run still pays the shares whose payments had started; its rows say which.
         - `SETTLEMENT_RULE.SKIPPED`: nothing was paid; `skipReason` says why.
 
         Each share's transaction sends its own `OUTGOING_PAYMENT.*` webhooks.
@@ -33852,7 +34332,8 @@ components:
         - MANAGE_CARDS
         - ISSUE_CARDS
         - USE_STORED_CARDS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one standard virtual card for itself while it holds no live standard card, and single-use and recurring purchase cards where the platform enables them. USE_STORED_CARDS: Can list the customer''s stored cards it is allowed to use and ask for a single-use link to one''s details. Never granted by default.'
+        - MANAGE_SETTLEMENT_RULES
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts. RECEIVE_FUNDS: Can create deposit targets for receiving funds. MANAGE_IDENTITY: Can read and update customer identity information and start verification. MANAGE_CARDS: Can read, tighten, and freeze its cards. ISSUE_CARDS: Can issue one standard virtual card for itself while it holds no live standard card, and single-use and recurring purchase cards where the platform enables them. USE_STORED_CARDS: Can list the customer''s stored cards it is allowed to use and ask for a single-use link to one''s details. Never granted by default. MANAGE_SETTLEMENT_RULES: Can propose settlement rules that split the customer''s incoming payments into its Embedded Wallet, read and delete the rules it created, and cancel their held executions.'
     AgentExecutionMode:
       type: string
       enum:
@@ -34151,6 +34632,8 @@ components:
         - ISSUE_PURCHASE_CARD
         - CLAIMABLE_PAYOUT
         - USE_STORED_CARD
+        - CREATE_SETTLEMENT_RULE
+        - UPDATE_SETTLEMENT_RULE
       description: |
         The type of action the agent is requesting.
 
@@ -34160,6 +34643,8 @@ components:
         | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. When `purchaseCard.increaseCardId` is set, raise the amount of that existing single-use card instead of issuing one. See `purchaseCard` |
         | `CLAIMABLE_PAYOUT` | Send a claimable payout to a person by phone number or email. See `claimablePayout` |
         | `USE_STORED_CARD` | Use one of the customer's stored cards for a purchase. See `storedCardUse` |
+        | `CREATE_SETTLEMENT_RULE` | Make a settlement rule the agent proposed `ACTIVE`. See `settlementRule` |
+        | `UPDATE_SETTLEMENT_RULE` | Change the match, shares or limits of a settlement rule the agent created. See `settlementRule` |
     AgentSendNetwork:
       type: string
       enum:
@@ -34546,6 +35031,284 @@ components:
           format: date-time
           description: When the agent opened the link. Absent until then.
           example: '2026-11-06T15:00:41Z'
+    SettlementRuleStatus:
+      type: string
+      enum:
+        - PENDING_APPROVAL
+        - ACTIVE
+        - PAUSED
+        - DELETED
+      description: |
+        Status of a settlement rule.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING_APPROVAL` | Proposed by an agent beyond its policy, waiting for the customer's approval. It fires on nothing. |
+        | `ACTIVE` | Fires on the payments it matches. |
+        | `PAUSED` | Fires on nothing. A payment it would have matched is tried against the customer's next rule. |
+        | `DELETED` | Deleted. It fires on nothing and cannot be changed. |
+    SettlementRuleCounterpartyNameMatch:
+      type: object
+      description: |
+        A pattern for the sender name Grid records on a bank deposit (the
+        `accountHolderName` of the deposit's bank account). Set exactly one of
+        `prefix` and `contains`. The comparison trims both names and ignores
+        case, as the transaction list groups senders. A bank often truncates
+        the name. A payment with no recorded sender name never matches.
+      properties:
+        prefix:
+          type: string
+          minLength: 1
+          maxLength: 140
+          description: The sender name starts with this.
+          example: GLOSSIER
+        contains:
+          type: string
+          minLength: 1
+          maxLength: 140
+          description: The sender name contains this.
+          example: glossier inc
+    SettlementRuleSelector:
+      type: object
+      description: Conditions a payment must all meet. A selector with no conditions matches every payment in the rule's currency.
+      properties:
+        creditedAccountId:
+          type: string
+          description: The customer's internal account the payment credited.
+          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        ruleBasedAccountId:
+          type: string
+          description: The rule-based account the payment arrived through.
+          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d001
+        counterpartyName:
+          $ref: '#/components/schemas/SettlementRuleCounterpartyNameMatch'
+        receivedAtWalletAddress:
+          type: string
+          description: The deposit address the payment was sent to.
+          example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+        rail:
+          $ref: '#/components/schemas/PaymentRail'
+    SettlementRuleShareType:
+      type: string
+      enum:
+        - PERCENT
+        - FIXED
+        - REMAINDER
+      description: |
+        How a share is sized.
+
+        | Type | Share |
+        |------|-------|
+        | `PERCENT` | `basisPoints` of the payment, rounded down to the smallest unit. |
+        | `FIXED` | `amount`, in the smallest unit of the rule's currency. |
+        | `REMAINDER` | What every other share leaves, in any row. At most one. |
+    SettlementRuleShare:
+      type: object
+      description: How much of a payment a row pays. Set `basisPoints` for a `PERCENT` share, `amount` for a `FIXED` share, and neither for a `REMAINDER` share.
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/SettlementRuleShareType'
+        basisPoints:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          description: The share in basis points of the payment. Set for `PERCENT` shares only.
+          example: 4000
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9000000000000000
+          description: The share in the smallest unit of the rule's currency. Set for `FIXED` shares only.
+          example: 50000
+    PayoutRunExternalAccountDestination:
+      title: External Account
+      type: object
+      required:
+        - destinationType
+        - externalAccountId
+      properties:
+        destinationType:
+          type: string
+          enum:
+            - EXTERNAL_ACCOUNT
+        externalAccountId:
+          type: string
+          description: An `ACTIVE` external account of the platform or of one of its customers.
+          example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+    PayoutRunContactDestination:
+      title: Contact
+      type: object
+      description: A person addressed by phone number or email, with the same fields as a claimable payout's recipient. Exactly one of `phoneNumber` and `email` is set.
+      required:
+        - destinationType
+        - name
+      properties:
+        destinationType:
+          type: string
+          enum:
+            - CONTACT
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: What the platform calls the recipient.
+          example: Maria
+        phoneNumber:
+          type: string
+          description: The recipient's mobile number in E.164 format.
+          example: '+639171234567'
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: The recipient's email address.
+          example: maria@example.com
+        country:
+          type: string
+          pattern: ^[A-Z]{2}$
+          description: ISO 3166-1 alpha-2 country the recipient is paid in. Defaults to the country of `phoneNumber`'s dialing code; required with `email`.
+          example: PH
+    PayoutRunGridCustomerDestination:
+      title: Grid Customer
+      type: object
+      description: An internal account on the platform, typically another customer's. The row is paid as a transfer between internal accounts and is held to the same rules as a quote between them.
+      required:
+        - destinationType
+        - accountId
+      properties:
+        destinationType:
+          type: string
+          enum:
+            - GRID_CUSTOMER
+        accountId:
+          type: string
+          description: An internal account of the platform or of one of its customers.
+          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+    SettlementRuleDestination:
+      oneOf:
+        - $ref: '#/components/schemas/PayoutRunExternalAccountDestination'
+        - $ref: '#/components/schemas/PayoutRunContactDestination'
+        - $ref: '#/components/schemas/PayoutRunGridCustomerDestination'
+      discriminator:
+        propertyName: destinationType
+        mapping:
+          EXTERNAL_ACCOUNT: '#/components/schemas/PayoutRunExternalAccountDestination'
+          CONTACT: '#/components/schemas/PayoutRunContactDestination'
+          GRID_CUSTOMER: '#/components/schemas/PayoutRunGridCustomerDestination'
+    SettlementRuleSplitInput:
+      type: object
+      required:
+        - share
+        - destination
+      properties:
+        share:
+          $ref: '#/components/schemas/SettlementRuleShare'
+        destination:
+          $ref: '#/components/schemas/SettlementRuleDestination'
+    SettlementRuleSplit:
+      allOf:
+        - $ref: '#/components/schemas/SettlementRuleSplitInput'
+        - type: object
+          required:
+            - position
+          properties:
+            position:
+              type: integer
+              description: The share's zero-based position in the rule. Shares are paid in this order.
+              example: 0
+    SettlementRuleLimits:
+      type: object
+      description: Caps on what the rule pays, in the smallest unit of its currency. An execution that would go over a cap is skipped with `LIMIT_EXCEEDED`, and the customer keeps the payment.
+      properties:
+        maxAmountPerExecution:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9000000000000000
+          description: The most the shares of one payment may add up to.
+          example: 1000000
+        maxAmountPerDay:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9000000000000000
+          description: The most the rule may pay out for the payments that completed in one UTC day.
+          example: 5000000
+    SettlementRule:
+      type: object
+      required:
+        - id
+        - customerId
+        - name
+        - status
+        - priority
+        - currency
+        - match
+        - splits
+        - holdSeconds
+        - achHoldSeconds
+        - limits
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique settlement rule identifier
+          example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+        customerId:
+          type: string
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        name:
+          type: string
+          example: Glossier deal
+        status:
+          $ref: '#/components/schemas/SettlementRuleStatus'
+        priority:
+          type: integer
+          format: int32
+          example: 1
+        currency:
+          type: string
+          example: USD
+        match:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettlementRuleSelector'
+        splits:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettlementRuleSplit'
+        holdSeconds:
+          type: integer
+          example: 0
+        achHoldSeconds:
+          type: integer
+          example: 86400
+        limits:
+          $ref: '#/components/schemas/SettlementRuleLimits'
+        agentId:
+          type: string
+          description: The agent that created the rule through the agent API. Absent for a rule created with an API token.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        agentActionId:
+          type: string
+          description: The `CREATE_SETTLEMENT_RULE` agent action awaiting the customer's approval of the rule. Present while the rule is `PENDING_APPROVAL`.
+          example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+        pendingChangeActionId:
+          type: string
+          description: The `UPDATE_SETTLEMENT_RULE` agent action holding a change to the rule's match, shares or limits until the customer approves it. Present while the change waits; the rule keeps its current terms until then.
+          example: AgentAction:019542f5-b3e7-1d02-0000-000000000098
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T18:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T18:00:00Z'
     AgentActionFailureReason:
       type: string
       enum:
@@ -34556,6 +35319,7 @@ components:
         - PRICE_MOVED
         - ADDRESS_REFUSED
         - APPROVAL_EXPIRED
+        - DELETED_BY_AGENT
       description: |
         Why an agent action has status `FAILED`.
 
@@ -34567,7 +35331,8 @@ components:
         | `EXECUTION_FAILED` | Grid could not execute the approved action. For `ISSUE_PURCHASE_CARD`, the card issuer did not issue the card |
         | `PRICE_MOVED` | Reserved and legacy. Quotes to a `CHAIN_ADDRESS` pay out at a locked rate and no longer fail with this reason |
         | `ADDRESS_REFUSED` | Grid refused the send's destination before it signed the send: the destination is no longer one the agent may send to (for example, a Spark address removed from the customer's saved addresses), or one of the customer's records of the address was refused or is held for review. A `CHAIN_ADDRESS` that screening refuses fails with `EXECUTION_FAILED` |
-        | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD` action, or an `EXECUTE_QUOTE` action with `priceTolerance`, was not approved before its `expiresAt` |
+        | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD`, `CREATE_SETTLEMENT_RULE` or `UPDATE_SETTLEMENT_RULE` action, or an `EXECUTE_QUOTE` action with `priceTolerance`, was not approved before its `expiresAt` |
+        | `DELETED_BY_AGENT` | The agent deleted the settlement rule a `CREATE_SETTLEMENT_RULE` or `UPDATE_SETTLEMENT_RULE` action would make or change before the action was decided |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -34622,6 +35387,9 @@ components:
         storedCardUse:
           $ref: '#/components/schemas/AgentStoredCardUse'
           description: The stored card the agent asked to use, where, and for how much, so an approval decision can show them. Present for `USE_STORED_CARD`. Approving the action lets the agent collect a single-use link with `POST /agents/me/stored-cards/{storedCardId}/reveal` and `actionId`.
+        settlementRule:
+          $ref: '#/components/schemas/SettlementRule'
+          description: The settlement rule the agent proposed, so an approval decision can show what it matches, who it pays and its limits. Present for `CREATE_SETTLEMENT_RULE` and `UPDATE_SETTLEMENT_RULE`. For `CREATE_SETTLEMENT_RULE`, approving the action makes the rule `ACTIVE`; rejecting it, or letting it expire, deletes it. For `UPDATE_SETTLEMENT_RULE`, it is the rule as the change would make it, with the rule's `id`; approving the action applies the change, and rejecting it, or letting it expire, drops it while the rule keeps its terms. Approving a rule does not approve its payments in advance. Each share is still checked against the agent's policy when it is sent.
         cardId:
           type: string
           description: The purchase card the action issued, or for an increase the card whose amount it raised. Present for an `ISSUE_PURCHASE_CARD` action once it is `APPROVED` and the card is issued or increased; read it with `GET /agents/me/cards/{cardId}`.
@@ -34640,7 +35408,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: 'When the action expires. For an `EXECUTE_QUOTE` action with `priceTolerance`, this is the end of the platform''s approval window, independent of the quote''s own expiry: approval executes a live quote and quotes the send again once it has expired, and a pending action that reaches this time fails with `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the quote''s own expiry; a pending action that reaches it fails with `QUOTE_EXPIRED`, and approval never creates a replacement quote. For `ISSUE_PURCHASE_CARD` and `USE_STORED_CARD`, this is the end of the approval window, after which a pending action fails with `APPROVAL_EXPIRED`.'
+          description: 'When the action expires. For an `EXECUTE_QUOTE` action with `priceTolerance`, this is the end of the platform''s approval window, independent of the quote''s own expiry: approval executes a live quote and quotes the send again once it has expired, and a pending action that reaches this time fails with `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the quote''s own expiry; a pending action that reaches it fails with `QUOTE_EXPIRED`, and approval never creates a replacement quote. For `ISSUE_PURCHASE_CARD`, `USE_STORED_CARD`, `CREATE_SETTLEMENT_RULE` and `UPDATE_SETTLEMENT_RULE`, this is the end of the approval window, after which a pending action fails with `APPROVAL_EXPIRED`; a settlement rule''s window is seven days.'
           example: '2025-10-03T15:05:00Z'
         createdAt:
           type: string
@@ -35643,6 +36411,374 @@ components:
           maxLength: 140
           description: A note for the recipient, shown once she has proved she holds the link.
           example: Happy birthday, Mom
+    SettlementRuleDraft:
+      type: object
+      description: A rule as it would be created. Only the fields that decide what it pays and what it matches are needed; a `priority` is not.
+      required:
+        - currency
+        - match
+        - splits
+      properties:
+        currency:
+          type: string
+          description: ISO 4217 code of the payments the rule splits.
+          example: USD
+        match:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/SettlementRuleSelector'
+        splits:
+          type: array
+          minItems: 1
+          description: The shares, in the order they are paid. At most 20.
+          items:
+            $ref: '#/components/schemas/SettlementRuleSplitInput'
+    AgentSettlementRulePreviewRequest:
+      description: A draft rule and a payment to split by it. The draft's fields sit at the top level, beside `amount`.
+      allOf:
+        - $ref: '#/components/schemas/SettlementRuleDraft'
+        - type: object
+          required:
+            - amount
+          properties:
+            currency:
+              type: string
+              description: Code of the payments the rule splits, which is the currency of the Embedded Wallet its selectors name.
+              example: USDB
+            amount:
+              type: integer
+              format: int64
+              minimum: 1
+              maximum: 9000000000000000
+              description: A payment to split, in the smallest unit of the draft's currency.
+              example: 1000000
+    SettlementRulePreviewSplit:
+      type: object
+      required:
+        - position
+        - share
+        - destination
+        - amount
+      properties:
+        position:
+          type: integer
+          description: The row's zero-based position in the rule.
+          example: 0
+        share:
+          $ref: '#/components/schemas/SettlementRuleShare'
+        destination:
+          $ref: '#/components/schemas/SettlementRuleDestination'
+        amount:
+          type: integer
+          format: int64
+          description: What the row would send, in the smallest unit of the rule's currency, before the fees of its quote. 0 when it would send nothing.
+          example: 400000
+    SettlementRuleSkipReason:
+      type: string
+      enum:
+        - RULE_PAUSED
+        - INCOMING_PAYMENT_RETURNED
+        - AMOUNT_BELOW_RULE
+        - LIMIT_EXCEEDED
+        - CANCELLED
+        - CREATOR_REVOKED
+        - AGENT_PAUSED
+      description: |
+        Why an execution paid nothing.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `RULE_PAUSED` | The rule was paused before the execution fired. |
+        | `INCOMING_PAYMENT_RETURNED` | The payment was returned before the execution fired. |
+        | `AMOUNT_BELOW_RULE` | The payment was smaller than the fixed and percentage shares together. |
+        | `LIMIT_EXCEEDED` | Paying it would have gone over one of the rule's `limits`. |
+        | `CANCELLED` | The execution was cancelled, or the rule deleted, while it was held. |
+        | `CREATOR_REVOKED` | The API token or agent that created the rule can no longer send payments. The rule is paused. |
+        | `AGENT_PAUSED` | The agent that created the rule is paused. The rule stays active, and pays the next payment once the agent is resumed. |
+    SettlementRuleRecentMatch:
+      type: object
+      required:
+        - transactionId
+        - amount
+        - currency
+        - completedAt
+      properties:
+        transactionId:
+          type: string
+          description: The incoming transaction.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000004
+        amount:
+          type: integer
+          format: int64
+          description: The payment, in the smallest unit of `currency`.
+          example: 1000000
+        currency:
+          type: string
+          example: USD
+        counterpartyName:
+          type: string
+          description: The sender name Grid recorded, which `counterpartyName` patterns compare against. Absent when Grid recorded none.
+          example: GLOSSIER INC
+        completedAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T18:00:00Z'
+    SettlementRulePreview:
+      type: object
+      required:
+        - currency
+        - amount
+        - splits
+        - ownerKeeps
+        - recentMatches
+      properties:
+        currency:
+          type: string
+          example: USD
+        amount:
+          type: integer
+          format: int64
+          description: The payment previewed.
+          example: 1000000
+        splits:
+          type: array
+          description: Every row of the rule, in row order.
+          items:
+            $ref: '#/components/schemas/SettlementRulePreviewSplit'
+        ownerKeeps:
+          type: integer
+          format: int64
+          description: What stays with the customer.
+          example: 450000
+        skipReason:
+          $ref: '#/components/schemas/SettlementRuleSkipReason'
+        recentMatches:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettlementRuleRecentMatch'
+    SettlementRuleListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettlementRule'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+        totalCount:
+          type: integer
+          description: Total number of rules matching the filter.
+    AgentSettlementRuleCreateRequest:
+      type: object
+      description: A settlement rule as an agent proposes it, for the agent's customer.
+      required:
+        - name
+        - currency
+        - match
+        - splits
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: What the rule is called. It is the description of each payment the rule sends.
+          example: Glossier deal
+        currency:
+          type: string
+          description: Code of the payments the rule splits, which is the currency of the Embedded Wallet its selectors name.
+          example: USDB
+        priority:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 2147483647
+          description: Rules are tried in ascending priority. Unique among the customer's rules that are not `DELETED`, the platform's included. Omit it to try the rule after the customer's others.
+          example: 1
+        match:
+          type: array
+          minItems: 1
+          maxItems: 20
+          description: A payment matches when any selector matches it. Every selector sets `creditedAccountId` to the customer's Embedded Wallet.
+          items:
+            $ref: '#/components/schemas/SettlementRuleSelector'
+        splits:
+          type: array
+          minItems: 1
+          description: The shares, in the order they are paid. At most 20.
+          items:
+            $ref: '#/components/schemas/SettlementRuleSplitInput'
+        holdSeconds:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          default: 0
+          description: How long after a payment completes the rule waits to pay it, for payments on rails other than ACH.
+          example: 0
+        achHoldSeconds:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          default: 86400
+          description: How long after an ACH payment completes the rule waits to pay it.
+          example: 86400
+        limits:
+          $ref: '#/components/schemas/SettlementRuleLimits'
+    AgentSettlementRuleUpdateRequest:
+      type: object
+      description: The fields to change. A field left out is unchanged.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Glossier deal
+        status:
+          $ref: '#/components/schemas/SettlementRuleStatus'
+          description: '`ACTIVE` or `PAUSED`.'
+        match:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/SettlementRuleSelector'
+        splits:
+          type: array
+          minItems: 1
+          description: Every share, replacing the current ones. At most 20.
+          items:
+            $ref: '#/components/schemas/SettlementRuleSplitInput'
+        holdSeconds:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          example: 0
+        achHoldSeconds:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          example: 0
+        limits:
+          anyOf:
+            - $ref: '#/components/schemas/SettlementRuleLimits'
+            - type: 'null'
+          description: Both limits, replacing the current ones. A limit left out is removed; `null` removes both.
+    SettlementRuleExecutionStatus:
+      type: string
+      enum:
+        - HELD
+        - EXECUTING
+        - EXECUTED
+        - FAILED
+        - SKIPPED
+      description: |
+        What a rule's firing on one payment became.
+
+        | Status | Description |
+        |--------|-------------|
+        | `HELD` | Waiting out the rule's hold until `firesAt`. It can be cancelled. |
+        | `EXECUTING` | Its payout run is paying the shares. |
+        | `EXECUTED` | Its payout run finished `COMPLETED` or `PARTIALLY_FAILED`. |
+        | `FAILED` | Its payout run finished `FAILED`, or was cancelled. The customer keeps what the run did not pay. |
+        | `SKIPPED` | Nothing was paid. See `skipReason`. |
+    SettlementRuleExecution:
+      type: object
+      required:
+        - id
+        - settlementRuleId
+        - status
+        - incomingTransactionId
+        - creditedAccountId
+        - incomingAmount
+        - incomingCompletedAt
+        - firesAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique execution identifier
+          example: SettlementRuleExecution:019542f5-b3e7-1d02-0000-000000000003
+        settlementRuleId:
+          type: string
+          example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+        status:
+          $ref: '#/components/schemas/SettlementRuleExecutionStatus'
+        skipReason:
+          $ref: '#/components/schemas/SettlementRuleSkipReason'
+        incomingTransactionId:
+          type: string
+          description: The incoming transaction the rule fired on.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000004
+        creditedAccountId:
+          type: string
+          description: The customer's internal account the payment credited, which pays the shares.
+          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        incomingAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: The incoming payment, as a `CurrencyAmount` (`amount` in the smallest unit, and `currency`) in the rule's currency.
+        splitAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: What the shares add up to, as a `CurrencyAmount` (`amount` in the smallest unit, and `currency`) in the rule's currency. Set once the execution has fired.
+        payoutRunId:
+          type: string
+          description: The payout run that pays the shares. Set once the execution has fired.
+          example: PayoutRun:019542f5-b3e7-1d02-0000-000000000005
+        incomingCompletedAt:
+          type: string
+          format: date-time
+          description: When the incoming payment completed.
+          example: '2026-11-06T18:00:00Z'
+        firesAt:
+          type: string
+          format: date-time
+          description: When a held execution pays out.
+          example: '2026-11-06T18:00:00Z'
+        firstPaymentSentSeconds:
+          type: number
+          format: double
+          description: Seconds from the incoming payment's completion to the first share's payment being sent. Set once the payout run has finished.
+          example: 1.8
+        lastPaymentSentSeconds:
+          type: number
+          format: double
+          description: Seconds from the incoming payment's completion to the last share's payment being sent. Set once the payout run has finished.
+          example: 2.6
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T18:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T18:00:02Z'
+    SettlementRuleExecutionListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettlementRuleExecution'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+        totalCount:
+          type: integer
+          description: Total number of executions.
     ClaimablePayoutClaimToken:
       type: object
       description: 'A claim token for the recipient''s link. Grid keeps only its hash and shows it once: issuing another replaces it, so an earlier link stops working.'
@@ -37995,70 +39131,6 @@ components:
           type: string
           description: The customer the payouts are made on behalf of, with the same meaning as `customerId` on an `ACCOUNT` quote source. Optional for a platform account; for a customer's account it must be the owner or omitted.
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
-    PayoutRunExternalAccountDestination:
-      title: External Account
-      type: object
-      required:
-        - destinationType
-        - externalAccountId
-      properties:
-        destinationType:
-          type: string
-          enum:
-            - EXTERNAL_ACCOUNT
-        externalAccountId:
-          type: string
-          description: An `ACTIVE` external account of the platform or of one of its customers.
-          example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-    PayoutRunContactDestination:
-      title: Contact
-      type: object
-      description: A person addressed by phone number or email, with the same fields as a claimable payout's recipient. Exactly one of `phoneNumber` and `email` is set.
-      required:
-        - destinationType
-        - name
-      properties:
-        destinationType:
-          type: string
-          enum:
-            - CONTACT
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-          description: What the platform calls the recipient.
-          example: Maria
-        phoneNumber:
-          type: string
-          description: The recipient's mobile number in E.164 format.
-          example: '+639171234567'
-        email:
-          type: string
-          format: email
-          maxLength: 254
-          description: The recipient's email address.
-          example: maria@example.com
-        country:
-          type: string
-          pattern: ^[A-Z]{2}$
-          description: ISO 3166-1 alpha-2 country the recipient is paid in. Defaults to the country of `phoneNumber`'s dialing code; required with `email`.
-          example: PH
-    PayoutRunGridCustomerDestination:
-      title: Grid Customer
-      type: object
-      description: An internal account on the platform, typically another customer's. The row is paid as a transfer between internal accounts and is held to the same rules as a quote between them.
-      required:
-        - destinationType
-        - accountId
-      properties:
-        destinationType:
-          type: string
-          enum:
-            - GRID_CUSTOMER
-        accountId:
-          type: string
-          description: An internal account of the platform or of one of its customers.
-          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
     PayoutRunRowDestination:
       oneOf:
         - $ref: '#/components/schemas/PayoutRunExternalAccountDestination'
@@ -38384,227 +39456,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PayoutRunExportRow'
-    SettlementRuleStatus:
-      type: string
-      enum:
-        - PENDING_APPROVAL
-        - ACTIVE
-        - PAUSED
-        - DELETED
-      description: |
-        Status of a settlement rule.
-
-        | Status | Description |
-        |--------|-------------|
-        | `PENDING_APPROVAL` | Proposed by an agent beyond its policy, waiting for the customer's approval. It fires on nothing. |
-        | `ACTIVE` | Fires on the payments it matches. |
-        | `PAUSED` | Fires on nothing. A payment it would have matched is tried against the customer's next rule. |
-        | `DELETED` | Deleted. It fires on nothing and cannot be changed. |
-    SettlementRuleCounterpartyNameMatch:
-      type: object
-      description: |
-        A pattern for the sender name Grid records on a bank deposit (the
-        `accountHolderName` of the deposit's bank account). Set exactly one of
-        `prefix` and `contains`. The comparison ignores case and collapses
-        whitespace, because a bank often truncates the name. A payment with no
-        recorded sender name never matches.
-      properties:
-        prefix:
-          type: string
-          minLength: 1
-          maxLength: 140
-          description: The sender name starts with this.
-          example: GLOSSIER
-        contains:
-          type: string
-          minLength: 1
-          maxLength: 140
-          description: The sender name contains this.
-          example: glossier inc
-    SettlementRuleSelector:
-      type: object
-      description: Conditions a payment must all meet. A selector with no conditions matches every payment in the rule's currency.
-      properties:
-        creditedAccountId:
-          type: string
-          description: The customer's internal account the payment credited.
-          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-        ruleBasedAccountId:
-          type: string
-          description: The rule-based account the payment arrived through.
-          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d001
-        counterpartyName:
-          $ref: '#/components/schemas/SettlementRuleCounterpartyNameMatch'
-        receivedAtWalletAddress:
-          type: string
-          description: The deposit address the payment was sent to.
-          example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
-        rail:
-          $ref: '#/components/schemas/PaymentRail'
-    SettlementRuleShareType:
-      type: string
-      enum:
-        - PERCENT
-        - FIXED
-        - REMAINDER
-      description: |
-        How a share is sized.
-
-        | Type | Share |
-        |------|-------|
-        | `PERCENT` | `basisPoints` of the payment, rounded down to the smallest unit. |
-        | `FIXED` | `amount`, in the smallest unit of the rule's currency. |
-        | `REMAINDER` | What every other share leaves, in any row. At most one. |
-    SettlementRuleShare:
-      type: object
-      description: How much of a payment a row pays. Set `basisPoints` for a `PERCENT` share, `amount` for a `FIXED` share, and neither for a `REMAINDER` share.
-      required:
-        - type
-      properties:
-        type:
-          $ref: '#/components/schemas/SettlementRuleShareType'
-        basisPoints:
-          type: integer
-          minimum: 1
-          maximum: 10000
-          description: The share in basis points of the payment. Set for `PERCENT` shares only.
-          example: 4000
-        amount:
-          type: integer
-          format: int64
-          minimum: 1
-          maximum: 9000000000000000
-          description: The share in the smallest unit of the rule's currency. Set for `FIXED` shares only.
-          example: 50000
-    SettlementRuleDestination:
-      oneOf:
-        - $ref: '#/components/schemas/PayoutRunExternalAccountDestination'
-        - $ref: '#/components/schemas/PayoutRunContactDestination'
-        - $ref: '#/components/schemas/PayoutRunGridCustomerDestination'
-      discriminator:
-        propertyName: destinationType
-        mapping:
-          EXTERNAL_ACCOUNT: '#/components/schemas/PayoutRunExternalAccountDestination'
-          CONTACT: '#/components/schemas/PayoutRunContactDestination'
-          GRID_CUSTOMER: '#/components/schemas/PayoutRunGridCustomerDestination'
-    SettlementRuleSplitInput:
-      type: object
-      required:
-        - share
-        - destination
-      properties:
-        share:
-          $ref: '#/components/schemas/SettlementRuleShare'
-        destination:
-          $ref: '#/components/schemas/SettlementRuleDestination'
-    SettlementRuleSplit:
-      allOf:
-        - $ref: '#/components/schemas/SettlementRuleSplitInput'
-        - type: object
-          required:
-            - position
-          properties:
-            position:
-              type: integer
-              description: The share's zero-based position in the rule. Shares are paid in this order.
-              example: 0
-    SettlementRuleLimits:
-      type: object
-      description: Caps on what the rule pays, in the smallest unit of its currency. An execution that would go over a cap is skipped with `LIMIT_EXCEEDED`, and the customer keeps the payment.
-      properties:
-        maxAmountPerExecution:
-          type: integer
-          format: int64
-          minimum: 1
-          maximum: 9000000000000000
-          description: The most the shares of one payment may add up to.
-          example: 1000000
-        maxAmountPerDay:
-          type: integer
-          format: int64
-          minimum: 1
-          maximum: 9000000000000000
-          description: The most the rule may pay out for the payments that completed in one UTC day.
-          example: 5000000
-    SettlementRule:
-      type: object
-      required:
-        - id
-        - customerId
-        - name
-        - status
-        - priority
-        - currency
-        - match
-        - splits
-        - holdSeconds
-        - achHoldSeconds
-        - limits
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          type: string
-          description: System-generated unique settlement rule identifier
-          example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
-        customerId:
-          type: string
-          example: Customer:019542f5-b3e7-1d02-0000-000000000001
-        name:
-          type: string
-          example: Glossier deal
-        status:
-          $ref: '#/components/schemas/SettlementRuleStatus'
-        priority:
-          type: integer
-          format: int32
-          example: 1
-        currency:
-          type: string
-          example: USD
-        match:
-          type: array
-          items:
-            $ref: '#/components/schemas/SettlementRuleSelector'
-        splits:
-          type: array
-          items:
-            $ref: '#/components/schemas/SettlementRuleSplit'
-        holdSeconds:
-          type: integer
-          example: 0
-        achHoldSeconds:
-          type: integer
-          example: 86400
-        limits:
-          $ref: '#/components/schemas/SettlementRuleLimits'
-        createdAt:
-          type: string
-          format: date-time
-          example: '2026-11-06T18:00:00Z'
-        updatedAt:
-          type: string
-          format: date-time
-          example: '2026-11-06T18:00:00Z'
-    SettlementRuleListResponse:
-      type: object
-      required:
-        - data
-        - hasMore
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/SettlementRule'
-        hasMore:
-          type: boolean
-          description: Indicates if more results are available beyond this page.
-        nextCursor:
-          type: string
-          description: Cursor to retrieve the next page of results (only present if hasMore is true).
-        totalCount:
-          type: integer
-          description: Total number of rules matching the filter.
     SettlementRuleCreateRequest:
       type: object
       required:
@@ -38664,30 +39515,6 @@ components:
           example: 86400
         limits:
           $ref: '#/components/schemas/SettlementRuleLimits'
-    SettlementRuleDraft:
-      type: object
-      description: A rule as it would be created. Only the fields that decide what it pays and what it matches are needed; a `priority` is not.
-      required:
-        - currency
-        - match
-        - splits
-      properties:
-        currency:
-          type: string
-          description: ISO 4217 code of the payments the rule splits.
-          example: USD
-        match:
-          type: array
-          minItems: 1
-          maxItems: 20
-          items:
-            $ref: '#/components/schemas/SettlementRuleSelector'
-        splits:
-          type: array
-          minItems: 1
-          description: The shares, in the order they are paid. At most 20.
-          items:
-            $ref: '#/components/schemas/SettlementRuleSplitInput'
     SettlementRulePreviewRequest:
       type: object
       required:
@@ -38711,108 +39538,6 @@ components:
           example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
         draft:
           $ref: '#/components/schemas/SettlementRuleDraft'
-    SettlementRulePreviewSplit:
-      type: object
-      required:
-        - position
-        - share
-        - destination
-        - amount
-      properties:
-        position:
-          type: integer
-          description: The row's zero-based position in the rule.
-          example: 0
-        share:
-          $ref: '#/components/schemas/SettlementRuleShare'
-        destination:
-          $ref: '#/components/schemas/SettlementRuleDestination'
-        amount:
-          type: integer
-          format: int64
-          description: What the row would send, in the smallest unit of the rule's currency, before the fees of its quote. 0 when it would send nothing.
-          example: 400000
-    SettlementRuleSkipReason:
-      type: string
-      enum:
-        - RULE_PAUSED
-        - INCOMING_PAYMENT_RETURNED
-        - AMOUNT_BELOW_RULE
-        - LIMIT_EXCEEDED
-        - CANCELLED
-        - CREATOR_REVOKED
-      description: |
-        Why an execution paid nothing.
-
-        | Reason | Description |
-        |--------|-------------|
-        | `RULE_PAUSED` | The rule was paused before the execution fired. |
-        | `INCOMING_PAYMENT_RETURNED` | The payment was returned before the execution fired. |
-        | `AMOUNT_BELOW_RULE` | The payment was smaller than the fixed and percentage shares together. |
-        | `LIMIT_EXCEEDED` | Paying it would have gone over one of the rule's `limits`. |
-        | `CANCELLED` | The execution was cancelled, or the rule deleted, while it was held. |
-        | `CREATOR_REVOKED` | The API token that created the rule can no longer send payments. The rule is paused. |
-    SettlementRuleRecentMatch:
-      type: object
-      required:
-        - transactionId
-        - amount
-        - currency
-        - completedAt
-      properties:
-        transactionId:
-          type: string
-          description: The incoming transaction.
-          example: Transaction:019542f5-b3e7-1d02-0000-000000000004
-        amount:
-          type: integer
-          format: int64
-          description: The payment, in the smallest unit of `currency`.
-          example: 1000000
-        currency:
-          type: string
-          example: USD
-        counterpartyName:
-          type: string
-          description: The sender name Grid recorded, which `counterpartyName` patterns compare against. Absent when Grid recorded none.
-          example: GLOSSIER INC
-        completedAt:
-          type: string
-          format: date-time
-          example: '2026-11-06T18:00:00Z'
-    SettlementRulePreview:
-      type: object
-      required:
-        - currency
-        - amount
-        - splits
-        - ownerKeeps
-        - recentMatches
-      properties:
-        currency:
-          type: string
-          example: USD
-        amount:
-          type: integer
-          format: int64
-          description: The payment previewed.
-          example: 1000000
-        splits:
-          type: array
-          description: Every row of the rule, in row order.
-          items:
-            $ref: '#/components/schemas/SettlementRulePreviewSplit'
-        ownerKeeps:
-          type: integer
-          format: int64
-          description: What stays with the customer.
-          example: 450000
-        skipReason:
-          $ref: '#/components/schemas/SettlementRuleSkipReason'
-        recentMatches:
-          type: array
-          items:
-            $ref: '#/components/schemas/SettlementRuleRecentMatch'
     SettlementRuleUpdateRequest:
       type: object
       description: The fields to change. A field left out is unchanged.
@@ -38858,114 +39583,6 @@ components:
             - $ref: '#/components/schemas/SettlementRuleLimits'
             - type: 'null'
           description: Both limits, replacing the current ones. A limit left out is removed; `null` removes both.
-    SettlementRuleExecutionStatus:
-      type: string
-      enum:
-        - HELD
-        - EXECUTING
-        - EXECUTED
-        - FAILED
-        - SKIPPED
-      description: |
-        What a rule's firing on one payment became.
-
-        | Status | Description |
-        |--------|-------------|
-        | `HELD` | Waiting out the rule's hold until `firesAt`. It can be cancelled. |
-        | `EXECUTING` | Its payout run is paying the shares. |
-        | `EXECUTED` | Its payout run finished `COMPLETED` or `PARTIALLY_FAILED`. |
-        | `FAILED` | Its payout run finished `FAILED`. The customer keeps the payment. |
-        | `SKIPPED` | Nothing was paid. See `skipReason`. |
-    SettlementRuleExecution:
-      type: object
-      required:
-        - id
-        - settlementRuleId
-        - status
-        - incomingTransactionId
-        - creditedAccountId
-        - incomingAmount
-        - incomingCompletedAt
-        - firesAt
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          type: string
-          description: System-generated unique execution identifier
-          example: SettlementRuleExecution:019542f5-b3e7-1d02-0000-000000000003
-        settlementRuleId:
-          type: string
-          example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
-        status:
-          $ref: '#/components/schemas/SettlementRuleExecutionStatus'
-        skipReason:
-          $ref: '#/components/schemas/SettlementRuleSkipReason'
-        incomingTransactionId:
-          type: string
-          description: The incoming transaction the rule fired on.
-          example: Transaction:019542f5-b3e7-1d02-0000-000000000004
-        creditedAccountId:
-          type: string
-          description: The customer's internal account the payment credited, which pays the shares.
-          example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-        incomingAmount:
-          $ref: '#/components/schemas/CurrencyAmount'
-          description: The incoming payment, as a `CurrencyAmount` (`amount` in the smallest unit, and `currency`) in the rule's currency.
-        splitAmount:
-          $ref: '#/components/schemas/CurrencyAmount'
-          description: What the shares add up to, as a `CurrencyAmount` (`amount` in the smallest unit, and `currency`) in the rule's currency. Set once the execution has fired.
-        payoutRunId:
-          type: string
-          description: The payout run that pays the shares. Set once the execution has fired.
-          example: PayoutRun:019542f5-b3e7-1d02-0000-000000000005
-        incomingCompletedAt:
-          type: string
-          format: date-time
-          description: When the incoming payment completed.
-          example: '2026-11-06T18:00:00Z'
-        firesAt:
-          type: string
-          format: date-time
-          description: When a held execution pays out.
-          example: '2026-11-06T18:00:00Z'
-        firstPaymentSentSeconds:
-          type: number
-          format: double
-          description: Seconds from the incoming payment's completion to the first share's payment being sent. Set once the payout run has finished.
-          example: 1.8
-        lastPaymentSentSeconds:
-          type: number
-          format: double
-          description: Seconds from the incoming payment's completion to the last share's payment being sent. Set once the payout run has finished.
-          example: 2.6
-        createdAt:
-          type: string
-          format: date-time
-          example: '2026-11-06T18:00:00Z'
-        updatedAt:
-          type: string
-          format: date-time
-          example: '2026-11-06T18:00:02Z'
-    SettlementRuleExecutionListResponse:
-      type: object
-      required:
-        - data
-        - hasMore
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/SettlementRuleExecution'
-        hasMore:
-          type: boolean
-          description: Indicates if more results are available beyond this page.
-        nextCursor:
-          type: string
-          description: Cursor to retrieve the next page of results (only present if hasMore is true).
-        totalCount:
-          type: integer
-          description: Total number of executions.
     WebhookType:
       type: string
       enum:

@@ -1,0 +1,155 @@
+parameters:
+  - name: settlementRuleId
+    in: path
+    required: true
+    description: System-generated unique settlement rule identifier
+    schema:
+      type: string
+    example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+get:
+  summary: Get a settlement rule
+  description: Retrieve a settlement rule the authenticated agent created. A rule another agent or the platform created is not found. Requires the MANAGE_SETTLEMENT_RULES or VIEW_TRANSACTIONS permission.
+  operationId: agentGetSettlementRule
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRule.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform, or the agent lacks both permissions
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - The agent created no settlement rule with this id
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+patch:
+  summary: Update a settlement rule
+  description: |
+    Change a rule the authenticated agent created. Send only the fields to change.
+
+    **At once:** `name`, `status` (`ACTIVE` or `PAUSED`), `holdSeconds` and `achHoldSeconds` apply when the request is made.
+
+    **Changes that can move more money:** `match`, `splits` and `limits` are checked as on create, on the rule as they would make it. When that rule is within the agent's policy, as `POST /agents/me/settlement-rules` decides, the change applies at once. Otherwise it waits for the customer's approval as an `UPDATE_SETTLEMENT_RULE` agent action, named by `pendingChangeActionId`, and the `AGENT_ACTION.PENDING_APPROVAL` webhook fires. Until the action is decided the rule keeps its current `match`, `splits` and `limits`. The fields that apply at once still do, so a request that also sets `status` to `PAUSED` pauses the rule straight away. Approving the action checks the change again and applies it; rejecting it, or letting it expire after seven days, drops it. A rule has at most one change waiting.
+
+    `splits` replaces every share and `limits` replaces both limits, as on `PATCH /settlement-rules/{settlementRuleId}`. An agent cannot change `priority`.
+
+    Requires the MANAGE_SETTLEMENT_RULES permission.
+  operationId: agentUpdateSettlementRule
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentSettlementRuleUpdateRequest.yaml
+  responses:
+    '200':
+      description: The rule, with any change that waits for approval named by `pendingChangeActionId`
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRule.yaml
+    '400':
+      description: Bad request - The body is invalid, a selector does not name the customer's Embedded Wallet, or a share's external account is not active
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform, the agent lacks MANAGE_SETTLEMENT_RULES or has no key for the wallet, or a share pays a destination an agent may not pay (`DESTINATION_NOT_ALLOWED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - The agent created no settlement rule with this id
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - The rule is deleted or awaiting approval, or a change to it already waits for approval
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Delete a settlement rule
+  description: |
+    The rule becomes `DELETED` and fires on no further payment. Its executions still held are skipped with `CANCELLED`. A rule still `PENDING_APPROVAL` is withdrawn, and a change waiting for approval is dropped: the waiting action fails with `DELETED_BY_AGENT`. Deleting a deleted rule returns it unchanged.
+
+    Requires the MANAGE_SETTLEMENT_RULES permission.
+  operationId: agentDeleteSettlementRule
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: The deleted rule
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRule.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform, or the agent lacks MANAGE_SETTLEMENT_RULES
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - The agent created no settlement rule with this id
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
