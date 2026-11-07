@@ -11101,10 +11101,76 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Update a settlement rule
+      description: |
+        Change a rule the authenticated agent created. Send only the fields to change.
+
+        **At once:** `name`, `status` (`ACTIVE` or `PAUSED`), `holdSeconds` and `achHoldSeconds` apply when the request is made.
+
+        **Changes that can move more money:** `match`, `splits` and `limits` are checked as on create, on the rule as they would make it. When that rule is within the agent's policy, as `POST /agents/me/settlement-rules` decides, the change applies at once. Otherwise it waits for the customer's approval as an `UPDATE_SETTLEMENT_RULE` agent action, named by `pendingChangeActionId`, and the `AGENT_ACTION.PENDING_APPROVAL` webhook fires. Until the action is decided the rule keeps its status and its current terms, and fires on them. Approving the action checks the change again and applies it; rejecting it, or letting it expire after seven days, drops it. A rule has at most one change waiting.
+
+        `splits` replaces every share and `limits` replaces both limits, as on `PATCH /settlement-rules/{settlementRuleId}`. An agent cannot change `priority`.
+
+        Requires the MANAGE_SETTLEMENT_RULES permission.
+      operationId: agentUpdateSettlementRule
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettlementRuleUpdateRequest'
+      responses:
+        '200':
+          description: The rule, with any change that waits for approval named by `pendingChangeActionId`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRule'
+        '400':
+          description: Bad request - The body is invalid, it sets `priority`, a selector does not name the customer's Embedded Wallet, or a share's external account is not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform, the agent lacks MANAGE_SETTLEMENT_RULES or has no key for the wallet, or a share pays a destination an agent may not pay (`DESTINATION_NOT_ALLOWED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - The agent created no settlement rule with this id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The rule is deleted or awaiting approval, or a change to it already waits for approval
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
     delete:
       summary: Delete a settlement rule
       description: |
-        The rule becomes `DELETED` and fires on no further payment. Its executions still held are skipped with `CANCELLED`. A rule still `PENDING_APPROVAL` is withdrawn: its `CREATE_SETTLEMENT_RULE` action fails with `DELETED_BY_AGENT`. Deleting a deleted rule returns it unchanged.
+        The rule becomes `DELETED` and fires on no further payment. Its executions still held are skipped with `CANCELLED`. A rule still `PENDING_APPROVAL` is withdrawn, and a change waiting for approval is dropped: the waiting action fails with `DELETED_BY_AGENT`. Deleting a deleted rule returns it unchanged.
 
         Requires the MANAGE_SETTLEMENT_RULES permission.
       operationId: agentDeleteSettlementRule
@@ -33866,6 +33932,7 @@ components:
         - ISSUE_PURCHASE_CARD
         - CLAIMABLE_PAYOUT
         - CREATE_SETTLEMENT_RULE
+        - UPDATE_SETTLEMENT_RULE
       description: |
         The type of action the agent is requesting.
 
@@ -33875,6 +33942,7 @@ components:
         | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. When `purchaseCard.increaseCardId` is set, raise the amount of that existing single-use card instead of issuing one. See `purchaseCard` |
         | `CLAIMABLE_PAYOUT` | Send a claimable payout to a person by phone number or email. See `claimablePayout` |
         | `CREATE_SETTLEMENT_RULE` | Make a settlement rule the agent proposed `ACTIVE`. See `settlementRule` |
+        | `UPDATE_SETTLEMENT_RULE` | Change the match, shares or limits of a settlement rule the agent created. See `settlementRule` |
     AgentSendNetwork:
       type: string
       enum:
@@ -34467,6 +34535,10 @@ components:
           type: string
           description: The `CREATE_SETTLEMENT_RULE` agent action awaiting the customer's approval of the rule. Present while the rule is `PENDING_APPROVAL`.
           example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+        pendingChangeActionId:
+          type: string
+          description: The `UPDATE_SETTLEMENT_RULE` agent action holding a change to the rule's match, shares or limits until the customer approves it. Present while the change waits; the rule keeps its current terms until then.
+          example: AgentAction:019542f5-b3e7-1d02-0000-000000000098
         createdAt:
           type: string
           format: date-time
@@ -34497,8 +34569,8 @@ components:
         | `EXECUTION_FAILED` | Grid could not execute the approved action. For `ISSUE_PURCHASE_CARD`, the card issuer did not issue the card |
         | `PRICE_MOVED` | Reserved and legacy. Quotes to a `CHAIN_ADDRESS` pay out at a locked rate and no longer fail with this reason |
         | `ADDRESS_REFUSED` | Grid refused the send's destination before it signed the send: the destination is no longer one the agent may send to (for example, a Spark address removed from the customer's saved addresses), or one of the customer's records of the address was refused or is held for review. A `CHAIN_ADDRESS` that screening refuses fails with `EXECUTION_FAILED` |
-        | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD` or `CREATE_SETTLEMENT_RULE` action, or an `EXECUTE_QUOTE` action with `priceTolerance`, was not approved before its `expiresAt` |
-        | `DELETED_BY_AGENT` | The agent deleted the settlement rule a `CREATE_SETTLEMENT_RULE` action proposed before the action was decided |
+        | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD`, `CREATE_SETTLEMENT_RULE` or `UPDATE_SETTLEMENT_RULE` action, or an `EXECUTE_QUOTE` action with `priceTolerance`, was not approved before its `expiresAt` |
+        | `DELETED_BY_AGENT` | The agent deleted the settlement rule a `CREATE_SETTLEMENT_RULE` or `UPDATE_SETTLEMENT_RULE` action would make or change before the action was decided |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -34552,7 +34624,7 @@ components:
           description: The claimable payout the agent asked to send, so an approval decision can show its amount and recipient. Present for `CLAIMABLE_PAYOUT`. Approving the action makes the payout `AWAITING_CLAIM`; rejecting it, or letting it expire, ends the payout and releases its hold.
         settlementRule:
           $ref: '#/components/schemas/SettlementRule'
-          description: The settlement rule the agent proposed, so an approval decision can show what it matches, who it pays and its limits. Present for `CREATE_SETTLEMENT_RULE`. Approving the action makes the rule `ACTIVE`; rejecting it, or letting it expire, deletes it. Approving a rule does not approve its payments in advance. Each share is still checked against the agent's policy when it is sent.
+          description: The settlement rule the agent proposed, so an approval decision can show what it matches, who it pays and its limits. Present for `CREATE_SETTLEMENT_RULE` and `UPDATE_SETTLEMENT_RULE`. For `CREATE_SETTLEMENT_RULE`, approving the action makes the rule `ACTIVE`; rejecting it, or letting it expire, deletes it. For `UPDATE_SETTLEMENT_RULE`, it is the rule as the change would make it, with the rule's `id`; approving the action applies the change, and rejecting it, or letting it expire, drops it while the rule keeps its terms. Approving a rule does not approve its payments in advance. Each share is still checked against the agent's policy when it is sent.
         cardId:
           type: string
           description: The purchase card the action issued, or for an increase the card whose amount it raised. Present for an `ISSUE_PURCHASE_CARD` action once it is `APPROVED` and the card is issued or increased; read it with `GET /agents/me/cards/{cardId}`.
@@ -34571,7 +34643,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: 'When the action expires. For an `EXECUTE_QUOTE` action with `priceTolerance`, this is the end of the platform''s approval window, independent of the quote''s own expiry: approval executes a live quote and quotes the send again once it has expired, and a pending action that reaches this time fails with `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the quote''s own expiry; a pending action that reaches it fails with `QUOTE_EXPIRED`, and approval never creates a replacement quote. For `ISSUE_PURCHASE_CARD` and `CREATE_SETTLEMENT_RULE`, this is the end of the approval window, after which a pending action fails with `APPROVAL_EXPIRED`; a settlement rule''s window is seven days.'
+          description: 'When the action expires. For an `EXECUTE_QUOTE` action with `priceTolerance`, this is the end of the platform''s approval window, independent of the quote''s own expiry: approval executes a live quote and quotes the send again once it has expired, and a pending action that reaches this time fails with `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the quote''s own expiry; a pending action that reaches it fails with `QUOTE_EXPIRED`, and approval never creates a replacement quote. For `ISSUE_PURCHASE_CARD`, `CREATE_SETTLEMENT_RULE` and `UPDATE_SETTLEMENT_RULE`, this is the end of the approval window, after which a pending action fails with `APPROVAL_EXPIRED`; a settlement rule''s window is seven days.'
           example: '2025-10-03T15:05:00Z'
         createdAt:
           type: string
@@ -35775,6 +35847,51 @@ components:
           example: 86400
         limits:
           $ref: '#/components/schemas/SettlementRuleLimits'
+    SettlementRuleUpdateRequest:
+      type: object
+      description: The fields to change. A field left out is unchanged.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Glossier deal
+        status:
+          $ref: '#/components/schemas/SettlementRuleStatus'
+          description: '`ACTIVE` or `PAUSED`.'
+        priority:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 2147483647
+          example: 2
+        match:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/SettlementRuleSelector'
+        splits:
+          type: array
+          minItems: 1
+          description: Every share, replacing the current ones. At most 20.
+          items:
+            $ref: '#/components/schemas/SettlementRuleSplitInput'
+        holdSeconds:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          example: 0
+        achHoldSeconds:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          example: 0
+        limits:
+          anyOf:
+            - $ref: '#/components/schemas/SettlementRuleLimits'
+            - type: 'null'
+          description: Both limits, replacing the current ones. A limit left out is removed; `null` removes both.
     SettlementRuleExecutionStatus:
       type: string
       enum:
@@ -38504,51 +38621,6 @@ components:
           example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
         draft:
           $ref: '#/components/schemas/SettlementRuleDraft'
-    SettlementRuleUpdateRequest:
-      type: object
-      description: The fields to change. A field left out is unchanged.
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 255
-          example: Glossier deal
-        status:
-          $ref: '#/components/schemas/SettlementRuleStatus'
-          description: '`ACTIVE` or `PAUSED`.'
-        priority:
-          type: integer
-          format: int32
-          minimum: 0
-          maximum: 2147483647
-          example: 2
-        match:
-          type: array
-          minItems: 1
-          maxItems: 20
-          items:
-            $ref: '#/components/schemas/SettlementRuleSelector'
-        splits:
-          type: array
-          minItems: 1
-          description: Every share, replacing the current ones. At most 20.
-          items:
-            $ref: '#/components/schemas/SettlementRuleSplitInput'
-        holdSeconds:
-          type: integer
-          minimum: 0
-          maximum: 86400
-          example: 0
-        achHoldSeconds:
-          type: integer
-          minimum: 0
-          maximum: 86400
-          example: 0
-        limits:
-          anyOf:
-            - $ref: '#/components/schemas/SettlementRuleLimits'
-            - type: 'null'
-          description: Both limits, replacing the current ones. A limit left out is removed; `null` removes both.
     WebhookType:
       type: string
       enum:
