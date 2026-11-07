@@ -302,6 +302,7 @@ export function shelfFor(query?: string): Shelf {
   const image = (i: number) => (c ? `/assets/agents/products/${c.key}-${i + 1}.webp` : `/assets/agents/products/generic-${(hash(q) + i) % GENERIC + 1}.webp`);
   const options = items.map((it, i) => ({
     title: it.title,
+    model: it.model,
     merchant: it.brand,
     domain: domainOf(it.brand),
     price: usd2(it.price),

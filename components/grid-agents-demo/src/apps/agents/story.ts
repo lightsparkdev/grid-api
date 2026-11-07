@@ -32,6 +32,7 @@ export const RING_LIGHT: Purchase & { item: string; image: string } = {
 export const BUY_OPTIONS = [
   {
     title: 'RP10-H 10" Selfie Ring Light',
+    model: 'RP10-H Ring Light',
     merchant: RING_LIGHT.merchant,
     domain: 'neewer.com',
     price: usd2(RING_LIGHT.amount),
@@ -41,6 +42,7 @@ export const BUY_OPTIONS = [
   },
   {
     title: 'Halo 12" Ring Light Kit',
+    model: 'Halo 12" Kit',
     merchant: 'Lumacraft',
     domain: 'lumacraft.co',
     price: '$62.00',
@@ -49,6 +51,7 @@ export const BUY_OPTIONS = [
   },
   {
     title: 'Bluetooth Remote Shutter',
+    model: 'Remote Shutter',
     merchant: 'Brightway',
     domain: 'brightway.shop',
     price: '$9.99',

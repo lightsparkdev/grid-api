@@ -20,8 +20,8 @@ import styles from './InstinctSafari.module.scss';
 
 export const INSTINCT_HOST = 'app.instinct.com';
 
-/** Safari over app.instinct.com: "◀ Messages" under the status bar's time, the page, Safari's toolbar. */
-function Safari({ onBack, children }: { onBack: () => void; children: ReactNode }) {
+/** Safari over Instinct's site: "◀ Messages" under the status bar's time, the page, Safari's toolbar. */
+export function Safari({ host = INSTINCT_HOST, onBack, children }: { host?: string; onBack: () => void; children: ReactNode }) {
   return (
     <div className={styles.page}>
       <button type="button" className={styles.breadcrumb} data-status-back onClick={onBack}>
@@ -31,7 +31,7 @@ function Safari({ onBack, children }: { onBack: () => void; children: ReactNode 
         Messages
       </button>
       {children}
-      <SafariBar host={INSTINCT_HOST} />
+      <SafariBar host={host} />
     </div>
   );
 }

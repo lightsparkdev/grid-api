@@ -116,6 +116,8 @@ export interface AgentNote {
 /** A product the agent found: a card in a carousel, an image Instinct sends, a line in a list. */
 export interface Product {
   title: string;
+  /** What people call it, without the listing's extras ("Aura Max"). */
+  model?: string;
   merchant: string;
   domain: string;
   price: string;
@@ -154,7 +156,7 @@ export type Message =
   | { id: number; kind: 'card'; card: AgentNote; sender?: string }
   | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
   | { id: number; kind: 'work'; key: string; status: string }
-  | { id: number; kind: 'products'; products: Product[] }
+  | { id: number; kind: 'products'; products: Product[]; query?: string }
   | { id: number; kind: 'subagent'; agent: SubAgent; done: boolean }
   | { id: number; kind: 'meta'; meta: AgentMeta }
   | { id: number; kind: 'divider'; text: string }
@@ -197,7 +199,11 @@ export type Beat =
   | { meta: string; params?: Params }
   | { divider: string }
   | { ask: string; params?: Params; faceId?: boolean; allow: Beat[]; deny: Beat[]; swap?: (to: PayTo) => Beat[] }
-  | { chips: Chip[]; reply?: boolean; then: (picked: number) => Beat[] }
+  /**
+   * A choice. Picked on a page the app opened (Instinct's options) there's no reply bubble, so `onPage` says what
+   * was picked before `then`.
+   */
+  | { chips: Chip[]; reply?: boolean; then: (picked: number) => Beat[]; onPage?: (picked: number) => Beat[] }
   /** Waits for a typed dollar amount ("everything" means `all`, in cents); anything else lapses it and goes to the model. */
   | { amount: true; all?: number; then: (usd: number) => Beat[] }
   | { emit: AgentEvent }

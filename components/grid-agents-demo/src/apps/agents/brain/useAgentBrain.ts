@@ -116,6 +116,7 @@ export function useAgentBrain({
   /** The open choice's options, so a typed reply can pick one. */
   const openChips = useRef<Chip[] | null>(null);
   const pickedByText = useRef(false);
+  const pickedOnPage = useRef(false);
   /** An open question for an amount, waiting on what they type. */
   const amountRef = useRef<{ take: (usd: number) => void; all?: number } | null>(null);
   const [awaitingAmount, setAwaitingAmount] = useState(false);
@@ -281,10 +282,12 @@ export function useAgentBrain({
           if (picked < 0 || run.cancelled) return false;
           setBusy(true);
           patch(id, (m) => (m.kind === 'chips' ? { ...m, picked } : m));
-          if (b.reply && !pickedByText.current) push({ kind: 'me', text: b.chips[picked].label });
+          const onPage = pickedOnPage.current;
+          if (b.reply && !pickedByText.current && !onPage) push({ kind: 'me', text: b.chips[picked].label });
           pickedByText.current = false;
+          pickedOnPage.current = false;
           await sleep(600);
-          if (!(await play(b.then(picked), run))) return false;
+          if (!(await play([...(onPage && b.onPage ? b.onPage(picked) : []), ...b.then(picked)], run))) return false;
         } else if ('amount' in b) {
           setBusy(false);
           setAwaitingAmount(true);
@@ -465,9 +468,13 @@ export function useAgentBrain({
   const deny = useCallback(() => decideRef.current?.('deny'), []);
   /** The checkout's Pay with switched to another way to pay. */
   const swap = useCallback((to: PayTo) => decideRef.current?.({ swap: to }), []);
+  /** A choice tapped: a chip, or (`onPage`) an option on a page the app opened. */
   const pick = useCallback(
-    (i: number) => {
-      if (pickRef.current) return pickRef.current(i);
+    (i: number, onPage?: boolean) => {
+      if (pickRef.current) {
+        pickedOnPage.current = !!onPage;
+        return pickRef.current(i);
+      }
       const s = suggested.current;
       if (!s || runRef.current || busy || !s.chips[i]) return;
       setComposer((c) => (s.chips.some((chip) => chip.label === c) ? '' : c));

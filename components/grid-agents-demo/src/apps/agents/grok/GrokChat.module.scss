@@ -470,6 +470,7 @@
   color: var(--grok-muted);
   font-size: 14px;
 
+  // The merchant's letter, cropped to the capital so the grid centers the letter, not its line box.
   i {
     display: grid;
     place-items: center;
@@ -481,6 +482,9 @@
     font-size: 10px;
     font-style: normal;
     font-weight: 600;
+    line-height: 1;
+    text-box: trim-both cap alphabetic;
+    text-transform: uppercase;
   }
 }
 
@@ -748,6 +752,13 @@
   border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
+
+  // Cropped to the capital so the grid centers the letter, not its line box.
+  > span {
+    line-height: 1;
+    text-box: trim-both cap alphabetic;
+    text-transform: uppercase;
+  }
 }
 
 .orderItem {

@@ -55,7 +55,7 @@ export const STATUS = {
 export type StatusKey = keyof typeof STATUS;
 
 export const PRODUCTS = {
-  'buy.options': (p?: Params) => shelfFor(s(p, 'query')).options,
+  'buy.options': (p?: Params) => shelfFor(s(p, 'query')).options.filter((o) => !n(p, 'only') || o.pick),
 } satisfies Record<string, (p?: Params) => Product[]>;
 
 export type ProductsKey = keyof typeof PRODUCTS;
@@ -170,6 +170,8 @@ export const LINES = {
 
   'buy.intro': (p) => `Found three that fit. The ${s(p, 'merchant')} ${s(p, 'model')} is the best of them, ${usd2(n(p, 'amount'))} with standard shipping.`,
   'buy.which': () => 'Want that one, or one of the others?',
+  'buy.found': (p) => `Found it: the ${s(p, 'merchant')} ${s(p, 'model')}, ${usd2(n(p, 'amount'))} with standard shipping.`,
+  'buy.picked': (p) => `Got your pick: the ${s(p, 'item')}. I’ll check the total and get checkout ready. Nothing is charged without your approval.`,
   'buy.payWith': (p) => `Want me to pay from ${yours(p)} or your ${CARD}?`,
   'buy.shortCard': (p) => `${Yours(p)} won’t cover it. Should I put it on your ${CARD}, or do you want to add ${usd(n(p, 'amount'))} first?`,
   'buy.noBalance': (p) => `I can put this on your card, or set up ${s(p, 'wallet').startsWith('your ') ? 'a balance' : `a ${s(p, 'wallet')}`} you can pay from.`,

@@ -8,6 +8,8 @@ import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentAsk, AgentBalance, AgentNote, Message, Product, SubAgent } from '../conversation';
 import { useKeptAsk, useKeptBalance } from '../openSheets';
 import type { AgentChatProps } from '../types';
+import { Hatch } from './Hatch';
+import { InstinctOptionsPage, OPTIONS_HOST, optionsTitle } from './InstinctOptions';
 import { INSTINCT_HOST, InstinctBalancePage, InstinctSafari, InstinctThreadPage } from './InstinctSafari';
 import styles from './InstinctChat.module.scss';
 
@@ -162,6 +164,38 @@ function askText(ask: AgentAsk) {
 /** Only what's sensitive (a card, a bank) opens app.instinct.com; everything else is answered by texting back. */
 const linksOut = (ask: AgentAsk) => !!(ask.card || ask.bank);
 
+/** A choice among the options a products message just showed (between them, only Instinct's own lines). */
+function choosesProduct(i: number, all: Message[]) {
+  for (let k = i - 1; k >= 0; k--) {
+    if (all[k].kind === 'them') continue;
+    return all[k].kind === 'products';
+  }
+  return false;
+}
+
+/** The options page for a products message: its buttons pick while the choice after it is open, then hand back. */
+function OptionsPage({ messages, id, onPick, onBack }: { messages: Message[]; id: number; onPick: (i: number) => void; onBack: () => void }) {
+  const at = messages.findIndex((m) => m.id === id);
+  const found = messages[at];
+  if (!found || found.kind !== 'products') return null;
+  const choice = messages.slice(at + 1).find((m): m is Extract<Message, { kind: 'chips' }> => m.kind === 'chips');
+  return (
+    <InstinctOptionsPage
+      products={found.products}
+      query={found.query}
+      open={!!choice && choice.picked === null && !choice.expired}
+      onPick={(i) => {
+        onPick(i);
+        window.setTimeout(onBack, PICKED_MS);
+      }}
+      onBack={onBack}
+    />
+  );
+}
+
+/** How long Sent to Instinct shows before Safari hands back to Messages (the recording's beat). */
+const PICKED_MS = 700;
+
 /** A choice, as a numbered text to answer by typing. */
 function chipsText(m: Extract<Message, { kind: 'chips' }>) {
   return `reply with one:\n${m.chips.map((c, i) => `${i + 1}. ${c.label}`).join('\n')}`;
@@ -246,25 +280,42 @@ function Receipt({ fresh }: { fresh: boolean }) {
   );
 }
 
-/** What Instinct found, as the product image it sends: the photo, how many it found, brand, title, price. */
-function ProductImage({ products }: { products: Product[] }) {
-  const p = products.find((x) => x.pick) ?? products[0];
+/** The options link's corner mark: a page with a folded corner over another, like iMessage's file previews. */
+function PagesGlyph() {
   return (
-    <div className={styles.productStack} role="img" aria-label={p.title}>
-      <span className={styles.stackBack} />
-      <div className={styles.productImage}>
-        <span className={styles.productPhoto}>
-          <img src={p.image} alt="" />
-          <i className={styles.count}>{products.length}</i>
-        </span>
-        <span className={styles.productBrand}>{p.merchant}</span>
-        <strong>{p.title}</strong>
-        <span className={styles.productPrice}>{p.price}</span>
-        <span className={styles.imageTop}>
-          <span>{today()}</span>
-          <span className={styles.wordmark}>Instinct</span>
-        </span>
-      </div>
+    <svg className={styles.linkPages} viewBox="0 0 13 15" width={13} height={15} aria-hidden>
+      <path d="M1.5 4.5v8.2c0 .8.6 1.3 1.3 1.3h6.4" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" />
+      <path
+        d="M4.6 1h4.2l3.2 3.2v6.6c0 .7-.5 1.2-1.2 1.2H4.6c-.7 0-1.2-.5-1.2-1.2V2.2c0-.7.5-1.2 1.2-1.2Z M8.6 1.2v3.2h3.2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.6}
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/**
+ * One product, as the image Instinct makes for it (recording 4, 11:04): the photo large on light gray, the brand over
+ * the name with the price in green, a rule, then the date and Instinct's wordmark.
+ */
+function ProductShot({ product: p }: { product: Product }) {
+  const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  return (
+    <div className={styles.shot} role="img" aria-label={`${p.title}, ${p.price}`}>
+      <span className={styles.shotPhoto}>
+        <img src={p.image} alt="" />
+      </span>
+      <span className={styles.shotBrand}>{p.merchant}</span>
+      <span className={styles.shotName}>
+        <b>{p.model ?? p.title}</b>
+        <span>{p.price}</span>
+      </span>
+      <span className={styles.shotFoot}>
+        <span>{date}</span>
+        <span className={styles.shotWord}>Instinct</span>
+      </span>
     </div>
   );
 }
@@ -300,7 +351,9 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
   const [view, setView] = useState<'messages' | 'safari'>(kept.open || keptLink.initial ? 'safari' : 'messages');
   const [switchTo, setSwitchTo] = useState<'messages' | 'safari' | null>(null);
   const [linkId, setLinkId] = useState<number | null>(kept.open ? null : (keptLink.initial?.id ?? null));
-  const [page, setPage] = useState<{ kind: 'thread'; agent: SubAgent } | { kind: 'balance' } | null>(kept.open ? { kind: 'balance' } : null);
+  const [page, setPage] = useState<{ kind: 'thread'; agent: SubAgent } | { kind: 'balance' } | { kind: 'options'; id: number } | null>(
+    kept.open ? { kind: 'balance' } : null,
+  );
   const open = chat.messages.find((m): m is Ask => m.kind === 'ask' && m.id === linkId);
 
   const openLink = (id: number) => {
@@ -374,6 +427,8 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
       .find((m) => (m.kind === 'ask' && m.state === 'open' && !linksOut(m.ask)) || (m.kind === 'chips' && m.picked === null && !m.expired));
     if (!open || drafted.current.has(open.id)) return;
     drafted.current.add(open.id);
+    // Choosing among the options happens on their page, so nothing is drafted for it.
+    if (open.kind === 'chips' && choosesProduct(chat.messages.indexOf(open), chat.messages)) return;
     // Only an untouched draft gives way to the next one; anything typed stays.
     if (composer && composer !== draft.current?.text) return;
     draft.current = { id: open.id, text: open.kind === 'chips' ? open.chips[0].label : 'Yes' };
@@ -463,6 +518,8 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           bubble('ask', <Detected text={askText(m.ask)} />, !theirsNext)
         );
       case 'chips':
+        // The options' page is where you choose; the thread doesn't list them again (typing one still works).
+        if (choosesProduct(i, all)) return null;
         return bubble('chips', <span className={styles.lines}>{chipsText(m)}</span>, !theirsNext);
       case 'work':
         return (
@@ -474,7 +531,21 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           </div>
         );
       case 'products':
-        return <ProductImage products={m.products} />;
+        if (m.products.length === 1) return <ProductShot product={m.products[0]} />;
+        return (
+          <button type="button" className={styles.link} data-open-link onClick={() => openPage({ kind: 'options', id: m.id })}>
+            <span className={`${styles.linkHero} ${styles.linkHeroOptions}`}>
+              <Hatch src={m.products[0].image} className={styles.linkHatch} />
+              <span className={styles.linkHeadlineSans}>{optionsTitle(m.products, m.query)}</span>
+              <PagesGlyph />
+              <span className={styles.linkWord}>Instinct</span>
+            </span>
+            <span className={styles.linkMeta}>
+              <strong>{optionsTitle(m.products, m.query)}</strong>
+              <small>{OPTIONS_HOST}</small>
+            </span>
+          </button>
+        );
       case 'me': {
         // A reply to an ask or a choice shows what it answers, as iMessage's inline reply does.
         const answers =
@@ -634,6 +705,8 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
             page &&
             (page.kind === 'thread' ? (
               <InstinctThreadPage agent={page.agent} onBack={back} />
+            ) : page.kind === 'options' ? (
+              <OptionsPage messages={chat.messages} id={page.id} onPick={(i) => chat.pick(i, true)} onBack={back} />
             ) : (
               <InstinctBalancePage
                 account={chat.account()}

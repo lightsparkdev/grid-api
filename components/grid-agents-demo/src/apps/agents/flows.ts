@@ -537,13 +537,15 @@ const buy = (ctx: FlowContext): Beat[] => {
           chips: shelf.options.map((o) => ({ label: o.title })),
           reply: true,
           then: (picked) => order(ctx, shelfWith(shelf, picked)),
+          onPage: (picked) => [{ say: 'buy.picked', params: { item: shelf.options[picked].title } }],
         },
       ];
   return [
     { react: '👍' },
     { work: 'searching', ms: 1800 },
-    { say: 'buy.intro', params: shelfParams(shelf) },
-    { products: 'buy.options', params: { query: shelf.query } },
+    // Something named is the one thing it shows; three it found, it lines up to choose from.
+    { say: shelf.named ? 'buy.found' : 'buy.intro', params: shelfParams(shelf) },
+    { products: 'buy.options', params: { query: shelf.query, ...(shelf.named && { only: 1 }) } },
     ...choose,
   ];
 };

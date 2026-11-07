@@ -84,7 +84,7 @@ function Markdown({ text }: { text: string }) {
 
 /** What dot found, as its markdown list. */
 function productsText(products: Product[]) {
-  return products.map((p) => `- **${p.title}**, ${p.price} at ${p.merchant}${p.pick ? ' (my pick)' : ''}`).join('\n');
+  return products.map((p) => `- **${p.title}**, ${p.price} at ${p.merchant}${p.pick && products.length > 1 ? ' (my pick)' : ''}`).join('\n');
 }
 
 /** Dots' mark: the blue blob, as the logo in its sheets and pills. */

@@ -1,0 +1,358 @@
+// Instinct's options page on files.instinct.com, measured at 3x from IMG_1941–1944: a beige masthead, a paper
+// sheet over it with 28pt corners, serif headings, two columns of tiles. Colors are the site's (--in-*).
+$serif: 'New York', ui-serif, Georgia, serif;
+
+.page {
+  --op-green: #5f9a7e;
+  position: absolute;
+  inset: 0;
+
+  :global([data-theme='dark']) & {
+    --op-green: #7fb79b;
+  }
+}
+
+.scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  background: var(--in-field);
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// The masthead's beige, down to the sheet's top; it stops shrinking at the 124pt bar and stays over what scrolls.
+.bar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 4;
+  background: var(--in-field);
+  pointer-events: none;
+}
+
+// The masthead's lines, placed and scaled by the scroll (inline), each loading in on its own (the inner span).
+.head {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+
+  > * {
+    position: absolute;
+    left: 50%;
+    translate: -50% 0;
+    transform-origin: 50% 0;
+    white-space: nowrap;
+  }
+}
+
+.word {
+  font-family: $serif;
+  font-size: 34px;
+  font-weight: 300;
+  line-height: 40px;
+  letter-spacing: -0.4px;
+
+  // Recording, 0.6s: it shows mid-screen over Loading; 1.4s: it rises to the masthead, easing out over 0.8s.
+  > span {
+    display: block;
+    animation:
+      op-appear 0.2s 0.75s both,
+      op-rise 0.8s 1.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+}
+
+.loading {
+  top: 405px;
+  color: var(--in-muted);
+  font-family: $serif;
+  font-size: 13px;
+  animation: op-loading 0.9s 0.75s both;
+}
+
+.made {
+  color: var(--in-muted);
+  font-family: $serif;
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.shareMid {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.made > span,
+.shareMid > span {
+  display: block;
+  animation: op-appear 0.3s 2s both;
+}
+
+.shareEnd {
+  top: 84px;
+  right: 28px;
+  left: auto;
+  translate: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+// The sheet slides up from below as the wordmark settles (recording, 1.6s to 2.2s).
+.sheet {
+  position: relative;
+  margin-top: 302px;
+  padding: 48px 24px 150px;
+  border-radius: 28px 28px 0 0;
+  background: var(--in-paper);
+  animation: op-sheet 0.66s 1.65s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes op-appear {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes op-rise {
+  from {
+    translate: 0 245px;
+  }
+}
+
+@keyframes op-loading {
+  0% {
+    opacity: 0;
+  }
+
+  20%,
+  78% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes op-sheet {
+  from {
+    translate: 0 620px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word > span,
+  .made > span,
+  .shareMid > span,
+  .sheet {
+    animation: none;
+  }
+
+  .loading {
+    display: none;
+  }
+}
+
+.title {
+  margin: 0;
+  font-family: $serif;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 31px;
+  letter-spacing: -0.3px;
+  text-wrap: pretty;
+}
+
+.checked {
+  margin: 30px 0 0;
+  color: var(--op-green);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.body {
+  margin: 30px 0 0;
+  color: var(--in-ink);
+  font-size: 14.5px;
+  line-height: 24px;
+  text-wrap: pretty;
+}
+
+.heading {
+  margin: 52px 0 22px;
+  font-family: $serif;
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 26px;
+}
+
+// Two tiles a row, 17pt apart: a white square photo, the number (and Cheapest) on it, then the facts and the button.
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 26px 17px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.photo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #fff;
+
+  img {
+    width: 88%;
+    height: 88%;
+    object-fit: contain;
+  }
+}
+
+.badges {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 4px;
+
+  b,
+  em {
+    display: grid;
+    place-items: center;
+    height: 22px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  b {
+    width: 22px;
+    background: #231f20;
+    color: #fff;
+  }
+
+  em {
+    padding: 0 8px;
+    background: #fff;
+    color: #231f20;
+    font-size: 14px;
+  }
+}
+
+.nameRow {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-top: 14px;
+  font-size: 14.5px;
+  line-height: 24px;
+
+  strong {
+    min-width: 0;
+    font-weight: 600;
+  }
+}
+
+.price {
+  flex: none;
+  color: var(--op-green);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.brand {
+  color: var(--in-muted);
+  font-size: 12.5px;
+  line-height: 18px;
+}
+
+.swatches {
+  display: flex;
+  gap: 7px;
+  margin-top: 12px;
+
+  i {
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.12);
+
+    &[data-on] {
+      outline: 1.5px solid var(--in-ink);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.buy {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 8px;
+  height: 44px;
+  margin-top: 16px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 22px;
+  background: var(--in-button);
+  color: var(--in-button-text);
+  font: inherit;
+  font-size: 14.5px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    opacity 0.2s ease,
+    scale 0.15s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.97;
+  }
+
+  &:disabled:not([data-sent]) {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  &[data-sent] {
+    cursor: default;
+  }
+}
+
+// A note set off by a rule on its left: Shipping.
+.note {
+  margin-top: 28px;
+  padding-left: 14px;
+  border-left: 2px solid var(--in-hair);
+
+  strong {
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 6px 0 0;
+    font-size: 14.5px;
+    line-height: 24px;
+  }
+}
+
+.foot {
+  margin: 44px 0 0;
+  color: var(--in-muted);
+  font-size: 14.5px;
+  line-height: 24px;
+}

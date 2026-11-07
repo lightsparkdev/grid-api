@@ -70,7 +70,7 @@ function EntityLinks({ products, pos }: { products: Product[]; pos?: string }) {
           {i > 0 && ' '}
           <img src={p.image} alt="" className={styles.entityThumb} />
           <strong className={styles.entity}>{p.title}</strong> at {p.price}
-          {p.pick ? ' is my pick.' : i === 1 ? ', or' : '.'}
+          {p.pick && products.length > 1 ? ' is my pick.' : i === 1 ? ', or' : '.'}
         </span>
       ))}
     </div>

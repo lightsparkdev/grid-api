@@ -96,7 +96,7 @@ export function renderThread(messages: StoredMessage[], voice: Voice): Message[]
       case 'work':
         return { id: m.id, kind: 'work', key: m.key, status: voice.status(m.key, m.params) };
       case 'products':
-        return { id: m.id, kind: 'products', products: voice.products(m.key, m.params) };
+        return { id: m.id, kind: 'products', products: voice.products(m.key, m.params), query: typeof m.params?.query === 'string' ? m.params.query : undefined };
       case 'meta':
         return { id: m.id, kind: 'meta', meta: voice.meta(m.key, m.params) };
       case 'subagent':
