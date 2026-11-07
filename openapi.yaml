@@ -36484,6 +36484,7 @@ components:
         - LIMIT_EXCEEDED
         - CANCELLED
         - CREATOR_REVOKED
+        - AGENT_PAUSED
       description: |
         Why an execution paid nothing.
 
@@ -36494,7 +36495,8 @@ components:
         | `AMOUNT_BELOW_RULE` | The payment was smaller than the fixed and percentage shares together. |
         | `LIMIT_EXCEEDED` | Paying it would have gone over one of the rule's `limits`. |
         | `CANCELLED` | The execution was cancelled, or the rule deleted, while it was held. |
-        | `CREATOR_REVOKED` | The API token that created the rule can no longer send payments. The rule is paused. |
+        | `CREATOR_REVOKED` | The API token or agent that created the rule can no longer send payments. The rule is paused. |
+        | `AGENT_PAUSED` | The agent that created the rule is paused. The rule stays active, and pays the next payment once the agent is resumed. |
     SettlementRuleRecentMatch:
       type: object
       required:
