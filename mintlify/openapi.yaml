@@ -36371,6 +36371,10 @@ components:
           required:
             - amount
           properties:
+            currency:
+              type: string
+              description: Code of the payments the rule splits, which is the currency of the Embedded Wallet its selectors name.
+              example: USDB
             amount:
               type: integer
               format: int64
