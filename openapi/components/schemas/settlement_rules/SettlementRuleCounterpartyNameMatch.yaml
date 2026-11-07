@@ -2,9 +2,9 @@ type: object
 description: |
   A pattern for the sender name Grid records on a bank deposit (the
   `accountHolderName` of the deposit's bank account). Set exactly one of
-  `prefix` and `contains`. The comparison ignores case and collapses
-  whitespace, because a bank often truncates the name. A payment with no
-  recorded sender name never matches.
+  `prefix` and `contains`. The comparison trims both names and ignores
+  case, as the transaction list groups senders. A bank often truncates
+  the name. A payment with no recorded sender name never matches.
 properties:
   prefix:
     type: string
