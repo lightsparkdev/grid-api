@@ -32810,6 +32810,11 @@ components:
             Optional description/memo for the simulated credit, reported as the `description` of the incoming transaction. Defaults to a generated description when omitted.
             Not supported for `RULE_BASED` accounts: the swept transaction's description comes from the account's sweep rule, so sending it returns `400 INVALID_INPUT`.
           example: Test deposit for invoice reconciliation
+        senderAddress:
+          type: string
+          maxLength: 128
+          description: Simulates the credit as an on-chain deposit from this wallet address. Grid treats it as a real deposit from that wallet. For a customer subject to the EU Travel Rule, Grid can hold the deposit with a `pendingReason` until the customer adds or verifies the wallet. An address starting with `0x` is an Ethereum address, and any other is a Solana address. Only stablecoin accounts accept it. Sending it for any other account returns `400 INVALID_INPUT`.
+          example: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b'
     Permission:
       type: string
       enum:
