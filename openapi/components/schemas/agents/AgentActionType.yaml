@@ -6,6 +6,7 @@ enum:
   - USE_STORED_CARD
   - CREATE_SETTLEMENT_RULE
   - UPDATE_SETTLEMENT_RULE
+  - PAYOUT_RUN
 description: |
   The type of action the agent is requesting.
 
@@ -17,3 +18,4 @@ description: |
   | `USE_STORED_CARD` | Use one of the customer's stored cards for a purchase. See `storedCardUse` |
   | `CREATE_SETTLEMENT_RULE` | Make a settlement rule the agent proposed `ACTIVE`. See `settlementRule` |
   | `UPDATE_SETTLEMENT_RULE` | Change the match, shares or limits of a settlement rule the agent created. See `settlementRule` |
+  | `PAYOUT_RUN` | Start a payout run the agent created. See `payoutRun` |
