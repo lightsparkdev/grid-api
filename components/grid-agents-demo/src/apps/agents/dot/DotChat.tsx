@@ -30,6 +30,7 @@ import { recipientNamed } from '../recipients';
 import { BalanceCard, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
+import { useAskSheet } from '../vault/useAskSheet';
 import { cardLabel } from '../vault/useCardEntry';
 import { useDotBalance } from './DotBalance';
 import { DotGlyph, useDotBank, useDotCard } from './DotVault';
@@ -522,17 +523,13 @@ export function DotChat({ chat }: AgentChatProps) {
   const lastMe = chat.messages.reduce((id, m) => (m.kind === 'me' ? m.id : id), -1);
   const openedIds = useOpenedIds(chat.messages);
   const [multiline, setMultiline] = useState(false);
-  const [sheet, setSheet] = useState<{ id: number; ask: AgentAsk } | null>(null);
-  const [shown, setShown] = useState(false);
+  // Checkouts and setup asks: Dots opens them in its own sheet. Cards and banks have theirs.
+  const sheet = useAskSheet(chat.messages, (a) => !a.card && !a.bank);
   const sub = useSubAgentSheet(chat.messages, SHEET_IN);
   const card = useDotCard({ messages: chat.messages, present: SHEET_IN, onAllow: chat.allow });
   const bank = useDotBank({ messages: chat.messages, present: SHEET_IN, onAllow: chat.allow, onDeny: chat.deny });
   const balance = useDotBalance({ present: SHEET_IN, account: chat.account, onAction: chat.prompt });
-  const sheetOpen = shown && !!sheet && chat.messages.some((m) => m.kind === 'ask' && m.id === sheet.id && m.state === 'open');
-  const open = (m: Ask) => {
-    setSheet({ id: m.id, ask: m.ask });
-    setShown(true);
-  };
+  const open = (m: Ask) => sheet.show(m.id, m.ask);
   // A payment opens its checkout as it arrives, as the checkout link does in the app.
   const opened = useRef(new Set<number>());
   useEffect(() => {
@@ -543,7 +540,7 @@ export function DotChat({ chat }: AgentChatProps) {
     return () => window.clearTimeout(t);
   }, [chat.messages]);
 
-  const close = () => setShown(false);
+  const close = sheet.hide;
   const allow = () => {
     close();
     chat.allow();
@@ -611,7 +608,6 @@ export function DotChat({ chat }: AgentChatProps) {
         return b ? (
           <BalanceCard
             balance={b}
-            track
             className={styles.accountSkin}
             onOpen={() => balance.open(b.wallet)}
           />
@@ -713,8 +709,8 @@ export function DotChat({ chat }: AgentChatProps) {
           </motion.div>
         }
       />
-      <AppSheet open={sheetOpen} present={SHEET_IN} className={sheet?.ask.rows ? styles.setupPanel : styles.payPanel} onDismiss={close}>
-        {sheet &&
+      <AppSheet open={sheet.open} present={SHEET_IN} className={sheet.ask?.rows ? styles.setupPanel : styles.payPanel} onDismiss={close}>
+        {sheet.ask &&
           (sheet.ask.rows ? (
             <SetupSheet ask={sheet.ask} onAllow={allow} onDeny={deny} onClose={close} />
           ) : (

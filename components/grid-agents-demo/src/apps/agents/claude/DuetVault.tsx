@@ -12,7 +12,7 @@ import { BANK_REACH, currencyFor, type BankCountry } from '@/data/bankCountries'
 import type { AgentAsk, AskState, Message } from '../conversation';
 import { linkedBank } from '../linkedBank';
 import { recipientNamed } from '../recipients';
-import { GlassPill, PressButton } from '../glass';
+import { GlassPill, PressButton, ScanButton } from '../glass';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
 import { APP_ICONS, opensPlaid, usePlaidLink } from '../vault/PlaidLink';
 import { useAskSheet } from '../vault/useAskSheet';
@@ -156,10 +156,11 @@ function SaveDisc({ stage, onClick }: { stage: 'form' | 'busy' | 'done'; onClick
   );
 }
 
-function Hero({ children }: { children: ReactNode }) {
+function Hero({ children, under }: { children: ReactNode; under?: ReactNode }) {
   return (
     <div className={styles.hero}>
       <span className={styles.avatar}>{children}</span>
+      {under}
     </div>
   );
 }
@@ -208,7 +209,7 @@ function BankFlow({ payee, home, onLinked, onClose }: { payee?: AgentAsk['recipi
 
 /** Duet's bank flow: Connect on its card opens the browse; closing leaves the card waiting. */
 export function useDuetBank({ messages, onAllow }: { messages: Message[]; onAllow: () => void }) {
-  const sheet = useAskSheet(messages);
+  const sheet = useAskSheet(messages, (a) => !!a.bank && !opensPlaid(a));
   const plaid = usePlaidLink({ app: 'Duet', icon: APP_ICONS.duet, messages, onLinked: onAllow, onManual: sheet.show });
   return {
     // Your own bank goes through Plaid; someone else's, or one Plaid doesn't have, through the browse.
@@ -245,7 +246,7 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
       }
       trailing={<SaveDisc stage={entry.stage === 'form' ? 'form' : entry.stage === 'saving' ? 'busy' : 'done'} onClick={entry.save} />}
     >
-      <Hero>
+      <Hero under={<ScanButton className={styles.heroScan} />}>
         <IconCreditCard1 size={36} />
       </Hero>
       <Rows rows={cardFields(ask)} />
@@ -256,7 +257,7 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
 
 /** Duet's card flow: the card as a Profile-style page. */
 export function useDuetCard({ messages, onAllow }: { messages: Message[]; onAllow: () => void }) {
-  const sheet = useAskSheet(messages);
+  const sheet = useAskSheet(messages, (a) => !!a.card);
   return {
     open: sheet.show,
     sheet: (

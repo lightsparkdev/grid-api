@@ -58,6 +58,8 @@ export interface AgentAsk {
   total?: string;
   /** What pays: a balance, a card, a rail. */
   method?: string;
+  /** A checkout's Pay with row: what pays, named (`method` goes under it). */
+  payWith?: string;
   expires?: string;
   allow?: string;
   allowed?: string;
@@ -87,7 +89,7 @@ export type PayTo = 'card' | 'balance' | 'topup';
 
 /** The app's own balance: the website card's anatomy, plus what each app shows natively. */
 export interface AgentBalance {
-  /** What the app calls it: "Bot balance", "Dots balance". */
+  /** What the app calls it: "Grok Bot balance", "Dots balance". */
   wallet: string;
   amount: string;
   note: string;

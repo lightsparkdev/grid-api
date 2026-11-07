@@ -3,9 +3,10 @@ import { motion } from 'motion/react';
 import { PhoneStatusBar } from '@/apps/shared/AppShell/PhoneStatusBar';
 import { playAppSwitch, WALLPAPER } from '@/apps/shared/appSwitch';
 import { SfSymbol } from '@/apps/shared/icons';
-import { ChatFrame, ComposerField, NATIVE_IN, Said, ScrollEdge, STILL, TypingDots, useOpenedIds } from '../ChatFrame';
+import { ChatFrame, ComposerField, NATIVE_IN, Said, ScrollEdge, STILL, TypingDots, useOpenedIds, useOpenedMarks } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentAsk, AgentBalance, AgentNote, Message, Product, SubAgent } from '../conversation';
+import { useKeptAsk, useKeptBalance } from '../openSheets';
 import type { AgentChatProps } from '../types';
 import { INSTINCT_HOST, InstinctBalancePage, InstinctSafari, InstinctThreadPage } from './InstinctSafari';
 import styles from './InstinctChat.module.scss';
@@ -63,15 +64,18 @@ const SEND = {
   end: 520,
 } satisfies Record<string, Keys | number>;
 
-/** Your bubble. Freshly sent, it flies out of the composer's field as iMessage's does. */
-function SentBubble({ fresh, from, children }: { fresh: boolean; from: () => DOMRect | null; children: ReactNode }) {
+/**
+ * Your bubble. Freshly sent, it flies out of the composer's field as iMessage's does. `mark` (the tapback) sits
+ * beside it rather than in it: the bubble is clipped to its corners, which would cut the cloud where it overlaps one.
+ */
+function SentBubble({ fresh, from, mark, children }: { fresh: boolean; from: () => DOMRect | null; mark?: ReactNode; children: ReactNode }) {
   const bubble = useRef<HTMLSpanElement>(null);
   const ghost = useRef<HTMLSpanElement>(null);
   const [flying, setFlying] = useState(fresh);
   useLayoutEffect(() => {
     const el = bubble.current;
     const g = ghost.current;
-    const col = el?.parentElement;
+    const col = el?.parentElement?.parentElement;
     const field = from();
     if (!fresh || !el || !g || !col || !field || matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setFlying(false);
@@ -124,8 +128,11 @@ function SentBubble({ fresh, from, children }: { fresh: boolean; from: () => DOM
   return (
     <>
       {flying && <span ref={ghost} className={styles.ghost} />}
-      <span ref={bubble} className={styles.me} data-bubble data-tail="br">
-        {children}
+      <span className={styles.meBox}>
+        <span ref={bubble} className={styles.me} data-bubble data-tail="br">
+          {children}
+        </span>
+        {mark}
       </span>
     </>
   );
@@ -188,9 +195,9 @@ function InstinctImage({ note }: { note: AgentNote }) {
   );
 }
 
-/** The balance, as Instinct texts it: the number, then what's left of today. */
+/** The balance, as Instinct texts it. */
 function balanceText(b: AgentBalance) {
-  return `${b.amount} in your ${b.wallet}\n${b.spent.left} left to spend today`;
+  return `${b.amount} in your ${b.wallet}`;
 }
 
 /** When the receipt under your bubble changes, in ms from the send (recording 2). */
@@ -287,10 +294,13 @@ function VaultLink({ m, onOpen }: { m: Ask; onOpen: () => void }) {
 export function InstinctChat({ chat, dark }: AgentChatProps) {
   const messagesCard = useRef<HTMLDivElement>(null);
   const safariCard = useRef<HTMLDivElement>(null);
-  const [view, setView] = useState<'messages' | 'safari'>('messages');
+  // Kept across an app switch: Safari opens on the balance page or the card or bank page that was up.
+  const kept = useKeptBalance();
+  const keptLink = useKeptAsk('ask', chat.messages, linksOut);
+  const [view, setView] = useState<'messages' | 'safari'>(kept.open || keptLink.initial ? 'safari' : 'messages');
   const [switchTo, setSwitchTo] = useState<'messages' | 'safari' | null>(null);
-  const [linkId, setLinkId] = useState<number | null>(null);
-  const [page, setPage] = useState<{ kind: 'thread'; agent: SubAgent } | { kind: 'balance' } | null>(null);
+  const [linkId, setLinkId] = useState<number | null>(kept.open ? null : (keptLink.initial?.id ?? null));
+  const [page, setPage] = useState<{ kind: 'thread'; agent: SubAgent } | { kind: 'balance' } | null>(kept.open ? { kind: 'balance' } : null);
   const open = chat.messages.find((m): m is Ask => m.kind === 'ask' && m.id === linkId);
 
   const openLink = (id: number) => {
@@ -298,17 +308,23 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
     setPage(null);
     setLinkId(id);
     setSwitchTo('safari');
+    keptLink.keep(id);
   };
   const openPage = (next: NonNullable<typeof page>) => {
     if (switchTo || view !== 'messages') return;
     setLinkId(null);
     setPage(next);
     setSwitchTo('safari');
+    kept.keep(next.kind === 'balance');
   };
+  const { keep } = kept;
+  const { release } = keptLink;
   const back = useCallback(() => {
     if (switchTo || view !== 'safari') return;
     setSwitchTo('messages');
-  }, [switchTo, view]);
+    keep(false);
+    release(linkId);
+  }, [switchTo, view, keep, release, linkId]);
 
   // Both apps ride the switch as cards with their own status bars; the phone's own bar steps aside meanwhile.
   useLayoutEffect(() => {
@@ -377,6 +393,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
   const lastMe = chat.messages.reduce((id, m) => (m.kind === 'me' ? m.id : id), -1);
 
   const opened = useOpenedIds(chat.messages);
+  const tappedAtOpen = useOpenedMarks();
 
   // A bubble flies out of the field as it was when sent (two lines tall, say), not the emptied one.
   const fieldRow = useRef<HTMLSpanElement>(null);
@@ -465,6 +482,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         // Instinct only ever thumbs-ups what you send (recording 2).
         const tapback = m.react || (answers?.kind === 'ask' && answers.state === 'done') ? '👍' : undefined;
         const fresh = !opened.has(m.id);
+        const tappedStill = !!tapback && tappedAtOpen(`tapback-${m.id}`);
         return (
           <div className={styles.meCol} data-tapped={tapback ? true : undefined}>
             {answers && (
@@ -484,22 +502,22 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
                 <span className={styles.thread} />
               </motion.span>
             )}
-            <SentBubble fresh={fresh} from={takeSentFrom}>
+            <SentBubble
+              fresh={fresh}
+              from={takeSentFrom}
+              mark={
+                tapback && (
+                  // The cloud grows out of its tail, and the emoji pops in a beat later (recording 2, 29.53s).
+                  <motion.span className={styles.tapback} initial={tappedStill ? false : { scale: 0 }} animate={{ scale: 1 }} transition={TAPBACK}>
+                    <motion.span initial={tappedStill ? false : { scale: 0 }} animate={{ scale: 1 }} transition={{ ...TAPBACK, delay: 0.05 }}>
+                      {tapback}
+                    </motion.span>
+                  </motion.span>
+                )
+              }
+            >
               <Detected text={m.text} />
               <span className={styles.tailOut} />
-              {tapback && (
-                // The cloud grows out of its tail, and the emoji pops in a beat later (recording 2, 29.53s).
-                <motion.span
-                  className={styles.tapback}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={TAPBACK}
-                >
-                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ ...TAPBACK, delay: 0.05 }}>
-                    {tapback}
-                  </motion.span>
-                </motion.span>
-              )}
             </SentBubble>
             {m.id === lastMe && <Receipt key={m.id} fresh={fresh} />}
           </div>

@@ -134,7 +134,7 @@ Grok Bot, Dots, Muse, and Instinct are rebuilt from 13 screen recordings and
 same way (`.tmp-sweep/capture.mjs`) and compared frame by frame.
 
 - Nothing inside the phone names Lightspark or Grid. Each app calls the money
-  its own: Muse balance, Bot balance, Dots balance, Instinct balance, Duet
+  its own: Muse balance, Grok Bot balance, Dots balance, Instinct balance, Duet
   balance. Third-party patterns from the recordings (a connect sheet, a web
   checkout, a card vault) keep their layouts and carry the host app's brand.
   Merchants stay third-party because they are the payee.
@@ -249,6 +249,18 @@ card. Rewrite them when the API lands.
 - Agent runs join on 6.5pt corners for every kind of message, including
   cards, checkouts and one-line bubbles; a bubble is reshaped whenever its
   place in a run changes, not only when it resizes.
+
+### 2026-11-07: fewer Face ID moments, sheets that survive a switch
+
+- Face ID guards money leaving to someone else above the approval limit, and
+  limit changes. Turning on the balance, saving a card, linking a bank and
+  withdrawing to your own bank don't ask for it: the form or Plaid already
+  confirms, and the recordings never show it there.
+- Balance cards state the balance only; "left today" read as a second budget.
+- A sheet that's up (the balance, a card or bank form, Plaid) stays up when
+  the person switches apps and redraws in the new app's look.
+- Muse's rows fade up as they arrive and its typing dots follow recording 9.
+  The first app on the page used to skip every row's entrance.
 
 ### 2026-11-06: approve only, bank marks, and a balance page
 

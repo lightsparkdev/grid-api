@@ -4,7 +4,7 @@ import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke
 import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
 import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
-import { ChatFrame, ComposerField, ScrollEdge, STILL, TypingDots, useOpenedIds, type ScrollCurve } from '../ChatFrame';
+import { ChatFrame, ComposerField, ScrollEdge, STILL, TypingDots, useOpenedIds, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
 import type { AgentBalance, AskRow, Chip, Message, Product } from '../conversation';
 import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useSubAgentSheet } from '../parts';
@@ -44,29 +44,19 @@ function BrowserCard({ status, waiting, pos }: { status: string; waiting?: boole
   );
 }
 
-/** Muse balance as one of Muse's artifacts: the stat tiles; tapping it opens the balance page. */
+/** Muse balance as one of Muse's artifacts: the balance tile; tapping it opens the balance page. */
 function BalanceArtifact({ balance, onOpen, pos }: { balance: AgentBalance; onOpen: () => void; pos?: string }) {
   return (
-    <button type="button" className={styles.artifact} data-opens-sheet data-pos={pos} onClick={onOpen}>
+    <button type="button" className={`${styles.artifact} ${styles.balanceArtifact}`} data-opens-sheet data-pos={pos} onClick={onOpen}>
       <span className={styles.artifactHead}>
         {balance.wallet}
         <IconChevronRight size={14} />
       </span>
-      <div className={styles.tiles}>
-        <span className={styles.tileBig}>
-          <small>Balance</small>
-          <b>{balance.amount}</b>
-          <em>{balance.note}</em>
-        </span>
-        <span className={styles.tile}>
-          <small>Left today</small>
-          <b>{balance.spent.left}</b>
-        </span>
-        <span className={styles.tile}>
-          <small>Daily limit</small>
-          <b>{balance.spent.limit}</b>
-        </span>
-      </div>
+      <span className={styles.tileBig}>
+        <small>Balance</small>
+        <b>{balance.amount}</b>
+        <em>{balance.note}</em>
+      </span>
     </button>
   );
 }
@@ -279,45 +269,32 @@ function ApprovalCard({
       {ask.rows && (
         <div className={styles.details}>
           {ask.rows.map((row) => (
-            <div
-              key={row.text}
-              className={styles.detail}
-              data-tall={(row.sub?.length ?? 0) > 34 || undefined}
-              data-pay={row.icon === 'meta' || undefined}
-              data-switch={(row.icon === 'meta' && ask.pay && state === 'open') || undefined}
-              role={row.icon === 'meta' && ask.pay && state === 'open' ? 'button' : undefined}
-              onClick={row.icon === 'meta' && ask.pay && state === 'open' ? onPay : undefined}
-            >
+            <div key={row.text} className={styles.detail} data-tall={(row.sub?.length ?? 0) > 34 || undefined}>
               <span className={styles.lead}>
                 <RowLead row={row} />
               </span>
               <span className={styles.detailText}>
-                {row.icon === 'meta' ? (
-                  <>
-                    <span className={styles.payLines}>
-                      {row.text}
-                      {ask.method && (
-                        <>
-                          <br />
-                          {ask.method}
-                        </>
-                      )}
-                    </span>
-                    <small className={styles.payWith}>
-                      <img src={`${A}/meta-small.svg`} alt="" width={12} height={8} />
-                      {row.sub}
-                    </small>
-                  </>
-                ) : (
-                  <>
-                    <span className={styles.oneLine}>{row.text}</span>
-                    {row.sub && <small>{row.sub}</small>}
-                  </>
-                )}
+                <span className={styles.oneLine}>{row.text}</span>
+                {row.sub && <small>{row.sub}</small>}
               </span>
-              {row.icon === 'meta' && ask.pay && <span className={styles.chevron} />}
             </div>
           ))}
+        </div>
+      )}
+      {ask.payWith && (
+        // The whole row switches what pays, while the checkout is open and has another way to pay.
+        <div
+          className={`${styles.total} ${styles.payRow}`}
+          role={ask.pay && state === 'open' ? 'button' : undefined}
+          data-switch={(ask.pay && state === 'open') || undefined}
+          onClick={ask.pay && state === 'open' ? onPay : undefined}
+        >
+          <span>Pay with</span>
+          <span className={styles.payValue}>
+            {ask.payWith}
+            {ask.method && <small>{ask.method}</small>}
+          </span>
+          <span className={styles.chevronSmall} />
         </div>
       )}
       {(ask.total ?? ask.amount) && (
@@ -408,8 +385,13 @@ function Streamed({ text, fresh }: { text: string; fresh: boolean }) {
   return <>{text.slice(0, shown)}</>;
 }
 
-/** Muse's thread jumps to its foot: rows, the typing bubble and each streamed chunk land without a scroll animation. */
-const museScroll = (): ScrollCurve => 'snap';
+/**
+ * Muse's arrivals. Recording 9 jumps the thread and pops each row in; here a new row (a reply, a card, the typing
+ * bubble) fades up into place and the thread glides to it, while each streamed chunk still lands at once.
+ */
+const MUSE_EASE: [number, number, number, number] = [0.25, 0.8, 0.25, 1];
+const MUSE_IN: RowMotion = { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: MUSE_EASE } };
+const museScroll = (cause: ScrollCause): ScrollCurve => (cause === 'grow' ? 'snap' : { ms: 300, ease: MUSE_EASE });
 
 /** Muse's tab bar (IMG_1862, Figma Tab Bar - iPhone): icon, left and top in pt, width, height. */
 const TABS = [
@@ -507,7 +489,7 @@ export function MuseChat({ chat }: AgentChatProps) {
       className={styles.screen}
       messages={chat.messages}
       render={render}
-      rowMotion={() => STILL}
+      rowMotion={(m) => (m.kind === 'me' || openedIds.has(m.id) ? STILL : MUSE_IN)}
       scroll={museScroll}
       overlay={
         <>

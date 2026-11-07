@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { IconCapture } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCapture';
 import { FrostPanel } from '@/components/liquid-glass';
 import styles from './glass.module.scss';
 
@@ -151,6 +152,29 @@ export function PressButton({
       onClick={onClick}
     >
       {children}
+    </button>
+  );
+}
+
+/** A card form's hint that a photo of the card fills it in: Scan with the camera glyph, on glass. It goes nowhere. */
+export function ScanButton({ className }: { className?: string }) {
+  return (
+    <NoopButton label="Scan card" size={100} className={`${styles.scan} ${className ?? ''}`}>
+      <GlassPill radius={22} className={styles.scanGlass}>
+        <span className={styles.scanInner}>
+          <IconCapture size={20} />
+          Scan
+        </span>
+      </GlassPill>
+    </NoopButton>
+  );
+}
+
+/** The same hint as a bare camera glyph at the end of the card number field. */
+export function ScanGlyph() {
+  return (
+    <button type="button" aria-label="Scan card" className={styles.scanGlyph}>
+      <IconCapture size={20} />
     </button>
   );
 }

@@ -19,7 +19,7 @@ export const setupDone = (p: Params | undefined) => {
 export const yours = (p: Params | undefined) => (s(p, 'wallet').startsWith('your ') ? s(p, 'wallet') : `your ${s(p, 'wallet')}`);
 
 /** "a Muse balance", or Your agent's "a balance". */
-const a = (p: Params | undefined) => (s(p, 'wallet').startsWith('your ') ? 'a balance' : `a ${s(p, 'wallet')}`);
+const a = (p: Params | undefined) => (s(p, 'wallet').startsWith('your ') ? 'a balance' : `${/^[aeiou]/i.test(s(p, 'wallet')) ? 'an' : 'a'} ${s(p, 'wallet')}`);
 /** Withdrawn: on an instant rail it's there; ACH and bank transfers say when it lands. */
 const cashoutDone = (rail: string) =>
   rail === 'ACH' ? 'Sent. It reaches your bank in 1–3 business days.' : rail === 'Bank Transfer' ? 'Sent. It should land within a business day.' : 'Done. It’s in your account.';
@@ -149,7 +149,10 @@ export const LINES = {
     pullsFrom(linkedBank())
       ? `Your ${linkedBank().bankName} •••• ${linkedBank().last4} is already connected. I can add money from it or withdraw to it.`
       : `Your ${linkedBank().bankName} •••• ${linkedBank().last4} is already connected. You can send money from it, and I can withdraw to it.`,
-  'balance.none': (p) => `You don’t have ${a(p)} yet. I pay with your ${CARD}.`,
+  'balance.none': (p) =>
+    n(p, 'card')
+      ? `You don’t have ${a(p)} yet. I pay with your ${CARD}.`
+      : `You don’t have ${a(p)} yet. Set one up to keep money here and get paid, or add a card for me to pay with.`,
 
   'limits.intro': () => 'I can’t change my own limits, so I sent it to you to confirm.',
   'limits.done': (p) => `Done. I’ll handle anything up to ${usd(n(p, 'approve'))} and ask you above it.`,
@@ -350,7 +353,7 @@ export const NOTES = {
     title: `${s(p, 'wallet')} is on`,
     lines: [`Balance ${usd2(n(p, 'balance'))}`],
     done: true,
-    balance: balanceOf(p, 'Ready to spend'),
+    balance: balanceOf(p, 'Available to spend'),
   }),
   deposit: (p) => {
     const lightning = s(p, 'network') === 'LIGHTNING';
@@ -411,7 +414,6 @@ export const NOTES = {
   balance: (p) => ({
     title: usd2(n(p, 'balance')),
     lines: [
-      `Left to spend today · ${usd2(n(p, 'leftToday'))}`,
       `Up to ${usd(n(p, 'perTx'))} a payment`,
       `Asks you above ${usd(n(p, 'approve'))}`,
     ],
@@ -433,10 +435,9 @@ export const MUSE_ORDER = (p: Params | undefined): AgentAsk => ({
   rows: [
     { text: s(p, 'item'), sub: 'Qty: 1', image: s(p, 'image') },
     { text: 'Standard by 2 to 5 business days', sub: ADDRESS, icon: 'truck' },
-    { text: PERSON.email, sub: PERSON.phone, icon: 'envelope' },
-    n(p, 'card') ? { text: CARD, sub: 'Pay with your saved card', icon: 'meta' } : { text: 'Muse balance', sub: 'Pay with Muse balance', icon: 'meta' },
   ],
   total: usd2(n(p, 'amount')),
+  payWith: n(p, 'card') ? CARD : 'Muse balance',
   method: n(p, 'card') ? 'Expires 09/29' : `${usd2(n(p, 'balance'))} available`,
   legal: s(p, 'merchant'),
   pay: payOf(p),

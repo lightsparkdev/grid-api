@@ -149,23 +149,17 @@
   }
 }
 
+// The bar's wash: solid behind the discs and title, fading out by the bar's foot, so it sits evenly around them.
 .edge {
   position: absolute;
   top: 0;
   right: 0;
   left: 0;
   z-index: 2;
-  height: calc(var(--sp-bar) + 18px);
-  background: linear-gradient(180deg, var(--sp-bg, #fff) 35%, color-mix(in srgb, var(--sp-bg, #fff) 0%, transparent));
+  height: var(--sp-bar);
+  background: linear-gradient(180deg, var(--sp-bg, #fff) 60%, color-mix(in srgb, var(--sp-bg, #fff) 0%, transparent));
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
-
-  &[data-shown] {
-    opacity: 1;
-  }
-
-  @include bands(180deg, ((1, 1px, 60%, 100%), (2, 2px, 45%, 85%), (3, 4px, 30%, 70%), (4, 8px, 15%, 55%), (5, 12px, 0%, 40%)));
 }
 
 .footEdge {

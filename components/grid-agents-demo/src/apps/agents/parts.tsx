@@ -78,13 +78,10 @@ export function NoteCard({ note, className }: { note: AgentNote; className?: str
  */
 export function BalanceCard({
   balance,
-  track,
   onOpen,
   className,
 }: {
   balance: AgentBalance;
-  /** Draw today's spend against the daily limit. */
-  track?: boolean;
   onOpen: () => void;
   className?: string;
 }) {
@@ -96,16 +93,6 @@ export function BalanceCard({
       </span>
       <strong className={styles.accountAmount}>{balance.amount}</strong>
       <span className={styles.accountNote}>{balance.note}</span>
-      {track && (
-        <span className={styles.accountTrack}>
-          <span className={styles.accountBar}>
-            <i style={{ width: `${Math.max(2, balance.spent.ratio * 100)}%` }} />
-          </span>
-          <small>
-            {balance.spent.left} left of {balance.spent.limit} today
-          </small>
-        </span>
-      )}
     </button>
   );
 }

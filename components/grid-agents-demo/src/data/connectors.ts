@@ -12,7 +12,7 @@ export interface ConnectorDef {
 /** In the Figma's grid order: two columns, read across. */
 export const CONNECTORS: ConnectorDef[] = [
   { id: 'muse', label: 'Muse', logo: { src: '/assets/connectors/muse-app.png' } },
-  { id: 'grok', label: 'Bot', logo: { src: '/assets/connectors/bot-app.png' } },
+  { id: 'grok', label: 'Grok Bot', logo: { src: '/assets/connectors/bot-app.png' } },
   { id: 'dot', label: 'Dots', logo: { src: '/assets/connectors/chatgpt-app.png' } },
   // Instinct lives in iMessage and has no app: its mark, drawn as an icon.
   { id: 'instinct', label: 'Instinct', logo: { src: '/assets/connectors/instinct-app.png' } },

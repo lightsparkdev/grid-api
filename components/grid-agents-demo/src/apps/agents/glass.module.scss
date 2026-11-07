@@ -105,3 +105,43 @@
   font-size: 17px;
   font-weight: 600;
 }
+
+// ScanButton: a 44pt capsule like a sheet's Cancel and Done, Scan after the camera glyph, in the sheet's own ink.
+.scan {
+  height: 44px;
+  color: inherit;
+}
+
+.scanGlass {
+  height: 44px;
+}
+
+.scanInner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 17px 0 14px;
+  font-size: 17px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.scanGlyph {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 -6px 0 auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}

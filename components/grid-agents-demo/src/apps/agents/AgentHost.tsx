@@ -7,6 +7,7 @@ import type { ChatTurn } from '@/lib/llm/types';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
 import { useAgentBrain, type FreeTextReply } from './brain/useAgentBrain';
 import type { Message } from './conversation';
+import { OpenSheetsContext, type OpenSheets } from './openSheets';
 import { SKINS } from './skins';
 import type { ChatView } from './types';
 import { renderThread, voiceFor } from './voices';
@@ -64,17 +65,26 @@ export function AgentHost({ connector, dark, reply, ...options }: AgentHostProps
   rendered.current = messages;
   const chat: ChatView = { ...brain, messages };
   const { Chat } = SKINS[connector];
+  const sheets = useRef<OpenSheets>({ balance: false, ask: null, plaid: null });
+  const kept = useMemo(() => ({ sheets, wallet: voice.wallet }), [voice]);
+  // The first app is just there; later ones fade in. Not AnimatePresence's `initial={false}`: that also stops every
+  // row inside the first app from ever playing its entrance.
+  const first = useRef(connector);
+  const switched = useRef(false);
+  if (connector !== first.current) switched.current = true;
   return (
-    <AnimatePresence initial={false}>
-      <motion.div
-        key={connector}
-        className={styles.skinLayer}
-        initial={SKIN_HIDDEN}
-        animate={{ ...SKIN_ENTER, transition: SKIN_FADE }}
-        exit={{ ...SKIN_EXIT, transition: SKIN_FADE }}
-      >
-        <Chat chat={chat} dark={dark} />
-      </motion.div>
-    </AnimatePresence>
+    <OpenSheetsContext.Provider value={kept}>
+      <AnimatePresence>
+        <motion.div
+          key={connector}
+          className={styles.skinLayer}
+          initial={switched.current ? SKIN_HIDDEN : false}
+          animate={{ ...SKIN_ENTER, transition: SKIN_FADE }}
+          exit={{ ...SKIN_EXIT, transition: SKIN_FADE }}
+        >
+          <Chat chat={chat} dark={dark} />
+        </motion.div>
+      </AnimatePresence>
+    </OpenSheetsContext.Provider>
   );
 }

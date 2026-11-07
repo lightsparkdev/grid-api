@@ -8,6 +8,8 @@ import styles from './SheetPage.module.scss';
 
 /** iOS's page sheet present (Muse, Grok and Claude rise alike): ~450ms, a long settle. */
 export const PAGE_SHEET_IN: Transition = { duration: 0.45, ease: [0.3, 0.7, 0.2, 1] };
+/** How far the page scrolls (pt) before the bar's wash is fully in. */
+const EDGE_FADE = 24;
 const PUSH: Transition = { duration: 0.35, ease: [0.2, 0.8, 0.2, 1] };
 /** Pushes like iOS navigation: forward slides in from the right over a parallaxed page, back from the left. */
 const SLIDE = {
@@ -96,8 +98,9 @@ function SearchField({ search, className }: { search: SheetSearch; className: st
  * - `large` (Muse's Settings, recording 21-06): a 34pt title opens the page and scrolls with it; once it has
  *   passed under the bar, the 17pt title fades in at the bar's center.
  * - Otherwise the title sits in the bar from the start (Dots, Grok, Claude).
- * Content scrolls under the bar through a progressive blur over a wash of the page's color, which appears once
- * anything is underneath. Every color comes from the host's --sp-* variables.
+ * Content scrolls under the bar into a wash of the page's color, which fades in over the first `EDGE_FADE` points
+ * of scroll. No backdrop blur: inside the presented sheet Chrome samples it offset, a ghost copy with a hard edge.
+ * Every color comes from the host's --sp-* variables.
  */
 export function SheetPage({
   title,
@@ -127,12 +130,12 @@ export function SheetPage({
   const scroller = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLDivElement>(null);
-  const [under, setUnder] = useState(false);
+  const edge = useRef<HTMLDivElement>(null);
   const [titled, setTitled] = useState(!large);
   const onScroll = () => {
     const el = scroller.current;
     if (!el) return;
-    setUnder(el.scrollTop > 1);
+    if (edge.current) edge.current.style.opacity = String(Math.min(1, el.scrollTop / EDGE_FADE));
     const h = heading.current;
     // The scroller is the heading's offset parent; the bar covers its top.
     if (large && h) setTitled(el.scrollTop > h.offsetTop + h.offsetHeight - (bar.current?.offsetHeight ?? 0) - 6);
@@ -157,13 +160,7 @@ export function SheetPage({
         )}
         <div className={styles.content}>{children}</div>
       </div>
-      <div className={styles.edge} data-shown={under || undefined} aria-hidden>
-        <i />
-        <i />
-        <i />
-        <i />
-        <i />
-      </div>
+      <div ref={edge} className={styles.edge} aria-hidden />
       <div ref={bar} className={styles.bar}>
         <span className={styles.end}>{leading}</span>
         <strong className={styles.title} data-shown={titled || undefined}>

@@ -10,7 +10,7 @@ import bank from './GrokBank.module.scss';
 import styles from './GrokBalance.module.scss';
 
 /*
- * Bot balance as Grok draws its Settings (IMG_1919) and Vault (IMG_1922, IMG_1923): white groups of 17pt rows
+ * Grok Bot balance as Grok draws its Settings (IMG_1919) and Vault (IMG_1922, IMG_1923): white groups of 17pt rows
  * with a gray line under the name, a faint section label, the Vault's rows with their outlined glyph and the
  * gray note under them, and its pill tabs with counts over the activity.
  */

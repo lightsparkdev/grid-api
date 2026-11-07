@@ -40,7 +40,7 @@ export function SiteBar({ left, onLeft, save }: { left: 'menu' | 'close'; onLeft
 }
 
 /** A form field as Add login draws it: the label over a beige box. */
-export function SiteField({ label, value, flag, icon }: { label: string; value: string; flag?: string; icon?: ReactNode }) {
+export function SiteField({ label, value, flag, icon, trailing }: { label: string; value: string; flag?: string; icon?: ReactNode; trailing?: ReactNode }) {
   return (
     <label className={styles.siteField}>
       <span className={styles.siteLabel}>
@@ -50,6 +50,7 @@ export function SiteField({ label, value, flag, icon }: { label: string; value: 
       <span className={styles.siteInput}>
         {flag && <Flag code={flag} size={18} />}
         {value}
+        {trailing}
       </span>
     </label>
   );

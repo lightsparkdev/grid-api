@@ -184,7 +184,8 @@
 // ── Profile: the avatar, then label | value rows in a white group ──────
 .hero {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   padding: 2px 0 24px;
 }
 
@@ -264,4 +265,10 @@
   to {
     rotate: 360deg;
   }
+}
+
+// The card form's Scan, at the top right of the fields (the sheet's own top right holds Save).
+// Scan sits on the avatar's lower edge, as a contact's Edit Photo does.
+.heroScan {
+  margin-top: -16px;
 }

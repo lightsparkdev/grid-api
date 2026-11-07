@@ -14,7 +14,7 @@ import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke
 import { Flag } from '@/apps/shared/Flag';
 import { BANK_REACH, type BankCountry } from '@/data/bankCountries';
 import type { AgentAsk, ChipGlyph, Message } from '../conversation';
-import { GlassButton } from '../glass';
+import { GlassButton, ScanButton } from '../glass';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
 import { AppSheet } from '../sheet';
 import { APP_ICONS, opensPlaid, usePlaidLink } from '../vault/PlaidLink';
@@ -203,13 +203,16 @@ function Intro({ onStart, onNotNow }: { onStart: () => void; onNotNow: () => voi
 
 /** Dots' bank flow: `open(id, ask)` from its pill, and the sheets to render in its screen. */
 export function useDotBank({ messages, present, onAllow, onDeny }: { messages: Message[]; present: Transition; onAllow: () => void; onDeny: () => void }) {
-  const sheet = useAskSheet(messages);
-  const [listed, setListed] = useState(false);
+  const sheet = useAskSheet(messages, (a) => !!a.bank);
+  const [listed, setListed] = useState(() => !!sheet.ask?.recipient);
   const plaid = usePlaidLink({
     app: 'Dots',
     icon: APP_ICONS.dot,
     messages,
-    onLinked: onAllow,
+    onLinked: () => {
+      sheet.hide();
+      onAllow();
+    },
     onManual: (id, ask) => {
       setListed(true);
       sheet.show(id, ask);
@@ -226,7 +229,6 @@ export function useDotBank({ messages, present, onAllow, onDeny }: { messages: M
           <Intro
             onStart={() => {
               if (sheet.ask && !opensPlaid(sheet.ask)) return setListed(true);
-              sheet.hide();
               if (sheet.ask) plaid.open(sheet.id, sheet.ask);
             }}
             onNotNow={() => {
@@ -263,6 +265,7 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
           <IconCrossMedium size={22} />
         </SheetDisc>
       }
+      trailing={<ScanButton />}
       footer={
         <Capsule busy={entry.busy} done={entry.stage === 'saved'} onClick={entry.save}>
           {entry.stage === 'saved' ? 'Saved' : (ask.allow ?? 'Save card')}
@@ -283,7 +286,7 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
 
 /** Dots' card flow: the Add card page, filled in. Closing it leaves the pill waiting in the thread. */
 export function useDotCard({ messages, present, onAllow }: { messages: Message[]; present: Transition; onAllow: () => void }) {
-  const sheet = useAskSheet(messages);
+  const sheet = useAskSheet(messages, (a) => !!a.card);
   return {
     open: sheet.show,
     sheet: (

@@ -86,14 +86,14 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
   /** xAI's bot: direct, a little dry. */
   grok: {
     name: 'Grok Bot',
-    wallet: 'Bot balance',
+    wallet: 'Grok Bot balance',
     lines: {
       greeting: () => `Hey. Give me the money chores: paying people in ${BANK_REACH} countries, subscriptions, getting paid. Hand me a card or a balance, plus a leash. Pick one.`,
       'setup.auto': (p) => `FYI: ${setupDone(p)}. Skipped the paperwork.`,
       'connect.already': () => 'Already connected. Here’s the account.',
-      'connect.intro': (p) => (n(p, 'hasAgent') ? 'That needs a Bot balance. Here’s the deal.' : 'First I need my own account and a leash. Here’s what I’m asking for.'),
-      'connect.self': (p) => (n(p, 'hasAgent') ? 'Sure. Here’s the Bot balance deal.' : 'Sure. I need my own account and a leash. Here’s what I’m asking for.'),
-      'connect.done': (p) => (n(p, 'hasAgent') ? 'Bot balance on. Your rules.' : 'Connected. My own account, your rules.'),
+      'connect.intro': (p) => (n(p, 'hasAgent') ? 'That needs a Grok Bot balance. Here’s the deal.' : 'First I need my own account and a leash. Here’s what I’m asking for.'),
+      'connect.self': (p) => (n(p, 'hasAgent') ? 'Sure. Here’s the Grok Bot balance deal.' : 'Sure. I need my own account and a leash. Here’s what I’m asking for.'),
+      'connect.done': (p) => (n(p, 'hasAgent') ? 'Grok Bot balance on. Your rules.' : 'Connected. My own account, your rules.'),
       'pay.newRecipient': (p) => `No bank on file for ${s(p, 'first')}. Add it once and I’ll send it.`,
       'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'local')} is about ${usd(n(p, 'usd'))}.` : ''}`,
       'pay.done': (p) => `Sent. ${s(p, 'first')}’s got it. Receipt’s in your inbox.`,
@@ -107,16 +107,16 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       connect: (p) => ({
         ...ASKS.connect(p),
         form: {
-          title: 'Turn on Bot balance',
+          title: 'Turn on Grok Bot balance',
           sub: 'Set what your Bot can spend. Only you can change these.',
-          sheetTitle: 'Bot balance',
+          sheetTitle: 'Grok Bot balance',
           fields: [
             { label: 'Per payment', value: usd(n(p, 'perTx')) },
             { label: 'Per day', value: usd(n(p, 'daily')) },
             { label: 'Ask me above', value: usd(n(p, 'approve')) },
           ],
           toggle: 'Face ID for anything over the limit',
-          submitted: 'Turned on Bot balance',
+          submitted: 'Turned on Grok Bot balance',
         },
       }),
       vault: () => ({

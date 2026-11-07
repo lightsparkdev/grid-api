@@ -221,24 +221,41 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   padding: 0;
   @include corners.bubble(20px, 0);
   color: var(--muse-dots);
+}
 
-  i {
-    animation-name: pulse;
+// Recording 9 (38 to 42s): each dot fades nearly out and back, then bobs up 6pt; the three run 0.15s apart.
+// Scoped under the screen so it outranks the shared dots' pulse.
+.screen .typing i {
+  opacity: 1;
+  animation: think 1.67s ease-in-out infinite;
+
+  &:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 0.3s;
   }
 }
 
-@keyframes pulse {
+@keyframes think {
   0%,
+  30%,
+  48%,
+  84%,
   100% {
-    opacity: 0.35;
-  }
-
-  25% {
     opacity: 1;
+    translate: 0 0;
   }
 
-  50% {
-    opacity: 0.35;
+  13% {
+    opacity: 0.2;
+    translate: 0 0;
+  }
+
+  66% {
+    opacity: 1;
+    translate: 0 -6px;
   }
 }
 
@@ -380,14 +397,12 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
     background: var(--muse-card);
   }
 
-  .detail[data-pay],
   .total,
   .actions {
     transition: opacity 0.2s ease-out;
   }
 
   &:not([data-ready]) {
-    .detail[data-pay],
     .total {
       opacity: 0.45;
     }
@@ -456,14 +471,6 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
     height: 80px;
   }
 
-  &[data-pay] {
-    height: 83px;
-    padding-right: 19.75px;
-  }
-
-  &[data-switch] {
-    cursor: pointer;
-  }
 }
 
 .lead {
@@ -538,14 +545,31 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   white-space: nowrap;
 }
 
-.payLines {
-  line-height: 22px;
+// Over Total, built like it: Pay with, then what pays over what it has left, and the chevron.
+.payRow {
+  height: 64px;
+  margin-top: 8px;
+
+  &[data-switch] {
+    cursor: pointer;
+  }
+
+  + .total {
+    margin-top: 8px;
+  }
 }
 
-.payWith {
+.payValue {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 22px;
+
+  small {
+    color: var(--muse-muted);
+    font-size: 13px;
+    line-height: 17px;
+  }
 }
 
 .total {
@@ -918,23 +942,10 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   font-weight: 600;
 }
 
-.tiles {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-
-  small {
-    color: var(--art-muted);
-    font-size: 12px;
-  }
-
-  b {
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
+.balanceArtifact {
+  width: 240px;
 }
 
-.tile,
 .tileBig {
   display: flex;
   flex-direction: column;
@@ -943,17 +954,15 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   border-radius: 16px;
   background: var(--art-tile);
 
-  b {
-    font-size: 20px;
-    line-height: 24px;
+  small {
+    color: var(--art-muted);
+    font-size: 12px;
   }
-}
-
-.tileBig {
-  grid-column: 1 / -1;
 
   b {
     font-size: 34px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
     line-height: 40px;
   }

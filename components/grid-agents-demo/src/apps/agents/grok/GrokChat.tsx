@@ -10,12 +10,13 @@ import { IconHome } from '@central-icons-react/round-outlined-radius-3-stroke-1.
 import { IconPaperPlane } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPaperPlane';
 import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconTag';
 import { Flag } from '@/apps/shared/Flag';
-import { ChatFrame, ComposerField, NATIVE_IN, ScrollEdge, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
-import { GlassDisc, GlassPill, NoopButton } from '../glass';
+import { ChatFrame, ComposerField, NATIVE_IN, ScrollEdge, useOpenedMarks, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
+import { GlassDisc, GlassPill, NoopButton, ScanGlyph } from '../glass';
 import type { AgentAsk, Chip, Message, Product } from '../conversation';
 import { BalanceCard, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
+import { useAskSheet } from '../vault/useAskSheet';
 import { bankDoneLabel } from '../vault/useBankPicker';
 import { useGrokBalance } from './GrokBalance';
 import { useGrokBank } from './GrokBank';
@@ -51,13 +52,19 @@ const REACT_PILL: Transition = {
   opacity: { duration: 0.08, ease: 'easeOut', delay: REACT_LAND - 0.05 },
 };
 
-function Reaction({ emoji }: { emoji: string }) {
+/** `still`: it was already there when the app opened, so it doesn't land again. */
+function Reaction({ emoji, still }: { emoji: string; still: boolean }) {
   return (
     <span className={styles.react}>
-      <motion.span className={styles.reactPill} initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={REACT_PILL} />
+      <motion.span
+        className={styles.reactPill}
+        initial={still ? false : { scale: 0.6, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={REACT_PILL}
+      />
       <motion.span
         className={styles.reactEmoji}
-        initial={{ opacity: 0, scale: 0.75, y: -35 }}
+        initial={still ? false : { opacity: 0, scale: 0.75, y: -35 }}
         animate={{ opacity: [0, 1, 1, 1, 1], scale: [0.75, 1, 1, 0.55, 0.5], y: [-35, -35, -35, -3, 0] }}
         transition={REACT_EMOJI}
       >
@@ -217,10 +224,13 @@ function FormSheet({ ask, onCancel, onDone }: { ask: AgentAsk; onCancel: () => v
         </button>
       </div>
       <div className={styles.fields}>
-        {f.fields.map((x) => (
+        {f.fields.map((x, i) => (
           <label key={x.label} className={styles.field}>
             <span>{x.label}</span>
-            <span className={styles.input}>{x.value}</span>
+            <span className={styles.input}>
+              {x.value}
+              {ask.card && i === 0 && <ScanGlyph />}
+            </span>
           </label>
         ))}
         {f.toggle && (
@@ -334,13 +344,11 @@ function settledByOrder(i: number, all: Message[]) {
 
 export function GrokChat({ chat }: AgentChatProps) {
   const [multiline, setMultiline] = useState(false);
+  const reactedAtOpen = useOpenedMarks();
   // The sheet keeps its ask while it slides away.
   const bank = useGrokBank({ messages: chat.messages, onAllow: chat.allow });
   const balance = useGrokBalance({ account: chat.account, onAction: chat.prompt });
-  const [sheet, setSheet] = useState<{ id: number; ask: AgentAsk } | null>(null);
-  const sheetOpen = !!sheet && chat.messages.some((m) => m.kind === 'ask' && m.id === sheet.id && m.state === 'open');
-  const [shown, setShown] = useState(false);
-  const closeSheet = () => setShown(false);
+  const form = useAskSheet(chat.messages, (a) => !!a.form && !a.bank);
   const working = chat.busy || chat.messages.some((m) => m.kind === 'work');
   const sub = useSubAgentSheet(chat.messages, SHEET_IN);
 
@@ -362,7 +370,7 @@ export function GrokChat({ chat }: AgentChatProps) {
             <Bubble className={styles.me} {...neighbors(i, all, 'me')}>
               {m.text}
             </Bubble>
-            {m.react && <Reaction emoji={m.react} />}
+            {m.react && <Reaction emoji={m.react} still={reactedAtOpen(`react-${m.id}`)} />}
           </span>
         );
       case 'ask':
@@ -371,8 +379,7 @@ export function GrokChat({ chat }: AgentChatProps) {
             m={m}
             onOpen={() => {
               if (m.ask.bank) return bank.open(m.id, m.ask);
-              setSheet({ id: m.id, ask: m.ask });
-              setShown(true);
+              form.show(m.id, m.ask);
             }}
           />
         ) : (
@@ -384,7 +391,6 @@ export function GrokChat({ chat }: AgentChatProps) {
           return (
             <BalanceCard
               balance={b}
-              track
               className={styles.accountSkin}
               onOpen={() => balance.open(b.wallet)}
             />
@@ -494,16 +500,16 @@ export function GrokChat({ chat }: AgentChatProps) {
           </motion.div>
         }
       />
-      <AppSheet open={shown && sheetOpen} present={SHEET_IN} dim={0.2} className={styles.sheetPanel} onDismiss={closeSheet}>
-        {sheet && (
+      <AppSheet open={form.open} present={SHEET_IN} dim={0.2} className={styles.sheetPanel} onDismiss={form.hide}>
+        {form.ask && (
           <FormSheet
-            ask={sheet.ask}
+            ask={form.ask}
             onCancel={() => {
-              closeSheet();
+              form.hide();
               chat.deny();
             }}
             onDone={() => {
-              closeSheet();
+              form.hide();
               chat.allow();
             }}
           />

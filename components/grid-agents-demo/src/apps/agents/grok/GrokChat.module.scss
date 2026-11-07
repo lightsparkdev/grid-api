@@ -839,8 +839,11 @@
   color: var(--grok-muted);
 }
 
+// The bars tuck 1pt under each circle; the circles sit above them, including the rest of the track drawn after.
 .trackEnd,
 .trackMark {
+  position: relative;
+  z-index: 1;
   display: grid;
   flex: none;
   place-items: center;
@@ -1041,7 +1044,6 @@
   --acct-accent-ink: var(--grok-ink-text);
   --acct-track: var(--grok-green);
   --acct-edge: inset 0 0 0 1px var(--grok-line);
-  width: 325px;
 }
 
 // The sub-agent row, in the status row's type.

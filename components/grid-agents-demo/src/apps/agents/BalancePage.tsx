@@ -8,6 +8,7 @@ import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-3-str
 import type { AccountSnapshot } from '@/data/agentApiCalls';
 import { BankMark } from './BankMark';
 import { linkedBank } from './linkedBank';
+import { useKeptBalance } from './openSheets';
 import { PageSheet, SheetDisc, SheetPage } from './SheetPage';
 import { usd, usd2 } from './story';
 import styles from './BalancePage.module.scss';
@@ -83,13 +84,18 @@ export function useBalanceSheet({
   present?: Transition;
   page: (props: BalancePageProps) => ReactNode;
 }) {
-  const [wallet, setWallet] = useState<string | null>(null);
-  const [shown, setShown] = useState(false);
-  const close = () => setShown(false);
+  const kept = useKeptBalance();
+  const [wallet, setWallet] = useState<string | null>(kept.open ? kept.wallet : null);
+  const [shown, setShown] = useState(kept.open);
+  const close = () => {
+    setShown(false);
+    kept.keep(false);
+  };
   return {
     open: (name: string) => {
       setWallet(name);
       setShown(true);
+      kept.keep(true);
     },
     sheet: (
       <PageSheet open={shown} present={present} className={theme} onDismiss={close}>

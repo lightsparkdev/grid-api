@@ -217,6 +217,13 @@
   color: #fff;
 }
 
+// Your bubble with its tapback beside it, so the cloud places against the bubble but outside its clip.
+.meBox {
+  position: relative;
+  display: flex;
+  max-width: 100%;
+}
+
 .tailIn,
 .tailOut {
   position: absolute;

@@ -1,4 +1,4 @@
-import { useCallback, useRef, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, type Transition } from 'motion/react';
 import { PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
 import styles from './sheet.module.scss';
@@ -90,8 +90,10 @@ export function AppSheet({
   children: ReactNode;
 }) {
   const foot = useFootFit();
+  // Already up as it mounts (kept open across an app switch): it's simply there, under the skins' crossfade.
+  const [upAtMount] = useState(open);
   return (
-    <AnimatePresence>
+    <AnimatePresence initial={!upAtMount}>
       {open && (
         <motion.div
           key="dim"

@@ -11,6 +11,7 @@ import type { AccountSnapshot } from '@/data/agentApiCalls';
 import { BankMark } from '../BankMark';
 import { balanceView, type BalanceAction } from '../BalancePage';
 import type { AgentAsk, AskState, SubAgent } from '../conversation';
+import { ScanGlyph } from '../glass';
 import { askButtons } from '../parts';
 import { APP_ICONS, opensPlaid, PlaidFlow } from '../vault/PlaidLink';
 import { InstinctBank, SiteBar, SiteField } from './InstinctBank';
@@ -100,8 +101,14 @@ export function InstinctSafari({
         <main className={styles.siteScroll}>
           <h1 className={styles.siteTitle}>{ask.title}</h1>
           <div className={styles.siteFields}>
-            {ask.rows?.map((r) => (
-              <SiteField key={r.text} label={r.text} value={r.sub ?? ''} icon={r.icon === 'lock' ? <SfSymbol name="lock.fill" size={12} /> : undefined} />
+            {ask.rows?.map((r, i) => (
+              <SiteField
+                key={r.text}
+                label={r.text}
+                value={r.sub ?? ''}
+                icon={r.icon === 'lock' ? <SfSymbol name="lock.fill" size={12} /> : undefined}
+                trailing={ask.card && i === 0 ? <ScanGlyph /> : undefined}
+              />
             ))}
           </div>
           <p className={styles.siteNote}>Only you can change these.</p>

@@ -117,7 +117,7 @@ function DetailsPage({ picker, onClose }: { picker: BankPicker; onClose: () => v
       <p className={styles.help}>
         {picker.payee
           ? `${payeeBlurb(bank, picker.payee.first)} Your Bot pays by account.`
-          : `Money moves over ${railLine(bank.country).replace(' · ', ' in ')}, in and out of your Bot balance.`}
+          : `Money moves over ${railLine(bank.country).replace(' · ', ' in ')}, in and out of your Grok Bot balance.`}
       </p>
     </SheetPage>
   );
@@ -134,7 +134,7 @@ function BankFlow({ payee, home, onLinked, onClose }: { payee?: AgentAsk['recipi
 
 /** Grok's bank flow: the form card's Continue opens it; closing leaves the card waiting. */
 export function useGrokBank({ messages, onAllow }: { messages: Message[]; onAllow: () => void }) {
-  const sheet = useAskSheet(messages);
+  const sheet = useAskSheet(messages, (a) => !!a.bank && !opensPlaid(a));
   const plaid = usePlaidLink({ app: 'Grok', icon: APP_ICONS.grok, messages, onLinked: onAllow, onManual: sheet.show });
   return {
     // Your own bank goes through Plaid; someone else's, or one Plaid doesn't have, through the form.

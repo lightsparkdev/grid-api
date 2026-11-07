@@ -21,6 +21,8 @@ import { VOICES } from './apps';
 export interface Voice {
   id: ConnectorId;
   name: string;
+  /** Its money's name as a title ("Muse balance"), as the balance card heads it. */
+  wallet: string;
   line(key: string, params?: Params): string;
   ask(key: string, params?: Params): AgentAsk;
   note(key: string, params?: Params): AgentNote;
@@ -47,6 +49,7 @@ export function voiceFor(connector: ConnectorId): Voice {
   return {
     id: connector,
     name: v.name,
+    wallet: v.wallet.charAt(0).toUpperCase() + v.wallet.slice(1),
     line: (key, params) => {
       const own = v.lines?.[key as LineKey];
       if (own) return own(withName(params));

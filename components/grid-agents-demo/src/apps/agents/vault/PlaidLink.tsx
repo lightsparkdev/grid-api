@@ -4,6 +4,7 @@ import { BANK_COUNTRIES } from '@/data/bankCountries';
 import { BankMark } from '../BankMark';
 import type { AgentAsk, Message } from '../conversation';
 import { bankFor, linkBank, type LinkedBank } from '../linkedBank';
+import { useKeptAsk } from '../openSheets';
 import { GlassPill, NoopButton, PressButton } from '../glass';
 import { AppSheet } from '../sheet';
 import styles from './PlaidLink.module.scss';
@@ -475,18 +476,29 @@ export function usePlaidLink({
   onLinked: () => void;
   onManual: (id: number, ask: AgentAsk) => void;
 }) {
-  const [run, setRun] = useState<{ id: number; ask: AgentAsk; stage: 'alert' | 'sheet' } | null>(null);
+  // Kept across an app switch: the next app opens Plaid again, past the alert already answered.
+  const kept = useKeptAsk('plaid', messages, (a) => !!a.bank);
+  const [run, setRun] = useState<{ id: number; ask: AgentAsk; stage: 'alert' | 'sheet' } | null>(kept.initial && { ...kept.initial, stage: 'sheet' });
   const live = !!run && messages.some((m) => m.kind === 'ask' && m.id === run.id && m.state === 'open');
   useEffect(() => {
-    if (run && !live) setRun(null);
+    if (run && !live) {
+      setRun(null);
+      kept.release(run.id);
+    }
   }, [run, live]);
-  const close = () => setRun(null);
-  const handOff = (after: () => void) => {
+  const close = () => {
     setRun(null);
+    kept.release(run?.id);
+  };
+  const handOff = (after: () => void) => {
+    close();
     window.setTimeout(after, DROP_MS);
   };
   return {
-    open: (id: number, ask: AgentAsk) => setRun({ id, ask, stage: 'alert' }),
+    open: (id: number, ask: AgentAsk) => {
+      setRun({ id, ask, stage: 'alert' });
+      kept.keep(id);
+    },
     overlay: (
       <>
         <AnimatePresence>{run?.stage === 'alert' && <Alert key="alert" app={app} onCancel={close} onContinue={() => setRun({ ...run, stage: 'sheet' })} />}</AnimatePresence>

@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, type Transition } from 'motion/react';
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
@@ -12,7 +11,7 @@ import { BANK_REACH, currencyFor, type BankCountry } from '@/data/bankCountries'
 import type { AgentAsk, AskState, Message } from '../conversation';
 import type { LinkedBank } from '../linkedBank';
 import { askButtons } from '../parts';
-import { GlassButton } from '../glass';
+import { GlassButton, ScanButton } from '../glass';
 import { AppSheet } from '../sheet';
 import { SheetDisc } from '../SheetPage';
 import { APP_ICONS, opensPlaid, usePlaidLink } from './PlaidLink';
@@ -203,40 +202,31 @@ export function useBankLink({
   onAllow: () => void;
   onDeny: () => void;
 }) {
-  const [ask, setAsk] = useState<number | null>(null);
-  const [open, setOpen] = useState(false);
-  const live = ask !== null && messages.some((m) => m.kind === 'ask' && m.id === ask && m.state === 'open');
-  const shown = messages.find((m): m is Extract<Message, { kind: 'ask' }> => m.kind === 'ask' && m.id === ask);
-  useEffect(() => {
-    if (open && !live) setOpen(false);
-  }, [open, live]);
-  const showForm = (id: number) => {
-    setAsk(id);
-    setOpen(true);
-  };
-  const plaid = usePlaidLink({ app: 'Your app', icon: APP_ICONS.yourapp, messages, onLinked: onAllow, onManual: showForm });
+  const form = useAskSheet(messages, (a) => !!a.bank && !opensPlaid(a));
+  const plaid = usePlaidLink({ app: 'Your app', icon: APP_ICONS.yourapp, messages, onLinked: onAllow, onManual: form.show });
   return {
     // Your own bank goes through Plaid; someone else's, or one Plaid doesn't have, through the form.
     open: (id: number) => {
       const m = messages.find((x): x is Extract<Message, { kind: 'ask' }> => x.kind === 'ask' && x.id === id);
-      if (m && opensPlaid(m.ask)) plaid.open(id, m.ask);
-      else showForm(id);
+      if (!m) return;
+      if (opensPlaid(m.ask)) plaid.open(id, m.ask);
+      else form.show(id, m.ask);
     },
     sheet: (
       <>
-        <AppSheet open={open} present={SHEET_IN} dim={0.3} className={styles.panel} onDismiss={() => setOpen(false)}>
+        <AppSheet open={form.open} present={SHEET_IN} dim={0.3} className={styles.panel} onDismiss={form.hide}>
           <div className={styles.sheet}>
             <BankLinkFlow
-              key={ask ?? 0}
+              key={form.id}
               wallet={wallet}
-              payee={shown?.ask.recipient}
-              home={shown?.ask.home}
+              payee={form.ask?.recipient}
+              home={form.ask?.home}
               onClose={() => {
-                setOpen(false);
+                form.hide();
                 onDeny();
               }}
               onLinked={() => {
-                setOpen(false);
+                form.hide();
                 onAllow();
               }}
             />
@@ -253,10 +243,11 @@ function CardForm({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
   const entry = useCardEntry(onSaved);
   return (
     <div className={styles.flow}>
-      <header className={styles.bar}>
+      <header className={`${styles.bar} ${styles.cardBar}`}>
         <SheetDisc label="Close" disabled={entry.busy} onClick={onClose}>
           <IconCrossMedium size={22} />
         </SheetDisc>
+        <ScanButton />
       </header>
       <div className={styles.scroll}>
         <h2 className={styles.title}>Add a card</h2>
@@ -291,7 +282,7 @@ function CardForm({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
 
 /** A skin's neutral card flow: `open(id, ask)` from its card ask, and the sheet to render in its screen. */
 export function useCardSheet({ messages, onAllow }: { messages: Message[]; onAllow: () => void }) {
-  const sheet = useAskSheet(messages);
+  const sheet = useAskSheet(messages, (a) => !!a.card);
   return {
     open: sheet.show,
     sheet: (

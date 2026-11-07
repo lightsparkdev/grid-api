@@ -270,6 +270,22 @@ export function useOpenedIds(messages: Message[]) {
   return opened.current;
 }
 
+/**
+ * Marks drawn while the app opens (a reaction already on a bubble when you switch to it): `opened(key)` stays true
+ * for those, so they're just there, and false for any that arrive later, which animate.
+ */
+export function useOpenedMarks() {
+  const marks = useRef(new Set<string>());
+  const opening = useRef(true);
+  useEffect(() => {
+    opening.current = false;
+  }, []);
+  return (key: string) => {
+    if (opening.current) marks.current.add(key);
+    return marks.current.has(key);
+  };
+}
+
 /** How a row arrives: where it starts, where it lands, and how it gets there. */
 export interface RowMotion {
   initial: TargetAndTransition;

@@ -16,7 +16,7 @@ import { BankMark } from '../BankMark';
 import { BANK_REACH, type BankCountry } from '@/data/bankCountries';
 import type { AgentAsk, AskState, Message, PayTo } from '../conversation';
 import { hasLinkedBank, linkedBank } from '../linkedBank';
-import { GlassButton } from '../glass';
+import { GlassButton, ScanButton } from '../glass';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
 import { AppSheet } from '../sheet';
 import { APP_ICONS, opensPlaid, usePlaidLink } from '../vault/PlaidLink';
@@ -359,16 +359,20 @@ function BankFlow({ payee, home, onLinked, onClose }: { payee?: AgentAsk['recipi
 
 /**
  * Muse's bank flow: the permission sheet, then Plaid for your own bank (recording 18:17), or the list for someone
- * else's or a bank Plaid doesn't have. Cancel or a swipe leaves the card waiting.
+ * else's or a bank Plaid doesn't have. Cancel or a swipe leaves the card waiting. The permission sheet stays up
+ * under iOS's alert and Plaid, as an app's own sheet does under a sign-in, and leaves once the bank is linked.
  */
 export function useMuseBank({ messages, onAllow }: { messages: Message[]; onAllow: () => void }) {
-  const sheet = useAskSheet(messages);
-  const [listed, setListed] = useState(false);
+  const sheet = useAskSheet(messages, (a) => !!a.bank);
+  const [listed, setListed] = useState(() => !!sheet.ask?.recipient);
   const plaid = usePlaidLink({
     app: 'Muse',
     icon: APP_ICONS.muse,
     messages,
-    onLinked: onAllow,
+    onLinked: () => {
+      sheet.hide();
+      onAllow();
+    },
     onManual: (id, ask) => {
       setListed(true);
       sheet.show(id, ask);
@@ -385,7 +389,6 @@ export function useMuseBank({ messages, onAllow }: { messages: Message[]; onAllo
           <Permission
             onConnect={() => {
               if (sheet.ask && !opensPlaid(sheet.ask)) return setListed(true);
-              sheet.hide();
               if (sheet.ask) plaid.open(sheet.id, sheet.ask);
             }}
             onCancel={sheet.hide}
@@ -415,6 +418,7 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
     <SheetPage
       title="Add a card"
       heading={<Hero art={<IconCreditCard1 size={26} />} title="Add a card" sub="Securely save a card for Muse to pay with." />}
+      trailing={<ScanButton />}
       leading={
         <SheetDisc label="Close" onClick={onClose} disabled={entry.busy}>
           <IconCrossMedium size={22} />
@@ -442,7 +446,7 @@ function CardPage({ ask, onSaved, onClose }: { ask: AgentAsk; onSaved: () => voi
 
 /** Muse's card flow: the Add a card page, as its Wallet adds a payment method. */
 export function useMuseCard({ messages, onAllow }: { messages: Message[]; onAllow: () => void }) {
-  const sheet = useAskSheet(messages);
+  const sheet = useAskSheet(messages, (a) => !!a.card);
   return {
     open: sheet.show,
     sheet: (

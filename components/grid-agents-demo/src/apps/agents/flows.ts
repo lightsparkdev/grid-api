@@ -82,7 +82,10 @@ function balanceParams(ctx: FlowContext) {
   };
 }
 
-/** Held for the person over the threshold; carried out on the agent's own authority under it. */
+/**
+ * Held for the person over the threshold; carried out on the agent's own authority under it. Face ID guards money
+ * leaving to someone else; a withdrawal to your own bank is just a tap.
+ */
 function approvalOr(
   ctx: FlowContext,
   needs: boolean,
@@ -98,7 +101,7 @@ function approvalOr(
       ask: ask.key,
       swap: ask.swap,
       params: ask.params,
-      faceId: true,
+      faceId: ask.key !== 'cashout',
       allow: [{ emit: { type: 'action.approve' } }, ...after],
       deny: [{ emit: { type: 'action.reject' } }, { say: denied, params: deniedParams }],
     },
@@ -120,7 +123,6 @@ const connect = (ctx: FlowContext): Beat[] => {
     {
       ask: 'connect',
       params: { perTx: l.perTransaction, daily: l.daily, approve: l.approvalAbove, hasAgent },
-      faceId: true,
       allow: [
         { work: 'setup', ms: 1100 },
         { emit: { type: 'connect' } },
@@ -151,7 +153,6 @@ const cardTopUp = (ctx: FlowContext, amount: number): Beat[] => [
         { say: 'card.intro', params: { topUp: 1 } },
         {
           ask: 'vault',
-          faceId: true,
           allow: [{ emit: { type: 'card.vault' } }, { meta: 'card.saved' }, ...charge],
           deny: [{ say: 'card.denied' }],
         },
@@ -179,7 +180,6 @@ const linkOwnBank = (intro: string, after: Beat[]): Beat[] => [
       {
         ask: 'bank',
         params: { home: HOMES[picked].home },
-        faceId: true,
         allow: [{ emit: { type: 'bank.link' } }, { meta: 'bank.linked' }, ...after],
         deny: [{ say: 'bank.denied' }],
       },
@@ -221,7 +221,6 @@ const vaultThen = (intro: string, after: () => Beat[]): Beat[] => [
   { say: intro },
   {
     ask: 'vault',
-    faceId: true,
     allow: [{ emit: { type: 'connect', lite: true } }, { emit: { type: 'card.vault' } }, { meta: 'card.saved' }, { when: after }],
     deny: [{ say: 'card.denied' }],
   },
@@ -298,7 +297,6 @@ const card = (ctx: FlowContext): Beat[] => {
     { say: 'card.intro', params: { topUp } },
     {
       ask: 'vault',
-      faceId: true,
       allow: [
         { emit: { type: 'connect', lite: true } },
         { emit: { type: 'card.vault' } },
@@ -681,8 +679,25 @@ const cashout = (ctx: FlowContext): Beat[] => {
   return [{ react: '👍' }, ...linkOwnBank('cashout.bank', [{ say: 'bank.kept' }, { when: send }])];
 };
 
-const balance = (ctx: FlowContext): Beat[] =>
-  ctx.account().connected && !ctx.account().balanceOn ? [{ react: '👍' }, { say: 'balance.none' }, ...offerBalance(ctx).slice(1)] : balanceShown(ctx);
+/** No balance yet: says so rather than turning one on to show $0. With a card, it offers the balance; without, either. */
+const balance = (ctx: FlowContext): Beat[] => {
+  const a = ctx.account();
+  if (a.balanceOn) return balanceShown(ctx);
+  if (a.cardVaulted) return [{ react: '👍' }, { say: 'balance.none', params: { card: 1 } }, ...offerBalance(ctx).slice(1)];
+  return [
+    { react: '👍' },
+    { say: 'balance.none', params: { card: 0 } },
+    {
+      chips: [
+        { label: 'Set up a balance', glyph: 'wallet' },
+        { label: 'Add a card', glyph: 'card' },
+      ],
+      reply: true,
+      then: (picked) =>
+        (picked === 0 ? connect(ctx) : card(ctx)).filter((b) => !('react' in b) && !('say' in b && b.say === 'connect.intro')),
+    },
+  ];
+};
 
 const balanceShown = (ctx: FlowContext): Beat[] => [
   { work: 'checking', ms: 700 },
@@ -774,6 +789,7 @@ export function planFor(flow: ActionId, ctx: FlowContext): Beat[] {
   if (flow === 'cashout' && !a.balanceOn) return [{ react: '👍' }, { say: 'cashout.noBalance' }];
   // A purchase needs only the agent: a card can stand in for the balance, so it's offered before one is set up.
   if (flow === 'buy' && !a.connected) return [{ react: '👍' }, ...covered()];
+  if (flow === 'balance' && !a.balanceOn) return balance(ctx);
   if (needsSetup(flow, a)) return connect({ ...ctx, then: covered });
   // Asked for directly, the agent's reply already says it's setting up.
   if (flow === 'connect') return connect(ctx).filter((b) => !('say' in b && b.say === 'connect.self'));

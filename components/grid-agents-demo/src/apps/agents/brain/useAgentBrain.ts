@@ -30,7 +30,7 @@ type NewMessage = StoredMessage extends infer M ? (M extends StoredMessage ? Omi
 const MAX_MESSAGES = 200;
 
 /** Under the greeting: things to try, so it's clear you can just type. A tap sends one as the person's own message, so each is in their words. */
-const STARTERS: Chip[] = [{ label: 'Set up a balance' }, { label: 'Add a card' }, { label: 'Send money abroad' }, { label: 'What can you do?' }];
+const STARTERS: Chip[] = [{ label: 'Set up a balance' }, { label: 'Add a card' }, { label: 'Send money to friends (US and abroad)' }, { label: 'What can you do?' }];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Which option a typed reply picks: its number, or its label; -1 for neither. */
 function typedChoice(text: string, chips: Chip[]) {
