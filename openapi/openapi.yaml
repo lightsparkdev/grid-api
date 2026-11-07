@@ -633,6 +633,8 @@ paths:
     $ref: paths/payout-runs/payout-runs_{payoutRunId}_export.yaml
   /settlement-rules:
     $ref: paths/settlement-rules/settlement-rules.yaml
+  /settlement-rules/preview:
+    $ref: paths/settlement-rules/settlement-rules_preview.yaml
   /settlement-rules/{settlementRuleId}:
     $ref: paths/settlement-rules/settlement-rules_{settlementRuleId}.yaml
   /settlement-rules/{settlementRuleId}/executions:

@@ -15537,6 +15537,79 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /settlement-rules/preview:
+    post:
+      summary: Preview a settlement rule
+      description: |
+        What a rule, or a draft of one, would pay on a payment of `amount`,
+        and which of the customer's recent payments it would have fired on.
+        Nothing is created or paid.
+
+        **splits** lists the rule's rows in order, each with what it would
+        send, computed exactly as an execution computes it: a percentage
+        rounds down, and the `REMAINDER` share takes what the others leave.
+        A share of 0 is not sent. `ownerKeeps` is what stays with the
+        customer. When the fixed and percentage shares add up to more than
+        `amount`, nothing would be paid, every row's `amount` is 0 and
+        `skipReason` is `AMOUNT_BELOW_RULE`. Fees are not estimated: each
+        share is sent by its own quote, whose fees come off the share.
+
+        **recentMatches** are the customer's completed bank and chain
+        deposits from the last 30 days that the rule's currency and `match`
+        select, newest first, at most 20, whatever the customer's other
+        rules would have done with them. Grid looks at the customer's latest
+        200 such deposits. Use them to spot a pattern that selects payments
+        it should not.
+
+        Give either `settlementRuleId` or `draft`.
+      operationId: previewSettlementRule
+      tags:
+        - Settlement Rules
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettlementRulePreviewRequest'
+      responses:
+        '200':
+          description: The preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementRulePreview'
+        '400':
+          description: Bad request - The body is invalid, it sets both or neither of settlementRuleId and draft, the rule is another customer's, or a share's destination cannot be paid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Settlement rules are not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not found - The customer or the settlement rule does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /settlement-rules/{settlementRuleId}:
     parameters:
       - name: settlementRuleId
@@ -37562,6 +37635,155 @@ components:
           example: 86400
         limits:
           $ref: '#/components/schemas/SettlementRuleLimits'
+    SettlementRuleDraft:
+      type: object
+      description: A rule as it would be created. Only the fields that decide what it pays and what it matches are needed; a `priority` is not.
+      required:
+        - currency
+        - match
+        - splits
+      properties:
+        currency:
+          type: string
+          description: ISO 4217 code of the payments the rule splits.
+          example: USD
+        match:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/SettlementRuleSelector'
+        splits:
+          type: array
+          minItems: 1
+          description: The shares, in the order they are paid. At most 20.
+          items:
+            $ref: '#/components/schemas/SettlementRuleSplitInput'
+    SettlementRulePreviewRequest:
+      type: object
+      required:
+        - customerId
+        - amount
+      properties:
+        customerId:
+          type: string
+          description: The customer whose payments the rule splits.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9000000000000000
+          description: A payment to split, in the smallest unit of the rule's currency.
+          example: 1000000
+        settlementRuleId:
+          type: string
+          description: A rule of the customer to preview. Set this or `draft`.
+          example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+        draft:
+          $ref: '#/components/schemas/SettlementRuleDraft'
+    SettlementRulePreviewSplit:
+      type: object
+      required:
+        - position
+        - share
+        - destination
+        - amount
+      properties:
+        position:
+          type: integer
+          description: The row's zero-based position in the rule.
+          example: 0
+        share:
+          $ref: '#/components/schemas/SettlementRuleShare'
+        destination:
+          $ref: '#/components/schemas/SettlementRuleDestination'
+        amount:
+          type: integer
+          format: int64
+          description: What the row would send, in the smallest unit of the rule's currency, before the fees of its quote. 0 when it would send nothing.
+          example: 400000
+    SettlementRuleSkipReason:
+      type: string
+      enum:
+        - RULE_PAUSED
+        - INCOMING_PAYMENT_RETURNED
+        - AMOUNT_BELOW_RULE
+        - LIMIT_EXCEEDED
+        - CANCELLED
+        - CREATOR_REVOKED
+      description: |
+        Why an execution paid nothing.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `RULE_PAUSED` | The rule was paused before the execution fired. |
+        | `INCOMING_PAYMENT_RETURNED` | The payment was returned before the execution fired. |
+        | `AMOUNT_BELOW_RULE` | The payment was smaller than the fixed and percentage shares together. |
+        | `LIMIT_EXCEEDED` | Paying it would have gone over one of the rule's `limits`. |
+        | `CANCELLED` | The execution was cancelled, or the rule deleted, while it was held. |
+        | `CREATOR_REVOKED` | The API token that created the rule can no longer send payments. The rule is paused. |
+    SettlementRuleRecentMatch:
+      type: object
+      required:
+        - transactionId
+        - amount
+        - currency
+        - completedAt
+      properties:
+        transactionId:
+          type: string
+          description: The incoming transaction.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000004
+        amount:
+          type: integer
+          format: int64
+          description: The payment, in the smallest unit of `currency`.
+          example: 1000000
+        currency:
+          type: string
+          example: USD
+        counterpartyName:
+          type: string
+          description: The sender name Grid recorded, which `counterpartyName` patterns compare against. Absent when Grid recorded none.
+          example: GLOSSIER INC
+        completedAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T18:00:00Z'
+    SettlementRulePreview:
+      type: object
+      required:
+        - currency
+        - amount
+        - splits
+        - ownerKeeps
+        - recentMatches
+      properties:
+        currency:
+          type: string
+          example: USD
+        amount:
+          type: integer
+          format: int64
+          description: The payment previewed.
+          example: 1000000
+        splits:
+          type: array
+          description: Every row of the rule, in row order.
+          items:
+            $ref: '#/components/schemas/SettlementRulePreviewSplit'
+        ownerKeeps:
+          type: integer
+          format: int64
+          description: What stays with the customer.
+          example: 450000
+        skipReason:
+          $ref: '#/components/schemas/SettlementRuleSkipReason'
+        recentMatches:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettlementRuleRecentMatch'
     SettlementRuleUpdateRequest:
       type: object
       description: The fields to change. A field left out is unchanged.
@@ -37625,26 +37847,6 @@ components:
         | `EXECUTED` | Its payout run finished `COMPLETED` or `PARTIALLY_FAILED`. |
         | `FAILED` | Its payout run finished `FAILED`. The customer keeps the payment. |
         | `SKIPPED` | Nothing was paid. See `skipReason`. |
-    SettlementRuleSkipReason:
-      type: string
-      enum:
-        - RULE_PAUSED
-        - INCOMING_PAYMENT_RETURNED
-        - AMOUNT_BELOW_RULE
-        - LIMIT_EXCEEDED
-        - CANCELLED
-        - CREATOR_REVOKED
-      description: |
-        Why an execution paid nothing.
-
-        | Reason | Description |
-        |--------|-------------|
-        | `RULE_PAUSED` | The rule was paused before the execution fired. |
-        | `INCOMING_PAYMENT_RETURNED` | The payment was returned before the execution fired. |
-        | `AMOUNT_BELOW_RULE` | The payment was smaller than the fixed and percentage shares together. |
-        | `LIMIT_EXCEEDED` | Paying it would have gone over one of the rule's `limits`. |
-        | `CANCELLED` | The execution was cancelled, or the rule deleted, while it was held. |
-        | `CREATOR_REVOKED` | The API token that created the rule can no longer send payments. The rule is paused. |
     SettlementRuleExecution:
       type: object
       required:
