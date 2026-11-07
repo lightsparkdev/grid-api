@@ -525,6 +525,16 @@ paths:
     $ref: paths/agents/agents_me_claimable-payouts_{claimablePayoutId}.yaml
   /agents/me/claimable-payouts/{claimablePayoutId}/cancel:
     $ref: paths/agents/agents_me_claimable-payouts_{claimablePayoutId}_cancel.yaml
+  /agents/me/settlement-rules/preview:
+    $ref: paths/agents/agents_me_settlement-rules_preview.yaml
+  /agents/me/settlement-rules:
+    $ref: paths/agents/agents_me_settlement-rules.yaml
+  /agents/me/settlement-rules/{settlementRuleId}:
+    $ref: paths/agents/agents_me_settlement-rules_{settlementRuleId}.yaml
+  /agents/me/settlement-rules/{settlementRuleId}/executions:
+    $ref: paths/agents/agents_me_settlement-rules_{settlementRuleId}_executions.yaml
+  /agents/me/settlement-rules/{settlementRuleId}/executions/{executionId}/cancel:
+    $ref: paths/agents/agents_me_settlement-rules_{settlementRuleId}_executions_{executionId}_cancel.yaml
   /claimable-payouts/{claimablePayoutId}/claim-token:
     $ref: paths/claimable-payouts/claimable-payouts_{claimablePayoutId}_claim-token.yaml
   /claimable-payouts/claim/lookup:
