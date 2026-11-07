@@ -123,10 +123,9 @@ post:
             $ref: ../../components/schemas/errors/Error401.yaml
     '409':
       description: >-
-        Conflict - External account already exists: the `platformAccountId`
-        is already used, or a wallet sent without a `platformAccountId` is
-        already registered without one for the same address, network, and
-        currency. When the conflicting account belongs to your platform, `details` carries its
+        Conflict - The `platformAccountId` is already used, or, without one,
+        the wallet is already registered. When the conflicting account belongs
+        to your platform, `details` carries its
         `externalAccountId` and `platformAccountId` so a retried request can
         recover it. `details` is omitted when the conflicting account cannot be
         identified, for example when the `platformAccountId` is already used on

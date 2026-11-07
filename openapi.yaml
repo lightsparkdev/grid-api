@@ -2783,7 +2783,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '409':
-          description: 'Conflict - External account already exists: the `platformAccountId` is already used, or a wallet sent without a `platformAccountId` is already registered for the customer without one for the same address, network, and currency. When the conflicting account belongs to the customer in `customerId` (a duplicate wallet) or to any account on your platform (a duplicate `platformAccountId`), `details` carries its `externalAccountId` and `platformAccountId` so a retried request can recover it. `details` is omitted when the conflicting account cannot be identified, for example when the `platformAccountId` is already used on another platform.'
+          description: Conflict - The `platformAccountId` is already used, or, without one, the wallet is already registered. When the conflicting account belongs to the customer in `customerId` (a duplicate wallet) or to any account on your platform (a duplicate `platformAccountId`), `details` carries its `externalAccountId` and `platformAccountId` so a retried request can recover it. `details` is omitted when the conflicting account cannot be identified, for example when the `platformAccountId` is already used on another platform.
           content:
             application/json:
               schema:
@@ -3152,7 +3152,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '409':
-          description: 'Conflict - External account already exists: the `platformAccountId` is already used, or a wallet sent without a `platformAccountId` is already registered without one for the same address, network, and currency. When the conflicting account belongs to your platform, `details` carries its `externalAccountId` and `platformAccountId` so a retried request can recover it. `details` is omitted when the conflicting account cannot be identified, for example when the `platformAccountId` is already used on another platform.'
+          description: Conflict - The `platformAccountId` is already used, or, without one, the wallet is already registered. When the conflicting account belongs to your platform, `details` carries its `externalAccountId` and `platformAccountId` so a retried request can recover it. `details` is omitted when the conflicting account cannot be identified, for example when the `platformAccountId` is already used on another platform.
           content:
             application/json:
               schema:
@@ -20373,7 +20373,7 @@ components:
             | NOT_YET_AVAILABLE | The request is valid, but its result is not available yet because the data it depends on could still change. Retry later. `reason` says what is outstanding. For balance changes, card settlement for a window boundary has not closed |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform. When the cardholder already holds the one card the platform allows, `details.refusalReason` is `CARDHOLDER_HOLDS_CARD` |
             | DOCUMENT_ALREADY_EXISTS | A document of this type already exists for the holder; replace it with PUT |
-            | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists: the `platformAccountId` is already used, or a wallet sent without a `platformAccountId` is already registered without one for the same address, network, and currency. When the conflicting account belongs to your platform, `details.externalAccountId` and `details.platformAccountId` identify it; otherwise `details` is omitted |
+            | DUPLICATE_EXTERNAL_ACCOUNT | The `platformAccountId` is already used, or, without one, the wallet is already registered. When the conflicting account belongs to your platform, `details.externalAccountId` and `details.platformAccountId` identify it; otherwise `details` is omitted |
             | DUPLICATE_PAY_REQUEST | A pay request with this idempotency key already exists |
             | OPERATION_IN_PROGRESS | A conflicting Embedded Wallet operation is still in progress |
             | SMS_OTP_CREDENTIAL_SET_CHANGED | The SMS_OTP credential set changed while the request was in flight |
@@ -29054,7 +29054,7 @@ components:
         platformAccountId:
           type: string
           maxLength: 255
-          description: 'Your platform''s identifier for the account in your system. This can be used to reference the account by your own identifier. It must be unique across your external accounts. For wallet accounts it is also the duplicate check: the same wallet address, network, and currency can be registered several times under different `platformAccountId` values, and only a reused `platformAccountId` is rejected with `DUPLICATE_EXTERNAL_ACCOUNT`. A wallet registered without a `platformAccountId` is rejected when the same wallet, network, and currency is already registered without one.'
+          description: Your platform's identifier for the account in your system. Must be unique. A wallet can be registered under several different `platformAccountId` values.
           example: ext_acc_123456
         ownershipType:
           $ref: '#/components/schemas/OwnershipType'
@@ -29179,7 +29179,7 @@ components:
         platformAccountId:
           type: string
           maxLength: 255
-          description: 'Your platform''s identifier for the account in your system. This can be used to reference the account by your own identifier. It must be unique across your external accounts. For wallet accounts it is also the duplicate check: the same wallet address, network, and currency can be registered several times under different `platformAccountId` values, and only a reused `platformAccountId` is rejected with `DUPLICATE_EXTERNAL_ACCOUNT`. A wallet registered without a `platformAccountId` is rejected when the same wallet, network, and currency is already registered without one.'
+          description: Your platform's identifier for the account in your system. Must be unique. A wallet can be registered under several different `platformAccountId` values.
           example: ext_acc_123456
         ownershipType:
           $ref: '#/components/schemas/OwnershipType'
@@ -34699,7 +34699,7 @@ components:
             platformAccountId:
               type: string
               maxLength: 255
-              description: 'Your platform''s identifier for the account in your system. This can be used to reference the account by your own identifier. It must be unique across your external accounts. For wallet accounts it is also the duplicate check: the same wallet address, network, and currency can be registered several times under different `platformAccountId` values, and only a reused `platformAccountId` is rejected with `DUPLICATE_EXTERNAL_ACCOUNT`. A wallet registered without a `platformAccountId` is rejected when the same wallet, network, and currency is already registered without one.'
+              description: Your platform's identifier for the account in your system. Must be unique. A wallet can be registered under several different `platformAccountId` values.
               example: ext_acc_123456
             ownershipType:
               $ref: '#/components/schemas/OwnershipType'
