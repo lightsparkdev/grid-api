@@ -29,7 +29,7 @@ properties:
       | NOT_YET_AVAILABLE | The request is valid, but its result is not available yet because the data it depends on could still change. Retry later. `reason` says what is outstanding. For balance changes, card settlement for a window boundary has not closed |
       | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform. When the cardholder already holds the one card the platform allows, `details.refusalReason` is `CARDHOLDER_HOLDS_CARD` |
       | DOCUMENT_ALREADY_EXISTS | A document of this type already exists for the holder; replace it with PUT |
-      | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists. When the conflicting account belongs to your platform, `details.externalAccountId` and `details.platformAccountId` identify it; otherwise `details` is omitted |
+      | DUPLICATE_EXTERNAL_ACCOUNT | The `platformAccountId` is already used, or, without one, the wallet is already registered. When the conflicting account belongs to your platform, `details.externalAccountId` and `details.platformAccountId` identify it; otherwise `details` is omitted |
       | DUPLICATE_PAY_REQUEST | A pay request with this idempotency key already exists |
       | OPERATION_IN_PROGRESS | A conflicting Embedded Wallet operation is still in progress |
       | SMS_OTP_CREDENTIAL_SET_CHANGED | The SMS_OTP credential set changed while the request was in flight |

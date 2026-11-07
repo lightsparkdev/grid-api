@@ -72,6 +72,13 @@ properties:
       can show its amount and recipient. Present for `CLAIMABLE_PAYOUT`.
       Approving the action makes the payout `AWAITING_CLAIM`; rejecting it,
       or letting it expire, ends the payout and releases its hold.
+  storedCardUse:
+    $ref: ../stored_cards/AgentStoredCardUse.yaml
+    description: >-
+      The stored card the agent asked to use, where, and for how much, so an
+      approval decision can show them. Present for `USE_STORED_CARD`.
+      Approving the action lets the agent collect a single-use link with
+      `POST /agents/me/stored-cards/{storedCardId}/reveal` and `actionId`.
   settlementRule:
     $ref: ../settlement_rules/SettlementRule.yaml
     description: >-
@@ -122,10 +129,10 @@ properties:
       `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the
       quote's own expiry; a pending action that reaches it fails with
       `QUOTE_EXPIRED`, and approval never creates a replacement quote. For
-      `ISSUE_PURCHASE_CARD`, `CREATE_SETTLEMENT_RULE` and
+      `ISSUE_PURCHASE_CARD`, `USE_STORED_CARD`, `CREATE_SETTLEMENT_RULE` and
       `UPDATE_SETTLEMENT_RULE`, this is the end of the approval window, after
-      which a pending action fails with
-      `APPROVAL_EXPIRED`; a settlement rule's window is seven days.
+      which a pending action fails with `APPROVAL_EXPIRED`; a settlement
+      rule's window is seven days.
     example: '2025-10-03T15:05:00Z'
   createdAt:
     type: string

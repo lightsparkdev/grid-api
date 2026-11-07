@@ -192,8 +192,10 @@ Every return arrives as one webhook, whether it lands during the hold or weeks a
 | `data.failureReason` | `QUOTE_EXECUTION_FAILED` |
 | `data.source.railDetails.status` | `RETURNED` |
 | `data.source.railDetails.returnedAt` | When Lightspark recorded the return |
+| `data.source.railDetails.returnCode` | The NACHA return reason code, such as `R01` (insufficient funds) or `R10` (customer advises unauthorized) |
+| `data.source.railDetails.returnCategory` | The Nacha return-rate category the code counts toward: `ADMINISTRATIVE` or `UNAUTHORIZED`. Absent for a code in neither, such as `R01`. |
 
-The API does not include the NACHA return code. Check `railDetails.status` to tell a return from a failure that happened before any money moved. A pull the bank rejected outright has `railDetails.status` set to `FAILED`.
+Group returns by `returnCode` to track your return rate for each reason, or by `returnCategory` for Nacha's thresholds. NACHA may add codes, so accept any value of the form `R` followed by two digits. Check `railDetails.status` to tell a return from a failure that happened before any money moved. A pull the bank rejected outright has `railDetails.status` set to `FAILED`.
 
 An insufficient-funds return, two days after the debit settled:
 
@@ -217,6 +219,7 @@ An insufficient-funds return, two days after the debit settled:
         "status": "RETURNED",
         "settledAt": "2026-10-21T21:00:00Z",
         "returnedAt": "2026-10-23T15:00:00Z",
+        "returnCode": "R01",
         "statementDescriptor": "ACMEFUND",
         "bankAccount": {
           "accountHolderName": "John Doe",
@@ -239,7 +242,7 @@ An insufficient-funds return, two days after the debit settled:
 }
 ```
 
-This is the same transaction id as the `INCOMING_PAYMENT.COMPLETED` webhook above, now `FAILED`. The payload does not say why the bank returned it.
+This is the same transaction id as the `INCOMING_PAYMENT.COMPLETED` webhook above, now `FAILED`. `returnCode` says why the bank returned it. `R01` counts toward neither Nacha category, so the payload has no `returnCategory`.
 
 ### What happens to the money
 
