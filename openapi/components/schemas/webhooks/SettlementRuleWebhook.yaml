@@ -1,0 +1,10 @@
+allOf:
+  - $ref: ./BaseWebhook.yaml
+  - type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: ../settlement_rules/SettlementRuleExecution.yaml
+      type:
+        $ref: ./SettlementRuleWebhookEventType.yaml

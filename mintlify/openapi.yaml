@@ -18602,6 +18602,118 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+  settlement-rule:
+    post:
+      summary: Settlement rule execution finished webhook
+      description: |
+        Fired once when a settlement rule's execution on an incoming payment finishes, with the execution:
+
+        - `SETTLEMENT_RULE.EXECUTED`: its payout run finished `COMPLETED` or `PARTIALLY_FAILED`. `payoutRunId` names the run, whose own `PAYOUT_RUN.*` webhook carries the row counts.
+        - `SETTLEMENT_RULE.FAILED`: its payout run finished `FAILED`. The customer keeps the payment.
+        - `SETTLEMENT_RULE.SKIPPED`: nothing was paid; `skipReason` says why.
+
+        Each share's transaction sends its own `OUTGOING_PAYMENT.*` webhooks.
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+      operationId: settlementRuleWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettlementRuleWebhook'
+            examples:
+              executed:
+                summary: A payment split and paid
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000040
+                  type: SETTLEMENT_RULE.EXECUTED
+                  timestamp: '2026-11-06T18:00:03Z'
+                  data:
+                    id: SettlementRuleExecution:019542f5-b3e7-1d02-0000-000000000003
+                    settlementRuleId: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+                    status: EXECUTED
+                    incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000004
+                    creditedAccountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    incomingAmount:
+                      amount: 1000000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    splitAmount:
+                      amount: 550000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    payoutRunId: PayoutRun:019542f5-b3e7-1d02-0000-000000000005
+                    incomingCompletedAt: '2026-11-06T18:00:00Z'
+                    firesAt: '2026-11-06T18:00:00Z'
+                    firstPaymentSentSeconds: 1.8
+                    lastPaymentSentSeconds: 2.6
+                    createdAt: '2026-11-06T18:00:00Z'
+                    updatedAt: '2026-11-06T18:00:03Z'
+              skipped:
+                summary: A payment returned during the hold
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000041
+                  type: SETTLEMENT_RULE.SKIPPED
+                  timestamp: '2026-11-07T18:00:00Z'
+                  data:
+                    id: SettlementRuleExecution:019542f5-b3e7-1d02-0000-000000000006
+                    settlementRuleId: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+                    status: SKIPPED
+                    skipReason: INCOMING_PAYMENT_RETURNED
+                    incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000007
+                    creditedAccountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    incomingAmount:
+                      amount: 500000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    incomingCompletedAt: '2026-11-06T18:00:00Z'
+                    firesAt: '2026-11-07T18:00:00Z'
+                    createdAt: '2026-11-06T18:00:00Z'
+                    updatedAt: '2026-11-07T18:00:00Z'
+      responses:
+        '200':
+          description: Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
 components:
   securitySchemes:
     BasicAuth:
@@ -38904,6 +39016,9 @@ components:
         - PAYOUT_RUN.COMPLETED
         - PAYOUT_RUN.PARTIALLY_FAILED
         - PAYOUT_RUN.FAILED
+        - SETTLEMENT_RULE.EXECUTED
+        - SETTLEMENT_RULE.FAILED
+        - SETTLEMENT_RULE.SKIPPED
         - CARD.STATUS_CHANGE
         - CARD.PIN_STATUS_CHANGE
         - CARD_TRANSACTION.AUTHORIZED
@@ -39465,6 +39580,23 @@ components:
               $ref: '#/components/schemas/PayoutRun'
             type:
               $ref: '#/components/schemas/PayoutRunWebhookEventType'
+    SettlementRuleWebhookEventType:
+      type: string
+      enum:
+        - SETTLEMENT_RULE.EXECUTED
+        - SETTLEMENT_RULE.FAILED
+        - SETTLEMENT_RULE.SKIPPED
+    SettlementRuleWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/SettlementRuleExecution'
+            type:
+              $ref: '#/components/schemas/SettlementRuleWebhookEventType'
   requestBodies:
     DocumentUploadRequestBody:
       required: true
