@@ -224,7 +224,7 @@ paths:
     patch:
       summary: Update platform configuration
       description: |-
-        Update platform configuration settings. Configure platform-wide card velocity limits through `POST /card-velocity-limits` without cardId. cardConfigs contains card presentation, authentication, and risk settings.
+        Update platform configuration settings. Configure platform-wide card velocity limits through `POST /card-velocity-limits` without cardId. cardConfigs contains card presentation, authentication, risk, and merchant category settings. Set `cardConfigs.allowedMccs` and `cardConfigs.blockedMccs` to restrict new authorizations on this platform's cards where Grid makes authorization decisions. Card restrictions and Lightspark's controls also apply.
 
         Set `cardConfigs.pinTargetOrigin` to the canonical HTTPS origin of your frontend before calling `GET /cards/{id}/pin-entry-url`. Omit the field to preserve its value or set it to `null` to clear it.
 
@@ -18374,6 +18374,29 @@ components:
             - type: 'null'
           description: Maximum normalized network risk score allowed for real-time card authorizations. Scores range from 0 (lowest risk) to 999 (highest risk). Visa scores are normalized by multiplying the raw 0–99 score by 10. Scores equal to the ceiling are allowed. Authorizations without a score are also allowed. The lowest configured card or platform ceiling applies. Omit to preserve the current setting or send null to clear this scope.
           example: 700
+        allowedMccs:
+          anyOf:
+            - type: array
+              minItems: 1
+              maxItems: 500
+              items:
+                type: string
+                pattern: ^[0-9]{4}$
+            - type: 'null'
+          description: Merchant category codes allowed for cards on this platform where Grid makes authorization decisions. Every configured allow list must admit the category, and any block list can refuse it. Card restrictions, default agent blocks, and Lightspark's controls also apply; this list cannot loosen them. Changes apply to new authorizations on existing and future cards. Omit to preserve the current list, or send null to remove this platform restriction. An empty allow list is invalid.
+          example:
+            - '5411'
+        blockedMccs:
+          anyOf:
+            - type: array
+              maxItems: 500
+              items:
+                type: string
+                pattern: ^[0-9]{4}$
+            - type: 'null'
+          description: Merchant category codes declined for cards on this platform where Grid makes authorization decisions. Blocks combine with card restrictions, default agent blocks, and Lightspark's controls and take precedence over allow lists. Changes apply to new authorizations on existing and future cards. Omit to preserve the current list; send null or an empty list to clear only this platform's blocks.
+          example:
+            - '7995'
         panRevealCssUrl:
           anyOf:
             - type: string
