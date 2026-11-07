@@ -1,0 +1,36 @@
+type: object
+description: >-
+  What a reveal link answers. Grid answers `number` and `cvc` as Evervault
+  ciphertext; the Evervault Relay in front of the link decrypts them, so the
+  caller of `detailsUrl` receives the card's own values.
+required:
+  - number
+  - expiryMonth
+  - expiryYear
+  - holderName
+properties:
+  number:
+    type: string
+    maxLength: 2048
+    description: The card number.
+  cvc:
+    type: string
+    maxLength: 2048
+    description: The security code, present only when the reveal's `cvcIncluded` is true.
+  expiryMonth:
+    type: integer
+    minimum: 1
+    maximum: 12
+    description: Expiry month, 1 to 12.
+    example: 8
+  expiryYear:
+    type: integer
+    minimum: 2000
+    maximum: 2199
+    description: Four-digit expiry year.
+    example: 2029
+  holderName:
+    type: string
+    maxLength: 255
+    description: The name on the card.
+    example: Jane Doe
