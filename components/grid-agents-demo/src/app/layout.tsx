@@ -39,13 +39,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
-    images: [{ url: '/og-agents-playground.webp', width: 2400, height: 1260 }],
+    images: [{ url: '/og-agents-playground-v2.webp', width: 2400, height: 1260 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: TITLE,
     description: DESCRIPTION,
-    images: ['/og-agents-playground.webp'],
+    images: ['/og-agents-playground-v2.webp'],
   },
 };
 
