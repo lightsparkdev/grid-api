@@ -1,5 +1,7 @@
-/* Each skin fills the screen; the outgoing one fades out over the incoming. */
+/* Each skin fills the screen; the outgoing one fades out over the incoming. Its sheets sit outside the chat screen,
+   so the no-orphans wrap is set here for both. */
 .skinLayer {
   position: absolute;
   inset: 0;
+  text-wrap: pretty;
 }

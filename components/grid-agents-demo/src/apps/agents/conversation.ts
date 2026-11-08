@@ -159,7 +159,7 @@ export type AskState = 'open' | 'pressing' | 'authing' | 'done' | 'denied' | 'ex
 
 export type Message =
   | { id: number; kind: 'me'; text: string; react?: string; meant?: string }
-  | { id: number; kind: 'them'; text: string; sender?: string; bullets?: string[]; typing: boolean }
+  | { id: number; kind: 'them'; text: string; sender?: string; bullets?: string[]; typing: boolean; replyTo?: string }
   | { id: number; kind: 'ask'; ask: AgentAsk; state: AskState }
   | { id: number; kind: 'card'; card: AgentNote; sender?: string }
   | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
@@ -183,7 +183,8 @@ export type Said =
 
 export type StoredMessage =
   | { id: number; kind: 'me'; text: string; react?: string; meant?: string }
-  | { id: number; kind: 'them'; said: Said; sender?: string; typing: boolean }
+  /** replyTo: the request this carries on, when the person answered something in between (Dots quotes it). */
+  | { id: number; kind: 'them'; said: Said; sender?: string; typing: boolean; replyTo?: string }
   | { id: number; kind: 'ask'; key: string; params?: Params; state: AskState }
   | { id: number; kind: 'card'; key: string; params?: Params }
   | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }

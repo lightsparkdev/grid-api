@@ -98,6 +98,7 @@ export function renderThread(messages: StoredMessage[], voice: Voice): Message[]
                 : voice.line(m.said.key, m.said.params),
           sender: m.sender,
           typing: m.typing,
+          replyTo: m.replyTo,
         };
       case 'ask':
         return { id: m.id, kind: 'ask', ask: voice.ask(m.key, m.params), state: m.state };

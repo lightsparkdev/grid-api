@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import type { ConnectorId } from '@/data/connectors';
 import { ClaudeChat } from './claude/ClaudeChat';
-import { DOTS_READS_FOR, DotChat } from './dot/DotChat';
+import { DOTS_READS_FOR, DOTS_TYPES_FOR, DotChat } from './dot/DotChat';
 import { GrokChat } from './grok/GrokChat';
 import { INSTINCT_READS_FOR, InstinctChat } from './instinct/InstinctChat';
 import { MuseChat } from './muse/MuseChat';
@@ -17,12 +17,14 @@ export interface AgentSkin {
   Chat: ComponentType<AgentChatProps>;
   /** How long the agent takes to read your message before it reacts or types (ms; the apps answer at once). */
   readsFor?: number;
+  /** The least time its typing bubble shows before a reply (ms). */
+  typesFor?: number;
 }
 
 export const SKINS: Record<ConnectorId, AgentSkin> = {
   muse: { id: 'muse', Chat: MuseChat },
   grok: { id: 'grok', Chat: GrokChat },
-  dot: { id: 'dot', Chat: DotChat, readsFor: DOTS_READS_FOR },
+  dot: { id: 'dot', Chat: DotChat, readsFor: DOTS_READS_FOR, typesFor: DOTS_TYPES_FOR },
   instinct: { id: 'instinct', Chat: InstinctChat, readsFor: INSTINCT_READS_FOR },
   claude: { id: 'claude', Chat: ClaudeChat },
   yourapp: { id: 'yourapp', Chat: YourAppChat },

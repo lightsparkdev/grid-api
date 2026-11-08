@@ -11,6 +11,9 @@
   --dot-muted: #a3a3a3;
   --dot-secondary: #6e6e73;
   --dot-them: #efefef;
+  --dot-quote: #787878;
+  --dot-think: #b9b9b9;
+  --dot-think-on: #a0a0a0;
   --dot-blue: #2d59ee;
   --dot-chip: #eef3fe;
   --dot-chip-picked: #dde7ff;
@@ -40,6 +43,9 @@
     --dot-muted: #737373;
     --dot-secondary: #9a9a9f;
     --dot-them: #232323;
+    --dot-quote: #8e8e8e;
+    --dot-think: #555;
+    --dot-think-on: #7a7a7a;
     --dot-chip: #17213d;
     --dot-chip-picked: #1f2c52;
     --dot-chip-text: #8fb0ff;
@@ -225,19 +231,73 @@
 }
 
 .me {
+  position: relative;
   max-width: 315px;
   background: var(--dot-blue);
   color: #fff;
 }
 
-.typing {
+// Recording 23-05-49: a 57×33 capsule, 8pt dots on 12pt centers darkening left to right once a second,
+// and a trail of two circles (11.7pt, 6pt) off its lower left.
+.thought {
+  position: relative;
   display: flex;
   align-items: center;
-  height: 36px;
-  padding: 0 16px;
-  @include corners.bubble(18px);
+  justify-content: center;
+  gap: 4px;
+  width: 57px;
+  height: 33px;
+  margin-bottom: 6px;
+  border-radius: 16.5px;
   background: var(--dot-them);
-  color: var(--dot-text);
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: inherit;
+  }
+
+  &::before {
+    top: 23.85px;
+    left: -1.05px;
+    width: 11.7px;
+    height: 11.7px;
+  }
+
+  &::after {
+    top: 33px;
+    left: -6.2px;
+    width: 6px;
+    height: 6px;
+  }
+
+  i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--dot-think);
+    animation: dot-think 1s infinite ease-in-out;
+  }
+
+  i:nth-child(2) {
+    animation-delay: 0.333s;
+  }
+
+  i:nth-child(3) {
+    animation-delay: 0.667s;
+  }
+}
+
+@keyframes dot-think {
+  30% {
+    background: var(--dot-think-on);
+  }
+
+  60% {
+    background: var(--dot-think);
+  }
 }
 
 .seen,
@@ -260,6 +320,17 @@
 
 .sender {
   margin: 0 0 4px 4px;
+}
+
+// Screenshot 2026-11-07 11.08.32 (Todd): 13pt gray, the arrow under the bubble's text, ~8pt over the bubble and clear of the row above.
+.replyTo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 4px 16px;
+  color: var(--dot-quote);
+  font-size: 13px;
+  line-height: 16px;
 }
 
 .chips {
@@ -795,8 +866,9 @@
 }
 
 // ── Composer ───────────────────────────────────────────────────────────
+// IMG_1946 at 3x: 328pt wide, 37pt in from each side, its foot 37.5pt above the screen's.
 .composerBox {
-  width: 370px;
+  width: 328px;
   margin: 0 auto;
 }
 
@@ -808,7 +880,7 @@
   position: relative;
   display: grid;
   grid-template-areas: 'plus field tools';
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-columns: 50px minmax(0, 1fr) auto;
   align-items: end;
   min-height: 48px;
   padding: 1.5px 6px 1.5px 0;
@@ -845,6 +917,11 @@
   height: 45px;
 }
 
+// IMG_1946: the + centered 25pt in, the text from 50pt.
+.plusSlot {
+  width: 50px;
+}
+
 .field {
   --field-pad: 11.5px;
   --placeholder: #8d8d8d;
@@ -856,19 +933,12 @@
   place-items: center;
   width: 32px;
   height: 32px;
-  margin: 0 2px 0 -4px;
+  // IMG_1946: the mic's center 49pt from the send button's.
+  margin: 0 2px 0 11px;
   border-radius: 50%;
   background: var(--dot-blue);
   color: #fff;
   cursor: pointer;
-  animation: dot-send-in 0.15s ease-out;
-}
-
-@keyframes dot-send-in {
-  from {
-    scale: 0.6;
-    opacity: 0;
-  }
 }
 
 .glyph {

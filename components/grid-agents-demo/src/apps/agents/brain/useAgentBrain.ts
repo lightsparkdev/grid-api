@@ -90,6 +90,10 @@ const NO = /^\s*(n|no|nope|nah|cancel|decline|deny|stop|don'?t|not now|never ?mi
 interface Run {
   flow: ActionId | null;
   cancelled: boolean;
+  /** What the person said that started it. */
+  request?: string;
+  /** They've said something since the agent last did. */
+  answered?: boolean;
 }
 
 /**
@@ -107,6 +111,7 @@ export function useAgentBrain({
   onCompleted,
   reply,
   readsFor = 0,
+  typesFor = 0,
 }: {
   entry?: FlowEntry;
   context: () => Omit<FlowContext, 'variant'>;
@@ -120,6 +125,8 @@ export function useAgentBrain({
   reply: (text: string) => Promise<FreeTextReply>;
   /** How long the agent takes to read each of your messages before it reacts, types or carries on (ms). */
   readsFor?: number;
+  /** The least time its typing bubble shows before a reply, however fast the model answers (ms). */
+  typesFor?: number;
 }) {
   const [messages, setMessages] = useState<StoredMessage[]>(() => [
     { id: 0, kind: 'stamp', text: 'Today' },
@@ -154,8 +161,8 @@ export function useAgentBrain({
   /** Suggested replies under the agent's last answer: a tap sends one as if typed. */
   const suggested = useRef<{ id: number; chips: Chip[] } | null>({ id: 2, chips: STARTERS });
 
-  const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, reply, readsFor });
-  cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, reply, readsFor };
+  const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, reply, readsFor, typesFor });
+  cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, reply, readsFor, typesFor };
   /** Runs once the agent has read what you just sent. */
   const afterReading = (f: () => void) => {
     if (cb.current.readsFor > 0) setTimeout(f, cb.current.readsFor);
@@ -164,6 +171,7 @@ export function useAgentBrain({
 
   const push = useCallback((m: NewMessage) => {
     const id = nextId.current++;
+    if (runRef.current) runRef.current.answered = m.kind === 'me';
     setMessages((list) => [...list, { ...m, id } as StoredMessage].slice(-MAX_MESSAGES));
     return id;
   }, []);
@@ -260,7 +268,8 @@ export function useAgentBrain({
             i += 1;
           }
           const said = parts.length > 1 ? { parts } : parts[0];
-          const id = show({ kind: 'them', said, sender: b.sender, typing: true });
+          const replyTo = run.answered ? run.request : undefined;
+          const id = show({ kind: 'them', said, sender: b.sender, typing: true, replyTo });
           await sleep(700);
           if (run.cancelled) return false;
           patch(id, (m) => (m.kind === 'them' ? { ...m, typing: false } : m));
@@ -339,8 +348,8 @@ export function useAgentBrain({
   );
 
   const start = useCallback(
-    async (flow: ActionId | null, beats: Beat[], after = 0, topic?: string) => {
-      const run: Run = { flow, cancelled: false };
+    async (flow: ActionId | null, beats: Beat[], after = 0, topic?: string, request?: string) => {
+      const run: Run = { flow, cancelled: false, request };
       runRef.current = run;
       if (flow) cb.current.onRun?.(flow);
       setRunning(flow);
@@ -358,7 +367,7 @@ export function useAgentBrain({
       if (!finished) followUps.current = [];
       if (following) {
         const ctx: FlowContext = { ...cb.current.context(), variant: following.variant, params: following.params };
-        void startRef.current(following.id, planFor(following.id, ctx).filter((b) => !('react' in b)), 700, topicFor(following.id, ctx));
+        void startRef.current(following.id, planFor(following.id, ctx).filter((b) => !('react' in b)), 700, topicFor(following.id, ctx), run.request);
         return;
       }
       const next = queued.current;
@@ -389,7 +398,7 @@ export function useAgentBrain({
       const note: Beat = { say: 'setup.auto', params: { connected: setup.connected ? 1 : 0, funded: setup.funded } };
       beats.splice(beats[0] && 'react' in beats[0] ? 1 : 0, 0, note);
     }
-    void start(entry.flow, beats, cb.current.readsFor, topicFor(entry.flow, ctx));
+    void start(entry.flow, beats, cb.current.readsFor, topicFor(entry.flow, ctx), text);
   }, [entry, cancelRun, dropSuggestions, push, start]);
 
   /** A control in the thread (the balance card's Add money) asks as the visitor would, with its tile's line. */
@@ -400,7 +409,7 @@ export function useAgentBrain({
       const def = ACTIONS.find((a) => a.id === flow)!;
       push({ kind: 'me', text: def.prompts[0] });
       const ctx: FlowContext = { ...cb.current.context(), variant: 0 };
-      void start(flow, FLOWS[flow](ctx), cb.current.readsFor, topicFor(flow, ctx));
+      void start(flow, FLOWS[flow](ctx), cb.current.readsFor, topicFor(flow, ctx), def.prompts[0]);
     },
     [push, start, dropSuggestions],
   );
@@ -418,7 +427,7 @@ export function useAgentBrain({
       const replying = cb.current.reply(meant);
       if (cb.current.readsFor > 0) await sleep(cb.current.readsFor);
       const typingId = push({ kind: 'them', said: { text: '' }, typing: true });
-      const answer = await replying;
+      const [answer] = await Promise.all([replying, sleep(cb.current.typesFor)]);
       const ctx: FlowContext | null = answer.flow ? { ...cb.current.context(), variant: answer.flow.variant, params: answer.flow.params } : null;
       const beats = answer.flow && ctx ? planFor(answer.flow.id, ctx) : null;
       const topic = answer.flow && ctx ? topicFor(answer.flow.id, ctx) : undefined;
@@ -436,7 +445,7 @@ export function useAgentBrain({
       followUps.current = answer.then ?? [];
       if (answer.flow && beats) {
         if (!silent) await sleep(700);
-        void start(answer.flow.id, beats, 0, silent ? topic : undefined);
+        void start(answer.flow.id, beats, 0, silent ? topic : undefined, text);
       } else if (answer.suggestions?.length) {
         await sleep(350);
         const id = push({ kind: 'chips', chips: answer.suggestions, picked: null });
@@ -454,7 +463,7 @@ export function useAgentBrain({
       if (!chip.flow) return ask(typed ?? chip.label, chip.label);
       push({ kind: 'me', text: typed ?? chip.label });
       const ctx: FlowContext = { ...cb.current.context(), variant: 0 };
-      void start(chip.flow, FLOWS[chip.flow](ctx), cb.current.readsFor, topicFor(chip.flow, ctx));
+      void start(chip.flow, FLOWS[chip.flow](ctx), cb.current.readsFor, topicFor(chip.flow, ctx), typed ?? chip.label);
     },
     [ask, push, start],
   );

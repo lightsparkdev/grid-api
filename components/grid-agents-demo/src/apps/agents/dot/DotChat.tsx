@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, type Transition } from 'motion/react';
+import { IconArrowCornerDownRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowCornerDownRight';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
 import { IconCheckCircle2 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckCircle2';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
@@ -14,9 +15,7 @@ import {
   ChatFrame,
   ComposerField,
   NATIVE_IN,
-  Said,
   STILL,
-  TypingDots,
   ScrollEdge,
   useOpenedIds,
   type ScrollCause,
@@ -48,6 +47,8 @@ type Ask = Extract<Message, { kind: 'ask' }>;
 const SHEET_IN: Transition = { duration: 0.5, ease: [0.12, 1, 0.6, 1] };
 /** The composer turning into a card (~120ms in recording 3). */
 const CARD: Transition = { duration: 0.12, ease: [0.25, 0.1, 0.25, 1] };
+/** The send grows in where the mic was while the mic steps left, in three frames (recording 23-04-09). */
+const SEND_IN: Transition = { duration: 0.05, ease: 'easeOut' };
 /** How long the pay sheet shows "Preparing your checkout…". */
 const PREPARING_MS = 900;
 
@@ -426,10 +427,14 @@ function MetaPill({ meta }: { meta: AgentMeta }) {
   );
 }
 
+/** The send's glide, fitted frame by frame (recording 23-05-49 at 60fps): a quarter of the way in one frame, done by ~200ms. */
+const SEND_GLIDE = 'linear(0, 0.27 8.3%, 0.47 16.7%, 0.63 25%, 0.75 33.3%, 0.83 41.7%, 0.89 50%, 0.93 58.3%, 0.96 66.7%, 0.98 75%, 0.99 83.3%, 1)';
+/** Its rise over the same ~200ms: still for a frame, then steady, easing in at the end. */
+const SEND_LIFT = 'linear(0, 0 8.3%, 0.085 16.7%, 0.23 25%, 0.36 33.3%, 0.49 41.7%, 0.62 50%, 0.7 58.3%, 0.79 66.7%, 0.85 75%, 0.91 83.3%, 0.94 91.7%, 1)';
+
 /**
- * Your bubble as Dots sends it (recordings 3 and 8): the composer's text
- * reflows at bubble width a little left of its place, the blue fills in behind
- * it within ~130ms as the text turns white, and it slides right into place.
+ * Your bubble as Dots sends it (recording 23-05-49): the text leaves from where it sat in the field and glides right
+ * across the screen as the thread lifts it, bare for ~40ms, then the blue fills in behind it by ~83ms as it turns white.
  */
 function SentBubble({ fresh, children }: { fresh: boolean; children: ReactNode }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -439,31 +444,48 @@ function SentBubble({ fresh, children }: { fresh: boolean; children: ReactNode }
     if (!fresh || !el || !screen || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const s = screen.getBoundingClientRect();
     const k = s.width / screen.offsetWidth || 1;
-    // It starts at ~62% of its distance from the screen's left edge (40pt short at x 106, 28.7pt at x 73).
-    const left = (el.getBoundingClientRect().left - s.left) / k;
     const css = getComputedStyle(el);
+    const field = screen.querySelector<HTMLElement>('textarea:not([aria-hidden])');
+    if (!field) return;
+    const at = el.getBoundingClientRect();
+    const from = field.getBoundingClientRect();
+    const fieldCss = getComputedStyle(field);
+    const dx = (from.left - at.left) / k + parseFloat(fieldCss.paddingLeft) - parseFloat(css.paddingLeft);
+    const dy = (from.top - at.top) / k + parseFloat(fieldCss.paddingTop) - parseFloat(css.paddingTop);
     const blue = css.backgroundColor;
     const clear = `color-mix(in srgb, ${blue} 0%, transparent)`;
     const ink = css.getPropertyValue('--dot-text').trim() || '#000';
-    const slide = el.animate([{ translate: `${-0.385 * left}px 0` }, { translate: '0 0' }], {
+    const fitted = CSS.supports('animation-timing-function', 'linear(0, 1)');
+    const slide = el.animate([{ translate: `${dx}px 0` }, { translate: '0 0' }], {
       duration: 200,
-      easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+      easing: fitted ? SEND_GLIDE : 'cubic-bezier(0.1, 0.8, 0.3, 1)',
     });
+    // Up from the field: in a full thread the scroll does most of it, in a short one this does all of it.
+    const lift = el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], {
+      duration: 200,
+      easing: fitted ? SEND_LIFT : 'cubic-bezier(0.4, 0.2, 0.3, 1)',
+    });
+    // It leaves over the composer's glass, and the field stays blank until it's clear (~83ms).
+    el.style.zIndex = '5';
+    void lift.finished.then(() => (el.style.zIndex = '')).catch(() => {});
+    field.style.setProperty('--placeholder', 'transparent');
+    const blank = window.setTimeout(() => field.style.removeProperty('--placeholder'), 83);
     const fill = el.animate(
       [
         { backgroundColor: clear, color: ink, offset: 0 },
-        { backgroundColor: clear, color: ink, offset: 0.2 },
-        { backgroundColor: `color-mix(in srgb, ${blue} 11%, transparent)`, color: ink, offset: 0.25 },
-        { backgroundColor: `color-mix(in srgb, ${blue} 65%, transparent)`, color: '#fff', offset: 0.375 },
-        { backgroundColor: `color-mix(in srgb, ${blue} 85%, transparent)`, color: '#fff', offset: 0.5 },
-        { backgroundColor: `color-mix(in srgb, ${blue} 94%, transparent)`, color: '#fff', offset: 0.625 },
+        { backgroundColor: clear, color: ink, offset: 0.5 },
+        { backgroundColor: `color-mix(in srgb, ${blue} 12%, transparent)`, color: ink, offset: 0.6 },
+        { backgroundColor: `color-mix(in srgb, ${blue} 65%, transparent)`, color: '#fff', offset: 0.8 },
         { backgroundColor: blue, color: '#fff', offset: 1 },
       ],
-      { duration: 133, easing: 'linear' },
+      { duration: 84, easing: 'linear' },
     );
     return () => {
       slide.cancel();
+      lift.cancel();
       fill.cancel();
+      window.clearTimeout(blank);
+      field.style.removeProperty('--placeholder');
     };
     // A bubble is sent once, on mount.
   }, []);
@@ -478,6 +500,8 @@ function SentBubble({ fresh, children }: { fresh: boolean; children: ReactNode }
 const RECEIPT = { delivered: 1100, seen: 1580 } as const;
 /** Dots starts typing once it has seen you. */
 export const DOTS_READS_FOR = 2200;
+/** Then thinks for about two seconds before the reply (recording 23-05-49, 5.07s to 7.15s). */
+export const DOTS_TYPES_FOR = 2000;
 
 /** One blink (recording 8, 27.33s): half shut for a frame, shut for two, half again, open. */
 const BLINK: { lid: 'half' | 'shut' | null; ms: number }[] = [
@@ -524,6 +548,50 @@ function DotAvatar({ thinking }: { thinking: boolean }) {
         )}
       </AnimatePresence>
     </span>
+  );
+}
+
+/** How much of a request a quote keeps: "Help me plan my afternoon"… */
+const QUOTE_WORDS = 5;
+
+/** Over a reply that carries on a request after you answered something in between: ↳ "Help me plan my afternoon"… */
+function ReplyTo({ request }: { request: string }) {
+  const words = request.trim().split(/\s+/);
+  const cut = words.length > QUOTE_WORDS;
+  const kept = words.slice(0, QUOTE_WORDS).join(' ');
+  return (
+    <span className={styles.replyTo}>
+      <IconArrowCornerDownRight size={14} />
+      {cut ? `"${kept.replace(/[.,!?;:]+$/, '')}"...` : `"${kept}"`}
+    </span>
+  );
+}
+
+/** Dots thinks in a thought bubble rather than a typing bubble (recording 23-05-49). */
+function Thought() {
+  return (
+    <span className={styles.thought} data-bubble aria-label="Typing">
+      <i />
+      <i />
+      <i />
+    </span>
+  );
+}
+
+/** The thought bubble goes at once and the reply fades in from pale, bubble and all (~100ms). */
+function DotSaid({ typing, children }: { typing: boolean; children: ReactNode }) {
+  const thought = useRef(typing);
+  if (typing) return <Thought />;
+  return (
+    <motion.div
+      className={styles.them}
+      data-bubble
+      initial={thought.current ? { opacity: 0.3 } : false}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.1, ease: 'easeOut' }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -610,9 +678,10 @@ export function DotChat({ chat }: AgentChatProps) {
         return (
           <>
             {m.sender && <span className={styles.sender}>{m.sender}</span>}
-            <Said typing={m.typing} className={styles.them}>
+            {m.replyTo && <ReplyTo request={m.replyTo} />}
+            <DotSaid typing={m.typing}>
               <Markdown text={m.text} />
-            </Said>
+            </DotSaid>
           </>
         );
       case 'me': {
@@ -677,11 +746,7 @@ export function DotChat({ chat }: AgentChatProps) {
         );
       }
       case 'work':
-        return (
-          <span className={styles.typing} data-bubble>
-            <TypingDots />
-          </span>
-        );
+        return <Thought />;
       case 'products':
         return (
           <div className={styles.them} data-bubble>
@@ -709,6 +774,12 @@ export function DotChat({ chat }: AgentChatProps) {
   };
 
   const hasText = chat.composer.length > 0;
+  // The render where the send comes or goes moves the mic on the send's clock, not the composer's.
+  const hadText = useRef(hasText);
+  const sendFlip = hadText.current !== hasText;
+  useEffect(() => {
+    hadText.current = hasText;
+  }, [hasText]);
 
   return (
     <div className={styles.stage}>
@@ -722,7 +793,7 @@ export function DotChat({ chat }: AgentChatProps) {
         onFaceIdDone={chat.authed}
         gap={6}
         threadTop={172}
-        composerBottom={38.5}
+        composerBottom={37.5}
         composerHeight={48}
         edge={<ScrollEdge className={styles.edge} />}
         header={
@@ -743,22 +814,32 @@ export function DotChat({ chat }: AgentChatProps) {
           <motion.div layout transition={CARD} className={styles.composerBox} style={{ borderRadius: 24 }}>
             <GlassPill radius={24} className={styles.composer}>
               <span className={styles.composerGrid} data-multiline={multiline || undefined}>
-                <motion.span layout="position" transition={CARD} className={styles.slot} style={{ gridArea: 'plus' }}>
+                <motion.span layout="position" transition={CARD} className={`${styles.slot} ${styles.plusSlot}`} style={{ gridArea: 'plus' }}>
                   <span className={styles.glyph} style={mask(`${A}/plus.svg`, 18, 18)} />
                 </motion.span>
                 <motion.span layout="position" transition={CARD} className={styles.fieldSlot}>
                   <ComposerField chat={chat} placeholder="Message your dot" className={styles.field} onMultiline={setMultiline} />
                 </motion.span>
-                <motion.span layout="position" transition={CARD} className={styles.tools}>
-                  <span className={styles.slot}>
+                <span className={styles.tools}>
+                  <motion.span layout="position" transition={sendFlip ? SEND_IN : CARD} className={styles.slot}>
                     <span className={styles.glyph} style={mask(`${A}/mic.svg`, 16, 22)} />
-                  </span>
+                  </motion.span>
                   {hasText && (
-                    <span className={styles.send} role="button" aria-label="Send" onClick={chat.send} data-ready={chat.canSend || undefined}>
+                    <motion.span
+                      layout="position"
+                      initial={{ scale: 0.8, opacity: 0.3 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ default: SEND_IN, layout: CARD }}
+                      className={styles.send}
+                      role="button"
+                      aria-label="Send"
+                      onClick={chat.send}
+                      data-ready={chat.canSend || undefined}
+                    >
                       <IconArrowUp size={18} />
-                    </span>
+                    </motion.span>
                   )}
-                </motion.span>
+                </span>
               </span>
             </GlassPill>
           </motion.div>
