@@ -68,8 +68,11 @@ const LIGHT_LINE_CAPS = [
   [0.25, 1],
   [0.42, 0],
 ] as const;
-/** Blue glass's glow (IMG_1859's Done): a bright line just inside the ring, dropping fast into a long faint tail. */
-const BLUE_GLOW = [
+/**
+ * Prominent (filled) glass's glow, measured on IMG_1859's blue Done: a bright line just inside the ring, dropping
+ * fast into a long faint tail. No lift: on a dark fill the clear glass's white would wash it grey.
+ */
+const PROMINENT_GLOW = [
   [0, 1],
   [1, 1],
   [1.33, 0.66],
@@ -106,7 +109,7 @@ type Stops = readonly (readonly [number, number])[];
  * The rim, traced on the glass's own outline so it follows the continuous corners: each band is a stroke of that
  * outline clipped to its inside (an exact inset band), lit on the caps and faded to nothing on the sides.
  */
-function GlassRim({ radius, tone }: { radius: number; tone?: 'blue' }) {
+function GlassRim({ radius, prominent }: { radius: number; prominent?: boolean }) {
   const id = useId().replace(/:/g, '');
   const ref = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState<[number, number] | null>(null);
@@ -162,7 +165,7 @@ function GlassRim({ radius, tone }: { radius: number; tone?: 'blue' }) {
         {caps('band', '#fff', BAND_CAPS)}
         {caps('glow', 'var(--glass-rim-inset)', LIGHT_GLOW_CAPS)}
         {caps('line', 'var(--glass-rim-inset)', LIGHT_LINE_CAPS)}
-        {vertical('blueGlow', 'var(--glass-rim-inset)', BLUE_GLOW, BLUE_GLOW)}
+        {vertical('prominentGlow', 'var(--glass-rim-inset)', PROMINENT_GLOW, PROMINENT_GLOW)}
         <linearGradient id={`${id}lift`} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={0} y2={h}>
           {LIGHT_LIFT.map(([pt, o]) => (
             <stop key={pt} offset={Math.min(1, pt / h)} style={{ stopColor: 'var(--glass-rim-inset)' }} stopOpacity={o} />
@@ -171,8 +174,8 @@ function GlassRim({ radius, tone }: { radius: number; tone?: 'blue' }) {
         {vertical('feather', '#fff', FEATHER, FEATHER)}
       </defs>
       <g clipPath={`url(#${id}in)`} className={styles.rimLight}>
-        {tone === 'blue' ? (
-          <path d={d} fill={`url(#${id}blueGlow)`} />
+        {prominent ? (
+          <path d={d} fill={`url(#${id}prominentGlow)`} />
         ) : (
           <>
             <path d={d} fill={`url(#${id}lift)`} />
@@ -196,6 +199,7 @@ export function GlassPill({
   absolute,
   tone,
   tint = tone === 'blue' ? BLUE : TINT,
+  prominent = tone === 'blue',
   className,
   style,
   children,
@@ -205,6 +209,8 @@ export function GlassPill({
   tone?: 'blue';
   /** The frost's fill. */
   tint?: string;
+  /** Filled with a solid color (a primary action, a dark save disc) rather than clear glass. */
+  prominent?: boolean;
   /** Floats over the screen (the panel otherwise sets itself `position: relative`). */
   absolute?: boolean;
   className?: string;
@@ -223,7 +229,7 @@ export function GlassPill({
       className={`${styles.pill} ${tone === 'blue' ? styles.blue : ''} ${className ?? ''}`}
       style={{ borderRadius: radius, ...(absolute && { position: 'absolute' }), ...style }}
     >
-      <GlassRim radius={radius} tone={tone} />
+      <GlassRim radius={radius} prominent={prominent} />
       {children}
     </FrostPanel>
   );
@@ -298,7 +304,7 @@ export function GlassButton({
 }) {
   return (
     <PressButton label={label} size={size} className={`${styles.cta} ${className ?? ''}`} disabled={disabled} onClick={onClick}>
-      <GlassPill radius={height / 2} tint={tint} style={{ height }}>
+      <GlassPill radius={height / 2} tint={tint} prominent={tint !== undefined} style={{ height }}>
         <span className={styles.ctaLabel} style={ink ? ({ '--cta-ink': ink } as CSSProperties) : undefined}>
           {children}
         </span>

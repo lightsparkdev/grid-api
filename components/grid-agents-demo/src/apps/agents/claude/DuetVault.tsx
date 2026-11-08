@@ -147,7 +147,7 @@ function Rows({ rows }: { rows: { key: string; label: string; value: string; fla
 function SaveDisc({ stage, onClick }: { stage: 'form' | 'busy' | 'done'; onClick: () => void }) {
   return (
     <PressButton label="Save" className={styles.saveDisc} onClick={stage === 'form' ? onClick : undefined}>
-      <GlassPill radius={22} tint="var(--dv-ink)">
+      <GlassPill radius={22} tint="var(--dv-ink)" prominent>
         <span className={styles.saveInk}>
           {stage === 'busy' ? <IconLoadingCircle size={20} className={styles.spin} /> : <IconCheckmark1 size={22} />}
         </span>
