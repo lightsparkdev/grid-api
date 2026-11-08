@@ -39,7 +39,7 @@
 
   :global([data-theme='dark']) & {
     --grok-sheet: #1c1c1e;
-    --grok-pill: rgba(58, 58, 60, 0.85);
+    --grok-pill: var(--chat-glass-tint);
     --grok-field: #2c2c2e;
     --grok-bg: #000;
     --grok-edge: 0, 0, 0;
@@ -591,8 +591,16 @@
   border-radius: 36px 36px calc(var(--screen-corner-radius, 73px) - 8px) calc(var(--screen-corner-radius, 73px) - 8px);
   background: var(--grok-sheet);
   color: var(--grok-text);
-  // The sheet's own edge is darker than its buttons' (#5d5d5d sides, #9d9d9d top in IMG_1859).
-  @include rim.glass-rim(0.33px, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.36));
+  // The sheet's own edge is darker than its buttons' (#5d5d5d sides, #9d9d9d top in IMG_1859). In dark it takes the
+  // glass's lit caps, since a black edge vanishes into it.
+  --sheet-rim-cap: rgba(0, 0, 0, 0.2);
+  --sheet-rim-side: rgba(0, 0, 0, 0.36);
+  @include rim.glass-rim(0.33px, var(--sheet-rim-cap), var(--sheet-rim-side));
+
+  :global([data-theme='dark']) & {
+    --sheet-rim-cap: var(--glass-rim-cap);
+    --sheet-rim-side: var(--glass-rim-side);
+  }
 }
 
 .sheetBar {

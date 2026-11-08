@@ -19,7 +19,7 @@
     --gb-line: #2c2c2e;
     --gb-tab: #2c2c2e;
       --gb-field: #2c2c2e;
-    --gb-pill: rgba(44, 44, 46, 0.85);
+    --gb-pill: var(--chat-glass-tint);
   }
 }
 

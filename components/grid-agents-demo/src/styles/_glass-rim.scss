@@ -19,8 +19,8 @@
     background: linear-gradient(
         180deg,
         $cap 0%,
-        $side 38%,
-        $side 62%,
+        $side var(--glass-rim-reach, 38%),
+        $side calc(100% - var(--glass-rim-reach, 38%)),
         $cap 100%
       )
       border-box;
@@ -37,13 +37,12 @@
   &::before {
     content: '';
     position: absolute;
-    inset: $width;
+    inset: var(--glass-rim-glow-at, #{$width});
     z-index: 1;
     border-radius: inherit;
     corner-shape: inherit;
-    box-shadow:
-      inset 0 1.33px 1px var(--glass-rim-inset),
-      inset 0 -1.33px 1px var(--glass-rim-inset);
+    background: var(--glass-rim-feather, none);
+    box-shadow: var(--glass-rim-glow, inset 0 1.33px 1px var(--glass-rim-inset), inset 0 -1.33px 1px var(--glass-rim-inset));
     pointer-events: none;
   }
 }

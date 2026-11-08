@@ -149,11 +149,38 @@ body {
   --glass-symbol-backdrop: linear-gradient(180deg, #242426 0%, #1a1a1c 100%);
   --sheet-flat-edge: rgba(255, 255, 255, 0.1);
   --float-sheet-tint: rgba(0, 0, 0, 0.85);
-  --chat-glass-tint: rgba(36, 36, 38, 0.55);
+  /* iOS dark glass (IMG_1949/1950 at 3x) keeps ~70% of what's behind and lifts it by ~33: #212121–#252525
+     over black, a lighter blue over a blue bubble. A light grey at 30%, not a dark one at half. */
+  --chat-glass-tint: rgba(110, 110, 112, 0.3);
   --chat-glass-ink: #fff;
-  --glass-rim-side: rgba(255, 255, 255, 0.1);
-  --glass-rim-cap: rgba(255, 255, 255, 0.5);
-  --glass-rim-inset: rgba(255, 255, 255, 0.22);
+  /* Its rim is light only on the caps and absent on the sides: ~29% white on the outer device pixel, falling to
+     ~6% over the next three, then a feathered glow that fades out ~7pt in. All of it is inset shadow and gradient:
+     the hairline ring's border rounds up to a whole point inside the scaled phone, a flat 3px stroke, so it's off,
+     and the shadows are stepped since a blur spills onto the sides. */
+  --glass-rim-side: transparent;
+  --glass-rim-cap: transparent;
+  --glass-rim-glow-at: 0;
+  --glass-rim-glow:
+    inset 0 0.33px 0 rgba(255, 255, 255, 0.14), inset 0 0.67px 0 rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -0.33px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -0.67px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(255, 255, 255, 0.09);
+  --glass-rim-feather: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06) 0,
+    rgba(255, 255, 255, 0.05) 1.33px,
+    rgba(255, 255, 255, 0.035) 2.33px,
+    rgba(255, 255, 255, 0.022) 3.33px,
+    rgba(255, 255, 255, 0.013) 4.67px,
+    rgba(255, 255, 255, 0.006) 5.67px,
+    transparent 7px,
+    transparent calc(100% - 7px),
+    rgba(255, 255, 255, 0.006) calc(100% - 5.67px),
+    rgba(255, 255, 255, 0.013) calc(100% - 4.67px),
+    rgba(255, 255, 255, 0.022) calc(100% - 3.33px),
+    rgba(255, 255, 255, 0.035) calc(100% - 2.33px),
+    rgba(255, 255, 255, 0.05) calc(100% - 1.33px),
+    rgba(255, 255, 255, 0.06) 100%
+  );
 }
 
 /* iPhone mock palette — the wallet is a self-contained iOS app preview, so it
