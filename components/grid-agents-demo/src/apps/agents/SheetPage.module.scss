@@ -149,6 +149,32 @@
   }
 }
 
+// What scrolls under the bar blurs progressively, most at the top and gone by the bar's foot. It comes in with the
+// scroll (--edge-in) by its strength, not its opacity: under a fading opacity Chrome would blur nothing.
+.edgeBlur {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: var(--sp-bar);
+  pointer-events: none;
+
+  > i {
+    position: absolute;
+    inset: 0;
+  }
+
+  @each $n, $blur, $solid, $clear in ((1, 1px, 50%, 100%), (2, 2px, 30%, 75%), (3, 4px, 15%, 55%), (4, 8px, 0%, 35%)) {
+    > i:nth-child(#{$n}) {
+      -webkit-backdrop-filter: blur(calc(var(--edge-in, 0) * #{$blur}));
+      backdrop-filter: blur(calc(var(--edge-in, 0) * #{$blur}));
+      -webkit-mask-image: linear-gradient(180deg, #000 $solid, transparent $clear);
+      mask-image: linear-gradient(180deg, #000 $solid, transparent $clear);
+    }
+  }
+}
+
 // The bar's wash: solid behind the discs and title, fading out by the bar's foot, so it sits evenly around them.
 .edge {
   position: absolute;
@@ -157,7 +183,12 @@
   left: 0;
   z-index: 2;
   height: var(--sp-bar);
-  background: linear-gradient(180deg, var(--sp-bg, #fff) 60%, color-mix(in srgb, var(--sp-bg, #fff) 0%, transparent));
+  background: linear-gradient(
+    180deg,
+    var(--sp-bg, #fff) 0%,
+    color-mix(in srgb, var(--sp-bg, #fff) 70%, transparent) 40%,
+    color-mix(in srgb, var(--sp-bg, #fff) 0%, transparent)
+  );
   opacity: 0;
   pointer-events: none;
 }

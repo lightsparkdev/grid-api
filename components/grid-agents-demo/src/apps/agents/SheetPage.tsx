@@ -131,11 +131,14 @@ export function SheetPage({
   const heading = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLDivElement>(null);
   const edge = useRef<HTMLDivElement>(null);
+  const blur = useRef<HTMLDivElement>(null);
   const [titled, setTitled] = useState(!large);
   const onScroll = () => {
     const el = scroller.current;
     if (!el) return;
-    if (edge.current) edge.current.style.opacity = String(Math.min(1, el.scrollTop / EDGE_FADE));
+    const fade = String(Math.min(1, el.scrollTop / EDGE_FADE));
+    if (edge.current) edge.current.style.opacity = fade;
+    blur.current?.style.setProperty('--edge-in', fade);
     const h = heading.current;
     // The scroller is the heading's offset parent; the bar covers its top.
     if (large && h) setTitled(el.scrollTop > h.offsetTop + h.offsetHeight - (bar.current?.offsetHeight ?? 0) - 6);
@@ -159,6 +162,12 @@ export function SheetPage({
           </div>
         )}
         <div className={styles.content}>{children}</div>
+      </div>
+      <div ref={blur} className={styles.edgeBlur} aria-hidden>
+        <i />
+        <i />
+        <i />
+        <i />
       </div>
       <div ref={edge} className={styles.edge} aria-hidden />
       <div ref={bar} className={styles.bar}>

@@ -40,6 +40,8 @@ function fitFoot(surface: HTMLElement) {
   surface.style.borderBottomLeftRadius = '0px';
   surface.style.borderBottomRightRadius = '0px';
   surface.style.clipPath = `path('${squirclePath(w, h, [top, top, foot, foot], PHONE_SHELL_GLASS.cornerSmoothing)}')`;
+  // The clip draws every corner, so the rounded overflow clip goes: Chrome drops the masks of backdrop blurs inside one.
+  surface.style.overflow = 'visible';
 }
 
 function useFootFit() {

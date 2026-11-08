@@ -18,8 +18,15 @@ $shadow:
 .rim {
   position: absolute;
   inset: 0;
+  z-index: -1;
   overflow: visible;
   pointer-events: none;
+}
+
+// The panel's content wrapper holds the rim behind the glass's own content (a glyph needn't be positioned), and
+// in front of the frost. Not on the panel itself: grouping it there would cut the frost off from its backdrop.
+.pill > div:last-child {
+  isolation: isolate;
 }
 
 .rimDark {
