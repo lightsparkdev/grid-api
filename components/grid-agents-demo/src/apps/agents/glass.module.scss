@@ -122,6 +122,12 @@ $shadow:
   width: 100%;
 }
 
+.flat {
+  display: grid;
+  width: 100%;
+  corner-shape: round;
+}
+
 .ctaLabel {
   display: flex;
   align-items: center;

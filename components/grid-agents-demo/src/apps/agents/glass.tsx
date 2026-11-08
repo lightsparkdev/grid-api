@@ -276,8 +276,9 @@ export function NoopButton(props: { label: string; size?: number; className?: st
 }
 
 /**
- * A sheet's action on glass: clear for the way out, tinted with the app's color for the way forward (iOS's
- * prominent glass). `size` is about how wide it lands, so it swells by the same few points as a disc.
+ * A sheet's action: clear glass for the way out, a flat capsule in the app's color for the way forward (the
+ * full-width primary buttons are flat in every app). `size` is about how wide it lands, so it swells by the same
+ * few points as a disc.
  */
 export function GlassButton({
   label,
@@ -291,7 +292,7 @@ export function GlassButton({
   children,
 }: {
   label: string;
-  /** The glass's fill: the app's accent for a primary action; the sheet's own frost when omitted. */
+  /** The primary action's flat fill, the app's accent; clear glass in the sheet's own frost when omitted. */
   tint?: string;
   /** The label's color on that fill. */
   ink?: string;
@@ -302,14 +303,32 @@ export function GlassButton({
   onClick?: () => void;
   children: ReactNode;
 }) {
+  const content = (
+    <span className={styles.ctaLabel} style={ink ? ({ '--cta-ink': ink } as CSSProperties) : undefined}>
+      {children}
+    </span>
+  );
   return (
     <PressButton label={label} size={size} className={`${styles.cta} ${className ?? ''}`} disabled={disabled} onClick={onClick}>
-      <GlassPill radius={height / 2} tint={tint} prominent={tint !== undefined} style={{ height }}>
-        <span className={styles.ctaLabel} style={ink ? ({ '--cta-ink': ink } as CSSProperties) : undefined}>
-          {children}
-        </span>
-      </GlassPill>
+      {tint ? (
+        <FlatFill radius={height / 2} fill={tint} height={height}>
+          {content}
+        </FlatFill>
+      ) : (
+        <GlassPill radius={height / 2} style={{ height }}>
+          {content}
+        </GlassPill>
+      )}
     </PressButton>
+  );
+}
+
+function FlatFill({ radius, fill, height, children }: { radius: number; fill?: string; height: number; children: ReactNode }) {
+  const ref = useContinuousCorners<HTMLSpanElement>(radius);
+  return (
+    <span ref={ref} className={styles.flat} style={{ height, borderRadius: radius, background: fill }}>
+      {children}
+    </span>
   );
 }
 
