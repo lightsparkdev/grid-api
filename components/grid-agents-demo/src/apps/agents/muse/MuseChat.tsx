@@ -29,7 +29,7 @@ function BrowserCard({ status, waiting, pos }: { status: string; waiting?: boole
     <div className={styles.browser} data-pos={pos}>
       <div className={styles.browserHead}>
         <span className={styles.globe}>
-          <IconGlobe size={14} />
+          <IconGlobe size={18} />
         </span>
         <span className={styles.browserTitle}>
           <strong>Browser</strong>
@@ -168,7 +168,7 @@ function AddressCard({ note, pos }: { note: AgentNote; pos?: string }) {
     <div className={styles.card} data-ready data-pos={pos}>
       <div className={styles.browserHead}>
         <span className={styles.globe}>
-          <IconWallet1 size={14} />
+          <IconWallet1 size={18} />
         </span>
         <span className={styles.browserTitle}>
           <strong>{note.title}</strong>
@@ -287,7 +287,7 @@ function ApprovalCard({
     <div className={styles.card} data-ready={ready || undefined} data-pos={pos}>
       <div className={styles.browserHead}>
         <span className={styles.globe}>
-          {checkout ? <IconGlobe size={14} /> : spends ? <IconArrowUpRight size={14} /> : <IconWallet1 size={14} />}
+          {checkout ? <IconGlobe size={18} /> : spends ? <IconArrowUpRight size={18} /> : <IconWallet1 size={18} />}
         </span>
         <span className={styles.browserTitle}>
           <strong>{title}</strong>
@@ -535,6 +535,9 @@ export function MuseChat({ chat }: AgentChatProps) {
         return <Divider text={m.text} />;
       case 'subagent':
         return <SubAgentRow agent={m.agent} done={m.done} onOpen={() => sub.open(m.id)} />;
+      // Only Duet labels a run.
+      case 'eyebrow':
+        return null;
       default: {
         const exhaustive: never = m;
         return exhaustive;

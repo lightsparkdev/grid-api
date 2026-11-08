@@ -1,4 +1,4 @@
-import type { ActionId } from '@/data/actions';
+import { actionLabel, type ActionId } from '@/data/actions';
 import type { AccountSnapshot } from '@/data/agentApiCalls';
 import { purchaseSpendLimit, type DepositNetwork, type Limits, type Payee, type Purchase } from '@/data/agentEvents';
 import { addressKind, canSend, NETWORK_FEE, NETWORKS_FOR, SENDS_ON, sendsLabel, shortAddress, type SendAsset } from '@/data/cryptoSend';
@@ -724,7 +724,8 @@ const buy = (outer: FlowContext): Beat[] => {
     : [
         { say: 'buy.which' },
         {
-          chips: shelf.options.map((o) => ({ label: o.title })),
+          // What people call it ("Sonora Aura Max"), not the listing's full name.
+          chips: shelf.options.map((o) => ({ label: o.model ? `${o.merchant} ${o.model}` : o.title })),
           reply: true,
           then: (picked) => order(ctx, shelfWith(shelf, picked)),
           onPage: (picked) => [{ say: 'buy.picked', params: { item: shelf.options[picked].title } }],
@@ -966,6 +967,20 @@ export function planFor(flow: ActionId, ctx: FlowContext): Beat[] {
 
 /** Flows whose one payment the per-payment limit caps, checked before anything else happens. */
 const OVER_LIMIT: Partial<Record<ActionId, boolean>> = { pay: true, crypto: true, buy: true, agent: true, cashout: true };
+
+/** What a run is about, for an app that labels it (Duet's eyebrow): who's paid, the hotel, the invoice, or the flow. */
+const TOPIC: Partial<Record<ActionId, (ctx: FlowContext) => string>> = {
+  connect: () => 'Set up a balance',
+  pay: (ctx) => `Pay ${((ctx.params?.name ? ctx.params : STORY_PAY).name ?? '').split(' ')[0]}`,
+  crypto: (ctx) => {
+    const address = (ctx.params ?? STORY_CRYPTO).address;
+    return address ? `Send to ${shortAddress(address)}` : 'Send crypto';
+  },
+  agent: (ctx) => stayFor(ctx.params).hotel,
+  getpaid: (ctx) => `${payerFor(ctx.params).first}’s invoice`,
+  buy: (ctx) => (ctx.variant % 2 === 1 ? subscriptionFor(ctx).merchant : 'Buy online'),
+};
+export const topicFor = (flow: ActionId, ctx: FlowContext) => TOPIC[flow]?.(ctx) ?? actionLabel(flow);
 
 /** What a setup on the way to a task is for, so a no to it says what's on hold. */
 const HELD: Partial<Record<ActionId, (p?: FlowParams) => string>> = {

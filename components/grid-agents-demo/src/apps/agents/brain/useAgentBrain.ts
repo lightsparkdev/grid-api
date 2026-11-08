@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ACTIONS, type ActionId } from '@/data/actions';
 import type { AgentEvent } from '@/data/agentEvents';
 import type { Beat, Chip, PayTo, Said, StoredMessage } from '../conversation';
-import { FLOWS, needsSetup, planFor, type FlowContext, type FlowParams } from '../flows';
+import { FLOWS, needsSetup, planFor, topicFor, type FlowContext, type FlowParams } from '../flows';
 
 /** A tile's jump: put this flow's line in the composer. */
 export interface FlowEntry {
@@ -339,13 +339,14 @@ export function useAgentBrain({
   );
 
   const start = useCallback(
-    async (flow: ActionId | null, beats: Beat[], after = 0) => {
+    async (flow: ActionId | null, beats: Beat[], after = 0, topic?: string) => {
       const run: Run = { flow, cancelled: false };
       runRef.current = run;
       if (flow) cb.current.onRun?.(flow);
       setRunning(flow);
       setBusy(true);
       if (after > 0) await sleep(after);
+      if (flow && topic && !run.cancelled) push({ kind: 'eyebrow', flow, text: topic });
       const finished = !run.cancelled && (await play(beats, run));
       if (runRef.current !== run) return;
       clearWork();
@@ -357,14 +358,14 @@ export function useAgentBrain({
       if (!finished) followUps.current = [];
       if (following) {
         const ctx: FlowContext = { ...cb.current.context(), variant: following.variant, params: following.params };
-        void startRef.current(following.id, planFor(following.id, ctx).filter((b) => !('react' in b)), 700);
+        void startRef.current(following.id, planFor(following.id, ctx).filter((b) => !('react' in b)), 700, topicFor(following.id, ctx));
         return;
       }
       const next = queued.current;
       queued.current = null;
       if (next) void askRef.current?.(next, next, false);
     },
-    [play, clearWork],
+    [play, clearWork, push],
   );
   const startRef = useRef(start);
   startRef.current = start;
@@ -388,7 +389,7 @@ export function useAgentBrain({
       const note: Beat = { say: 'setup.auto', params: { connected: setup.connected ? 1 : 0, funded: setup.funded } };
       beats.splice(beats[0] && 'react' in beats[0] ? 1 : 0, 0, note);
     }
-    void start(entry.flow, beats, cb.current.readsFor);
+    void start(entry.flow, beats, cb.current.readsFor, topicFor(entry.flow, ctx));
   }, [entry, cancelRun, dropSuggestions, push, start]);
 
   /** A control in the thread (the balance card's Add money) asks as the visitor would, with its tile's line. */
@@ -399,7 +400,7 @@ export function useAgentBrain({
       const def = ACTIONS.find((a) => a.id === flow)!;
       push({ kind: 'me', text: def.prompts[0] });
       const ctx: FlowContext = { ...cb.current.context(), variant: 0 };
-      void start(flow, FLOWS[flow](ctx), cb.current.readsFor);
+      void start(flow, FLOWS[flow](ctx), cb.current.readsFor, topicFor(flow, ctx));
     },
     [push, start, dropSuggestions],
   );
@@ -418,17 +419,24 @@ export function useAgentBrain({
       if (cb.current.readsFor > 0) await sleep(cb.current.readsFor);
       const typingId = push({ kind: 'them', said: { text: '' }, typing: true });
       const answer = await replying;
-      const beats = answer.flow ? planFor(answer.flow.id, { ...cb.current.context(), variant: answer.flow.variant, params: answer.flow.params }) : null;
+      const ctx: FlowContext | null = answer.flow ? { ...cb.current.context(), variant: answer.flow.variant, params: answer.flow.params } : null;
+      const beats = answer.flow && ctx ? planFor(answer.flow.id, ctx) : null;
+      const topic = answer.flow && ctx ? topicFor(answer.flow.id, ctx) : undefined;
       const opener = beats?.find((b) => !('react' in b));
       // Nothing to say, or the flow opens with a setup step or a no of its own ("On it" would promise what it says next it can't do yet): the typing bubble just goes.
       const silent = ('text' in answer.said && !answer.said.text) || (!!opener && 'say' in opener && SPEAKS_FIRST.has(opener.say));
       if (silent) setMessages((list) => list.filter((m) => m.id !== typingId));
       else patch(typingId, (m) => (m.kind === 'them' ? { ...m, said: answer.said, typing: false } : m));
+      // The reply that starts a flow is the run's first word, so the run's label goes above it.
+      if (!silent && answer.flow && topic) {
+        const label: StoredMessage = { id: nextId.current++, kind: 'eyebrow', flow: answer.flow.id, text: topic };
+        setMessages((list) => list.flatMap((m) => (m.id === typingId ? [label, m] : [m])));
+      }
       setBusy(false);
       followUps.current = answer.then ?? [];
       if (answer.flow && beats) {
         if (!silent) await sleep(700);
-        void start(answer.flow.id, beats);
+        void start(answer.flow.id, beats, 0, silent ? topic : undefined);
       } else if (answer.suggestions?.length) {
         await sleep(350);
         const id = push({ kind: 'chips', chips: answer.suggestions, picked: null });
@@ -446,7 +454,7 @@ export function useAgentBrain({
       if (!chip.flow) return ask(typed ?? chip.label, chip.label);
       push({ kind: 'me', text: typed ?? chip.label });
       const ctx: FlowContext = { ...cb.current.context(), variant: 0 };
-      void start(chip.flow, FLOWS[chip.flow](ctx), cb.current.readsFor);
+      void start(chip.flow, FLOWS[chip.flow](ctx), cb.current.readsFor, topicFor(chip.flow, ctx));
     },
     [ask, push, start],
   );

@@ -404,6 +404,11 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   .details,
   .total {
     background: var(--muse-card);
+
+    // The card is already #1c1c1e in dark, so its panels step up a shade, as they step up to white in light.
+    :global([data-theme='dark']) & {
+      background: var(--muse-sunk);
+    }
   }
 
   .total,
@@ -825,15 +830,15 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
 .browserHead {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .globe {
   display: grid;
   flex: none;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: #0866ff;
   color: #fff;

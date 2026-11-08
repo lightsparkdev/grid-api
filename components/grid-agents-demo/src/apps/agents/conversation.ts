@@ -117,6 +117,8 @@ export interface AgentNote {
   rows?: { title: string; detail: string; amount: string; incoming: boolean }[];
   /** The app's balance card (Balance, and the account a connect sets up). */
   balance?: AgentBalance;
+  /** The figures that matter, for apps that lay a receipt out as tiles (Duet's artifacts). */
+  stats?: { label: string; value: string }[];
 }
 
 /** A product the agent found: a card in a carousel, an image Instinct sends, a line in a list. */
@@ -167,6 +169,7 @@ export type Message =
   | { id: number; kind: 'meta'; meta: AgentMeta }
   | { id: number; kind: 'divider'; text: string }
   | { id: number; kind: 'tag'; text: string }
+  | { id: number; kind: 'eyebrow'; flow: ActionId; text: string }
   | { id: number; kind: 'stamp'; text: string };
 
 /* ── Stored: what the brain keeps ────────────────────────────────────── */
@@ -189,6 +192,8 @@ export type StoredMessage =
   | { id: number; kind: 'subagent'; key: string; params?: Params; done: boolean }
   | { id: number; kind: 'meta'; key: string; params?: Params }
   | { id: number; kind: 'divider'; text: string }
+  /** What a run of the conversation is about ("Pay Sofia"), for apps that label it (Duet's eyebrow). */
+  | { id: number; kind: 'eyebrow'; flow: ActionId; text: string }
   | { id: number; kind: 'stamp'; text: string };
 
 /* ── Flows: what a conversation does ─────────────────────────────────── */

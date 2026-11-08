@@ -457,13 +457,15 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
       .find((m) => (m.kind === 'ask' && m.state === 'open' && !linksOut(m.ask)) || (m.kind === 'chips' && m.picked === null && !m.expired));
     if (!open || drafted.current.has(open.id)) return;
     drafted.current.add(open.id);
+    // Suggestions (the greeting's, or under a reply) are offers, not a question the agent is waiting on.
+    if (open.kind === 'chips' && !chat.activeFlow) return;
     // Choosing among the options happens on their page, so nothing is drafted for it.
     if (open.kind === 'chips' && choosesProduct(chat.messages.indexOf(open), chat.messages)) return;
     // Only an untouched draft gives way to the next one; anything typed stays.
     if (composer && composer !== draft.current?.text) return;
     draft.current = { id: open.id, text: open.kind === 'chips' ? open.chips[0].label : 'Yes' };
     setComposer(draft.current.text);
-  }, [chat.messages, composer, setComposer]);
+  }, [chat.messages, chat.activeFlow, composer, setComposer]);
   // The composer is every app's: a draft left untouched doesn't follow the person into the next app, and is
   // drafted again on the way back.
   useEffect(
@@ -657,6 +659,9 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
             <strong>{m.text}</strong>
           </span>
         );
+      // Only Duet labels a run.
+      case 'eyebrow':
+        return null;
       default: {
         const exhaustive: never = m;
         return exhaustive;

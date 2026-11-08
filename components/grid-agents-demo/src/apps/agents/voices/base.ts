@@ -18,6 +18,9 @@ export const setupDone = (p: Params | undefined) => {
 /** "your Muse balance", and Your agent's "your balance" without saying your twice. */
 export const yours = (p: Params | undefined) => (s(p, 'wallet').startsWith('your ') ? s(p, 'wallet') : `your ${s(p, 'wallet')}`);
 
+/** "Muse balance", or Your agent's plain "Balance", as a value on its own. */
+const walletName = (p: Params | undefined) => (s(p, 'wallet').startsWith('your ') ? 'Balance' : s(p, 'wallet'));
+
 /** "a Muse balance", or Your agent's "a balance". */
 const a = (p: Params | undefined) => (s(p, 'wallet').startsWith('your ') ? 'a balance' : `${/^[aeiou]/i.test(s(p, 'wallet')) ? 'an' : 'a'} ${s(p, 'wallet')}`);
 /** Withdrawn: on an instant rail it's there; ACH and bank transfers say when it lands. */
@@ -430,36 +433,71 @@ export const NOTES = {
     title: n(p, 'lightning') ? `Paid ${s(p, 'sends')} invoice` : `${s(p, 'sends')} to ${s(p, 'short')}`,
     lines: [n(p, 'lightning') ? 'Lightning' : `${s(p, 'asset')} on ${s(p, 'network')}`, `${usd2(n(p, 'usd') + n(p, 'fee'))} from ${s(p, 'wallet')}`],
     done: true,
+    stats: [
+      { label: 'Sent', value: s(p, 'sends') },
+      { label: 'Fee', value: n(p, 'fee') ? usd2(n(p, 'fee')) : 'None' },
+      { label: 'Network', value: n(p, 'lightning') ? 'Lightning' : s(p, 'network') },
+    ],
   }),
   'receipt.pay': (p) => ({
     title: `${s(p, 'local')} to ${s(p, 'first')}`,
     lines: [`${s(p, 'bank')} · ${s(p, 'rail')}`, `${usd2(n(p, 'usd'))} from ${s(p, 'wallet')}`],
     done: true,
+    stats: [
+      { label: 'Sent', value: s(p, 'local') },
+      { label: 'Cost', value: usd2(n(p, 'usd')) },
+      { label: 'Via', value: s(p, 'rail') },
+    ],
   }),
   'receipt.cashout': (p) => ({
     title: `${s(p, 'local')} to ${s(p, 'to')}`,
     lines: [s(p, 'rail'), `${usd2(n(p, 'usd'))} from ${s(p, 'wallet')}`],
     done: true,
+    stats: [
+      { label: 'Moved', value: s(p, 'local') },
+      { label: 'From balance', value: usd2(n(p, 'usd')) },
+      { label: 'Via', value: s(p, 'rail') },
+    ],
   }),
   'receipt.buy': (p) => ({
     title: `${usd2(n(p, 'amount'))} at ${s(p, 'merchant')}`,
-    lines: [n(p, 'card') ? `Paid with ${CARD}` : `Paid from ${yours(p)}`, 'One-time card · closed after the charge'],
+    lines: [n(p, 'card') ? `Paid with ${CARD}` : `Paid from ${yours(p)}`, 'One-time card'],
     done: true,
+    stats: [
+      { label: 'Total', value: usd2(n(p, 'amount')) },
+      { label: 'Paid with', value: n(p, 'card') ? CARD : walletName(p) },
+      { label: 'Card', value: 'One-time' },
+    ],
   }),
   'receipt.sub': (p) => ({
     title: `${usd2(n(p, 'amount'))} at ${s(p, 'merchant')}`,
     lines: [`Recurring Visa · renews monthly, only for ${s(p, 'merchant')}`, ...(n(p, 'card') ? [`Billed to ${CARD}`] : [])],
     done: true,
+    stats: [
+      { label: 'Monthly', value: usd2(n(p, 'amount')) },
+      { label: 'Billed to', value: n(p, 'card') ? CARD : walletName(p) },
+      { label: 'Card', value: `${s(p, 'merchant')} only` },
+    ],
   }),
   'receipt.agent': (p) => ({
     title: `Paid ${s(p, 'hotel')} · ${usd2(n(p, 'amount'))}`,
     lines: [s(p, 'dates'), `You saved ${usd2(n(p, 'listed') - n(p, 'amount'))} by paying direct`],
     done: true,
+    stats: [
+      { label: 'Paid', value: usd2(n(p, 'amount')) },
+      { label: 'Saved', value: usd2(n(p, 'listed') - n(p, 'amount')) },
+      { label: 'Stay', value: nightsOf(p) },
+    ],
   }),
   'receipt.getpaid': (p) => ({
     title: `${usd2(n(p, 'amount'))} from ${s(p, 'payer')}`,
     lines: [`${s(p, 'invoice')} · paid`],
     done: true,
+    stats: [
+      { label: 'Received', value: usd2(n(p, 'amount')) },
+      { label: 'Invoice', value: s(p, 'invoice') },
+      { label: 'Status', value: 'Paid' },
+    ],
   }),
   balance: (p) => ({
     title: usd2(n(p, 'balance')),

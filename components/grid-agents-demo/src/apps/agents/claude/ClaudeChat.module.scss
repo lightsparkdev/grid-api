@@ -17,6 +17,8 @@
   --cl-ink: #0b0b0b;
   --cl-ink-text: #fff;
   --cl-tag: #fae3b8;
+  --cl-chip: rgba(11, 11, 11, 0.06);
+  --cl-tile: #f4f3ee;
   --part-surface: var(--cl-card);
   --part-sunk: var(--cl-bubble);
   --part-text: var(--cl-text);
@@ -47,36 +49,14 @@
     --cl-ink: #f5f4ef;
     --cl-ink-text: #1f1e1d;
     --cl-tag: #5a4520;
+    --cl-chip: rgba(255, 255, 255, 0.08);
+    --cl-tile: #2a2928;
   }
   font-family: 'Anthropic Sans', var(--font-family-sf-pro);
   font-variation-settings: 'opsz' 16;
 }
 
-// Claude's code block: a hairline card, the label and Copy in a header row, the value in mono below.
-.codeWrap {
-  width: 100%;
-  max-width: 340px;
-}
-
-.codeBlock {
-  overflow: hidden;
-  border: 1px solid var(--cl-ring);
-  border-radius: 12px;
-  background: var(--cl-card);
-}
-
-.codeHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 7px 8px 7px 12px;
-  border-bottom: 1px solid var(--cl-ring);
-  color: var(--cl-muted);
-  font-size: 13px;
-  line-height: 18px;
-}
-
+// Copy, in an address artifact's footer where the pin would be.
 .codeCopy {
   display: inline-flex;
   align-items: center;
@@ -87,6 +67,7 @@
   background: none;
   color: var(--cl-muted);
   font: inherit;
+  font-size: 15px;
   cursor: pointer;
   pointer-events: auto;
 
@@ -95,26 +76,302 @@
   }
 }
 
-.codeBody {
-  margin: 0;
-  padding: 10px 12px 12px;
-  color: var(--cl-text);
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 13px;
-  line-height: 19px;
-  white-space: pre-wrap;
-  word-break: break-all;
+// Quick replies: outlined pills in a row, each led by the reply arrow.
+.replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 363px;
 }
 
-.codeLine {
-  margin: 6px 2px 0;
+.reply {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px 0 11px;
+  border: 1px solid var(--cl-rule);
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--cl-card);
+  color: var(--cl-text);
+  font: inherit;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: -0.3px;
+  cursor: pointer;
+  transition: opacity 0.3s ease, background-color 0.3s ease, scale 0.15s ease;
+
+  svg {
+    flex: none;
+    color: var(--cl-muted);
+  }
+
+  &:active:not(:disabled) {
+    scale: 0.96;
+  }
+
+  .replies[data-settled] & {
+    cursor: default;
+  }
+
+  .replies[data-settled] &:not([data-picked]) {
+    opacity: 0.4;
+  }
+
+  &[data-picked] {
+    background: var(--cl-me);
+  }
+
+  :global([data-theme='dark']) &:not([data-picked]) {
+    background: transparent;
+  }
+}
+
+// A yes asked in words: the message, then its replies.
+.textAsk {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+// Cards, banks, invoices and addresses set inside a line.
+.inlineChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 1px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--cl-chip);
+  font-size: 15px;
+  line-height: 22px;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  vertical-align: 1px;
+
+  svg {
+    flex: none;
+    color: var(--cl-muted);
+  }
+}
+
+// Duet's artifact: a preview, then its name under a hairline.
+.artifact {
+  display: flex;
+  flex-direction: column;
+  width: 363px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--cl-card);
+  box-shadow: 0 0 0 1px var(--cl-ring);
+
+  &[data-opens-sheet] {
+    cursor: pointer;
+  }
+}
+
+.artifactPreview {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 16px;
+}
+
+.artifactLabel {
+  color: var(--cl-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.artifactHeadline {
+  margin-top: 6px;
+  font-family: 'Anthropic Serif', 'Tiempos Headline', Georgia, 'Times New Roman', serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 29px;
+  letter-spacing: -0.3px;
+}
+
+.artifactStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.artifactStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--cl-tile);
+
+  small {
+    overflow: hidden;
+    color: var(--cl-muted);
+    font-size: 11px;
+    line-height: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  b {
+    overflow: hidden;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.artifactAddress {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  code {
+    min-width: 0;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 13px;
+    line-height: 19px;
+    word-break: break-all;
+  }
+}
+
+.artifactRows {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+
+  > span {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--cl-rule);
+    font-size: 15px;
+    line-height: 20px;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+
+    > span {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  small {
+    color: var(--cl-muted);
+    font-size: 13px;
+    line-height: 17px;
+  }
+
+  b {
+    font-weight: 600;
+
+    &[data-incoming] {
+      color: var(--part-success);
+    }
+  }
+}
+
+.artifactFoot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px 13px;
+  border-top: 1px solid var(--cl-rule);
+  color: var(--cl-muted);
+}
+
+.artifactName {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+
+  b {
+    overflow: hidden;
+    color: var(--cl-text);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 22px;
+    letter-spacing: -0.43px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    overflow: hidden;
+    font-size: 15px;
+    line-height: 20px;
+    letter-spacing: -0.23px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// What Duet is doing, as a quiet line under the thread.
+.working {
+  padding-left: 4px;
   color: var(--cl-muted);
   font-size: 14px;
   line-height: 19px;
+  animation: cl-working 1.6s ease-in-out infinite;
+}
 
-  & + & {
-    margin-top: 2px;
+@keyframes cl-working {
+  50% {
+    opacity: 0.45;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .working {
+    animation: none;
+  }
+}
+
+// A finished task: a check, Done, and where it's kept.
+.doneRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 363px;
+  margin-top: 8px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  background: var(--cl-card);
+  box-shadow: 0 0 0 1px var(--cl-ring);
+  color: var(--cl-muted);
+  font-size: 17px;
+  line-height: 22px;
+  letter-spacing: -0.43px;
+
+  span {
+    flex: 1;
+    color: var(--cl-text);
+  }
+
+  small {
+    font-size: 15px;
+  }
+}
+
+// Under the thread, over the composer.
+.disclaimer {
+  display: block;
+  margin: 0 0 10px 31px;
+  color: var(--cl-muted);
+  font-size: 12px;
+  line-height: 16px;
 }
 
 // The header's soft fall-off over the thread.
@@ -221,13 +478,19 @@
   left: 17px;
 }
 
+// Centered on the label's 18pt line, which the row sits on by its foot.
+.tagChevron {
+  margin: 0 0 4.5px 2px;
+}
+
 .tagIcon {
   display: grid;
   place-items: center;
   width: 18px;
   height: 18px;
   border-radius: 5px;
-  background: var(--cl-tag);
+  background: color-mix(in srgb, var(--flow) 16%, transparent);
+  color: var(--flow);
 }
 
 .spend {
@@ -461,11 +724,12 @@
   --acct-accent: #d97757;
   --acct-edge: inset 0 0 0 1px rgba(20, 20, 19, 0.08);
 
+  // Darker than the screen with a hairline, as Duet's other cards are, so it doesn't vanish into the background.
   :global([data-theme='dark']) & {
-    --acct-bg: #262624;
+    --acct-bg: var(--cl-card);
     --acct-ink: #faf9f5;
     --acct-ink-2: #9c9a92;
     --acct-button: #30302e;
-    --acct-edge: none;
+    --acct-edge: inset 0 0 0 1px var(--cl-ring);
   }
 }

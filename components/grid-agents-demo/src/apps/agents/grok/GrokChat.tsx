@@ -449,6 +449,9 @@ export function GrokChat({ chat }: AgentChatProps) {
         return <span className={styles.stamp}>{m.text}</span>;
       case 'subagent':
         return <SubAgentRow className={styles.subRow} agent={m.agent} done={m.done} onOpen={() => sub.open(m.id)} />;
+      // Only Duet labels a run.
+      case 'eyebrow':
+        return null;
       default: {
         const exhaustive: never = m;
         return exhaustive;

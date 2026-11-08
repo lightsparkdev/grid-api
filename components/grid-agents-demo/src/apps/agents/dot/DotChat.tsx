@@ -698,6 +698,9 @@ export function DotChat({ chat }: AgentChatProps) {
         return <Divider text={m.text} />;
       case 'subagent':
         return <SubAgentRow agent={m.agent} done={m.done} onOpen={() => sub.open(m.id)} />;
+      // Only Duet labels a run.
+      case 'eyebrow':
+        return null;
       default: {
         const exhaustive: never = m;
         return exhaustive;

@@ -77,11 +77,14 @@ export function voiceFor(connector: ConnectorId): Voice {
 
 /** The stored thread, as this app says it. */
 export function renderThread(messages: StoredMessage[], voice: Voice): Message[] {
-  return messages.map((m): Message => {
+  // Only Duet labels a run; elsewhere the label isn't in the thread at all, so it can't sit between neighbors.
+  const shown = voice.id === 'claude' ? messages : messages.filter((m) => m.kind !== 'eyebrow');
+  return shown.map((m): Message => {
     switch (m.kind) {
       case 'me':
       case 'stamp':
       case 'divider':
+      case 'eyebrow':
         return m;
       case 'them':
         return {

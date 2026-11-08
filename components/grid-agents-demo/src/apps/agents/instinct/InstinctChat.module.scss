@@ -585,12 +585,15 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
 }
 
 // The field's text as it lifts off: a pale, blurred copy of the field under the composer's glass.
+// On its own layer: WebKit doesn't repaint where a moving blur has been, and leaves a trail behind the field.
 .ghost {
   position: absolute;
   border-radius: 20px;
   background: #2b99fa;
   filter: blur(8px);
   pointer-events: none;
+  transform: translateZ(0);
+  will-change: opacity, filter, left, top, width, height;
 }
 
 // An inline reply: the quoted text in an outlined bubble, a thread line down to yours.
