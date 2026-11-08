@@ -11,7 +11,7 @@ import { IconPin } from '@central-icons-react/round-outlined-radius-3-stroke-1.5
 import { IconSquareBehindSquare1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare1';
 import { FLOW_ICON_COLORS, FLOW_ICONS } from '@/data/flowIcons';
 import { ChatFrame, ComposerField, Said, ScrollEdge } from '../ChatFrame';
-import { GlassPill, NoopButton } from '../glass';
+import { GlassPill, NoopButton, useContinuousCorners } from '../glass';
 import type { AgentNote, Message } from '../conversation';
 import { AddressQr, askButtons, AskCard, BalanceCard, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import type { AgentChatProps } from '../types';
@@ -256,6 +256,7 @@ export function ClaudeChat({ chat }: AgentChatProps) {
   const card = useDuetCard({ messages: chat.messages, onAllow: chat.allow });
   const bank = useDuetBank({ messages: chat.messages, onAllow: chat.allow });
   const balance = useDuetBalance({ account: chat.account, onAction: chat.prompt });
+  const selectedTab = useContinuousCorners<HTMLSpanElement>(27);
   // A run that ended in a receipt closes with Done once the next thing starts (or the thread rests). The balance a setup
   // shows is the account, not something finished.
   const closesRun = (i: number, all: Message[]) => {
@@ -418,7 +419,12 @@ export function ClaudeChat({ chat }: AgentChatProps) {
                 ['Make', 'tab-make'],
               ] as const
             ).map(([label, icon], i) => (
-              <span key={label} className={styles.tab} data-selected={i === 0 || undefined}>
+              <span
+                key={label}
+                ref={i === 0 ? selectedTab : undefined}
+                className={styles.tab}
+                data-selected={i === 0 || undefined}
+              >
                 <span className={styles.tabGlyph} style={mask(`${A}/${icon}.svg`, 26, 26)} />
                 {label}
               </span>

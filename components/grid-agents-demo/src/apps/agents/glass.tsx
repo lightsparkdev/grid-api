@@ -1,6 +1,7 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useCallback, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { IconCapture } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCapture';
 import { FrostPanel } from '@/components/liquid-glass';
+import { smoothShapeClip, smoothShapePath } from '@/lib/squircle/path';
 import styles from './glass.module.scss';
 
 /**
@@ -12,8 +13,125 @@ const TINT = 'var(--chat-glass-tint)';
 /** iOS's blue button glass, measured flat at its center in IMG_1859. */
 const BLUE = '#3672eb';
 const BLUR = 3;
+/** iOS continuous corners, the chat bubbles' smoothing (styles/_corners.scss): a capsule's ends ease off its long edges. */
+const SMOOTHING = 0.6;
 
-/** Glass of any size: title pills, composers, tab bars. Truly round ends. */
+const isDisc = (w: number, h: number, r: number) => Math.abs(w - h) < 0.5 && r >= h / 2 - 0.5;
+const outline = (w: number, h: number, r: number) => smoothShapePath(w, h, [r, r, r, r], isDisc(w, h, r) ? 0 : SMOOTHING, true);
+
+/** Clips an element to the glass's continuous corners at `radius`, following its size: a tab bar's selected pill. */
+export function useContinuousCorners<T extends HTMLElement>(radius: number) {
+  const ref = useRef<T>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const apply = () => {
+      const cs = getComputedStyle(el);
+      const w = parseFloat(cs.width);
+      const h = parseFloat(cs.height);
+      if (w > 0 && h > 0) el.style.clipPath = smoothShapeClip(w, h, [radius, radius, radius, radius], isDisc(w, h, radius) ? 0 : SMOOTHING, true);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [radius]);
+  return ref;
+}
+
+/** Light rim: a white glow just inside the caps (depth, opacity), under a one-point ring grey on the caps and darker on the sides. */
+const LIGHT_GLOW = [
+  [1, 0.75],
+  [1.5, 0.6],
+  [2, 0.3],
+] as const;
+/** Dark rim (IMG_1949/1950 at 3x): ~29% white on the outer device pixel, falling to ~6% over the next two... */
+const DARK_BANDS = [
+  [0.33, 0.14],
+  [0.67, 0.08],
+  [1, 0.09],
+] as const;
+/** ...then a feathered glow fading out ~7pt in (depth, white opacity). */
+const FEATHER = [
+  [0, 0.06],
+  [1.33, 0.05],
+  [2.33, 0.035],
+  [3.33, 0.022],
+  [4.67, 0.013],
+  [5.67, 0.006],
+  [7, 0],
+] as const;
+
+/**
+ * The rim, traced on the glass's own outline so it follows the continuous corners: each band is a stroke of that
+ * outline clipped to its inside (an exact inset band), lit on the caps and faded to nothing on the sides.
+ */
+function GlassRim({ radius }: { radius: number }) {
+  const id = useId().replace(/:/g, '');
+  const ref = useRef<SVGSVGElement>(null);
+  const [size, setSize] = useState<[number, number] | null>(null);
+  useLayoutEffect(() => {
+    const host = ref.current?.parentElement;
+    if (!host) return;
+    const measure = () => {
+      const cs = getComputedStyle(host);
+      const w = parseFloat(cs.width);
+      const h = parseFloat(cs.height);
+      setSize((s) => (s && s[0] === w && s[1] === h ? s : [w, h]));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(host);
+    return () => ro.disconnect();
+  }, []);
+  if (!size || size[0] <= 0 || size[1] <= 0) return <svg ref={ref} className={styles.rim} aria-hidden />;
+  const [w, h] = size;
+  const d = outline(w, h, radius);
+  const caps = (key: string, reach: number, color: string) => (
+    <linearGradient id={`${id}${key}`} x1={0} y1={0} x2={0} y2={1}>
+      <stop offset={0} style={{ stopColor: color }} />
+      <stop offset={reach} style={{ stopColor: color }} stopOpacity={0} />
+      <stop offset={1 - reach} style={{ stopColor: color }} stopOpacity={0} />
+      <stop offset={1} style={{ stopColor: color }} />
+    </linearGradient>
+  );
+  const feather = [...FEATHER.map(([px, o]) => [px / h, o]), ...[...FEATHER].reverse().map(([px, o]) => [1 - px / h, o])];
+  const band = (key: string, depth: number, opacity: number) => (
+    <path key={`${key}${depth}`} d={d} fill="none" stroke={`url(#${id}${key})`} strokeWidth={depth * 2} strokeOpacity={opacity} />
+  );
+  return (
+    <svg ref={ref} className={styles.rim} width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden>
+      <defs>
+        <clipPath id={`${id}in`}>
+          <path d={d} />
+        </clipPath>
+        <linearGradient id={`${id}ring`} x1={0} y1={0} x2={0} y2={1}>
+          <stop offset={0} style={{ stopColor: 'var(--glass-rim-cap)' }} />
+          <stop offset={0.38} style={{ stopColor: 'var(--glass-rim-side)' }} />
+          <stop offset={0.62} style={{ stopColor: 'var(--glass-rim-side)' }} />
+          <stop offset={1} style={{ stopColor: 'var(--glass-rim-cap)' }} />
+        </linearGradient>
+        {caps('glow', 0.38, 'var(--glass-rim-inset)')}
+        {caps('band', 0.3, '#fff')}
+        <linearGradient id={`${id}feather`} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={0} y2={h}>
+          {feather.map(([at, o], i) => (
+            <stop key={i} offset={Math.min(1, Math.max(0, at))} stopColor="#fff" stopOpacity={o} />
+          ))}
+        </linearGradient>
+      </defs>
+      <g clipPath={`url(#${id}in)`} className={styles.rimLight}>
+        {LIGHT_GLOW.map(([depth, o]) => band('glow', depth, o))}
+        <path d={d} fill="none" stroke={`url(#${id}ring)`} strokeWidth={2} />
+      </g>
+      <g clipPath={`url(#${id}in)`} className={styles.rimDark}>
+        <path d={d} fill={`url(#${id}feather)`} />
+        {DARK_BANDS.map(([depth, o]) => band('band', depth, o))}
+      </g>
+    </svg>
+  );
+}
+
+/** Glass of any size: title pills, composers, tab bars. Continuous corners; a disc stays a circle. */
 export function GlassPill({
   radius,
   absolute,
@@ -34,15 +152,19 @@ export function GlassPill({
   style?: CSSProperties;
   children?: ReactNode;
 }) {
+  // A disc keeps the frost's round clip (border-radius), which never drops its blur.
+  const shape = useCallback((w: number, h: number) => (isDisc(w, h, radius) ? null : outline(w, h, radius)), [radius]);
   return (
     <FrostPanel
       radius={radius}
+      shape={shape}
       tint={tint}
       tintBlur={BLUR}
       edge="none"
       className={`${styles.pill} ${tone === 'blue' ? styles.blue : ''} ${className ?? ''}`}
       style={{ borderRadius: radius, ...(absolute && { position: 'absolute' }), ...style }}
     >
+      <GlassRim radius={radius} />
       {children}
     </FrostPanel>
   );

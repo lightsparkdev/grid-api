@@ -8,7 +8,7 @@ import { IconSquareBehindSquare1 } from '@central-icons-react/round-outlined-rad
 import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { ChatFrame, ComposerField, ScrollEdge, STILL, TypingDots, useOpenedIds, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
-import { GlassDisc, GlassPill, NoopButton } from '../glass';
+import { GlassDisc, GlassPill, NoopButton, useContinuousCorners } from '../glass';
 import type { AgentBalance, AgentNote, AskRow, Chip, Message, Product } from '../conversation';
 import { AddressQr, askButtons, copyLabel, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
@@ -468,6 +468,7 @@ export function MuseChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages);
   const card = useMuseCard({ messages: chat.messages, onAllow: chat.allow });
   const bank = useMuseBank({ messages: chat.messages, onAllow: chat.allow });
+  const selectedTab = useContinuousCorners<HTMLSpanElement>(25);
   const balance = useMuseBalance({ account: chat.account, onAction: chat.prompt });
   const payWith = useMusePayWith({ messages: chat.messages, onSwap: chat.swap });
   const render = (m: Message, i: number, all: Message[]) => {
@@ -631,7 +632,7 @@ export function MuseChat({ chat }: AgentChatProps) {
       tabBar={
         <div className={styles.tabBar}>
           <GlassPill radius={29} absolute className={styles.tabPill}>
-            <span className={styles.tabSelected} />
+            <span ref={selectedTab} className={styles.tabSelected} />
           </GlassPill>
           {TABS.map(([icon, x, y, w, h]) => (
             <span

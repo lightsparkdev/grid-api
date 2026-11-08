@@ -5,7 +5,28 @@
   display: grid;
   corner-shape: round;
   box-shadow: rim.$glass-rim-shadow;
-  @include rim.glass-rim;
+}
+
+// GlassRim: drawn on the glass's own outline, with light and dark sets measured separately.
+.rim {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.rimDark {
+  display: none;
+}
+
+:global([data-theme='dark']) {
+  .rimLight {
+    display: none;
+  }
+
+  .rimDark {
+    display: inline;
+  }
 }
 
 // Blue glass (IMG_1859's Done at 3x): a flat #3672eb fill, a darker blue hairline, a lighter blue band just

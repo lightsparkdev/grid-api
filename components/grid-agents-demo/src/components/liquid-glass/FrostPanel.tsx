@@ -139,6 +139,10 @@ export interface FrostPanelProps {
   specular?: FrostSpecular;
   /** Outer drop shadow (CSS box-shadow value), traced at the panel's radius. */
   shadow?: string;
+  /** An outline of your own (SVG path data in the panel's px) in place of the radius squircle, or null for the
+   *  default at that size: e.g. the chat bubbles' continuous capsule. The frost clips to it, and it's exposed as
+   *  `--frost-clip` so overlays drawn in CSS can clip to the same shape. */
+  shape?: (width: number, height: number) => string | null;
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;
@@ -185,6 +189,7 @@ export function FrostPanel({
   specularCorners,
   specular,
   shadow,
+  shape,
   className,
   style,
   children,
@@ -309,8 +314,17 @@ export function FrostPanel({
         ? (base.map((r) => Math.max(0, r - 0.5)) as [number, number, number, number])
         : Math.max(0, base - 0.5);
       const frost = frostRef.current;
+      // The exact layout size: offsetWidth rounds, and a rounded width shaves a flat off a capsule's end.
+      const own = shape?.(parseFloat(getComputedStyle(el).width) || width, parseFloat(getComputedStyle(el).height) || height);
+      if (own) el.style.setProperty('--frost-clip', `path('${own}')`);
+      else el.style.removeProperty('--frost-clip');
       if (frost) {
-        if (roundUniform) {
+        if (own) {
+          const p = `path('${own}')`;
+          frost.style.clipPath = p;
+          frost.style.setProperty('-webkit-clip-path', p);
+          frost.style.borderRadius = '';
+        } else if (roundUniform) {
           // Round capsule/rect — border-radius keeps backdrop-filter alive.
           frost.style.borderRadius = `${radius}px`;
           frost.style.clipPath = '';
@@ -325,7 +339,7 @@ export function FrostPanel({
       edgeSvgRef.current?.setAttribute('viewBox', `0 0 ${width} ${height}`);
       edgePathRef.current?.setAttribute(
         'd',
-        squirclePath(width - 1, height - 1, inset, cornerSmoothing, 22, 0.5, 0.5),
+        own ?? squirclePath(width - 1, height - 1, inset, cornerSmoothing, 22, 0.5, 0.5),
       );
     };
     apply();
@@ -333,7 +347,7 @@ export function FrostPanel({
     ro.observe(el);
     return () => ro.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [radiiKey, cornerSmoothing]);
+  }, [radiiKey, cornerSmoothing, shape]);
 
   const baseRadii = cornerRadii ?? radius;
   // Frost shape. Squircle / per-corner: `clip-path: path()` ONLY — it's a true
