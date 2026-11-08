@@ -1060,7 +1060,8 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   width: 78px;
   height: 50px;
   border-radius: 25px;
-  background: rgba(0, 0, 0, 0.07);
+  // IMG_1952: #eae9ea in the bar.
+  background: rgba(0, 0, 0, 0.055);
 
   // IMG_1950: darker than the bar in dark (#0e0e0e in #252525), not lighter.
   :global([data-theme='dark']) & {

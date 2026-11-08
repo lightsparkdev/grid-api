@@ -39,11 +39,45 @@ export function useContinuousCorners<T extends HTMLElement>(radius: number) {
   return ref;
 }
 
-/** Light rim: a white glow just inside the caps (depth, opacity), under a one-point ring grey on the caps and darker on the sides. */
-const LIGHT_GLOW = [
-  [1, 0.75],
-  [1.5, 0.6],
-  [2, 0.3],
+/**
+ * Light rim (IMG_1951/1952 at 3x): a crisp ring, grey on the caps and darker on the sides. One band, as two
+ * sub-pixel bands antialias into a smear twice as wide.
+ */
+const LIGHT_RING = 0.5;
+/** A white glow inside the caps that follows the curve: an inset band (depth) softened (blur), solid ~2.5pt in and gone by ~10pt... */
+const LIGHT_GLOW = { depth: 5, blur: 2.8 };
+/** ...fading around the ends: (offset down the glass, opacity), mirrored for the bottom. */
+const LIGHT_GLOW_CAPS = [
+  [0, 1],
+  [0.2, 0.8],
+  [0.4, 0],
+] as const;
+/**
+ * Below the top glow the glass lightens again, darkest ~10-13pt down and ~5 levels lighter by ~25pt, so the
+ * bottom glow lands on a near-white base and barely shows: (pt from the top, white opacity).
+ */
+const LIGHT_LIFT = [
+  [13, 0],
+  [19, 0.4],
+  [25, 0.62],
+] as const;
+/** A thin white line just inside the ring, reaching ~75° round a capsule's ends before it fades. */
+const LIGHT_LINE = { depth: 1.2, opacity: 1 };
+const LIGHT_LINE_CAPS = [
+  [0, 1],
+  [0.25, 1],
+  [0.42, 0],
+] as const;
+/** Blue glass's glow (IMG_1859's Done): a bright line just inside the ring, dropping fast into a long faint tail. */
+const BLUE_GLOW = [
+  [0, 1],
+  [1, 1],
+  [1.33, 0.66],
+  [1.67, 0.34],
+  [2, 0.18],
+  [3, 0.14],
+  [5, 0.07],
+  [7, 0],
 ] as const;
 /** Dark rim (IMG_1949/1950 at 3x): ~29% white on the outer device pixel, falling to ~6% over the next two... */
 const DARK_BANDS = [
@@ -61,12 +95,18 @@ const FEATHER = [
   [5.67, 0.006],
   [7, 0],
 ] as const;
+/** The dark bands light the caps only: (offset down the glass, opacity), mirrored. */
+const BAND_CAPS = [
+  [0, 1],
+  [0.3, 0],
+] as const;
+type Stops = readonly (readonly [number, number])[];
 
 /**
  * The rim, traced on the glass's own outline so it follows the continuous corners: each band is a stroke of that
  * outline clipped to its inside (an exact inset band), lit on the caps and faded to nothing on the sides.
  */
-function GlassRim({ radius }: { radius: number }) {
+function GlassRim({ radius, tone }: { radius: number; tone?: 'blue' }) {
   const id = useId().replace(/:/g, '');
   const ref = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState<[number, number] | null>(null);
@@ -87,15 +127,20 @@ function GlassRim({ radius }: { radius: number }) {
   if (!size || size[0] <= 0 || size[1] <= 0) return <svg ref={ref} className={styles.rim} aria-hidden />;
   const [w, h] = size;
   const d = outline(w, h, radius);
-  const caps = (key: string, reach: number, color: string) => (
+  const caps = (key: string, color: string, stops: Stops) => (
     <linearGradient id={`${id}${key}`} x1={0} y1={0} x2={0} y2={1}>
-      <stop offset={0} style={{ stopColor: color }} />
-      <stop offset={reach} style={{ stopColor: color }} stopOpacity={0} />
-      <stop offset={1 - reach} style={{ stopColor: color }} stopOpacity={0} />
-      <stop offset={1} style={{ stopColor: color }} />
+      {[...stops, ...[...stops].reverse().map(([at, o]) => [1 - at, o] as const)].map(([at, o], i) => (
+        <stop key={i} offset={at} style={{ stopColor: color }} stopOpacity={o} />
+      ))}
     </linearGradient>
   );
-  const feather = [...FEATHER.map(([px, o]) => [px / h, o]), ...[...FEATHER].reverse().map(([px, o]) => [1 - px / h, o])];
+  const vertical = (key: string, color: string, top: Stops, bottom: Stops) => (
+    <linearGradient id={`${id}${key}`} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={0} y2={h}>
+      {[...top.map(([px, o]) => [px / h, o]), ...[...bottom].reverse().map(([px, o]) => [1 - px / h, o])].map(([at, o], i) => (
+        <stop key={i} offset={Math.min(1, Math.max(0, at))} style={{ stopColor: color }} stopOpacity={o} />
+      ))}
+    </linearGradient>
+  );
   const band = (key: string, depth: number, opacity: number) => (
     <path key={`${key}${depth}`} d={d} fill="none" stroke={`url(#${id}${key})`} strokeWidth={depth * 2} strokeOpacity={opacity} />
   );
@@ -105,23 +150,37 @@ function GlassRim({ radius }: { radius: number }) {
         <clipPath id={`${id}in`}>
           <path d={d} />
         </clipPath>
+        <filter id={`${id}soft`} filterUnits="userSpaceOnUse" x={-10} y={-10} width={w + 20} height={h + 20}>
+          <feGaussianBlur stdDeviation={LIGHT_GLOW.blur} />
+        </filter>
         <linearGradient id={`${id}ring`} x1={0} y1={0} x2={0} y2={1}>
           <stop offset={0} style={{ stopColor: 'var(--glass-rim-cap)' }} />
           <stop offset={0.38} style={{ stopColor: 'var(--glass-rim-side)' }} />
           <stop offset={0.62} style={{ stopColor: 'var(--glass-rim-side)' }} />
           <stop offset={1} style={{ stopColor: 'var(--glass-rim-cap)' }} />
         </linearGradient>
-        {caps('glow', 0.38, 'var(--glass-rim-inset)')}
-        {caps('band', 0.3, '#fff')}
-        <linearGradient id={`${id}feather`} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={0} y2={h}>
-          {feather.map(([at, o], i) => (
-            <stop key={i} offset={Math.min(1, Math.max(0, at))} stopColor="#fff" stopOpacity={o} />
+        {caps('band', '#fff', BAND_CAPS)}
+        {caps('glow', 'var(--glass-rim-inset)', LIGHT_GLOW_CAPS)}
+        {caps('line', 'var(--glass-rim-inset)', LIGHT_LINE_CAPS)}
+        {vertical('blueGlow', 'var(--glass-rim-inset)', BLUE_GLOW, BLUE_GLOW)}
+        <linearGradient id={`${id}lift`} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={0} y2={h}>
+          {LIGHT_LIFT.map(([pt, o]) => (
+            <stop key={pt} offset={Math.min(1, pt / h)} style={{ stopColor: 'var(--glass-rim-inset)' }} stopOpacity={o} />
           ))}
         </linearGradient>
+        {vertical('feather', '#fff', FEATHER, FEATHER)}
       </defs>
       <g clipPath={`url(#${id}in)`} className={styles.rimLight}>
-        {LIGHT_GLOW.map(([depth, o]) => band('glow', depth, o))}
-        <path d={d} fill="none" stroke={`url(#${id}ring)`} strokeWidth={2} />
+        {tone === 'blue' ? (
+          <path d={d} fill={`url(#${id}blueGlow)`} />
+        ) : (
+          <>
+            <path d={d} fill={`url(#${id}lift)`} />
+            <path d={d} fill="none" stroke={`url(#${id}glow)`} strokeWidth={LIGHT_GLOW.depth * 2} filter={`url(#${id}soft)`} />
+            <path d={d} fill="none" stroke={`url(#${id}line)`} strokeWidth={LIGHT_LINE.depth * 2} strokeOpacity={LIGHT_LINE.opacity} />
+          </>
+        )}
+        <path d={d} fill="none" stroke={`url(#${id}ring)`} strokeWidth={LIGHT_RING * 2} />
       </g>
       <g clipPath={`url(#${id}in)`} className={styles.rimDark}>
         <path d={d} fill={`url(#${id}feather)`} />
@@ -164,7 +223,7 @@ export function GlassPill({
       className={`${styles.pill} ${tone === 'blue' ? styles.blue : ''} ${className ?? ''}`}
       style={{ borderRadius: radius, ...(absolute && { position: 'absolute' }), ...style }}
     >
-      <GlassRim radius={radius} />
+      <GlassRim radius={radius} tone={tone} />
       {children}
     </FrostPanel>
   );

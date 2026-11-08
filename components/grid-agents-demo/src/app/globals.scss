@@ -131,7 +131,7 @@ body {
   --float-sheet-tint: rgba(255, 255, 255, 0.85);
   /* The agent chats' chrome glass (header buttons, composers, tab bars) frosting
      the live thread: clear enough that bubbles read through as they pass. */
-  --chat-glass-tint: rgba(244, 244, 246, 0.6);
+  --chat-glass-tint: rgba(245, 245, 245, 0.6);
   --chat-glass-ink: #111112;
   /* iOS 27 glass rim (styles/_glass-rim.scss): a grey hairline, darker on the
      sides (#9c9c9c over #f3f3f3) than the caps (#d9d9d9), white just inside. */

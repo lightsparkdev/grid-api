@@ -1,10 +1,17 @@
 @use '../../styles/glass-rim' as rim;
 
+// iOS's light glass (IMG_1951/1952): a faint shadow only below, about 1.5% at the edge and gone by 10pt.
+$shadow:
+  0 12px 16px -8px rgba(0, 0, 0, 0.03),
+  0 4px 10px -6px rgba(0, 0, 0, 0.015);
+
 // A grid, so the panel's content wrapper stretches to the glass's full size.
 .pill {
+  --glass-rim-cap: rgba(0, 0, 0, 0.1);
+  --glass-rim-side: rgba(0, 0, 0, 0.33);
   display: grid;
   corner-shape: round;
-  box-shadow: rim.$glass-rim-shadow;
+  box-shadow: $shadow;
 }
 
 // GlassRim: drawn on the glass's own outline, with light and dark sets measured separately.
@@ -37,7 +44,7 @@
   --glass-rim-inset: rgba(130, 185, 255, 0.5);
   box-shadow:
     0 0 0 0.5px rgba(205, 248, 255, 0.9),
-    rim.$glass-rim-shadow;
+    $shadow;
 }
 
 .disc {
