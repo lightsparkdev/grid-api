@@ -670,6 +670,41 @@
   font-size: 17px;
 }
 
+.addressField {
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  border: 0;
+  color: var(--grok-text);
+  font: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:active {
+    opacity: 0.6;
+  }
+
+  code {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 15px;
+  }
+
+  svg {
+    flex: none;
+    color: var(--grok-muted);
+  }
+}
+
+.addressLine {
+  color: var(--grok-muted);
+  font-size: 15px;
+  line-height: 20px;
+
+  .addressField + & {
+    margin-top: 6px;
+  }
+}
+
 .toggleRow {
   display: flex;
   align-items: center;

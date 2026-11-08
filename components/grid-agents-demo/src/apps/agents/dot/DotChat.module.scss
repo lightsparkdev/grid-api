@@ -422,12 +422,19 @@
   corner-shape: round round var(--corner-shape) var(--corner-shape);
   background: var(--dot-card);
   color: var(--dot-text);
+
+  @supports (corner-shape: squircle) {
+    border-top-left-radius: calc(38px * var(--corner-superellipse-scale));
+    border-top-right-radius: calc(38px * var(--corner-superellipse-scale));
+    corner-shape: var(--corner-shape);
+  }
 }
 
+// Concentric with the 38pt corner: a 44pt disc inset 16 shares its centre.
 .close {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 16px;
+  right: 16px;
 }
 
 .setupMarks {
@@ -477,6 +484,23 @@
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.addressFull {
+  max-width: 300px;
+  margin-top: 10px;
+  color: var(--dot-text);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 13px;
+  line-height: 19px;
+  text-align: center;
+  word-break: break-all;
+
+  + .setupBody {
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+  }
 }
 
 .black {

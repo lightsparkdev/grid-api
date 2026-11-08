@@ -2,13 +2,15 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { TextMorph } from 'torph/react';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
 import { IconArrowUpRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpRight';
+import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
+import { IconSquareBehindSquare1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare1';
 import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { ChatFrame, ComposerField, ScrollEdge, STILL, TypingDots, useOpenedIds, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
-import type { AgentBalance, AskRow, Chip, Message, Product } from '../conversation';
-import { askButtons, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useSubAgentSheet } from '../parts';
+import type { AgentBalance, AgentNote, AskRow, Chip, Message, Product } from '../conversation';
+import { AddressQr, askButtons, copyLabel, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { useMuseBalance } from './MuseBalance';
 import { ConnectorCard, useMuseBank, useMuseCard, useMusePayWith } from './MuseConnect';
@@ -155,6 +157,41 @@ function RowLead({ row }: { row: AskRow }) {
         </span>
       );
   }
+}
+
+/** Where to send money (an address, an invoice, bank details), as Muse's own card: the code in a white row with
+ *  its QR, what to know under it, and a row that copies it. */
+function AddressCard({ note, pos }: { note: AgentNote; pos?: string }) {
+  const code = note.code ?? '';
+  const { copied, copy } = useCopy(code);
+  return (
+    <div className={styles.card} data-ready data-pos={pos}>
+      <div className={styles.browserHead}>
+        <span className={styles.globe}>
+          <IconWallet1 size={14} />
+        </span>
+        <span className={styles.browserTitle}>
+          <strong>{note.title}</strong>
+          <small>{note.glyph === 'bank' ? 'Bank transfer' : note.glyph === 'bolt' ? 'Lightning invoice' : 'Deposit address'}</small>
+        </span>
+      </div>
+      <div className={styles.details}>
+        <div className={styles.addressBody}>
+          {note.glyph !== 'bank' && <AddressQr value={code} size={88} />}
+          <code>{code}</code>
+        </div>
+      </div>
+      <button type="button" className={`${styles.total} ${styles.copyRow}`} onClick={copy}>
+        <span>{copied ? 'Copied' : copyLabel(note)}</span>
+        {copied ? <IconCheckmark1 size={18} /> : <IconSquareBehindSquare1 size={18} />}
+      </button>
+      {note.lines.map((l) => (
+        <p key={l} className={styles.addressLine}>
+          {l}
+        </p>
+      ))}
+    </div>
+  );
 }
 
 /** A choice's height before its label is measured, and the room above and below the label. */
@@ -459,6 +496,7 @@ export function MuseChat({ chat }: AgentChatProps) {
       case 'card': {
         const b = m.card.balance;
         if (b) return <BalanceArtifact balance={b} pos={groupPosition(i, all)} onOpen={() => balance.open(b.wallet)} />;
+        if (m.card.code) return <AddressCard note={m.card} pos={groupPosition(i, all)} />;
         return (
           <div className={styles.noteWrap} data-pos={groupPosition(i, all)}>
             <NoteCard note={m.card} className={styles.note} />

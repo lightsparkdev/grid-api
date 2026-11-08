@@ -106,8 +106,10 @@ export interface AgentNote {
   lines: string[];
   /** A settled receipt draws a check. */
   done?: boolean;
-  /** A value to show in mono, such as an address. */
+  /** A value to show in mono and copy whole: an address, an invoice, an account number. */
   code?: string;
+  /** What the code is, for the apps that draw it their own way: a coin address, a Lightning invoice, bank details. */
+  glyph?: 'coin' | 'bolt' | 'bank';
   /** A list of rows (History): title, detail, and a signed amount. */
   rows?: { title: string; detail: string; amount: string; incoming: boolean }[];
   /** The app's balance card (Balance, and the account a connect sets up). */

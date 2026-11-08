@@ -1,8 +1,10 @@
 import { TextMorph } from 'torph/react';
+import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
+import { IconSquareBehindSquare1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare1';
 import { ChatFrame, ComposerField, Said, ScrollEdge } from '../ChatFrame';
 import { GlassPill, NoopButton } from '../glass';
-import type { Message } from '../conversation';
-import { askButtons, AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
+import type { AgentNote, Message } from '../conversation';
+import { askButtons, AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useCopy, useSubAgentSheet, WorkLine } from '../parts';
 import type { AgentChatProps } from '../types';
 import { ClaudeMascot } from './ClaudeMascot';
 import { useDuetBalance } from './DuetBalance';
@@ -63,6 +65,32 @@ function SpendCard({
   );
 }
 
+/** Where to send money, as Claude writes anything to copy: a code block, its label on the left and Copy on the
+ *  right, the whole value inside, and what to know under it. */
+function CodeBlock({ note }: { note: AgentNote }) {
+  const code = note.code ?? '';
+  const { copied, copy } = useCopy(code);
+  return (
+    <div className={styles.codeWrap}>
+      <div className={styles.codeBlock}>
+        <div className={styles.codeHead}>
+          <span>{note.title}</span>
+          <button type="button" className={styles.codeCopy} onClick={copy}>
+            {copied ? <IconCheckmark1 size={14} /> : <IconSquareBehindSquare1 size={14} />}
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+        <pre className={styles.codeBody}>{code}</pre>
+      </div>
+      {note.lines.map((l) => (
+        <p key={l} className={styles.codeLine}>
+          {l}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export function ClaudeChat({ chat }: AgentChatProps) {
   const sub = useSubAgentSheet(chat.messages);
   const card = useDuetCard({ messages: chat.messages, onAllow: chat.allow });
@@ -102,7 +130,7 @@ export function ClaudeChat({ chat }: AgentChatProps) {
         );
       case 'card': {
         const b = m.card.balance;
-        return b ? <BalanceCard balance={b} onOpen={() => balance.open(b.wallet)} className={styles.accountSkin} /> : <NoteCard note={m.card} />;
+        return b ? <BalanceCard balance={b} onOpen={() => balance.open(b.wallet)} className={styles.accountSkin} /> : m.card.code ? <CodeBlock note={m.card} /> : <NoteCard note={m.card} />;
       }
       case 'chips':
         return <ChipRow chips={m.chips} picked={m.picked} onPick={chat.pick} expired={m.expired} />;

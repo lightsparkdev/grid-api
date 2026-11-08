@@ -15,10 +15,12 @@
   corner-shape: round;
 }
 
-// The thread scrolls; the stack grows at its foot and the thread follows it (useStickToEnd).
+// The thread scrolls; the stack grows at its foot and the thread follows it (useStickToEnd). A word too long for its
+// bubble (a pasted address) breaks rather than running out of it.
 .thread {
   position: absolute;
   inset: 0;
+  overflow-wrap: break-word;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;

@@ -52,6 +52,71 @@
   font-variation-settings: 'opsz' 16;
 }
 
+// Claude's code block: a hairline card, the label and Copy in a header row, the value in mono below.
+.codeWrap {
+  width: 100%;
+  max-width: 340px;
+}
+
+.codeBlock {
+  overflow: hidden;
+  border: 1px solid var(--cl-ring);
+  border-radius: 12px;
+  background: var(--cl-card);
+}
+
+.codeHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 8px 7px 12px;
+  border-bottom: 1px solid var(--cl-ring);
+  color: var(--cl-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.codeCopy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--cl-muted);
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+
+  &:hover {
+    background: var(--cl-bubble);
+  }
+}
+
+.codeBody {
+  margin: 0;
+  padding: 10px 12px 12px;
+  color: var(--cl-text);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 13px;
+  line-height: 19px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.codeLine {
+  margin: 6px 2px 0;
+  color: var(--cl-muted);
+  font-size: 14px;
+  line-height: 19px;
+
+  & + & {
+    margin-top: 2px;
+  }
+}
+
 // The header's soft fall-off over the thread.
 .edge {
   height: 150px;

@@ -387,12 +387,14 @@ export const NOTES = {
     return {
       title: s(p, 'method'),
       code: ADDRESS_ON[s(p, 'network')] ?? ADDRESS_ON.BASE,
+      glyph: lightning ? 'bolt' : 'coin',
       lines: lightning ? [`${usd2(n(p, 'amount'))} · expires in 10 min`] : [`Send ${s(p, 'currency')} only`, 'This address never expires'],
     };
   },
   receive: (p) => ({
     title: `Pay ${PERSON.full}`,
     code: s(p, 'network') === 'LIGHTNING' ? RECEIVE_INVOICE : ADDRESS_ON.BASE,
+    glyph: s(p, 'network') === 'LIGHTNING' ? 'bolt' : 'coin',
     lines: [`${usd2(n(p, 'amount'))} · ${s(p, 'invoice')}`, s(p, 'method')],
   }),
   'deposit.bank': (p) => {
@@ -401,6 +403,7 @@ export const NOTES = {
     return {
       title: `Send ${s(p, 'send')} by ${s(p, 'rail')}`,
       code: first?.[1],
+      glyph: 'bank',
       lines: [`${first?.[0]} · ${PERSON.full}`, ...rest.map(([label, value]) => `${label} ${value}`), `Reference ${s(p, 'reference')}`],
     };
   },

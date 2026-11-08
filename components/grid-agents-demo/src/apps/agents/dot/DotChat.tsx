@@ -24,10 +24,10 @@ import {
 } from '../ChatFrame';
 import { GlassButton, GlassDisc, GlassPill, NoopButton } from '../glass';
 import { SheetDisc } from '../SheetPage';
-import type { AgentAsk, AgentMeta, Message, PayTo, Product } from '../conversation';
+import type { AgentAsk, AgentMeta, AgentNote, Message, PayTo, Product } from '../conversation';
 import { linkedBank } from '../linkedBank';
 import { recipientNamed } from '../recipients';
-import { BalanceCard, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
+import { AddressQr, BalanceCard, copyLabel, Divider, NoteCard, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from '../vault/useAskSheet';
@@ -144,6 +144,50 @@ function ActionPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
       label={label}
       onOpen={onOpen}
     />
+  );
+}
+
+/** Something to send money to (an address, an invoice, bank details): an action pill, as Dots links everything. */
+function NotePill({ note, onOpen }: { note: AgentNote; onOpen: () => void }) {
+  return (
+    <button type="button" className={styles.pill} data-state="open" onClick={onOpen} data-opens-sheet>
+      <span className={styles.pillLead}>
+        <DotGlyph glyph={note.glyph ?? 'coin'} />
+      </span>
+      <span className={styles.pillLabel}>{note.title}</span>
+      <span className={styles.chevron} />
+    </button>
+  );
+}
+
+/** The pill's sheet, built like the setup sheet: the code as a QR and in full, what to know, and a black Copy. */
+function AddressSheet({ note, onClose }: { note: AgentNote; onClose: () => void }) {
+  const code = note.code ?? '';
+  const { copied, copy } = useCopy(code);
+  const label = copied ? 'Copied' : copyLabel(note);
+  return (
+    <div className={styles.setup}>
+      <span className={styles.close}>
+        <SheetDisc label="Close" onClick={onClose}>
+          <IconCrossMedium size={20} />
+        </SheetDisc>
+      </span>
+      {note.glyph !== 'bank' && (
+        <span className={styles.setupMarks}>
+          <AddressQr value={code} size={148} />
+        </span>
+      )}
+      <strong className={styles.setupTitle}>{note.title}</strong>
+      <code className={styles.addressFull}>{code}</code>
+      <div className={styles.setupBody}>
+        {note.lines.map((l) => (
+          <p key={l}>{l}</p>
+        ))}
+      </div>
+      <GlassButton label={label} tint="var(--dot-cta)" ink="var(--dot-cta-text)" size={340} className={styles.black} onClick={copy}>
+        {label}
+      </GlassButton>
+    </div>
   );
 }
 
@@ -267,7 +311,11 @@ function PaySheet({
               ) : (
                 <div>
                   <span>Send to</span>
-                  <p>{who?.detail}</p>
+                  <p>
+                    {who?.name}
+                    <br />
+                    {who?.detail}
+                  </p>
                 </div>
               )}
               {method && (
@@ -529,6 +577,8 @@ export function DotChat({ chat }: AgentChatProps) {
   const card = useDotCard({ messages: chat.messages, present: SHEET_IN, onAllow: chat.allow });
   const bank = useDotBank({ messages: chat.messages, present: SHEET_IN, onAllow: chat.allow, onDeny: chat.deny });
   const balance = useDotBalance({ present: SHEET_IN, account: chat.account, onAction: chat.prompt });
+  // The address sheet keeps its note while it slides away.
+  const [address, setAddress] = useState<{ note: AgentNote; open: boolean } | null>(null);
   const open = (m: Ask) => sheet.show(m.id, m.ask);
   // A payment opens its checkout as it arrives, as the checkout link does in the app.
   const opened = useRef(new Set<number>());
@@ -611,6 +661,8 @@ export function DotChat({ chat }: AgentChatProps) {
             className={styles.accountSkin}
             onOpen={() => balance.open(b.wallet)}
           />
+        ) : m.card.code ? (
+          <NotePill note={m.card} onOpen={() => setAddress({ note: m.card, open: true })} />
         ) : (
           <NoteCard note={m.card} />
         );
@@ -716,6 +768,9 @@ export function DotChat({ chat }: AgentChatProps) {
           ) : (
             <PaySheet key={sheet.id} ask={sheet.ask} onAllow={allow} onDeny={deny} onClose={close} onSwap={swap} />
           ))}
+      </AppSheet>
+      <AppSheet open={!!address?.open} present={SHEET_IN} className={styles.setupPanel} onDismiss={() => setAddress((a) => a && { ...a, open: false })}>
+        {address && <AddressSheet note={address.note} onClose={() => setAddress((a) => a && { ...a, open: false })} />}
       </AppSheet>
       {sub.sheet}
       {card.sheet}

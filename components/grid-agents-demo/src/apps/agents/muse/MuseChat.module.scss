@@ -527,6 +527,48 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   mask-image: url('/assets/agents/muse/chevron-small.svg');
 }
 
+.addressBody {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+
+  code {
+    flex: 1;
+    min-width: 0;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 13px;
+    line-height: 19px;
+    word-break: break-all;
+  }
+}
+
+.copyRow {
+  width: 100%;
+  border: 0;
+  color: var(--muse-text);
+  font: inherit;
+  font-size: 17px;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:active {
+    opacity: 0.6;
+  }
+}
+
+.addressLine {
+  margin: 8px 4px 0;
+  color: var(--muse-muted);
+  font-size: 13px;
+  line-height: 17px;
+
+  & + & {
+    margin-top: 2px;
+  }
+}
+
 .method {
   margin: 10px 4px 0;
   color: var(--muse-muted);

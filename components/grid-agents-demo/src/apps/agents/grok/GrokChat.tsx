@@ -8,12 +8,14 @@ import { IconCrossSmall } from '@central-icons-react/round-outlined-radius-3-str
 import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
 import { IconHome } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHome';
 import { IconPaperPlane } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPaperPlane';
+import { IconSquareBehindSquare1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare1';
+import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconTag';
 import { Flag } from '@/apps/shared/Flag';
 import { ChatFrame, ComposerField, NATIVE_IN, ScrollEdge, useOpenedMarks, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton, ScanGlyph } from '../glass';
-import type { AgentAsk, Chip, Message, Product } from '../conversation';
-import { BalanceCard, Divider, NoteCard, SubAgentRow, useSubAgentSheet } from '../parts';
+import type { AgentAsk, AgentNote, Chip, Message, Product } from '../conversation';
+import { BalanceCard, copyLabel, Divider, NoteCard, shortCode, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from '../vault/useAskSheet';
@@ -200,6 +202,31 @@ function FormCard({ m, onOpen }: { m: Ask; onOpen: () => void }) {
       <button type="button" className={styles.continue} onClick={onOpen} data-opens-sheet>
         Continue
       </button>
+    </div>
+  );
+}
+
+/** Where to send money, as Grok's form card: what it is, the code in a field with a copy glyph where the card
+ *  number's scan glyph sits, and what to know under it. The whole field copies. */
+function AddressForm({ note }: { note: AgentNote }) {
+  const code = note.code ?? '';
+  const { copied, copy } = useCopy(code);
+  return (
+    <div className={styles.form}>
+      <span className={styles.formKind}>
+        <IconWallet1 size={16} />
+        {note.glyph === 'bank' ? 'Bank transfer' : note.glyph === 'bolt' ? 'Lightning invoice' : 'Deposit address'}
+      </span>
+      <strong>{note.title}</strong>
+      <button type="button" className={`${styles.input} ${styles.addressField}`} onClick={copy} aria-label={copied ? 'Copied' : copyLabel(note)}>
+        <code>{shortCode(code)}</code>
+        {copied ? <IconCheckmark1 size={18} /> : <IconSquareBehindSquare1 size={18} />}
+      </button>
+      {note.lines.map((l) => (
+        <span key={l} className={styles.addressLine}>
+          {l}
+        </span>
+      ))}
     </div>
   );
 }
@@ -397,6 +424,7 @@ export function GrokChat({ chat }: AgentChatProps) {
           );
         }
         if (m.card.done && settledByOrder(i, all)) return null;
+        if (m.card.code) return <AddressForm note={m.card} />;
         return <NoteCard note={m.card} className={styles.note} />;
       }
       case 'chips':

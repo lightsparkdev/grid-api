@@ -34,6 +34,34 @@ export function RowGlyph({ row, size = 18 }: { row: AskRow; size?: number }) {
   return <span className={styles.rowDot} />;
 }
 
+/** What copying a note's code is called, by what it is. */
+export const copyLabel = (note: AgentNote) => (note.glyph === 'bank' ? 'Copy account number' : note.glyph === 'bolt' ? 'Copy invoice' : 'Copy address');
+
+/**
+ * A QR code's look for an address: finder squares in three corners and modules from a hash of the value, so each
+ * address draws its own. It doesn't scan; the addresses are made up too.
+ */
+export function AddressQr({ value, size = 140 }: { value: string; size?: number }) {
+  const n = 25;
+  let h = 2166136261;
+  const bits: boolean[] = [];
+  for (let i = 0; i < n * n; i++) {
+    h ^= value.charCodeAt(i % value.length) + i;
+    h = Math.imul(h, 16777619) >>> 0;
+    bits.push((h & 0b1000) !== 0);
+  }
+  const finder = (x: number, y: number) => x < 8 && y < 8;
+  const inFinder = (x: number, y: number) => finder(x, y) || finder(n - 1 - x, y) || finder(x, n - 1 - y);
+  const cells: string[] = [];
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (!inFinder(x, y) && bits[y * n + x]) cells.push(`M${x} ${y}h1v1h-1z`);
+  const eye = (x: number, y: number) => `M${x} ${y}h7v7h-7zM${x + 1} ${y + 1}v5h5v-5zM${x + 2} ${y + 2}h3v3h-3z`;
+  return (
+    <svg className={styles.qr} viewBox={`-1 -1 ${n + 2} ${n + 2}`} width={size} height={size} role="img" aria-label="QR code">
+      <path d={`${cells.join('')}${eye(0, 0)}${eye(n - 7, 0)}${eye(0, n - 7)}`} fillRule="evenodd" />
+    </svg>
+  );
+}
+
 /** An address or invoice, shortened in the middle the way wallets show them. Account numbers are short enough as is. */
 export const shortCode = (value: string) => (value.length > 24 ? `${value.slice(0, 6)}…${value.slice(-4)}` : value);
 

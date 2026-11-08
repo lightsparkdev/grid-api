@@ -192,6 +192,12 @@
   background: #fff;
   color: #000;
 
+  @supports (corner-shape: squircle) {
+    border-top-left-radius: calc(38px * var(--corner-superellipse-scale));
+    border-top-right-radius: calc(38px * var(--corner-superellipse-scale));
+    corner-shape: var(--corner-shape);
+  }
+
   :global([data-theme='dark']) & {
     background: #1a1a1a;
     color: #f5f5f5;
