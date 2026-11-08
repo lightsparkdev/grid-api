@@ -36346,6 +36346,10 @@ components:
         estimatedReceiveAmount:
           $ref: '#/components/schemas/CurrencyAmount'
           description: Estimated amount credited to the destination internal account after fees, denominated in the destination asset. Present for `LIGHTNING` deposits.
+        quoteId:
+          type: string
+          description: The quote that funds the deposit. The transaction that pays the deposit carries the same `quoteId`, so a payment can be matched to its deposit.
+          example: Quote:019542f5-b3e7-1d02-0000-000000000006
         targetType:
           $ref: '#/components/schemas/AgentDepositTargetType'
           description: Whether `target` is a Lightning invoice or chain address.
