@@ -28,6 +28,8 @@
   flex-shrink: 0;
   width: 0.73em;
   height: 0.73em;
+  // "A" sits closer to the mark than the cards playground's "C"; this evens the gap.
+  margin-right: 1px;
   color: var(--text-primary);
 }
 

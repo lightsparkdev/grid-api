@@ -1,4 +1,5 @@
 import { Disclaimer } from '@/components/Disclaimer/Disclaimer';
+import { GridLogoMark } from '@/components/GridWordmark';
 import styles from './PlaygroundIntro.module.scss';
 
 /** The brands-are-mockups line under the intro, held back for now. */
@@ -9,6 +10,7 @@ export function PlaygroundIntro() {
     <section className={styles.section}>
       <div className={styles.heading}>
         <div className={styles.titleRow}>
+          <GridLogoMark className={styles.logo} />
           <span className={styles.titlePrimary}>Agent Accounts</span>
         </div>
         <span className={styles.titleSecondary}>Playground</span>
