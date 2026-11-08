@@ -9,6 +9,7 @@ export type ActionId =
   | 'fund'
   | 'limits'
   | 'pay'
+  | 'crypto'
   | 'buy'
   | 'agent'
   | 'getpaid'
@@ -41,6 +42,7 @@ export const initialCompleted: CompletedFlows = {
   fund: false,
   limits: false,
   pay: false,
+  crypto: false,
   buy: false,
   agent: false,
   getpaid: false,
@@ -97,6 +99,12 @@ export const ACTIONS: ActionDef[] = [
     prompts: ['Send Sofia R$250 for the concert tickets'],
   },
   {
+    id: 'crypto',
+    label: 'Send crypto',
+    desc: 'Pay out stablecoins to an address, or a Lightning invoice',
+    prompts: ['Send 50 USDC to 0x8C1d4bE27a9F3c05D6e1b2A4f7C9d0E3b5A6c2F1'],
+  },
+  {
     id: 'buy',
     label: 'Buy online',
     desc: 'A single-use virtual Visa for one purchase',
@@ -142,5 +150,5 @@ export function actionLabel(id: ActionId): string {
  *  related flows sharing a row, then its payments as a list. */
 export const FLOW_GROUPS: { label: string; flows: ActionId[]; columns?: 1 | 2 }[] = [
   { label: 'Account', flows: ['connect', 'limits', 'card', 'bank', 'fund', 'cashout', 'balance', 'history'] },
-  { label: 'Payments', flows: ['pay', 'getpaid', 'buy', 'agent'], columns: 1 },
+  { label: 'Payments', flows: ['pay', 'crypto', 'getpaid', 'buy', 'agent'], columns: 1 },
 ];

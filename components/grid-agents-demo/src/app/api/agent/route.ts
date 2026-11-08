@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { FlowParams, FundMethod } from '@/apps/agents/flows';
+import { NETWORK_NAME } from '@/apps/agents/story';
+import { canSend, type SendAsset } from '@/data/cryptoSend';
+import type { DepositNetwork } from '@/data/agentEvents';
 import { ACTIONS, type ActionId } from '@/data/actions';
 import { BANK_COUNTRIES, currencyFor } from '@/data/bankCountries';
 import { CONNECTORS, type ConnectorId } from '@/data/connectors';
@@ -18,7 +21,9 @@ const MAX_NAME = 40;
 const FLOWS = ACTIONS.map((a) => a.id as string);
 const VARIANTS = ['order', 'subscription'];
 const COUNTRY_CODES = BANK_COUNTRIES.map((c) => c.code);
-const METHODS: FundMethod[] = ['card', 'bank', 'usdc', 'bitcoin'];
+const METHODS: FundMethod[] = ['card', 'bank', 'crypto'];
+const ASSETS: string[] = ['USDC', 'USDT', 'BTC', 'USDB'] satisfies SendAsset[];
+const NETWORKS = Object.keys(NETWORK_NAME);
 const CONNECTOR_IDS = CONNECTORS.map((c) => c.id);
 
 /** Why the composer falls back to a scripted line instead of the model. */
@@ -117,6 +122,8 @@ export async function POST(req: NextRequest) {
       variants: VARIANTS,
       countries: COUNTRY_CODES,
       methods: METHODS,
+      assets: ASSETS,
+      networks: NETWORKS,
       connectors: CONNECTOR_IDS,
     });
     const started = FLOWS.includes(answer.flow) ? (answer.flow as ActionId) : undefined;
@@ -125,7 +132,10 @@ export async function POST(req: NextRequest) {
     const flow = params === null ? undefined : started;
     if (params === null && process.env.NODE_ENV === 'development') console.info('[agent] dropped', started, JSON.stringify({ ...answer, replies: undefined }));
     // A top-up or withdrawal with no amount: the flow asks how much in the app's own voice, so the model's line would only repeat it.
-    const quiet = (flow === 'fund' || flow === 'cashout') && !params?.amount;
+    // A crypto send to an address it can't use: the flow says so, and "on it" first would contradict it.
+    const quiet =
+      ((flow === 'fund' || flow === 'cashout') && !params?.amount) ||
+      (flow === 'crypto' && !!params?.address && !canSend(params.address, params.asset));
     const replies: Partial<Record<ConnectorId, string>> = {};
     for (const id of CONNECTOR_IDS) {
       const raw = typeof answer.replies[id] === 'string' ? clean(answer.replies[id]) : '';
@@ -226,6 +236,8 @@ function paramsFor(flow: ActionId, a: ModelAnswer, saved: PromptState['recipient
       return {
         ...(positive(a.amount, 10_000) ? { amount: a.amount } : {}),
         ...((METHODS as string[]).includes(a.method ?? '') ? { method: a.method as FundMethod } : {}),
+        ...(ASSETS.includes(a.asset ?? '') ? { asset: a.asset as SendAsset } : {}),
+        ...(NETWORKS.includes(a.network ?? '') ? { network: a.network as DepositNetwork } : {}),
       };
     case 'cashout':
       return positive(a.amount, 10_000) ? { amount: a.amount } : {};
@@ -258,6 +270,16 @@ function paramsFor(flow: ActionId, a: ModelAnswer, saved: PromptState['recipient
       // Lucía's invoice is the one on file: naming her alone plays it.
       if (!name || (/^luc[ií]a\b/i.test(name) && !amount)) return {};
       return amount ? { name, amount } : null;
+    }
+    case 'crypto': {
+      // Kept as given, so a fragment ("0x12…ab") stays one and the flow says it can't send there.
+      const address = typeof a.address === 'string' ? a.address.replace(/[^A-Za-z0-9.…]/g, '').slice(0, 4096) : '';
+      return {
+        ...(address ? { address } : {}),
+        ...(positive(a.amount, 10_000) ? { amount: a.amount } : {}),
+        ...(ASSETS.includes(a.asset ?? '') ? { asset: a.asset as SendAsset } : {}),
+        ...(NETWORKS.includes(a.network ?? '') ? { network: a.network as DepositNetwork } : {}),
+      };
     }
     case 'connect':
     case 'card':

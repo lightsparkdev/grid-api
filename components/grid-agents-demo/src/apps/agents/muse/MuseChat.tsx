@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { TextMorph } from 'torph/react';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
+import { IconArrowUpRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpRight';
 import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
 import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
@@ -156,6 +157,37 @@ function RowLead({ row }: { row: AskRow }) {
   }
 }
 
+/** A choice's height before its label is measured, and the room above and below the label. */
+const CHOICE_MIN = 37.67;
+const CHOICE_INSET = 8.83;
+
+/**
+ * One choice. Its label gets the full width until it's picked; the check then takes room on the right, so a long
+ * label can wrap, and the chip eases to its new height instead of jumping.
+ */
+function Choice({ label, state, onPick }: { label: string; state: 'open' | 'selected' | 'dimmed'; onPick: () => void }) {
+  const text = useRef<HTMLSpanElement>(null);
+  const [height, setHeight] = useState<number>();
+  useLayoutEffect(() => {
+    const el = text.current;
+    if (!el) return;
+    const fit = () => setHeight(Math.max(CHOICE_MIN, el.offsetHeight + CHOICE_INSET * 2));
+    fit();
+    const watch = new ResizeObserver(fit);
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, []);
+  return (
+    <button type="button" className={styles.choice} data-state={state} disabled={state !== 'open'} onClick={onPick} style={height ? { height } : undefined}>
+      <svg className={styles.choiceDash} aria-hidden>
+        <rect />
+      </svg>
+      <span ref={text}>{label}</span>
+      {state === 'selected' && <span className={styles.choiceCheck} />}
+    </button>
+  );
+}
+
 /** Muse's choices: dashed chips in the agent's bubble; the pick takes a solid outline and a check. */
 function Choices({
   chips,
@@ -177,20 +209,7 @@ function Choices({
   return (
     <div className={`${styles.choices} ${inline ? styles.inline : ''}`} data-pos={pos}>
       {chips.map((c, i) => (
-        <button
-          key={c.label}
-          type="button"
-          className={styles.choice}
-          data-state={picked === i ? 'selected' : settled ? 'dimmed' : 'open'}
-          disabled={settled}
-          onClick={() => onPick(i)}
-        >
-          <svg className={styles.choiceDash} aria-hidden>
-            <rect />
-          </svg>
-          <span>{c.label}</span>
-          {picked === i && <span className={styles.choiceCheck} />}
-        </button>
+        <Choice key={c.label} label={c.label} state={picked === i ? 'selected' : settled ? 'dimmed' : 'open'} onPick={() => onPick(i)} />
       ))}
     </div>
   );
@@ -222,17 +241,22 @@ function ApprovalCard({
     const t = window.setTimeout(() => setReady(true), 900);
     return () => window.clearTimeout(t);
   }, [ready]);
-  // A payment is a checkout Muse is holding open; setting up or changing the balance is Muse asking about itself.
-  const checkout = !!(ask.amount || ask.total);
+  // A purchase is a store's checkout Muse is holding open; sending or moving money is a payment; setting up or
+  // changing the balance is Muse asking about itself.
+  const spends = !!(ask.amount || ask.total);
+  const checkout = spends && !!(ask.who?.icon || ask.rows?.some((r) => r.image));
+  const title = checkout ? 'Checkout' : spends ? 'Payment' : ask.rows?.some((r) => r.icon === 'wallet') ? 'Muse balance' : 'Muse';
   return (
     <div className={styles.card} data-ready={ready || undefined} data-pos={pos}>
       <div className={styles.browserHead}>
-        <span className={styles.globe}>{checkout ? <IconGlobe size={14} /> : <IconWallet1 size={14} />}</span>
+        <span className={styles.globe}>
+          {checkout ? <IconGlobe size={14} /> : spends ? <IconArrowUpRight size={14} /> : <IconWallet1 size={14} />}
+        </span>
         <span className={styles.browserTitle}>
-          <strong>{checkout ? 'Checkout' : ask.rows?.some((r) => r.icon === 'wallet') ? 'Muse balance' : 'Muse'}</strong>
+          <strong>{title}</strong>
           <small>
             {state === 'open'
-              ? checkout
+              ? spends
                 ? 'Waiting for you'
                 : 'Needs you'
               : state === 'done'
@@ -256,7 +280,7 @@ function ApprovalCard({
               {ask.who.bank ? (
                 <BankMark bank={ask.who.bank} country={ask.who.flag} size={32} />
               ) : (
-                <span className={styles.productLetter}>{ask.who.name[0]}</span>
+                <span className={styles.productLetter}>{ask.who.mark ?? ask.who.name[0]}</span>
               )}
             </span>
             <span className={styles.detailText}>
@@ -304,7 +328,7 @@ function ApprovalCard({
           <span className={styles.chevronSmall} />
         </div>
       )}
-      {!ask.rows && ask.method && <p className={styles.method}>{ask.method}</p>}
+      {!ask.rows && !ask.payWith && ask.method && <p className={styles.method}>{ask.method}</p>}
       <div className={styles.actions} data-state={state}>
         {ask.deny && (
           <button

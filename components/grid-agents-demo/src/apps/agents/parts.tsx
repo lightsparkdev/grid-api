@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TextMorph } from 'torph/react';
 import type { Transition } from 'motion/react';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
+import { IconSquareBehindSquare1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare1';
 import { Flag } from '@/apps/shared/Flag';
 import { BankMark } from './BankMark';
 import { SfSymbol } from '@/apps/shared/icons';
@@ -33,6 +34,37 @@ export function RowGlyph({ row, size = 18 }: { row: AskRow; size?: number }) {
   return <span className={styles.rowDot} />;
 }
 
+/** An address or invoice, shortened in the middle the way wallets show them. Account numbers are short enough as is. */
+export const shortCode = (value: string) => (value.length > 24 ? `${value.slice(0, 6)}…${value.slice(-4)}` : value);
+
+/** Whether a copy just happened, for its "Copied": copies the whole value, and settles back after a moment. */
+export function useCopy(value: string) {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  const copy = () => {
+    void navigator.clipboard?.writeText(value).catch(() => {});
+    setCopied(true);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setCopied(false), 1500);
+  };
+  return { copied, copy };
+}
+
+/** An address, invoice or account number to take away: the whole row copies it. */
+export function CopyCode({ value }: { value: string }) {
+  const { copied, copy } = useCopy(value);
+  return (
+    <button type="button" className={styles.code} onClick={copy} aria-label={copied ? 'Copied' : `Copy ${value}`}>
+      <code>{shortCode(value)}</code>
+      <span className={styles.codeCopy} data-copied={copied || undefined}>
+        {copied ? <IconCheckmark1 size={14} /> : <IconSquareBehindSquare1 size={14} />}
+        {copied ? 'Copied' : 'Copy'}
+      </span>
+    </button>
+  );
+}
+
 /** A receipt, an address, a limits summary. */
 export function NoteCard({ note, className }: { note: AgentNote; className?: string }) {
   return (
@@ -45,7 +77,7 @@ export function NoteCard({ note, className }: { note: AgentNote; className?: str
         )}
         {note.title}
       </span>
-      {note.code && <code className={styles.code}>{note.code}</code>}
+      {note.code && <CopyCode value={note.code} />}
       {note.lines.map((l) => (
         <span key={l} className={styles.noteLine}>
           {l}
@@ -344,7 +376,7 @@ export function AskCard({
               ) : ask.who.icon ? (
                 <img src={ask.who.icon} alt="" width={28} height={28} />
               ) : (
-                ask.who.name[0]
+                (ask.who.mark ?? ask.who.name[0])
               )}
             </span>
           )}

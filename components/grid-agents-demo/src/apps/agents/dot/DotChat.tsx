@@ -221,7 +221,7 @@ function PaySheet({
         {!ready ? (
           <motion.div key="prep" className={styles.preparing} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
             <DotsMark size={44} />
-            <strong>Preparing your checkout…</strong>
+            <strong>Preparing your {order ? 'checkout' : 'payment'}…</strong>
             <i className={styles.spinner} />
           </motion.div>
         ) : (
@@ -232,7 +232,7 @@ function PaySheet({
                 <BankMark bank={who.bank} country={who.flag} size={44} />
               ) : (
                 <span className={styles.payWho}>
-                  {who?.flag ? <Flag code={who.flag} size={44} /> : who?.icon ? <img src={who.icon} alt="" /> : (who?.name ?? ask.title)[0]}
+                  {who?.flag ? <Flag code={who.flag} size={44} /> : who?.icon ? <img src={who.icon} alt="" /> : (who?.mark ?? (who?.name ?? ask.title)[0])}
                 </span>
               )}
             </span>

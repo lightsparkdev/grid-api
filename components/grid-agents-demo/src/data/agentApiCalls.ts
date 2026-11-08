@@ -30,6 +30,7 @@ import {
   type Purchase,
 } from './agentEvents';
 import { linkedBank as chosenBank, depositDetails, formatMoney, type LinkedBank } from '@/apps/agents/linkedBank';
+import { sendsLabel, shortAddress, type CryptoPayee, type SendAsset } from './cryptoSend';
 import type { ApiCall } from './flow';
 
 /* ── Fixtures ─────────────────────────────────────────────────────────── */
@@ -45,6 +46,15 @@ const SIGNED = { 'X-Grid-Signature': '<signature>' };
 
 const USD = { code: 'USD', name: 'United States Dollar', symbol: '$', decimals: 2 };
 const USDB = { code: 'USDB', name: 'USDB', symbol: '$', decimals: 2 };
+/** What a crypto send receives, with each asset's smallest unit (USDC and USDT in millionths, bitcoin in satoshis). */
+const SEND_CURRENCY: Record<SendAsset, { code: string; name: string; symbol: string; decimals: number }> = {
+  USDC: { code: 'USDC', name: 'USD Coin', symbol: '', decimals: 6 },
+  USDT: { code: 'USDT', name: 'Tether USD', symbol: '', decimals: 6 },
+  BTC: { code: 'BTC', name: 'Bitcoin', symbol: '₿', decimals: 8 },
+  USDB,
+};
+/** Dollars to satoshis at a demo price of $100,000 a bitcoin. */
+const SATS_PER_CENT = 10;
 const FIAT: Record<string, { code: string; name: string; symbol: string; decimals: number }> = {
   USD,
   BRL: { code: 'BRL', name: 'Brazilian Real', symbol: 'R$', decimals: 2 },
@@ -174,6 +184,7 @@ function depositTarget(network: DepositNetwork, amount: number) {
   if (network === 'LIGHTNING') return `lnbc${Math.round(amount / 4)}0n1pn${base64url(40).toLowerCase()}`;
   if (network === 'SOLANA') return `7xKX${base64url(36).replace(/[-_]/g, 'q')}`;
   if (network === 'TRON') return `TQ${base64url(32).replace(/[-_]/g, 'r')}`;
+  if (network === 'SPARK') return `sp1pq${base64url(48).toLowerCase().replace(/[-_]/g, 'x')}`;
   return `0x${hex(40)}`;
 }
 
@@ -924,6 +935,78 @@ export function createAgentSession(nameOf: () => string): AgentSession {
     ];
   };
 
+  /** A send to an address on another chain, a Lightning invoice, or a saved Spark address, locked on what arrives. */
+  const cryptoQuote = (p: CryptoPayee): CallStep[] => {
+    const id = nextId('Quote');
+    const currency = SEND_CURRENCY[p.asset];
+    const receiving = p.asset === 'BTC' ? p.usd * SATS_PER_CENT : p.asset === 'USDB' ? p.usd : p.usd * 10_000;
+    const account = nextId('ExternalAccount');
+    const chain = { destinationType: 'CHAIN_ADDRESS', network: p.network, currency: p.asset, address: p.address };
+    const invoice = { destinationType: 'LIGHTNING_INVOICE', invoice: p.address };
+    const asked = p.network === 'LIGHTNING' ? invoice : p.network === 'SPARK' ? { destinationType: 'ACCOUNT', accountId: account, currency: 'USDB' } : chain;
+    const reqBody = { source: { sourceType: 'ACCOUNT', accountId: WALLET }, destination: asked, lockedCurrencySide: 'RECEIVING', lockedCurrencyAmount: receiving };
+    const total = p.usd + p.fee;
+    const body = {
+      id,
+      status: 'PENDING',
+      createdAt: nowIso(),
+      expiresAt: toIso(Date.now() + 5 * 60_000),
+      source: reqBody.source,
+      destination: { destinationType: 'ACCOUNT', accountId: account, currency: p.asset },
+      sendingCurrency: USDB,
+      receivingCurrency: currency,
+      totalSendingAmount: total,
+      totalReceivingAmount: receiving,
+      exchangeRate: Number((receiving / p.usd).toFixed(4)),
+      feesIncluded: p.fee,
+      minimumReceivingAmount: p.network === 'LIGHTNING' || p.network === 'SPARK' ? null : receiving,
+      ...(p.network === 'LIGHTNING'
+        ? { destinationLightningInvoice: invoice }
+        : p.network === 'SPARK'
+          ? { destinationSparkAddress: p.address }
+          : { destinationChainAddress: chain }),
+      transactionId: nextId('Transaction'),
+    };
+    const sends = sendsLabel(p.asset, p.usd);
+    const where = p.network === 'LIGHTNING' ? 'Lightning invoice' : `${p.asset} on ${p.network.charAt(0)}${p.network.slice(1).toLowerCase()}`;
+    quote = {
+      id,
+      body,
+      usd: total,
+      title: `To ${shortAddress(p.address)}`,
+      detail: where,
+      done: p.network === 'LIGHTNING' ? `The invoice is paid: ${sends}.` : `${sends} arrived at ${shortAddress(p.address)}.`,
+      toolName: 'quote_crypto_send',
+    };
+    return [
+      {
+        tool: {
+          name: 'quote_crypto_send',
+          args: { to: p.address, network: p.network, asset: p.asset, amount: dollars(p.usd) },
+          result: { quote_id: id, receives: sends, fee: money(p.fee), expires_in: '5 minutes' },
+        },
+        calls: [
+          {
+            method: 'POST',
+            path: '/agents/me/quotes',
+            auth: 'agent',
+            title: 'Create quote',
+            headers: { 'Idempotency-Key': idempotencyKey() },
+            reqBody,
+            status: '201 Created',
+            note:
+              p.network === 'LIGHTNING'
+                ? `Pays the invoice's exact amount from the wallet; the ${money(p.fee)} fee is added to what's debited.`
+                : p.network === 'SPARK'
+                  ? `USDB to one of the customer's saved Spark addresses, account to account.`
+                  : `Grid records the address as an external account, screens it, and pays the chain itself at a locked rate: exactly ${sends} arrives, and the ${money(p.fee)} network fee is added to the USDB sent.`,
+            resBody: body,
+          },
+        ],
+      },
+    ];
+  };
+
   const agentQuote = (to: MerchantAgent): CallStep[] => {
     const step = quoteStep(
       'quote_send',
@@ -1262,8 +1345,11 @@ export function createAgentSession(nameOf: () => string): AgentSession {
           return payoutQuote(event.payee, 'quote_send', event.payee.name);
         case 'cashout.quote':
           return payoutQuote(event.payee, 'quote_bank_send', `To ${event.payee.name}`, linkedBank ?? undefined);
+        case 'crypto.quote':
+          return cryptoQuote(event.payee);
         case 'pay.execute':
         case 'cashout.execute':
+        case 'crypto.execute':
         case 'agent.execute':
           return executeSteps();
         case 'buy.request':

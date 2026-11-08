@@ -1,19 +1,20 @@
 import type { ActionId } from '@/data/actions';
 import type { AccountSnapshot } from '@/data/agentApiCalls';
 import { purchaseSpendLimit, type DepositNetwork, type Limits, type Payee, type Purchase } from '@/data/agentEvents';
+import { addressKind, canSend, NETWORK_FEE, NETWORKS_FOR, SENDS_ON, sendsLabel, shortAddress, type SendAsset } from '@/data/cryptoSend';
 import type { Beat, ChipGlyph, Params, PayTo } from './conversation';
 import { depositDetails, formatMoney, linkedBank, pullsFrom } from './linkedBank';
 import { draftRecipient, payeeFor, recipientNamed, type Recipient } from './recipients';
 import { hash, merchantFor, stayFor, stayParams } from './hotels';
 import { purchaseFor, shelfFor, shelfParams, shelfWith, type Shelf } from './products';
-import { CASHOUT_AMOUNT, FUND, LUCIA, NEW_LIMITS, SUBSCRIPTION, usd2 } from './story';
+import { CASHOUT_AMOUNT, CRYPTO, FUND, LUCIA, NETWORK_NAME, NEW_LIMITS, SUBSCRIPTION, usd2, type CryptoAsset } from './story';
 
 /* What each flow does once the visitor sends its line: the agent's beats, the
    Grid events at each beat, and the points where it waits on the visitor.
    Flows read the account as it is when they start, so a payment over the
    approval threshold asks and one under it doesn't, as Grid would decide. */
 
-export type FundMethod = 'card' | 'bank' | 'usdc' | 'bitcoin';
+export type FundMethod = 'card' | 'bank' | 'crypto';
 
 /** The details someone gave in the chat, as the model read them. A tile passes none and plays the story's own. */
 export interface FlowParams {
@@ -25,6 +26,11 @@ export interface FlowParams {
   note?: string;
   /** Add funds: where it comes from. Add funds and Withdraw read `amount` in USD. */
   method?: FundMethod;
+  /** Add funds and Send crypto: the asset and network, if they said. */
+  asset?: SendAsset;
+  network?: DepositNetwork;
+  /** Send crypto: where to, as they gave it (an address, a Lightning invoice, a Spark address). */
+  address?: string;
   /** Set limits, in USD. */
   approve?: number;
   daily?: number;
@@ -51,6 +57,9 @@ export interface FlowContext {
   params?: FlowParams;
   /** What comes next once this flow has done its part: the task a setup was for. */
   then?: () => Beat[];
+  /** Pay someone with too little in the balance: adds what's short (USD cents) once the payee and quote are set,
+   *  so no money moves before the agent knows who it's for. */
+  topUp?: (short: number, then: () => Beat[]) => Beat[];
   /** The app's checkout has a Pay with row (Muse, Dots): the agent goes with what covers a purchase, and the
    *  person switches there. Elsewhere the agent asks first. */
   picksInCheckout?: boolean;
@@ -127,7 +136,8 @@ const connect = (ctx: FlowContext): Beat[] => {
         { work: 'setup', ms: 1100 },
         { emit: { type: 'connect' } },
         { say: 'connect.done', params: { hasAgent } },
-        { when: () => [{ card: 'account.ready', params: balanceParams(ctx) }, ...(ctx.then?.() ?? [])] },
+        // On the way to something else, that's what comes next; an empty balance card would only be in the way.
+        { when: () => (ctx.then ? ctx.then() : [{ card: 'account.ready', params: balanceParams(ctx) }]) },
       ],
       deny: [{ say: 'connect.denied', params: { hasAgent } }],
     },
@@ -316,7 +326,11 @@ const bank = (ctx: FlowContext): Beat[] => {
 };
 
 /** Add funds' sources, in its chips' order. */
-const FUND_METHODS: FundMethod[] = ['card', 'bank', 'usdc', 'bitcoin'];
+const FUND_METHODS: FundMethod[] = ['card', 'bank', 'crypto'];
+
+/** What a network alone says about the asset: only USDT arrives on Tron, only Bitcoin over Lightning. Spark could be either. */
+const assetOn = (network?: DepositNetwork): CryptoAsset | undefined =>
+  network === 'TRON' ? 'USDT' : network === 'LIGHTNING' ? 'BTC' : undefined;
 
 const fund = (ctx: FlowContext): Beat[] => {
   const amount = cents(ctx.params?.amount);
@@ -328,13 +342,15 @@ const fund = (ctx: FlowContext): Beat[] => {
       { amount: true, then: (usd) => fund({ ...ctx, params: { ...ctx.params, amount: usd } }).slice(1) },
     ];
   }
-  const from = (picked: number): Beat[] => {
-    if (picked === 0) return cardTopUp(ctx, amount);
-    if (picked === 1) return bankTopUp(ctx, amount);
-    const o = FUND.crypto[picked - 2];
-    const params = { method: o.label, network: o.network, currency: o.currency, amount };
+  const deposit = (asset: CryptoAsset, network: DepositNetwork): Beat[] => {
+    const lightning = network === 'LIGHTNING';
+    // A Lightning invoice is priced in dollars; a chain address takes the asset itself.
+    const currency = lightning ? 'USD' : asset;
+    const { label } = CRYPTO.find((o) => o.asset === asset)!;
+    const method = lightning ? 'Bitcoin over Lightning' : `${label} on ${NETWORK_NAME[network]}`;
+    const params = { method, network, currency: asset, amount };
     return [
-      { emit: { type: 'fund.deposit', network: o.network, currency: o.currency, amount } },
+      { emit: { type: 'fund.deposit', network, currency, amount } },
       { say: 'fund.address', params },
       { card: 'deposit', params },
       {
@@ -348,7 +364,37 @@ const fund = (ctx: FlowContext): Beat[] => {
       },
     ];
   };
-  const method = ctx.params?.method ? FUND_METHODS.indexOf(ctx.params.method) : -1;
+  // Crypto asks what they're sending, then on which network, skipping whatever they already said or has one answer.
+  const onNetwork = (asset: CryptoAsset): Beat[] => {
+    const { networks, label } = CRYPTO.find((o) => o.asset === asset)!;
+    const said = ctx.params?.network;
+    if (said && networks.includes(said)) return deposit(asset, said);
+    if (networks.length === 1) return deposit(asset, networks[0]);
+    return [
+      { say: 'fund.network', params: { asset: label } },
+      {
+        chips: networks.map((n) => ({ label: NETWORK_NAME[n], glyph: 'coin' as const })),
+        reply: true,
+        then: (picked) => deposit(asset, networks[picked]),
+      },
+    ];
+  };
+  const crypto = (): Beat[] => {
+    const asked = CRYPTO.find((o) => o.asset === ctx.params?.asset)?.asset;
+    const said = asked ?? assetOn(ctx.params?.network);
+    if (said) return onNetwork(said);
+    return [
+      { say: 'fund.asset' },
+      {
+        chips: CRYPTO.map((o) => ({ label: o.label, glyph: o.asset === 'BTC' ? ('bolt' as const) : ('coin' as const) })),
+        reply: true,
+        then: (picked) => onNetwork(CRYPTO[picked].asset),
+      },
+    ];
+  };
+  const from = (picked: number): Beat[] => (picked === 0 ? cardTopUp(ctx, amount) : picked === 1 ? bankTopUp(ctx, amount) : crypto());
+  const named = ctx.params?.method ?? (ctx.params?.asset || ctx.params?.network ? 'crypto' : undefined);
+  const method = named ? FUND_METHODS.indexOf(named) : -1;
   if (method >= 0) return [{ react: '👍' }, ...from(method)];
   return [
     { react: '👍' },
@@ -358,7 +404,7 @@ const fund = (ctx: FlowContext): Beat[] => {
       chips: [
         { label: FUND.card, glyph: 'card' },
         { label: FUND.bank, glyph: 'bank' },
-        ...FUND.crypto.map((o) => ({ label: o.label, glyph: cryptoGlyph(o.network) })),
+        { label: FUND.crypto, glyph: 'coin' },
       ],
       reply: true,
       then: from,
@@ -426,19 +472,26 @@ function sendTo(ctx: FlowContext, r: Recipient, p: FlowParams): Beat[] {
   };
   const { perTransaction } = ctx.account().limits;
   if (payee.usd > perTransaction) return [{ say: 'pay.over', params: { ...params, perTx: perTransaction } }];
+  const send = (): Beat[] => {
+    const sent = { ...params, balance: ctx.account().balanceCents };
+    return [
+      { emit: { type: 'pay.execute' } },
+      ...approvalOr(
+        ctx,
+        ctx.needsApproval(payee.usd),
+        { key: 'pay', params: sent },
+        'pay.auto',
+        [{ work: 'sending', ms: 1000 }, { card: 'receipt.pay', params: sent }, { say: 'pay.done', params: sent }],
+        'pay.denied',
+      ),
+    ];
+  };
+  const short = payee.usd - ctx.account().balanceCents;
   return [
     { work: 'quoting', ms: 1200 },
     { emit: { type: 'pay.quote', payee } },
     { say: 'pay.intro', params },
-    { emit: { type: 'pay.execute' } },
-    ...approvalOr(
-      ctx,
-      ctx.needsApproval(payee.usd),
-      { key: 'pay', params },
-      'pay.auto',
-      [{ work: 'sending', ms: 1000 }, { card: 'receipt.pay', params }, { say: 'pay.done', params }],
-      'pay.denied',
-    ),
+    ...(short > 0 && ctx.topUp ? ctx.topUp(short, send) : send()),
   ];
 }
 
@@ -466,6 +519,85 @@ const pay = (ctx: FlowContext): Beat[] => {
       ],
       deny: [{ say: 'pay.denied' }],
     },
+  ];
+};
+
+/** The tile's send when nobody typed one: 50 USDC to an address that could be on any EVM chain, so it asks which. */
+const STORY_CRYPTO: FlowParams = { address: '0x8C1d4bE27a9F3c05D6e1b2A4f7C9d0E3b5A6c2F1', amount: 50, asset: 'USDC' };
+
+/**
+ * Send crypto: what the address is, from its shape; the asset and network when it leaves them open; then a quote
+ * and the send. A pasted fragment, or an address it can't send to, gets said so instead of guessed at.
+ */
+const crypto = (ctx: FlowContext): Beat[] => {
+  const p = ctx.params ?? STORY_CRYPTO;
+  const address = (p.address ?? '').trim();
+  if (!address) return [{ react: '👍' }, { say: 'crypto.where' }];
+  const kind = addressKind(address);
+  if (kind === 'invalid') return [{ react: '👀' }, { say: 'crypto.invalid' }];
+  if (kind === 'bitcoin') return [{ react: '👍' }, { say: 'crypto.onchain' }];
+  const amount = cents(p.amount);
+  if (amount === undefined) {
+    return [
+      { react: '👍' },
+      { say: 'crypto.amount' },
+      { amount: true, then: (usd) => crypto({ ...ctx, params: { ...p, amount: usd } }).slice(1) },
+    ];
+  }
+  const networks = NETWORKS_FOR[kind];
+  const short = shortAddress(address);
+
+  const send = (asset: SendAsset, network: DepositNetwork): Beat[] => {
+    const fee = NETWORK_FEE[network];
+    const params: Params = { short, asset, network: NETWORK_NAME[network], sends: sendsLabel(asset, amount), usd: amount, fee, lightning: network === 'LIGHTNING' ? 1 : 0 };
+    const { perTransaction } = ctx.account().limits;
+    if (amount + fee > perTransaction) return [{ say: 'limit.over', params: { perTx: perTransaction } }];
+    const go = (): Beat[] => {
+      const sent = { ...params, balance: ctx.account().balanceCents };
+      return [
+        { emit: { type: 'crypto.execute' } },
+        ...approvalOr(
+          ctx,
+          ctx.needsApproval(amount + fee),
+          { key: 'crypto', params: sent },
+          'pay.auto',
+          [{ work: 'sending', ms: 1000 }, { card: 'receipt.crypto', params: sent }, { say: 'crypto.done', params: sent }],
+          'pay.denied',
+        ),
+      ];
+    };
+    const toAdd = amount + fee - ctx.account().balanceCents;
+    return [
+      { work: 'quoting', ms: 1100 },
+      { emit: { type: 'crypto.quote', payee: { address, network, asset, usd: amount, fee } } },
+      { say: 'crypto.intro', params },
+      ...(toAdd > 0 && ctx.topUp ? ctx.topUp(toAdd, go) : go()),
+    ];
+  };
+
+  // Which network, when the address could be on more than one that takes this asset.
+  const onNetwork = (asset: SendAsset): Beat[] => {
+    const fits = networks.filter((n) => SENDS_ON[n].includes(asset));
+    if (!fits.length) return [{ say: 'crypto.mismatch', params: { asset, network: NETWORK_NAME[networks[0]], takes: SENDS_ON[networks[0]].join(' or ') } }];
+    if (p.network && fits.includes(p.network)) return send(asset, p.network);
+    if (fits.length === 1) return send(asset, fits[0]);
+    return [
+      { say: 'crypto.network', params: { asset } },
+      { chips: fits.map((n) => ({ label: NETWORK_NAME[n], glyph: 'coin' as const })), reply: true, then: (picked) => send(asset, fits[picked]) },
+    ];
+  };
+
+  // Which asset, when the address takes more than one and they didn't say.
+  const takes = networks.flatMap((n) => SENDS_ON[n]).filter((a, i, all) => all.indexOf(a) === i);
+  const chosen = p.asset && takes.includes(p.asset) ? p.asset : takes.length === 1 ? takes[0] : undefined;
+  if (p.asset && !takes.includes(p.asset)) {
+    return [{ react: '👍' }, { say: 'crypto.mismatch', params: { asset: p.asset, network: NETWORK_NAME[networks[0]], takes: takes.join(' or ') } }];
+  }
+  if (chosen) return [{ react: '👍' }, ...onNetwork(chosen)];
+  return [
+    { react: '👍' },
+    { say: 'crypto.asset' },
+    { chips: takes.map((a) => ({ label: a, glyph: 'coin' as const })), reply: true, then: (picked) => onNetwork(takes[picked]) },
   ];
 };
 
@@ -661,7 +793,7 @@ const cashout = (ctx: FlowContext): Beat[] => {
     const local = Math.round(amount * bank.country.usdToLocal);
     const rail = bank.country.rail;
     const p: Payee = { name: `${bank.bankName} •••• ${bank.last4}`, currency: bank.currency, amount: local, usd: amount, rail: rail.toUpperCase().replace(/ /g, '_'), bank: bank.bankName };
-    const params = { local: formatMoney(local, bank.currency), to: p.name, rail, usd: amount, flag: bank.country.code, bank: bank.bankName };
+    const params = { local: formatMoney(local, bank.currency), to: p.name, rail, usd: amount, flag: bank.country.code, bank: bank.bankName, balance };
     return [
       { work: 'quoting', ms: 1000 },
       { emit: { type: 'cashout.quote', payee: p } },
@@ -738,6 +870,7 @@ export const FLOWS: Record<ActionId, (ctx: FlowContext) => Beat[]> = {
   fund,
   limits,
   pay,
+  crypto,
   buy,
   agent,
   getpaid,
@@ -756,6 +889,10 @@ export function planFor(flow: ActionId, ctx: FlowContext): Beat[] {
   const quiet = (beats: Beat[]) => beats.filter((b) => !('react' in b));
   const task = () => quiet(FLOWS[flow](ctx));
   const covered = (): Beat[] => {
+    if (flow === 'pay' || flow === 'crypto') {
+      const topUp = (short: number, then: () => Beat[]) => quiet(fund({ ...ctx, params: { amount: Math.ceil(short / 5_000) * 50 }, then }));
+      return quiet(FLOWS[flow]({ ...ctx, topUp }));
+    }
     const need = flowSpend(flow, ctx.params, ctx.variant) - ctx.account().balanceCents;
     if (need <= 0 || !TOPS_UP[flow]) return task();
     const amount = Math.ceil(need / 5_000) * 5_000;
@@ -789,6 +926,8 @@ export function planFor(flow: ActionId, ctx: FlowContext): Beat[] {
   if (OVER_LIMIT[flow] && spend > a.limits.perTransaction) return [{ react: '👍' }, { say: 'limit.over', params: { perTx: a.limits.perTransaction } }];
   if (flow === 'cashout' && a.balanceOn && a.balanceCents <= 0) return [{ react: '👍' }, { say: 'cashout.empty' }];
   if (flow === 'cashout' && !a.balanceOn) return [{ react: '👍' }, { say: 'cashout.noBalance' }];
+  // An address it can't send to (or can't send that asset to) is said before setting anything up for it.
+  if (flow === 'crypto' && ctx.params?.address && !canSend(ctx.params.address, ctx.params.asset)) return FLOWS.crypto(ctx);
   // A purchase needs only the agent: a card can stand in for the balance, so it's offered before one is set up.
   if (flow === 'buy' && !a.connected) return [{ react: '👍' }, ...covered()];
   if (flow === 'balance' && !a.balanceOn) return balance(ctx);
@@ -800,7 +939,7 @@ export function planFor(flow: ActionId, ctx: FlowContext): Beat[] {
 }
 
 /** Flows whose one payment the per-payment limit caps, checked before anything else happens. */
-const OVER_LIMIT: Partial<Record<ActionId, boolean>> = { pay: true, buy: true, agent: true, cashout: true };
+const OVER_LIMIT: Partial<Record<ActionId, boolean>> = { pay: true, crypto: true, buy: true, agent: true, cashout: true };
 
 /** Flows a short balance tops up for. Withdrawing more than you have is a no, not a reason to add money. */
 const TOPS_UP: Record<ActionId, boolean> = {
@@ -810,6 +949,7 @@ const TOPS_UP: Record<ActionId, boolean> = {
   fund: false,
   limits: false,
   pay: true,
+  crypto: true,
   buy: true,
   agent: true,
   getpaid: false,
@@ -826,6 +966,8 @@ export function flowSpend(flow: ActionId, params?: FlowParams, variant = 0): num
       const r = recipientNamed(p.name ?? '') ?? draftRecipient(p.name ?? '', p.country ?? '');
       return r ? payeeFor(r, p.amount ?? 0, p.currency ?? 'USD').usd : 0;
     }
+    case 'crypto':
+      return cents((params ?? STORY_CRYPTO).amount) ?? 0;
     case 'buy':
       return variant % 2 === 1 ? (cents(params?.price) ?? SUBSCRIPTION.amount) : purchaseSpendLimit(shelfFor(params?.query).pick.amount);
     case 'agent':
@@ -864,6 +1006,7 @@ const NEEDS_CONNECTION: Record<ActionId, boolean> = {
   fund: true,
   limits: true,
   pay: true,
+  crypto: true,
   buy: true,
   agent: true,
   getpaid: true,

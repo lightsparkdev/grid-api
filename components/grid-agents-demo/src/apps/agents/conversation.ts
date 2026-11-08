@@ -51,7 +51,8 @@ export interface AgentAsk {
   /** The merchant's initial (or a short mark) in the card's corner. */
   badge?: string;
   /** A single counterparty: a person, a bank, an agent. Money going to a bank names it, so its mark can show (with `flag`, its country). */
-  who?: { name: string; flag?: string; bank?: string; icon?: string; detail: string };
+  /** `mark`: what stands in for them when there's no flag, bank or picture (their initial otherwise). */
+  who?: { name: string; flag?: string; bank?: string; icon?: string; mark?: string; detail: string };
   /** The headline amount. */
   amount?: string;
   rows?: AskRow[];

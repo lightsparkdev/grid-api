@@ -58,17 +58,50 @@
 }
 
 .code {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 4px 0 3px;
   padding: 8px 10px;
-  overflow: hidden;
+  border: 0;
   border-radius: calc(var(--part-radius, 20px) * 0.5);
   background: var(--part-sunk, #f2f2f2);
   color: var(--part-text, #000);
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: opacity 0.15s ease;
+
+  &:active {
+    opacity: 0.6;
+  }
+
+  code {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 12px;
+    line-height: 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.codeCopy {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  color: var(--part-muted, #8e8e93);
   font-size: 12px;
+  font-weight: 500;
   line-height: 16px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+
+  &[data-copied] {
+    color: var(--part-text, #000);
+  }
 }
 
 .rowImage {

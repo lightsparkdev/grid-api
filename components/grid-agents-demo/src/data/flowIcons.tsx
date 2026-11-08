@@ -1,6 +1,7 @@
 import { IconArrowInbox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowInbox';
 import { IconArrowOutOfBox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowOutOfBox';
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
+import { IconCoin1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCoin1';
 import { IconCreditCard1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCard1';
 import { IconCreditCardAdd } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCardAdd';
 import { IconHistory } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHistory';
@@ -22,6 +23,7 @@ export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
   fund: IconPlusLarge,
   limits: IconLimit,
   pay: IconPaperPlaneTopRight,
+  crypto: IconCoin1,
   buy: IconCreditCard1,
   agent: IconAiBotHead,
   getpaid: IconArrowInbox,
@@ -43,6 +45,7 @@ export const FLOW_ICON_COLORS: Record<ActionId, string> = {
   balance: '#05AEB8',
   history: 'var(--color-sky-500)',
   pay: '#00A2EE',
+  crypto: '#0098EE',
   getpaid: 'var(--color-blue-500)',
   buy: '#0082ED',
   agent: 'var(--icon-info)',

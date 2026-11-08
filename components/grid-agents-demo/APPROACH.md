@@ -261,6 +261,27 @@ card. Rewrite them when the API lands.
   the person switches apps and redraws in the new app's look.
 - Muse's rows fade up as they arrive and its typing dots follow recording 9.
   The first app on the page used to skip every row's entrance.
+- A payment with too little in the balance tops up after the payee and the
+  quote, not before: no money moves until the agent knows who it's for, and
+  it adds what the quote needs. Setting up a balance on the way to something
+  else skips the empty balance card.
+- An approval answered with another app's button shows in Instinct as a
+  "yes" (or "no") under the ask, since Instinct only takes a text reply.
+- Add funds offers a card, a bank, or Crypto. Crypto asks what they're
+  sending (USDC, USDT, Bitcoin), then the network, from what Grid's agent
+  deposits allow (`AgentDepositNetwork`): USDC on Base, Solana, Ethereum,
+  Polygon or Arbitrum; USDT on those and Tron, minus Base; Bitcoin over
+  Lightning or Spark. Spark is ahead of that enum, which doesn't list it yet,
+  though the rest of the spec does. Anything they already named ("USDT on
+  Tron") isn't asked again.
+- Send crypto pays out of the balance as Grid's agent quotes allow: USDC or
+  USDT to an address on another chain (`CHAIN_ADDRESS`; Base takes USDC only,
+  Tron USDT only), a Lightning invoice (`LIGHTNING_INVOICE`), or USDB to a
+  Spark address. The address's shape says what it is (`src/data/cryptoSend.ts`):
+  an EVM address asks which chain, since the same address works on all of
+  them; a fragment, an on-chain Bitcoin address, or an asset the chain can't
+  take is said before any setup, and the model's "on it" is held back so it
+  doesn't contradict that. Network fees are made up but in proportion.
 
 ### 2026-11-06: approve only, bank marks, and a balance page
 

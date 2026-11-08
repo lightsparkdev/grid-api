@@ -1,3 +1,5 @@
+import type { CryptoPayee } from './cryptoSend';
+
 /* What a conversation asks Grid to do, in its own terms. The flows emit these;
    `agentApiCalls.ts` turns each into the agent's tool call and the Grid
    requests and webhooks behind it. Nothing here names a path or a field, so
@@ -5,7 +7,7 @@
 
 import type { LinkedBank } from '@/apps/agents/linkedBank';
 
-export type DepositNetwork = 'LIGHTNING' | 'BASE' | 'SOLANA' | 'TRON';
+export type DepositNetwork = 'LIGHTNING' | 'SPARK' | 'BASE' | 'ETHEREUM' | 'SOLANA' | 'POLYGON' | 'ARBITRUM' | 'TRON';
 
 /** A bank account or mobile wallet the agent pays out to, on a local rail. */
 export interface Payee {
@@ -87,6 +89,9 @@ export type AgentEvent =
   /** The agent quotes moving money to the person's own bank or wallet, then executes it. */
   | { type: 'cashout.quote'; payee: Payee }
   | { type: 'cashout.execute' }
+  /** The agent quotes a send to a crypto address or Lightning invoice, then executes it. */
+  | { type: 'crypto.quote'; payee: CryptoPayee }
+  | { type: 'crypto.execute' }
   /** The agent asks for a purchase card for one purchase (or one subscription). */
   | { type: 'buy.request'; purchase: Purchase }
   /** The agent drops the purchase card it asked for: the person chose another way to pay before approving. */

@@ -256,7 +256,7 @@ function OrderCard({ m, onAllow, onDeny }: { m: Ask; onAllow: () => void; onDeny
   const tile = who?.bank ? (
     <BankMark bank={who.bank} country={who.flag} size={22} />
   ) : (
-    <span className={styles.orderTile}>{who?.flag ? <Flag code={who.flag} size={20} /> : <span>{(who?.name ?? ask.title)[0]}</span>}</span>
+    <span className={styles.orderTile}>{who?.flag ? <Flag code={who.flag} size={20} /> : <span>{who?.mark ?? (who?.name ?? ask.title)[0]}</span>}</span>
   );
   const method = ask.method?.replace(/^From /, '');
   return (

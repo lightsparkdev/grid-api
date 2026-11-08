@@ -15,7 +15,7 @@ const usd = (description: string) => ({ type: 'number', description });
  */
 export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL || DEFAULT_MODEL): ModelAdapter {
   return {
-    async answer({ system, turns, flows, variants, countries, methods, connectors }: ModelRequest): Promise<ModelAnswer> {
+    async answer({ system, turns, flows, variants, countries, methods, assets, networks, connectors }: ModelRequest): Promise<ModelAnswer> {
       /** What a flow runs with: the top-level flow's details, and each queued flow's. */
       const details = {
         name: { type: 'string', description: 'pay: the person being paid; getpaid: the person paying them. As they were named (e.g. "Maria" or "Maria Lopez").' },
@@ -24,6 +24,9 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
         currency: { type: 'string', description: 'pay: "USD", or the ISO code of the recipient’s local currency if they gave it in that currency.' },
         note: { type: 'string', description: 'pay: what it’s for, a few words, if they said.' },
         method: { type: 'string', enum: methods, description: 'fund: where the money comes from, if they said. buy: "card" only if they want it on their credit or debit card.' },
+        asset: { type: 'string', enum: assets, description: 'fund in crypto, or crypto: the asset, if they said ("BTC" for Bitcoin).' },
+        network: { type: 'string', enum: networks, description: 'fund in crypto, or crypto: the network, if they said.' },
+        address: { type: 'string', description: 'crypto: where to send, copied exactly as they gave it (an address, a Lightning invoice or a Spark address), even if it looks incomplete.' },
         approve: usd('limits: the most you may spend without asking, USD.'),
         daily: usd('limits: the daily limit, USD.'),
         perTx: usd('limits: the per-payment limit, USD.'),

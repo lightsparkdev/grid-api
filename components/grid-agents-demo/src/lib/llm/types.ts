@@ -24,6 +24,9 @@ export interface ModelAnswer {
   currency?: string;
   note?: string;
   method?: string;
+  asset?: string;
+  network?: string;
+  address?: string;
   approve?: number;
   daily?: number;
   perTx?: number;
@@ -49,6 +52,9 @@ export interface ModelRequest {
   /** Country codes a payment can go to. */
   countries: string[];
   methods: string[];
+  /** Crypto a top-up takes, and the networks it can arrive on. */
+  assets: string[];
+  networks: string[];
 }
 
 export interface ModelAdapter {

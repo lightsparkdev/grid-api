@@ -695,6 +695,56 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   font-size: 12px;
 }
 
+.codeText {
+  border: 0;
+  color: inherit;
+  font: inherit;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 14px;
+  line-height: 19px;
+  text-align: left;
+  word-break: break-all;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+// The address bubble with its "Copied" beside it, placed against the bubble but outside its clip.
+.codeBox {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+}
+
+// On the bubble's top corner, where a tapback sits, so it shows without moving the thread.
+.copied {
+  position: absolute;
+  top: -9px;
+  right: -6px;
+  z-index: 1;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--im-muted);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 14px;
+  opacity: 0;
+  pointer-events: none;
+  scale: 0.8;
+  transition:
+    opacity 0.15s ease,
+    scale 0.15s ease;
+
+  &:empty {
+    padding: 0;
+  }
+
+  &[data-on] {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
 .imageLine {
   margin-top: 6px;
   color: #6b6466;

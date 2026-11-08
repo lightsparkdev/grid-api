@@ -6,14 +6,34 @@ import type { DepositNetwork, Limits, Purchase } from '@/data/agentEvents';
 export const PERSON = { first: 'Alex', full: 'Alex Rivera', email: 'alex.rivera@gmail.com', phone: '+1 (310) 555-0142' };
 export const ADDRESS = '2140 Ocean Park Blvd, Apt 4, Santa Monica CA 90405, US';
 
-/** Add funds, in the order the product leads with: a card, a bank, then crypto (stablecoins, then Bitcoin). */
+/** Add funds, in the order the product leads with: a card, a bank, then crypto. */
 export const FUND = {
   card: 'Credit or debit card',
   bank: 'Bank account',
-  crypto: [
-    { label: 'USDC on Base', network: 'BASE' as DepositNetwork, currency: 'USDC' },
-    { label: 'Bitcoin (Lightning)', network: 'LIGHTNING' as DepositNetwork, currency: 'USD' },
-  ],
+  crypto: 'Crypto',
+};
+
+export type CryptoAsset = 'USDC' | 'USDT' | 'BTC';
+
+/**
+ * What crypto a top-up takes and the networks each can arrive on: USDT on Tron but USDC not, and Bitcoin over
+ * Lightning or Spark. Spark is ahead of `AgentDepositNetwork`, which doesn't list it yet.
+ */
+export const CRYPTO: { asset: CryptoAsset; label: string; networks: DepositNetwork[] }[] = [
+  { asset: 'USDC', label: 'USDC', networks: ['BASE', 'SOLANA', 'ETHEREUM', 'POLYGON', 'ARBITRUM'] },
+  { asset: 'USDT', label: 'USDT', networks: ['TRON', 'ETHEREUM', 'SOLANA', 'POLYGON', 'ARBITRUM'] },
+  { asset: 'BTC', label: 'Bitcoin', networks: ['LIGHTNING', 'SPARK'] },
+];
+
+export const NETWORK_NAME: Record<DepositNetwork, string> = {
+  LIGHTNING: 'Lightning',
+  SPARK: 'Spark',
+  BASE: 'Base',
+  ETHEREUM: 'Ethereum',
+  SOLANA: 'Solana',
+  POLYGON: 'Polygon',
+  ARBITRUM: 'Arbitrum',
+  TRON: 'Tron',
 };
 
 

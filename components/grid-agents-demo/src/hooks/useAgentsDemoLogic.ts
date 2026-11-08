@@ -67,6 +67,7 @@ const NO_RUNS = (): Record<ActionId, number> => ({
   fund: 0,
   limits: 0,
   pay: 0,
+  crypto: 0,
   buy: 0,
   agent: 0,
   getpaid: 0,

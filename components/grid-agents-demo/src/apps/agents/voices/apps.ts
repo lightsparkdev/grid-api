@@ -38,6 +38,11 @@ const n = (p: Params | undefined, k: string) => Number(p?.[k] ?? 0);
 const s = (p: Params | undefined, k: string) => String(p?.[k] ?? '');
 const lower = (p: Params | undefined, k: string) => s(p, k).toLowerCase();
 
+/** Muse's send and withdraw checkouts: what pays sits in a Pay with row above the total, as its order sheet does. */
+const museSpend =
+  (key: 'pay' | 'cashout' | 'crypto'): AskFn =>
+  (p) => ({ ...ASKS[key](p), payWith: 'Muse balance', method: `${usd2(n(p, 'balance'))} available` });
+
 /** Claude Duet's spend card: a clock on the request, Approve, then Paid. */
 const duetSpend =
   (key: AskKey): AskFn =>
@@ -69,6 +74,9 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     },
     asks: {
       buy: (p) => MUSE_ORDER(p),
+      pay: museSpend('pay'),
+      cashout: museSpend('cashout'),
+      crypto: museSpend('crypto'),
     },
     status: {
       searching: () => '🛍️ Searching stores',
@@ -351,6 +359,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     asks: {
       pay: duetSpend('pay'),
       cashout: duetSpend('cashout'),
+      crypto: duetSpend('crypto'),
       buy: duetSpend('buy'),
       sub: duetSpend('sub'),
       agent: duetSpend('agent'),

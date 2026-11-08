@@ -1,10 +1,11 @@
-import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { PhoneStatusBar } from '@/apps/shared/AppShell/PhoneStatusBar';
 import { playAppSwitch, WALLPAPER } from '@/apps/shared/appSwitch';
 import { SfSymbol } from '@/apps/shared/icons';
 import { ChatFrame, ComposerField, NATIVE_IN, Said, ScrollEdge, STILL, TypingDots, useOpenedIds, useOpenedMarks } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
+import { shortCode, useCopy } from '../parts';
 import type { AgentAsk, AgentBalance, AgentNote, Message, Product, SubAgent } from '../conversation';
 import { useKeptAsk, useKeptBalance } from '../openSheets';
 import type { AgentChatProps } from '../types';
@@ -164,6 +165,17 @@ function askText(ask: AgentAsk) {
 /** Only what's sensitive (a card, a bank) opens app.instinct.com; everything else is answered by texting back. */
 const linksOut = (ask: AgentAsk) => !!(ask.card || ask.bank);
 
+/**
+ * Instinct only takes a text yes or no, so an ask settled with another app's button reads as answered here too:
+ * the reply it would have taken, sent under it.
+ */
+const withReplies = (messages: Message[]): Message[] =>
+  messages.flatMap((m, i) =>
+    m.kind === 'ask' && !linksOut(m.ask) && (m.state === 'done' || m.state === 'denied') && messages[i + 1]?.kind !== 'me'
+      ? [m, { id: -m.id - 1, kind: 'me', text: m.state === 'done' ? 'yes' : 'no' }]
+      : [m],
+  );
+
 /** A choice among the options a products message just showed (between them, only Instinct's own lines). */
 function choosesProduct(i: number, all: Message[]) {
   for (let k = i - 1; k >= 0; k--) {
@@ -203,6 +215,24 @@ function chipsText(m: Extract<Message, { kind: 'chips' }>) {
 
 const today = () => new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
+/** The address an image shows, sent after it as text so it can be taken: a tap copies it, as a long press would. */
+function CodeText({ value, tail }: { value: string; tail: boolean }) {
+  const { copied, copy } = useCopy(value);
+  return (
+    <div className={styles.body}>
+      <span className={styles.codeBox}>
+        <button type="button" className={`${styles.bubble} ${styles.codeText}`} data-bubble data-tail={tail ? 'bl' : undefined} onClick={copy}>
+          {value}
+        </button>
+        <span className={styles.copied} data-on={copied || undefined} aria-live="polite">
+          {copied ? 'Copied' : ''}
+        </span>
+      </span>
+      {tail && <span className={styles.tailIn} />}
+    </div>
+  );
+}
+
 /** An image Instinct generates: its paper, the headline in its serif, the details, its wordmark. */
 function InstinctImage({ note }: { note: AgentNote }) {
   return (
@@ -212,7 +242,7 @@ function InstinctImage({ note }: { note: AgentNote }) {
         <span>{today()}</span>
       </span>
       <strong className={styles.imageTitle}>{note.title}</strong>
-      {note.code && <code className={styles.imageCode}>{note.code}</code>}
+      {note.code && <code className={styles.imageCode}>{shortCode(note.code)}</code>}
       {note.lines.map((l) => (
         <span key={l} className={styles.imageLine}>
           {l}
@@ -445,9 +475,10 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
     },
     [setComposer],
   );
-  const lastMe = chat.messages.reduce((id, m) => (m.kind === 'me' ? m.id : id), -1);
+  const thread = useMemo(() => withReplies(chat.messages), [chat.messages]);
+  const lastMe = thread.reduce<number | null>((id, m) => (m.kind === 'me' ? m.id : id), null);
 
-  const opened = useOpenedIds(chat.messages);
+  const opened = useOpenedIds(thread);
   const tappedAtOpen = useOpenedMarks();
 
   // A bubble flies out of the field as it was when sent (two lines tall, say), not the emptied one.
@@ -494,7 +525,15 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         );
       case 'card': {
         const b = m.card.balance;
-        if (!b) return <InstinctImage note={m.card} />;
+        if (!b)
+          return m.card.code ? (
+            <>
+              <InstinctImage note={m.card} />
+              <CodeText value={m.card.code} tail={!theirsNext} />
+            </>
+          ) : (
+            <InstinctImage note={m.card} />
+          );
         return (
           <>
             {bubble('balance', <span className={styles.lines}>{balanceText(b)}</span>, false)}
@@ -633,7 +672,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
       <div ref={messagesCard} className={styles.card} data-away={(view === 'safari' && !switchTo) || undefined}>
         <ChatFrame
           className={styles.screen}
-          messages={chat.messages}
+          messages={thread}
           render={render}
           rowMotion={(m) => (m.kind === 'me' ? STILL : NATIVE_IN)}
           faceId={chat.authing}

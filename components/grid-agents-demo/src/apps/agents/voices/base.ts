@@ -127,6 +127,8 @@ export const LINES = {
   'fund.amount': () => 'How much do you want to add?',
   'fund.ask': () => 'How do you want to add it?',
   'fund.needed': (p) => `I’ll need ${usd(n(p, 'amount'))} in ${yours(p)} to cover that. How do you want to add it?`,
+  'fund.asset': () => 'What are you sending?',
+  'fund.network': (p) => `Which network is your ${s(p, 'asset')} on?`,
   'fund.address': (p) => `Here’s your ${s(p, 'method')} ${s(p, 'network') === 'LIGHTNING' ? 'invoice' : 'address'}. Whatever you send lands as dollars.`,
   'fund.bank': (p) => `Pulling ${usd(n(p, 'amount'))} from your ${linkedBank().bankName} •••• ${linkedBank().last4} over ACH.`,
   'fund.push': (p) =>
@@ -165,6 +167,18 @@ export const LINES = {
   'pay.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m sending it now.`,
   'pay.done': (p) => `Sent. ${s(p, 'first')} has it, with a note that it’s from you.`,
   'pay.denied': () => 'Okay, I won’t send it.',
+  'crypto.where': () => 'Sure. What address should I send it to?',
+  'crypto.invalid': () => 'That doesn’t look like an address I can send to. Can you paste the whole thing?',
+  'crypto.onchain': () => 'That’s a Bitcoin address. I can pay a Lightning invoice or send USDB to a Spark address, but not bitcoin on-chain yet.',
+  'crypto.mismatch': (p) => `${s(p, 'network')} addresses only take ${s(p, 'takes')}, so I can’t send ${s(p, 'asset')} there.`,
+  'crypto.amount': () => 'How much do you want to send?',
+  'crypto.asset': () => 'USDC or USDT?',
+  'crypto.network': () => 'Which network is that address on? Sending on the wrong one can lose the money.',
+  'crypto.intro': (p) =>
+    n(p, 'lightning')
+      ? `That invoice is for ${s(p, 'sends')}, plus ${usd2(n(p, 'fee'))} in fees.`
+      : `${s(p, 'sends')} to ${s(p, 'short')} on ${s(p, 'network')}. The network fee is ${usd2(n(p, 'fee'))}, so exactly ${s(p, 'sends')} arrives.`,
+  'crypto.done': (p) => (n(p, 'lightning') ? 'Paid. The invoice is settled.' : `Sent. ${s(p, 'sends')} is at ${s(p, 'short')} on ${s(p, 'network')}.`),
   'limit.over': (p) => `That’s more than the ${usd(n(p, 'perTx'))} I can spend in one payment. Raise my limit and I’ll do it.`,
   'pay.over': (p) => `That’s more than the ${usd(n(p, 'perTx'))} I can send in one payment. Raise my limit and I’ll send it.`,
 
@@ -289,6 +303,17 @@ export const ASKS = {
     allowed: 'Paid',
     denied: 'Declined',
   }),
+  crypto: (p) => ({
+    title: n(p, 'lightning') ? 'Pay a Lightning invoice' : `Send ${s(p, 'sends')} to ${s(p, 'short')}`,
+    who: n(p, 'lightning')
+      ? { name: 'Lightning invoice', mark: '⚡', detail: `${s(p, 'short')} · fee ${usd2(n(p, 'fee'))}` }
+      : { name: s(p, 'short'), mark: '$', detail: `${s(p, 'asset')} on ${s(p, 'network')} · fee ${usd2(n(p, 'fee'))}` },
+    amount: s(p, 'sends'),
+    method: `From ${s(p, 'wallet')} · ${usd2(n(p, 'usd') + n(p, 'fee'))}`,
+    allow: 'Approve',
+    allowed: 'Sent',
+    denied: 'Declined',
+  }),
   cashout: (p) => ({
     title: `Move ${s(p, 'local')} to ${s(p, 'to')}`,
     who: { name: s(p, 'to'), flag: s(p, 'flag') || undefined, bank: s(p, 'bank'), detail: `${s(p, 'local')} over ${s(p, 'rail')}` },
@@ -361,13 +386,13 @@ export const NOTES = {
     const lightning = s(p, 'network') === 'LIGHTNING';
     return {
       title: s(p, 'method'),
-      code: lightning ? 'lnbc1pn5x9…q7mxt0' : s(p, 'network') === 'BASE' ? '0x4f2a…9c1e' : 'TQ8v…rN2k',
+      code: ADDRESS_ON[s(p, 'network')] ?? ADDRESS_ON.BASE,
       lines: lightning ? [`${usd2(n(p, 'amount'))} · expires in 10 min`] : [`Send ${s(p, 'currency')} only`, 'This address never expires'],
     };
   },
   receive: (p) => ({
     title: `Pay ${PERSON.full}`,
-    code: s(p, 'network') === 'LIGHTNING' ? 'lnbc4682…h3kq9z' : '0x4f2a…9c1e',
+    code: s(p, 'network') === 'LIGHTNING' ? RECEIVE_INVOICE : ADDRESS_ON.BASE,
     lines: [`${usd2(n(p, 'amount'))} · ${s(p, 'invoice')}`, s(p, 'method')],
   }),
   'deposit.bank': (p) => {
@@ -382,6 +407,11 @@ export const NOTES = {
   quote: (p) => ({
     title: `${s(p, 'local')} to ${s(p, 'to')}`,
     lines: [`${usd2(n(p, 'usd'))} from ${s(p, 'wallet')} · fee ${usd2(n(p, 'fee'))}`, 'Quote expires in 5 min'],
+  }),
+  'receipt.crypto': (p) => ({
+    title: n(p, 'lightning') ? `Paid ${s(p, 'sends')} invoice` : `${s(p, 'sends')} to ${s(p, 'short')}`,
+    lines: [n(p, 'lightning') ? 'Lightning' : `${s(p, 'asset')} on ${s(p, 'network')}`, `${usd2(n(p, 'usd') + n(p, 'fee'))} from ${s(p, 'wallet')}`],
+    done: true,
   }),
   'receipt.pay': (p) => ({
     title: `${s(p, 'local')} to ${s(p, 'name')}`,
@@ -429,6 +459,19 @@ export const NOTES = {
 } satisfies Record<string, NoteFn>;
 
 export type NoteKey = keyof typeof NOTES;
+
+/** Deposit addresses in each network's own format, whole, so copying one gets all of it; cards shorten them. */
+const ADDRESS_ON: Record<string, string> = {
+  LIGHTNING: 'lnbc1pn5x9qhpp5w8u3kzj4d2fh0xa7t6vlr9cq5mgy3ens8p4w2ke7rz0h6dlc9qsdqqcqzzsxqyz5vqsp5q7mxt0',
+  SPARK: 'sp1pqzu5y8t3rk0v7w2xg6hn4c9ldm5qf8ja3ze6xp2t0w4rs7kv9n3h7f3k',
+  BASE: '0x4f2a8B3c71dE9056aF2b4C8d1e7F3a9B6c0D9c1e',
+  ETHEREUM: '0x4f2a8B3c71dE9056aF2b4C8d1e7F3a9B6c0D9c1e',
+  POLYGON: '0x4f2a8B3c71dE9056aF2b4C8d1e7F3a9B6c0D9c1e',
+  ARBITRUM: '0x4f2a8B3c71dE9056aF2b4C8d1e7F3a9B6c0D9c1e',
+  SOLANA: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU9q2Lm',
+  TRON: 'TQ8vYk3Zr9WbXsN5hLc2Fj7Pd4mUe6RrN2k',
+};
+const RECEIVE_INVOICE = 'lnbc4682u1pn5x9qhpp5r3w0t8yq9zk2fh6xa4t7vlc5mgy8ens3p2w9ke6rz0h4dlc7qsdqqcqzzsxqyh3kq9z';
 
 /** Muse's order sheet for what it found. */
 export const MUSE_ORDER = (p: Params | undefined): AgentAsk => ({
