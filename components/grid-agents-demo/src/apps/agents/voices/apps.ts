@@ -340,7 +340,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     name: 'Claude',
     wallet: 'Duet balance',
     lines: {
-      greeting: () => `Payroll ran at 6 AM, all 14 people are paid. I can pay anyone in ${BANK_REACH} countries too, once you add a card or set up a balance.`,
+      greeting: () => `Hi. I can pay people in ${BANK_REACH} countries, shop and get paid for you. To start, add a card or set up a Duet balance.`,
       'setup.auto': (p) => `For the record: ${setupDone(p)}, so we could go straight to it.`,
       'connect.intro': (p) =>
         n(p, 'hasAgent') ? 'I’ll need a Duet balance for this, with limits you set. Here’s exactly what I’m asking for.' : 'First I’ll need my own account for this, with limits you set. Here’s exactly what I’m asking for.',
