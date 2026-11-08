@@ -1,5 +1,6 @@
 // Dots, measured from recordings 3, 5, 7 and 8 (refs/dots/spec.md).
 @use '../../../styles/corners';
+@use '../../../styles/sf';
 .stage {
   --sub-bg: var(--dot-them);
   --sub-radius: 22px;
@@ -168,7 +169,7 @@
   align-items: center;
   height: 37px;
   padding: 0 14px;
-  font-size: 17px;
+  @include sf.size(17px);
   font-weight: 590;
 }
 
@@ -177,7 +178,7 @@
   align-self: stretch;
   padding: 6px 0 8px;
   color: var(--dot-muted);
-  font-size: 12px;
+  @include sf.size(12px);
   text-align: center;
 
   b {
@@ -189,7 +190,7 @@
 .me {
   padding: 11px 16px 12px;
   @include corners.bubble(24px);
-  font-size: 17px;
+  @include sf.size(17px);
   line-height: 22px;
 }
 
@@ -303,7 +304,7 @@
 .seen,
 .sender {
   color: var(--dot-muted);
-  font-size: 12px;
+  @include sf.size(12px);
 }
 
 // Delivered and Seen share one line, aligned to the bubble's text rather than its edge (IMG_1861), and crossfade.
@@ -329,7 +330,7 @@
   gap: 6px;
   margin: 12px 0 4px 16px;
   color: var(--dot-quote);
-  font-size: 13px;
+  @include sf.size(13px);
   line-height: 16px;
 }
 
@@ -355,10 +356,9 @@
   background: var(--dot-chip);
   color: var(--dot-chip-text);
   font: inherit;
-  font-size: 17px;
+  @include sf.size(17px);
   font-weight: 510;
   line-height: 22px;
-  letter-spacing: -0.43px;
   white-space: nowrap;
 }
 
@@ -517,7 +517,7 @@
 
 .setupTitle {
   margin-top: 14px;
-  font-size: 22px;
+  @include sf.size(22px);
   font-weight: 600;
   line-height: 28px;
 }
@@ -528,7 +528,7 @@
   gap: 10px;
   margin-top: 14px;
   color: var(--dot-secondary);
-  font-size: 13px;
+  @include sf.size(13px);
   line-height: 18px;
 
   p {
@@ -552,7 +552,7 @@
   background: none;
   color: var(--dot-text);
   font: inherit;
-  font-size: 15px;
+  @include sf.size(15px);
   font-weight: 600;
   cursor: pointer;
 }
@@ -606,7 +606,7 @@
   padding: 14px 16px 0;
 
   strong {
-    font-size: 15px;
+    @include sf.size(15px);
     font-weight: 600;
     text-align: center;
   }
@@ -633,7 +633,7 @@
 
   strong {
     color: var(--dot-text);
-    font-size: 28px;
+    @include sf.size(28px);
     font-weight: 700;
     line-height: 34px;
   }
@@ -663,7 +663,7 @@
   border-radius: 50%;
   background: #fff;
   color: #000;
-  font-size: 17px;
+  @include sf.size(17px);
   font-weight: 600;
 
   img {
@@ -675,7 +675,7 @@
 
 .payTitle {
   margin-top: 16px;
-  font-size: 28px;
+  @include sf.size(28px);
   font-weight: 700;
   line-height: 34px;
   text-align: center;
@@ -688,7 +688,7 @@
   gap: 5px;
   margin-top: 10px;
   color: var(--dot-secondary);
-  font-size: 13px;
+  @include sf.size(13px);
 }
 
 .email {
@@ -696,7 +696,7 @@
   align-items: center;
   gap: 8px;
   margin-top: 10px;
-  font-size: 13px;
+  @include sf.size(13px);
 
   i {
     display: grid;
@@ -705,7 +705,7 @@
     height: 22px;
     border-radius: 50%;
     background: var(--dot-them);
-    font-size: 11px;
+    @include sf.size(11px);
     font-style: normal;
     font-weight: 600;
   }
@@ -737,11 +737,11 @@
 
   small {
     color: var(--dot-secondary);
-    font-size: 13px;
+    @include sf.size(13px);
   }
 
   b {
-    font-size: 17px;
+    @include sf.size(17px);
     font-weight: 600;
   }
 }
@@ -757,7 +757,7 @@
     gap: 12px;
     padding: 14px 0;
     border-top: 1px solid var(--dot-line);
-    font-size: 15px;
+    @include sf.size(15px);
     line-height: 20px;
   }
 
@@ -843,7 +843,7 @@
 
   small {
     color: var(--dot-secondary);
-    font-size: 13px;
+    @include sf.size(13px);
     line-height: 17px;
   }
 
@@ -925,7 +925,7 @@
 .field {
   --field-pad: 11.5px;
   --placeholder: #8d8d8d;
-  font-size: 17px;
+  @include sf.size(17px);
 }
 
 .send {

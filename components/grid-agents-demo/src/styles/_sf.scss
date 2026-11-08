@@ -1,0 +1,35 @@
+@use 'sass:map';
+@use 'sass:math';
+
+// SF Pro's tracking at each point size (Apple's HIG table), which iOS applies on its own. The web font has
+// no tracking table, so a size set without it runs ~5% wide (IMG_1951's Dots bubble at 17pt).
+$tracking: (
+  11: 0.06,
+  12: 0,
+  13: -0.08,
+  14: -0.15,
+  15: -0.23,
+  16: -0.31,
+  17: -0.43,
+  18: -0.44,
+  19: -0.45,
+  20: -0.45,
+  21: -0.36,
+  22: -0.26,
+  23: -0.1,
+  24: 0.07,
+  25: 0.15,
+  26: 0.22,
+  27: 0.29,
+  28: 0.38,
+);
+
+/// A font size with the tracking iOS gives it.
+@mixin size($px) {
+  $pt: math.div($px, 1px);
+  @if not map.has-key($tracking, $pt) {
+    @error 'No SF Pro tracking for #{$px}.';
+  }
+  font-size: $px;
+  letter-spacing: map.get($tracking, $pt) * 1px;
+}

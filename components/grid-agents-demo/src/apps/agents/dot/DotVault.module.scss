@@ -1,4 +1,5 @@
 // Dots' bank and card sheets (DotVault.tsx), measured at 3x from IMG_1892, IMG_1893 and IMG_1899.
+@use '../../../styles/sf';
 
 .theme,
 .introPanel {
@@ -39,7 +40,7 @@
   gap: 8px;
   margin: 10px 16.7px 6px;
   color: var(--sp-muted);
-  font-size: 17px;
+  @include sf.size(17px);
   font-weight: 600;
   line-height: 22px;
 }
@@ -91,16 +92,14 @@
 }
 
 .rowTitle {
-  font-size: 17px;
+  @include sf.size(17px);
   line-height: 22px;
-  letter-spacing: -0.43px;
 }
 
 .rowSub {
   color: var(--sp-muted);
-  font-size: 15px;
+  @include sf.size(15px);
   line-height: 20px;
-  letter-spacing: -0.23px;
 }
 
 .rowEnd {
@@ -111,7 +110,7 @@
 .empty {
   margin: 8px 16.7px;
   color: var(--sp-muted);
-  font-size: 15px;
+  @include sf.size(15px);
 }
 
 // ── Add phone number: white boxes 51pt tall, 17pt apart, the label inside above the value ──
@@ -136,7 +135,7 @@
 
 .boxLabel {
   color: var(--sp-muted);
-  font-size: 12px;
+  @include sf.size(12px);
   line-height: 16px;
 }
 
@@ -145,9 +144,8 @@
   align-items: center;
   gap: 6px;
   overflow: hidden;
-  font-size: 17px;
+  @include sf.size(17px);
   line-height: 22px;
-  letter-spacing: -0.43px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -156,7 +154,7 @@
   text-wrap: pretty;
   margin: 20px 24px 0;
   color: var(--sp-muted);
-  font-size: 12px;
+  @include sf.size(12px);
   line-height: 16px;
   text-align: center;
 
@@ -221,7 +219,7 @@
 
 .introTitle {
   margin-top: 14px;
-  font-size: 20px;
+  @include sf.size(20px);
   font-weight: 600;
   line-height: 25px;
 }
@@ -229,7 +227,7 @@
 .introSub {
   margin: 6px 12px 0;
   color: #6e6e73;
-  font-size: 15px;
+  @include sf.size(15px);
   line-height: 20px;
   text-align: center;
   text-wrap: balance;
