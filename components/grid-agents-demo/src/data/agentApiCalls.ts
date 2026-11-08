@@ -188,17 +188,6 @@ function depositTarget(network: DepositNetwork, amount: number) {
   return `0x${hex(40)}`;
 }
 
-/** The past few days, so History is never empty. It nets to zero: the account opens empty. */
-function seedLedger(): LedgerEntry[] {
-  const day = 86_400_000;
-  const now = Date.now();
-  return [
-    { id: nextId('Transaction'), at: now - 1 * day, title: 'Spotify', detail: 'Subscription · card', cents: -1199, status: 'COMPLETED' },
-    { id: nextId('Transaction'), at: now - 3 * day, title: 'Blue Bottle Coffee', detail: 'One-time card', cents: -1850, status: 'COMPLETED' },
-    { id: nextId('Transaction'), at: now - 5 * day, title: 'Added funds', detail: 'Bank transfer', cents: 3049, status: 'COMPLETED' },
-  ];
-}
-
 /* ── Session ──────────────────────────────────────────────────────────── */
 
 type Quote = {
@@ -243,7 +232,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
   let balance = OPENING_BALANCE_CENTS;
   let spentToday = 0;
   let countToday = 0;
-  const ledger: LedgerEntry[] = seedLedger();
+  const ledger: LedgerEntry[] = [];
   let quote: Quote | null = null;
   let deposit: { id: string; network: DepositNetwork; currency: string; amount: number } | null = null;
   /** A top-up the person is pushing from their bank: the real-time funded quote it settles. */

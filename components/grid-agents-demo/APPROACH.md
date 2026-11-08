@@ -27,9 +27,39 @@ send.
 with the cards demo: `cornerShape` ×2, `superellipse`). Dev server on 4003;
 `node scripts/flow-sweep.mjs light` (and `dark`, `SWEEP_DENY=1`,
 `SWEEP_ENGINE=webkit`) runs every flow in every app; the docs embed is
-`make mint` → `/agent-accounts/demo`.
+`make mint` → `/agent-accounts/demo`. Any change to a flow or a line gets
+checked against the conversation checklist below.
 
 ## Decisions
+
+### 2026-11-07: the conversation checklist
+
+Fixes used to land one path at a time while the paths next to them kept the
+same problem. Every flow change is now checked against one list, written
+from the review callouts:
+
+1. Every card is teed up: a sheet, form, address or approval follows a line
+   from the agent saying why (or a question the person just answered).
+2. No internal speak: no card ids, scopes, API or settlement terms, "the
+   agent", or talk about how the demo works.
+3. One voice per turn: the model's reply and the flow's line never repeat or
+   contradict. When a flow opens with a setup step, a no, or "already done",
+   the model's reply is dropped (`SPEAKS_FIRST` in the brain).
+4. Only what's needed, in order: the price before any money (a purchase
+   searches and shows first; a hotel quotes first), refusals before setup, and
+   a no to a setup step puts the task on hold out loud instead of dropping it.
+5. Says what happened: top-ups add exactly what's short, never more, and
+   nothing is shown or withdrawn that a shortcut made up (Balance, History and
+   Withdraw tiles answer with the account as it is; the ledger opens empty).
+6. Labels match the action, from the person's side ("Receive $468.20", not the
+   payer's "Pay Alex Rivera"), with people by the name the person used.
+7. All six apps reach the same end state on the same path.
+8. Natural tone, in each app's own voice.
+
+A walker in `.tmp-sweep/audit/` (not committed) plays every flow from seven
+starting states down every branch, renders it in all six voices, and flags 1,
+2, 4 and 5 automatically: `npx tsx .tmp-sweep/audit/sim.ts`, then
+`python3 .tmp-sweep/audit/group.py`.
 
 ### 2026-11-05: one conversation, re-skinned per app
 

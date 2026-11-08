@@ -31,8 +31,8 @@ export const CARD = 'Visa •••• 4242';
 /** "Your Muse balance won't cover it. ", ahead of a purchase that went to the card for that reason. */
 export const short = (p: Params | undefined) => (n(p, 'short') ? `${Yours(p)} won’t cover it. ` : '');
 
-/** " R$250 is $46.30 right now." for a payment in another currency, nothing in dollars. */
-export const converted = (p: Params | undefined, how = 'right now') => (n(p, 'converted') ? ` ${s(p, 'local')} is ${usd2(n(p, 'usd'))} ${how}.` : '');
+/** " R$250 is $46.30 right now.", or " $50.00 is ₱2,900 right now." when they asked in dollars; nothing for a payment in dollars. */
+export const converted = (p: Params | undefined, how = 'right now') => (n(p, 'converted') ? ` ${s(p, 'from')} is ${s(p, 'to')} ${how}.` : '');
 
 export type LineFn = (p?: Params) => string;
 export type AskFn = (p?: Params) => AgentAsk;
@@ -129,12 +129,21 @@ export const LINES = {
   'fund.needed': (p) => `I’ll need ${usd(n(p, 'amount'))} in ${yours(p)} to cover that. How do you want to add it?`,
   'fund.asset': () => 'What are you sending?',
   'fund.network': (p) => `Which network is your ${s(p, 'asset')} on?`,
-  'fund.address': (p) => `Here’s your ${s(p, 'method')} ${s(p, 'network') === 'LIGHTNING' ? 'invoice' : 'address'}. Whatever you send lands as dollars.`,
+  'fund.address': (p) =>
+    s(p, 'network') === 'LIGHTNING' ? 'Here’s your Lightning invoice. Whatever you send lands as dollars.' : `Here’s your address for ${s(p, 'method')}. Whatever you send lands as dollars.`,
+  'fund.other': (p) => (n(p, 'again') ? 'Okay. Crypto works too, or I can hold off.' : `No problem. Want to add the ${usd(n(p, 'amount'))} another way?`),
+  'fund.later': () => 'Okay, no money added. Just say when.',
+  'task.held': (p) => `Okay, I’ll hold off on ${s(p, 'what')}. Just say when.`,
   'fund.bank': (p) => `Pulling ${usd(n(p, 'amount'))} from your ${linkedBank().bankName} •••• ${linkedBank().last4} over ACH.`,
   'fund.push': (p) =>
     `Send ${s(p, 'send')} from your ${linkedBank().bankName} by ${s(p, 'rail')} to these details. It lands in ${yours(p)} as dollars.`,
-  'bank.intro': () => `Link a bank once and you can move money in and out any time. It works with banks in ${BANK_REACH} countries.`,
-  'bank.where': () => 'Where’s your bank?',
+  'bank.intro': () => `Link a bank once and you can move money in and out any time, in ${BANK_REACH} countries. Where is it?`,
+  'bank.opening': (p) =>
+    s(p, 'home') === 'us'
+      ? 'Opening Plaid so you can sign in to your bank.'
+      : s(p, 'home') === 'other'
+        ? 'Pick your country, then add your bank details.'
+        : `Here’s the form for your bank in ${s(p, 'country')}.`,
   'bank.kept': () => 'I’ll keep this account connected for next time, for adding money and withdrawing.',
   'bank.denied': () => 'Okay, no bank for now. You can link one any time.',
   'fund.done': (p) => `${usd(n(p, 'amount'))} landed. You have ${usd2(n(p, 'balance'))} now.`,
@@ -156,7 +165,7 @@ export const LINES = {
       ? `You don’t have ${a(p)} yet. I pay with your ${CARD}.`
       : `You don’t have ${a(p)} yet. Set one up to keep money here and get paid, or add a card for me to pay with.`,
 
-  'limits.intro': () => 'I can’t change my own limits, so I sent it to you to confirm.',
+  'limits.intro': () => 'I can’t change my own limits. Confirm these and they’re set.',
   'limits.done': (p) => `Done. I’ll handle anything up to ${usd(n(p, 'approve'))} and ask you above it.`,
   'limits.denied': () => 'Okay, your limits stay as they are.',
   'limits.same': (p) => `Those are already my limits: I handle anything up to ${usd(n(p, 'approve'))}, ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day.`,
@@ -170,14 +179,16 @@ export const LINES = {
   'crypto.where': () => 'Sure. What address should I send it to?',
   'crypto.invalid': () => 'That doesn’t look like an address I can send to. Can you paste the whole thing?',
   'crypto.onchain': () => 'That’s a Bitcoin address. I can pay a Lightning invoice or send USDB to a Spark address, but not bitcoin on-chain yet.',
-  'crypto.mismatch': (p) => `${s(p, 'network')} addresses only take ${s(p, 'takes')}, so I can’t send ${s(p, 'asset')} there.`,
+  'crypto.mismatch': (p) => `I can’t send ${s(p, 'asset')} there: ${s(p, 'network')} addresses only take ${s(p, 'takes')}.`,
   'crypto.amount': () => 'How much do you want to send?',
   'crypto.asset': () => 'USDC or USDT?',
   'crypto.network': () => 'Which network is that address on? Sending on the wrong one can lose the money.',
   'crypto.intro': (p) =>
     n(p, 'lightning')
       ? `That invoice is for ${s(p, 'sends')}, plus ${usd2(n(p, 'fee'))} in fees.`
-      : `${s(p, 'sends')} to ${s(p, 'short')} on ${s(p, 'network')}. The network fee is ${usd2(n(p, 'fee'))}, so exactly ${s(p, 'sends')} arrives.`,
+      : n(p, 'fee')
+        ? `${s(p, 'sends')} to ${s(p, 'short')} on ${s(p, 'network')}. The network fee is ${usd2(n(p, 'fee'))}, so exactly ${s(p, 'sends')} arrives.`
+        : `${s(p, 'sends')} to ${s(p, 'short')} on ${s(p, 'network')}. There’s no network fee.`,
   'crypto.done': (p) => (n(p, 'lightning') ? 'Paid. The invoice is settled.' : `Sent. ${s(p, 'sends')} is at ${s(p, 'short')} on ${s(p, 'network')}.`),
   'limit.over': (p) => `That’s more than the ${usd(n(p, 'perTx'))} I can spend in one payment. Raise my limit and I’ll do it.`,
   'pay.over': (p) => `That’s more than the ${usd(n(p, 'perTx'))} I can send in one payment. Raise my limit and I’ll send it.`,
@@ -188,7 +199,6 @@ export const LINES = {
   'buy.picked': (p) => `Got your pick: the ${s(p, 'item')}. I’ll check the total and get checkout ready. Nothing is charged without your approval.`,
   'buy.payWith': (p) => `Want me to pay from ${yours(p)} or your ${CARD}?`,
   'buy.shortCard': (p) => `${Yours(p)} won’t cover it. Should I put it on your ${CARD}, or do you want to add ${usd(n(p, 'amount'))} first?`,
-  'buy.noBalance': (p) => `I can put this on your card, or set up ${s(p, 'wallet').startsWith('your ') ? 'a balance' : `a ${s(p, 'wallet')}`} you can pay from.`,
   'buy.short': (p) => `You have ${usd2(n(p, 'balance'))} in ${yours(p)}. I can put this on your card instead, or you can add ${usd(n(p, 'amount'))} first.`,
   'buy.card': (p) =>
     n(p, 'card')
@@ -198,7 +208,7 @@ export const LINES = {
   'buy.done': () => 'Ordered. It arrives Thursday.',
   'buy.denied': () => 'Okay, I won’t place the order. Nothing was charged.',
 
-  'sub.intro': (p) => `${s(p, 'item')} is ${usd2(n(p, 'amount'))} a month.`,
+  'sub.intro': (p) => `It’s ${usd2(n(p, 'amount'))} a month for ${s(p, 'item')}.`,
   'sub.card': (p) => `${short(p)}I’ll get a card that only ${s(p, 'merchant')} can charge, up to ${usd2(n(p, 'amount'))} a month${n(p, 'card') ? `, billed to your ${CARD}` : ''}.`,
   'sub.done': (p) => `You’re subscribed. The card is locked to ${s(p, 'merchant')} now, so nobody else can use it.`,
   'sub.denied': () => 'Okay, no subscription.',
@@ -217,17 +227,18 @@ export const LINES = {
   'getpaid.already': (p) => `${s(p, 'first')} already paid ${s(p, 'invoice')}, ${usd2(n(p, 'amount'))}. Nothing else is outstanding.`,
 
   'cashout.amount': () => 'How much should I move to your bank?',
-  'cashout.bank': () => 'I’ll need your bank first. Link it once and I can move money there any time.',
+  'cashout.bank': () => 'I’ll need your bank first. Link it once and I can move money there any time. Where is it?',
   'cashout.over': (p) => `You have ${usd2(n(p, 'balance'))} in ${yours(p)}, so I can move up to that.`,
   'cashout.empty': (p) => `There’s nothing in ${yours(p)} to move yet.`,
   'cashout.quote': (p) => `Moving ${s(p, 'local')} to your ${s(p, 'to')} over ${s(p, 'rail')}. ${railTiming(linkedBank())}`,
   'cashout.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m sending it now.`,
   'cashout.done': () => cashoutDone(linkedBank().country.rail),
-  'cashout.noBalance': (p) => `There’s nothing to move yet: you don’t have ${a(p)}. Add money to one and I can send it to your bank.`,
+  'cashout.noBalance': (p) => `There’s nothing to move yet. Set up ${a(p)} and add money, then I can move it to your bank.`,
   'cashout.denied': () => 'Okay, the money stays put.',
 
   'balance.answer': (p) => `You have ${usd2(n(p, 'balance'))}. Here’s where things stand.`,
   'history.answer': () => 'Here’s what moved recently.',
+  'history.none': () => 'Nothing yet. Once I pay for something or money comes in, it shows up here.',
 } satisfies Record<string, LineFn>;
 
 export type LineKey = keyof typeof LINES;
@@ -238,10 +249,14 @@ export const payOf = (p: Params | undefined): AgentAsk['pay'] =>
     ? { by: n(p, 'card') ? 'card' : 'balance', card: CARD, wallet: s(p, 'wallet'), balance: usd2(n(p, 'balance')), enough: !!n(p, 'enough') }
     : undefined;
 
+/** "Was $10" under a limit that changes; nothing under one that stays. */
+export const was = (p: Params | undefined, key: string, from: string, format = (v: string) => `Was ${v}`) =>
+  n(p, key) === n(p, from) ? undefined : format(usd(n(p, from)));
+
 const limitsRows = (p?: Params): AgentAsk['rows'] => [
-  { text: `Acts alone up to ${usd(n(p, 'approve'))}`, sub: `Was ${usd(n(p, 'fromApprove'))}`, icon: 'lock' },
-  { text: `${usd(n(p, 'daily'))} a day`, sub: `Was ${usd(n(p, 'fromDaily'))}`, icon: 'gauge' },
-  { text: `${usd(n(p, 'perTx'))} a payment`, sub: `Was ${usd(n(p, 'fromPerTx'))}`, icon: 'gauge' },
+  { text: `Acts alone up to ${usd(n(p, 'approve'))}`, sub: was(p, 'approve', 'fromApprove'), icon: 'lock' },
+  { text: `${usd(n(p, 'daily'))} a day`, sub: was(p, 'daily', 'fromDaily'), icon: 'gauge' },
+  { text: `${usd(n(p, 'perTx'))} a payment`, sub: was(p, 'perTx', 'fromPerTx'), icon: 'gauge' },
 ];
 
 export const ASKS = {
@@ -296,7 +311,7 @@ export const ASKS = {
   }),
   pay: (p) => ({
     title: `Send ${s(p, 'local')} to ${s(p, 'first')}`,
-    who: { name: s(p, 'name'), flag: s(p, 'flag'), bank: s(p, 'bank'), detail: `${s(p, 'local')} to ${s(p, 'bank')} via ${s(p, 'rail')}` },
+    who: { name: s(p, 'first'), flag: s(p, 'flag'), bank: s(p, 'bank'), detail: `${s(p, 'local')} to ${s(p, 'bank')} via ${s(p, 'rail')}` },
     amount: s(p, 'local'),
     method: `From ${s(p, 'wallet')} · ${usd2(n(p, 'usd'))}`,
     allow: 'Approve',
@@ -307,7 +322,7 @@ export const ASKS = {
     title: n(p, 'lightning') ? 'Pay a Lightning invoice' : `Send ${s(p, 'sends')} to ${s(p, 'short')}`,
     who: n(p, 'lightning')
       ? { name: 'Lightning invoice', mark: '⚡', detail: `${s(p, 'short')} · fee ${usd2(n(p, 'fee'))}` }
-      : { name: s(p, 'short'), mark: '$', detail: `${s(p, 'asset')} on ${s(p, 'network')} · fee ${usd2(n(p, 'fee'))}` },
+      : { name: s(p, 'short'), mark: '$', detail: `${s(p, 'asset')} on ${s(p, 'network')} · ${n(p, 'fee') ? `fee ${usd2(n(p, 'fee'))}` : 'no fee'}` },
     amount: s(p, 'sends'),
     method: `From ${s(p, 'wallet')} · ${usd2(n(p, 'usd') + n(p, 'fee'))}`,
     allow: 'Approve',
@@ -347,7 +362,7 @@ export const ASKS = {
     title: `Pay ${s(p, 'hotel')}’s agent`,
     who: { name: s(p, 'hotel'), detail: `${n(p, 'nights')} ${n(p, 'nights') === 1 ? 'night' : 'nights'} in ${s(p, 'city')}, ${s(p, 'dates')}` },
     amount: usd2(n(p, 'amount')),
-    method: `Account to account · you save ${usd2(n(p, 'listed') - n(p, 'amount'))}`,
+    method: `Paid direct · you save ${usd2(n(p, 'listed') - n(p, 'amount'))}`,
     allow: 'Approve',
     allowed: 'Paid',
     denied: 'Declined',
@@ -377,7 +392,7 @@ function balanceOf(p: Params | undefined, note: string): AgentBalance {
 
 export const NOTES = {
   'account.ready': (p) => ({
-    title: `${s(p, 'wallet')} is on`,
+    title: `${s(p, 'wallet').charAt(0).toUpperCase()}${s(p, 'wallet').slice(1)} is on`,
     lines: [`Balance ${usd2(n(p, 'balance'))}`],
     done: true,
     balance: balanceOf(p, 'Available to spend'),
@@ -392,10 +407,10 @@ export const NOTES = {
     };
   },
   receive: (p) => ({
-    title: `Pay ${PERSON.full}`,
+    title: `Receive ${usd2(n(p, 'amount'))}`,
     code: s(p, 'network') === 'LIGHTNING' ? RECEIVE_INVOICE : ADDRESS_ON.BASE,
     glyph: s(p, 'network') === 'LIGHTNING' ? 'bolt' : 'coin',
-    lines: [`${usd2(n(p, 'amount'))} · ${s(p, 'invoice')}`, s(p, 'method')],
+    lines: [`From ${s(p, 'first')} · ${s(p, 'invoice')}`, s(p, 'method')],
   }),
   'deposit.bank': (p) => {
     const rows: [string, string][] = JSON.parse(s(p, 'rows') || '[]');
@@ -417,7 +432,7 @@ export const NOTES = {
     done: true,
   }),
   'receipt.pay': (p) => ({
-    title: `${s(p, 'local')} to ${s(p, 'name')}`,
+    title: `${s(p, 'local')} to ${s(p, 'first')}`,
     lines: [`${s(p, 'bank')} · ${s(p, 'rail')}`, `${usd2(n(p, 'usd'))} from ${s(p, 'wallet')}`],
     done: true,
   }),
@@ -428,7 +443,7 @@ export const NOTES = {
   }),
   'receipt.buy': (p) => ({
     title: `${usd2(n(p, 'amount'))} at ${s(p, 'merchant')}`,
-    lines: n(p, 'card') ? [`Paid with ${CARD}`, 'One-time card · closed after the charge'] : ['One-time Visa · closed after the charge'],
+    lines: [n(p, 'card') ? `Paid with ${CARD}` : `Paid from ${yours(p)}`, 'One-time card · closed after the charge'],
     done: true,
   }),
   'receipt.sub': (p) => ({
@@ -437,8 +452,8 @@ export const NOTES = {
     done: true,
   }),
   'receipt.agent': (p) => ({
-    title: `Settled, instant and final · ${usd2(n(p, 'amount'))}`,
-    lines: [`To ${s(p, 'hotel')}’s account · ${s(p, 'dates')}`, `Saved ${usd2(n(p, 'listed') - n(p, 'amount'))} by skipping the card`],
+    title: `Paid ${s(p, 'hotel')} · ${usd2(n(p, 'amount'))}`,
+    lines: [s(p, 'dates'), `You saved ${usd2(n(p, 'listed') - n(p, 'amount'))} by paying direct`],
     done: true,
   }),
   'receipt.getpaid': (p) => ({
@@ -478,7 +493,7 @@ const RECEIVE_INVOICE = 'lnbc4682u1pn5x9qhpp5r3w0t8yq9zk2fh6xa4t7vlc5mgy8ens3p2w
 
 /** Muse's order sheet for what it found. */
 export const MUSE_ORDER = (p: Params | undefined): AgentAsk => ({
-  title: `The agent wants to place an order at ${s(p, 'merchant')}`,
+  title: `${s(p, 'agent')} wants to place an order at ${s(p, 'merchant')}`,
   badge: s(p, 'merchant')[0],
   rows: [
     { text: s(p, 'item'), sub: 'Qty: 1', image: s(p, 'image') },

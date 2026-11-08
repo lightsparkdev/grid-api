@@ -33,7 +33,8 @@ export interface Voice {
 }
 
 /** Names that keep their capital at the start of a sentence in a lowercase voice. */
-const PROPER = /^(Visa|Muse|Dots|Bot|Grok|Duet|Claude|Instinct|Plaid|Chase|Hotel|PIX|SPEI|ACH|SEPA|UPI|USDC|Bitcoin|[A-Z]{2,})/;
+const PROPER =
+  /^(Visa|Muse|Dots|Bot|Grok|Duet|Claude|Instinct|Plaid|Chase|Hotel|PIX|SPEI|ACH|SEPA|UPI|USDC|Bitcoin|Lightning|Spark|Base|Solana|Ethereum|Polygon|Arbitrum|Tron|Duolingo|Netflix|Spotify|[A-Z]{2,})/;
 
 /** A neutral line in a lowercase voice (Dots, Instinct): each sentence opens lowercase, and so does "I". */
 export function casual(text: string): string {
@@ -41,6 +42,9 @@ export function casual(text: string): string {
     .replace(/(^|[.!?]\s+)([A-Z][\w’']*)/g, (m, pre: string, word: string) => (PROPER.test(word) ? m : pre + word[0].toLowerCase() + word.slice(1)))
     .replace(/\bI(?=[’'\s,.!?]|$)/g, 'i');
 }
+
+/** Lines said as one bubble; Instinct's unpunctuated texts get a period between them. */
+export const joinLines = (lines: string[]) => lines.reduce((all, line) => (!all ? line : /[.!?:]$/.test(all) ? `${all} ${line}` : `${all}. ${line}`), '');
 
 /** An app's voice: its own lines where it has them, the neutral ones otherwise. */
 export function voiceFor(connector: ConnectorId): Voice {
@@ -83,7 +87,12 @@ export function renderThread(messages: StoredMessage[], voice: Voice): Message[]
         return {
           id: m.id,
           kind: 'them',
-          text: 'text' in m.said ? (m.said.voices?.[voice.id] ?? m.said.text) : voice.line(m.said.key, m.said.params),
+          text:
+            'text' in m.said
+              ? (m.said.voices?.[voice.id] ?? m.said.text)
+              : 'parts' in m.said
+                ? joinLines(m.said.parts.map((part) => voice.line(part.key, part.params)))
+                : voice.line(m.said.key, m.said.params),
           sender: m.sender,
           typing: m.typing,
         };

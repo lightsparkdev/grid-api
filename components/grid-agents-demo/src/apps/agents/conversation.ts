@@ -1,3 +1,4 @@
+import type { ActionId } from '@/data/actions';
 import type { AgentEvent } from '@/data/agentEvents';
 import type { ConnectorId } from '@/data/connectors';
 
@@ -18,6 +19,8 @@ export interface Chip {
   icon?: string;
   /** What it is, for the apps that draw a line glyph ahead of the label (Dots). */
   glyph?: ChipGlyph;
+  /** A suggestion that is a flow's own request: tapped, it starts that flow rather than asking the model. */
+  flow?: ActionId;
 }
 
 export type ChipGlyph = 'card' | 'bank' | 'coin' | 'bolt' | 'check' | 'wallet';
@@ -169,7 +172,11 @@ export type Message =
 /* ── Stored: what the brain keeps ────────────────────────────────────── */
 
 /** Something said, by key (rendered in the current app's voice) or verbatim (the model's replies, written in every app's voice). */
-export type Said = { key: string; params?: Params } | { text: string; voices?: Partial<Record<ConnectorId, string>> };
+export type Said =
+  | { key: string; params?: Params }
+  | { text: string; voices?: Partial<Record<ConnectorId, string>> }
+  /** Lines a flow said as one bubble: a line, then the one that carries it on ("…$46.30 right now. I'll need $46.30…"). */
+  | { parts: { key: string; params?: Params }[] };
 
 export type StoredMessage =
   | { id: number; kind: 'me'; text: string; react?: string; meant?: string }
@@ -193,7 +200,8 @@ export type StoredMessage =
  * stays up until the next thing it says or shows.
  */
 export type Beat =
-  | { say: string; params?: Params; sender?: string }
+  /** `join`: carries on the bubble just said, when nothing came between them. */
+  | { say: string; params?: Params; sender?: string; join?: boolean }
   | { card: string; params?: Params }
   | { work: string; ms: number; params?: Params }
   | { products: string; params?: Params }

@@ -30,7 +30,12 @@ type NewMessage = StoredMessage extends infer M ? (M extends StoredMessage ? Omi
 const MAX_MESSAGES = 200;
 
 /** Under the greeting: things to try, so it's clear you can just type. A tap sends one as the person's own message, so each is in their words. */
-const STARTERS: Chip[] = [{ label: 'Set up a balance' }, { label: 'Add a card' }, { label: 'Send money to friends (US and abroad)' }, { label: 'What can you do?' }];
+const STARTERS: Chip[] = [
+  { label: 'Set up a balance', flow: 'connect' },
+  { label: 'Add a card', flow: 'card' },
+  { label: 'Send money to friends (US and abroad)' },
+  { label: 'What can you do?' },
+];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Which option a typed reply picks: its number, or its label; -1 for neither. */
 function typedChoice(text: string, chips: Chip[]) {
@@ -54,6 +59,27 @@ function typedAmount(text: string, all?: number) {
   const usd = Number(m[1].replace(/,/g, '')) * (m[2] ? 1000 : 1);
   return usd > 0 ? usd : undefined;
 }
+
+/** Lines a flow opens with that answer the request themselves: a setup first, a no, or "already done". */
+const SPEAKS_FIRST = new Set([
+  'connect.intro',
+  'connect.already',
+  'cashout.noBalance',
+  'cashout.empty',
+  'limit.over',
+  'pay.over',
+  'pay.where',
+  'crypto.invalid',
+  'crypto.mismatch',
+  'crypto.onchain',
+  'balance.none',
+  'history.none',
+  'card.already',
+  'bank.already',
+  'limits.same',
+  'agent.already',
+  'getpaid.already',
+]);
 
 /** A reply that approves an open ask; anything else declines it. */
 const YES = /^\s*(y|yes|yeah|yep|yup|ok|okay|sure|approve|approved|do it|go ahead|send it)\b/i;
@@ -197,7 +223,8 @@ export function useAgentBrain({
 
   const play = useCallback(
     async (beats: Beat[], run: Run): Promise<boolean> => {
-      for (const b of beats) {
+      for (let i = 0; i < beats.length; i++) {
+        const b = beats[i];
         if (run.cancelled) return false;
         if ('work' in b) {
           setMessages((list) => {
@@ -226,7 +253,14 @@ export function useAgentBrain({
         } else if ('divider' in b) {
           show({ kind: 'divider', text: b.divider });
         } else if ('say' in b) {
-          const id = show({ kind: 'them', said: { key: b.say, params: b.params }, sender: b.sender, typing: true });
+          // Lines that carry this one on join it in one bubble.
+          const parts = [{ key: b.say, params: b.params }];
+          for (let next = beats[i + 1]; next && 'say' in next && next.join; next = beats[i + 1]) {
+            parts.push({ key: next.say, params: next.params });
+            i += 1;
+          }
+          const said = parts.length > 1 ? { parts } : parts[0];
+          const id = show({ kind: 'them', said, sender: b.sender, typing: true });
           await sleep(700);
           if (run.cancelled) return false;
           patch(id, (m) => (m.kind === 'them' ? { ...m, typing: false } : m));
@@ -384,16 +418,17 @@ export function useAgentBrain({
       if (cb.current.readsFor > 0) await sleep(cb.current.readsFor);
       const typingId = push({ kind: 'them', said: { text: '' }, typing: true });
       const answer = await replying;
-      // Nothing to say (the flow it starts speaks first): the typing bubble just goes.
-      const silent = 'text' in answer.said && !answer.said.text;
+      const beats = answer.flow ? planFor(answer.flow.id, { ...cb.current.context(), variant: answer.flow.variant, params: answer.flow.params }) : null;
+      const opener = beats?.find((b) => !('react' in b));
+      // Nothing to say, or the flow opens with a setup step or a no of its own ("On it" would promise what it says next it can't do yet): the typing bubble just goes.
+      const silent = ('text' in answer.said && !answer.said.text) || (!!opener && 'say' in opener && SPEAKS_FIRST.has(opener.say));
       if (silent) setMessages((list) => list.filter((m) => m.id !== typingId));
       else patch(typingId, (m) => (m.kind === 'them' ? { ...m, said: answer.said, typing: false } : m));
       setBusy(false);
       followUps.current = answer.then ?? [];
-      if (answer.flow) {
-        const ctx: FlowContext = { ...cb.current.context(), variant: answer.flow.variant, params: answer.flow.params };
+      if (answer.flow && beats) {
         if (!silent) await sleep(700);
-        void start(answer.flow.id, planFor(answer.flow.id, ctx));
+        void start(answer.flow.id, beats);
       } else if (answer.suggestions?.length) {
         await sleep(350);
         const id = push({ kind: 'chips', chips: answer.suggestions, picked: null });
@@ -404,6 +439,17 @@ export function useAgentBrain({
   );
 
   askRef.current = ask;
+
+  /** A suggestion that is a flow's own request plays that flow, as a tile's line would; the rest go to the model. */
+  const suggest = useCallback(
+    async (chip: Chip, typed?: string) => {
+      if (!chip.flow) return ask(typed ?? chip.label, chip.label);
+      push({ kind: 'me', text: typed ?? chip.label });
+      const ctx: FlowContext = { ...cb.current.context(), variant: 0 };
+      void start(chip.flow, FLOWS[chip.flow](ctx), cb.current.readsFor);
+    },
+    [ask, push, start],
+  );
 
   const send = useCallback(async () => {
     const text = composer.trim();
@@ -460,8 +506,9 @@ export function useAgentBrain({
     const n = Number.parseInt(text, 10);
     const i = s && String(n) === text && n >= 1 && n <= s.chips.length ? n - 1 : -1;
     dropSuggestions(i >= 0 ? i : undefined);
-    await ask(text, i >= 0 ? s!.chips[i].label : text);
-  }, [composer, busy, push, ask, dropSuggestions, cancelRun]);
+    if (i >= 0) await suggest(s!.chips[i], text);
+    else await ask(text);
+  }, [composer, busy, push, ask, suggest, dropSuggestions, cancelRun]);
 
   /** The visitor's tap on the open ask's primary button. */
   const allow = useCallback(() => decideRef.current?.('allow'), []);
@@ -479,9 +526,9 @@ export function useAgentBrain({
       if (!s || runRef.current || busy || !s.chips[i]) return;
       setComposer((c) => (s.chips.some((chip) => chip.label === c) ? '' : c));
       dropSuggestions(i);
-      void ask(s.chips[i].label);
+      void suggest(s.chips[i]);
     },
-    [busy, ask, dropSuggestions],
+    [busy, suggest, dropSuggestions],
   );
   /** Face ID finished its scan and checkmark. */
   const authed = useCallback(() => authRef.current?.(), []);

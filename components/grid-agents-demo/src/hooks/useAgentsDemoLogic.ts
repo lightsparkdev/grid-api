@@ -19,6 +19,9 @@ import type { AgentResponse, ChatTurn } from '@/lib/llm/types';
 /** Apps whose checkout has a Pay with row to switch the payment; the rest have the agent ask first. */
 const CHECKOUT_PICKER = new Set<ConnectorId>(['muse', 'dot']);
 
+/** Tiles that answer with the account as it is: a shortcut that added money only to show or withdraw it would be fake. */
+const AS_IT_STANDS = new Set<ActionId>(['balance', 'history', 'cashout']);
+
 /** The calls one step makes land one after another, not in a block. */
 const CALL_STAGGER_MS = 650;
 
@@ -30,14 +33,14 @@ const CALL_STAGGER_MS = 650;
 function prepare(session: AgentSession, id: ActionId, variant: number): NonNullable<FlowEntry['setup']> {
   const a = session.snapshot();
   // A card-only account passed on a balance once: the flow asks for one, as it does when typed, rather than
-  // turning it on behind their back.
-  if (a.connected && !a.balanceOn && needsSetup(id, a)) return { connected: false, funded: 0 };
+  // turning it on behind their back. Checking the balance or history, or withdrawing, answers as it stands.
+  if ((a.connected && !a.balanceOn && needsSetup(id, a)) || AS_IT_STANDS.has(id)) return { connected: false, funded: 0 };
   const connected = needsSetup(id, a);
   if (connected) session.assumeConnected();
   const need = flowSpend(id, undefined, variant);
   const have = session.snapshot().balanceCents;
-  // A purchase goes on the saved card when the balance is short, so there's nothing to top up.
-  const onCard = id === 'buy' && session.snapshot().cardVaulted;
+  // A purchase goes on the card without a balance, or when the saved card covers a short one: nothing to top up.
+  const onCard = id === 'buy' && (session.snapshot().cardVaulted || !session.snapshot().balanceOn);
   const funded = need && have < need && !onCard ? Math.max(FAST_FORWARD_FUND_CENTS, Math.ceil((need - have) / 10_000) * 10_000) : 0;
   if (funded) session.assumeFunded(funded);
   return { connected, funded };
