@@ -1,4 +1,8 @@
+import { Disclaimer } from '@/components/Disclaimer/Disclaimer';
 import styles from './PlaygroundIntro.module.scss';
+
+/** The brands-are-mockups line under the intro, held back for now. */
+const SHOW_DISCLAIMER = false;
 
 export function PlaygroundIntro() {
   return (
@@ -10,6 +14,7 @@ export function PlaygroundIntro() {
         <span className={styles.titleSecondary}>Playground</span>
       </div>
       <p className={styles.body}>Give an agent an account and watch the exact API calls fire as you go</p>
+      {SHOW_DISCLAIMER && <Disclaimer />}
     </section>
   );
 }

@@ -1,0 +1,9 @@
+// Tucked under the intro line, in its inset, a step fainter than tertiary text.
+.line {
+  margin: calc(-1 * var(--spacing-xs)) 0 0;
+  padding: 0 var(--spacing-xs);
+  font-family: var(--font-family-sans);
+  font-size: 10px;
+  line-height: 14px;
+  color: color-mix(in srgb, var(--text-tertiary) 65%, var(--panel-bg));
+}
