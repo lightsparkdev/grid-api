@@ -2,8 +2,8 @@ import { Disclaimer } from '@/components/Disclaimer/Disclaimer';
 import { GridLogoMark } from '@/components/GridWordmark';
 import styles from './PlaygroundIntro.module.scss';
 
-/** The brands-are-mockups line under the intro, held back for now. */
-const SHOW_DISCLAIMER = false;
+/** The brands-are-mockups line under the intro: on localhost only, held back from the live site for now. */
+const SHOW_DISCLAIMER = process.env.NODE_ENV === 'development';
 
 export function PlaygroundIntro() {
   return (
