@@ -1,0 +1,19 @@
+type: object
+description: A single-use link that answers a stored card's details to its owner.
+required:
+  - detailsUrl
+  - expiresAt
+properties:
+  detailsUrl:
+    type: string
+    format: uri
+    maxLength: 2048
+    description: >-
+      The single-use link on Evervault's Relay. Open it with Evervault's Reveal
+      component in the owner's browser; it answers `StoredCardRevealDetails`
+      without `cvc`, once, until `expiresAt`. It is a bearer secret: do not log
+      or store it.
+  expiresAt:
+    type: string
+    format: date-time
+    description: When the link stops working, two minutes after it was issued.
