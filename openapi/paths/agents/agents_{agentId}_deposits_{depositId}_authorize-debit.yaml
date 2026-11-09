@@ -1,0 +1,85 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+  - name: depositId
+    in: path
+    description: System-generated unique deposit identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Authorize an agent deposit debit
+  description: >-
+    Records the customer's debit authorization for a `PENDING` `ACH_PULL`
+    deposit and submits the debit. Call it only from an explicit action by
+    the signed-in customer (or, for a business, an admin) on the platform's
+    own page, after showing `achPull.authorization.text` verbatim.
+    `textVersion` and `textSha256` must match the deposit's text, or the
+    request is refused with `400` and nothing is recorded. Grid checks again
+    the external-account pull gate, the account's validation, the limits and
+    any pull block; a refusal records nothing and leaves the deposit
+    `PENDING`. On success the authorization is recorded and used once by this
+    debit: the deposit becomes `PROCESSING` and the amount is credited to the
+    destination USDB account at once. A repeat of the same request after
+    success returns the deposit unchanged. This endpoint uses platform
+    credentials, not agent credentials.
+  operationId: authorizeAgentDepositDebit
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentDebitAuthorizationRequest.yaml
+  responses:
+    '200':
+      description: The deposit after authorization, or unchanged for a repeat of the same successful request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentDeposit.yaml
+    '400':
+      description: >-
+        Bad request - Authorization text version or hash mismatch, invalid
+        input, pull limit exceeded or account not validated for pulls
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - External-account pulls are not enabled for the platform or the customer's pulls are blocked
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Agent or deposit not found for this platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - Deposit is not `PENDING` or has expired, except for a repeat of the same successful request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

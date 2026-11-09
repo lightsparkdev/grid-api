@@ -1,0 +1,25 @@
+type: object
+description: ACH debit details for an `ACH_PULL` deposit.
+required:
+  - externalAccountId
+  - accountLast4
+  - authorization
+  - limits
+properties:
+  externalAccountId:
+    type: string
+    description: The customer's external account from which the debit is pulled.
+    example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000003
+  accountLast4:
+    type: string
+    pattern: '^[0-9]{4}$'
+    description: Last four digits of the bank account number.
+    example: '6789'
+  authorization:
+    $ref: ./AgentDebitAuthorization.yaml
+  limits:
+    $ref: ./AgentAchPullLimits.yaml
+  returnCode:
+    type: string
+    description: ACH return reason code when the bank returned the debit.
+    example: R01

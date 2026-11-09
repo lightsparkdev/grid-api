@@ -1,0 +1,33 @@
+type: object
+description: The customer's acceptance of the deposit's debit authorization text.
+required:
+  - textVersion
+  - textSha256
+  - authorizedBy
+  - ipAddress
+  - userAgent
+properties:
+  textVersion:
+    type: string
+    description: Must match the deposit's `achPull.authorization.textVersion`.
+    example: ach-pull-v1
+  textSha256:
+    type: string
+    pattern: '^[0-9a-f]{64}$'
+    description: Must match the deposit's `achPull.authorization.textSha256`.
+    example: dd686beb4942839dbd48f8ebf1289ed5f8f3f3a984c1bdc96c035560cdc2922d
+  authorizedBy:
+    type: string
+    maxLength: 255
+    description: The platform's identifier for the signed-in person who authorized the debit.
+    example: user_12345
+  ipAddress:
+    type: string
+    maxLength: 45
+    description: IPv4 or IPv6 address of that person's request.
+    example: 203.0.113.42
+  userAgent:
+    type: string
+    maxLength: 1024
+    description: User agent of that person's request.
+    example: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36

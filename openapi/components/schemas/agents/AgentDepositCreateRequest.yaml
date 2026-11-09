@@ -10,7 +10,15 @@ description: >-
   request for the same account, network and currency is refused. Where Grid
   funds a chain deposit through a quote instead, the address is the quote's
   and the deposit carries the quote's `expiresAt`; a payment after it is not
-  converted (see `paidAfterExpiry`).
+  converted (see `paidAfterExpiry`). For `ACH_PULL`, `sourceCurrency` must be
+  `USD`, and `amount` in USD cents and `sourceExternalAccountId` are required.
+  The source must be the agent customer's own `ACTIVE` USD external account
+  with a Plaid ACH validation recorded through
+  `POST /agents/{agentId}/external-accounts/{externalAccountId}/ach-validations`.
+  The destination must be the customer's USDB `EMBEDDED_WALLET`. Creating an
+  `ACH_PULL` deposit moves no money and records no authorization; it returns
+  the authorization text the customer must accept. Requires the
+  `RECEIVE_FUNDS` permission.
 required:
   - sourceNetwork
   - sourceCurrency
@@ -23,7 +31,7 @@ properties:
     type: string
     description: >-
       Currency or asset the customer will deposit. Must be `USD` for
-      `LIGHTNING`; for a chain network, use the asset sent on that chain.
+      `LIGHTNING` or `ACH_PULL`; for a chain network, use the asset sent on that chain.
       `TRON` supports `USDT` only.
     example: USD
   destinationInternalAccountId:
@@ -31,15 +39,23 @@ properties:
     description: >-
       Internal account that will receive the converted deposit. It must belong
       to the agent's associated customer and be allowed by the agent policy.
+      For `ACH_PULL`, it must be the customer's USDB `EMBEDDED_WALLET`.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  sourceExternalAccountId:
+    type: string
+    description: >-
+      Required for `ACH_PULL`: the agent customer's own `ACTIVE` USD external
+      account with a Plaid ACH validation. Refused with `400` if sent with
+      another network.
+    example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000003
   amount:
     type: integer
     format: int64
     exclusiveMinimum: 0
     maximum: 9000000000000000
     description: >-
-      Exact USD amount the user pays for a `LIGHTNING` deposit, in cents.
-      Required for `LIGHTNING`; no amount is required for chain networks. This
-      is an exact-in amount: deposit fees are deducted before the destination
-      asset is credited.
+      USD amount in cents. Required for `LIGHTNING` and `ACH_PULL`; no amount
+      is required for chain networks. For `LIGHTNING`, this is the exact amount
+      the user pays, with deposit fees deducted before the destination asset
+      is credited. For `ACH_PULL`, this is the amount to debit.
     example: 2000

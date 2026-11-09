@@ -9558,7 +9558,7 @@ paths:
   /agents/me/deposits:
     post:
       summary: Create an agent deposit
-      description: Create a deposit for the authenticated agent's customer. The returned target is a BOLT11 invoice for Lightning or an address for a supported chain. Requires the RECEIVE_FUNDS permission in the agent's policy.
+      description: Create a deposit for the authenticated agent's customer. The returned target is a BOLT11 invoice for Lightning, an address for a supported chain or the source external account ID for `ACH_PULL`. Creating an `ACH_PULL` deposit moves no money and records no authorization; it returns the text the customer must accept before the platform calls `authorizeAgentDepositDebit`. Requires the RECEIVE_FUNDS permission in the agent's policy.
       operationId: agentCreateDeposit
       tags:
         - Agent Operations
@@ -9587,7 +9587,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AgentDeposit'
         '400':
-          description: Bad request - Unsupported deposit route or invalid amount
+          description: Bad request - Unsupported deposit route or invalid amount. For `ACH_PULL`, the source account has no Plaid ACH validation, the amount exceeds a pull limit, or the source account is not the customer's own `ACTIVE` USD account. Also returned when `sourceExternalAccountId` is sent with another network.
           content:
             application/json:
               schema:
@@ -9599,7 +9599,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the RECEIVE_FUNDS permission
+          description: Forbidden - Agents API is not enabled for the platform or the agent does not have the RECEIVE_FUNDS permission. For `ACH_PULL`, external-account pulls are not enabled for the platform or the customer's pulls are blocked after an unauthorized ACH return.
           content:
             application/json:
               schema:
@@ -10156,6 +10156,142 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/deposits/{depositId}/authorize-debit:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+      - name: depositId
+        in: path
+        description: System-generated unique deposit identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Authorize an agent deposit debit
+      description: 'Records the customer''s debit authorization for a `PENDING` `ACH_PULL` deposit and submits the debit. Call it only from an explicit action by the signed-in customer (or, for a business, an admin) on the platform''s own page, after showing `achPull.authorization.text` verbatim. `textVersion` and `textSha256` must match the deposit''s text, or the request is refused with `400` and nothing is recorded. Grid checks again the external-account pull gate, the account''s validation, the limits and any pull block; a refusal records nothing and leaves the deposit `PENDING`. On success the authorization is recorded and used once by this debit: the deposit becomes `PROCESSING` and the amount is credited to the destination USDB account at once. A repeat of the same request after success returns the deposit unchanged. This endpoint uses platform credentials, not agent credentials.'
+      operationId: authorizeAgentDepositDebit
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentDebitAuthorizationRequest'
+      responses:
+        '200':
+          description: The deposit after authorization, or unchanged for a repeat of the same successful request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDeposit'
+        '400':
+          description: Bad request - Authorization text version or hash mismatch, invalid input, pull limit exceeded or account not validated for pulls
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - External-account pulls are not enabled for the platform or the customer's pulls are blocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent or deposit not found for this platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - Deposit is not `PENDING` or has expired, except for a repeat of the same successful request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/external-accounts/{externalAccountId}/ach-validations:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+      - name: externalAccountId
+        in: path
+        description: System-generated unique external account identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Record an agent external account ACH validation
+      description: Records that the platform validated the account's routing and account numbers through Plaid Auth and matched an owner reported by Plaid Identity to the customer's verified name or business legal name. Grid counts it as an ACH account validation for that account; `ACH_PULL` deposits require one. Refused with `400` if `ownerNameMatched` is false or the account is not a USD account of the agent's customer. This endpoint uses platform credentials, not agent credentials.
+      operationId: createAgentExternalAccountAchValidation
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentAchValidationRequest'
+      responses:
+        '201':
+          description: The recorded ACH account validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAchValidation'
+        '400':
+          description: Bad request - Invalid input, `ownerNameMatched` is false or the account is not a USD account of the agent's customer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent or external account not found for this platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -20479,6 +20615,9 @@ components:
             | STABLECOIN_VERIFICATION_FAILED | The stablecoin could not be verified with the provider |
             | DOCUMENTS_REQUIRED | The destination requires supporting documents for the quote's `purposeOfPayment` that the request did not supply. `details.missingRequirements` lists the requirement ID of each one |
             | EXACT_AMOUNT_UNAVAILABLE | The quote cannot deliver exactly the requested receiving amount at the current rate; quote again shortly or lock the sending amount |
+            | DEBIT_AUTHORIZATION_MISMATCH | The authorization text version or hash does not match the deposit's |
+            | BANK_ACCOUNT_NOT_VALIDATED | The external account has no ACH validation accepted for pulls |
+            | ACH_PULL_LIMIT_EXCEEDED | The amount exceeds the per-pull limit or the customer's rolling 7-day or 30-day pull limit |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -20544,6 +20683,9 @@ components:
             - STABLECOIN_VERIFICATION_FAILED
             - DOCUMENTS_REQUIRED
             - EXACT_AMOUNT_UNAVAILABLE
+            - DEBIT_AUTHORIZATION_MISMATCH
+            - BANK_ACCOUNT_NOT_VALIDATED
+            - ACH_PULL_LIMIT_EXCEEDED
         reason:
           type: string
           description: Error message
@@ -21835,6 +21977,8 @@ components:
             | SANCTION_BLOCKED | Blocked by sanction screening |
             | DESTINATION_NOT_ALLOWED | The agent may not pay this destination |
             | CORRIDOR_UNDER_MAINTENANCE | Payments to this corridor are paused for maintenance. |
+            | ACH_PULL_NOT_ENABLED | External-account pulls are not enabled for the platform |
+            | ACH_PULL_BLOCKED | Pulls are blocked for this customer after an unauthorized ACH return |
           enum:
             - FORBIDDEN
             - USER_NOT_READY
@@ -21845,6 +21989,8 @@ components:
             - SANCTION_BLOCKED
             - DESTINATION_NOT_ALLOWED
             - CORRIDOR_UNDER_MAINTENANCE
+            - ACH_PULL_NOT_ENABLED
+            - ACH_PULL_BLOCKED
         reason:
           type: string
           description: Error message
@@ -21902,6 +22048,7 @@ components:
             | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
             | PAYMENT_DOCUMENT_ALREADY_USED | The payment document is already attached to a quote. A document can be used on one quote only, so upload the file again to use it on another quote |
             | INVOICE_ALREADY_USED | Another quote for the Lightning invoice can still be executed or funded, or was executed. An invoice has one live quote at a time; ask the recipient for a new one, or retry once Grid has closed the earlier quote as expired |
+            | DEPOSIT_NOT_PENDING | The deposit is not waiting for authorization (already authorized, expired or failed) |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
             - TRANSACTION_NOT_CANCELLABLE
@@ -21932,6 +22079,7 @@ components:
             - WALLET_NOT_PROVISIONED
             - PAYMENT_DOCUMENT_ALREADY_USED
             - INVOICE_ALREADY_USED
+            - DEPOSIT_NOT_PENDING
         reason:
           type: string
           description: Error message
@@ -36360,10 +36508,11 @@ components:
         - POLYGON
         - ARBITRUM
         - TRON
-      description: Network from which an agent customer can fund a deposit. `TRON` deposits support `USDT` only.
+        - ACH_PULL
+      description: Network from which an agent customer can fund a deposit. `TRON` deposits support `USDT` only. `ACH_PULL` is an ACH debit from one of the customer's own US bank accounts (external accounts).
     AgentDepositCreateRequest:
       type: object
-      description: Request for a deposit into one of the agent customer's internal accounts. For `LIGHTNING`, set `sourceCurrency` to `USD` and provide `amount`; the user pays that exact USD amount and fees are deducted from the amount received. For chain networks, no amount is required and the returned standing deposit address does not expire. A chain request counts the first order the address receives from that network in that currency within 24 hours of the request; while that window is open with nothing paid, a second request for the same account, network and currency is refused. Where Grid funds a chain deposit through a quote instead, the address is the quote's and the deposit carries the quote's `expiresAt`; a payment after it is not converted (see `paidAfterExpiry`).
+      description: Request for a deposit into one of the agent customer's internal accounts. For `LIGHTNING`, set `sourceCurrency` to `USD` and provide `amount`; the user pays that exact USD amount and fees are deducted from the amount received. For chain networks, no amount is required and the returned standing deposit address does not expire. A chain request counts the first order the address receives from that network in that currency within 24 hours of the request; while that window is open with nothing paid, a second request for the same account, network and currency is refused. Where Grid funds a chain deposit through a quote instead, the address is the quote's and the deposit carries the quote's `expiresAt`; a payment after it is not converted (see `paidAfterExpiry`). For `ACH_PULL`, `sourceCurrency` must be `USD`, and `amount` in USD cents and `sourceExternalAccountId` are required. The source must be the agent customer's own `ACTIVE` USD external account with a Plaid ACH validation recorded through `POST /agents/{agentId}/external-accounts/{externalAccountId}/ach-validations`. The destination must be the customer's USDB `EMBEDDED_WALLET`. Creating an `ACH_PULL` deposit moves no money and records no authorization; it returns the authorization text the customer must accept. Requires the `RECEIVE_FUNDS` permission.
       required:
         - sourceNetwork
         - sourceCurrency
@@ -36374,18 +36523,22 @@ components:
           description: Network from which the customer will send the deposit.
         sourceCurrency:
           type: string
-          description: Currency or asset the customer will deposit. Must be `USD` for `LIGHTNING`; for a chain network, use the asset sent on that chain. `TRON` supports `USDT` only.
+          description: Currency or asset the customer will deposit. Must be `USD` for `LIGHTNING` or `ACH_PULL`; for a chain network, use the asset sent on that chain. `TRON` supports `USDT` only.
           example: USD
         destinationInternalAccountId:
           type: string
-          description: Internal account that will receive the converted deposit. It must belong to the agent's associated customer and be allowed by the agent policy.
+          description: Internal account that will receive the converted deposit. It must belong to the agent's associated customer and be allowed by the agent policy. For `ACH_PULL`, it must be the customer's USDB `EMBEDDED_WALLET`.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        sourceExternalAccountId:
+          type: string
+          description: 'Required for `ACH_PULL`: the agent customer''s own `ACTIVE` USD external account with a Plaid ACH validation. Refused with `400` if sent with another network.'
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000003
         amount:
           type: integer
           format: int64
           exclusiveMinimum: 0
           maximum: 9000000000000000
-          description: 'Exact USD amount the user pays for a `LIGHTNING` deposit, in cents. Required for `LIGHTNING`; no amount is required for chain networks. This is an exact-in amount: deposit fees are deducted before the destination asset is credited.'
+          description: USD amount in cents. Required for `LIGHTNING` and `ACH_PULL`; no amount is required for chain networks. For `LIGHTNING`, this is the exact amount the user pays, with deposit fees deducted before the destination asset is credited. For `ACH_PULL`, this is the amount to debit.
           example: 2000
     AgentDepositStatus:
       type: string
@@ -36402,10 +36555,95 @@ components:
       enum:
         - LIGHTNING_INVOICE
         - CHAIN_ADDRESS
-      description: Format of the payment target returned for an agent deposit.
+        - EXTERNAL_ACCOUNT
+      description: Format of the payment target returned for an agent deposit. `EXTERNAL_ACCOUNT` means `target` is the external account ID for `ACH_PULL`.
+    AgentDebitAuthorization:
+      type: object
+      description: The NACHA WEB (consumer) or CCD (business) single-debit authorization for this deposit.
+      required:
+        - textVersion
+        - text
+        - textSha256
+      properties:
+        id:
+          type: string
+          description: Authorization identifier, present once authorized.
+          example: DebitAuthorization:019542f5-b3e7-1d02-0000-000000000004
+        textVersion:
+          type: string
+          description: Version of the authorization text rendered for this deposit.
+          example: ach-pull-v1
+        text:
+          type: string
+          description: Exact authorization text Grid rendered for this deposit, including the amount, account ending, date and how to revoke. Show it verbatim to the customer.
+          example: I authorize Lightspark Group, Inc. and its partner bank to debit $20.00 once from my CHECKING account ending ••6789 at Chase on or after November 9, 2026, to add funds to my Lightspark Agents account. This authorizes a single debit only. I can revoke it before the debit is sent by cancelling it on this page or by contacting support@lightspark.com; revoking does not affect a debit already sent.
+        textSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+          description: Lowercase hex SHA-256 of the UTF-8 `text`.
+          example: e341cec8130241e0b34961bb2541adc23dca596c8bf4a68468a65037d4aaaf3d
+        authorizedAt:
+          type: string
+          format: date-time
+          description: When the customer authorized the debit.
+          example: '2026-10-09T18:01:00Z'
+        revokedAt:
+          type: string
+          format: date-time
+          description: When the authorization was revoked. A single-debit authorization is used at once by its debit, so Grid sets this only when the debit could not be submitted after the authorization was recorded.
+          example: '2026-10-09T18:01:30Z'
+    AgentAchPullLimits:
+      type: object
+      description: The per-pull maximum and how much more this customer can pull in rolling 7-day and 30-day windows, in USD cents. The windows count every submitted pull that was not refused.
+      required:
+        - perPullLimit
+        - rolling7DayRemaining
+        - rolling30DayRemaining
+      properties:
+        perPullLimit:
+          type: integer
+          format: int64
+          description: Maximum amount for one pull, in USD cents.
+          example: 100000
+        rolling7DayRemaining:
+          type: integer
+          format: int64
+          description: Amount this customer can still pull in the rolling 7-day window, in USD cents.
+          example: 200000
+        rolling30DayRemaining:
+          type: integer
+          format: int64
+          description: Amount this customer can still pull in the rolling 30-day window, in USD cents.
+          example: 500000
+    AgentAchPull:
+      type: object
+      description: ACH debit details for an `ACH_PULL` deposit.
+      required:
+        - externalAccountId
+        - accountLast4
+        - authorization
+        - limits
+      properties:
+        externalAccountId:
+          type: string
+          description: The customer's external account from which the debit is pulled.
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000003
+        accountLast4:
+          type: string
+          pattern: ^[0-9]{4}$
+          description: Last four digits of the bank account number.
+          example: '6789'
+        authorization:
+          $ref: '#/components/schemas/AgentDebitAuthorization'
+        limits:
+          $ref: '#/components/schemas/AgentAchPullLimits'
+        returnCode:
+          type: string
+          description: ACH return reason code when the bank returned the debit.
+          example: R01
     AgentDeposit:
       type: object
-      description: A deposit that converts funds from an external network into an internal account belonging to the agent's customer. A deposit reported `FAILED` or `EXPIRED` can still become `COMPLETED` when the funds arrive late; the platform then receives the `INCOMING_PAYMENT` webhook for the deposit's transaction again, now `COMPLETED`.
+      description: A deposit that converts funds from an external network into an internal account belonging to the agent's customer. For networks other than `ACH_PULL`, a deposit reported `FAILED` or `EXPIRED` can still become `COMPLETED` when the funds arrive late; the platform then receives the `INCOMING_PAYMENT` webhook for the deposit's transaction again, now `COMPLETED`. For `ACH_PULL`, `PENDING` means the deposit was created and is waiting for the customer's debit authorization; nothing has moved. It becomes `EXPIRED` at `expiresAt`, 30 minutes after creation. `PROCESSING` means the debit was submitted to the bank and the amount was credited to the destination USDB account. `COMPLETED` means the debit settled. `FAILED` means Grid refused the debit at submission or the bank returned it (see `achPull.returnCode`). A return after crediting does not remove the credit.
       required:
         - id
         - status
@@ -36454,14 +36692,17 @@ components:
           example: Quote:019542f5-b3e7-1d02-0000-000000000006
         targetType:
           $ref: '#/components/schemas/AgentDepositTargetType'
-          description: Whether `target` is a Lightning invoice or chain address.
+          description: Whether `target` is a Lightning invoice, chain address or external account ID.
         target:
           type: string
-          description: BOLT11 invoice when `targetType` is `LIGHTNING_INVOICE`; otherwise the address on `sourceNetwork` to which the customer sends funds.
+          description: BOLT11 invoice when `targetType` is `LIGHTNING_INVOICE`; a chain address when `CHAIN_ADDRESS`; the source external account ID when `EXTERNAL_ACCOUNT` for `ACH_PULL`.
           example: lnbc1pndepositpp5...
+        achPull:
+          $ref: '#/components/schemas/AgentAchPull'
+          description: ACH debit details. Present only for `ACH_PULL`.
         paymentLinks:
           type: object
-          description: Payment links for a `LIGHTNING` deposit. Absent for chain deposits.
+          description: Payment links present only for a `LIGHTNING` deposit.
           required:
             - cashApp
           properties:
@@ -36480,7 +36721,7 @@ components:
             - string
             - 'null'
           format: date-time
-          description: 'When the deposit must be paid by: the invoice''s expiry for `LIGHTNING`, or the quote''s for a chain deposit Grid funds through a quote. Omitted or null for standing chain deposit addresses, which do not expire.'
+          description: 'When the deposit must be paid by: the invoice''s expiry for `LIGHTNING`, or the quote''s for a chain deposit Grid funds through a quote. Omitted or null for standing chain deposit addresses, which do not expire. For `ACH_PULL`, the authorization deadline, 30 minutes after creation.'
           example: '2026-10-09T18:05:00Z'
         paidAfterExpiry:
           type: boolean
@@ -36803,6 +37044,96 @@ components:
           type: string
           description: Optional human-readable reason for the rejection, stored on the action and visible to the platform.
           example: Transaction amount exceeds customer's current risk limit.
+    AgentDebitAuthorizationRequest:
+      type: object
+      description: The customer's acceptance of the deposit's debit authorization text.
+      required:
+        - textVersion
+        - textSha256
+        - authorizedBy
+        - ipAddress
+        - userAgent
+      properties:
+        textVersion:
+          type: string
+          description: Must match the deposit's `achPull.authorization.textVersion`.
+          example: ach-pull-v1
+        textSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+          description: Must match the deposit's `achPull.authorization.textSha256`.
+          example: dd686beb4942839dbd48f8ebf1289ed5f8f3f3a984c1bdc96c035560cdc2922d
+        authorizedBy:
+          type: string
+          maxLength: 255
+          description: The platform's identifier for the signed-in person who authorized the debit.
+          example: user_12345
+        ipAddress:
+          type: string
+          maxLength: 45
+          description: IPv4 or IPv6 address of that person's request.
+          example: 203.0.113.42
+        userAgent:
+          type: string
+          maxLength: 1024
+          description: User agent of that person's request.
+          example: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36
+    AgentAchValidationRequest:
+      type: object
+      description: Plaid account and owner validation performed by the platform.
+      required:
+        - method
+        - ownerNameMatched
+        - validatedAt
+      properties:
+        method:
+          type: string
+          enum:
+            - PLAID_AUTH
+          description: Method used to validate the account's routing and account numbers.
+          example: PLAID_AUTH
+        ownerNameMatched:
+          type: boolean
+          description: 'Must be true: the platform matched an account owner reported by Plaid Identity to the customer''s verified name or business legal name. Grid refuses the request when it is false.'
+          example: true
+        institutionName:
+          type: string
+          maxLength: 255
+          description: Name of the bank reported by Plaid.
+          example: Chase
+        validatedAt:
+          type: string
+          format: date-time
+          description: When the platform validated the account and matched its owner.
+          example: '2026-10-09T17:55:00Z'
+    AgentAchValidation:
+      type: object
+      description: An ACH account validation accepted for pulls from this external account.
+      required:
+        - externalAccountId
+        - method
+        - validatedAt
+      properties:
+        externalAccountId:
+          type: string
+          description: The customer's external account that was validated.
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000003
+        method:
+          type: string
+          enum:
+            - PLAID_AUTH
+          description: Method used to validate the account's routing and account numbers.
+          example: PLAID_AUTH
+        institutionName:
+          type: string
+          maxLength: 255
+          description: Name of the bank reported by Plaid, when provided.
+          example: Chase
+        validatedAt:
+          type: string
+          format: date-time
+          description: When the platform validated the account and matched its owner.
+          example: '2026-10-09T17:55:00Z'
     AgentDeviceCodeRequest:
       type: object
       required:

@@ -1,10 +1,17 @@
 type: object
 description: >-
   A deposit that converts funds from an external network into
-  an internal account belonging to the agent's customer. A deposit reported
-  `FAILED` or `EXPIRED` can still become `COMPLETED` when the funds arrive
-  late; the platform then receives the `INCOMING_PAYMENT` webhook for the
-  deposit's transaction again, now `COMPLETED`.
+  an internal account belonging to the agent's customer. For networks other
+  than `ACH_PULL`, a deposit reported `FAILED` or `EXPIRED` can still become
+  `COMPLETED` when the funds arrive late; the platform then receives the
+  `INCOMING_PAYMENT` webhook for the deposit's transaction again, now
+  `COMPLETED`. For `ACH_PULL`, `PENDING` means the deposit was created and is
+  waiting for the customer's debit authorization; nothing has moved. It
+  becomes `EXPIRED` at `expiresAt`, 30 minutes after creation. `PROCESSING`
+  means the debit was submitted to the bank and the amount was credited to
+  the destination USDB account. `COMPLETED` means the debit settled. `FAILED`
+  means Grid refused the debit at submission or the bank returned it (see
+  `achPull.returnCode`). A return after crediting does not remove the credit.
 required:
   - id
   - status
@@ -59,17 +66,21 @@ properties:
     example: Quote:019542f5-b3e7-1d02-0000-000000000006
   targetType:
     $ref: ./AgentDepositTargetType.yaml
-    description: Whether `target` is a Lightning invoice or chain address.
+    description: Whether `target` is a Lightning invoice, chain address or external account ID.
   target:
     type: string
     description: >-
-      BOLT11 invoice when `targetType` is `LIGHTNING_INVOICE`; otherwise the
-      address on `sourceNetwork` to which the customer sends funds.
+      BOLT11 invoice when `targetType` is `LIGHTNING_INVOICE`; a chain address
+      when `CHAIN_ADDRESS`; the source external account ID when
+      `EXTERNAL_ACCOUNT` for `ACH_PULL`.
     example: lnbc1pndepositpp5...
+  achPull:
+    $ref: ./AgentAchPull.yaml
+    description: ACH debit details. Present only for `ACH_PULL`.
   paymentLinks:
     type: object
     description: >-
-      Payment links for a `LIGHTNING` deposit. Absent for chain deposits.
+      Payment links present only for a `LIGHTNING` deposit.
     required:
       - cashApp
     properties:
@@ -92,6 +103,7 @@ properties:
       When the deposit must be paid by: the invoice's expiry for `LIGHTNING`,
       or the quote's for a chain deposit Grid funds through a quote. Omitted or
       null for standing chain deposit addresses, which do not expire.
+      For `ACH_PULL`, the authorization deadline, 30 minutes after creation.
     example: '2026-10-09T18:05:00Z'
   paidAfterExpiry:
     type: boolean

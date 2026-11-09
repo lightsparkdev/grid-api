@@ -1,0 +1,41 @@
+type: object
+description: >-
+  The NACHA WEB (consumer) or CCD (business) single-debit authorization for
+  this deposit.
+required:
+  - textVersion
+  - text
+  - textSha256
+properties:
+  id:
+    type: string
+    description: Authorization identifier, present once authorized.
+    example: DebitAuthorization:019542f5-b3e7-1d02-0000-000000000004
+  textVersion:
+    type: string
+    description: Version of the authorization text rendered for this deposit.
+    example: ach-pull-v1
+  text:
+    type: string
+    description: >-
+      Exact authorization text Grid rendered for this deposit, including the
+      amount, account ending, date and how to revoke. Show it verbatim to the
+      customer.
+    example: >-
+      I authorize Lightspark Group, Inc. and its partner bank to debit $20.00 once from my CHECKING account ending ••6789 at Chase on or after November 9, 2026, to add funds to my Lightspark Agents account. This authorizes a single debit only. I can revoke it before the debit is sent by cancelling it on this page or by contacting support@lightspark.com; revoking does not affect a debit already sent.
+  textSha256:
+    type: string
+    pattern: '^[0-9a-f]{64}$'
+    description: Lowercase hex SHA-256 of the UTF-8 `text`.
+    example: e341cec8130241e0b34961bb2541adc23dca596c8bf4a68468a65037d4aaaf3d
+  authorizedAt:
+    type: string
+    format: date-time
+    description: When the customer authorized the debit.
+    example: '2026-10-09T18:01:00Z'
+  revokedAt:
+    type: string
+    format: date-time
+    description: >-
+      When the authorization was revoked. A single-debit authorization is used at once by its debit, so Grid sets this only when the debit could not be submitted after the authorization was recorded.
+    example: '2026-10-09T18:01:30Z'
