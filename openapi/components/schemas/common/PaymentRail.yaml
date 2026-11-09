@@ -41,4 +41,17 @@ description: >-
   in advance, `ACH` continues to settle same-business-day on production platforms; it
   already settles next-business-day on sandbox platforms. To guarantee same-day
   settlement after that date, request `ACH_SAME_DAY`.
+
+
+  `BANK_TRANSFER` pays the recipient's bank account. In COP, DKK, EUR, INR and PHP,
+  more than one bank rail can carry a payout, and Grid picks one for you. For these
+  currencies, send `BANK_TRANSFER` or omit the rail. In INR, `BANK_TRANSFER` needs an
+  account with `accountNumber` and `ifsc`. `UPI` is a separate rail and is not
+  deprecated.
+
+
+  For payouts in these currencies, these rail names are deprecated: `ACH_COLOMBIA` and
+  `BRE_B` (COP), `SEPA` and `SEPA_INSTANT` (DKK and EUR), `NEFT` and `RTGS` (INR), and
+  `INSTAPAY` and `PESONET` (PHP). Requests that send them still work. Payout responses
+  will show `BANK_TRANSFER` in their place, so read each of them as `BANK_TRANSFER`.
 example: ACH
