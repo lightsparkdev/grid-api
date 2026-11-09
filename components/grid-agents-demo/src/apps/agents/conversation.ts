@@ -72,6 +72,8 @@ export interface AgentAsk {
   denied?: string;
   /** The merchant whose terms the person accepts by allowing (Muse's footnote). */
   legal?: string;
+  /** An order brought over within the hour (food, groceries): how soon ("25–35 min"). */
+  soon?: string;
   form?: AgentForm;
   /** A card going into the vault: what the scan finds. */
   card?: { brand: string; last4: string; expires: string; name: string };

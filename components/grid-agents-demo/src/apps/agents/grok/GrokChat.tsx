@@ -500,7 +500,7 @@ export function GrokChat({ chat }: AgentChatProps) {
                   <span className={styles.glyph} style={{ ...mask(`${A}/plus.svg`), width: 14, height: 14 }} />
                 </motion.span>
                 <motion.span layout="position" transition={COMPOSER_SPRING} className={styles.fieldSlot}>
-                  <ComposerField chat={chat} placeholder="Ask Grok Bot" className={styles.fieldText} onMultiline={setMultiline} />
+                  <ComposerField chat={chat} placeholder="Ask Grok Bot to buy or send" className={styles.fieldText} onMultiline={setMultiline} />
                 </motion.span>
                 <motion.span layout="position" transition={COMPOSER_SPRING} className={styles.tools}>
                   <span className={styles.micDisc}>

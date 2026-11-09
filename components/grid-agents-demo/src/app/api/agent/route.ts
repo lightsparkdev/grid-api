@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { FlowParams, FundMethod } from '@/apps/agents/flows';
+import { listedFor, listsBrand, type BuyKind } from '@/apps/agents/products';
 import { NETWORK_NAME } from '@/apps/agents/story';
 import { canSend, type SendAsset } from '@/data/cryptoSend';
 import type { DepositNetwork } from '@/data/agentEvents';
@@ -8,11 +9,15 @@ import { BANK_COUNTRIES, currencyFor } from '@/data/bankCountries';
 import { CONNECTORS, type ConnectorId } from '@/data/connectors';
 import { anthropicAdapter } from '@/lib/llm/anthropic';
 import { takeTurn } from '@/lib/llm/limits';
+import { lookUpPrice } from '@/lib/llm/priceLookup';
+import { voiceFor } from '@/apps/agents/voices';
 import { systemPrompt, type PromptState } from '@/lib/llm/prompt';
 import type { AgentResponse, ChatTurn, ModelAnswer } from '@/lib/llm/types';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+/** The model, then a web price lookup for a product we don't list. */
+export const maxDuration = 30;
 
 const MAX_TEXT = 300;
 const MAX_TURNS = 12;
@@ -22,8 +27,9 @@ const FLOWS = ACTIONS.map((a) => a.id as string);
 const VARIANTS = ['order', 'subscription'];
 const COUNTRY_CODES = BANK_COUNTRIES.map((c) => c.code);
 const METHODS: FundMethod[] = ['card', 'bank', 'crypto'];
-const ASSETS: string[] = ['USDC', 'USDT', 'BTC', 'USDB'] satisfies SendAsset[];
-const NETWORKS = Object.keys(NETWORK_NAME);
+const ASSETS: string[] = ['USDC', 'USDT', 'USDB'] satisfies SendAsset[];
+/** Stablecoins only: no bitcoin, so no Lightning. */
+const NETWORKS = Object.keys(NETWORK_NAME).filter((n) => n !== 'LIGHTNING');
 const CONNECTOR_IDS = CONNECTORS.map((c) => c.id);
 
 /** Why the composer falls back to a scripted line instead of the model. */
@@ -42,15 +48,29 @@ function sameOrigin(req: NextRequest): boolean {
   }
 }
 
-/** Plain text only, a few sentences: no code, no markdown. */
+/** Plain text only, a few sentences: no code, no markdown. Never "crypto": it's stablecoins. */
 function clean(reply: string): string {
-  return reply
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/`([^`]*)`/g, '$1')
-    .replace(/[*_#>]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, MAX_REPLY);
+  return stablecoinsOnly(
+    reply
+      .replace(/\bcrypto(?:currenc(?:y|ies))?\b/gi, (m) => (m[0] === 'C' ? 'Stablecoins' : 'stablecoins'))
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/`([^`]*)`/g, '$1')
+      .replace(/[*_#>]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim(),
+  ).slice(0, MAX_REPLY);
+}
+
+const BITCOIN = /bitcoin|\bbtc\b|lightning/i;
+
+/** The playground never goes near bitcoin: a sentence that names it goes, and a reply that was only that says what it does. */
+function stablecoinsOnly(reply: string): string {
+  if (!BITCOIN.test(reply)) return reply;
+  const kept = (reply.match(/[^.!?]+[.!?]*/g) ?? [reply]).filter((s) => !BITCOIN.test(s)).join('').trim();
+  const lower = reply === reply.toLowerCase();
+  const what = lower ? 'i work in stablecoins, like usdc and usdt.' : 'I work in stablecoins, like USDC and USDT.';
+  // What's left may lean on what went ("one of those"), so it follows the line that says what it does.
+  return /stablecoin/i.test(kept) ? kept : `${what} ${kept}`.trim();
 }
 
 interface Body {
@@ -127,7 +147,7 @@ export async function POST(req: NextRequest) {
       connectors: CONNECTOR_IDS,
     });
     const started = FLOWS.includes(answer.flow) ? (answer.flow as ActionId) : undefined;
-    const params = started ? paramsFor(started, answer, recipients) : undefined;
+    const params = started ? await priced(key, paramsFor(started, answer, recipients)) : undefined;
     // A flow missing what it needs doesn't start; the reply stands on its own.
     const flow = params === null ? undefined : started;
     if (params === null && process.env.NODE_ENV === 'development') console.info('[agent] dropped', started, JSON.stringify({ ...answer, replies: undefined }));
@@ -136,21 +156,30 @@ export async function POST(req: NextRequest) {
     const quiet =
       ((flow === 'fund' || flow === 'cashout') && !params?.amount) ||
       (flow === 'crypto' && !!params?.address && !canSend(params.address, params.asset));
+    // A gift card without its store or value doesn't start, so "on it!" would promise nothing: it asks for what's missing.
+    const brand = typeof answer.brand === 'string' ? answer.brand.replace(/[^A-Za-z\u00C0-\u024F0-9 '’&.+-]/g, '').trim().slice(0, 32) : '';
+    const giftAsk = started === 'buy' && params === null && answer.kind === 'gift' ? (brand ? 'gift.amount' : 'gift.store') : undefined;
     const replies: Partial<Record<ConnectorId, string>> = {};
     for (const id of CONNECTOR_IDS) {
-      const raw = typeof answer.replies[id] === 'string' ? clean(answer.replies[id]) : '';
-      if (raw && !quiet) replies[id] = flow ? statement(raw) : raw;
+      const raw = giftAsk ? voiceFor(id).line(giftAsk, { brand }) : typeof answer.replies[id] === 'string' ? clean(answer.replies[id]) : '';
+      const line = raw && flow ? statement(raw) : raw;
+      // Still a question with the flow underway: the flow asks what it needs, so the line would only talk over it.
+      if (line && !quiet && !(flow && line.endsWith('?'))) replies[id] = line;
     }
     const reply = replies[connector] ?? '';
-    if (!reply && !quiet) return fallback('error');
+    if (!reply && !quiet && !flow) return fallback('error');
     const variant = flow === 'buy' && answer.variant === 'subscription' ? 1 : 0;
     // The rest of what one message asked for, checked like the first; any that can't start are dropped.
     const then = flow
-      ? (Array.isArray(answer.then) ? answer.then : []).flatMap((t) => {
-          const id = FLOWS.includes(t?.flow) ? (t.flow as ActionId) : undefined;
-          const p = id ? paramsFor(id, { ...t, replies: answer.replies }, recipients) : null;
-          return id && p !== null ? [{ flow: id, variant: id === 'buy' && t.variant === 'subscription' ? 1 : 0, ...(p ? { params: p } : {}) }] : [];
-        })
+      ? (
+          await Promise.all(
+            (Array.isArray(answer.then) ? answer.then : []).map(async (t) => {
+              const id = FLOWS.includes(t?.flow) ? (t.flow as ActionId) : undefined;
+              const p = id ? await priced(key, paramsFor(id, { ...t, replies: answer.replies }, recipients)) : null;
+              return id && p !== null ? [{ flow: id, variant: id === 'buy' && t.variant === 'subscription' ? 1 : 0, ...(p ? { params: p } : {}) }] : [];
+            }),
+          )
+        ).flat()
       : [];
     // Suggestions are for countries and choices: guessing someone's name would be odd.
     const suggestions = flow || /\bname\b/i.test(reply) ? [] : suggestionsOf(answer.suggestions);
@@ -164,6 +193,16 @@ export async function POST(req: NextRequest) {
     if (process.env.NODE_ENV === 'development') console.error('[agent]', e);
     return fallback('error');
   }
+}
+
+/** A product they named that we don't list gets its current price from the web; the model's estimate stops at its training. */
+async function priced(key: string, p: FlowParams | null | undefined): Promise<FlowParams | null | undefined> {
+  if (!p || p.kind === 'gift' || listedFor(p)) return p;
+  // A product they named, or a brand we don't list with what they want from it ("buffalo trace bourbon").
+  const named = p.product ?? (p.brand && !listsBrand(p.brand) ? p.query : undefined);
+  if (!named) return p;
+  const price = await lookUpPrice(key, named, p.brand);
+  return price ? { ...p, typicalPrice: price } : p;
 }
 
 /** A line that starts a flow doesn't ask anything (the flow does): a trailing question goes, if there's more to it. */
@@ -251,7 +290,25 @@ function paramsFor(flow: ActionId, a: ModelAnswer, saved: PromptState['recipient
       const card = a.method === 'card' ? ({ method: 'card' } as const) : undefined;
       if (a.variant !== 'subscription') {
         const query = text(a.query, 40);
-        return query ? { query, ...card } : card;
+        const product = text(a.product, 60);
+        const brand = text(a.brand, 32);
+        const kind = a.kind === 'gift' || a.kind === 'digital' ? (a.kind as BuyKind) : undefined;
+        const budget = positive(a.budget, 5_000);
+        const typicalPrice = positive(a.typicalPrice, 5_000);
+        const amount = kind === 'gift' ? positive(a.amount, 2_000) : undefined;
+        // A gift card needs the store and the value; the reply asks for whichever is missing.
+        if (kind === 'gift' && (!brand || !amount)) return null;
+        const order = {
+          ...(query && { query }),
+          ...(product && { product }),
+          ...(brand && { brand }),
+          ...(kind && { kind }),
+          ...(budget && { budget }),
+          ...(typicalPrice && { typicalPrice }),
+          ...(amount && { amount }),
+          ...card,
+        };
+        return Object.keys(order).length ? order : undefined;
       }
       const merchant = text(a.merchant, 32);
       const price = positive(a.price, 1_000);

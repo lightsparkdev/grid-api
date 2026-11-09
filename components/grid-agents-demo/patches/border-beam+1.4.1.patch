@@ -1,0 +1,151 @@
+diff --git a/node_modules/border-beam/dist/index.d.ts b/node_modules/border-beam/dist/index.d.ts
+index 3203d93..d2383ab 100644
+--- a/node_modules/border-beam/dist/index.d.ts
++++ b/node_modules/border-beam/dist/index.d.ts
+@@ -23,13 +23,14 @@ export default BorderBeam;
+  * - 'colorful': Full rainbow spectrum (default)
+  * - 'mono': Monochromatic grayscale
+  * - 'ocean': Blue and purple tones
++ * - 'global': Sky, blue and green tones
+  * - 'sunset': Warm orange, yellow, and red tones
+  * - 'forest': Green and teal tones
+  * - 'candy': Pink and magenta tones
+  * - 'ice': Cyan and pale blue tones
+  * - 'gold': Amber and yellow tones
+  */
+-export declare type BorderBeamColorVariant = 'colorful' | 'mono' | 'ocean' | 'sunset' | 'forest' | 'candy' | 'ice' | 'gold';
++export declare type BorderBeamColorVariant = 'colorful' | 'mono' | 'ocean' | 'global' | 'sunset' | 'forest' | 'candy' | 'ice' | 'gold';
+ 
+ /**
+  * Props for the BorderBeam component
+diff --git a/node_modules/border-beam/dist/index.es.js b/node_modules/border-beam/dist/index.es.js
+index b3a58bd..9810c11 100644
+--- a/node_modules/border-beam/dist/index.es.js
++++ b/node_modules/border-beam/dist/index.es.js
+@@ -165,6 +165,21 @@ const Ee = {
+     spike: { primary: "rgb(100, 120, 255)", secondary: "rgba(130, 100, 220, 0.98)" },
+     spikeLt: { primary: "rgb(60, 60, 180)", secondary: "rgb(80, 100, 200)" }
+   },
++  global: {
++    border: [
++      { color: "rgb(80, 220, 215)", pos: "33% -7.4%", size: "70px 40px" },
++      { color: "rgb(60, 160, 255)", pos: "12% -5%", size: "60px 35px" },
++      { color: "rgb(36, 122, 244)", pos: "2.1% 68.3%", size: "40px 70px" },
++      { color: "rgb(33, 167, 237)", pos: "2.1% 68.3%", size: "20px 35px" },
++      { color: "rgb(80, 255, 196)", pos: "74.4% 100%", size: "180px 32px" },
++      { color: "rgb(70, 167, 255)", pos: "55% 100%", size: "85px 26px" },
++      { color: "rgb(100, 240, 169)", pos: "93.9% 0%", size: "74px 32px" },
++      { color: "rgb(74, 142, 246)", pos: "100% 27.1%", size: "26px 42px" },
++      { color: "rgb(70, 255, 142)", pos: "100% 27.1%", size: "52px 48px" }
++    ],
++    spike: { primary: "rgb(100, 159, 255)", secondary: "rgba(94, 226, 173, 0.98)" },
++    spikeLt: { primary: "rgb(47, 135, 193)", secondary: "rgb(36, 122, 244)" }
++  },
+   sunset: {
+     border: [
+       { color: "rgb(255, 80, 50)", pos: "33% -7.4%", size: "70px 40px" },
+@@ -307,6 +322,28 @@ const Ee = {
+       { color: "rgba(110, 90, 230, 0.3)", pos: "100% 27%", size: "11px 12px" }
+     ]
+   },
++  global: {
++    border: [
++      { color: "rgb(20, 170, 240)", pos: "2% 68%", size: "9px 18px" },
++      { color: "rgb(17, 147, 213)", pos: "2% 68%", size: "4px 8px" },
++      { color: "rgb(80, 220, 215)", pos: "72% -3%", size: "59px 9px" },
++      { color: "rgb(80, 149, 255)", pos: "74% 100%", size: "42px 7px" },
++      { color: "rgb(70, 240, 150)", pos: "100% 27%", size: "10px 17px" },
++      { color: "rgb(80, 189, 220)", pos: "100% 27%", size: "10px 18px" },
++      { color: "rgb(70, 153, 255)", pos: "100% 27%", size: "5px 10px" },
++      { color: "rgb(90, 230, 225)", pos: "100% 27%", size: "11px 12px" }
++    ],
++    inner: [
++      { color: "rgba(20, 170, 240, 0.5)", pos: "2% 68%", size: "9px 18px" },
++      { color: "rgba(17, 147, 213, 0.45)", pos: "2% 68%", size: "4px 8px" },
++      { color: "rgba(80, 220, 215, 0.35)", pos: "72% -3%", size: "59px 9px" },
++      { color: "rgba(80, 149, 255, 0.35)", pos: "74% 100%", size: "42px 7px" },
++      { color: "rgba(70, 240, 150, 0.3)", pos: "100% 27%", size: "10px 17px" },
++      { color: "rgba(80, 189, 220, 0.4)", pos: "100% 27%", size: "10px 18px" },
++      { color: "rgba(70, 153, 255, 0.3)", pos: "100% 27%", size: "5px 10px" },
++      { color: "rgba(90, 230, 225, 0.3)", pos: "100% 27%", size: "11px 12px" }
++    ]
++  },
+   sunset: {
+     border: [
+       { color: "rgb(255, 180, 50)", pos: "2% 68%", size: "9px 18px" },
+@@ -518,6 +555,30 @@ const Ve = {
+       { color: "rgb(120, 90, 245)", sizeW: 30, sizeH: 30, offsetX: -110, offsetY: -1 }
+     ]
+   },
++  global: {
++    dark: [
++      { color: "rgb(80, 220, 215)", sizeW: 36, sizeH: 36, offsetX: 0, offsetY: 2 },
++      { color: "rgb(60, 160, 255)", sizeW: 30, sizeH: 32, offsetX: 39, offsetY: 0 },
++      { color: "rgb(36, 122, 244)", sizeW: 33, sizeH: 28, offsetX: -36, offsetY: 2 },
++      { color: "rgb(70, 255, 142)", sizeW: 29, sizeH: 34, offsetX: -54, offsetY: 0 },
++      { color: "rgb(70, 167, 255)", sizeW: 27, sizeH: 30, offsetX: 51, offsetY: -1 },
++      { color: "rgb(80, 255, 196)", sizeW: 36, sizeH: 24, offsetX: 21, offsetY: 1 },
++      { color: "rgb(74, 142, 246)", sizeW: 30, sizeH: 22, offsetX: -21, offsetY: 0 },
++      { color: "rgb(90, 239, 240)", sizeW: 25, sizeH: 28, offsetX: 66, offsetY: 1 },
++      { color: "rgb(100, 255, 189)", sizeW: 23, sizeH: 30, offsetX: -66, offsetY: -1 }
++    ],
++    light: [
++      { color: "rgb(55, 205, 200)", sizeW: 45, sizeH: 36, offsetX: 0, offsetY: 2 },
++      { color: "rgb(30, 136, 240)", sizeW: 35, sizeH: 32, offsetX: 65, offsetY: 0 },
++      { color: "rgb(17, 110, 243)", sizeW: 40, sizeH: 28, offsetX: -60, offsetY: 2 },
++      { color: "rgb(54, 226, 127)", sizeW: 35, sizeH: 34, offsetX: -90, offsetY: 0 },
++      { color: "rgb(48, 146, 242)", sizeW: 38, sizeH: 30, offsetX: 85, offsetY: -1 },
++      { color: "rgb(70, 240, 213)", sizeW: 50, sizeH: 24, offsetX: 35, offsetY: 1 },
++      { color: "rgb(45, 126, 245)", sizeW: 40, sizeH: 22, offsetX: -35, offsetY: 0 },
++      { color: "rgb(80, 192, 225)", sizeW: 35, sizeH: 28, offsetX: 110, offsetY: 1 },
++      { color: "rgb(90, 245, 211)", sizeW: 30, sizeH: 30, offsetX: -110, offsetY: -1 }
++    ]
++  },
+   sunset: {
+     dark: [
+       { color: "rgb(255, 100, 60)", sizeW: 36, sizeH: 36, offsetX: 0, offsetY: 2 },
+@@ -680,6 +741,17 @@ const Ue = {
+     { color: "rgba(110, 90, 240, 0.45)", sizeW: 21, sizeH: 24, offsetX: 66, offsetY: 0 },
+     { color: "rgba(140, 100, 255, 0.52)", sizeW: 18, sizeH: 26, offsetX: -66, offsetY: -1 }
+   ],
++  global: [
++    { color: "rgba(80, 220, 215, 0.48)", sizeW: 33, sizeH: 30, offsetX: 0, offsetY: 0 },
++    { color: "rgba(60, 160, 255, 0.42)", sizeW: 24, sizeH: 26, offsetX: 39, offsetY: -3 },
++    { color: "rgba(36, 122, 244, 0.48)", sizeW: 27, sizeH: 24, offsetX: -36, offsetY: 0 },
++    { color: "rgba(70, 255, 142, 0.42)", sizeW: 23, sizeH: 28, offsetX: -54, offsetY: -2 },
++    { color: "rgba(70, 167, 255, 0.50)", sizeW: 24, sizeH: 24, offsetX: 51, offsetY: -1 },
++    { color: "rgba(80, 255, 196, 0.45)", sizeW: 30, sizeH: 20, offsetX: 21, offsetY: 0 },
++    { color: "rgba(74, 142, 246, 0.40)", sizeW: 25, sizeH: 18, offsetX: -21, offsetY: -2 },
++    { color: "rgba(90, 239, 240, 0.45)", sizeW: 21, sizeH: 24, offsetX: 66, offsetY: 0 },
++    { color: "rgba(100, 255, 189, 0.52)", sizeW: 18, sizeH: 26, offsetX: -66, offsetY: -1 }
++  ],
+   sunset: [
+     { color: "rgba(255, 100, 60, 0.48)", sizeW: 33, sizeH: 30, offsetX: 0, offsetY: 0 },
+     { color: "rgba(255, 180, 50, 0.42)", sizeW: 24, sizeH: 26, offsetX: 39, offsetY: -3 },
+@@ -814,6 +886,26 @@ const Qe = {
+       ]
+     }
+   },
++  global: {
++    dark: {
++      spikes: [
++        { color1: "rgb(80, 242, 255)", color2: "rgb(80, 242, 255)" },
++        { color1: "rgba(59, 159, 241, 0.59)", color2: "rgba(59, 159, 241, 0.29)" },
++        { color1: "rgb(60, 146, 255)", color2: "rgb(60, 146, 255)" },
++        { color1: "rgba(48, 143, 242, 0.91)", color2: "rgba(48, 143, 242, 0.45)" },
++        { color1: "rgb(90, 255, 225)", color2: "rgb(90, 255, 225)" }
++      ]
++    },
++    light: {
++      spikes: [
++        { color1: "rgb(40, 149, 180)", color2: "rgba(40, 149, 180, 0.8)" },
++        { color1: "rgba(14, 115, 226, 0.7)", color2: "rgba(14, 115, 226, 0.46)" },
++        { color1: "rgb(10, 86, 210)", color2: "rgba(10, 86, 210, 0.82)" },
++        { color1: "rgb(14, 115, 226)", color2: "rgba(14, 115, 226, 0.7)" },
++        { color1: "rgb(55, 172, 205)", color2: "rgba(55, 172, 205, 0.78)" }
++      ]
++    }
++  },
+   sunset: {
+     dark: {
+       spikes: [

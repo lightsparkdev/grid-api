@@ -68,7 +68,7 @@ function GrokBalancePage({ wallet, view: v, onClose, onAction }: BalancePageProp
           sub="Available to spend"
         />
         <Row title="Spent today" value={v.used} />
-        <Row title="Add money" sub="From your card, bank or crypto" onClick={() => onAction('fund')} />
+        <Row title="Add money" sub="From your card, bank or stablecoins" onClick={() => onAction('fund')} />
         <Row title="Move to bank" sub={v.bank ? `To ${v.bank.name} ending ${v.bank.last4}` : 'To a bank you link'} onClick={() => onAction('cashout')} />
       </div>
 

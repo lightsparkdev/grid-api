@@ -1,7 +1,7 @@
 import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, Params, Product, SubAgent } from '../conversation';
 import { BANK_REACH } from '@/data/bankCountries';
-import { linkedBank, pullsFrom, railTiming } from '../linkedBank';
-import { shelfFor } from '../products';
+import { linkedBank, pullsFrom } from '../linkedBank';
+import { requestOf, shelfFor } from '../products';
 import { ADDRESS, PERSON, usd, usd2 } from '../story';
 
 /* The neutral voice: every line, ask and note a flow can produce, written so
@@ -23,9 +23,6 @@ const walletName = (p: Params | undefined) => (s(p, 'wallet').startsWith('your '
 
 /** "a Muse balance", or Your agent's "a balance". */
 const a = (p: Params | undefined) => (s(p, 'wallet').startsWith('your ') ? 'a balance' : `${/^[aeiou]/i.test(s(p, 'wallet')) ? 'an' : 'a'} ${s(p, 'wallet')}`);
-/** Withdrawn: on an instant rail it's there; ACH and bank transfers say when it lands. */
-const cashoutDone = (rail: string) =>
-  rail === 'ACH' ? 'Sent. It reaches your bank in 1–3 business days.' : rail === 'Bank Transfer' ? 'Sent. It should land within a business day.' : 'Done. It’s in your account.';
 /** "Your Muse balance", for a line that opens with it. */
 const Yours = (p: Params | undefined) => yours(p).charAt(0).toUpperCase() + yours(p).slice(1);
 /** What a purchase goes on: the saved card, or the app's balance. */
@@ -33,6 +30,15 @@ export const paidFrom = (p: Params | undefined) => (n(p, 'card') ? 'Visa ••�
 export const CARD = 'Visa •••• 4242';
 /** "Your Muse balance won't cover it. ", ahead of a purchase that went to the card for that reason. */
 export const short = (p: Params | undefined) => (n(p, 'short') ? `${Yours(p)} won’t cover it. ` : '');
+/** A withdrawal to their own bank lands at once, on every rail. */
+const WITHDRAW_TIMING = 'It lands in seconds.';
+/** How soon food and groceries get there. */
+const SOON = '25–35 min';
+/** When the one they named costs more than they said they'd spend. */
+export const overBudget = (p: Params | undefined) => (n(p, 'over') ? ` That’s over the ${usd(n(p, 'over'))} you mentioned.` : '');
+/** A gift card that doesn't come in the value they asked for: the nearest it does. */
+const giftRange = (p: Params | undefined) =>
+  n(p, 'asked') ? ` ${s(p, 'merchant')} cards ${n(p, 'asked') > n(p, 'amount') ? 'top out' : 'start'} at ${usd(n(p, 'amount'))}.` : '';
 
 /** " R$250 is $46.30 right now.", or " $50.00 is ₱2,900 right now." when they asked in dollars; nothing for a payment in dollars. */
 export const converted = (p: Params | undefined, how = 'right now') => (n(p, 'converted') ? ` ${s(p, 'from')} is ${s(p, 'to')} ${how}.` : '');
@@ -58,7 +64,7 @@ export const STATUS = {
 export type StatusKey = keyof typeof STATUS;
 
 export const PRODUCTS = {
-  'buy.options': (p?: Params) => shelfFor(s(p, 'query')).options.filter((o) => !n(p, 'only') || o.pick),
+  'buy.options': (p?: Params) => shelfFor(requestOf(p)).options.filter((o) => !n(p, 'only') || o.pick),
 } satisfies Record<string, (p?: Params) => Product[]>;
 
 export type ProductsKey = keyof typeof PRODUCTS;
@@ -127,6 +133,9 @@ export const LINES = {
   'connect.denied': (p) => (n(p, 'hasAgent') ? `No problem. I’ll keep paying with your ${CARD}.` : 'No problem. I won’t touch money until you connect me.'),
   'connect.already': (p) => `I’m already set up. Here’s ${yours(p)}.`,
 
+  'fund.offer': () => 'It’s empty for now. Want to add money?',
+  'fund.offerShort': () => 'Want to add money?',
+  'fund.offerFrom': (p) => `${Yours(p)} is empty. Want to add money from ${n(p, 'bank') ? `your ${linkedBank().bankName} account` : `your ${CARD}`}?`,
   'fund.amount': () => 'How much do you want to add?',
   'fund.ask': () => 'How do you want to add it?',
   'fund.needed': (p) => `I’ll need ${usd(n(p, 'amount'))} in ${yours(p)} to cover that. How do you want to add it?`,
@@ -134,7 +143,7 @@ export const LINES = {
   'fund.network': (p) => `Which network is your ${s(p, 'asset')} on?`,
   'fund.address': (p) =>
     s(p, 'network') === 'LIGHTNING' ? 'Here’s your Lightning invoice. Whatever you send lands as dollars.' : `Here’s your address for ${s(p, 'method')}. Whatever you send lands as dollars.`,
-  'fund.other': (p) => (n(p, 'again') ? 'Okay. Crypto works too, or I can hold off.' : `No problem. Want to add the ${usd(n(p, 'amount'))} another way?`),
+  'fund.other': (p) => (n(p, 'again') ? 'Okay. Stablecoins work too, or I can hold off.' : `No problem. Want to add the ${usd(n(p, 'amount'))} another way?`),
   'fund.later': () => 'Okay, no money added. Just say when.',
   'task.held': (p) => `Okay, I’ll hold off on ${s(p, 'what')}. Just say when.`,
   'fund.bank': (p) => `Pulling ${usd(n(p, 'amount'))} from your ${linkedBank().bankName} •••• ${linkedBank().last4} over ACH.`,
@@ -156,7 +165,7 @@ export const LINES = {
   'card.denied': () => 'Okay, no card for now. You can add one any time.',
   'card.done': (p) => (n(p, 'topUp') ? `Saved. I can pay with your ${CARD} now, or top up from it.` : `Saved. I can pay with your ${CARD} now.`),
   'card.already': (p) => (n(p, 'topUp') ? `Your ${CARD} is already saved. I can pay with it or top up from it.` : `Your ${CARD} is already saved. I can pay with it.`),
-  'balance.offer': (p) => `Want a ${s(p, 'wallet').replace(/^your /, '')} too? You could keep money there, get paid into it, and send money abroad.`,
+  'balance.offer': (p) => `Want a ${s(p, 'wallet').replace(/^your /, '')} too? I can pay from it without your card, and you can get paid into it and send money abroad.`,
   'balance.later': () => 'No problem. Just ask when you want one.',
   'bank.done': () => `Linked. I’ll keep your ${linkedBank().bankName} •••• ${linkedBank().last4} connected for next time, for adding money and withdrawing.`,
   'bank.already': () =>
@@ -169,7 +178,12 @@ export const LINES = {
       : `You don’t have ${a(p)} yet. Set one up to keep money here and get paid, or add a card for me to pay with.`,
 
   'limits.intro': () => 'I can’t change my own limits. Confirm these and they’re set.',
-  'limits.done': (p) => `Done. I’ll handle anything up to ${usd(n(p, 'approve'))} and ask you above it.`,
+  'limits.done': (p) =>
+    s(p, 'what') === 'perTx'
+      ? `Done. I can spend up to ${usd(n(p, 'perTx'))} in one payment now.`
+      : s(p, 'what') === 'daily'
+        ? `Done. I can spend up to ${usd(n(p, 'daily'))} a day now.`
+        : `Done. I’ll handle anything up to ${usd(n(p, 'approve'))} and ask you above it.`,
   'limits.denied': () => 'Okay, your limits stay as they are.',
   'limits.same': (p) => `Those are already my limits: I handle anything up to ${usd(n(p, 'approve'))}, ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day.`,
 
@@ -181,7 +195,7 @@ export const LINES = {
   'pay.denied': () => 'Okay, I won’t send it.',
   'crypto.where': () => 'Sure. What address should I send it to?',
   'crypto.invalid': () => 'That doesn’t look like an address I can send to. Can you paste the whole thing?',
-  'crypto.onchain': () => 'That’s a Bitcoin address. I can pay a Lightning invoice or send USDB to a Spark address, but not bitcoin on-chain yet.',
+  'crypto.onchain': () => 'I can only send stablecoins: USDC or USDT to a wallet address.',
   'crypto.mismatch': (p) => `I can’t send ${s(p, 'asset')} there: ${s(p, 'network')} addresses only take ${s(p, 'takes')}.`,
   'crypto.amount': () => 'How much do you want to send?',
   'crypto.asset': () => 'USDC or USDT?',
@@ -193,12 +207,13 @@ export const LINES = {
         ? `${s(p, 'sends')} to ${s(p, 'short')} on ${s(p, 'network')}. The network fee is ${usd2(n(p, 'fee'))}, so exactly ${s(p, 'sends')} arrives.`
         : `${s(p, 'sends')} to ${s(p, 'short')} on ${s(p, 'network')}. There’s no network fee.`,
   'crypto.done': (p) => (n(p, 'lightning') ? 'Paid. The invoice is settled.' : `Sent. ${s(p, 'sends')} is at ${s(p, 'short')} on ${s(p, 'network')}.`),
-  'limit.over': (p) => `That’s more than the ${usd(n(p, 'perTx'))} I can spend in one payment. Raise my limit and I’ll do it.`,
-  'pay.over': (p) => `That’s more than the ${usd(n(p, 'perTx'))} I can send in one payment. Raise my limit and I’ll send it.`,
+  'limit.raise': (p) => `That’s more than the ${usd(n(p, 'perTx'))} I can ${s(p, 'act') || 'spend'} in one payment. Raise it to ${usd(n(p, 'to'))} and I’ll go ahead.`,
+  'limit.kept': () => 'Okay, your limit stays as it is, so I’ll hold off on this one.',
 
-  'buy.intro': (p) => `Found three that fit. The ${s(p, 'merchant')} ${s(p, 'model')} is the best of them, ${usd2(n(p, 'amount'))} with standard shipping.`,
-  'buy.which': () => 'Want that one, or one of the others?',
-  'buy.found': (p) => `Found it: the ${s(p, 'merchant')} ${s(p, 'model')}, ${usd2(n(p, 'amount'))} with standard shipping.`,
+  'buy.which': (p) => `I’d go with the ${s(p, 'merchant')} ${s(p, 'model')}. Want that one, or one of the others?`,
+  'buy.note': (p) => `${overBudget(p)}${giftRange(p)}`.trim(),
+  'gift.amount': (p) => `How much should the ${s(p, 'brand')} gift card be?`,
+  'gift.store': () => 'Which store should the gift card be for?',
   'buy.picked': (p) => `Got your pick: the ${s(p, 'item')}. I’ll check the total and get checkout ready. Nothing is charged without your approval.`,
   'buy.payWith': (p) => `Want me to pay from ${yours(p)} or your ${CARD}?`,
   'buy.shortCard': (p) => `${Yours(p)} won’t cover it. Should I put it on your ${CARD}, or do you want to add ${usd(n(p, 'amount'))} first?`,
@@ -208,7 +223,8 @@ export const LINES = {
       ? `${short(p)}I’ll pay with a one-time card for exactly this order, charged to your ${CARD}.`
       : `I’ll pay from ${yours(p)} with a one-time card for exactly this order.`,
   'buy.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m checking out.`,
-  'buy.done': () => 'Ordered. It arrives Thursday.',
+  'buy.done': (p) => (n(p, 'now') ? 'Ordered. It gets there in about 30 minutes.' : 'Ordered. It arrives Thursday.'),
+  'buy.sent': () => 'Done. It’s in your inbox.',
   'buy.denied': () => 'Okay, I won’t place the order. Nothing was charged.',
 
   'sub.intro': (p) => `It’s ${usd2(n(p, 'amount'))} a month for ${s(p, 'item')}.`,
@@ -233,9 +249,9 @@ export const LINES = {
   'cashout.bank': () => 'I’ll need your bank first. Link it once and I can move money there any time. Where is it?',
   'cashout.over': (p) => `You have ${usd2(n(p, 'balance'))} in ${yours(p)}, so I can move up to that.`,
   'cashout.empty': (p) => `There’s nothing in ${yours(p)} to move yet.`,
-  'cashout.quote': (p) => `Moving ${s(p, 'local')} to your ${s(p, 'to')} over ${s(p, 'rail')}. ${railTiming(linkedBank())}`,
+  'cashout.quote': (p) => `Moving ${s(p, 'local')} to your ${s(p, 'to')} over ${s(p, 'rail')}. ${WITHDRAW_TIMING}`,
   'cashout.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m sending it now.`,
-  'cashout.done': () => cashoutDone(linkedBank().country.rail),
+  'cashout.done': () => 'Done. It’s in your account.',
   'cashout.noBalance': (p) => `There’s nothing to move yet. Set up ${a(p)} and add money, then I can move it to your bank.`,
   'cashout.denied': () => 'Okay, the money stays put.',
 
@@ -277,7 +293,7 @@ export const ASKS = {
   limits: (p) => ({
     title: `Update ${s(p, 'agent').replace(/^Your /, 'your ')}’s limits`,
     rows: limitsRows(p),
-    allow: 'Save',
+    allow: s(p, 'go') ? `Save and ${s(p, 'go')}` : 'Save',
     allowed: 'Saved',
     denied: 'Canceled',
   }),
@@ -345,6 +361,7 @@ export const ASKS = {
     title: `Buy at ${s(p, 'merchant')}`,
     who: { name: s(p, 'merchant'), icon: s(p, 'image'), detail: `${s(p, 'item')} · one-time card` },
     amount: usd2(n(p, 'amount')),
+    ...(n(p, 'now') && { soon: SOON }),
     method: `From ${paidFrom(p)} · one-time card`,
     pay: payOf(p),
     allow: 'Approve',
@@ -535,12 +552,17 @@ export const MUSE_ORDER = (p: Params | undefined): AgentAsk => ({
   badge: s(p, 'merchant')[0],
   rows: [
     { text: s(p, 'item'), sub: 'Qty: 1', image: s(p, 'image') },
-    { text: 'Standard by 2 to 5 business days', sub: ADDRESS, icon: 'truck' },
+    n(p, 'email')
+      ? { text: 'Delivered by email', sub: PERSON.email, icon: 'envelope' }
+      : n(p, 'now')
+        ? { text: `Delivery in ${SOON}`, sub: ADDRESS, icon: 'truck' }
+        : { text: 'Standard by 2 to 5 business days', sub: ADDRESS, icon: 'truck' },
   ],
   total: usd2(n(p, 'amount')),
   payWith: n(p, 'card') ? CARD : 'Muse balance',
   method: n(p, 'card') ? 'Expires 09/29' : `${usd2(n(p, 'balance'))} available`,
   legal: s(p, 'merchant'),
+  ...(n(p, 'now') && { soon: SOON }),
   pay: payOf(p),
   allow: 'Allow',
   allowed: 'Allowed',

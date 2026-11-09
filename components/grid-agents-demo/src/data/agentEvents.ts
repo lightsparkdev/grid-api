@@ -60,7 +60,8 @@ export interface Limits {
 export type AgentEvent =
   /** The platform creates the agent with its policy, and the agent redeems its device code. `lite`: only to pay
    *  with the person's card, no balance yet; without it, the balance is on too. */
-  | { type: 'connect'; lite?: boolean }
+  /** `limits`: what the agent starts with when the task it's for needs more than the defaults. */
+  | { type: 'connect'; lite?: boolean; limits?: Limits }
   /** The agent asks for a deposit address or invoice. */
   | { type: 'fund.deposit'; network: DepositNetwork; currency: string; amount: number }
   /** The deposit, or the bank transfer, landed. */

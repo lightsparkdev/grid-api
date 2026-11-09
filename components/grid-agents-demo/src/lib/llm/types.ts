@@ -33,6 +33,11 @@ export interface ModelAnswer {
   merchant?: string;
   price?: number;
   query?: string;
+  kind?: string;
+  product?: string;
+  brand?: string;
+  budget?: number;
+  typicalPrice?: number;
   city?: string;
   checkIn?: string;
   checkOut?: string;

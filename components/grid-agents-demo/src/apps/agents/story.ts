@@ -6,23 +6,22 @@ import type { DepositNetwork, Limits, Purchase } from '@/data/agentEvents';
 export const PERSON = { first: 'Alex', full: 'Alex Rivera', email: 'alex.rivera@gmail.com', phone: '+1 (310) 555-0142' };
 export const ADDRESS = '2140 Ocean Park Blvd, Apt 4, Santa Monica CA 90405, US';
 
-/** Add funds, in the order the product leads with: a card, a bank, then crypto. */
+/** Add funds, in the order the product leads with: a card, a bank, then stablecoins. Never "crypto" on screen. */
 export const FUND = {
   card: 'Credit or debit card',
   bank: 'Bank account',
-  crypto: 'Crypto',
+  crypto: 'Stablecoins',
 };
 
 export type CryptoAsset = 'USDC' | 'USDT' | 'BTC';
 
 /**
- * What crypto a top-up takes and the networks each can arrive on: USDT on Tron but USDC not, and Bitcoin over
- * Lightning or Spark. Spark is ahead of `AgentDepositNetwork`, which doesn't list it yet.
+ * The stablecoins a top-up takes and the networks each can arrive on: USDT on Tron but USDC not. The playground
+ * only ever talks stablecoins, so Bitcoin isn't offered.
  */
 export const CRYPTO: { asset: CryptoAsset; label: string; networks: DepositNetwork[] }[] = [
   { asset: 'USDC', label: 'USDC', networks: ['BASE', 'SOLANA', 'ETHEREUM', 'POLYGON', 'ARBITRUM'] },
   { asset: 'USDT', label: 'USDT', networks: ['TRON', 'ETHEREUM', 'SOLANA', 'POLYGON', 'ARBITRUM'] },
-  { asset: 'BTC', label: 'Bitcoin', networks: ['LIGHTNING', 'SPARK'] },
 ];
 
 export const NETWORK_NAME: Record<DepositNetwork, string> = {
@@ -95,7 +94,7 @@ export const LUCIA = {
   invoice: 'INV-0042',
   options: [
     { label: 'USDC on Base', network: 'BASE' as DepositNetwork, currency: 'USDC' },
-    { label: 'Bitcoin over Lightning', network: 'LIGHTNING' as DepositNetwork, currency: 'BTC' },
+    { label: 'USDT on Ethereum', network: 'ETHEREUM' as DepositNetwork, currency: 'USDT' },
   ],
 };
 

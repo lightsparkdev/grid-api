@@ -119,15 +119,3 @@ export function depositDetails(bank: LinkedBank, usdCents: number): DepositDetai
       };
   }
 }
-
-/** How long a top-up over the bank's rail takes to land, in the agent's words. */
-export function railTiming(bank: LinkedBank): string {
-  switch (bank.country.rail) {
-    case 'ACH':
-      return 'Bank transfers take 1–3 business days.';
-    case 'Bank Transfer':
-      return 'It usually lands within a business day.';
-    default:
-      return `${bank.country.rail} usually lands in seconds.`;
-  }
-}

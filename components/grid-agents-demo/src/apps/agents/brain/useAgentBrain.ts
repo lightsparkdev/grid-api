@@ -66,8 +66,8 @@ const SPEAKS_FIRST = new Set([
   'connect.already',
   'cashout.noBalance',
   'cashout.empty',
-  'limit.over',
-  'pay.over',
+  'cashout.bank',
+  'pay.newRecipient',
   'pay.where',
   'crypto.invalid',
   'crypto.mismatch',
@@ -84,7 +84,8 @@ const SPEAKS_FIRST = new Set([
 /** A reply that approves an open ask; anything else declines it. */
 const YES = /^\s*(y|yes|yeah|yep|yup|ok|okay|sure|approve|approved|do it|go ahead|send it)\b/i;
 /** A reply that only declines it; anything that's neither is a new request, answered once the ask is declined. */
-const NO = /^\s*(n|no|nope|nah|cancel|decline|deny|stop|don'?t|not now|never ?mind)\b/i;
+const NO =
+  /^\s*(?:(?:actually|wait|oh|ok(?:ay)?|hmm|um|so)[\s,.!]*)*(n|no|nope|nah|cancel|decline|deny|stop|don'?t|not now|never ?mind|forget (?:it|that)|hold off|scratch that)\b/i;
 
 /** A run's handle: cancelling it settles whatever it was waiting on. */
 interface Run {
@@ -564,6 +565,8 @@ export function useAgentBrain({
     setComposer,
     send,
     canSend: composer.trim().length > 0 && (answering || awaitingAmount || (!running && !busy)),
+    /** A flow is waiting on a typed dollar amount ("How much?"). */
+    awaitingAmount,
     busy,
     allow,
     deny,

@@ -83,7 +83,7 @@ export const ACTIONS: ActionDef[] = [
   {
     id: 'fund',
     label: 'Add funds',
-    desc: 'Top up from a card, a bank or crypto',
+    desc: 'Top up from a card, a bank or stablecoins',
     prompts: ['Add money to my account'],
   },
   {
@@ -100,8 +100,8 @@ export const ACTIONS: ActionDef[] = [
   },
   {
     id: 'crypto',
-    label: 'Send crypto',
-    desc: 'Pay out stablecoins to an address, or a Lightning invoice',
+    label: 'Send stablecoins',
+    desc: 'Pay out stablecoins to a wallet address',
     prompts: ['Send 50 USDC to 0x8C1d4bE27a9F3c05D6e1b2A4f7C9d0E3b5A6c2F1'],
   },
   {
@@ -119,7 +119,7 @@ export const ACTIONS: ActionDef[] = [
   {
     id: 'getpaid',
     label: 'Get paid',
-    desc: 'A client pays the account in stablecoins or BTC',
+    desc: 'A client pays the account in stablecoins',
     prompts: ['Lucía wants to pay my invoice. Where should she send it?'],
   },
   {
@@ -149,6 +149,6 @@ export function actionLabel(id: ActionId): string {
 /** The picker's sections: the agent's account as a two-column grid read across,
  *  related flows sharing a row, then its payments as a list. */
 export const FLOW_GROUPS: { label: string; flows: ActionId[]; columns?: 1 | 2 }[] = [
-  { label: 'Account', flows: ['connect', 'limits', 'card', 'bank', 'fund', 'cashout', 'balance', 'history'] },
-  { label: 'Payments', flows: ['pay', 'getpaid', 'buy', 'agent'], columns: 1 },
+  { label: 'Explore account flows', flows: ['connect', 'limits', 'card', 'bank', 'fund', 'cashout', 'balance', 'history'] },
+  { label: 'Explore payment flows', flows: ['pay', 'getpaid', 'buy', 'agent'], columns: 1 },
 ];

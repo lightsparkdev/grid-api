@@ -28,9 +28,9 @@ export function railBlurb(c: BankCountry) {
   const cur = currencyFor(c);
   switch (c.rail) {
     case 'ACH':
-      return `ACH in ${cur}, 1–3 business days`;
+      return `ACH in ${cur}`;
     case 'Bank Transfer':
-      return `Bank transfer in ${cur}, within a business day`;
+      return `Bank transfer in ${cur}`;
     default:
       return `${c.rail} in ${cur}, usually lands in seconds`;
   }

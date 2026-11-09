@@ -9,6 +9,7 @@ import { AppPanel } from '@/components/AppPanel/AppPanel';
 import { ApiPanel } from '@/components/ApiPanel/ApiPanel';
 import { ColumnResizeHandle } from '@/components/ColumnResizeHandle/ColumnResizeHandle';
 import { ThemeSync } from '@/components/ThemeSync';
+import { ComposerDials } from '@/apps/agents/ComposerBeam';
 import { useColumnResize } from '@/hooks/useColumnResize';
 import { useAgentsDemoLogic } from '@/hooks/useAgentsDemoLogic';
 import { LAYOUT_WIDE_PX } from '@/lib/layout';
@@ -127,17 +128,19 @@ export default function Page() {
       </div>
       <div ref={stackColRef} className={styles.stackCol}>
         <div className={styles.appCol}>
-          <AppPanel
-            chatKey={logic.chatKey}
-            connector={logic.connector}
-            entry={logic.entry}
-            context={logic.context}
-            onEvent={logic.onEvent}
-            onActiveFlow={logic.setActiveFlow}
-            onRun={logic.onRun}
-            onCompleted={logic.onCompleted}
-            reply={logic.reply}
-          />
+          <ComposerDials>
+            <AppPanel
+              chatKey={logic.chatKey}
+              connector={logic.connector}
+              entry={logic.entry}
+              context={logic.context}
+              onEvent={logic.onEvent}
+              onActiveFlow={logic.setActiveFlow}
+              onRun={logic.onRun}
+              onCompleted={logic.onCompleted}
+              reply={logic.reply}
+            />
+          </ComposerDials>
         </div>
         <ColumnResizeHandle onMouseDown={onResizeStart} />
         <div

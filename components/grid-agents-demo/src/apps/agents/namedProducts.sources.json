@@ -1,0 +1,1283 @@
+{
+ "checked": "2026-11-08",
+ "entries": [
+  {
+   "name": "Apple iPhone 17",
+   "price": 899,
+   "source": "https://www.apple.com/shop/buy-iphone/iphone-17",
+   "note": "Current base iPhone; iPhone 18 non-Pro has not shipped. Apple advertises from $899 with a $30 carrier connectivity discount; unlocked (connect later) is $929 for 256GB."
+  },
+  {
+   "name": "Apple iPhone Air",
+   "price": 1099,
+   "source": "https://www.apple.com/shop/buy-iphone/iphone-air",
+   "note": "Exists; 256GB base. Apple raised the Air from $999 to $1099 in September 2026."
+  },
+  {
+   "name": "Apple iPhone Duo",
+   "price": 1999,
+   "source": "https://www.apple.com/shop/buy-iphone/iphone-duo",
+   "note": "Apple's foldable, launched Oct 23, 2026. $1,999 for 256GB (512GB $2,199, 1TB $2,599, 2TB $3,199)."
+  },
+  {
+   "name": "Apple iPhone 18 Pro",
+   "price": 1199,
+   "source": "https://www.apple.com/shop/buy-iphone/iphone-18-pro",
+   "note": "256GB base. Announced September 9, 2026; 17 Pro discontinued."
+  },
+  {
+   "name": "Apple iPhone 18 Pro Max",
+   "price": 1299,
+   "source": "https://www.apple.com/shop/buy-iphone/iphone-18-pro/6.9-inch-display-256gb-black-unlocked",
+   "note": "256GB base, 6.9-inch. Unlocked 256GB Black lists at $1,299."
+  },
+  {
+   "name": "Apple iPhone 17e",
+   "price": 699,
+   "source": "https://www.apple.com/shop/buy-iphone/iphone-17e",
+   "note": "Current e-series. Launched at $599 in March 2026; Apple Store now $699 for 256GB unlocked."
+  },
+  {
+   "name": "Samsung Galaxy S26",
+   "price": 999.99,
+   "source": "https://www.samsung.com/us/smartphones/galaxy-s26/buy/galaxy-s26-256gb-unlocked-sku-sm-s942uzwexaa/",
+   "note": "Unlocked 256GB MSRP $999.99; Samsung.com currently sells it at $849.99."
+  },
+  {
+   "name": "Samsung Galaxy S26 Ultra",
+   "price": 1399.99,
+   "source": "https://www.samsung.com/us/smartphones/galaxy-s26-ultra/buy/galaxy-s26-ultra-256gb-unlocked-sku-sm-s948uzkaxaa/",
+   "note": "Unlocked 256GB MSRP $1,399.99; Samsung.com currently sells it at $999.99."
+  },
+  {
+   "name": "Samsung Galaxy Z Flip8",
+   "price": 1199.99,
+   "source": "https://www.samsung.com/us/smartphones/galaxy-z-flip8/buy/galaxy-z-flip8-256gb-unlocked-sku-sm-f776ulgaxaa/",
+   "note": "Unlocked 256GB list $1,199.99."
+  },
+  {
+   "name": "Samsung Galaxy Z Fold8",
+   "price": 1899.99,
+   "source": "https://www.samsung.com/us/smartphones/galaxy-z-fold8/buy/galaxy-z-fold8-256gb-unlocked-sku-sm-f971uzkaxaa/",
+   "note": "Unlocked 256GB MSRP $1,899.99; Samsung.com currently sells it at $1,599.99. Fold 8 Ultra is a separate, higher-priced model."
+  },
+  {
+   "name": "Google Pixel 11",
+   "price": 899,
+   "source": "https://store.google.com/product/pixel_11?hl=en-US",
+   "note": "256GB base. Google Store shows $899 list; lower figures are after trade-in/promo."
+  },
+  {
+   "name": "Google Pixel 11 Pro",
+   "price": 1099,
+   "source": "https://store.google.com/us/product/pixel_11_pro?hl=en-US",
+   "note": "Pixel 11 Pro (not Pro XL). List $1,099; Pro XL starts at $1,299."
+  },
+  {
+   "name": "Google Pixel 10a",
+   "price": 599,
+   "source": "https://store.google.com/us/product/pixel_10a?hl=en-US",
+   "note": "Current a-series. List $599 for 128GB after an October 2026 $100 increase; Google Store currently shows $549 through Nov 8, 2026."
+  },
+  {
+   "name": "Apple iPad (A16)",
+   "price": 449,
+   "source": "https://www.apple.com/shop/buy-ipad/ipad",
+   "note": "11-inch iPad with A16, 128GB Wi-Fi."
+  },
+  {
+   "name": "Apple 11-inch iPad Air",
+   "price": 749,
+   "source": "https://www.apple.com/shop/buy-ipad/ipad-air/11-inch-display-128gb-blue-wifi",
+   "note": "11-inch Wi-Fi 128GB. Current Air on sale is M4; 13-inch Air starts higher."
+  },
+  {
+   "name": "Apple 11-inch iPad Pro",
+   "price": 1199,
+   "source": "https://www.apple.com/shop/buy-ipad/ipad-pro",
+   "note": "M5, 256GB Wi-Fi base. Apple's 11-inch iPad Pro 256GB list is $1,199."
+  },
+  {
+   "name": "Apple iPad mini",
+   "price": 699,
+   "source": "https://www.apple.com/shop/buy-ipad/ipad-mini",
+   "note": "New 8.5-inch iPad mini with A20 Pro; 128GB Wi-Fi from $699."
+  },
+  {
+   "name": "Amazon Kindle",
+   "price": 149.99,
+   "source": "https://www.amazon.com/Kindle-Graphite-16GB/dp/B0FXJ9PGSJ",
+   "note": "Newest 6-inch 16GB Kindle (2026 redesign), Graphite. Aluminum 32GB version is $189.99."
+  },
+  {
+   "name": "Amazon Kindle Paperwhite",
+   "price": 199.99,
+   "source": "https://www.amazon.com/Kindle-Paperwhite%C2%A0-Graphite-16GB/dp/B0GHTD6Q5C",
+   "note": "Newest 7-inch 16GB Paperwhite. Signature Edition is $249.99."
+  },
+  {
+   "name": "Amazon Kindle Scribe",
+   "price": 499.99,
+   "source": "https://www.amazon.com/dp/B0DVQQGMCZ",
+   "note": "Current non-color Scribe, 32GB newest model, pen included. Scribe Colorsoft is a separate $629.99 model."
+  },
+  {
+   "name": "Samsung Galaxy Tab S11",
+   "price": 999.99,
+   "source": "https://www.samsung.com/us/tablets/galaxy-tab-s11/buy/galaxy-tab-s11-128gb-gray-wi-fi-sku-sm-x730nzaaxar/",
+   "note": "11-inch base size, 128GB Wi-Fi. Tab S11 Ultra (14.6-inch) starts at $1,299.99."
+  },
+  {
+   "name": "Apple 13-inch MacBook Air",
+   "price": 1299,
+   "source": "https://www.apple.com/shop/buy-mac/macbook-air",
+   "note": "M5 base. Apple shop 'Buy from $1299' for 13-inch."
+  },
+  {
+   "name": "Apple 15-inch MacBook Air",
+   "price": 1499,
+   "source": "https://www.apple.com/shop/buy-mac/macbook-air/15-inch",
+   "note": "M5, 16GB/512GB base at $1,499."
+  },
+  {
+   "name": "Apple 14-inch MacBook Pro",
+   "price": 1999,
+   "source": "https://www.apple.com/shop/buy-mac/macbook-pro",
+   "note": "Current 14-inch base is M6 at $1,999 (16GB). Separate PROLED XDR 14-inch line starts at $2,899."
+  },
+  {
+   "name": "Apple 16-inch MacBook Pro",
+   "price": 2999,
+   "source": "https://www.apple.com/shop/buy-mac/macbook-pro/16-inch",
+   "note": "16-inch has no M6; base is M5 Pro 24GB/1TB at $2,999 (up from $2,699 at March 2026 launch)."
+  },
+  {
+   "name": "Dell XPS 13",
+   "price": 699.99,
+   "source": "https://www.dell.com/en-us/shop/laptop-computers/spd/xps13dx13260",
+   "note": "XPS name still used. 2026 XPS 13 starts at $699.99 ($599 student). XPS 14 is the premium sibling (from about $1,699.99)."
+  },
+  {
+   "name": "Microsoft Surface Laptop 13.8-inch (8th Edition)",
+   "price": 1599.99,
+   "source": "https://www.microsoft.com/en-us/store/configure/surface-laptop-13-8-inch-8th-edition/8mzbmmcjzpmf",
+   "note": "8th Edition, Snapdragon X2 Plus 10-core / 16GB / 512GB. Original list $1,599.99; Microsoft Store currently advertises from $1,299.99 ($300 off)."
+  },
+  {
+   "name": "Apple AirPods 5",
+   "price": 129,
+   "source": "https://www.apple.com/shop/buy-airpods/airpods-5",
+   "note": "Current generation as of Sept 2026; Apple discontinued AirPods 4. Base model includes ANC and a USB-C charging case. Apple newsroom: $129."
+  },
+  {
+   "name": "Apple AirPods 5 with Wireless Charging Case",
+   "price": 149,
+   "source": "https://www.apple.com/newsroom/2026/09/apple-introduces-airpods-5-with-best-in-class-open-ear-active-noise-cancellation/",
+   "note": "Step-up AirPods 5 config: Wireless Charging Case, on-stem volume swipe, longer battery. Successor slot to AirPods 4 with ANC ($179). Both AirPods 5 configs now include ANC."
+  },
+  {
+   "name": "Apple AirPods Pro 3",
+   "price": 249,
+   "source": "https://www.apple.com/shop/buy-airpods/airpods-pro-3",
+   "note": "Current Pro generation (announced Sept 2025). Apple Store $249.00."
+  },
+  {
+   "name": "Apple AirPods Max 2",
+   "price": 549,
+   "source": "https://www.apple.com/shop/buy-airpods/airpods-max-2",
+   "note": "Current generation (announced March 2026). Apple Store $549.00."
+  },
+  {
+   "name": "Beats Studio Pro Wireless Headphones",
+   "price": 299.99,
+   "source": "https://www.apple.com/shop/product/mqtp3ll/a/beats-studio-pro-wireless-headphones-black",
+   "note": "Still the current Studio over-ear on Apple.com at $299.99 (launched at $349.99). Beats 360 is a separate newer model at $349.99."
+  },
+  {
+   "name": "Powerbeats Fit Wireless Fitness Earbuds",
+   "price": 199.99,
+   "source": "https://www.apple.com/shop/product/me2j4ll/a/powerbeats-fit-wireless-fitness-earbuds-with-secure-fit-jet-black",
+   "note": "Current successor to Beats Fit Pro (Beats reintroduced Fit Pro as Powerbeats Fit in Sept 2025). Apple.com $199.99."
+  },
+  {
+   "name": "Beats Solo 4 Wireless On-Ear Headphones",
+   "price": 199.99,
+   "source": "https://www.beatsbydre.com/headphones/solo4-wireless",
+   "note": "Manufacturer list $199.99 on Beats.com and Apple Store."
+  },
+  {
+   "name": "Sony WH-1000XM6 Wireless Noise Cancelling Headphones",
+   "price": 459.99,
+   "source": "https://electronics.sony.com/audio/headphones/headband/p/wh1000xm6-b",
+   "note": "Current Sony over-ear flagship; no XM7 on sale. Sony US list $459.99; site currently shows $379.99 sale."
+  },
+  {
+   "name": "Sony WF-1000XM6 Truly Wireless Noise Cancelling Earbuds",
+   "price": 329.99,
+   "source": "https://electronics.sony.com/audio/headphones/truly-wireless-earbuds/p/wf1000xm6-s",
+   "note": "Current Sony earbud flagship (launched Feb 2026). Sony US list $329.99; site currently shows $299.99 sale."
+  },
+  {
+   "name": "Bose QuietComfort Ultra Headphones (2nd Gen)",
+   "price": 449,
+   "source": "https://www.bose.com/p/headphones/bose-quietcomfort-ultra-headphones-2nd-gen/QCUH2-HEADPHONEARN.html",
+   "note": "Current QC Ultra over-ear generation (launched Oct 2025 at $449). Bose.com currently $369 sale vs $449 original."
+  },
+  {
+   "name": "Bose QuietComfort Ultra Earbuds (2nd Gen)",
+   "price": 299,
+   "source": "https://www.bose.com/p/earbuds/bose-quietcomfort-ultra-earbuds-2nd-gen/QCUE2-HEADPHONEIN.html",
+   "note": "Current QC Ultra earbuds generation. Bose.com list $299; currently $229 sale."
+  },
+  {
+   "name": "Sonos Era 100",
+   "price": 219,
+   "source": "https://www.sonos.com/en-us/shop/wireless-speakers",
+   "note": "Sonos US list $219. Product page sometimes shows $189 promotional price."
+  },
+  {
+   "name": "Sonos Ace Ultra",
+   "price": 449,
+   "source": "https://www.sonos.com/en-us/shop/sonos-ace-ultra",
+   "note": "Current Ace generation (successor to original Ace; ships from Sept 2026). Original Ace still sold at $349."
+  },
+  {
+   "name": "JBL Flip 7",
+   "price": 149.95,
+   "source": "https://www.jbl.com/FLIP-7.html",
+   "note": "Current Flip. JBL US list $149.95; site currently shows sale around $119.95–$129.95 depending on color."
+  },
+  {
+   "name": "JBL Charge 6",
+   "price": 199.95,
+   "source": "https://www.jbl.com/CHARGE-6.html?dwvar_CHARGE-6_color=Black-AM-Current",
+   "note": "Current Charge (no Charge 7). JBL US list $199.95; site currently shows $149.95–$159.95 sale."
+  },
+  {
+   "name": "Bose SoundLink Flex Portable Speaker (2nd Gen)",
+   "price": 159,
+   "source": "https://www.bose.com/p/speakers/bose-soundlink-flex-portable-speaker-2nd-gen/SLFLXII-SPEAKERWIRELESS.html",
+   "note": "Current Flex generation. Bose.com $159.00."
+  },
+  {
+   "name": "Marshall Emberton III",
+   "price": 179.99,
+   "source": "https://www.marshall.com/us/en/product/emberton-iii?pid=1006884",
+   "note": "Current Emberton. Marshall US $179.99 for standard finishes (Black and Brass)."
+  },
+  {
+   "name": "Apple Watch Series 12",
+   "price": 399,
+   "source": "https://www.apple.com/shop/buy-watch/apple-watch",
+   "note": "Current Series. Base is 42mm aluminum GPS from $399. Series 11 discontinued Sept 2026."
+  },
+  {
+   "name": "Apple Watch Ultra 4",
+   "price": 799,
+   "source": "https://www.apple.com/shop/buy-watch/apple-watch-ultra",
+   "note": "Current Ultra (announced Sept 2026). 49mm titanium GPS + Cellular from $799."
+  },
+  {
+   "name": "Apple Watch SE 3",
+   "price": 249,
+   "source": "https://www.apple.com/shop/buy-watch/apple-watch-se",
+   "note": "Current SE; no SE 4. Base GPS from $249 (40mm)."
+  },
+  {
+   "name": "Samsung Galaxy Watch9 40mm Bluetooth",
+   "price": 379.99,
+   "source": "https://images.samsung.com/is/content/samsung/assets/us/business/solutions/industries/government/msrp-price-sheets/Samsung-Wearables-MSRP-Price-File--September-2026.pdf",
+   "note": "Current base Galaxy Watch. Samsung Sept 2026 wearables MSRP: 40mm Bluetooth $379.99. Best Buy/Target also list $379.99. Samsung.com configurator often defaults to higher LTE SKU prices ($429.99/$459.99)."
+  },
+  {
+   "name": "Fitbit Charge 6",
+   "price": 159.95,
+   "source": "https://store.google.com/us/product/fitbit_charge_6?hl=en-US",
+   "note": "Still the current Charge; Charge 7 not announced. Google Store list $159.95; currently $129.95 sale through 2026-11-08."
+  },
+  {
+   "name": "Garmin Forerunner 570 42mm",
+   "price": 549.99,
+   "source": "https://www.garmin.com/en-US/newsroom/press-release/sports-fitness/garmin-unveils-the-forerunner-570-and-forerunner-970-its-newest-gps-running-and-triathlon-smartwatches-for-performance-driven-athletes/",
+   "note": "Mid-range successor to Forerunner 265. Garmin SRP $549.99 for both 42mm and 47mm. Running Warehouse also lists 42mm at $549.99."
+  },
+  {
+   "name": "Oura Ring 5",
+   "price": 399,
+   "source": "https://ouraring.com/store",
+   "note": "Current generation (launched June 2026). Base Silver/Black $399; premium finishes $499. Membership sold separately."
+  },
+  {
+   "name": "Google Pixel Watch 5 41mm Wi-Fi",
+   "price": 399,
+   "source": "https://store.google.com/us/product/pixel_watch_5?hl=en-US",
+   "note": "Current generation, base 41mm Wi-Fi. Launch MSRP $399; Google Store currently shows From $299.99 (sale)."
+  },
+  {
+   "name": "Ray-Ban Meta Wayfarer (Gen 3)",
+   "price": 449,
+   "source": "https://www.meta.com/ai-glasses/ray-ban-meta-gen-3-wayfarer/",
+   "note": "Current base Ray-Ban Meta glasses. Meta Store from $449 for standard Wayfarer Gen 3 (clear/standard lenses). Transitions and Large frames cost more."
+  },
+  {
+   "name": "Sony PlayStation 5 Console - 1 TB (Disc Drive)",
+   "price": 649,
+   "source": "https://direct.playstation.com/en-us/hardware/ps5",
+   "note": "Current US standard disc model (slim, 1 TB). PlayStation Direct lists $649.00; Sony's April 2, 2026 RRP announcement was $649.99."
+  },
+  {
+   "name": "Sony PlayStation 5 Digital Edition Console - 825 GB",
+   "price": 599,
+   "source": "https://direct.playstation.com/en-us/hardware/ps5",
+   "note": "PlayStation Direct lists $599.00; Sony's April 2, 2026 RRP was $599.99. 825 GB, no disc drive."
+  },
+  {
+   "name": "Sony PlayStation 5 Pro Console - 2 TB",
+   "price": 899,
+   "source": "https://direct.playstation.com/en-us/hardware/ps5",
+   "note": "PlayStation Direct lists $899.00; Sony's April 2, 2026 RRP was $899.99. Disc drive sold separately."
+  },
+  {
+   "name": "Microsoft Xbox Series X 1TB (Disc Drive)",
+   "price": 799.99,
+   "source": "https://www.microsoft.com/en-us/d/xbox-series-x/8wj714n3rbtl",
+   "note": "1TB disc model. Microsoft Store page starts at $749.99 because that SKU also includes the Digital Edition; disc RRP is $799.99 as of the Aug 1, 2026 hike (news.xbox.com). Refurbished disc units are listed as originally $799.99."
+  },
+  {
+   "name": "Microsoft Xbox Series S 512GB",
+   "price": 499.99,
+   "source": "https://www.microsoft.com/en-us/d/xbox-series-s/942j774tp9jn",
+   "note": "Base 512GB all-digital model. Microsoft Store starting from $499.99 after the Aug 1, 2026 hike. 1TB Series S is $599.99."
+  },
+  {
+   "name": "Nintendo Switch 2 System",
+   "price": 499.99,
+   "source": "https://www.bestbuy.com/product/switch-2-system-nintendo-switch-2/J7GSL57TGH/sku/6614313",
+   "note": "US MSRP $499.99 effective Sept 1, 2026 (nintendo.com/us/whatsnew/price-revision-for-nintendo-switch-2-system/). Best Buy lists $499.99."
+  },
+  {
+   "name": "Nintendo Switch 2 + Mario Kart World Bundle",
+   "price": 549.99,
+   "source": "https://www.nintendo.com/us/gaming-systems/switch-2/",
+   "note": "Current $549.99 MSRP bundle includes the system, a full Mario Kart World download, and 3 months of Nintendo Switch Online. Replaced the original $499.99 launch bundle."
+  },
+  {
+   "name": "Nintendo Switch – OLED Model",
+   "price": 399.99,
+   "source": "https://www.nintendo.com/us/gaming-systems/switch/oled-model/",
+   "note": "Official US MSRP $399.99. Raised from $349.99 in August 2025; still sold alongside Switch 2."
+  },
+  {
+   "name": "Valve Steam Deck OLED 512GB",
+   "price": 789,
+   "source": "https://www.steamdeck.com/en/",
+   "note": "Base OLED SKU is 512GB at $789 USD since Valve's May 27, 2026 restock/hike; 1TB is $949. LCD is discontinued. Steam's US hardware store page has been flaky in early November 2026; price trackers still showed $789 on Nov 5."
+  },
+  {
+   "name": "Meta Quest 3 512GB",
+   "price": 599.99,
+   "source": "https://www.meta.com/quest/quest-3/",
+   "note": "Meta Store $599.99 for the 512GB Quest 3 after the April 19, 2026 hike."
+  },
+  {
+   "name": "Meta Quest 3S 128GB",
+   "price": 349.99,
+   "source": "https://www.meta.com/quest/compare/",
+   "note": "Base 128GB model. Meta Store $349.99 (256GB is $449.99). Generic 'quest' maps here as the volume current headset."
+  },
+  {
+   "name": "Sony DualSense Wireless Controller - White",
+   "price": 74,
+   "source": "https://direct.playstation.com/en-us/buy-accessories/dualsense-wireless-controller-white-for-ps5-pc-mac-mobile",
+   "note": "Standard white/Midnight Black list is $74.00 on PlayStation Direct. Limited/special colors are $79–$84."
+  },
+  {
+   "name": "Xbox Wireless Controller - Carbon Black",
+   "price": 64.99,
+   "source": "https://www.microsoft.com/en-us/d/xbox-wireless-controller/8xn59crbsqgz",
+   "note": "Manufacturer list $64.99 (core/Carbon Black). Microsoft Store was discounting to about $49 at check time; use list, not the sale."
+  },
+  {
+   "name": "Nintendo Switch 2 Pro Controller",
+   "price": 89.99,
+   "source": "https://www.nintendo.com/us/store/products/nintendo-switch-2-pro-controller-123674/",
+   "note": "Nintendo Store related listings and Target show Regular Price $89.99. Best Buy's standard listing was $97.99 at check time; Zelda 40th special edition is $99.99. Using Nintendo's $89.99 list for the standard model."
+  },
+  {
+   "name": "Mario Kart World (Nintendo Switch 2)",
+   "price": 79.99,
+   "source": "https://www.nintendo.com/us/gaming-systems/switch-2/featured-games/mario-kart-world/",
+   "note": "Standalone Switch 2 exclusive. Official US MSRP $79.99 digital and physical. Store product page: nintendo.com/us/store/products/mario-kart-world-switch-2/"
+  },
+  {
+   "name": "The Legend of Zelda: Tears of the Kingdom (Nintendo Switch)",
+   "price": 69.99,
+   "source": "https://www.nintendo.com/us/store/products/the-legend-of-zelda-tears-of-the-kingdom-switch/",
+   "note": "Original Switch version, US list $69.99. Nintendo also sells a Switch 2 Edition at $79.99; this entry is the standard Switch game."
+  },
+  {
+   "name": "PlayStation Portal Remote Player",
+   "price": 249,
+   "source": "https://direct.playstation.com/en-us/collections/portal-play-your-way",
+   "note": "PlayStation Direct $249.00; Sony's April 2, 2026 RRP is $249.99. Streams PS5 games; not a standalone console."
+  },
+  {
+   "name": "Apple TV 4K (4th generation)",
+   "price": 299,
+   "source": "https://www.apple.com/shop/buy-tv/apple-tv-4k",
+   "note": "Current US model announced Oct 13, 2026. Single 128GB Wi-Fi + Ethernet config at $299. Pre-order; in stores starting Nov 13, 2026."
+  },
+  {
+   "name": "Roku Streaming Stick 4K",
+   "price": 79.99,
+   "source": "https://www.bestbuy.com/product/roku-streaming-stick-4k-hdr-dolby-vision-streaming-device-for-tv-with-voice-remote-long-range-wi-fi-black/J3PFCJQGK2/sku/10735820",
+   "note": "US list $79.99 after Roku's July 2026 hike (model 3820R2). Roku.com often shows a limited-time sale around $49.99; Best Buy listed $79.99."
+  },
+  {
+   "name": "Amazon Fire TV Stick 4K (2026 / 3rd gen)",
+   "price": 59.99,
+   "source": "https://www.aboutamazon.com/news/devices/fire-tv-stick-4k-new-remote",
+   "note": "Current 2026 Vega OS model. Manufacturer list $59.99. Amazon was selling it for $24.99 (list still $59.99) in early November 2026."
+  },
+  {
+   "name": "Google TV Streamer (4K)",
+   "price": 149.99,
+   "source": "https://store.google.com/us/product/google_tv_streamer?hl=en-US",
+   "note": "Google Store $149.99 after the Aug 31, 2026 hike from $99.99."
+  },
+  {
+   "name": "LG 65-inch OLED evo AI C6 4K Smart TV (2026)",
+   "price": 1399.99,
+   "source": "https://www.bestbuy.com/product/lg-65-class-c6-series-oled-evo-ai-4k-smart-webos-tv-2026/JJ8VPZKZ8H",
+   "note": "Current-year C-series. Typical Best Buy / LG.com US price $1,399.99 on Nov 8, 2026 (model OLED65C6PUA). MSRP/comp value is much higher (~$2,699) so this is street, not sticker."
+  },
+  {
+   "name": "Samsung 65-inch Q6F Series QLED 4K Smart TV (2025)",
+   "price": 428,
+   "source": "https://www.bestbuy.com/product/samsung-65-class-q6f-series-qled-4k-uhd-samsungvision-ai-smart-tizen-tv-2025/JJGRF383L7",
+   "note": "Current popular Q-series / Q60 successor still widely sold. Typical Best Buy street around $428–$450 (comp value ~$599.99). 2026 Neo QLED QN80H exists but is a different, pricier line."
+  },
+  {
+   "name": "TCL 55-inch Q6LR Series 4K QLED Roku TV (2026)",
+   "price": 279.99,
+   "source": "https://www.bestbuy.com/product/tcl-55-class-q6lr-series-4k-uhd-hdr-qled-smart-tv-with-roku-tv-2026/J36QYTHWG5",
+   "note": "Current popular 55-inch TCL QLED. Typical Best Buy price $279.99 as of Nov 7–8, 2026 (comp value ~$399.99). MSRP is not meaningful."
+  },
+  {
+   "name": "Sonos Arc Ultra",
+   "price": 1099,
+   "source": "https://www.sonos.com/en-us/shop/arc-ultra",
+   "note": "Sonos US list $1,099. Occasional promotions (e.g. $899) are sale prices, not list."
+  },
+  {
+   "name": "Sonos Beam Ultra",
+   "price": 699,
+   "source": "https://www.sonos.com/en-us/shop/beam-ultra",
+   "note": "Current Beam as of Sept 2026. Official US list $699. Beam (Gen 2) is still sold at $499."
+  },
+  {
+   "name": "Amazon Echo Dot (newest model)",
+   "price": 99.99,
+   "source": "https://www.amazon.com/Meet-the-Echo-Dot-designed-for-Alexa-plus-with-a-built-in-smart-home-hub-and-improved-audio/dp/B0FXN2JWST",
+   "note": "Current 2026 Echo Dot with built-in smart home hub and eero Wi-Fi extender. Amazon list $99.99."
+  },
+  {
+   "name": "Amazon Echo Show 8 (newest model), Vibrant HD 8.7\" display",
+   "price": 199.99,
+   "source": "https://www.amazon.com/Amazon-Echo-Show-8-Vibrant-HD-8.7-display-Graphite-Amazon/dp/B0DC8ZMR1P",
+   "note": "Current 8.7-inch Echo Show 8 (4th gen / 2025). Amazon lists $199.99; some reviews still cite $179.99."
+  },
+  {
+   "name": "Google Nest Hub (2nd gen)",
+   "price": 99.99,
+   "source": "https://store.google.com/us/product/nest_hub_2nd_gen?hl=en-US",
+   "note": "Still the current Nest Hub; 7-inch Google Store list $99.99. Nest Hub Max is the larger 10-inch model."
+  },
+  {
+   "name": "Google Nest Learning Thermostat (4th gen)",
+   "price": 279.99,
+   "source": "https://store.google.com/us/product/nest_learning_thermostat_4th_gen?hl=en-US",
+   "note": "Includes one Nest Temperature Sensor (2nd gen). List $279.99; Google Store sale $219.99 through Nov 8, 2026."
+  },
+  {
+   "name": "Ring Battery Doorbell 2K",
+   "price": 99.99,
+   "source": "https://ring.com/products/battery-doorbell-2nd-gen",
+   "note": "Current base battery doorbell (successor to Video Doorbell). Wired Doorbell 2K is $79.99 if a wired base model is preferred."
+  },
+  {
+   "name": "Blink Outdoor 4 (1-camera system)",
+   "price": 79.99,
+   "source": "https://www.amazon.com/dp/B0DHLSZXQD",
+   "note": "Single-camera system with Sync Module Core. Amazon list $79.99; frequently discounted."
+  },
+  {
+   "name": "Philips Hue White and Color Ambiance Essential Starter Kit (4 E26 bulbs)",
+   "price": 139.99,
+   "source": "https://www.philips-hue.com/en-us/p/hue-white-and-color-ambiance-essential-starter-kit-4-e26-smart-bulbs-800-lm/046677608989",
+   "note": "Current popular kit: four 800 lm color bulbs plus Hue Bridge. 2-bulb Essential kit is $114.99."
+  },
+  {
+   "name": "Apple AirTag (1 Pack)",
+   "price": 29,
+   "source": "https://www.apple.com/shop/buy-airtag/airtag/1-pack",
+   "note": "Current-generation AirTag (louder speaker, expanded Precision Finding). Apple list $29."
+  },
+  {
+   "name": "Apple AirTag 4 Pack",
+   "price": 99,
+   "source": "https://www.apple.com/shop/buy-airtag/airtag/4-pack",
+   "note": "Same current-generation AirTag, four-pack. Apple list $99."
+  },
+  {
+   "name": "Apple HomePod mini 2",
+   "price": 149,
+   "source": "https://www.apple.com/shop/buy-homepod/homepod-mini",
+   "note": "Current HomePod mini is HomePod mini 2. Apple list $149. Full-size HomePod is $349."
+  },
+  {
+   "name": "GoPro HERO13 Black",
+   "price": 429,
+   "source": "https://www.bhphotovideo.com/c/product/1846709-REG/gopro_chdhx_131_th_hero13_black.html",
+   "note": "Current HERO Black. Launched at $399.99; typical US dealer price now $429 (B&H, Walmart)."
+  },
+  {
+   "name": "DJI Mini 4K",
+   "price": 299,
+   "source": "https://www.djiusa.com/products/dji-mini-4k",
+   "note": "Current base Mini kit (drone + RC-N1C). Mini 5 Pro is the current flagship Mini at $759."
+  },
+  {
+   "name": "DJI Osmo Pocket 3",
+   "price": 439,
+   "source": "https://www.djiusa.com/products/osmo-pocket-3",
+   "note": "Standard camera (not Creator Combo). DJI USA list $439; Creator Combo is $549."
+  },
+  {
+   "name": "Fujifilm instax mini 13",
+   "price": 89.95,
+   "source": "https://www.instaxus.com/cameras/instax-mini-13/",
+   "note": "Current Mini (replaces Mini 12). Fujifilm US MSRP $89.95. Mini 12 still listed at $93.95."
+  },
+  {
+   "name": "Sony Alpha ZV-E10 II (body only)",
+   "price": 1199.99,
+   "source": "https://electronics.sony.com/imaging/interchangeable-lens-cameras/aps-c/p/zve10m2b",
+   "note": "Body only, not the 16–50mm kit ($1,299.99). B&H lists body at $1,198."
+  },
+  {
+   "name": "FUJIFILM X100VI",
+   "price": 1799.95,
+   "source": "https://www.bhphotovideo.com/c/product/1899778-REG/fujifilm_16953924_x100vi_digital_camera_black_coo_japan.html",
+   "note": "Current X100. US retail $1,799.95 (up from $1,599 launch). Often out of stock at MSRP."
+  },
+  {
+   "name": "Logitech MX Master 4",
+   "price": 119.99,
+   "source": "https://www.logitech.com/en-us/shop/p/mx-master-4",
+   "note": "Current MX Master (replaced 3S). Logitech list $119.99. MX Master 3S still sold, often $89.99."
+  },
+  {
+   "name": "Logitech MX Keys S",
+   "price": 129.99,
+   "source": "https://www.logitech.com/en-us/shop/p/mx-keys-s",
+   "note": "Manufacturer list $129.99; logitech.com currently $119.99 ($10 off)."
+  },
+  {
+   "name": "Apple Magic Keyboard (USB-C) - US English",
+   "price": 99,
+   "source": "https://www.apple.com/shop/product/mjlx4ll/a/magic-keyboard-usb-c-us-english",
+   "note": "Standard USB-C Magic Keyboard, not Touch ID ($149) or numeric-keypad models."
+  },
+  {
+   "name": "Apple Magic Mouse (USB-C) - White Multi-Touch Surface",
+   "price": 79,
+   "source": "https://www.apple.com/shop/product/mxk53am/a/magic-mouse-usb%E2%80%91c-white-multi-touch-surface",
+   "note": "Current USB-C Magic Mouse. Apple list $79. Black finish also $79."
+  },
+  {
+   "name": "Apple 20W USB-C Power Adapter",
+   "price": 19,
+   "source": "https://www.apple.com/shop/product/mwvv3am/a/20w-usb-c-power-adapter",
+   "note": "Cable sold separately. Apple list $19."
+  },
+  {
+   "name": "Anker 737 Power Bank (PowerCore 24K)",
+   "price": 109.99,
+   "source": "https://www.anker.com/products/a1289",
+   "note": "24,000mAh, 140W. List $109.99; Anker US currently $11 off ($98.99). Still listed among Anker best sellers."
+  },
+  {
+   "name": "Samsung Portable SSD T7 1TB",
+   "price": 274.99,
+   "source": "https://www.samsung.com/us/business/memory-storage/portable-ssd/portable-ssd-t7-usb-3-2-1tb-gray-sku-mu-pc1t0t-am/",
+   "note": "Samsung list/MSRP $274.99 (MU-PC1T0T/AM). Typical Amazon price about $230 (list shown as $274.99)."
+  },
+  {
+   "name": "Apple Pencil Pro",
+   "price": 129,
+   "source": "https://www.apple.com/shop/product/mx2d3am/a/apple-pencil-pro",
+   "note": "Apple list $129. Education $119."
+  },
+  {
+   "name": "Apple Pencil (USB-C)",
+   "price": 79,
+   "source": "https://www.apple.com/shop/product/muwa3am/a/apple-pencil-usb-c",
+   "note": "Apple list $79. Pairs/charges via USB-C; no pressure sensitivity."
+  },
+  {
+   "name": "Dell UltraSharp 27 4K Thunderbolt Hub Monitor - U2725QE",
+   "price": 849.99,
+   "source": "https://www.dell.com/en-us/shop/monitors/apd/dell-ultrasharp-27-4k-thunderbolt-hub-monitor-u2725qe/u2725qe_monitor/-",
+   "note": "Current popular UltraSharp 27. Dell list $849.99; some Dell pages show $799.99 sale."
+  },
+  {
+   "name": "Ninja AF101 4-Quart Air Fryer",
+   "price": 119.99,
+   "source": "https://www.macys.com/shop/product/ninja-af101-4-quart-ceramic-nonstick-electric-air-fryer?ID=6914910",
+   "note": "Still the popular 4-qt model at US retailers at $119.99 (Amazon, Macy's, Home Depot, Kohl's). Ninja.com no longer lists AF101; current Ninja basket successor is the 5-qt Air Fryer Pro AF141 ($129.99 list)."
+  },
+  {
+   "name": "Ninja DualZone 8-QT Dual Air Fryer",
+   "price": 219.99,
+   "source": "https://www.sharkninja.com/ninja-dualzone-8-qt-dual-air-fryer-in-grey/DZ801.html",
+   "note": "Current Ninja.com 8-qt DualZone is DZ801; list $219.99, on sale $179.99. Older popular DZ201 Foodi DualZone still sold on Amazon (~$159.95, list $199.99)."
+  },
+  {
+   "name": "Instant Pot Duo 6QT Multi-Use Pressure Cooker",
+   "price": 109.99,
+   "source": "https://instantpot.com/collections/ip-6qt",
+   "note": "Manufacturer list $109.99. Amazon often lower (~$98)."
+  },
+  {
+   "name": "KitchenAid Artisan Series 5 Quart Tilt-Head Stand Mixer",
+   "price": 499.99,
+   "source": "https://www.rcwilley.com/Appliances/Small-Kitchen-Appliances/Mixers/120039476/KitchenAid-Artisan-Series-5-Quart-Tilt-Head-Stand-Mixer---Juniper-Green-View",
+   "note": "List $499.99 (KSM150PS). KitchenAid is promoting Milkshake and Juniper at $349.99."
+  },
+  {
+   "name": "Vitamix 5200 Standard Getting Started",
+   "price": 499.95,
+   "source": "https://www.vitamix.com/us/en_us/products/5200-standard-getting-started",
+   "note": "Manufacturer list $499.95 for the Standard Getting Started package."
+  },
+  {
+   "name": "Ninja Professional Blender 72 oz 1000-Watt",
+   "price": 109.99,
+   "source": "https://www.macys.com/shop/product/ninja-bl610-professional-72-oz-1000w-blender?ID=1961022",
+   "note": "Retailer list $109.99 (Macy's / Boscov's ticketed). Currently ~$79.99 at Macy's and Home Depot."
+  },
+  {
+   "name": "Nespresso Vertuo Pop+",
+   "price": 129.95,
+   "source": "https://www.breville.com/en-us/product/bnv121",
+   "note": "Breville US list $129.95, on sale $99.95. Nespresso USA Deluxe finishes list at $149.99. De'Longhi ENV92 lists $129."
+  },
+  {
+   "name": "Keurig K-Mini Single Serve Coffee Maker",
+   "price": 99.99,
+   "source": "https://www.keurig.com/c/coffeemakers101?sort=price-asc",
+   "note": "Keurig.com list $99.99, currently $59.99. Amazon ~$69–$75."
+  },
+  {
+   "name": "Breville Barista Express Espresso Machine",
+   "price": 699.95,
+   "source": "https://www.breville.com/en-us/product/bes870",
+   "note": "Manufacturer list $699.95 (BES870). Currently $499.95 on Breville.com and Amazon."
+  },
+  {
+   "name": "Ninja CREAMi 7-in-1 Ice Cream Maker",
+   "price": 229.99,
+   "source": "https://www.sharkninja.com/ninja-creami-7-in-1-ice-cream-maker/NC301.html",
+   "note": "Current base 7-in-1 is NC301 at $229.99. NinjaKitchen.com has NC301CB on sale at $199.99."
+  },
+  {
+   "name": "Le Creuset Signature Round Dutch Oven 5.5 Quart",
+   "price": 420,
+   "source": "https://www.lecreuset.com/round-dutch-oven/21177US.html?dwvar_21177US_size=5+1%2F2+qt.",
+   "note": "Manufacturer SRP $420 for 5.5 qt. Some department-store colors list higher (~$455)."
+  },
+  {
+   "name": "Lodge Classic 12 Inch Cast Iron Skillet",
+   "price": 29.95,
+   "source": "https://www.lodgecastiron.com/collections/skillets",
+   "note": "Lodge Classic Cast Iron Skillets regular $29.95, currently from $24.90. Target lists the 12-inch at $29.99. Amazon third-party listings vary."
+  },
+  {
+   "name": "Our Place Ceramic Nonstick Always Pan 10.5 Inch",
+   "price": 95,
+   "source": "https://fromourplace.com/products/always-essential-cooking-pan",
+   "note": "Current ceramic 10.5-inch Always Pan on fromourplace.com is $95 (still labeled Always Pan 2.0 on the page). Large 12.5-inch is $115."
+  },
+  {
+   "name": "Stanley Quencher H2.0 FlowState Tumbler 40 oz",
+   "price": 45,
+   "source": "https://www.stanley1913.com/products/adventure-quencher-travel-tumbler-40-oz",
+   "note": "Manufacturer list $45.00."
+  },
+  {
+   "name": "Hydro Flask 32 oz Wide Mouth Bottle",
+   "price": 44.95,
+   "source": "https://www.hydroflask.com/32-oz-wide-mouth",
+   "note": "Manufacturer $44.95. REI lists some colorways $44.95–$51.95."
+  },
+  {
+   "name": "YETI Rambler 20 oz Tumbler with MagSlider Lid",
+   "price": 40,
+   "source": "https://www.yeti.com/drinkware/tumblers/rambler-20oz.html",
+   "note": "Manufacturer $40.00. Amazon and some retailers often lower."
+  },
+  {
+   "name": "Owala FreeSip Stainless Steel Water Bottle 24 oz",
+   "price": 29.99,
+   "source": "https://owalalife.com/collections/all",
+   "note": "Standard 24 oz colors $29.99. Printed/special designs $34.99."
+  },
+  {
+   "name": "Fellow Stagg EKG Pro Electric Pour-Over Kettle",
+   "price": 179.95,
+   "source": "https://fellowproducts.com/products/stagg-ekg-electric-pour-over-kettle",
+   "note": "Original Stagg EKG is not sold new; current successor is EKG Pro at $179.95 (matte). Wood-accent/Studio finishes $199.95+. Refurbished original EKG $132."
+  },
+  {
+   "name": "Zojirushi NS-TSC10 Micom Rice Cooker and Warmer 5.5 Cup",
+   "price": 229.99,
+   "source": "https://store.zojirushi.com/products/nstsc",
+   "note": "Manufacturer $229.99. NS-TSC10A (stainless gray) is the same-price sibling."
+  },
+  {
+   "name": "Cuisinart Brew Central 12 Cup Programmable Coffee Maker",
+   "price": 129.95,
+   "source": "https://www.cuisinart.com/brew-central-12-cup-programmable-coffee-maker/DCC-1200NAS.html",
+   "note": "Manufacturer $129.95. The better-known DCC-3200 PerfecTemp is 14-cup, not 12-cup ($119.95)."
+  },
+  {
+   "name": "Dyson V15 Detect Absolute Cordless Vacuum",
+   "price": 749.99,
+   "source": "https://www.dyson.com/deals",
+   "note": "Dyson list $749.99; currently $649.99 on Dyson.com. Current US V15 SKU is V15 Detect Absolute."
+  },
+  {
+   "name": "Dyson V8 Absolute Cordless Vacuum",
+   "price": 539.99,
+   "source": "https://www.dyson.com/vacuum-cleaners/cordless/v8",
+   "note": "Current new V8 variant is V8 Absolute. Product page list $539.99 (out of stock there); Dyson deals currently $349.99 (was $519.99). V8 Origin is refurbished-only."
+  },
+  {
+   "name": "iRobot Roomba 105 Vac Robot",
+   "price": 249.99,
+   "source": "https://www.irobot.com/en_US/roomba-105x-vac-robot/Q314020.html",
+   "note": "Current popular base is the Roomba 105 series. 105 Vac Robot lists $249.99 but is unavailable on iRobot.com. In-stock sibling: 105 Combo Robot $199.99 (was $319.99); 105 Vac + AutoEmpty $279.99 (was $449.99)."
+  },
+  {
+   "name": "Shark Navigator Lift-Away Upright Vacuum NV352",
+   "price": 179.99,
+   "source": "https://www.amazon.com/Shark-Navigator-Lift-Away-Anti-Allergy-NV352/dp/B004Q4DRJW",
+   "note": "No live US list on Shark.com. Typical Amazon price $179.99; Home Depot $149.99. NV352 is still the popular Lift-Away upright."
+  },
+  {
+   "name": "Levoit Core 300-P Air Purifier",
+   "price": 99.99,
+   "source": "https://levoit.com/products/core300-p-air-purifier",
+   "note": "Current Core 300 is sold as Core 300-P at $99.99 MSRP (sometimes $89.99 on sale)."
+  },
+  {
+   "name": "BISSELL Little Green Portable Carpet Cleaner",
+   "price": 129.99,
+   "source": "https://www.bissell.com/en-us/product/little-green-portable-carpet-upholstery-cleaner-1400B.html",
+   "note": "Manufacturer $129.99 for the corded original (1400B), the current base Little Green."
+  },
+  {
+   "name": "Dyson Airwrap Multi-Styler Complete Long",
+   "price": 599.99,
+   "source": "https://www.dyson.com/hair-care/hair-stylers/airwrap/complete-long-copper-nickel",
+   "note": "Current base Complete Long kit at $599.99. Airwrap Origin is $399.99 (was $549.99); Airwrap i.d. is $649.99; Co-anda 2x is $749.99."
+  },
+  {
+   "name": "Dyson Supersonic Hair Dryer (3 attachments)",
+   "price": 399.99,
+   "source": "https://www.dyson.com/hair-care/hair-dryers/supersonic/prussian-blue-rich-copper",
+   "note": "Original/base 3-attachment model. List $399.99; currently $299.99 on Dyson.com. Supersonic Nural is $449.99."
+  },
+  {
+   "name": "Shark FlexStyle 5-in-1 Air Styler & Hair Dryer with Diffuser",
+   "price": 349.99,
+   "source": "https://www.sharkninja.com/shark-flexstyle-air-styling-drying-system-with-diffuser/HD435.html",
+   "note": "Original FlexStyle 5-in-1, model HD435, $349.99. NextGen IonCurl (HD840) list is also $349.99, currently $249.99."
+  },
+  {
+   "name": "Philips Sonicare 4100 Rechargeable Electric Toothbrush",
+   "price": 49.99,
+   "source": "https://www.kohls.com/product/prd-5667334/philips-sonicare-4100-rechargeable-electric-toothbrush-with-pressure-sensor.jsp",
+   "note": "Philips.com does not show a live price. Kohl's/Best Buy/Walgreens list $49.99; commonly $39.99 on sale. Model HX3681/23 / HX3681/24."
+  },
+  {
+   "name": "Oral-B iO Series 5 Customizable Clean Rechargeable Electric Toothbrush",
+   "price": 119.99,
+   "source": "https://oralb.com/en-us/products/electric-toothbrushes/oral-b-io-series-5-customizable-clean-rechargeable-electric-toothbrush-matte-black/",
+   "note": "Brand list $119.99; currently $99.99 ($20 off fall sale) on Oral-B.com."
+  },
+  {
+   "name": "Philips Norelco OneBlade 360 Face",
+   "price": 29.96,
+   "source": "https://www.usa.philips.com/c-m-pe/oneblade-trim-edge-and-shave/all",
+   "note": "Current base is OneBlade 360 Face (QP2724/70). Philips suggested retail $29.96; Amazon $29.96. Product page: https://www.usa.philips.com/c-p/QP2724_70/oneblade-360-face"
+  },
+  {
+   "name": "Chanel N°5 Eau de Parfum, 3.4 oz",
+   "price": 190,
+   "source": "https://www.chanel.com/us/fragrance/p/125530/n5-eau-de-parfum-spray/",
+   "note": "3.4 fl oz / 100 ml spray. Matches Ulta $190."
+  },
+  {
+   "name": "Dior Sauvage Eau de Toilette, 3.4 oz",
+   "price": 142,
+   "source": "https://www.ulta.com/p/sauvage-eau-de-toilette-pimprod2022740?sku=2299553",
+   "note": "Ulta and Bloomingdale's list 3.4 oz at $142. Dior.com product page did not expose the size price in the fetch."
+  },
+  {
+   "name": "YSL Libre Eau de Parfum, 1.6 oz",
+   "price": 150,
+   "source": "https://www.sephora.com/buy/best-perfumes-for-women",
+   "note": "1.6 oz / 50 ml is $150 at Sephora and Bloomingdale's. YSL Beauty US 50 ml was out of stock; 90 ml shows $185."
+  },
+  {
+   "name": "Glossier You Eau de Parfum, 1.7 oz",
+   "price": 82,
+   "source": "https://www.glossier.com/collections/all?variant=45891071377653",
+   "note": "50 ml / 1.7 oz is $82; 100 ml is $116; 8 ml is $32. Product page: https://www.glossier.com/products/glossier-you"
+  },
+  {
+   "name": "CeraVe Moisturizing Cream, 16 oz",
+   "price": 19.99,
+   "source": "https://www.staples.com/cerave-moisturizing-cream-16-oz-s2936513/product_24589996",
+   "note": "16 oz jar $19.99 at Staples/Walgreens. CeraVe.com shows $14.99 without confirming the 16 oz size. Grocery sale prices around $16.99."
+  },
+  {
+   "name": "Olaplex No.3 Hair Perfector, 3.3 oz",
+   "price": 30,
+   "source": "https://gourmet-garage.instacart.com/products/16869935?retailerSlug=sephora",
+   "note": "Original No.3 3.3 oz / 100 ml still $30 at Sephora. Brand site now sells successor No.3PLUS Complete Repair Treatment at $34."
+  },
+  {
+   "name": "Laneige Lip Sleeping Mask, 0.7 oz",
+   "price": 24,
+   "source": "https://www.sephora.com/product/lip-sleeping-mask-P420652?skuId=1966258",
+   "note": "Original/Berry 0.7 oz / 20 g jar. Also $24 on Laneige US."
+  },
+  {
+   "name": "Rare Beauty Soft Pinch Liquid Blush, 0.25 oz",
+   "price": 25,
+   "source": "https://www.sephora.com/product/rare-beauty-by-selena-gomez-soft-pinch-liquid-blush-P97989778",
+   "note": "Full size 0.25 oz / 7.5 mL is $25 at Sephora and Ulta. Mini is $16."
+  },
+  {
+   "name": "Sol de Janeiro Brazilian Bum Bum Cream, 8.1 oz",
+   "price": 48,
+   "source": "https://soldejaneiro.com/products/brazilian-bum-bum-cream/",
+   "note": "240 ml / 8.1 oz full size $48 on brand site and Sephora. Refill pod is $44 / $39 depending on listing."
+  },
+  {
+   "name": "Charlotte Tilbury Matte Revolution Lipstick, Pillow Talk",
+   "price": 37,
+   "source": "https://www.charlottetilbury.com/us/product/matte-revolution-lipstick-pillowtalk",
+   "note": "Pillow Talk Original, 0.12 oz, $37 on Charlotte Tilbury US. Some Sephora SKUs still show $35."
+  },
+  {
+   "name": "Summer Fridays Lip Butter Balm, 0.5 oz",
+   "price": 24,
+   "source": "https://www.sephora.com/product/summer-fridays-lip-butter-balm-P455936?skuId=2652113",
+   "note": "Standard 0.5 oz / 15 g tube. $24 at Sephora as of Nov 7, 2026."
+  },
+  {
+   "name": "Drunk Elephant Protini Polypeptide Cream, 1.69 oz",
+   "price": 69,
+   "source": "https://www.drunkelephant.com/collections/moisturizers/protini-polypeptide-cream-50-ml-856556004739.html?pr_rd_page=131",
+   "note": "Standard 50 ml / 1.69 oz $69 on brand site. Ulta lists $72."
+  },
+  {
+   "name": "Theragun Mini 3rd Gen",
+   "price": 219.99,
+   "source": "https://www.therabody.com/products/theragun-mini-gen-3-black",
+   "note": "Current generation is 3rd Gen at $219.99 on Therabody US."
+  },
+  {
+   "name": "Theragun Prime 6th Gen",
+   "price": 329.99,
+   "source": "https://www.therabody.com/products/theragun-prime-gen-6-massage-gun",
+   "note": "Current generation is 6th Gen at $329.99 on Therabody US."
+  },
+  {
+   "name": "Bowflex SelectTech 552 Dumbbells (pair)",
+   "price": 479,
+   "source": "https://www.bowflex.com/products/bowflex-results-series-552-selecttech-dumbbells",
+   "note": "Current Results Series 552 pair. List $479; currently $399 on Bowflex.com. Sold as a pair, 5–52.5 lb each."
+  },
+  {
+   "name": "Manduka PRO Yoga Mat 6mm, Standard 71\"",
+   "price": 144,
+   "source": "https://www.manduka.com/products/manduka-pro-yoga-mat",
+   "note": "Standard 71\" x 26\" x 6 mm is $144 on Manduka.com. Extra-long costs more."
+  },
+  {
+   "name": "Lululemon The Mat 5mm",
+   "price": 118,
+   "source": "https://shop.lululemon.com/p/the-mat-5mm/ffzufvh78s",
+   "note": "26\" x 71\", 5 mm, FSC-certified rubber. The (Big) Mat 5mm is $128."
+  },
+  {
+   "name": "YETI Tundra 45 Hard Cooler",
+   "price": 325,
+   "source": "https://www.yeti.com/coolers/hard-coolers/tundra/tundra-45.html",
+   "note": "Core colors $325. Some seasonal/collab colors listed at $350."
+  },
+  {
+   "name": "Solo Stove Bonfire 2.0",
+   "price": 249.99,
+   "source": "https://www.solostove.com/en-us/c/backyard-fire-pit",
+   "note": "Fire pit only $249.99 on Solo Stove. Home Depot lists SSBON-2.0 at $259.99. Stand bundle is $299.99."
+  },
+  {
+   "name": "Coleman Sundome 4-Person Tent",
+   "price": 117.99,
+   "source": "https://www.coleman.com/camp-sports/tents-by-size/4-person-tents/sundome-4-person-camping-tent/SP_271238.html",
+   "note": "List $117.99; currently $87.99 sale and out of stock on Coleman.com. Amazon also $117.99."
+  },
+  {
+   "name": "LEGO Star Wars Millennium Falcon 75192",
+   "price": 849.99,
+   "source": "https://www.lego.com/en-us/product/millennium-falcon-75192",
+   "note": "Current UCS-style Falcon still sold as set 75192. LEGO.com full price $849.99; listed as retiring soon and often sold out."
+  },
+  {
+   "name": "LEGO Botanicals Orchid 10311",
+   "price": 49.99,
+   "source": "https://www.lego.com/en-us/product/orchid-10311",
+   "note": "Still the current Botanicals Orchid set on LEGO.com. Retailers often discount to about $40."
+  },
+  {
+   "name": "LEGO Titanic 10294",
+   "price": 679.99,
+   "source": "https://www.lego.com/en-us/product/lego-titanic-10294",
+   "note": ""
+  },
+  {
+   "name": "Hasbro Monopoly Board Game",
+   "price": 19.99,
+   "source": "https://www.target.com/c/board-games-toys/monopoly/-/N-5xt9hZ5xvzd",
+   "note": "Typical official retailer price for the current classic Monopoly (Target $19.99). Hasbro Pulse US does not currently list the classic SKU; Barnes & Noble still shows an older Classic listing at $24.99."
+  },
+  {
+   "name": "CATAN Board Game (Base Game) 6th Edition",
+   "price": 49.99,
+   "source": "https://catanshop.com/catan-6th-edition-base-game",
+   "note": "Current US base game is 6th Edition. Asmodee USA currently shows $39.99 on sale vs $49.99 list."
+  },
+  {
+   "name": "UNO Card Game",
+   "price": 7.49,
+   "source": "https://www.target.com/p/uno-card-game/-/A-17070411",
+   "note": "Typical official retailer list for the cardboard classic pack; Target currently $6.99 (was $7.49). Mattel shop Classic UNO tin (GDJ85) is $16.99."
+  },
+  {
+   "name": "Jellycat Bartholomew Bear Medium",
+   "price": 33,
+   "source": "https://us.jellycat.com/bartholomew-bear/",
+   "note": "Medium SKU BARM3BR. Official page starts at $33; same $33 at Crate & Barrel Kids and other retailers."
+  },
+  {
+   "name": "Squishmallows Original 16-Inch Plush",
+   "price": 24.99,
+   "source": "https://www.amazon.com/Squishmallow-Official-Kellytoy-Avocado-Ultrasoft/dp/B08BG9RB42",
+   "note": "No single brand-shop MSRP; typical official retailer full price is $24.99 (Amazon Austin the Avocado and several other 16-inch listings). Street prices vary by character, roughly $18–$30."
+  },
+  {
+   "name": "Barbie DreamHouse Dollhouse 2026",
+   "price": 215.99,
+   "source": "https://shop.mattel.com/collections/barbie-dollhouses",
+   "note": "Current 2026 DreamHouse (JKG84) on Mattel shop. Same collection also shows a $249.99 listing for the same product name; $215.99 is the price shown most often."
+  },
+  {
+   "name": "MAGNA-TILES Classic 100 Piece Set",
+   "price": 119.99,
+   "source": "https://magnatiles.com/products/magna-tiles-classic-100-piece-set",
+   "note": ""
+  },
+  {
+   "name": "Nike Air Force 1 '07 Men's Shoes",
+   "price": 115,
+   "source": "https://www.nike.com/t/air-force-1-07-mens-shoes-DZejrQoC",
+   "note": "Standard leather '07, style CW2288-111. Patent and other special uppers are $125."
+  },
+  {
+   "name": "Nike Air Max 90 Men's Shoes",
+   "price": 135,
+   "source": "https://www.nike.com/t/air-max-90-mens-shoes-bAZ6AeHT",
+   "note": "Standard men's Air Max 90. Premium colorways list at $145."
+  },
+  {
+   "name": "adidas Samba OG Shoes",
+   "price": 100,
+   "source": "https://www.adidas.com/us/samba-og-shoes/IE3438.html",
+   "note": "Core Samba OG colorways $100. Some materials/collabs list at $110–$130."
+  },
+  {
+   "name": "New Balance 550",
+   "price": 109.99,
+   "source": "https://www.newbalance.com/pd/550/BB550V1-34466.html",
+   "note": ""
+  },
+  {
+   "name": "Converse Chuck Taylor All Star Canvas Unisex High Top",
+   "price": 65,
+   "source": "https://www.converse.com/shop/p/chuck-taylor-all-star-canvas-unisex-high-top-shoe/M9006MP.html",
+   "note": "Classic canvas high top. Leather high tops list at $70."
+  },
+  {
+   "name": "Vans Old Skool Shoe",
+   "price": 75,
+   "source": "https://www.vans.com/en-us/p/shoes/icons/old-skool-5205/old-skool-shoe-VN000D3HY28",
+   "note": "Classic black/white and core suede/canvas colorways $75. Some seasonal colors $70–$85; Premium Old Skool is $100+."
+  },
+  {
+   "name": "HOKA Men's Clifton 10",
+   "price": 155,
+   "source": "https://stores.hoka.com/product/2241802/hoka-mens-clifton-10",
+   "note": "Current Clifton on sale in the US is the Clifton 10. HOKA full price $155; some colors currently $124 (20% off) on hoka.com."
+  },
+  {
+   "name": "UGG Classic Ultra Mini Boot",
+   "price": 165,
+   "source": "https://www.ugg.com/women-boots/9/",
+   "note": "Women's Classic Ultra Mini listed at $165 on UGG.com. Nordstrom shows $164.95–$165. Platform and other Ultra Mini variants are higher."
+  },
+  {
+   "name": "BIRKENSTOCK Arizona Birko-Flor",
+   "price": 117.95,
+   "source": "https://www.birkenstock.com/us/arizona-birko-flor/arizona-core-birkoflor-0-eva-u_1.html",
+   "note": "Core black/dark brown/white Birko-Flor Arizona. Some colors on sale from the same $117.95 list."
+  },
+  {
+   "name": "Ray-Ban Original Wayfarer Classic",
+   "price": 191,
+   "source": "https://www.sunglasshut.com/us/ray-ban/rb2140-805289126676",
+   "note": "Official US retailer (Sunglass Hut / Luxottica) list $191 for Original Wayfarer Classic. Polarized and some sizes can be higher. Ray-Ban.com product pages did not render a price in this check."
+  },
+  {
+   "name": "lululemon Align High-Rise Pant 25\"",
+   "price": 98,
+   "source": "https://shop.lululemon.com/c/women-black-align-pants/n1c1a0zesuuzqd1q",
+   "note": "Standard solid Align 25\" is $98. Prints, shimmer, and some special fabrics list at $118."
+  },
+  {
+   "name": "Patagonia Men's Better Sweater Fleece Jacket",
+   "price": 169,
+   "source": "https://www.patagonia.com/product/mens-better-sweater-fleece-jacket/25528.html",
+   "note": ""
+  },
+  {
+   "name": "Levi's 501 Original Fit Men's Jeans",
+   "price": 89.5,
+   "source": "https://www.levi.com/US/en_US/clothing/men/jeans/straight/501-original-fit-mens-jeans/p/005013367",
+   "note": "Brand list $89.50 for Original Fit; currently on sale at $49.98 on levi.com. Nearby 501 Original listings show original prices of $84.95–$110 depending on wash/stretch."
+  },
+  {
+   "name": "lululemon Everywhere Belt Bag 1L",
+   "price": 38,
+   "source": "https://shop.lululemon.com/p/everywhere-belt-bag/p2c308toaw",
+   "note": "Core 1L is $38. Some colorways/hardware variants list at $44."
+  },
+  {
+   "name": "Away The Carry-On",
+   "price": 275,
+   "source": "https://www.awaytravel.com/products/carry-on-jet-black",
+   "note": "Current hardshell Carry-On (not Bigger Carry-On, Flex, or Aluminum)."
+  },
+  {
+   "name": "Fjällräven Kånken",
+   "price": 95,
+   "source": "https://www.fjallraven.com/us/en-us/bags-gear/kanken/kanken-bags/kanken/",
+   "note": "Classic 16L Kånken, not Mini or Laptop."
+  },
+  {
+   "name": "Herschel Little America Backpack 30L",
+   "price": 140,
+   "source": "https://herschel.com/products/herschel-little-america-backpack",
+   "note": "Current standard size is 30L at $140. Mid-Volume 21L is $130; Premium Classic is $190."
+  },
+  {
+   "name": "Peak Design Everyday Backpack 20L",
+   "price": 279.95,
+   "source": "https://www.peakdesign.com/products/everyday-backpack?Color=Ocean&Size=20L",
+   "note": "Current revamped Everyday Backpack (V2) in 20L. 30L lists at $299.95."
+  },
+  {
+   "name": "Amazon eGift Card",
+   "min": 5,
+   "max": 2000,
+   "source": "https://www.amazon.com/dp/B07PCMWTSG",
+   "note": ""
+  },
+  {
+   "name": "Starbucks eGift Card",
+   "min": 5,
+   "max": 100,
+   "source": "https://about.starbucks.com/press/2025/starbucks-anticipates-1-in-5-americans-to-receive-a-starbucks-card-this-holiday-season/",
+   "note": "starbucks.com/gift does not print the dollar range; 2025 Starbucks press says most cards load $5–$100."
+  },
+  {
+   "name": "Apple Gift Card",
+   "min": 10,
+   "max": 2000,
+   "source": "https://www.apple.com/shop/help/gifting",
+   "note": "Electronic gift cards $10–$2000; physical cards bought online are $25–$2000."
+  },
+  {
+   "name": "Google Play Gift Card",
+   "min": 5,
+   "max": 200,
+   "source": "https://support.google.com/googleplay/answer/3422734?hl=en",
+   "note": "US official denominations are $10, $15, $25, $50, $100, plus variable $5–$200."
+  },
+  {
+   "name": "Target eGiftCard",
+   "min": 5,
+   "max": 500,
+   "source": "https://www.target.com/help/articles/gift-cards/target-giftcards",
+   "note": ""
+  },
+  {
+   "name": "Walmart eGift Card",
+   "min": 5,
+   "max": 500,
+   "source": "https://giftcards.walmart.com/?type=1",
+   "note": ""
+  },
+  {
+   "name": "Best Buy Gift Card",
+   "min": 15,
+   "max": 500,
+   "source": "https://www.bestbuy.com/site/electronics/gift-cards/cat09000.c?id=cat09000",
+   "note": "BestBuy.com sells cards from $15 (smallest listed) through $500; a staff Q&A said online presets were $15–$200. The $500 Gamer card listing was marked no longer available in new condition when checked."
+  },
+  {
+   "name": "Vanilla Visa Gift Card",
+   "min": 10,
+   "max": 500,
+   "source": "https://www.vanillagift.com/thanks-pixels",
+   "note": "Purchase fee is extra and not included in giftMin/giftMax. Vanilla pages are JS-heavy; range is from Vanilla's $10–$500 amount picker copy."
+  },
+  {
+   "name": "Netflix eGift Card",
+   "min": 15,
+   "max": 100,
+   "source": "https://www.amazon.com/Gift-Cards-841684/s?rh=n%3A2238192011%2Cp_123%3A841684",
+   "note": "Netflix does not sell cards on netflix.com; amounts are from Amazon, which Netflix lists as an online retailer. Walmart also sells $30/$60/$100 eGifts."
+  },
+  {
+   "name": "Spotify Gift Card",
+   "min": 10,
+   "max": 99,
+   "source": "https://www.target.com/p/spotify-60-gift-card-mail-delivery/-/A-88022005",
+   "note": "Spotify no longer sells cards on spotify.com. Target lists $10, $12, $36, $60, $72, and $99; Kroger eGifts are $10/$30/$60. Range is retailer denominations, not a custom amount."
+  },
+  {
+   "name": "Steam Gift Card",
+   "min": 5,
+   "max": 50,
+   "source": "https://store.steampowered.com/steamaccount/",
+   "note": "Steam's own add-funds / digital gift amounts shown are $5, $10, $25, and $50. Retail physical cards commonly go to $100; Steam's gift-card select page did not print a max."
+  },
+  {
+   "name": "PlayStation Store Gift Card",
+   "min": 10,
+   "max": 100,
+   "source": "https://www.playstation.com/en-us/playstation-gift-cards/",
+   "note": "PlayStation.com says you can customize value via CashStar but does not print the range; authorized eGift sellers list $10–$100."
+  },
+  {
+   "name": "Xbox Gift Card",
+   "min": 1,
+   "max": 100,
+   "source": "https://www.microsoft.com/en-us/p/xbox-gift-card-digital-code/cfq7ttc0k63h",
+   "note": "Microsoft Store page defaults to $100; Microsoft Q&A for the same product says US digital cards are $1–$100, with $1 increments up to $80."
+  },
+  {
+   "name": "Nintendo eShop Gift Card",
+   "min": 5,
+   "max": 100,
+   "source": "https://www.amazon.com/nintendo-gift-card/s?k=nintendo+gift+card",
+   "note": "nintendo.com does not list denominations. Nintendo-sold US digital codes on Amazon include $5, $10, $20, $50, $65, $70, and $100. Some third-party eCash listings go to $200."
+  },
+  {
+   "name": "Uber Gift Card",
+   "min": 15,
+   "max": 500,
+   "source": "https://www.uber.com/us/en/gift-cards/info/",
+   "note": "Uber.com says store cards start at $15 and an account can hold $2,000 total; it does not print a per-card max. Authorized eGift retailers (e.g. Kroger/eGifter) sell $15–$500 per card."
+  },
+  {
+   "name": "DoorDash eGift Card",
+   "min": 5,
+   "max": 500,
+   "source": "https://www.doordash.com/gift-cards",
+   "note": ""
+  },
+  {
+   "name": "Sephora eGift Card",
+   "min": 10,
+   "max": 250,
+   "source": "https://www.sephora.com/beauty/faqs-gift-cards",
+   "note": "Sephora FAQ states a $250 max denomination; $10 min is from Sephora corporate gift cards ($10–$250) and authorized eGift amount pickers, not printed on the consumer FAQ."
+  },
+  {
+   "name": "Home Depot eGift Card",
+   "min": 5,
+   "max": 2000,
+   "source": "https://homedepot.egifter.com/gift/create/start",
+   "note": "Official Home Depot eGift partner page lists $5–$2,000. homedepot.com FAQ confirms eGift purchase but does not print the range."
+  },
+  {
+   "name": "Airbnb Gift Card",
+   "min": 25,
+   "max": 2000,
+   "source": "https://www.airbnb.com/giftcards/",
+   "note": "airbnb.com/giftcards says pick an amount but does not print the range. Airbnb's gift-card purchase flow (Launch Gift Cards) asks for $25–$2,000."
+  },
+  {
+   "name": "Chipotle eGift Card",
+   "min": 10,
+   "max": 250,
+   "source": "https://www.chipotle.com/gift-cards",
+   "note": "chipotle.com/gift-cards does not print amounts. Chipotle's gift-card FAQ says $10 min and $250 max per card."
+  },
+  {
+   "name": "Lyft Gift Card",
+   "min": 25,
+   "max": 200,
+   "source": "https://www.lyft.com/gift",
+   "note": "lyft.com says select $25–$100 or enter your own amount. Lyft also sends buyers to Amazon, where the eGift custom range is $25–$200."
+  },
+  {
+   "name": "Instacart Gift Card",
+   "min": 25,
+   "max": 500,
+   "source": "https://www.instacart.com/p/gift-cards",
+   "note": "Current help page confirms preset or custom amounts but does not print the range. Instacart's gift-card blog says presets $25–$200 and custom up to $500."
+  },
+  {
+   "name": "Roblox Gift Card",
+   "min": 10,
+   "max": 500,
+   "source": "https://www.roblox.com/shopgiftcards?locale=en_us&location=us",
+   "note": ""
+  },
+  {
+   "name": "Nike Digital Gift Card",
+   "min": 25,
+   "max": 500,
+   "source": "https://www.nike.com/t/digital-gift-card-emailed-in-approximately-2-hours-or-less-B9Mv2K/GIFTCARD-D7503",
+   "note": ""
+  }
+ ]
+}

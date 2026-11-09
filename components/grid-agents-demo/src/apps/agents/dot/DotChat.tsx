@@ -302,7 +302,7 @@ function PaySheet({
             <div className={styles.payRows}>
               {order ? (
                 <div>
-                  <span>Ship to</span>
+                  <span>{ask.soon ? 'Deliver to' : 'Ship to'}</span>
                   <p>
                     {PERSON.full}
                     <br />
@@ -818,7 +818,7 @@ export function DotChat({ chat }: AgentChatProps) {
                   <span className={styles.glyph} style={mask(`${A}/plus.svg`, 18, 18)} />
                 </motion.span>
                 <motion.span layout="position" transition={CARD} className={styles.fieldSlot}>
-                  <ComposerField chat={chat} placeholder="Message your dot" className={styles.field} onMultiline={setMultiline} />
+                  <ComposerField chat={chat} placeholder="Ask dot to buy or send…" className={styles.field} onMultiline={setMultiline} />
                 </motion.span>
                 <span className={styles.tools}>
                   <motion.span layout="position" transition={sendFlip ? SEND_IN : CARD} className={styles.slot}>

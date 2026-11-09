@@ -308,7 +308,6 @@ function ApprovalCard({
       </div>
       <div className={styles.cardTitle}>
         <span>{ask.title}</span>
-        {ask.badge && <span className={styles.merchant}>{ask.badge}</span>}
       </div>
       {ask.who && (
         <div className={styles.details}>
@@ -605,7 +604,7 @@ export function MuseChat({ chat }: AgentChatProps) {
             <span className={styles.slot}>
               <span className={styles.icon} style={{ maskImage: `url(${A}/plus.svg)` }} />
             </span>
-            <ComposerField chat={chat} placeholder="Message" className={styles.field} />
+            <ComposerField chat={chat} placeholder="Ask Muse to buy, pay or send…" className={styles.field} />
             {chat.composer ? (
               <span className={styles.slot} role="button" aria-label="Send" onClick={chat.send}>
                 <span className={styles.sendCircle} data-ready={chat.canSend || undefined}>
@@ -631,7 +630,7 @@ export function MuseChat({ chat }: AgentChatProps) {
       }
       tabBar={
         <div className={styles.tabBar}>
-          <GlassPill radius={29} absolute className={styles.tabPill}>
+          <GlassPill radius={31.5} absolute className={styles.tabPill}>
             <span ref={selectedTab} className={styles.tabSelected} />
           </GlassPill>
           {TABS.map(([icon, x, y, w, h]) => (

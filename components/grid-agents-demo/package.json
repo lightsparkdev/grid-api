@@ -4,6 +4,7 @@
   "private": true,
   "description": "Interactive Agent Accounts playground, embedded in the Grid docs.",
   "scripts": {
+    "postinstall": "patch-package",
     "dev": "next dev -p 4003",
     "build": "next build",
     "start": "next start -p 4003",
@@ -21,7 +22,9 @@
     "@central-icons-react/round-outlined-radius-3-stroke-2": "^1.1.290",
     "@lightsparkdev/origin": "^0.13.4",
     "@upstash/redis": "^1.41.0",
+    "border-beam": "^1.4.1",
     "clsx": "^2.1.1",
+    "dialkit": "^2.2.0",
     "geist": "^1.7.2",
     "motion": "^12.33.0",
     "next": "^14.2.35",
@@ -34,6 +37,7 @@
     "@types/node": "^22.10.0",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
+    "patch-package": "^8.0.1",
     "playwright": "^1.60.0",
     "typescript": "^5.9.3"
   }

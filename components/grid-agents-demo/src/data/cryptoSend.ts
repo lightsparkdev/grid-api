@@ -69,7 +69,8 @@ export const NETWORK_FEE: Record<DepositNetwork, number> = {
 /** Whether the agent can send to this address at all (and this asset, if named), before anything is set up for it. */
 export function canSend(address: string, asset?: SendAsset): boolean {
   const kind = addressKind(address);
-  if (kind === 'invalid' || kind === 'bitcoin') return false;
+  // The playground only sends stablecoins: no bitcoin, on-chain or over Lightning.
+  if (kind === 'invalid' || kind === 'bitcoin' || kind === 'lightning') return false;
   return !asset || NETWORKS_FOR[kind].some((n) => SENDS_ON[n].includes(asset));
 }
 

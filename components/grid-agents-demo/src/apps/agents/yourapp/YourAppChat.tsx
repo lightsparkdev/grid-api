@@ -104,7 +104,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
       composer={
         <GlassPill radius={24} className={styles.composer}>
           <span className={styles.composerRow}>
-            <ComposerField chat={chat} placeholder="Message your agent" className={styles.field} />
+            <ComposerField chat={chat} placeholder="Ask your agent to buy or send…" className={styles.field} />
             <span className={styles.send} data-active={chat.composer ? true : undefined} role="button" onClick={chat.send} data-ready={chat.canSend || undefined}>
               <SfSymbol name="arrow.up" size={15} />
             </span>

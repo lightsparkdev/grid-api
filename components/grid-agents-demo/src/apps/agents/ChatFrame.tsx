@@ -5,6 +5,7 @@ import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { easeOutSnappy, motionTransition } from '@/lib/easing';
 import { smoothShapeClip, type CapsuleQuarter } from '@/lib/squircle/path';
+import { ComposerBeam, useComposerDials } from './ComposerBeam';
 import type { Message } from './conversation';
 import type { ChatView } from './types';
 import styles from './ChatFrame.module.scss';
@@ -452,6 +453,7 @@ export function ChatFrame({
       {tabBar}
       <div ref={composerRef} className={styles.composer}>
         {composer}
+        <ComposerBeam host={composerRef} fresh={!messages.some((m) => m.kind === 'me')} />
       </div>
       <div className={styles.overlay} data-chat-overlay>
         {overlay}
@@ -459,6 +461,44 @@ export function ChatFrame({
       {screenOverlay && onFaceIdDone && createPortal(<FaceIdAuth active={!!faceId} onDone={onFaceIdDone} />, screenOverlay)}
     </div>
   );
+}
+
+/** What the agent is waiting on, if anything, which the field's placeholder then says. */
+type Waiting = 'amount' | 'card' | 'bank' | 'ask' | 'choice' | 'answer';
+
+const WAITING: Record<Waiting, string> = {
+  amount: 'Type an amount, like $50',
+  card: 'Add your card, or ask something else',
+  bank: 'Link your bank, or ask something else',
+  ask: 'Approve it, or type a change',
+  choice: 'Pick one, or type your own',
+  answer: 'Type your answer…',
+};
+
+/** The placeholder: what the agent is waiting on (an amount, a card or bank, an approval, a choice, an answer), else the app's invitation. */
+function hintFor(chat: Pick<ChatView, 'messages' | 'awaitingAmount'>, invite: string, own: Partial<Record<Waiting, string>> = {}): string {
+  const said = chat.messages.filter((m) => m.kind !== 'work' && m.kind !== 'meta' && m.kind !== 'stamp');
+  const last = said[said.length - 1];
+  const open = chat.messages.find((m) => m.kind === 'ask' && m.state === 'open');
+  const waiting: Waiting | undefined = !chat.messages.some((m) => m.kind === 'me')
+    ? undefined
+    : chat.awaitingAmount
+      ? 'amount'
+      : open?.kind === 'ask'
+        ? open.ask.card
+          ? 'card'
+          : open.ask.bank
+            ? 'bank'
+            : 'ask'
+        : chat.messages.some((m) => m.kind === 'chips' && m.picked === null && !m.expired)
+          ? 'choice'
+          : last?.kind === 'them' && !last.typing && last.text.trim().endsWith('?')
+            ? 'answer'
+            : undefined;
+  if (!waiting) return invite;
+  // A lowercase app (Dots, Instinct: its invitation opens lowercase) says it lowercase too.
+  const text = own[waiting] ?? WAITING[waiting];
+  return /^[a-z]/.test(invite) ? text.toLowerCase() : text;
 }
 
 /**
@@ -471,11 +511,15 @@ export function ChatFrame({
 export function ComposerField({
   chat,
   placeholder,
+  waiting,
   className,
   onMultiline,
 }: {
-  chat: Pick<ChatView, 'composer' | 'setComposer' | 'send'>;
+  chat: Pick<ChatView, 'composer' | 'setComposer' | 'send' | 'messages' | 'awaitingAmount'>;
+  /** The app's invitation to type ("Ask Muse to buy, pay or send…"), shown until the agent waits on something. */
   placeholder: string;
+  /** The app's own words for what it's waiting on, where they differ (Instinct's approvals are a typed yes). */
+  waiting?: Partial<Record<Waiting, string>>;
   className?: string;
   /**
    * The text has outgrown one row. Skins whose composer turns into a card
@@ -529,14 +573,23 @@ export function ComposerField({
     return () => ro.disconnect();
   }, [chat.composer]);
 
+  const { shimmer } = useComposerDials();
+  const hint = hintFor(chat, placeholder, waiting);
   return (
     <span ref={wrap} className={`${styles.fieldWrap} ${className ?? ''}`} data-multiline={multiline || undefined}>
+      {/* The placeholder, drawn so it can shimmer: a glint sweeps it to say "type here". */}
+      {!chat.composer && (
+        <span className={styles.hint} aria-hidden>
+          <span className={styles.hintText}>{hint}</span>
+          {shimmer && <span className={styles.hintGlint}>{hint}</span>}
+        </span>
+      )}
       <textarea
         className={styles.field}
         style={{ height: height ?? undefined }}
         rows={1}
         value={chat.composer}
-        placeholder={placeholder}
+        aria-placeholder={hint}
         maxLength={COMPOSER_MAX}
         enterKeyHint="send"
         aria-label="Message"

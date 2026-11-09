@@ -441,23 +441,17 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   }
 }
 
-.merchant,
 .productLetter {
   display: grid;
   flex: none;
   place-items: center;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
-  background: var(--muse-bg);
+  border-radius: 7px;
+  background: var(--muse-rule);
   color: var(--muse-muted);
   font-size: 13px;
   font-weight: 510;
-}
-
-.productLetter {
-  border-radius: 7px;
-  background: var(--muse-rule);
 }
 
 .details {
@@ -1045,12 +1039,13 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   pointer-events: none;
 }
 
+// IMG_1952 at 3x: the bar runs 790 to 853pt, 9pt under the composer.
 .tabPill {
   position: absolute;
-  top: 14px;
+  top: 12px;
   left: 21px;
   width: 360px;
-  height: 58px;
+  height: 63px;
 }
 
 .tabSelected {
@@ -1058,8 +1053,8 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   top: 4px;
   left: 5px;
   width: 78px;
-  height: 50px;
-  border-radius: 25px;
+  height: 55px;
+  border-radius: 27.5px;
   // IMG_1952: #eae9ea in the bar.
   background: rgba(0, 0, 0, 0.055);
 

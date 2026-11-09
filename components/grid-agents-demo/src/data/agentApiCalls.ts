@@ -468,12 +468,13 @@ export function createAgentSession(nameOf: () => string): AgentSession {
 
   /* ── Events ── */
 
-  const connect = (lite = false): CallStep[] => {
+  const connect = (lite = false, start?: Limits): CallStep[] => {
     // Already there for the card: the balance turns on, nothing new to create.
     if (connected) {
       balanceOn = balanceOn || !lite;
       return [];
     }
+    if (start) limits = { ...start };
     connected = true;
     balanceOn = !lite;
     const code = base64url(22);
@@ -489,7 +490,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
             reqBody: { name: nameOf(), customerId: CUSTOMER, policy: policyBody(limits) },
             status: '201 Created',
             note: lite
-              ? 'The person saved a card for the agent to pay with; your backend creates the agent with the default policy. No balance yet. The device code goes to the agent once.'
+              ? `The person saved a card for the agent to pay with; your backend creates the agent with ${start ? 'a policy that covers what it’s buying' : 'the default policy'}. No balance yet. The device code goes to the agent once.`
               : 'The person approved in your app; your backend creates the agent with its policy. The device code goes to the agent once.',
             resBody: { agent: { ...agentResource(), isConnected: false }, deviceCode },
           },
@@ -965,12 +966,12 @@ export function createAgentSession(nameOf: () => string): AgentSession {
       title: `To ${shortAddress(p.address)}`,
       detail: where,
       done: p.network === 'LIGHTNING' ? `The invoice is paid: ${sends}.` : `${sends} arrived at ${shortAddress(p.address)}.`,
-      toolName: 'quote_crypto_send',
+      toolName: 'quote_stablecoin_send',
     };
     return [
       {
         tool: {
-          name: 'quote_crypto_send',
+          name: 'quote_stablecoin_send',
           args: { to: p.address, network: p.network, asset: p.asset, amount: dollars(p.usd) },
           result: { quote_id: id, receives: sends, fee: money(p.fee), expires_in: '5 minutes' },
         },
@@ -1307,7 +1308,7 @@ export function createAgentSession(nameOf: () => string): AgentSession {
     stepsFor(event) {
       switch (event.type) {
         case 'connect':
-          return connect(event.lite);
+          return connect(event.lite, event.limits);
         case 'fund.deposit':
           return fundDeposit(event.network, event.currency, event.amount);
         case 'fund.received':
