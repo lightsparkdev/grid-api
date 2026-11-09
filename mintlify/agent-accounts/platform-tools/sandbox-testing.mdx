@@ -5,7 +5,7 @@ icon: "/images/icons/hammer.svg"
 "og:image": "/images/og/og-agents-playground-v2.webp"
 ---
 
-The Grid sandbox runs the agent APIs exactly as production does, with simulated money. Policies, spending pools, approvals, device codes and webhooks all behave as they will in production, so a flow that works in sandbox works live.
+The Grid sandbox runs the agent APIs with simulated money. Policies, spending pools, approvals, device codes and webhooks behave as they do in production. Sandbox simulates the API contract, not the banking rails: settlement timings and failure modes that come from a partner bank cannot be reproduced, so test those paths with small amounts in production.
 
 ## Sandbox setup
 

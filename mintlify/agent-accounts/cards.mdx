@@ -1,6 +1,6 @@
 ---
 title: "Cards"
-description: "Give agents their own virtual cards, single-use and recurring purchase cards scoped to one merchant, and bounded access to cards the customer already owns."
+description: "Give agents their own virtual cards, single-use purchase cards for one purchase, recurring cards locked to one merchant, and bounded access to cards the customer already owns."
 icon: "/images/icons/credit-card1.svg"
 "og:image": "/images/og/og-agents-playground-v2.webp"
 ---
@@ -73,7 +73,7 @@ For a subscription, a card saved with a merchant, a hotel or car rental, or an o
 
 - It always becomes an `ISSUE_PURCHASE_CARD` action awaiting the customer's approval (`202`), whatever the policy's threshold or mode. A request the policy denies is still refused with `403`.
 - It locks to the first merchant that charges it and declines every other merchant. That merchant may charge it again, up to `amount` in any trailing month, with no tax or shipping allowance added, so include those in `amount`.
-- It has no expiry and stays open until the customer or your platform closes it with `PATCH /cards/{id}` and `status: CLOSED`. Pausing the agent declines its charges without closing it; deleting the agent freezes it.
+- It has no expiry and stays open until the customer or your platform closes it with `PATCH /cards/{id}`, sending `status: CLOSED` together with a `substatus` and a `reason`, which the endpoint requires whenever `status` is set. Pausing the agent declines its charges without closing it; deleting the agent freezes it.
 - Recurring cards have their own, smaller limit on open cards, separate from single-use cards.
 
 ### Read the card details
@@ -114,7 +114,7 @@ Where your platform enables agents for business customers, an agent of a `BUSINE
 
 ### Hand a card to a new agent
 
-Deleting an agent freezes the standard card issued for it, and a frozen card still counts against the customer's card limit. When the customer reconnects the same agent software as a new agent, call `POST /agents/{agentId}/card-handover` on the new agent to move the card to it and unfreeze it. Pass `previousAgentId` to pick the deleted agent's card, or `kind=PURCHASE` to move recurring purchase cards one at a time (call again until `204`). It responds `204` when there is nothing to hand over. Single-use purchase cards are never handed over.
+Deleting an agent freezes the standard card issued for it, and a frozen card still counts against the customer's card limit. When the customer reconnects the same agent software as a new agent, call `POST /agents/{agentId}/card-handover` on the new agent to move the card to it and unfreeze it. Pass `previousAgentId` to pick the deleted agent's card, or `kind=PURCHASE` to move recurring purchase cards one at a time (call again until `204`). For `kind=PURCHASE`, the new agent must first hold an `ACTIVE` delegated key on the Embedded Wallet that funds the card; a card on a wallet where it holds none is skipped, and the call can answer `204` even though that card was not moved. Otherwise `204` means there is nothing to hand over. Single-use purchase cards are never handed over.
 
 ## Stored cards
 
