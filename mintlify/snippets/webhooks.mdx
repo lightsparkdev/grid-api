@@ -197,13 +197,13 @@ The Grid API will retry webhooks with the following policy based on the webhook 
 | Webhook Type | Retry Policy | Notes |
 |-------------|-------------|-------|
 | `TEST` | No retries | Used for testing webhook configuration |
-| `OUTGOING_PAYMENT.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
-| `INCOMING_PAYMENT.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on: 409 (duplicate webhook) or PENDING status since it is served as an approval mechanism in-flow |
-| `BULK_UPLOAD.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
-| `WALLET_OPERATION.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
-| `INVITATION.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
-| `CUSTOMER.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
-| `ACCOUNT.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
-| `CARD.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
-| `CARD_TRANSACTION.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
+| `OUTGOING_PAYMENT.*` | Retry with exponential backoff up to 360 attempts (roughly 85 hours) with maximum interval of 15 mins | No retry on 409 (duplicate webhooks) |
+| `INCOMING_PAYMENT.*` | Retry with exponential backoff up to 360 attempts (roughly 85 hours) with maximum interval of 15 mins | No retry on: 409 (duplicate webhook) or PENDING status since it is served as an approval mechanism in-flow |
+| `BULK_UPLOAD.*` | Retry with exponential backoff up to 360 attempts (roughly 85 hours) with maximum interval of 15 mins | No retry on 409 (duplicate webhooks) |
+| `WALLET_OPERATION.*` | Retry with exponential backoff up to 360 attempts (roughly 85 hours) with maximum interval of 15 mins | No retry on 409 (duplicate webhooks) |
+| `INVITATION.*` | Retry with exponential backoff up to 360 attempts (roughly 85 hours) with maximum interval of 15 mins | No retry on 409 (duplicate webhooks) |
+| `CUSTOMER.*` | Retry with exponential backoff up to 360 attempts (roughly 85 hours) with maximum interval of 15 mins | No retry on 409 (duplicate webhooks) |
+| `ACCOUNT.*` | Retry with exponential backoff up to 360 attempts (roughly 85 hours) with maximum interval of 15 mins | No retry on 409 (duplicate webhooks) |
+| `CARD.*` | Retry with exponential backoff up to 360 attempts (roughly 85 hours) with maximum interval of 15 mins | No retry on 409 (duplicate webhooks) |
+| `CARD_TRANSACTION.*` | Retry with exponential backoff up to 360 attempts (roughly 85 hours) with maximum interval of 15 mins | No retry on 409 (duplicate webhooks) |
 | `CARD_AUTHORIZATION.REQUEST` | No retries | Real-time decision request, sent only while `cardConfigs.realTimeAuthorization` is set |
