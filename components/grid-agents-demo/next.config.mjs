@@ -1,8 +1,20 @@
 import * as sass from 'sass';
+import { createHash } from 'crypto';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Webpack's cache trusts node_modules by package version, so a patched package (patches/, applied by patch-package)
+// would keep its stale unpatched build. The patches' contents go into the cache key instead.
+const patchesDir = path.join(__dirname, 'patches');
+const patchesHash = fs.existsSync(patchesDir)
+  ? createHash('sha256')
+      .update(fs.readdirSync(patchesDir).sort().map((f) => fs.readFileSync(path.join(patchesDir, f), 'utf8')).join('\n'))
+      .digest('hex')
+      .slice(0, 12)
+  : 'none';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -33,6 +45,10 @@ const nextConfig = {
     ];
   },
   webpack: (config) => {
+    if (config.cache && typeof config.cache === 'object') {
+      config.cache.version = `${config.cache.version ?? ''}|patches-${patchesHash}`;
+    }
+
     // Ensure dependencies imported by the local Origin package
     // resolve from this project's node_modules
     config.resolve.modules = [
