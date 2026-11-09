@@ -33,7 +33,7 @@ const VOICES: ConnectorId[] = ['muse', 'grok', 'dot', 'instinct', 'claude'];
 const ROOT = join(__dirname, '..');
 
 type Expect =
-  | { flow: 'buy'; gift?: { brand: string; amount: number }; named?: string; range?: [number, number]; budget?: number; brand?: string; subscription?: boolean; delivery?: 'ship' | 'email'; /** The pick costs at most this (USD): socks aren't $89. */ under?: number }
+  | { flow: 'buy'; gift?: { brand: string; amount: number }; named?: string; range?: [number, number]; budget?: number; brand?: string; subscription?: boolean; delivery?: Shelf['delivery']; /** The pick costs at most this (USD): socks aren't $89. */ under?: number; /** Watch the price and buy under this (USD). */ below?: number; /** A top-up's value (USD). */ value?: number }
   | { flow: 'ask' }
   | { flow: 'none' }
   /** Whatever it does, only the checks every reply gets. */
@@ -48,6 +48,9 @@ type Expect =
       keepsApprove?: boolean;
       /** A flow queued after this one ("raise it, then buy the iPhone"). */
       then?: ActionId;
+      /** pay: every month. getpaid: split with this many others. */
+      monthly?: boolean;
+      splitWith?: number;
     };
 
 interface Case {
@@ -227,6 +230,25 @@ const CASES: Case[] = [
     ] as const
   ).map(([text, amount]) => ({ tag: 'withdraw', text, expect: { flow: 'cashout', amount } as Expect })),
   { tag: 'withdraw', text: 'withdraw some money', expect: { flow: 'cashout', orAsk: true } },
+  // Delivered now, a ride, tickets, a table, a top-up, a bill, a price watch: each a one-time card, arriving its own way.
+  { tag: 'now', text: 'order me a pizza', expect: buy({ delivery: 'now' }) },
+  { tag: 'now', text: 'can you get me an iced latte', expect: buy({ delivery: 'now' }) },
+  { tag: 'ride', text: 'get me a ride to the airport', expect: buy({ delivery: 'ride' }) },
+  { tag: 'ride', text: 'order an uber to SFO', expect: buy({ delivery: 'ride', brand: 'Uber' }) },
+  { tag: 'tickets', text: 'two tickets to the knicks game friday', expect: buy({ delivery: 'email' }) },
+  { tag: 'tickets', text: 'get us 4 movie tickets for tonight', expect: buy({ delivery: 'email' }) },
+  { tag: 'table', text: 'book dinner for 4 at 8 tonight', expect: buy({ delivery: 'email' }) },
+  { tag: 'topup', text: 'top up my mom’s phone in mexico with $20', expect: buy({ delivery: 'instant', value: 20 }) },
+  { tag: 'topup', text: 'put $10 of airtime on my brother’s phone in the philippines', expect: buy({ delivery: 'instant', value: 10 }) },
+  { tag: 'topup', text: 'top up my mom’s phone in mexico', expect: { flow: 'ask' } },
+  { tag: 'bill', text: 'pay my electric bill', expect: buy({ delivery: 'bill' }) },
+  { tag: 'bill', text: 'pay my $72 internet bill', expect: buy({ delivery: 'bill', value: 72 }) },
+  { tag: 'watch', text: 'buy the sony wh-1000xm6 if it drops under $300', expect: buy({ below: 300 }) },
+  { tag: 'watch', text: 'get me a ps5 when it goes on sale for less than $400', expect: buy({ below: 400 }) },
+  { tag: 'monthly', text: 'send maria in mexico $200 every month on the 1st', expect: { flow: 'pay', amount: 200, monthly: true } },
+  { tag: 'monthly', text: 'send my mom money every month', expect: { flow: 'ask' } },
+  { tag: 'split', text: 'split last night’s $120 dinner with sam and alex', expect: { flow: 'getpaid', amount: 120, splitWith: 2 } },
+  { tag: 'split', text: 'split the $90 uber with jess', expect: { flow: 'getpaid', amount: 90, splitWith: 1 } },
   { tag: 'withdraw', text: 'how long does a withdrawal take?', expect: { flow: 'none' } },
   // Top-ups, payments, crypto, the rest.
   { tag: 'fund', text: 'add $100 to my balance', expect: { flow: 'fund', amount: 100 } },
@@ -431,6 +453,12 @@ function staticChecks(): Result[] {
     ['a coffee maker still ships', { query: 'coffee maker' }, (s) => (s.delivery === 'ship' && /Coffee Maker|Espresso|Kettle/.test(s.pick.item) ? [] : [`${s.delivery} ${s.pick.item}`])],
     ['dog food is not takeout', { query: 'dog food' }, (s) => (s.delivery === 'ship' ? [] : [`${s.delivery} ${s.pick.item}`])],
     ['indian food leads with a curry', { query: 'indian food' }, (s) => (/Tikka/.test(s.pick.item) ? [] : [s.pick.item])],
+    ['a ride goes where they said', { query: 'ride to the airport' }, (s) => (s.delivery === 'ride' && s.details?.to === 'the airport' && s.options.length === 3 ? [] : [`${s.delivery} ${JSON.stringify(s.details)}`])],
+    ['tickets for how many they said', { query: '4 movie tickets' }, (s) => (s.delivery === 'email' && s.details?.tickets === 4 && s.pick.amount === 6_400 ? [] : [`${s.pick.item} ${s.pick.amount}`])],
+    ['a table for 4 at 8', { query: 'dinner reservation for 4 at 8' }, (s) => (s.details?.table === 4 && s.details?.time === '8:00 PM' ? [] : [JSON.stringify(s.details)])],
+    ['a top-up in local money', { query: 'phone top-up in Mexico', kind: 'topup', amount: 20 }, (s) => (s.delivery === 'instant' && s.pick.brand === 'Telcel' && s.pick.amount === 2_000 && /MX\$\d{3}/.test(String(s.details?.local)) ? [] : [`${s.pick.item} ${JSON.stringify(s.details)}`])],
+    ['the bill they named', { query: 'internet bill' }, (s) => (s.delivery === 'bill' && s.pick.brand === 'Wavelink Fiber' ? [] : [s.pick.item])],
+    ['a biller they named', { query: 'electric bill', brand: 'PG&E' }, (s) => (s.pick.brand === 'PG&E' ? [] : [s.pick.item])],
     ['a restaurant they named delivers', { query: 'pizza', brand: "Domino's", typicalPrice: 18 }, (s) => (s.delivery === 'now' && s.pick.brand === "Domino's" ? [] : [`${s.delivery} ${s.pick.item}`])],
   ];
   for (const [text, request, test] of shelves) {
@@ -537,6 +565,8 @@ function judge(c: Case, r: AgentResponse | { fallback: string }): Result {
     if ('perTx' in e && e.perTx !== undefined && r.params?.perTx !== e.perTx) problems.push(`perTx ${r.params?.perTx}, wanted ${e.perTx}`);
     if ('keepsApprove' in e && e.keepsApprove && r.params?.approve !== undefined) problems.push(`set approve to ${r.params.approve}`);
     if ('then' in e && e.then && !r.then?.some((t) => t.flow === e.then)) problems.push(`nothing queued after (${JSON.stringify(r.then ?? [])})`);
+    if ('monthly' in e && e.monthly && r.params?.every !== 'month') problems.push('not monthly');
+    if ('splitWith' in e && e.splitWith && r.params?.people?.length !== e.splitWith) problems.push(`split with ${JSON.stringify(r.params?.people ?? [])}`);
     return result(said);
   }
 
@@ -572,6 +602,8 @@ function judge(c: Case, r: AgentResponse | { fallback: string }): Result {
     problems.push(`picked ${shelf.pick.brand}, wanted ${e.brand}`);
   if (e.delivery && shelf.delivery !== e.delivery) problems.push(`delivery ${shelf.delivery}, wanted ${e.delivery}`);
   if (e.under && shelf.pick.amount > e.under * 100) problems.push(`pick ${usd2(shelf.pick.amount)}, over $${e.under}`);
+  if (e.below && r.params?.below !== e.below) problems.push(`below ${r.params?.below ?? 'missing'}, wanted ${e.below}`);
+  if (e.value && shelf.pick.amount !== e.value * 100) problems.push(`value ${usd2(shelf.pick.amount)}, wanted ${usd2(e.value * 100)}`);
   // Nothing on the shelf is named after a vague word ("Verde Birthday Present", "Oriel Common Everyday Item").
   const vague = shelf.options.filter((o) => /\b(present|gift|item|thing|something|stuff|everyday|whatever|surprise)\b/i.test(o.title) && !/gift card/i.test(o.title));
   if (vague.length) problems.push(`vague product: ${vague.map((o) => o.title).join(', ')}`);

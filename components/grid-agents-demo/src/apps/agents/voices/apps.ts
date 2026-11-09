@@ -4,10 +4,12 @@ import { BANK_REACH } from '@/data/bankCountries';
 import { usd, usd2 } from '../story';
 import {
   ASKS,
+  byErrand,
   CARD,
   MUSE_ORDER,
   short,
   nightsOf,
+  orderNoun,
   setupDone,
   type AskFn,
   type AskKey,
@@ -67,8 +69,15 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'buy.which': (p) => `The ${s(p, 'merchant')} ${s(p, 'model')} is the one I’d get. Want it, or one of the others?`,
       'buy.card': (p) =>
         n(p, 'needs')
-          ? `${short(p)}Here’s the final quote. Do these details look correct, and should I place the order with your ${n(p, 'card') ? CARD : 'Muse balance'}?`
-          : `${short(p)}Here’s the final quote: ${usd2(n(p, 'amount'))} on your ${n(p, 'card') ? CARD : 'Muse balance'}.`,
+          ? `${short(p)}${byErrand(p, {
+              order: 'Here’s the final quote. Do these details look correct, and should I place the order',
+              ride: 'Here’s the ride. Should I book it',
+              bill: 'Here’s the bill. Should I pay it',
+              topup: 'Here’s the top-up. Should I send it',
+              tickets: 'Here are the tickets. Should I buy them',
+              table: 'Here’s the table. Should I book it',
+            })} with your ${n(p, 'card') ? CARD : 'Muse balance'}?`
+          : `${short(p)}${byErrand(p, { order: 'Here’s the final quote', ride: 'Here’s the ride', bill: 'Here’s the bill', topup: 'Here’s the top-up', tickets: 'Here are the tickets', table: 'Here’s the table' })}: ${usd2(n(p, 'amount'))} on your ${n(p, 'card') ? CARD : 'Muse balance'}.`,
       'buy.done': (p) => (n(p, 'now') ? 'Ordered. It gets there in about 30 minutes, and you can track it from your inbox.' : 'Ordered. It arrives Thursday, and tracking is in your inbox.'),
       'buy.sent': () => 'Sent! It’s in your inbox.',
       'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank yet. Add it once and I’ll take it from there.`,
@@ -83,9 +92,20 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       crypto: museSpend('crypto'),
     },
     status: {
-      searching: () => '🛍️ Searching stores',
-      filling: () => '📝 Filling checkout',
-      paying: () => '💳 Checking out',
+      searching: (p) =>
+        byErrand(p, {
+          order: '🛍️ Searching stores',
+          food: '🛵 Checking what’s nearby',
+          ride: '🚗 Finding a ride',
+          bill: '🧾 Looking up your bill',
+          topup: '📱 Checking the carrier',
+          tickets: '🎟️ Finding tickets',
+          table: '🍽️ Checking tables',
+        }),
+      filling: (p) =>
+        byErrand(p, { order: '📝 Filling checkout', ride: '📍 Setting the pickup', bill: '🧾 Filling in the bill', topup: '📱 Entering the number', tickets: '🎟️ Picking seats', table: '🍽️ Holding the table' }),
+      paying: (p) =>
+        byErrand(p, { order: '💳 Checking out', ride: '🚗 Booking the ride', bill: '💳 Paying the bill', topup: '💳 Sending the top-up', tickets: '💳 Buying tickets', table: '💳 Booking the table' }),
       quoting: () => '💱 Getting a quote',
       sending: () => '💸 Sending',
       setup: () => '✨ Setting up Muse balance',
@@ -209,6 +229,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'fund.offerShort': () => 'want to add money?',
       'fund.offerFrom': (p) => `your **Dots balance** is empty. want to add money from ${n(p, 'bank') ? 'your bank' : `your **${CARD}**`}?`,
       'fund.amount': () => 'sure! how much should i add?',
+      'amount.other': () => 'sure! type any amount',
       'fund.ask': () => 'pick what’s easiest:',
       'fund.done': (p) => `${usd(n(p, 'amount'))} landed! you’ve got ${usd2(n(p, 'balance'))} now.`,
       'pay.newRecipient': (p) => `i don’t have ${lower(p, 'first')}’s bank yet! add it here once and i’ll send it.`,
@@ -220,8 +241,8 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'buy.which': (p) => `i’d go with the **${s(p, 'merchant')} ${s(p, 'model')}**! want that one, or one of the others?`,
       'buy.card': (p) =>
         n(p, 'card')
-          ? `${n(p, 'short') ? 'your **Dots balance** won’t cover it, so ' : ''}i’ll put it on your **${CARD}** through a one-time card for exactly this order.${n(p, 'needs') ? ' opening the checkout for you' : ''}`
-          : `i’ll pay from your **Dots balance** with a one-time card for exactly this order.${n(p, 'needs') ? ' opening the checkout for you' : ''}`,
+          ? `${n(p, 'short') ? 'your **Dots balance** won’t cover it, so ' : ''}i’ll put it on your **${CARD}** through a one-time card for exactly this ${orderNoun(p)}.${n(p, 'needs') ? ' opening it for you' : ''}`
+          : `i’ll pay from your **Dots balance** with a one-time card for exactly this ${orderNoun(p)}.${n(p, 'needs') ? ' opening it for you' : ''}`,
       'buy.payWith': () => `want me to pay from your **Dots balance** or your **${CARD}**?`,
       'buy.short': (p) => `you’ve got ${usd2(n(p, 'balance'))} in your **Dots balance**. i can put this on your card instead, or you can add ${usd(n(p, 'amount'))} first!`,
       'card.forBuy': () => 'add your card once and i’ll take it from there!',
@@ -281,6 +302,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'fund.offerShort': () => 'want to add money?',
       'fund.offerFrom': (p) => `your Instinct balance is empty, want to add money from your ${n(p, 'bank') ? 'bank' : 'card'}?`,
       'fund.amount': () => 'how much?',
+      'amount.other': () => 'sure, type any amount',
       'fund.ask': () => 'how do you want to add it?',
       'fund.done': (p) => `got it. ${usd2(n(p, 'balance'))} in the account`,
       'limits.intro': () => 'i can’t change my own limits, you have to ok them',
@@ -296,15 +318,15 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'pay.denied': () => 'ok, not sending',
       'buy.card': (p) =>
         n(p, 'card')
-          ? `${n(p, 'short') ? 'your Instinct balance won’t cover it, so ' : ''}i’ll put it on your ${CARD} with a one-time card for exactly this order`
-          : 'i’ll pay from your Instinct balance with a one-time card for exactly this order',
+          ? `${n(p, 'short') ? 'your Instinct balance won’t cover it, so ' : ''}i’ll put it on your ${CARD} with a one-time card for exactly this ${orderNoun(p)}`
+          : `i’ll pay from your Instinct balance with a one-time card for exactly this ${orderNoun(p)}`,
       'buy.payWith': () => `your Instinct balance or your ${CARD}?`,
       'buy.short': (p) => `you’ve got ${usd2(n(p, 'balance'))} in your Instinct balance. i can put this on your card, or you can add ${usd(n(p, 'amount'))} first`,
       'card.forBuy': () => 'add your card once and i’ve got it',
       'balance.offer': () => 'want an Instinct balance too? i can pay from it without your card, and you can get paid into it, send money abroad',
       'balance.later': () => 'ok, just ask when you want one',
       'buy.which': (p) => `i’d go with the ${s(p, 'merchant')} ${s(p, 'model')}. that one, or one of the others?`,
-      'buy.picked': (p) => `got your pick: the ${s(p, 'item')}. i’ll check the current total and get checkout ready. nothing’s charged without your ok`,
+      'buy.picked': (p) => `got your pick: the ${s(p, 'item')}. i’ll check the current total and get ${byErrand(p, { order: 'checkout', ride: 'the ride', tickets: 'the tickets', table: 'the booking' })} ready. nothing’s charged without your ok`,
       'buy.shortCard': (p) => `your Instinct balance won’t cover it. put it on your ${CARD}, or add ${usd(n(p, 'amount'))} first?`,
       'bank.kept': () => 'i’ll keep it connected for next time, for adding money and withdrawing',
       'buy.done': (p) => (n(p, 'now') ? 'ordered, there in about 30 min' : 'ordered, arrives thursday'),
@@ -363,7 +385,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'connect.done': (p) => (n(p, 'hasAgent') ? 'Your Duet balance is on, and I’ll stay inside the limits you set.' : 'Connected. I have my own account now, and I’ll stay inside the limits you set.'),
       'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank details yet. Add them here once, and I’ll send it right after.`,
       'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so I’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'from')} comes to ${s(p, 'to')} at today’s rate.` : ''}`,
-      'buy.card': (p) => `${short(p)}I’ll pay with a virtual card locked to this one order${n(p, 'card') ? `, charged to your ${CARD}` : ''}.`,
+      'buy.card': (p) => `${short(p)}I’ll pay with a virtual card locked to this one ${orderNoun(p)}${n(p, 'card') ? `, charged to your ${CARD}` : ''}.`,
       'buy.done': (p) => (n(p, 'now') ? 'Done. It gets there in about 30 minutes, and the receipt is filed.' : 'Done. It arrives Thursday, and the receipt is filed.'),
       'buy.sent': () => 'Done. It’s in your inbox, and the receipt is filed.',
       'sub.card': (p) => `${short(p)}I’ll use a card only ${s(p, 'merchant')} can charge, capped at ${usd2(n(p, 'amount'))} a month${n(p, 'card') ? `, billed to your ${CARD}` : ''}.`,

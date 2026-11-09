@@ -457,11 +457,20 @@
   margin: 0 -4px 0 15px;
 }
 
-// What dot set up, in its gray pill (IMG_1890): dark glyph and label, 16pt in.
+// What dot set up, in its gray pill (IMG_1890): dark glyph and label, 16pt in. A long one wraps inside the chat.
 .metaPill {
+  height: auto;
+  min-height: 48px;
+  max-width: 100%;
+  padding-block: 13px;
   padding-left: 16px;
   background: var(--dot-them);
   color: var(--dot-text);
+  white-space: normal;
+
+  > svg {
+    flex-shrink: 0;
+  }
 }
 
 .spinner {

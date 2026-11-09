@@ -20,9 +20,12 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
       const details = {
         name: { type: 'string', description: 'pay: the person being paid; getpaid: the person paying them. As they were named (e.g. "Maria" or "Maria Lopez").' },
         country: { type: 'string', enum: countries, description: 'pay: where that person banks.' },
-        amount: { type: 'number', description: 'pay: the amount, in `currency`. fund and cashout: the amount in USD. buy a gift card: its value in USD.' },
+        amount: { type: 'number', description: 'pay: the amount, in `currency`. fund and cashout: the amount in USD. buy a gift card or phone top-up: its value in USD; a bill: the amount only if they said it. getpaid split: the whole bill in USD.' },
         currency: { type: 'string', description: 'pay: "USD", or the ISO code of the recipient’s local currency if they gave it in that currency.' },
         note: { type: 'string', description: 'pay: what it’s for, a few words, if they said.' },
+        every: { type: 'string', enum: ['month'], description: 'pay: "month" if they want it sent every month.' },
+        day: { type: 'number', description: 'pay every month: the day of the month (1–28), only if they said ("on the 1st" is 1).' },
+        people: { type: 'array', items: { type: 'string' }, description: 'getpaid split: the others splitting the bill with them, by first name.' },
         method: { type: 'string', enum: methods, description: 'fund: where the money comes from, if they said. buy: "card" only if they want it on their credit or debit card.' },
         asset: { type: 'string', enum: assets, description: 'fund in stablecoins, or crypto: the asset, if they said.' },
         network: { type: 'string', enum: networks, description: 'fund in stablecoins, or crypto: the network, if they said.' },
@@ -37,11 +40,12 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
         checkOut: { type: 'string', description: 'agent: check-out date, YYYY-MM-DD.' },
         guests: { type: 'number', description: 'agent: how many people are staying, only if they said.' },
         query: { type: 'string', description: 'buy order: what they want to buy, in a few words ("noise cancelling headphones", "starbucks gift card").' },
-        kind: { type: 'string', enum: ['physical', 'gift', 'digital'], description: 'buy order: "gift" for a gift card, "digital" for a game, app or other download, else "physical".' },
+        kind: { type: 'string', enum: ['physical', 'gift', 'digital', 'topup'], description: 'buy order: "gift" for a gift card, "topup" for prepaid phone credit, "digital" for a game, app or other download, else "physical".' },
         product: { type: 'string', description: 'buy order: the exact product, only if they named one, written the way its maker does ("AirPods Pro", "PS5", "iPhone Duo").' },
         brand: { type: 'string', description: 'buy order: the brand or store they named ("Nike", "Starbucks"), or the maker of the product they named.' },
         budget: usd('buy order: the most they want to spend, USD, only if they said ("under $100").'),
         typicalPrice: usd('buy order: what it usually costs in the US, USD, your best estimate (the product or brand they named, else a typical one).'),
+        below: usd('buy order: only if they want it bought once its price drops under this, USD ("if it goes under $250").'),
         variant: { type: 'string', enum: variants, description: 'buy: "order" for something to buy once, "subscription" for a subscription.' },
       };
       const res = await fetch('https://api.anthropic.com/v1/messages', {

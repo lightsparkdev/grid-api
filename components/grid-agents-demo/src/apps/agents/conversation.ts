@@ -30,7 +30,7 @@ export interface AskRow {
   text: string;
   sub?: string;
   /** A glyph the skin knows how to draw, or an image path. */
-  icon?: 'product' | 'truck' | 'envelope' | 'meta' | 'wallet' | 'lock' | 'gauge' | 'checkmark' | 'card';
+  icon?: 'product' | 'truck' | 'car' | 'envelope' | 'meta' | 'wallet' | 'lock' | 'gauge' | 'checkmark' | 'card';
   image?: string;
 }
 
@@ -70,10 +70,14 @@ export interface AgentAsk {
   /** Omitted when there's nothing to decline (the person asked for it): the card shows only the way forward. */
   deny?: string;
   denied?: string;
-  /** The merchant whose terms the person accepts by allowing (Muse's footnote). */
-  legal?: string;
-  /** An order brought over within the hour (food, groceries): how soon ("25–35 min"). */
-  soon?: string;
+  /** The merchant whose terms the person accepts by allowing (Muse's footnote): what's shared with them, and which
+   *  of their policies. */
+  legal?: { merchant: string; shares: string; policies: string[] };
+  /** Muse's sheet header when it isn't a store's checkout: a ride, a bill. `payment` draws it as a payment. */
+  heading?: { title: string; payment?: boolean };
+  /** Where an order goes when it isn't shipped to them: food delivered, a ride's pickup, the phone a top-up lands on, the
+   *  account a bill is paid to. */
+  where?: { label: string; lines: string[] };
   form?: AgentForm;
   /** A card going into the vault: what the scan finds. */
   card?: { brand: string; last4: string; expires: string; name: string };
@@ -132,6 +136,8 @@ export interface Product {
   domain: string;
   price: string;
   rating?: string;
+  /** Shown where the rating would be, when that matters more: how far away a ride is. */
+  detail?: string;
   image: string;
   /** The one the agent goes with. */
   pick?: boolean;
@@ -223,8 +229,9 @@ export type Beat =
    * was picked before `then`.
    */
   | { chips: Chip[]; reply?: boolean; then: (picked: number) => Beat[]; onPage?: (picked: number) => Beat[] }
-  /** Waits for a typed dollar amount ("everything" means `all`, in cents); anything else lapses it and goes to the model. */
-  | { amount: true; all?: number; then: (usd: number) => Beat[] }
+  /** Waits for a typed dollar amount ("everything" means `all`, in cents); anything else lapses it and goes to the model.
+   *  `options` (dollars) show as chips, with an Other that leaves it to typing. */
+  | { amount: true; all?: number; options?: number[]; then: (usd: number) => Beat[] }
   | { emit: AgentEvent }
   | { pause: number }
   | { when: () => Beat[] };

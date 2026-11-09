@@ -3,6 +3,8 @@ import type { Params, Product } from './conversation';
 import { hash } from './hotels';
 import { NAMED_PHOTOS } from './namedPhotos';
 import { GIFT_CARDS, NAMED_PRODUCTS, type GiftCard, type NamedProduct } from './namedProducts';
+import { BANK_COUNTRIES, currencyFor } from '@/data/bankCountries';
+import { formatMoney } from './linkedBank';
 import { BUY_OPTIONS, RING_LIGHT, usd2 } from './story';
 
 /*
@@ -22,13 +24,14 @@ interface Item {
   title: string;
   /** USD cents, with standard shipping. */
   price: number;
-  rating: string;
+  /** Left off where stars would read oddly: a bill, a top-up. */
+  rating?: string;
 }
 
 interface Category {
   key: string;
-  /** Delivered from nearby within the hour (food, coffee, groceries), not shipped. */
-  now?: true;
+  /** How it arrives, when it isn't shipped: food from nearby within the hour, a ride, tickets by email, a top-up, a bill. */
+  delivery?: Delivery;
   /** Words that mean this category in a request. */
   words: string[];
   items: [Item, Item, Item];
@@ -263,7 +266,7 @@ const CATEGORIES: Category[] = [
   // Delivered from nearby in about half an hour: restaurants, cafés, a grocer. Made-up places, real-world prices.
   {
     key: 'pizza',
-    now: true,
+    delivery: 'now',
     words: ['pizza', 'pizzas', 'pepperoni', 'margherita', 'slice'],
     items: [
       { brand: 'Forno Rosso', model: 'Margherita Pizza', title: 'Forno Rosso Margherita Pizza, 14"', price: 1_900, rating: '4.8' },
@@ -273,7 +276,7 @@ const CATEGORIES: Category[] = [
   },
   {
     key: 'burger',
-    now: true,
+    delivery: 'now',
     words: ['burger', 'burgers', 'cheeseburger', 'cheeseburgers', 'hamburger', 'fries'],
     items: [
       { brand: 'Patty Lane', model: 'Double Cheeseburger', title: 'Patty Lane Double Cheeseburger & Fries', price: 1_700, rating: '4.7' },
@@ -283,7 +286,7 @@ const CATEGORIES: Category[] = [
   },
   {
     key: 'sushi',
-    now: true,
+    delivery: 'now',
     words: ['sushi', 'sashimi', 'maki', 'nigiri', 'poke', 'poke bowl', 'japanese food'],
     items: [
       { brand: 'Umi Kitchen', model: 'Sushi Platter', title: 'Umi Kitchen Chef’s Sushi Platter, 16 pc', price: 3_400, rating: '4.8' },
@@ -293,7 +296,7 @@ const CATEGORIES: Category[] = [
   },
   {
     key: 'tacos',
-    now: true,
+    delivery: 'now',
     words: ['taco', 'tacos', 'burrito', 'burritos', 'quesadilla', 'mexican food', 'mexican'],
     items: [
       { brand: 'Casa Lupe', model: 'Carne Asada Tacos', title: 'Casa Lupe Carne Asada Tacos, 3', price: 1_400, rating: '4.8' },
@@ -303,7 +306,7 @@ const CATEGORIES: Category[] = [
   },
   {
     key: 'coffee',
-    now: true,
+    delivery: 'now',
     words: ['coffee', 'coffees', 'latte', 'lattes', 'cappuccino', 'espresso', 'cold brew', 'iced coffee', 'matcha', 'flat white'],
     items: [
       { brand: 'Morning Ritual', model: 'Oat Milk Latte', title: 'Morning Ritual Oat Milk Latte, 16 oz', price: 650, rating: '4.8' },
@@ -313,7 +316,7 @@ const CATEGORIES: Category[] = [
   },
   {
     key: 'noodles',
-    now: true,
+    delivery: 'now',
     words: ['ramen', 'noodles', 'noodle', 'pho', 'pad thai', 'thai food', 'thai', 'udon', 'vietnamese food'],
     items: [
       { brand: 'Menya Hoshi', model: 'Tonkotsu Ramen', title: 'Menya Hoshi Tonkotsu Ramen', price: 1_700, rating: '4.8' },
@@ -323,7 +326,7 @@ const CATEGORIES: Category[] = [
   },
   {
     key: 'salad',
-    now: true,
+    delivery: 'now',
     words: ['salad', 'salads', 'grain bowl', 'caesar'],
     items: [
       { brand: 'Green Theory', model: 'Chicken Caesar', title: 'Green Theory Chicken Caesar Salad', price: 1_400, rating: '4.7' },
@@ -333,7 +336,7 @@ const CATEGORIES: Category[] = [
   },
   {
     key: 'groceries',
-    now: true,
+    delivery: 'now',
     words: ['groceries', 'grocery', 'milk', 'eggs', 'bread', 'bananas', 'produce', 'fruit', 'vegetables', 'avocados'],
     items: [
       { brand: 'Corner Market', model: 'Milk & Eggs', title: 'Corner Market Whole Milk & a Dozen Eggs', price: 1_200, rating: '4.7' },
@@ -343,13 +346,66 @@ const CATEGORIES: Category[] = [
   },
   {
     key: 'takeout',
-    now: true,
+    delivery: 'now',
     words: ['takeout', 'take out', 'dinner', 'lunch', 'something to eat', 'curry', 'indian food', 'chinese food', 'dumplings'],
     items: [
       { brand: 'Little Lantern', model: 'Chinese Dinner for Two', title: 'Little Lantern Chinese Dinner for Two', price: 3_800, rating: '4.7' },
       { brand: 'Saffron Indian Kitchen', model: 'Chicken Tikka Masala', title: 'Saffron Indian Kitchen Chicken Tikka Masala & Naan', price: 1_900, rating: '4.8' },
       { brand: 'Jade Garden', model: 'Pork Soup Dumplings', title: 'Jade Garden Pork Soup Dumplings, 8 pc', price: 1_400, rating: '4.7' },
     ],
+  },
+  // Bought like anything else (a one-time card), but each arrives its own way. Their shelves are tailored in special().
+  {
+    key: 'ride',
+    delivery: 'ride',
+    words: ['ride', 'rides', 'uber', 'lyft', 'taxi', 'cab', 'car to', 'a car', 'lift to'],
+    items: [
+      { brand: 'Swift', model: 'Standard', title: 'Swift Standard', price: 2_400, rating: '4.8' },
+      { brand: 'Glide', model: 'Comfort', title: 'Glide Comfort', price: 3_100, rating: '4.9' },
+      { brand: 'Roam', model: 'XL', title: 'Roam XL', price: 3_800, rating: '4.7' },
+    ],
+  },
+  {
+    key: 'tickets',
+    delivery: 'email',
+    words: ['ticket', 'tickets', 'concert', 'concert tickets', 'show tickets', 'game tickets', 'gig', 'festival', 'theater', 'theatre'],
+    items: [
+      { brand: 'Orpheum Hall', model: 'General Admission', title: 'Orpheum Hall General Admission', price: 4_800, rating: '4.7' },
+      { brand: 'Lantern Room', model: 'Balcony Seats', title: 'Lantern Room Balcony Seats', price: 7_000, rating: '4.8' },
+      { brand: 'Pier 9 Stage', model: 'Floor', title: 'Pier 9 Stage Floor', price: 9_000, rating: '4.6' },
+    ],
+  },
+  {
+    key: 'movie',
+    delivery: 'email',
+    words: ['movie', 'movies', 'movie tickets', 'cinema', 'imax'],
+    items: [
+      { brand: 'Bijou Cinema', model: 'Evening Showing', title: 'Bijou Cinema Evening Showing', price: 1_600, rating: '4.6' },
+      { brand: 'Starlight IMAX', model: 'IMAX', title: 'Starlight IMAX', price: 2_400, rating: '4.8' },
+      { brand: 'Rialto', model: 'Recliner Seats', title: 'Rialto Recliner Seats', price: 1_900, rating: '4.7' },
+    ],
+  },
+  {
+    key: 'table',
+    delivery: 'email',
+    words: ['reservation', 'reservations', 'table for', 'book a table', 'book dinner', 'dinner reservation', 'restaurant reservation', 'reserve a table'],
+    items: [
+      { brand: 'Olive & Ash', model: 'Table', title: 'Olive & Ash', price: 2_000, rating: '4.8' },
+      { brand: 'Marlowe', model: 'Table', title: 'Marlowe', price: 2_500, rating: '4.7' },
+      { brand: 'Sakura Room', model: 'Table', title: 'Sakura Room', price: 2_000, rating: '4.9' },
+    ],
+  },
+  {
+    key: 'topup',
+    delivery: 'instant',
+    words: ['top up', 'top-up', 'topup', 'airtime', 'phone credit', 'mobile credit', 'prepaid credit', 'phone top up', 'load her phone', 'load his phone'],
+    items: [{ brand: 'Prepaid', model: 'Top-up', title: 'Prepaid top-up', price: 2_000, rating: '4.9' }, { brand: 'Prepaid', model: 'Top-up', title: 'Prepaid top-up', price: 2_000, rating: '4.9' }, { brand: 'Prepaid', model: 'Top-up', title: 'Prepaid top-up', price: 2_000, rating: '4.9' }],
+  },
+  {
+    key: 'bill',
+    delivery: 'bill',
+    words: ['bill', 'bills', 'electric bill', 'power bill', 'electricity bill', 'internet bill', 'wifi bill', 'phone bill', 'cell bill', 'water bill', 'gas bill', 'utility bill', 'utilities'],
+    items: [{ brand: 'Pacific Power', model: 'Bill', title: 'Pacific Power', price: 8_640, rating: '4.9' }, { brand: 'Pacific Power', model: 'Bill', title: 'Pacific Power', price: 8_640, rating: '4.9' }, { brand: 'Pacific Power', model: 'Bill', title: 'Pacific Power', price: 8_640, rating: '4.9' }],
   },
 ];
 
@@ -361,8 +417,8 @@ const GENERIC = 3;
 const GIFT_DEFAULT = 25;
 const GIFT_WORDS = /\b(e-?gift|gift ?cards?)\b/i;
 
-export type BuyKind = 'physical' | 'gift' | 'digital';
-export type Delivery = 'ship' | 'email' | 'now';
+export type BuyKind = 'physical' | 'gift' | 'digital' | 'topup';
+export type Delivery = 'ship' | 'email' | 'now' | 'ride' | 'instant' | 'bill';
 
 /** What someone asked to buy, as the model passed it on. Flow params carry the same fields. */
 export interface BuyRequest {
@@ -375,7 +431,7 @@ export interface BuyRequest {
   brand?: string;
   /** The most they'll spend, USD. */
   budget?: number;
-  /** A gift card's value, USD. */
+  /** A gift card's or a phone top-up's value, USD. */
   amount?: number;
   /** The model's estimate of a named product's usual price, USD. */
   typicalPrice?: number;
@@ -384,6 +440,7 @@ export interface BuyRequest {
 /** A listing as the shelf builds it: an item with its photo. */
 interface Listing extends Item {
   image: string;
+  detail?: string;
 }
 
 const photo = (key: string, i = 1) => `/assets/agents/products/${key}-${i}.webp`;
@@ -534,7 +591,7 @@ function choices(query: string, typical?: number, budget?: number, first: Listin
   const picked = [...first, ...fromCategory.filter((it) => !first.some((f) => f.brand === it.brand))].slice(0, 3);
   if (picked.length >= 3) return picked;
   const name = titleCase(query.replace(/^(a|an|some|new|the)\s+/i, ''));
-  const made = generated(name, 3 - picked.length, typical, budget, picked.map((p) => p.brand), c?.now ? KITCHENS : BRANDS);
+  const made = generated(name, 3 - picked.length, typical, budget, picked.map((p) => p.brand), c?.delivery === 'now' ? KITCHENS : BRANDS);
   // Made for a category we know, they look the part: headphones under $50 still show headphones.
   return [...picked, ...(c ? made.map((it, i) => ({ ...it, image: photo(c.key, ((picked.length + i) % 3) + 1) })) : made)];
 }
@@ -553,6 +610,8 @@ export interface Shelf {
   over?: number;
   /** The gift card value they asked for (USD cents), when the card doesn't come in it. */
   asked?: number;
+  /** What the checkout and the lines say about how it arrives: a ride's destination, a table's time, a bill's due date. */
+  details?: Params;
 }
 
 function shelfOf(query: string, listings: Listing[], extra: Partial<Shelf> = {}): Shelf {
@@ -563,11 +622,148 @@ function shelfOf(query: string, listings: Listing[], extra: Partial<Shelf> = {})
     domain: domainOf(it.brand),
     price: usd2(it.price),
     rating: it.rating,
+    ...(it.detail && { detail: it.detail }),
     image: it.image,
     ...(i === 0 && { pick: true }),
   }));
   const first = listings[0];
   return { query, options, pick: { brand: first.brand, model: first.model, item: first.title, amount: first.price, image: first.image }, delivery: 'ship', ...extra };
+}
+
+const NUMBERS: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, pair: 2, couple: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8 };
+
+/** How many a request asks for ("two tickets", "a table for 4"), from the words after `before` if given. */
+function countIn(q: string, before?: RegExp): number | undefined {
+  const m = (before ? q.match(before) : null) ?? q.match(/\b(\d{1,2}|a|an|one|two|pair|couple|three|four|five|six|seven|eight)\b(?= (?:of )?(?:[a-z]+ )?(?:tickets?|seats?|people|of us|guests?)\b)/i);
+  if (!m) return undefined;
+  const n = /^\d+$/.test(m[1]) ? Number(m[1]) : NUMBERS[m[1].toLowerCase()];
+  return n && n >= 1 && n <= 12 ? n : undefined;
+}
+
+/** "at 8", "8:30pm", "at 7 pm": the time as a reservation reads it ("8:00 PM"); dinner hours are evening. */
+function timeIn(q: string): string | undefined {
+  const all = Array.from(q.matchAll(/\b(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b(?!\s*(?:people|guests|tickets|of us|pc))/gi));
+  const m = all.find((x) => /\bat\b|am|pm|:/i.test(x[0]));
+  if (!m) return undefined;
+  const hour = Number(m[1]);
+  if (hour < 1 || hour > 12) return undefined;
+  return `${hour}:${m[2] ?? '00'} ${m[3] ? m[3].toUpperCase() : hour < 11 ? 'PM' : 'AM'}`;
+}
+
+/** Where a ride goes, as they said it: "to the airport" is the Airport. */
+const destinationIn = (q: string) => {
+  const m = q.match(/\bto ([a-z0-9][a-z0-9 '’&.-]*)$/i) ?? q.match(/\b(home|work)\b/i);
+  const to = m?.[1].trim();
+  // "to airport" reads as "the airport".
+  return to && /^(airport|office|station|train station|gym|mall|beach|hospital|hotel|stadium|venue|restaurant)$/i.test(to) ? `the ${to}` : to;
+};
+
+/** A carrier for prepaid top-ups in each country we pay (made-up where it doesn't matter, the big local one where it does). */
+const CARRIERS: Record<string, { carrier: string; dial: string }> = {
+  mx: { carrier: 'Telcel', dial: '+52 55' },
+  ph: { carrier: 'Globe', dial: '+63 917' },
+  in: { carrier: 'Airtel', dial: '+91 98' },
+  ng: { carrier: 'MTN', dial: '+234 803' },
+  br: { carrier: 'Claro', dial: '+55 11' },
+  co: { carrier: 'Claro', dial: '+57 310' },
+  gt: { carrier: 'Tigo', dial: '+502 5' },
+  sv: { carrier: 'Tigo', dial: '+503 7' },
+  hn: { carrier: 'Tigo', dial: '+504 9' },
+  do: { carrier: 'Claro', dial: '+1 809' },
+  ke: { carrier: 'Safaricom', dial: '+254 712' },
+  gh: { carrier: 'MTN', dial: '+233 24' },
+  pe: { carrier: 'Claro', dial: '+51 9' },
+  vn: { carrier: 'Viettel', dial: '+84 98' },
+  pk: { carrier: 'Jazz', dial: '+92 300' },
+  bd: { carrier: 'Grameenphone', dial: '+880 17' },
+  us: { carrier: 'T-Mobile', dial: '+1 415' },
+};
+
+/** Which bill: the biller, its usual amount (USD cents) and its photo. */
+const BILLS: { words: RegExp; biller: string; what: string; amount: number; photo: number }[] = [
+  { words: /internet|wifi|wi-fi|broadband|fiber/i, biller: 'Wavelink Fiber', what: 'internet', amount: 7_000, photo: 2 },
+  { words: /phone|mobile|cell|wireless/i, biller: 'Northstar Mobile', what: 'phone', amount: 4_500, photo: 3 },
+  { words: /water/i, biller: 'City Water', what: 'water', amount: 3_820, photo: 4 },
+  { words: /gas/i, biller: 'Bay Gas & Heat', what: 'gas', amount: 5_210, photo: 1 },
+  { words: /./, biller: 'Pacific Power', what: 'electric', amount: 8_640, photo: 1 },
+];
+
+const tailoredFor = (query: string, r: BuyRequest) => {
+  const c = categoryFor(r.product ?? '') ?? categoryFor(query);
+  return c?.delivery && c.delivery !== 'now' ? c : undefined;
+};
+
+/** A ride, tickets, a table, a top-up or a bill: priced here, so nothing to look up. */
+export const isTailored = (r: BuyRequest) => r.kind === 'topup' || !!tailoredFor(r.query ?? '', r);
+
+const shortDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+/**
+ * Things bought with a one-time card that aren't products on a shelf: a ride (priced for where it's going), tickets
+ * and a table (for how many, and when), a phone top-up (in the country it's for), a bill (the one that's due).
+ */
+const RIDE_ETAS = ['4 min', '7 min', '9 min'];
+
+function special(query: string, r: BuyRequest): Shelf | undefined {
+  const c = tailoredFor(query, r);
+  if (!c) return undefined;
+  const q = ` ${query} ${r.product ?? ''} `;
+  const brand = r.brand ? titleCase(r.brand) : undefined;
+  if (c.key === 'ride') {
+    const to = destinationIn(query);
+    const fare = 0.8 + (hash(to ?? query) % 50) / 100;
+    // How far away each is stands in for its stars, as a ride app shows it.
+    const items = c.items.map(({ rating: _, ...it }, i) => ({ ...it, price: Math.round((it.price * fare) / 100) * 100, image: photo('ride', i + 1), detail: `${RIDE_ETAS[i]} away` }));
+    const listings = brand ? [{ ...items[0], brand, title: `${brand} ${items[0].model}` }] : items;
+    return shelfOf(query, listings, { delivery: 'ride', named: !!brand, details: { ...(to && { to }), eta: RIDE_ETAS[0] } });
+  }
+  if (c.key === 'tickets' || c.key === 'movie') {
+    const count = countIn(q) ?? 2;
+    const items = c.items.map((it, i) => ({
+      ...it,
+      model: `${it.model}, ${count} ${count === 1 ? 'ticket' : 'tickets'}`,
+      title: `${brand ? `${brand} · ` : ''}${it.title}, ${count} ${count === 1 ? 'ticket' : 'tickets'}`,
+      price: it.price * count,
+      image: photo(c.key, c.key === 'movie' ? 1 : i + 1),
+    }));
+    return shelfOf(query, items, { delivery: 'email', details: { tickets: count } });
+  }
+  if (c.key === 'table') {
+    const party = countIn(q, /\bfor (\d{1,2}|two|three|four|five|six|seven|eight)\b/i) ?? 2;
+    const time = timeIn(q) ?? '7:30 PM';
+    const items = c.items.map((it, i) => ({
+      ...it,
+      ...(brand && i === 0 && { brand, title: brand }),
+      model: `table for ${party} at ${time}`,
+      title: `${brand && i === 0 ? brand : it.title}, table for ${party} at ${time}`,
+      price: 1_000 * party,
+      image: photo('table', i + 1),
+    }));
+    return shelfOf(query, brand ? items.slice(0, 1) : items, { delivery: 'email', named: !!brand, details: { table: party, time } });
+  }
+  if (c.key === 'topup') {
+    const country = BANK_COUNTRIES.find((b) => words(q).includes(words(b.name))) ?? BANK_COUNTRIES.find((b) => b.code === 'us')!;
+    const { carrier, dial } = CARRIERS[country.code] ?? { carrier: 'Prepaid', dial: '+1' };
+    const usd = Math.min(200, Math.max(5, r.amount ?? r.budget ?? 20));
+    const abroad = country.code !== 'us';
+    const local = formatMoney(Math.round(usd * 100 * country.usdToLocal), currencyFor(country));
+    const name = brand ?? carrier;
+    const item = { brand: name, model: abroad ? `top-up, ${local}` : 'top-up', title: `${name} top-up${abroad ? `, ${local}` : ''}`, price: usd * 100, image: photo('topup') };
+    return shelfOf(query, [item], {
+      delivery: 'instant',
+      named: true,
+      details: { phone: `${dial} •••• ${String(4821 + (hash(country.code) % 4000)).slice(0, 4)}`, ...(abroad && { local }), country: country.name },
+    });
+  }
+  const bill = BILLS.find((b) => b.words.test(q))!;
+  const biller = brand ?? bill.biller;
+  const amount = r.amount ? Math.round(r.amount * 100) : r.budget ? Math.round(r.budget * 100) : bill.amount;
+  const month = new Date(Date.now() - 20 * 86_400_000).toLocaleDateString('en-US', { month: 'long' });
+  return shelfOf(query, [{ brand: biller, model: `${month} bill`, title: `${biller}, ${month} ${bill.what} bill`, price: amount, image: photo('bill', bill.photo) }], {
+    delivery: 'bill',
+    named: true,
+    details: { account: `•••• ${String(2231 + (hash(biller) % 7000)).slice(0, 4)}`, due: shortDate(new Date(Date.now() + 7 * 86_400_000)), what: bill.what },
+  });
 }
 
 /**
@@ -603,8 +799,11 @@ export function shelfFor(request: BuyRequest = {}): Shelf {
     });
   }
 
+  const tailored = special(query, request);
+  if (tailored) return tailored;
+
   const digital = request.kind === 'digital';
-  const delivery: Delivery = digital ? 'email' : (categoryFor(request.product ?? '') ?? categoryFor(q))?.now ? 'now' : 'ship';
+  const delivery: Delivery = digital ? 'email' : (categoryFor(request.product ?? '') ?? categoryFor(q))?.delivery === 'now' ? 'now' : 'ship';
   const listed = listedFor({ ...request, query: q });
   if (listed) {
     const price = Math.round(listed.price * 100);
@@ -668,7 +867,7 @@ export function requestParams(r: BuyRequest = {}): Params {
   const out: Params = {};
   for (const k of REQUEST_TEXT) if (r[k]) out[k] = r[k];
   for (const k of REQUEST_NUMBERS) if (r[k]) out[k] = r[k];
-  if (r.kind === 'gift' && r.amount) out.amount = r.amount;
+  if ((r.kind === 'gift' || r.kind === 'topup') && r.amount) out.amount = r.amount;
   return out;
 }
 
@@ -679,7 +878,7 @@ export function requestOf(p: Params = {}): BuyRequest {
   const kind = str('kind');
   return {
     query: str('query'),
-    kind: kind === 'gift' || kind === 'digital' || kind === 'physical' ? kind : undefined,
+    kind: kind === 'gift' || kind === 'digital' || kind === 'physical' || kind === 'topup' ? kind : undefined,
     product: str('product'),
     brand: str('brand'),
     budget: num('budget'),
@@ -693,13 +892,25 @@ export function shelfWith(shelf: Shelf, i: number): Shelf {
   const o = shelf.options[i];
   if (!o || i === 0) return shelf;
   const amount = Math.round(Number(o.price.replace(/[^0-9.]/g, '')) * 100);
-  return { ...shelf, pick: { brand: o.merchant, model: o.title.replace(new RegExp(`^${o.merchant}\\s+`), ''), item: o.title, amount, image: o.image } };
+  const eta = shelf.delivery === 'ride' && o.detail?.replace(/ away$/, '');
+  return {
+    ...shelf,
+    pick: { brand: o.merchant, model: o.title.replace(new RegExp(`^${o.merchant}\\s+`), ''), item: o.title, amount, image: o.image },
+    ...(eta && { details: { ...shelf.details, eta } }),
+  };
 }
 
 /** What the agent asks Grid to buy, and what the lines and cards read. */
 export function purchaseFor(shelf: Shelf): Purchase {
   const p = shelf.pick;
-  const how = shelf.delivery === 'email' ? 'delivered by email' : shelf.delivery === 'now' ? 'delivered in about 30 minutes' : 'standard shipping';
+  const how = {
+    ship: 'standard shipping',
+    email: 'delivered by email',
+    now: 'delivered in about 30 minutes',
+    ride: 'pickup in a few minutes',
+    instant: 'credited instantly',
+    bill: 'bill payment',
+  }[shelf.delivery];
   return { merchant: p.brand, description: `${p.item}, ${how}`, amount: p.amount };
 }
 
@@ -714,6 +925,8 @@ export function shelfParams(shelf: Shelf) {
     image: p.image,
     ...(shelf.delivery === 'email' && { email: 1 }),
     ...(shelf.delivery === 'now' && { now: 1 }),
+    delivery: shelf.delivery,
+    ...shelf.details,
     ...(shelf.over && { over: shelf.over }),
     ...(shelf.asked && { asked: shelf.asked }),
   };

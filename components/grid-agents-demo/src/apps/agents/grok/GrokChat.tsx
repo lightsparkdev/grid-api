@@ -158,7 +158,7 @@ function Products({ products }: { products: Product[] }) {
           </span>
           <span className={styles.productText}>
             <strong>{p.title}</strong>
-            {p.rating && <small>★ {p.rating}</small>}
+            {p.detail ? <small>{p.detail}</small> : p.rating && <small>★ {p.rating}</small>}
             <span>{p.price}</span>
             <span className={styles.productMerchant}>
               <i>{p.merchant[0]}</i>

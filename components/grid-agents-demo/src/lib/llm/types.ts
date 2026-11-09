@@ -38,6 +38,10 @@ export interface ModelAnswer {
   brand?: string;
   budget?: number;
   typicalPrice?: number;
+  below?: number;
+  every?: string;
+  day?: number;
+  people?: string[];
   city?: string;
   checkIn?: string;
   checkOut?: string;

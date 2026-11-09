@@ -287,7 +287,7 @@ export function ProductRow({ products, className }: { products: Product[]; class
             <strong>{p.title}</strong>
             <small>
               {p.merchant}
-              {p.rating && ` · ★ ${p.rating}`}
+              {p.detail ? ` · ${p.detail}` : p.rating && ` · ★ ${p.rating}`}
             </small>
             <span>{p.price}</span>
             {p.pick && <span className={styles.productPick}>Best match</span>}

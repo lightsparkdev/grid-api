@@ -335,9 +335,26 @@ export function useAgentBrain({
         } else if ('amount' in b) {
           setBusy(false);
           setAwaitingAmount(true);
-          const usd = await new Promise<number>((r) => (amountRef.current = { take: r, all: b.all }));
+          const offered = b.options ?? [];
+          const labels = [...offered.map((usd) => `$${usd.toLocaleString('en-US')}`), 'Other'];
+          const chipsId = offered.length ? show({ kind: 'chips', chips: labels.map((label) => ({ label })), picked: null }) : null;
+          const usd = await new Promise<number>((r) => {
+            amountRef.current = { take: r, all: b.all };
+            if (chipsId === null) return;
+            pickRef.current = (i) => {
+              if (i < 0) return r(i);
+              pickRef.current = null;
+              patch(chipsId, (m) => (m.kind === 'chips' ? { ...m, picked: i } : m));
+              push({ kind: 'me', text: labels[i] });
+              // Other: it asks for one, and the typed amount still answers.
+              if (i === offered.length) void play([{ pause: 500 }, { say: 'amount.other' }], run).then(() => setBusy(false));
+              else window.setTimeout(() => r(offered[i]), 600);
+            };
+          });
           amountRef.current = null;
+          pickRef.current = null;
           setAwaitingAmount(false);
+          if (chipsId !== null) patch(chipsId, (m) => (m.kind === 'chips' && m.picked === null ? { ...m, expired: true } : m));
           if (usd <= 0 || run.cancelled) return false;
           setBusy(true);
           if (!(await play(b.then(usd), run))) return false;

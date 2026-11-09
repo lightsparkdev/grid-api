@@ -1,4 +1,4 @@
-import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, Params, Product, SubAgent } from '../conversation';
+import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, AskRow, Params, Product, SubAgent } from '../conversation';
 import { BANK_REACH } from '@/data/bankCountries';
 import { linkedBank, pullsFrom } from '../linkedBank';
 import { requestOf, shelfFor } from '../products';
@@ -34,6 +34,87 @@ export const short = (p: Params | undefined) => (n(p, 'short') ? `${Yours(p)} wo
 const WITHDRAW_TIMING = 'It lands in seconds.';
 /** How soon food and groceries get there. */
 const SOON = '25–35 min';
+
+/** What a purchase is, for the words around it: a store order, food on its way, a ride, a bill, a top-up, tickets or a table. */
+export type Errand = 'order' | 'food' | 'ride' | 'bill' | 'topup' | 'tickets' | 'table';
+export const errandOf = (p: Params | undefined): Errand => {
+  switch (s(p, 'delivery')) {
+    case 'now':
+      return 'food';
+    case 'ride':
+      return 'ride';
+    case 'bill':
+      return 'bill';
+    case 'instant':
+      return 'topup';
+    case 'email':
+      return n(p, 'table') ? 'table' : n(p, 'tickets') ? 'tickets' : 'order';
+    default:
+      return 'order';
+  }
+};
+/** Its words for what it is, falling back to an order's. */
+export const byErrand = <T,>(p: Params | undefined, words: { order: T } & Partial<Record<Errand, T>>): T => words[errandOf(p)] ?? words.order;
+/** "this order", "this ride": what a one-time card is locked to. */
+export const orderNoun = (p: Params | undefined) => byErrand(p, { order: 'order', ride: 'ride', bill: 'bill', topup: 'top-up', table: 'booking' });
+
+/** Where an order goes when it isn't shipped, by how it arrives (shelfParams' delivery and details). */
+const whereOf = (p: Params | undefined): AgentAsk['where'] => {
+  switch (s(p, 'delivery')) {
+    case 'now':
+      return { label: 'Deliver to', lines: [PERSON.full, ADDRESS] };
+    case 'ride':
+      return { label: 'Pickup at', lines: [ADDRESS, ...(s(p, 'to') ? [`To ${s(p, 'to')}`] : [])] };
+    case 'instant':
+      return { label: 'Top up', lines: [s(p, 'phone'), s(p, 'country')] };
+    case 'bill':
+      return { label: 'Pay to', lines: [`${s(p, 'merchant')} account ${s(p, 'account')}`, `Due ${s(p, 'due')}`] };
+    default:
+      return undefined;
+  }
+};
+
+/** What buying it is, as an approval's title says it: "place an order at", or what a ride, a table, tickets, a top-up or a bill is. */
+const buyingAt = (p: Params | undefined) => {
+  const m = s(p, 'merchant');
+  switch (s(p, 'delivery')) {
+    case 'ride':
+      return `book a ride with ${m}`;
+    case 'instant':
+      return `top up a phone with ${m}`;
+    case 'bill':
+      return `pay your ${m} bill`;
+    case 'email':
+      return n(p, 'table') ? `book a table at ${m}` : n(p, 'tickets') ? `buy tickets from ${m}` : `place an order at ${m}`;
+    default:
+      return `place an order at ${m}`;
+  }
+};
+const Buying = (p: Params | undefined) => buyingAt(p).charAt(0).toUpperCase() + buyingAt(p).slice(1);
+
+/** Muse's checkout row for how it arrives. */
+const arrivalRow = (p: Params | undefined): AskRow => {
+  switch (s(p, 'delivery')) {
+    case 'email':
+      return n(p, 'table')
+        ? { text: 'Confirmation by email', sub: PERSON.email, icon: 'envelope' }
+        : n(p, 'tickets')
+          ? { text: 'Tickets by email', sub: PERSON.email, icon: 'envelope' }
+          : { text: 'Delivered by email', sub: PERSON.email, icon: 'envelope' };
+    case 'now':
+      return { text: `Delivery in ${SOON}`, sub: ADDRESS, icon: 'truck' };
+    case 'ride':
+      return { text: `Pickup in ${s(p, 'eta')}`, sub: s(p, 'to') ? `To ${s(p, 'to')}` : ADDRESS, icon: 'car' };
+    case 'instant':
+      return { text: 'Credited in seconds', sub: `${s(p, 'phone')} · ${s(p, 'country')}`, icon: 'checkmark' };
+    case 'bill':
+      return { text: `Paid to account ${s(p, 'account')}`, sub: `Due ${s(p, 'due')}`, icon: 'card' };
+    default:
+      return n(p, 'email')
+        ? { text: 'Delivered by email', sub: PERSON.email, icon: 'envelope' }
+        : { text: 'Standard by 2 to 5 business days', sub: ADDRESS, icon: 'truck' };
+  }
+};
 /** When the one they named costs more than they said they'd spend. */
 export const overBudget = (p: Params | undefined) => (n(p, 'over') ? ` That’s over the ${usd(n(p, 'over'))} you mentioned.` : '');
 /** A gift card that doesn't come in the value they asked for: the nearest it does. */
@@ -49,9 +130,12 @@ export type NoteFn = (p?: Params) => AgentNote;
 
 /** What the agent is doing while it works: Grok's status row, Muse's header subtitle. */
 export const STATUS = {
-  searching: () => 'Searching stores',
-  filling: () => 'Filling the checkout form',
-  paying: () => 'Paying for the order',
+  searching: (p) =>
+    byErrand(p, { order: 'Searching stores', food: 'Checking what’s nearby', ride: 'Finding a ride', bill: 'Looking up the bill', topup: 'Checking the carrier', tickets: 'Finding tickets', table: 'Checking tables' }),
+  filling: (p) =>
+    byErrand(p, { order: 'Filling the checkout form', ride: 'Setting the pickup', bill: 'Filling in the bill', topup: 'Entering the number', tickets: 'Picking seats', table: 'Holding the table' }),
+  paying: (p) =>
+    byErrand(p, { order: 'Paying for the order', ride: 'Booking the ride', bill: 'Paying the bill', topup: 'Sending the top-up', tickets: 'Buying the tickets', table: 'Booking the table' }),
   quoting: () => 'Getting a quote',
   sending: () => 'Sending the payment',
   setup: (p) => `Setting up ${s(p, 'wallet')}`,
@@ -111,7 +195,9 @@ export const SUBAGENTS = {
 export type SubAgentKey = keyof typeof SUBAGENTS;
 
 export const METAS = {
-  'buy.tracking': () => ({ text: 'Created routine · Track the delivery', icon: 'routine' }),
+  'buy.tracking': (p) => ({ text: s(p, 'delivery') === 'ride' ? 'Created routine · Track your ride' : 'Created routine · Track the delivery', icon: 'routine' }),
+  'watch.routine': (p) => ({ text: `Created routine · Buy the ${s(p, 'model')} under ${usd(n(p, 'below'))}`, icon: 'routine' }),
+  'pay.routine': (p) => ({ text: `Created routine · ${s(p, 'local')} to ${s(p, 'first')} on the ${s(p, 'day')} of each month`, icon: 'routine' }),
   'sub.reminder': () => ({ text: 'Created routine · Remind me before it renews', icon: 'routine' }),
   'connect.limits': () => ({ text: 'Limits saved', icon: 'check' }),
   'card.saved': () => ({ text: 'Visa •••• 4242 saved', icon: 'check' }),
@@ -137,6 +223,7 @@ export const LINES = {
   'fund.offerShort': () => 'Want to add money?',
   'fund.offerFrom': (p) => `${Yours(p)} is empty. Want to add money from ${n(p, 'bank') ? `your ${linkedBank().bankName} account` : `your ${CARD}`}?`,
   'fund.amount': () => 'How much do you want to add?',
+  'amount.other': () => 'Sure. Type any amount.',
   'fund.ask': () => 'How do you want to add it?',
   'fund.needed': (p) => `I’ll need ${usd(n(p, 'amount'))} in ${yours(p)} to cover that. How do you want to add it?`,
   'fund.asset': () => 'What are you sending?',
@@ -192,6 +279,9 @@ export const LINES = {
   'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so I’ll send it over ${s(p, 'rail')}.${converted(p)}`,
   'pay.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m sending it now.`,
   'pay.done': (p) => `Sent. ${s(p, 'first')} has it, with a note that it’s from you.`,
+  'pay.scheduled': (p) => `Sent the first one. I’ll send ${s(p, 'first')} ${s(p, 'local')} on the ${s(p, 'day')} of every month, starting ${s(p, 'next')}, and check with you if anything changes.`,
+  'split.intro': (p) => `That’s ${usd2(n(p, 'share'))} each, split ${n(p, 'count')} ways. I sent ${s(p, 'list')} a request.`,
+  'split.done': (p) => `Everyone paid: ${usd2(n(p, 'back'))} back, so you’re square. You have ${usd2(n(p, 'balance'))} now.`,
   'pay.denied': () => 'Okay, I won’t send it.',
   'crypto.where': () => 'Sure. What address should I send it to?',
   'crypto.invalid': () => 'That doesn’t look like an address I can send to. Can you paste the whole thing?',
@@ -214,18 +304,30 @@ export const LINES = {
   'buy.note': (p) => `${overBudget(p)}${giftRange(p)}`.trim(),
   'gift.amount': (p) => `How much should the ${s(p, 'brand')} gift card be?`,
   'gift.store': () => 'Which store should the gift card be for?',
-  'buy.picked': (p) => `Got your pick: the ${s(p, 'item')}. I’ll check the total and get checkout ready. Nothing is charged without your approval.`,
+  'buy.picked': (p) => `Got your pick: the ${s(p, 'item')}. I’ll check the total and get ${byErrand(p, { order: 'checkout', ride: 'the ride', tickets: 'the tickets', table: 'the booking' })} ready. Nothing is charged without your approval.`,
   'buy.payWith': (p) => `Want me to pay from ${yours(p)} or your ${CARD}?`,
   'buy.shortCard': (p) => `${Yours(p)} won’t cover it. Should I put it on your ${CARD}, or do you want to add ${usd(n(p, 'amount'))} first?`,
   'buy.short': (p) => `You have ${usd2(n(p, 'balance'))} in ${yours(p)}. I can put this on your card instead, or you can add ${usd(n(p, 'amount'))} first.`,
   'buy.card': (p) =>
     n(p, 'card')
-      ? `${short(p)}I’ll pay with a one-time card for exactly this order, charged to your ${CARD}.`
-      : `I’ll pay from ${yours(p)} with a one-time card for exactly this order.`,
-  'buy.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m checking out.`,
+      ? `${short(p)}I’ll pay with a one-time card for exactly this ${orderNoun(p)}, charged to your ${CARD}.`
+      : `I’ll pay from ${yours(p)} with a one-time card for exactly this ${orderNoun(p)}.`,
+  'buy.auto': (p) =>
+    `It’s under your ${usd(n(p, 'limit'))} limit, so I’m ${byErrand(p, { order: 'checking out', ride: 'booking it', bill: 'paying it', topup: 'sending it', tickets: 'buying them', table: 'booking it' })}.`,
   'buy.done': (p) => (n(p, 'now') ? 'Ordered. It gets there in about 30 minutes.' : 'Ordered. It arrives Thursday.'),
   'buy.sent': () => 'Done. It’s in your inbox.',
-  'buy.denied': () => 'Okay, I won’t place the order. Nothing was charged.',
+  'tickets.sent': (p) => `Done. ${n(p, 'tickets') === 1 ? 'Your ticket is' : 'The tickets are'} in your inbox.`,
+  'table.done': (p) => `Booked: ${s(p, 'merchant')} at ${s(p, 'time')} for ${n(p, 'table')}. The confirmation is in your inbox, and the deposit comes off the bill.`,
+  'ride.done': (p) => `Booked. Your driver is ${s(p, 'eta')} away${s(p, 'to') ? `, headed to ${s(p, 'to')}` : ''}.`,
+  'topup.done': (p) => `Done. ${s(p, 'local') || usd2(n(p, 'amount'))} is on the phone now.`,
+  'topup.amount': () => 'How much should I put on it?',
+  'bill.done': (p) => `Paid. ${s(p, 'merchant')} has it, ahead of the ${s(p, 'due')} due date.`,
+  'watch.set': (p) => `I’ll keep an eye on it and buy it the moment it’s under ${usd(n(p, 'below'))}.`,
+  'watch.card': () => 'Add your card now, so I can buy it the moment it drops.',
+  'watch.dropped': (p) => `The ${s(p, 'model')} just dropped to ${usd2(n(p, 'amount'))}, so I’m buying it like you asked.`,
+  'watch.already': (p) => `It’s already ${usd2(n(p, 'amount'))}, under your ${usd(n(p, 'below'))}, so I’ll get it now.`,
+  'buy.denied': (p) =>
+    `Okay, I won’t ${byErrand(p, { order: 'place the order', ride: 'book the ride', bill: 'pay the bill', topup: 'send the top-up', tickets: 'buy the tickets', table: 'book the table' })}. Nothing was charged.`,
 
   'sub.intro': (p) => `It’s ${usd2(n(p, 'amount'))} a month for ${s(p, 'item')}.`,
   'sub.card': (p) => `${short(p)}I’ll get a card that only ${s(p, 'merchant')} can charge, up to ${usd2(n(p, 'amount'))} a month${n(p, 'card') ? `, billed to your ${CARD}` : ''}.`,
@@ -329,7 +431,7 @@ export const ASKS = {
     denied: 'Not now',
   }),
   pay: (p) => ({
-    title: `Send ${s(p, 'local')} to ${s(p, 'first')}`,
+    title: `Send ${s(p, 'local')} to ${s(p, 'first')}${n(p, 'monthly') ? ', then monthly' : ''}`,
     who: { name: s(p, 'first'), flag: s(p, 'flag'), bank: s(p, 'bank'), detail: `${s(p, 'local')} to ${s(p, 'bank')} via ${s(p, 'rail')}` },
     amount: s(p, 'local'),
     method: `From ${s(p, 'wallet')} · ${usd2(n(p, 'usd'))}`,
@@ -358,10 +460,10 @@ export const ASKS = {
     denied: 'Declined',
   }),
   buy: (p) => ({
-    title: `Buy at ${s(p, 'merchant')}`,
+    title: ['ship', 'now', ''].includes(s(p, 'delivery')) ? `Buy at ${s(p, 'merchant')}` : Buying(p),
     who: { name: s(p, 'merchant'), icon: s(p, 'image'), detail: `${s(p, 'item')} · one-time card` },
     amount: usd2(n(p, 'amount')),
-    ...(n(p, 'now') && { soon: SOON }),
+    where: whereOf(p),
     method: `From ${paidFrom(p)} · one-time card`,
     pay: payOf(p),
     allow: 'Approve',
@@ -546,23 +648,44 @@ const ADDRESS_ON: Record<string, string> = {
 };
 const RECEIVE_INVOICE = 'lnbc4682u1pn5x9qhpp5r3w0t8yq9zk2fh6xa4t7vlc5mgy8ens3p2w9ke6rz0h4dlc7qsdqqcqzzsxqyh3kq9z';
 
+/** Muse's sheet footnote and header by what it is: a bill or a top-up is a payment with no store terms to accept. */
+const legalOf = (p: Params | undefined): Pick<AgentAsk, 'legal' | 'heading'> => {
+  const merchant = s(p, 'merchant');
+  const errand = errandOf(p);
+  switch (errand) {
+    case 'bill':
+      return { heading: { title: 'Bill payment', payment: true } };
+    case 'topup':
+      return { heading: { title: 'Top-up', payment: true } };
+    case 'ride':
+      return { heading: { title: 'Ride' }, legal: { merchant, shares: 'trip info', policies: ['Privacy Policy', 'Terms of Service'] } };
+    case 'table':
+      return { heading: { title: 'Reservation' }, legal: { merchant, shares: 'booking info', policies: ['Cancellation Policy', 'Privacy Policy'] } };
+    case 'tickets':
+      return { heading: { title: 'Tickets' }, legal: { merchant, shares: 'order info', policies: ['Refund Policy', 'Privacy Policy', 'Terms of Service'] } };
+    case 'order':
+    case 'food':
+      return { legal: { merchant, shares: 'order info', policies: ['Refund Policy', 'Privacy Policy', 'Terms of Service'] } };
+    default: {
+      const exhaustive: never = errand;
+      return exhaustive;
+    }
+  }
+};
+
 /** Muse's order sheet for what it found. */
 export const MUSE_ORDER = (p: Params | undefined): AgentAsk => ({
-  title: `${s(p, 'agent')} wants to place an order at ${s(p, 'merchant')}`,
+  title: `${s(p, 'agent')} wants to ${buyingAt(p)}`,
   badge: s(p, 'merchant')[0],
   rows: [
-    { text: s(p, 'item'), sub: 'Qty: 1', image: s(p, 'image') },
-    n(p, 'email')
-      ? { text: 'Delivered by email', sub: PERSON.email, icon: 'envelope' }
-      : n(p, 'now')
-        ? { text: `Delivery in ${SOON}`, sub: ADDRESS, icon: 'truck' }
-        : { text: 'Standard by 2 to 5 business days', sub: ADDRESS, icon: 'truck' },
+    { text: s(p, 'item'), ...(['ship', 'now', ''].includes(s(p, 'delivery')) && { sub: 'Qty: 1' }), image: s(p, 'image') },
+    arrivalRow(p),
   ],
   total: usd2(n(p, 'amount')),
   payWith: n(p, 'card') ? CARD : 'Muse balance',
   method: n(p, 'card') ? 'Expires 09/29' : `${usd2(n(p, 'balance'))} available`,
-  legal: s(p, 'merchant'),
-  ...(n(p, 'now') && { soon: SOON }),
+  ...legalOf(p),
+  where: whereOf(p),
   pay: payOf(p),
   allow: 'Allow',
   allowed: 'Allowed',

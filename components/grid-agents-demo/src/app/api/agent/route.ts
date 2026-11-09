@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { FlowParams, FundMethod } from '@/apps/agents/flows';
-import { listedFor, listsBrand, type BuyKind } from '@/apps/agents/products';
+import { isTailored, listedFor, listsBrand, type BuyKind } from '@/apps/agents/products';
 import { NETWORK_NAME } from '@/apps/agents/story';
 import { canSend, type SendAsset } from '@/data/cryptoSend';
 import type { DepositNetwork } from '@/data/agentEvents';
@@ -158,7 +158,14 @@ export async function POST(req: NextRequest) {
       (flow === 'crypto' && !!params?.address && !canSend(params.address, params.asset));
     // A gift card without its store or value doesn't start, so "on it!" would promise nothing: it asks for what's missing.
     const brand = typeof answer.brand === 'string' ? answer.brand.replace(/[^A-Za-z\u00C0-\u024F0-9 '’&.+-]/g, '').trim().slice(0, 32) : '';
-    const giftAsk = started === 'buy' && params === null && answer.kind === 'gift' ? (brand ? 'gift.amount' : 'gift.store') : undefined;
+    const giftAsk =
+      started === 'buy' && params === null && answer.kind === 'gift'
+        ? brand
+          ? 'gift.amount'
+          : 'gift.store'
+        : started === 'buy' && params === null && answer.kind === 'topup'
+          ? 'topup.amount'
+          : undefined;
     const replies: Partial<Record<ConnectorId, string>> = {};
     for (const id of CONNECTOR_IDS) {
       const raw = giftAsk ? voiceFor(id).line(giftAsk, { brand }) : typeof answer.replies[id] === 'string' ? clean(answer.replies[id]) : '';
@@ -197,7 +204,7 @@ export async function POST(req: NextRequest) {
 
 /** A product they named that we don't list gets its current price from the web; the model's estimate stops at its training. */
 async function priced(key: string, p: FlowParams | null | undefined): Promise<FlowParams | null | undefined> {
-  if (!p || p.kind === 'gift' || listedFor(p)) return p;
+  if (!p || p.kind === 'gift' || isTailored(p) || listedFor(p)) return p;
   // A product they named, or a brand we don't list with what they want from it ("buffalo trace bourbon").
   const named = p.product ?? (p.brand && !listsBrand(p.brand) ? p.query : undefined);
   if (!named) return p;
@@ -269,7 +276,15 @@ function paramsFor(flow: ActionId, a: ModelAnswer, saved: PromptState['recipient
       if (!country) return null;
       const local = currencyFor(country);
       const currency = typeof a.currency === 'string' && a.currency.toUpperCase() === local ? local : 'USD';
-      return { name, country: country.code, amount, currency, ...(text(a.note, 40) ? { note: text(a.note, 40) } : {}) };
+      const day = typeof a.day === 'number' && Number.isInteger(a.day) && a.day >= 1 && a.day <= 31 ? Math.min(28, a.day) : undefined;
+      return {
+        name,
+        country: country.code,
+        amount,
+        currency,
+        ...(text(a.note, 40) ? { note: text(a.note, 40) } : {}),
+        ...(a.every === 'month' ? { every: 'month' as const, ...(day ? { day } : {}) } : {}),
+      };
     }
     case 'fund':
       return {
@@ -292,12 +307,15 @@ function paramsFor(flow: ActionId, a: ModelAnswer, saved: PromptState['recipient
         const query = text(a.query, 40);
         const product = text(a.product, 60);
         const brand = text(a.brand, 32);
-        const kind = a.kind === 'gift' || a.kind === 'digital' ? (a.kind as BuyKind) : undefined;
+        const kind = a.kind === 'gift' || a.kind === 'digital' || a.kind === 'topup' ? (a.kind as BuyKind) : undefined;
         const budget = positive(a.budget, 5_000);
         const typicalPrice = positive(a.typicalPrice, 5_000);
-        const amount = kind === 'gift' ? positive(a.amount, 2_000) : undefined;
-        // A gift card needs the store and the value; the reply asks for whichever is missing.
+        // A value is a gift card's or a top-up's; a bill's only when they said it.
+        const amount = kind === 'gift' || kind === 'topup' || /\bbill/i.test(query ?? '') ? positive(a.amount, 2_000) : undefined;
+        const below = positive(a.below, 20_000);
+        // A gift card needs the store and the value, a top-up its value; the reply asks for whichever is missing.
         if (kind === 'gift' && (!brand || !amount)) return null;
+        if (kind === 'topup' && !amount) return null;
         const order = {
           ...(query && { query }),
           ...(product && { product }),
@@ -306,6 +324,7 @@ function paramsFor(flow: ActionId, a: ModelAnswer, saved: PromptState['recipient
           ...(budget && { budget }),
           ...(typicalPrice && { typicalPrice }),
           ...(amount && { amount }),
+          ...(below && { below }),
           ...card,
         };
         return Object.keys(order).length ? order : undefined;
@@ -324,6 +343,9 @@ function paramsFor(flow: ActionId, a: ModelAnswer, saved: PromptState['recipient
     case 'getpaid': {
       const name = text(a.name, MAX_NAME);
       const amount = positive(a.amount, 100_000);
+      // Splitting a bill they paid: the others, and the whole bill.
+      const people = (Array.isArray(a.people) ? a.people : []).map((p) => text(p, MAX_NAME)).filter((p): p is string => !!p).slice(0, 8);
+      if (people.length) return amount ? { people, amount } : null;
       // Lucía's invoice is the one on file: naming her alone plays it.
       if (!name || (/^luc[ií]a\b/i.test(name) && !amount)) return {};
       return amount ? { name, amount } : null;

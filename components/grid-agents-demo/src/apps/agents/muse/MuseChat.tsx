@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { TextMorph } from 'torph/react';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
 import { IconArrowUpRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpRight';
@@ -72,7 +72,8 @@ function EntityLinks({ products, pos }: { products: Product[]; pos?: string }) {
         <span key={p.title} className={styles.entityLine}>
           {i > 0 && ' '}
           <img src={p.image} alt="" className={styles.entityThumb} />
-          <strong className={styles.entity}>{p.title}</strong> at {p.price}
+          <strong className={styles.entity}>{p.title}</strong>
+          {p.detail && `, ${p.detail},`} at {p.price}
           {p.pick && products.length > 1 ? ' is my pick.' : i === 1 ? ', or' : '.'}
         </span>
       ))}
@@ -146,6 +147,8 @@ function RowLead({ row }: { row: AskRow }) {
   switch (row.icon) {
     case 'truck':
       return <span className={styles.glyph} style={{ maskImage: `url(${A}/truck.png)` }} />;
+    case 'car':
+      return <span className={styles.glyph} style={{ maskImage: `url(${A}/car.svg)` }} />;
     case 'envelope':
       return <span className={styles.glyph} style={{ maskImage: `url(${A}/envelope.png)` }} />;
     case 'meta':
@@ -281,8 +284,9 @@ function ApprovalCard({
   // A purchase is a store's checkout Muse is holding open; sending or moving money is a payment; setting up or
   // changing the balance is Muse asking about itself.
   const spends = !!(ask.amount || ask.total);
-  const checkout = spends && !!(ask.who?.icon || ask.rows?.some((r) => r.image));
-  const title = checkout ? 'Checkout' : spends ? 'Payment' : ask.rows?.some((r) => r.icon === 'wallet') ? 'Muse balance' : 'Muse';
+  const checkout = spends && !ask.heading?.payment && !!(ask.who?.icon || ask.rows?.some((r) => r.image));
+  const title =
+    ask.heading?.title ?? (checkout ? 'Checkout' : spends ? 'Payment' : ask.rows?.some((r) => r.icon === 'wallet') ? 'Muse balance' : 'Muse');
   return (
     <div className={styles.card} data-ready={ready || undefined} data-pos={pos}>
       <div className={styles.browserHead}>
@@ -390,8 +394,14 @@ function ApprovalCard({
       </div>
       {ask.legal && (
         <p className={styles.legal}>
-          By clicking allow, you agree to share order info with {ask.legal} and accept {ask.legal}’s{' '}
-          <em>Refund Policy</em>, <em>Privacy Policy</em> and <em>Terms of Service</em>.
+          By clicking allow, you agree to share {ask.legal.shares} with {ask.legal.merchant} and accept {ask.legal.merchant}’s{' '}
+          {ask.legal.policies.map((policy, i, all) => (
+            <Fragment key={policy}>
+              {i > 0 && (i === all.length - 1 ? ' and ' : ', ')}
+              <em>{policy}</em>
+            </Fragment>
+          ))}
+          .
         </p>
       )}
     </div>

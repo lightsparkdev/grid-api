@@ -302,11 +302,14 @@ function PaySheet({
             <div className={styles.payRows}>
               {order ? (
                 <div>
-                  <span>{ask.soon ? 'Deliver to' : 'Ship to'}</span>
+                  <span>{ask.where?.label ?? 'Ship to'}</span>
                   <p>
-                    {PERSON.full}
-                    <br />
-                    {ADDRESS}
+                    {(ask.where?.lines ?? [PERSON.full, ADDRESS]).map((line, i) => (
+                      <Fragment key={line}>
+                        {i > 0 && <br />}
+                        {line}
+                      </Fragment>
+                    ))}
                   </p>
                 </div>
               ) : (

@@ -24,6 +24,11 @@ export interface FlowParams {
   amount?: number;
   currency?: string;
   note?: string;
+  /** Pay someone every month, on this day of it (1–28): the first goes now. */
+  every?: 'month';
+  day?: number;
+  /** Get paid, split: the others splitting `amount` (the whole bill, USD) with them. */
+  people?: string[];
   /** Add funds: where it comes from. Add funds and Withdraw read `amount` in USD. */
   method?: FundMethod;
   /** Add funds and Send crypto: the asset and network, if they said. */
@@ -54,6 +59,8 @@ export interface FlowParams {
   typicalPrice?: number;
   /** Buy online: they just added money to pay from the balance, so it doesn't ask again. */
   pay?: 'balance';
+  /** Buy online, a named product: buy it once it's under this (USD), not now. */
+  below?: number;
 }
 
 export interface FlowContext {
@@ -124,10 +131,10 @@ function approvalOr(
   autoLine: string,
   after: Beat[],
   denied: string,
-  deniedParams?: Params,
+  lineParams?: Params,
 ): Beat[] {
   if (ctx.preApproved) return [{ emit: { type: 'action.approve' } }, ...after];
-  if (!needs) return [{ say: autoLine, params: limitParams(ctx) }, ...after];
+  if (!needs) return [{ say: autoLine, params: { ...lineParams, ...limitParams(ctx) } }, ...after];
   return [
     {
       ask: ask.key,
@@ -135,7 +142,7 @@ function approvalOr(
       params: ask.params,
       faceId: ask.key !== 'cashout',
       allow: [{ emit: { type: 'action.approve' } }, ...after],
-      deny: [{ emit: { type: 'action.reject' } }, { say: denied, params: deniedParams }],
+      deny: [{ emit: { type: 'action.reject' } }, { say: denied, params: lineParams }],
     },
   ];
 }
@@ -433,7 +440,7 @@ const fund = (ctx: FlowContext): Beat[] => {
     return [
       { react: '👍' },
       { say: 'fund.amount' },
-      { amount: true, then: (usd) => fund({ ...ctx, params: { ...ctx.params, amount: usd } }).slice(1) },
+      { amount: true, options: [25, 50, 100], then: (usd) => fund({ ...ctx, params: { ...ctx.params, amount: usd } }).slice(1) },
     ];
   }
   const deposit = (asset: CryptoAsset, network: DepositNetwork): Beat[] => {
@@ -583,6 +590,16 @@ function recipientParams(r: Recipient): Params {
   return { name: r.name, first: r.first, flag: c.code, country: c.name, rail: railName(c.rail), currency: r.bank.currency, bank: r.bank.bankName };
 }
 
+const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`;
+
+/** A payment that repeats each month on `day` (the 1st unless they said): the first goes now, the next on that day. */
+function monthly(day = 1): Params {
+  const d = Math.min(28, Math.max(1, Math.round(day)));
+  const now = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth() + (now.getDate() < d ? 0 : 1), d);
+  return { monthly: 1, day: ordinal(d), next: next.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) };
+}
+
 /** What a payment to someone the agent already knows looks like: a quote, then sent or held for the person. */
 function sendTo(ctx: FlowContext, r: Recipient, p: FlowParams): Beat[] {
   const payee = payeeFor(r, p.amount ?? 0, p.currency ?? 'USD');
@@ -596,6 +613,7 @@ function sendTo(ctx: FlowContext, r: Recipient, p: FlowParams): Beat[] {
     from: inDollars ? usd2(payee.usd) : payee.local,
     to: inDollars ? payee.local : usd2(payee.usd),
     note: p.note ?? '',
+    ...(p.every === 'month' && monthly(p.day)),
   };
   const send = (c: FlowContext): Beat[] => {
     const sent = { ...params, balance: c.account().balanceCents };
@@ -606,7 +624,13 @@ function sendTo(ctx: FlowContext, r: Recipient, p: FlowParams): Beat[] {
         c.needsApproval(payee.usd),
         { key: 'pay', params: sent },
         'pay.auto',
-        [{ work: 'sending', ms: 1000 }, { card: 'receipt.pay', params: sent }, { say: 'pay.done', params: sent }],
+        [
+          { work: 'sending', ms: 1000 },
+          { card: 'receipt.pay', params: sent },
+          ...(p.every === 'month'
+            ? [{ say: 'pay.scheduled', params: sent } as const, { meta: 'pay.routine', params: sent } as const]
+            : [{ say: 'pay.done', params: sent } as const]),
+        ],
         'pay.denied',
       ),
     ];
@@ -791,6 +815,8 @@ const buy = (outer: FlowContext): Beat[] => {
     ];
   }
   const shelf = shelfFor(ctx.params);
+  const below = cents(ctx.params?.below);
+  if (below && shelf.named) return watched(ctx, shelf, below);
   // Something they named, it buys; three it found, it says which it'd get and they choose.
   const choose: Beat[] = shelf.named
     ? order(ctx, shelf)
@@ -801,12 +827,12 @@ const buy = (outer: FlowContext): Beat[] => {
           chips: shelf.options.map((o) => ({ label: o.model ? `${o.merchant} ${o.model}` : o.title })),
           reply: true,
           then: (picked) => order(ctx, shelfWith(shelf, picked)),
-          onPage: (picked) => [{ say: 'buy.picked', params: { item: shelf.options[picked].title } }],
+          onPage: (picked) => [{ say: 'buy.picked', params: { ...shelfParams(shelf), item: shelf.options[picked].title } }],
         },
       ];
   return [
     { react: '👍' },
-    { work: 'searching', ms: 1800 },
+    { work: 'searching', ms: 1800, params: shelfParams(shelf) },
     // The card shows what it found and what it costs; a line before it would only repeat that. After it, a named
     // one gets a line only when there's more to say (over their budget, a card's range).
     { products: 'buy.options', params: { ...requestParams(ctx.params), ...(shelf.named && { only: 1 }) } },
@@ -815,10 +841,58 @@ const buy = (outer: FlowContext): Beat[] => {
   ];
 };
 
+/**
+ * "Buy it if it drops under $250": the agent watches the price and buys it on its own once it's under, the approval
+ * given up front. It saves a card first if there's nothing to pay with, so it can act the moment it drops. Already
+ * under, it just buys it.
+ */
+function watched(ctx: FlowContext, shelf: Shelf, below: number): Beat[] {
+  const params = { ...shelfParams(shelf), below };
+  const found: Beat[] = [{ react: '👍' }, { work: 'searching', ms: 1800, params }, { products: 'buy.options', params: { ...requestParams(ctx.params), only: 1 } }];
+  if (shelf.pick.amount <= below) return [...found, { say: 'watch.already', params }, ...order(ctx, shelf)];
+  // A believable sale price: a few percent under what they set, ending in 9.
+  const drop = Math.floor((below * 0.96) / 1000) * 1000 - 100;
+  const dropped: Shelf = { ...shelf, pick: { ...shelf.pick, amount: drop } };
+  // It buys without asking when it drops, so how it pays is settled now: the balance if it covers the sale price, else
+  // the card (saved first if it isn't yet).
+  const a = ctx.account();
+  const fromBalance = a.balanceOn && a.balanceCents >= drop;
+  const watch = (c: FlowContext): Beat[] => [
+    { say: 'watch.set', params },
+    { meta: 'watch.routine', params },
+    { divider: 'Two days later' },
+    { say: 'watch.dropped', params: { ...shelfParams(dropped), was: shelf.pick.amount } },
+    ...order({ ...c, preApproved: true, ...(!fromBalance && { params: { ...c.params, method: 'card' } }) }, dropped),
+  ];
+  return [...found, ...(fromBalance || a.cardVaulted ? watch(ctx) : vaultThen(ctx, 'watch.card', () => watch(ctx)))];
+}
+
 /** Checking out what was chosen. Over the per-payment limit, it says so first, with the product on screen. */
 function order(ctx: FlowContext, shelf: Shelf): Beat[] {
   const spend = purchaseSpendLimit(purchaseFor(shelf).amount);
   return overLimit(ctx, spend, 'buy', (c) => checkout(c, shelf)) ?? checkout(ctx, shelf);
+}
+
+/** What the agent says once it's bought, by how it arrives: shipped or delivered (with tracking), a ride on its way,
+ *  tickets or a table by email, a top-up on the phone, a bill paid. */
+function arrived(shelf: Shelf, p: Params): Beat[] {
+  switch (shelf.delivery) {
+    case 'ship':
+    case 'now':
+      return [{ say: 'buy.done', params: p }, { meta: 'buy.tracking', params: p }];
+    case 'ride':
+      return [{ say: 'ride.done', params: p }, { meta: 'buy.tracking', params: p }];
+    case 'email':
+      return [{ say: p.table ? 'table.done' : p.tickets ? 'tickets.sent' : 'buy.sent', params: p }];
+    case 'instant':
+      return [{ say: 'topup.done', params: p }];
+    case 'bill':
+      return [{ say: 'bill.done', params: p }];
+    default: {
+      const exhaustive: never = shelf.delivery;
+      return exhaustive;
+    }
+  }
 }
 
 /** What pays, then the card for it. Short of money with no card, it tops up first. */
@@ -830,24 +904,26 @@ function checkout(ctx: FlowContext, shelf: Shelf): Beat[] {
   const newCard = !ctx.account().cardVaulted;
   return [
     ...payWith(ctx, purchase.amount, function place(onCard: boolean, short = false, again = false): Beat[] {
-      const p = { ...params, card: onCard ? 1 : 0, short: short ? 1 : 0, needs: ctx.needsApproval(spend) ? 1 : 0 };
+      // Approved up front (a price watch, a raised limit), it doesn't ask again.
+      const p = { ...params, card: onCard ? 1 : 0, short: short ? 1 : 0, needs: ctx.needsApproval(spend) && !ctx.preApproved ? 1 : 0 };
       return [
         ...(again ? [] : [{ say: 'buy.card', params: p }]),
         { emit: { type: 'buy.request', purchase: { ...purchase, byCard: onCard } } },
-        { work: 'filling', ms: again ? 700 : 1300 },
+        { work: 'filling', ms: again ? 700 : 1300, params },
         ...approvalOr(
           ctx,
           ctx.needsApproval(spend),
           { key: 'buy', params: { ...p, ...payParams(ctx, purchase.amount) }, swap: swapFor(ctx, purchase.amount, (c) => place(c, false, true)) },
           'buy.auto',
           [
-            { work: 'paying', ms: 1100 },
+            { work: 'paying', ms: 1100, params },
             { emit: { type: 'buy.checkout' } },
             { card: 'receipt.buy', params: p },
-            ...(shelf.delivery === 'email' ? [{ say: 'buy.sent' } as const] : [{ say: 'buy.done', params: p } as const, { meta: 'buy.tracking' } as const]),
+            ...arrived(shelf, p),
             ...(onCard && newCard ? [{ when: () => (ctx.account().balanceOn ? [] : offerBalance(ctx)) }] : []),
           ],
           'buy.denied',
+          params,
         ),
       ];
     }),
@@ -892,7 +968,32 @@ function payerFor(p?: FlowParams) {
   return { payer: name, first: name.split(' ')[0], amount: cents(p?.amount) ?? LUCIA.amount, invoice: `INV-${String(43 + (hash(name) % 900)).padStart(4, '0')}` };
 }
 
+/**
+ * Splitting a bill they paid: each person's share (the whole bill over everyone, them included), a request to each,
+ * and each payment as it lands.
+ */
+function split(ctx: FlowContext, people: string[], total: number): Beat[] {
+  const share = Math.round(total / (people.length + 1));
+  const names = people.map((n) => n.split(' ')[0]);
+  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  return [
+    { react: '👍' },
+    { say: 'split.intro', params: { total, share, list, count: people.length + 1 } },
+    { emit: { type: 'getpaid.address', network: 'BASE', currency: 'USDC' } },
+    { work: 'watching', ms: 2000 },
+    ...people.flatMap((payer, i): Beat[] => [
+      ...(i ? [{ pause: 1400 } as const] : []),
+      { emit: { type: 'getpaid.received', from: payer, amount: share } },
+      { card: 'receipt.getpaid', params: { payer, amount: share, invoice: 'Split request' } },
+    ]),
+    { when: () => [{ say: 'split.done', params: { back: share * people.length, balance: ctx.account().balanceCents } }] },
+  ];
+}
+
 const getpaid = (ctx: FlowContext): Beat[] => {
+  const people = ctx.params?.people?.filter(Boolean) ?? [];
+  const total = cents(ctx.params?.amount);
+  if (people.length && total) return split(ctx, people, total);
   const who = payerFor(ctx.params);
   if (paid(ctx, who.payer)) return [{ react: '👍' }, { say: 'getpaid.already', params: who }];
   return [
