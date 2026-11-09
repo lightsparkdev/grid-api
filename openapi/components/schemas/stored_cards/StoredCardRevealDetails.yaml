@@ -16,7 +16,7 @@ properties:
   cvc:
     type: string
     maxLength: 2048
-    description: The security code, present only when the reveal's `cvcIncluded` is true.
+    description: The security code, present only on an agent's link whose reveal has `cvcIncluded` true; never on an owner's link.
   expiryMonth:
     type: integer
     minimum: 1

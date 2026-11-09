@@ -1504,6 +1504,65 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/stored-cards/{storedCardId}/reveal:
+    parameters:
+      - name: customerId
+        in: path
+        description: System-generated unique customer identifier
+        required: true
+        schema:
+          type: string
+      - name: storedCardId
+        in: path
+        description: System-generated unique stored card identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Reveal a stored card to its owner
+      description: 'Issues a single-use link, valid for two minutes, that answers the card''s number, expiry and holder name to the customer who owns the card. Call it only after the platform has verified the customer is present (for example with a fresh step-up), and hand the link only to that customer''s browser, for Evervault''s Reveal component to open: the link goes through Evervault''s Relay, which decrypts the number on the way, so whoever opens it receives the card number in plaintext. The link never answers a security code. Only an `ACTIVE` card can be revealed. Each issue and each opening is recorded in the card''s audit log with the customer as the actor.'
+      operationId: createStoredCardOwnerReveal
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '201':
+          description: The link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoredCardOwnerReveal'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer or stored card not found, or the card is not `ACTIVE`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '429':
+          description: Too many reveals for this customer or card; retry after the `Retry-After` header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers/{customerId}/verify-email:
     parameters:
       - name: customerId
@@ -12959,7 +13018,7 @@ paths:
           maxLength: 128
     get:
       summary: Open a stored card link
-      description: 'What a stored card''s `detailsUrl` answers, once. Open the `detailsUrl` itself, never this path on Grid''s host: `detailsUrl` goes through Evervault''s Relay, which decrypts `number` and `cvc` on the way, and Grid answers them only as Evervault ciphertext. The token is the only credential. A link that was already opened, has expired, or whose card or agent lost access answers `404`.'
+      description: 'What a stored card''s `detailsUrl` answers, once. Open the `detailsUrl` itself, never this path on Grid''s host: `detailsUrl` goes through Evervault''s Relay, which decrypts `number` and `cvc` on the way, and Grid answers them only as Evervault ciphertext. The token is the only credential. A link that was already opened, has expired, or whose card or agent lost access answers `404`. The same path answers a link from `createStoredCardOwnerReveal`, which never carries `cvc`, and the response allows the origin `https://ui-components.evervault.com` (CORS) so Evervault''s Reveal component can open it.'
       operationId: openStoredCardReveal
       tags:
         - Agent Operations
@@ -12972,7 +13031,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StoredCardRevealDetails'
         '404':
-          description: Link not found, already opened, or expired
+          description: Link not found, already opened, or expired; an owner link also answers `404` once the card is no longer `ACTIVE`
           content:
             application/json:
               schema:
@@ -22438,6 +22497,22 @@ components:
           maxLength: 64
           description: The customer's own label for the card.
           example: Personal Visa
+    StoredCardOwnerReveal:
+      type: object
+      description: A single-use link that answers a stored card's details to its owner.
+      required:
+        - detailsUrl
+        - expiresAt
+      properties:
+        detailsUrl:
+          type: string
+          format: uri
+          maxLength: 2048
+          description: 'The single-use link on Evervault''s Relay. Open it with Evervault''s Reveal component in the owner''s browser; it answers `StoredCardRevealDetails` without `cvc`, once, until `expiresAt`. It is a bearer secret: do not log or store it.'
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the link stops working, two minutes after it was issued.
     ContactVerificationConfirmRequest:
       type: object
       description: Request body for confirming an email or phone verification challenge.
@@ -38335,7 +38410,7 @@ components:
         cvc:
           type: string
           maxLength: 2048
-          description: The security code, present only when the reveal's `cvcIncluded` is true.
+          description: The security code, present only on an agent's link whose reveal has `cvcIncluded` true; never on an owner's link.
         expiryMonth:
           type: integer
           minimum: 1

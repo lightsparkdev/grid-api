@@ -15,6 +15,10 @@ get:
     answers them only as Evervault ciphertext. The token is the only
     credential. A link that was already opened, has expired, or whose card or
     agent lost access answers `404`.
+    The same path answers a link from `createStoredCardOwnerReveal`, which
+    never carries `cvc`, and the response allows the origin
+    `https://ui-components.evervault.com` (CORS) so Evervault's Reveal component
+    can open it.
   operationId: openStoredCardReveal
   tags:
     - Agent Operations
@@ -27,7 +31,7 @@ get:
           schema:
             $ref: ../../components/schemas/stored_cards/StoredCardRevealDetails.yaml
     '404':
-      description: Link not found, already opened, or expired
+      description: Link not found, already opened, or expired; an owner link also answers `404` once the card is no longer `ACTIVE`
       content:
         application/json:
           schema:

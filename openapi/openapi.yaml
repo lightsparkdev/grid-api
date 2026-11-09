@@ -302,6 +302,8 @@ paths:
     $ref: paths/customers/customers_{customerId}_stored-cards_{storedCardId}.yaml
   /customers/{customerId}/stored-cards/{storedCardId}/agents/{agentId}:
     $ref: paths/customers/customers_{customerId}_stored-cards_{storedCardId}_agents_{agentId}.yaml
+  /customers/{customerId}/stored-cards/{storedCardId}/reveal:
+    $ref: paths/customers/customers_{customerId}_stored-cards_{storedCardId}_reveal.yaml
   /customers/{customerId}/verify-email:
     $ref: paths/customers/customers_{customerId}_verify-email.yaml
   /customers/{customerId}/verify-email/confirm:

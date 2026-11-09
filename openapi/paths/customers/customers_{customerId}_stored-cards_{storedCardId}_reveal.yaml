@@ -1,0 +1,67 @@
+parameters:
+  - name: customerId
+    in: path
+    description: System-generated unique customer identifier
+    required: true
+    schema:
+      type: string
+  - name: storedCardId
+    in: path
+    description: System-generated unique stored card identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Reveal a stored card to its owner
+  description: >-
+    Issues a single-use link, valid for two minutes, that answers the card's
+    number, expiry and holder name to the customer who owns the card. Call it
+    only after the platform has verified the customer is present (for example
+    with a fresh step-up), and hand the link only to that customer's browser,
+    for Evervault's Reveal component to open: the link goes through Evervault's
+    Relay, which decrypts the number on the way, so whoever opens it receives
+    the card number in plaintext. The link never answers a security code. Only
+    an `ACTIVE` card can be revealed. Each issue and each opening is recorded
+    in the card's audit log with the customer as the actor.
+  operationId: createStoredCardOwnerReveal
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '201':
+      description: The link
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stored_cards/StoredCardOwnerReveal.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Customer or stored card not found, or the card is not `ACTIVE`
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '429':
+      description: Too many reveals for this customer or card; retry after the `Retry-After` header
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
