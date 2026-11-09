@@ -61,12 +61,12 @@ $skeleton-bone-dark: var(--color-gray-850);
   }
 
   /* Match the live cards' softer surface on the chrome-gray panel (wide). */
-  @media (min-width: $breakpoint-layout-wide) {
+  :global(html[data-layout='wide']) & {
     background: var(--surface-primary);
+  }
 
-    :global([data-theme='dark']) & {
-      background: var(--color-gray-950);
-    }
+  :global(html[data-layout='wide'][data-theme='dark']) & {
+    background: var(--color-gray-950);
   }
 }
 

@@ -3,8 +3,21 @@
  *  by convention, since SCSS can't import TS — the stylesheet twins in
  *  styles/breakpoints.scss. Change them together. */
 
-/** Stacked ⇄ 3-col threshold. Twin: $breakpoint-layout-wide. */
+/** The docs sidebar expanded, its default: what the layout assumes standalone. */
+export const DOCS_SIDEBAR_EXPANDED_PX = 280;
+
+/** Stacked ⇄ 3-col threshold beside the expanded docs sidebar. */
 export const LAYOUT_WIDE_PX = 1600;
+
+/**
+ * Where stacked flips to 3 columns (Configure 400 | App | API) beside a docs sidebar this wide: room for the phone at
+ * full size (~466px) next to the API column at its default (sidebar + configure). 1600 with the sidebar expanded;
+ * 1368 collapsed to the rail, so a MacBook Pro 14" (a 1464px embed) gets 3 columns.
+ */
+export const wideAt = (sidebar = DOCS_SIDEBAR_EXPANDED_PX) => LAYOUT_WIDE_PX - DOCS_SIDEBAR_EXPANDED_PX + sidebar;
+
+/** The html[data-layout] value for a frame this wide beside a docs sidebar this wide. */
+export const layoutFor = (width: number, sidebar?: number) => (width < wideAt(sidebar) ? 'stacked' : 'wide');
 
 /** Configure column width. Twin: $layout-laptop-config-width. */
 export const CONFIGURE_COL_PX = 400;

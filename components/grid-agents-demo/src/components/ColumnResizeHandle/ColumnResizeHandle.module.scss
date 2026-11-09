@@ -48,7 +48,7 @@
   }
 }
 
-@media (max-width: ($breakpoint-layout-wide - 1px)) {
+@include layout-stacked {
   .handle {
     display: none;
   }

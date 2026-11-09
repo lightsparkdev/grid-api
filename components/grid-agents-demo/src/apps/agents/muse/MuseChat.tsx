@@ -604,7 +604,7 @@ export function MuseChat({ chat }: AgentChatProps) {
             <span className={styles.slot}>
               <span className={styles.icon} style={{ maskImage: `url(${A}/plus.svg)` }} />
             </span>
-            <ComposerField chat={chat} placeholder="Ask Muse to buy, pay or send…" className={styles.field} />
+            <ComposerField chat={chat} placeholder="Message Muse" className={styles.field} />
             {chat.composer ? (
               <span className={styles.slot} role="button" aria-label="Send" onClick={chat.send}>
                 <span className={styles.sendCircle} data-ready={chat.canSend || undefined}>

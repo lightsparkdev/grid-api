@@ -4,7 +4,6 @@ import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconChevronGrabberVertical } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronGrabberVertical';
 import { IconClock } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconClock';
-import { IconCrossSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossSmall';
 import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
 import { IconHome } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHome';
 import { IconPaperPlane } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPaperPlane';
@@ -127,9 +126,6 @@ function ChoiceCard({ m, onPick }: { m: Extract<Message, { kind: 'chips' }>; onP
   return (
     <div className={styles.choiceWrap}>
       <div className={styles.choice} data-done={done || undefined}>
-        <span className={styles.choiceClose} aria-hidden>
-          <IconCrossSmall size={16} />
-        </span>
         {m.chips.map((c: Chip, i) => (
           <button
             key={c.label}
@@ -500,7 +496,7 @@ export function GrokChat({ chat }: AgentChatProps) {
                   <span className={styles.glyph} style={{ ...mask(`${A}/plus.svg`), width: 14, height: 14 }} />
                 </motion.span>
                 <motion.span layout="position" transition={COMPOSER_SPRING} className={styles.fieldSlot}>
-                  <ComposerField chat={chat} placeholder="Ask Grok Bot to buy or send" className={styles.fieldText} onMultiline={setMultiline} />
+                  <ComposerField chat={chat} placeholder="Message Grok Bot" className={styles.fieldText} onMultiline={setMultiline} />
                 </motion.span>
                 <motion.span layout="position" transition={COMPOSER_SPRING} className={styles.tools}>
                   <span className={styles.micDisc}>

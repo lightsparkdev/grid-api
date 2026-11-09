@@ -12,7 +12,7 @@ import { ThemeSync } from '@/components/ThemeSync';
 import { ComposerDials } from '@/apps/agents/ComposerBeam';
 import { useColumnResize } from '@/hooks/useColumnResize';
 import { useAgentsDemoLogic } from '@/hooks/useAgentsDemoLogic';
-import { LAYOUT_WIDE_PX } from '@/lib/layout';
+import { layoutFor } from '@/lib/layout';
 import type { ActionId } from '@/data/actions';
 import styles from './page.module.scss';
 
@@ -42,13 +42,24 @@ export default function Page() {
   // inline script in layout.tsx sets it BEFORE first paint (an effect here
   // would flash the SSR wide default on stacked viewports while JS loads);
   // this listener only keeps it live across resizes.
+  // Where it flips follows the docs sidebar too: collapsed, there's room for 3 columns sooner.
   useLayoutEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${LAYOUT_WIDE_PX - 1}px)`);
+    const nav = parseFloat(new URLSearchParams(window.location.search).get('nav') ?? '');
+    let sidebar = Number.isFinite(nav) && nav >= 0 ? nav : undefined;
     const apply = () =>
-      document.documentElement.setAttribute('data-layout', mql.matches ? 'stacked' : 'wide');
+      document.documentElement.setAttribute('data-layout', layoutFor(window.innerWidth, sidebar));
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type !== 'nav-sync' || typeof e.data.sidebarWidth !== 'number') return;
+      sidebar = e.data.sidebarWidth;
+      apply();
+    };
     apply();
-    mql.addEventListener('change', apply);
-    return () => mql.removeEventListener('change', apply);
+    window.addEventListener('resize', apply);
+    window.addEventListener('message', onMessage);
+    return () => {
+      window.removeEventListener('resize', apply);
+      window.removeEventListener('message', onMessage);
+    };
   }, []);
 
   // Mobile only (<=767): the layout collapses to one view at a time. On desktop

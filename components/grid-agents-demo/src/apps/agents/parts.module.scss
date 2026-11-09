@@ -149,10 +149,16 @@
   font: inherit;
   font-size: 16px;
   cursor: pointer;
-  transition: opacity 0.3s ease, scale 0.15s ease;
+  transition: opacity 0.3s ease, scale 0.15s ease, background-color 0.2s ease;
 
   &[data-picked] {
     scale: 0.97;
+  }
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--part-chip, #f2f2f2), var(--part-chip-text, #000) 7%);
+    }
   }
 
   img {

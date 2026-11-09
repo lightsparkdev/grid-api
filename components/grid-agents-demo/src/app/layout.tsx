@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { easingVarsStylesheet } from '@/lib/easing';
-import { CONFIGURE_COL_PX, LAYOUT_WIDE_PX, NAV_COLLAPSED_MAX_PX } from '@/lib/layout';
+import { CONFIGURE_COL_PX, DOCS_SIDEBAR_EXPANDED_PX, LAYOUT_WIDE_PX, NAV_COLLAPSED_MAX_PX } from '@/lib/layout';
 import './globals.scss';
 
 const TITLE = 'Lightspark Agent Accounts — Playground';
@@ -63,7 +63,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Boot attributes, set before first paint to avoid flashes — an
             effect is too late (the SSR HTML paints long before hydration):
             - data-embed / data-theme from the URL (embed) or stored pref
-            - data-layout (stacked ⇄ 3-col) from the viewport width
+            - data-layout (stacked ⇄ 3-col) from the viewport width and the
+              docs sidebar beside it (wideAt in lib/layout.ts)
             - --api-col-default from the embed's ?nav param (the live docs
               sidebar width), so the wide layout's code column paints at its
               real default — sidebar + configure column — instead of the
@@ -84,8 +85,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
               }
               document.documentElement.setAttribute('data-theme',t);
-              document.documentElement.setAttribute('data-layout',window.innerWidth<${LAYOUT_WIDE_PX}?'stacked':'wide');
               var nav=parseFloat(p.get('nav'));
+              var side=isFinite(nav)&&nav>=0?nav:${DOCS_SIDEBAR_EXPANDED_PX};
+              document.documentElement.setAttribute('data-layout',window.innerWidth<${LAYOUT_WIDE_PX - DOCS_SIDEBAR_EXPANDED_PX}+side?'stacked':'wide');
               if(isFinite(nav)&&nav>=0){
                 document.documentElement.style.setProperty('--api-col-default',(Math.round(nav)+${CONFIGURE_COL_PX})+'px');
                 document.documentElement.setAttribute('data-nav',nav<=${NAV_COLLAPSED_MAX_PX}?'collapsed':'expanded');

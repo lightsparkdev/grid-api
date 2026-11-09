@@ -41,12 +41,8 @@
   }
 
   /* Side-by-side the panel wears the docs-chrome gray (both modes). */
-  @media (min-width: $breakpoint-layout-wide) {
+  :global(html[data-layout='wide']) & {
     --cover-bg: var(--surface-secondary);
-
-    :global([data-theme='dark']) & {
-      --cover-bg: var(--surface-secondary);
-    }
   }
 }
 
@@ -131,7 +127,7 @@
 /* Stacked layouts (mobile + laptop): cap to one screenful with the centered
    message, not the full intrinsic skeleton height — so the API section isn't a
    tall empty void below the app. */
-@media (max-width: ($breakpoint-layout-wide - 1px)) {
+@include layout-stacked {
   .root {
     flex: none;
     height: calc(100dvh - 52px);

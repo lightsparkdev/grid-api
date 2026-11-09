@@ -496,7 +496,7 @@ function hintFor(chat: Pick<ChatView, 'messages' | 'awaitingAmount'>, invite: st
             ? 'answer'
             : undefined;
   if (!waiting) return invite;
-  // A lowercase app (Dots, Instinct: its invitation opens lowercase) says it lowercase too.
+  // An app whose invitation opens lowercase (Instinct's "iMessage") says it lowercase too.
   const text = own[waiting] ?? WAITING[waiting];
   return /^[a-z]/.test(invite) ? text.toLowerCase() : text;
 }

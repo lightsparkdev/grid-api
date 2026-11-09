@@ -1,12 +1,3 @@
-/** App + API side-by-side inside the right column. Above this the layout is 3
-    columns: Configure (400) | App | API. The phone needs ~466px (434 shell +
-    16px inset each side) to render full size, and the API column defaults to
-    680 — below ~1600 the 3-col reads cramped (a MacBook Pro 16" at 1728 with
-    the docs sidebar expanded gives the embed 1448, which should stack; with
-    the sidebar collapsed it gets 1680, which fits 3-col comfortably).
-    TS twin: LAYOUT_WIDE_PX in lib/layout.ts — change them together. */
-$breakpoint-layout-wide: 1600px;
-
 /** Configure stacks above app + API (phone). */
 $breakpoint-layout-mobile: 767px;
 
@@ -16,8 +7,24 @@ $layout-laptop-config-width: 400px;
 $layout-laptop-content-padding: 40px;
 $layout-laptop-api-content-max-width: 680px;
 
-@mixin layout-laptop {
-  @media (max-width: ($breakpoint-layout-wide - 1px)) and (min-width: ($breakpoint-layout-mobile + 1px)) {
+/** Stacked ⇄ 3 columns (Configure | App | API) is html[data-layout], not a media query: where it flips depends on
+    the docs sidebar beside the embed too (lib/layout.ts, wideAt). These wrap whole rules. */
+@mixin layout-wide {
+  :global(html[data-layout='wide']) {
     @content;
+  }
+}
+
+@mixin layout-stacked {
+  :global(html[data-layout='stacked']) {
+    @content;
+  }
+}
+
+@mixin layout-laptop {
+  @media (min-width: ($breakpoint-layout-mobile + 1px)) {
+    @include layout-stacked {
+      @content;
+    }
   }
 }

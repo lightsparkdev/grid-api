@@ -1,12 +1,22 @@
 'use client';
 
-import { createContext, useContext, useEffect, useLayoutEffect, useState, type ReactNode, type RefObject } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode, type RefObject } from 'react';
 import { BorderBeam, type BorderBeamColorVariant, type BorderBeamSize, type BorderBeamTheme } from 'border-beam';
 import { DialRoot, useDialKit, type DialConfig } from 'dialkit';
 import 'dialkit/styles.css';
 
 const SIZES: BorderBeamSize[] = ['md', 'sm', 'line', 'pulse-inner', 'pulse-outside'];
-const COLORS: BorderBeamColorVariant[] = ['global', 'ocean', 'colorful', 'mono', 'sunset', 'forest', 'candy', 'ice', 'gold'];
+const COLORS: BorderBeamColorVariant[] = [
+  'global',
+  'ocean',
+  'colorful',
+  'mono',
+  'sunset',
+  'forest',
+  'candy',
+  'ice',
+  'gold',
+];
 
 const DIALS = {
   beam: {
@@ -89,16 +99,20 @@ type Box = { left: number; top: number; width: number; height: number; radius: n
  */
 function usePillOutline(host: RefObject<HTMLDivElement>) {
   const [box, setBox] = useState<Box | null>(null);
-  useLayoutEffect(() => {
+  // After the commit, not in a layout effect: the composer's ref is attached after its children's layout effects.
+  useEffect(() => {
     const el = host.current;
-    const field = el?.querySelector('textarea:not([aria-hidden])');
-    if (!el || !field) return;
-    let pill = field.parentElement;
-    while (pill && pill !== el && parseFloat(getComputedStyle(pill).borderTopLeftRadius) < 12)
-      pill = pill.parentElement;
-    if (!pill || pill === el) return;
-    const found = pill;
+    if (!el) return;
+    const pillOf = () => {
+      let pill = el.querySelector('textarea:not([aria-hidden])')?.parentElement;
+      while (pill && pill !== el && parseFloat(getComputedStyle(pill).borderTopLeftRadius) < 12)
+        pill = pill.parentElement;
+      return pill && pill !== el ? pill : null;
+    };
+    let found: HTMLElement | null = null;
+    const ro = new ResizeObserver(() => measure());
     const measure = () => {
+      if (!found) return;
       const h = el.getBoundingClientRect();
       const r = found.getBoundingClientRect();
       // The phone is scaled to fit the page; positions inside it are in its own px.
@@ -111,11 +125,23 @@ function usePillOutline(host: RefObject<HTMLDivElement>) {
         radius: parseFloat(getComputedStyle(found).borderTopLeftRadius),
       });
     };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(found);
-    ro.observe(el);
-    return () => ro.disconnect();
+    // The skin's field can arrive after the first paint (and a skin can redraw its pill): look again when it does.
+    const look = () => {
+      const pill = pillOf();
+      if (!pill || pill === found) return;
+      found = pill;
+      ro.disconnect();
+      ro.observe(pill);
+      ro.observe(el);
+      measure();
+    };
+    look();
+    const mo = new MutationObserver(look);
+    mo.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+    return () => {
+      mo.disconnect();
+      ro.disconnect();
+    };
   }, [host]);
   return box;
 }

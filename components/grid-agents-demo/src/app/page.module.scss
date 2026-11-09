@@ -59,7 +59,7 @@
    would race the stacked ⇄ 3-col media flip and hold the column at its full
    stacked width inside the fresh row layout for a frame or two, crushing the
    app column to zero (the phone blinks out). Drags always track 1:1. */
-@media (min-width: $breakpoint-layout-wide) {
+@include layout-wide {
   .apiCol[data-easing]:not([data-resizing]) {
     transition: width 240ms cubic-bezier(0.25, 0.1, 0.25, 1);
   }

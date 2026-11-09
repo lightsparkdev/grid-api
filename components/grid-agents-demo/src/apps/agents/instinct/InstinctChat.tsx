@@ -722,7 +722,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
               </GlassPill>
               <GlassPill radius={20} className={styles.field}>
                 <span ref={fieldRow} className={styles.fieldRow}>
-                  <ComposerField chat={chat} placeholder="text Instinct to buy or send…" waiting={{ ask: 'reply yes, or type a change' }} className={styles.fieldText} />
+                  <ComposerField chat={chat} placeholder="iMessage" waiting={{ ask: 'reply yes, or type a change' }} className={styles.fieldText} />
                   {chat.composer ? (
                     <span className={styles.send} role="button" onClick={chat.send} data-ready={chat.canSend || undefined}>
                       <SfSymbol name="arrow.up" size={14} />

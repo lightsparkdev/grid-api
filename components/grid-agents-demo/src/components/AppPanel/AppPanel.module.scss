@@ -12,20 +12,9 @@
   transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-@media (max-width: ($breakpoint-layout-wide - 1px)) {
+@include layout-stacked {
   .panel {
     min-height: 100%;
-    overflow: visible;
-  }
-
-  .body {
-    flex: 1;
-    overflow: visible;
-  }
-}
-
-@media (min-width: $breakpoint-layout-wide) {
-  .body {
     overflow: visible;
   }
 }

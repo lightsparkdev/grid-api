@@ -321,6 +321,12 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
     opacity: 0.55;
   }
 
+  @media (hover: hover) {
+    &[data-state='open']:hover {
+      background: color-mix(in srgb, var(--muse-text) 6%, transparent);
+    }
+  }
+
   &[data-state='selected'] {
     padding-right: 39px;
     box-shadow: inset 0 0 0 1px var(--muse-text);
