@@ -14,11 +14,34 @@ post:
     authorization is declined. Payments in flight hold their amount against
     the pool until they complete or fail, so concurrent payments cannot
     together exceed it. `RECURRING` limits reset on UTC calendar boundaries.
+
+
+    Send an `Idempotency-Key` header to make retries safe: a request carrying
+    a key already used returns the pool the first request created, with a
+    `200` instead of a `201`. The request is compared with the pool as it is
+    now, so reusing a key with a different name, currency, limit
+    type, period, limit amount, per-transaction limit, approval threshold,
+    daily limit, monthly limit, allowed payment types or
+    `requiresAdminApproval`, after the pool was changed, or for a pool that
+    was archived is rejected with `409`. Without a key a retry cannot be
+    recognised, so each request creates its own pool. Keys are scoped to the
+    customer, so the same key on another customer creates a separate pool.
   operationId: createSpendingPool
   tags:
     - Agent Management
   security:
     - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      description: >
+        A unique identifier for the request. A retry with the same key returns
+        the pool the first request created rather than creating a second one.
+      required: false
+      schema:
+        type: string
+        maxLength: 255
+        example: 550e8400-e29b-41d4-a716-446655440000
   requestBody:
     required: true
     content:
@@ -26,6 +49,14 @@ post:
         schema:
           $ref: ../../components/schemas/agents/SpendingPoolCreateRequest.yaml
   responses:
+    '200':
+      description: >-
+        The `Idempotency-Key` was already used for this request: the pool the
+        first request created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/SpendingPool.yaml
     '201':
       description: Spending pool created
       content:
@@ -56,6 +87,17 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict - the `Idempotency-Key` was already used for a pool whose
+        name, currency, limit type, period, limit amount,
+        per-transaction limit, approval threshold, daily limit, monthly
+        limit, allowed payment types or `requiresAdminApproval` differs from
+        this request, or that was since archived. Use a new key for a new pool.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
     '500':
       description: Internal service error
       content:
