@@ -9,5 +9,4 @@ allOf:
       items:
         type: string
         enum:
-        - SEPA
-        - SEPA_INSTANT
+        - BANK_TRANSFER
