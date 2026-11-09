@@ -397,11 +397,11 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       // Duet asks for a yes in the thread, with reply pills, and keeps cards for money.
       connect: (p) => ({
         ...ASKS.connect(p),
-        text: `Here’s the setup: up to ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day, and I’ll check with you before anything over ${usd(n(p, 'approve'))}. Want me to turn it on?`,
+        text: `Up to ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day. I’ll check with you before anything over ${usd(n(p, 'approve'))}, and you can change these any time.`,
       }),
       limits: (p) => ({
         ...ASKS.limits(p),
-        text: `New limits: I’d act alone up to ${usd(n(p, 'approve'))}${wasText(p, 'approve', 'fromApprove')}, ${usd(n(p, 'daily'))} a day${wasText(p, 'daily', 'fromDaily')} and ${usd(n(p, 'perTx'))} a payment${wasText(p, 'perTx', 'fromPerTx')}. ${s(p, 'go') ? `Save them and ${s(p, 'go')} it?` : 'Save them?'}`,
+        text: `I’d act alone up to ${usd(n(p, 'approve'))}${wasText(p, 'approve', 'fromApprove')}, ${usd(n(p, 'daily'))} a day${wasText(p, 'daily', 'fromDaily')} and ${usd(n(p, 'perTx'))} a payment${wasText(p, 'perTx', 'fromPerTx')}.`,
       }),
       pay: duetSpend('pay'),
       cashout: duetSpend('cashout'),

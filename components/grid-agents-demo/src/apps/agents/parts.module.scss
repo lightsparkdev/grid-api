@@ -566,7 +566,7 @@
 
 // ── Sub-agent: the working row, and its sheet ──────────────────────────
 // The agent your agent worked with, as a card: its mark, its name over what they're doing or agreed, a chevron
-// to the conversation. Each app sets the surface (--sub-bg, --sub-border, --sub-radius, --sub-width).
+// to the conversation. Each app sets the surface (--sub-bg, --sub-border, --sub-shadow, --sub-radius, --sub-width).
 .sub {
   display: flex;
   align-items: center;
@@ -576,6 +576,7 @@
   padding: 12px 14px 12px 12px;
   border: var(--sub-border, 0);
   border-radius: var(--sub-radius, 18px);
+  box-shadow: var(--sub-shadow, none);
   background: var(--sub-bg, var(--part-sunk, #f2f2f2));
   color: var(--part-text, #000);
   font: inherit;

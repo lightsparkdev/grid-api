@@ -3,14 +3,15 @@
 .screen {
   // The agent-to-agent card: Claude's white card and hairline ring.
   --sub-bg: var(--cl-card);
-  --sub-border: 1px solid var(--cl-ring);
+  --sub-border: 0;
+  --sub-shadow: none;
   --sub-radius: 22px;
   --cl-bg: #f9f9f7;
   --cl-edge: 249, 249, 247;
   --cl-text: #0b0b0b;
   --cl-muted: #5e5d59;
   --cl-bubble: #ededeb;
-  --cl-me: #e5e2d9;
+  --cl-me: #f6d0bd;
   --cl-card: #fff;
   --cl-ring: rgba(11, 11, 11, 0.06);
   --cl-rule: rgba(11, 11, 11, 0.12);
@@ -25,7 +26,8 @@
   --part-muted: var(--cl-muted);
   --part-rule: var(--cl-rule);
   --part-radius: 22px;
-  --part-shadow: drop-shadow(0 0 1px var(--cl-rule));
+  --cl-lift-pill: 0 0 0 0.5px rgba(11, 11, 11, 0.13), 0 1px 3px rgba(11, 11, 11, 0.06);
+  --part-shadow: drop-shadow(0 0 0.5px rgba(11, 11, 11, 0.3)) drop-shadow(0 1px 4px rgba(11, 11, 11, 0.07));
   --part-accent: var(--cl-ink);
   --part-accent-text: var(--cl-ink-text);
   --part-done: var(--cl-bubble);
@@ -42,7 +44,7 @@
     --cl-text: #f5f4ef;
     --cl-muted: #a6a39b;
     --cl-bubble: #30302e;
-    --cl-me: #3d3c38;
+    --cl-me: #573b30;
     --cl-card: #1f1e1d;
     --cl-ring: rgba(255, 255, 255, 0.08);
     --cl-rule: rgba(255, 255, 255, 0.12);
@@ -51,6 +53,8 @@
     --cl-tag: #5a4520;
     --cl-chip: rgba(255, 255, 255, 0.08);
     --cl-tile: #2a2928;
+    --cl-lift-pill: 0 0 0 0.5px rgba(255, 255, 255, 0.1), 0 1px 3px rgba(0, 0, 0, 0.35);
+    --part-shadow: drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.18)) drop-shadow(0 1px 5px rgba(0, 0, 0, 0.4));
   }
   font-family: 'Anthropic Sans', var(--font-family-sf-pro);
   font-variation-settings: 'opsz' 16;
@@ -90,7 +94,7 @@
   gap: 6px;
   height: 36px;
   padding: 0 14px 0 11px;
-  border: 1px solid var(--cl-rule);
+  border: 0;
   border-radius: 999px;
   corner-shape: round;
   background: var(--cl-card);
@@ -135,10 +139,10 @@
 }
 
 // A yes asked in words: the message, then its replies.
-.textAsk {
+// A list (option cards, a connections card) with any leftover replies under it.
+.choice {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 8px;
 }
 
@@ -171,7 +175,6 @@
   overflow: hidden;
   border-radius: 22px;
   background: var(--cl-card);
-  box-shadow: 0 0 0 1px var(--cl-ring);
 
   &[data-opens-sheet] {
     cursor: pointer;
@@ -324,24 +327,37 @@
   }
 }
 
-// What Duet is doing, as a quiet line under the thread.
-.working {
-  padding-left: 4px;
-  color: var(--cl-muted);
-  font-size: 14px;
-  line-height: 19px;
-  animation: cl-working 1.6s ease-in-out infinite;
-}
+// What Duet is doing, in a small label hung under its avatar.
+.activity {
+  position: absolute;
+  top: 136px;
+  left: 50%;
+  z-index: 4;
+  padding: 2px 8px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--cl-card);
+  box-shadow: var(--cl-lift-pill);
+  color: var(--cl-text);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: -0.1px;
+  white-space: nowrap;
+  opacity: 0;
+  translate: -50% -2px;
+  transition: opacity 0.25s ease, translate 0.25s ease;
+  pointer-events: none;
 
-@keyframes cl-working {
-  50% {
-    opacity: 0.45;
+  &[data-on] {
+    opacity: 1;
+    translate: -50% 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .working {
-    animation: none;
+  .activity {
+    transition: none;
   }
 }
 
@@ -355,7 +371,6 @@
   padding: 12px 16px;
   border-radius: 18px;
   background: var(--cl-card);
-  box-shadow: 0 0 0 1px var(--cl-ring);
   color: var(--cl-muted);
   font-size: 17px;
   line-height: 22px;
@@ -371,10 +386,10 @@
   }
 }
 
-// Under the thread, over the composer.
-.disclaimer {
-  display: block;
-  margin: 0 0 10px 31px;
+// Under your latest message, once Duet has it.
+.seen {
+  align-self: flex-end;
+  margin: 4px 6px 0 0;
   color: var(--cl-muted);
   font-size: 12px;
   line-height: 16px;
@@ -425,6 +440,11 @@
   .mascot & {
     width: 76px;
     height: 76px;
+  }
+
+  .computer & {
+    width: 64px;
+    height: 64px;
   }
 }
 
@@ -506,7 +526,6 @@
   padding: 16px;
   border-radius: 22px;
   background: var(--cl-card);
-  box-shadow: 0 0 0 1px var(--cl-ring);
 }
 
 .spendTop {
@@ -641,13 +660,36 @@
   }
 }
 
+// What scrolls under the composer and tab bar washes toward the screen, still showing through, as Duet's own does.
+.foot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  height: 200px;
+  background: linear-gradient(180deg, rgba(var(--cl-edge), 0) 0%, rgba(var(--cl-edge), 0.55) 45%, rgba(var(--cl-edge), 0.82) 100%);
+  pointer-events: none;
+}
+
+// The tab bar and, beside it, the computer disc (IMG_1967 at 3x).
 .tabs {
   position: absolute;
   bottom: 32px;
-  left: 39px;
+  left: 17px;
   z-index: 3;
-  width: 324px;
+  width: 298px;
   height: 64px;
+}
+
+.computer {
+  position: absolute;
+  bottom: 32px;
+  left: 322px;
+  z-index: 3;
+  width: 64px;
+  height: 64px;
+  color: var(--cl-muted);
 }
 
 .tabRow {
@@ -728,7 +770,7 @@
   --acct-button: #f0eee6;
   --acct-button-radius: 10px;
   --acct-accent: #d97757;
-  --acct-edge: inset 0 0 0 1px rgba(20, 20, 19, 0.08);
+  --acct-edge: none;
 
   // Darker than the screen with a hairline, as Duet's other cards are, so it doesn't vanish into the background.
   :global([data-theme='dark']) & {
@@ -736,6 +778,5 @@
     --acct-ink: #faf9f5;
     --acct-ink-2: #9c9a92;
     --acct-button: #30302e;
-    --acct-edge: inset 0 0 0 1px var(--cl-ring);
   }
 }

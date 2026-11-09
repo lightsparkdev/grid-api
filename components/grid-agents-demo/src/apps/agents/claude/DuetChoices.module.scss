@@ -1,0 +1,244 @@
+// Duet's richer choices (IMG_1964 to IMG_1970 at 3x): option cards, a connections card and a permission card. The
+// colors come from the chat (--cl-*). Each card sits in a Lift, which clips it to continuous corners at its radius and
+// draws the shadow around the clip.
+
+.lift {
+  filter: var(--part-shadow);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 363px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px 12px 12px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--cl-card);
+  color: var(--cl-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.3s ease, scale 0.15s ease, background-color 0.2s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.98;
+  }
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--cl-card), var(--cl-text) 3%);
+    }
+  }
+
+  .options[data-settled] &:not([data-picked]) {
+    opacity: 0.45;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.tile,
+.logo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--cl-text);
+}
+
+.tile {
+  width: 40px;
+  height: 40px;
+  background: var(--cl-bubble);
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+
+  b {
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 22px;
+    letter-spacing: -0.43px;
+  }
+
+  small {
+    color: var(--cl-muted);
+    font-size: 15px;
+    line-height: 20px;
+    letter-spacing: -0.23px;
+  }
+}
+
+.check {
+  flex: none;
+  color: var(--part-success);
+}
+
+.connect {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 363px;
+  padding: 16px;
+  border-radius: 24px;
+  background: var(--cl-card);
+  color: var(--cl-text);
+}
+
+.connection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: opacity 0.3s ease;
+
+  .connect[data-settled] &:not([data-picked]) {
+    opacity: 0.45;
+  }
+
+  b {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 23px;
+  }
+}
+
+.logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--cl-rule);
+}
+
+.plus {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--cl-card);
+  box-shadow: inset 0 0 0 1px var(--cl-rule);
+  color: var(--cl-text);
+  cursor: pointer;
+  transition: scale 0.15s ease, background-color 0.2s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.94;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  .connection[data-picked] & {
+    color: var(--part-success);
+  }
+}
+
+.secondary,
+.primary {
+  display: grid;
+  place-items: center;
+  height: 50px;
+  border-radius: 999px;
+  corner-shape: round;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: -0.43px;
+  cursor: pointer;
+  transition: scale 0.15s ease, background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.secondary {
+  border: 0;
+  background: var(--cl-card);
+  box-shadow: inset 0 0 0 1px var(--cl-rule);
+  color: var(--cl-text);
+}
+
+.primary {
+  border: 0;
+  background: var(--cl-ink);
+  color: var(--cl-ink-text);
+
+  &[data-pressing] {
+    scale: 0.97;
+  }
+
+  &[data-done] {
+    background: var(--cl-bubble);
+    color: var(--cl-muted);
+  }
+}
+
+.permission {
+  display: flex;
+  flex-direction: column;
+  width: 363px;
+  padding: 16px 16px 14px;
+  border-radius: 24px;
+  background: var(--cl-card);
+  color: var(--cl-text);
+
+  p {
+    margin: 8px 0 14px;
+    color: var(--cl-muted);
+    font-size: 15px;
+    line-height: 20px;
+    letter-spacing: -0.23px;
+  }
+
+  &[data-state='denied'] .primary,
+  &[data-state='expired'] button {
+    opacity: 0.4;
+  }
+}
+
+.permissionHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  svg {
+    flex: none;
+    margin-top: 1px;
+  }
+
+  b {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 22px;
+    letter-spacing: -0.43px;
+  }
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  &[data-single] {
+    grid-template-columns: 1fr;
+  }
+}

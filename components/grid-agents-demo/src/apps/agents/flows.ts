@@ -7,7 +7,7 @@ import { depositDetails, formatMoney, linkedBank, pullsFrom } from './linkedBank
 import { draftRecipient, payeeFor, recipientNamed, type Recipient } from './recipients';
 import { hash, merchantFor, stayFor, stayParams, type Stay } from './hotels';
 import { purchaseFor, requestParams, shelfFor, shelfParams, shelfWith, type BuyKind, type Shelf } from './products';
-import { CASHOUT_AMOUNT, CRYPTO, FUND, LUCIA, NETWORK_NAME, NEW_LIMITS, SUBSCRIPTION, usd2, type CryptoAsset } from './story';
+import { CASHOUT_AMOUNT, CRYPTO, FUND, FUND_DETAIL, LUCIA, NETWORK_NAME, NEW_LIMITS, SUBSCRIPTION, usd2, type CryptoAsset } from './story';
 
 /* What each flow does once the visitor sends its line: the agent's beats, the
    Grid events at each beat, and the points where it waits on the visitor.
@@ -430,6 +430,7 @@ const bank = (ctx: FlowContext): Beat[] => {
 /** Add funds' sources, in its chips' order. */
 const FUND_METHODS: FundMethod[] = ['card', 'bank', 'crypto'];
 const FUND_GLYPH: Record<FundMethod, ChipGlyph> = { card: 'card', bank: 'bank', crypto: 'coin' };
+const fundChip = (m: FundMethod) => ({ label: FUND[m], glyph: FUND_GLYPH[m], detail: FUND_DETAIL[m] });
 
 /** What a network alone says about the asset: only USDT arrives on Tron, only Bitcoin over Lightning. Spark could be either. */
 const assetOn = (network?: DepositNetwork): CryptoAsset | undefined =>
@@ -501,7 +502,7 @@ const fund = (ctx: FlowContext): Beat[] => {
     return [
       { say: 'fund.other', params: { amount, again: tried.length > 1 ? 1 : 0 } },
       {
-        chips: [...rest.map((i) => ({ label: FUND[FUND_METHODS[i]], glyph: FUND_GLYPH[FUND_METHODS[i]] })), { label: 'Not now' }],
+        chips: [...rest.map((i) => fundChip(FUND_METHODS[i])), { label: 'Not now' }],
         reply: true,
         then: (picked) => (picked < rest.length ? from(rest[picked], tried) : [holdOr(ctx, { say: 'fund.later' })]),
       },
@@ -521,7 +522,7 @@ const fund = (ctx: FlowContext): Beat[] => {
     // Topping up for something else, it says what it needs and why.
     ctx.then ? { say: 'fund.needed', params: { amount }, join: true } : { say: 'fund.ask' },
     {
-      chips: FUND_METHODS.map((m) => ({ label: FUND[m], glyph: FUND_GLYPH[m] })),
+      chips: FUND_METHODS.map(fundChip),
       reply: true,
       then: from,
     },
@@ -1020,7 +1021,7 @@ export const getpaid = (ctx: FlowContext): Beat[] => {
     { react: '‼️' },
     { say: 'getpaid.ask', params: who },
     {
-      chips: LUCIA.options.map((o) => ({ label: o.label, glyph: cryptoGlyph(o.network) })),
+      chips: LUCIA.options.map((o) => ({ label: o.label, glyph: cryptoGlyph(o.network), detail: o.detail })),
       reply: true,
       then: (i) => {
         const o = LUCIA.options[i];
@@ -1237,16 +1238,51 @@ export function overLimit(ctx: FlowContext, spend: number, go: string, then: (ct
 const OVER_LIMIT: Partial<Record<ActionId, boolean>> = { pay: true, crypto: true, buy: true, agent: true, cashout: true };
 
 /** What a run is about, for an app that labels it (Duet's eyebrow): who's paid, the hotel, the invoice, or the flow. */
+/** "Geoff, Jay and Anita". */
+const listOf = (names: string[]) => (names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : (names[0] ?? ''));
+
+/** A run's label. A tile (no params) tells its own story; a request names what it's about, and a missing detail
+ *  falls back to the flow rather than the story's people. */
 const TOPIC: Partial<Record<ActionId, (ctx: FlowContext) => string>> = {
   connect: () => 'Set up a balance',
-  pay: (ctx) => `Pay ${((ctx.params?.name ? ctx.params : STORY_PAY).name ?? '').split(' ')[0]}`,
+  pay: (ctx) => {
+    const name = (ctx.params ? ctx.params.name : STORY_PAY.name)?.split(' ')[0];
+    return name ? `Pay ${name}` : 'Pay someone';
+  },
   crypto: (ctx) => {
     const address = (ctx.params ?? STORY_CRYPTO).address;
     return address ? `Send to ${shortAddress(address)}` : 'Send stablecoins';
   },
   agent: (ctx) => stayFor(ctx.params).hotel,
-  getpaid: (ctx) => `${payerFor(ctx.params).first}’s invoice`,
-  buy: (ctx) => (ctx.variant % 2 === 1 ? subscriptionFor(ctx).merchant : 'Buy online'),
+  getpaid: (ctx) => {
+    const p = ctx.params;
+    if (p?.people?.length) return `Split with ${listOf(p.people)}`;
+    return !p || p.name ? `${payerFor(p).first}’s invoice` : 'Get paid';
+  },
+  buy: (ctx) => {
+    if (ctx.variant % 2 === 1) return subscriptionFor(ctx).merchant;
+    if (!ctx.params?.query && !ctx.params?.product) return 'Buy online';
+    const shelf = shelfFor(ctx.params);
+    const { brand, model } = shelf.pick;
+    const to = shelf.details?.to;
+    switch (shelf.delivery) {
+      case 'ride':
+        return to ? `Ride to ${to}` : 'Ride';
+      case 'bill':
+        return `${brand} bill`;
+      case 'instant':
+        return `${brand} top-up`;
+      case 'email':
+        return shelf.details?.table ? `Table at ${brand}` : model ? `${brand} ${model}` : brand;
+      case 'ship':
+      case 'now':
+        return model ? `${brand} ${model}` : brand;
+      default: {
+        const exhaustive: never = shelf.delivery;
+        return exhaustive;
+      }
+    }
+  },
 };
 export const topicFor = (flow: ActionId, ctx: FlowContext) => TOPIC[flow]?.(ctx) ?? actionLabel(flow);
 

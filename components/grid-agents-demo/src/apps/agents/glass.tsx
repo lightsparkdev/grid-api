@@ -199,6 +199,7 @@ export function GlassPill({
   absolute,
   tone,
   tint = tone === 'blue' ? BLUE : TINT,
+  blur = BLUR,
   prominent = tone === 'blue',
   className,
   style,
@@ -209,6 +210,8 @@ export function GlassPill({
   tone?: 'blue';
   /** The frost's fill. */
   tint?: string;
+  /** How much the frost blurs what's behind it, in px: more for an alert over a busy page. */
+  blur?: number;
   /** Filled with a solid color (a primary action, a dark save disc) rather than clear glass. */
   prominent?: boolean;
   /** Floats over the screen (the panel otherwise sets itself `position: relative`). */
@@ -224,7 +227,7 @@ export function GlassPill({
       radius={radius}
       shape={shape}
       tint={tint}
-      tintBlur={BLUR}
+      tintBlur={blur}
       edge="none"
       className={`${styles.pill} ${tone === 'blue' ? styles.blue : ''} ${className ?? ''}`}
       style={{ borderRadius: radius, ...(absolute && { position: 'absolute' }), ...style }}

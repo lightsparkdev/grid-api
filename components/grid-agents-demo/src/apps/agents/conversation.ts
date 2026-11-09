@@ -21,6 +21,8 @@ export interface Chip {
   glyph?: ChipGlyph;
   /** A suggestion that is a flow's own request: tapped, it starts that flow rather than asking the model. */
   flow?: ActionId;
+  /** A line under it, for the apps that list a choice as cards (Duet). */
+  detail?: string;
 }
 
 export type ChipGlyph = 'card' | 'bank' | 'coin' | 'bolt' | 'check' | 'wallet';

@@ -13,6 +13,13 @@ export const FUND = {
   crypto: 'Stablecoins',
 };
 
+/** What each way to add money is like, under its name where a choice is listed as cards. */
+export const FUND_DETAIL = {
+  card: 'Lands in your balance right away',
+  bank: 'Pulled from your bank account',
+  crypto: 'USDC or USDT, sent to an address',
+};
+
 export type CryptoAsset = 'USDC' | 'USDT' | 'BTC';
 
 /**
@@ -93,8 +100,8 @@ export const LUCIA = {
   amount: 46_820,
   invoice: 'INV-0042',
   options: [
-    { label: 'USDC on Base', network: 'BASE' as DepositNetwork, currency: 'USDC' },
-    { label: 'USDT on Ethereum', network: 'ETHEREUM' as DepositNetwork, currency: 'USDT' },
+    { label: 'USDC on Base', network: 'BASE' as DepositNetwork, currency: 'USDC', detail: 'Fast, with tiny network fees' },
+    { label: 'USDT on Ethereum', network: 'ETHEREUM' as DepositNetwork, currency: 'USDT', detail: 'Widely supported, higher network fees' },
   ],
 };
 

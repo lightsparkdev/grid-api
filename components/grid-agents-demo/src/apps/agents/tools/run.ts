@@ -685,6 +685,10 @@ export function topicOf(call: ToolCall, ctx: FlowContext): string {
     merchant: s(i.merchant),
     price: typeof i.monthly_price_usd === 'number' ? i.monthly_price_usd : undefined,
     address: s(i.address),
+    query: s(i.query),
+    product: s(i.product),
+    brand: s(i.brand),
+    ...(Array.isArray(i.split_with) && { people: i.split_with.filter((x): x is string => typeof x === 'string') }),
   };
   return topicFor(flow, { ...ctx, params, variant: call.name === 'subscribe' ? 1 : 0 });
 }

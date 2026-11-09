@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { TextMorph } from 'torph/react';
 import { IconArrowCornerDownRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowCornerDownRight';
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
@@ -10,13 +10,14 @@ import { IconFileText } from '@central-icons-react/round-outlined-radius-3-strok
 import { IconPin } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPin';
 import { IconSquareBehindSquare1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare1';
 import { FLOW_ICON_COLORS, FLOW_ICONS } from '@/data/flowIcons';
-import { ChatFrame, ComposerField, Said, ScrollEdge } from '../ChatFrame';
+import { ChatFrame, ComposerField, Said, ScrollEdge, TypingDots } from '../ChatFrame';
 import { GlassPill, NoopButton, useContinuousCorners } from '../glass';
 import type { AgentNote, Message } from '../conversation';
 import { AddressQr, askButtons, AskCard, BalanceCard, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import type { AgentChatProps } from '../types';
 import { ClaudeMascot } from './ClaudeMascot';
 import { useDuetBalance } from './DuetBalance';
+import { ConnectList, Lift, OptionList, PermissionCard, SETUP } from './DuetChoices';
 import { DuetConnector, useDuetBank, useDuetCard } from './DuetVault';
 import type { MascotState } from './mascot';
 import styles from './ClaudeChat.module.scss';
@@ -77,27 +78,46 @@ function SpendCard({
 /** Duet's quick replies: outlined pills in a row, each led by the reply arrow. */
 function ReplyPills({ labels, picked, settled, onPick }: { labels: string[]; picked: number | null; settled: boolean; onPick: (i: number) => void }) {
   return (
-    <div className={styles.replies} data-settled={settled || undefined}>
-      {labels.map((label, i) => (
-        <button key={label} type="button" className={styles.reply} data-picked={picked === i || undefined} disabled={settled} onClick={() => onPick(i)}>
-          <IconArrowCornerDownRight size={15} />
-          {label}
-        </button>
-      ))}
-    </div>
+    <Lift cards=":scope > * > *">
+      <div className={styles.replies} data-settled={settled || undefined}>
+        {labels.map((label, i) => (
+          <button key={label} type="button" className={styles.reply} data-picked={picked === i || undefined} disabled={settled} onClick={() => onPick(i)}>
+            <IconArrowCornerDownRight size={15} />
+            {label}
+          </button>
+        ))}
+      </div>
+    </Lift>
   );
 }
 
-/** A yes Duet asks for in the thread (setting up, new limits): the ask as a message, answered with a reply. */
-function TextAsk({ m, onAllow, onDeny }: { m: Extract<Message, { kind: 'ask' }>; onAllow: () => void; onDeny: () => void }) {
-  const { ask, state } = m;
-  const picked = state === 'denied' ? 1 : state === 'open' || state === 'expired' ? null : 0;
+/**
+ * A choice, drawn by what it offers: nothing but ways to set Duet up, as one card of connections; options with a line
+ * under each, as option cards; anything else, as reply pills. Lists stay with the pick checked; pills go once answered.
+ */
+function Choice({ m, onPick }: { m: Extract<Message, { kind: 'chips' }>; onPick: (i: number) => void }) {
+  const settled = m.picked !== null || !!m.expired;
+  if (m.expired && m.picked === null) return null;
+  const all = m.chips.map((chip, index) => ({ chip, index }));
+  const isSetup = (c: (typeof all)[number]) => !!(c.chip.flow && SETUP[c.chip.flow]);
+  const answers = all.filter((c) => c.chip.label !== 'Not now');
+  const setup = answers.length > 0 && answers.every(isSetup) ? answers : [];
+  const listed = setup.length ? setup : all.filter(({ chip }) => chip.detail);
+  const rest = all.filter((c) => !listed.includes(c));
+  const pills = (items: typeof all) =>
+    !settled && items.length > 0 && <ReplyPills labels={items.map((c) => c.chip.label)} picked={null} settled={false} onPick={(j) => onPick(items[j].index)} />;
+  if (!listed.length) return pills(all) || null;
+  // The connections card keeps its own Not now; other leftovers stay as pills under the list.
+  const notNow = setup.length ? rest.find((c) => c.chip.label === 'Not now') : undefined;
+  const others = rest.filter((c) => c !== notNow);
   return (
-    <div className={styles.textAsk}>
-      <Said typing={false} className={styles.bubble}>
-        {ask.text}
-      </Said>
-      <ReplyPills labels={['Yes', 'Not now']} picked={picked} settled={state !== 'open'} onPick={(i) => (i === 0 ? onAllow() : onDeny())} />
+    <div className={styles.choice}>
+      {setup.length ? (
+        <ConnectList items={listed} picked={m.picked} settled={settled} onPick={onPick} notNow={notNow?.index} />
+      ) : (
+        <OptionList items={listed} picked={m.picked} settled={settled} onPick={onPick} />
+      )}
+      {pills(others)}
     </div>
   );
 }
@@ -273,12 +293,15 @@ export function ClaudeChat({ chat }: AgentChatProps) {
     return node !== null && closesRun(i, all) ? (
       <>
         {node}
-        <DoneRow />
+        <Lift>
+          <DoneRow />
+        </Lift>
       </>
     ) : (
       node
     );
   };
+  const lastMe = chat.messages.findLastIndex((m) => m.kind === 'me');
   const renderOne = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
@@ -293,7 +316,18 @@ export function ClaudeChat({ chat }: AgentChatProps) {
       case 'eyebrow':
         return <Eyebrow m={m} />;
       case 'me':
-        return <span className={styles.me} data-bubble>{m.text}</span>;
+        return i === lastMe && (i < all.length - 1 || chat.busy) ? (
+          <>
+            <span className={styles.me} data-bubble>
+              {m.text}
+            </span>
+            <span className={styles.seen}>Seen</span>
+          </>
+        ) : (
+          <span className={styles.me} data-bubble>
+            {m.text}
+          </span>
+        );
       case 'tag':
         return (
           <span className={styles.tag}>
@@ -305,26 +339,60 @@ export function ClaudeChat({ chat }: AgentChatProps) {
           </span>
         );
       case 'ask':
-        if (m.ask.bank) return <DuetConnector ask={m.ask} state={m.state} onOpen={() => bank.open(m.id, m.ask)} />;
-        if (m.ask.card) return <DuetConnector ask={m.ask} state={m.state} onOpen={() => card.open(m.id, m.ask)} />;
-        // Money gets the spend card; a yes Duet asks for in words (setting up, limits) is a message with replies.
-        if (m.ask.amount) return <SpendCard m={m} onAllow={chat.allow} onDeny={chat.deny} />;
-        if (m.ask.text) return <TextAsk m={m} onAllow={chat.allow} onDeny={chat.deny} />;
-        return <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />;
+        if (m.ask.bank || m.ask.card) {
+          const open = m.ask.bank ? bank.open : card.open;
+          return (
+            <Lift>
+              <DuetConnector ask={m.ask} state={m.state} onOpen={() => open(m.id, m.ask)} />
+            </Lift>
+          );
+        }
+        // Money gets the spend card; a yes Duet needs without money (setting up, limits) gets a permission card.
+        if (m.ask.amount)
+          return (
+            <Lift>
+              <SpendCard m={m} onAllow={chat.allow} onDeny={chat.deny} />
+            </Lift>
+          );
+        if (m.ask.text) return <PermissionCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />;
+        return (
+          <Lift>
+            <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />
+          </Lift>
+        );
       case 'card': {
         const b = m.card.balance;
-        if (b) return <BalanceCard balance={b} onOpen={() => balance.open(b.wallet)} className={styles.accountSkin} />;
-        if (m.card.code) return <AddressArtifact note={m.card} />;
-        return m.card.stats || m.card.rows ? <NoteArtifact note={m.card} /> : <NoteCard note={m.card} />;
+        return (
+          <Lift>
+            {b ? (
+              <BalanceCard balance={b} onOpen={() => balance.open(b.wallet)} className={styles.accountSkin} />
+            ) : m.card.code ? (
+              <AddressArtifact note={m.card} />
+            ) : m.card.stats || m.card.rows ? (
+              <NoteArtifact note={m.card} />
+            ) : (
+              <NoteCard note={m.card} />
+            )}
+          </Lift>
+        );
       }
+      // Answered or passed by, the replies go; a tap already came through as your message.
       case 'chips':
-        return <ReplyPills labels={m.chips.map((c) => c.label)} picked={m.picked} settled={m.picked !== null || !!m.expired} onPick={chat.pick} />;
+        return <Choice m={m} onPick={chat.pick} />;
       case 'stamp':
         return <span className={styles.stamp}>{m.text}</span>;
       case 'work':
-        return <span className={styles.working}>{m.status}…</span>;
+        return (
+          <span className={styles.bubble} data-bubble>
+            <TypingDots />
+          </span>
+        );
       case 'products':
-        return <ProductRow products={m.products} />;
+        return (
+          <Lift cards=":scope > * > *">
+            <ProductRow products={m.products} />
+          </Lift>
+        );
       case 'meta': {
         // A connected card already says what was saved.
         const prev = all[i - 1];
@@ -334,7 +402,11 @@ export function ClaudeChat({ chat }: AgentChatProps) {
       case 'divider':
         return <Divider text={m.text} />;
       case 'subagent':
-        return <SubAgentRow agent={m.agent} done={m.done} onOpen={() => sub.open(m.id)} />;
+        return (
+          <Lift>
+            <SubAgentRow agent={m.agent} done={m.done} onOpen={() => sub.open(m.id)} />
+          </Lift>
+        );
       default: {
         const exhaustive: never = m;
         return exhaustive;
@@ -343,6 +415,11 @@ export function ClaudeChat({ chat }: AgentChatProps) {
   };
 
   const typing = chat.messages.some((m) => m.kind === 'them' && m.typing);
+  const last = chat.messages.at(-1);
+  const doing = last?.kind === 'work' ? last.status : typing ? 'Thinking it through' : '';
+  // Kept while it fades out, so the label doesn't empty first.
+  const shown = useRef('');
+  if (doing) shown.current = doing;
   const mascotState: MascotState = chat.asking
     ? 'waitshape'
     : chat.busy && chat.activeFlow === 'connect'
@@ -387,6 +464,9 @@ export function ClaudeChat({ chat }: AgentChatProps) {
               <ClaudeMascot state={mascotState} />
             </span>
           </GlassPill>
+          <span className={styles.activity} data-on={doing ? '' : undefined} aria-live="polite">
+            {shown.current}
+          </span>
           <NoopButton label="Account" size={48} className={styles.account}>
             <GlassPill radius={24}>
               <span className={styles.disc}>M</span>
@@ -395,8 +475,6 @@ export function ClaudeChat({ chat }: AgentChatProps) {
         </>
       }
       composer={
-        <>
-        <span className={styles.disclaimer}>Claude Duet is AI and can make mistakes.</span>
         <GlassPill radius={26} className={styles.composer}>
           <span className={styles.composerRow}>
             <span className={`${styles.glyph} ${styles.rowGlyph}`} style={mask(`${A}/plus.svg`, 24, 24)} />
@@ -407,30 +485,39 @@ export function ClaudeChat({ chat }: AgentChatProps) {
             </span>
           </span>
         </GlassPill>
-        </>
       }
       tabBar={
-        <GlassPill radius={32} absolute className={styles.tabs}>
-          <span className={styles.tabRow}>
-            {(
-              [
-                ['Chat', 'tab-chat'],
-                ['Tasks', 'tab-tasks'],
-                ['Make', 'tab-make'],
-              ] as const
-            ).map(([label, icon], i) => (
-              <span
-                key={label}
-                ref={i === 0 ? selectedTab : undefined}
-                className={styles.tab}
-                data-selected={i === 0 || undefined}
-              >
-                <span className={styles.tabGlyph} style={mask(`${A}/${icon}.svg`, 26, 26)} />
-                {label}
+        <>
+          <span className={styles.foot} aria-hidden />
+          <GlassPill radius={32} absolute className={styles.tabs}>
+            <span className={styles.tabRow}>
+              {(
+                [
+                  ['Chat', 'tab-chat'],
+                  ['Tasks', 'tab-tasks'],
+                  ['Make', 'tab-make'],
+                ] as const
+              ).map(([label, icon], i) => (
+                <span
+                  key={label}
+                  ref={i === 0 ? selectedTab : undefined}
+                  className={styles.tab}
+                  data-selected={i === 0 || undefined}
+                >
+                  <span className={styles.tabGlyph} style={mask(`${A}/${icon}.svg`, 26, 26)} />
+                  {label}
+                </span>
+              ))}
+            </span>
+          </GlassPill>
+          <NoopButton label="Computer" size={64} className={styles.computer}>
+            <GlassPill radius={32}>
+              <span className={styles.disc}>
+                <span className={styles.tabGlyph} style={mask(`${A}/computer.svg`, 28, 28)} />
               </span>
-            ))}
-          </span>
-        </GlassPill>
+            </GlassPill>
+          </NoopButton>
+        </>
       }
     />
   );

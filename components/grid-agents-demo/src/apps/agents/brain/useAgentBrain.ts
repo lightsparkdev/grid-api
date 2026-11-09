@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ACTIONS, type ActionId } from '@/data/actions';
+import { BANK_REACH } from '@/data/bankCountries';
 import type { AgentEvent } from '@/data/agentEvents';
 import { BANK_COUNTRIES } from '@/data/bankCountries';
 import { ENDS_TURN, READS_RESULT, type Block, type Say, type ToolCall, type ToolResult, type Turn } from '@/lib/llm/tools';
@@ -30,10 +31,10 @@ const MAX_TURNS = 24;
 
 /** Under the greeting: things to try, so it's clear you can just type. A tap sends one as the person's own message, so each is in their words. */
 const STARTERS: Chip[] = [
-  { label: 'Set up a balance', flow: 'connect' },
-  { label: 'Add a card', flow: 'card' },
-  { label: 'Send money to friends (US and abroad)' },
-  { label: 'What can you do?' },
+  { label: 'Set up a balance', flow: 'connect', detail: 'Spend from it, within limits you set' },
+  { label: 'Add a card', flow: 'card', detail: 'Save it once, I’ll pay when you ask' },
+  { label: 'Send money to friends (US and abroad)', detail: `To banks in ${BANK_REACH} countries` },
+  { label: 'What can you do?', detail: 'A quick tour of what I can handle' },
 ];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Which option a typed reply picks: its number, or its label; -1 for neither. */

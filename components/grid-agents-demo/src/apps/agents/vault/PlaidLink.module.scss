@@ -609,18 +609,11 @@ $foot: #f4f7fa;
 }
 
 .alert {
+  --alert-tint: rgb(250 250 252 / 0.62);
   position: absolute;
   top: 353px;
   left: 41px;
   width: 320px;
-  padding: 25px 16px 16px;
-  border-radius: 34px;
-  background: rgb(250 250 252 / 0.78);
-  backdrop-filter: blur(24px) saturate(1.6);
-  -webkit-backdrop-filter: blur(24px) saturate(1.6);
-  box-shadow:
-    0 12px 40px rgb(0 0 0 / 0.18),
-    inset 0 0 0 0.5px rgb(255 255 255 / 0.8);
   color: #000;
   font-family: var(--font-family-sf-pro);
 
@@ -642,16 +635,27 @@ $foot: #f4f7fa;
   }
 
   :global([data-theme='dark']) & {
-    background: rgb(44 44 46 / 0.82);
-    box-shadow:
-      0 12px 40px rgb(0 0 0 / 0.4),
-      inset 0 0 0 0.5px rgb(255 255 255 / 0.1);
+    --alert-tint: rgb(44 44 46 / 0.66);
     color: #fff;
 
     p {
       color: #98989f;
     }
   }
+}
+
+// The app's glass, frosted harder than the chrome since it sits over a whole page.
+.alertGlass {
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.18);
+
+  :global([data-theme='dark']) & {
+    box-shadow: 0 12px 40px rgb(0 0 0 / 0.4);
+  }
+}
+
+.alertBody {
+  display: block;
+  padding: 25px 16px 16px;
 }
 
 .alertButtons {

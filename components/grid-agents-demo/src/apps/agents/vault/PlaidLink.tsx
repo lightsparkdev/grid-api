@@ -362,18 +362,22 @@ function Alert({ app, onCancel, onContinue }: { app: string; onCancel: () => voi
         exit={{ opacity: 0, scale: 0.96 }}
         transition={{ duration: 0.28, ease: [0.2, 0.9, 0.3, 1] }}
       >
-        <strong>
-          “{app}” Wants to Use “secure.plaid.com” to Sign In
-        </strong>
-        <p>This allows the app and website to share information about you.</p>
-        <span className={styles.alertButtons}>
-          <button type="button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button type="button" onClick={onContinue}>
-            Continue
-          </button>
-        </span>
+        <GlassPill radius={34} tint="var(--alert-tint)" blur={24} className={styles.alertGlass}>
+          <span className={styles.alertBody}>
+            <strong>
+              “{app}” Wants to Use “secure.plaid.com” to Sign In
+            </strong>
+            <p>This allows the app and website to share information about you.</p>
+            <span className={styles.alertButtons}>
+              <button type="button" onClick={onCancel}>
+                Cancel
+              </button>
+              <button type="button" onClick={onContinue}>
+                Continue
+              </button>
+            </span>
+          </span>
+        </GlassPill>
       </motion.div>
     </motion.div>
   );

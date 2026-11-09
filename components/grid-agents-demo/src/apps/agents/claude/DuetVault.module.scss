@@ -68,44 +68,79 @@
   }
 }
 
-// ── The connector card in the thread ───────────────────────────────────
+// ── The connector in the thread: a one-row connections card (IMG_1968) ──
 .connector {
-  --dv-line: var(--cl-rule);
-  --dv-tile: var(--cl-card);
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 340px;
-  padding: 14px 16px 16px;
-  border-radius: 20px;
+  align-items: center;
+  gap: 12px;
+  width: 363px;
+  padding: 16px;
+  border-radius: 24px;
   background: var(--cl-card);
-  box-shadow: 0 0 0 1px var(--cl-ring);
   color: var(--cl-text);
 
-  &[data-state='done'] .connect,
-  &[data-state='denied'] .connect,
-  &[data-state='expired'] .connect {
-    background: var(--cl-bubble);
-    color: var(--cl-muted);
+  strong {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 23px;
+  }
+
+  &[data-state='denied'],
+  &[data-state='expired'] {
+    opacity: 0.55;
   }
 }
 
-.connectorHead {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.connectorLogo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--cl-rule);
+}
 
-  strong {
-    font-size: 17px;
-    font-weight: 600;
-  }
+.connectorText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .connectorLine {
   text-wrap: pretty;
   color: var(--cl-muted);
-  font-size: 14px;
-  line-height: 19px;
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -0.23px;
+}
+
+.connectorPlus {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--cl-card);
+  box-shadow: inset 0 0 0 1px var(--cl-rule);
+  color: var(--cl-text);
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active:not(:disabled) {
+    scale: 0.94;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  .connector[data-state='done'] & {
+    color: var(--part-success);
+  }
 }
 
 // ── Browse: one card per country, 16pt in, 10pt apart ──────────────────

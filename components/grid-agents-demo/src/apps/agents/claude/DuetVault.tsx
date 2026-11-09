@@ -5,6 +5,7 @@ import { IconChevronLeft } from '@central-icons-react/round-outlined-radius-3-st
 import { IconCreditCard1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCard1';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
+import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusMedium';
 import { IconSortArrowUpDown } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSortArrowUpDown';
 import { Flag } from '@/apps/shared/Flag';
 import { BankMark } from '../BankMark';
@@ -46,18 +47,26 @@ export function DuetConnector({ ask, state, onOpen }: { ask: AgentAsk; state: As
         ? `Move money between your Duet balance and a bank in ${BANK_REACH} countries.`
         : 'Save a card once and Duet can pay with it when you ask.';
   const action = payee ? (done ? 'Saved' : pending ? 'Saving…' : 'Add') : done ? 'Connected' : pending ? 'Connecting…' : 'Connect';
+  // A row of Duet's connections card: the logo, what it is, and a plus that becomes a check.
   return (
     <div className={styles.connector} data-state={state}>
-      <span className={styles.connectorHead}>
-        <span className={styles.tile}>
-          {payee ? <Flag code={payee.country} size={20} /> : ask.bank ? <IconBank size={18} /> : <IconCreditCard1 size={18} />}
-        </span>
-        <strong>{name}</strong>
-        <button type="button" className={styles.connect} disabled={state !== 'open'} onClick={onOpen} data-opens-sheet>
-          {state === 'denied' ? (ask.denied ?? 'Not now') : action}
-        </button>
+      <span className={styles.connectorLogo}>
+        {payee ? <Flag code={payee.country} size={24} /> : ask.bank ? <IconBank size={22} /> : <IconCreditCard1 size={22} />}
       </span>
-      <span className={styles.connectorLine}>{line}</span>
+      <span className={styles.connectorText}>
+        <strong>{name}</strong>
+        <span className={styles.connectorLine}>{line}</span>
+      </span>
+      <button
+        type="button"
+        className={styles.connectorPlus}
+        aria-label={state === 'denied' ? (ask.denied ?? 'Not now') : action}
+        disabled={state !== 'open'}
+        onClick={onOpen}
+        data-opens-sheet
+      >
+        {done ? <IconCheckmark1 size={18} /> : pending ? <IconLoadingCircle size={20} className={styles.spin} /> : <IconPlusMedium size={20} />}
+      </button>
     </div>
   );
 }
