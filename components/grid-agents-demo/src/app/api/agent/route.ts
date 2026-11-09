@@ -1,18 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import type { FlowParams, FundMethod } from '@/apps/agents/flows';
-import { isTailored, listedFor, listsBrand, type BuyKind } from '@/apps/agents/products';
-import { NETWORK_NAME } from '@/apps/agents/story';
-import { canSend, type SendAsset } from '@/data/cryptoSend';
-import type { DepositNetwork } from '@/data/agentEvents';
-import { ACTIONS, type ActionId } from '@/data/actions';
-import { BANK_COUNTRIES, currencyFor } from '@/data/bankCountries';
+import { isTailored, listedFor, listsBrand, type BuyRequest } from '@/apps/agents/products';
+import { BANK_COUNTRIES } from '@/data/bankCountries';
 import { CONNECTORS, type ConnectorId } from '@/data/connectors';
 import { anthropicAdapter } from '@/lib/llm/anthropic';
-import { takeTurn } from '@/lib/llm/limits';
+import { takeStep, takeTurn } from '@/lib/llm/limits';
 import { lookUpPrice } from '@/lib/llm/priceLookup';
-import { voiceFor } from '@/apps/agents/voices';
 import { systemPrompt, type PromptState } from '@/lib/llm/prompt';
-import type { AgentResponse, ChatTurn, ModelAnswer } from '@/lib/llm/types';
+import { CONNECTOR_IDS, TOOL_NAMES, type Block, type Say, type ToolCall, type Turn } from '@/lib/llm/tools';
+import type { AgentResponse } from '@/lib/llm/types';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -20,17 +15,12 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 const MAX_TEXT = 300;
-const MAX_TURNS = 12;
+const MAX_TURNS = 40;
+const MAX_BLOCK = 2_400;
+const MAX_BODY = 80_000;
 const MAX_REPLY = 360;
 const MAX_NAME = 40;
-const FLOWS = ACTIONS.map((a) => a.id as string);
-const VARIANTS = ['order', 'subscription'];
 const COUNTRY_CODES = BANK_COUNTRIES.map((c) => c.code);
-const METHODS: FundMethod[] = ['card', 'bank', 'crypto'];
-const ASSETS: string[] = ['USDC', 'USDT', 'USDB'] satisfies SendAsset[];
-/** Stablecoins only: no bitcoin, so no Lightning. */
-const NETWORKS = Object.keys(NETWORK_NAME).filter((n) => n !== 'LIGHTNING');
-const CONNECTOR_IDS = CONNECTORS.map((c) => c.id);
 
 /** Why the composer falls back to a scripted line instead of the model. */
 type Fallback = 'off' | 'origin' | 'invalid' | 'visitor' | 'daily' | 'error';
@@ -48,9 +38,19 @@ function sameOrigin(req: NextRequest): boolean {
   }
 }
 
+/** A promise to do something later that no tool does: remind, warn, flag, keep watch. */
+const PROMISE =
+  /\b(i['’]ll|i will|i['’]m going to|i can)\s+(also\s+)?(remind|warn|flag|alert|notify|ping|nudge|follow up|check (in |back )?with you|keep an eye|keep watch|watch (your|the) balance|let you know (if|when|before))/i;
+
+/** A line never promises what no tool does: a sentence that does goes. */
+function noPromises(reply: string): string {
+  if (!PROMISE.test(reply)) return reply;
+  return (reply.match(/[^.!?]+[.!?]*/g) ?? [reply]).filter((s) => !PROMISE.test(s)).join('').trim();
+}
+
 /** Plain text only, a few sentences: no code, no markdown. Never "crypto": it's stablecoins. */
 function clean(reply: string): string {
-  return stablecoinsOnly(
+  return stablecoinsOnly(noPromises(
     reply
       .replace(/\bcrypto(?:currenc(?:y|ies))?\b/gi, (m) => (m[0] === 'C' ? 'Stablecoins' : 'stablecoins'))
       .replace(/```[\s\S]*?```/g, '')
@@ -58,7 +58,7 @@ function clean(reply: string): string {
       .replace(/[*_#>]/g, '')
       .replace(/\s+/g, ' ')
       .trim(),
-  ).slice(0, MAX_REPLY);
+  )).slice(0, MAX_REPLY);
 }
 
 const BITCOIN = /bitcoin|\bbtc\b|lightning/i;
@@ -75,16 +75,35 @@ function stablecoinsOnly(reply: string): string {
 
 interface Body {
   connector?: string;
-  text?: string;
-  history?: ChatTurn[];
+  turns?: Turn[];
   state?: Partial<PromptState>;
 }
 
+/** The conversation as the page kept it, checked: the person first, roles taking turns, known blocks, sizes capped. */
+function turnsOf(raw: unknown): Turn[] | null {
+  if (!Array.isArray(raw) || !raw.length || raw.length > MAX_TURNS) return null;
+  const turns: Turn[] = [];
+  for (const t of raw as Turn[]) {
+    if ((t?.role !== 'user' && t?.role !== 'assistant') || !Array.isArray(t.content) || !t.content.length) return null;
+    if (turns.length ? turns[turns.length - 1].role === t.role : t.role !== 'user') return null;
+    const content: Block[] = [];
+    for (const b of t.content) {
+      if (b?.type === 'text' && typeof b.text === 'string' && b.text.trim()) content.push({ type: 'text', text: b.text.slice(0, MAX_BLOCK) });
+      else if (b?.type === 'tool_use' && t.role === 'assistant' && typeof b.id === 'string' && (TOOL_NAMES as readonly string[]).includes(b.name) && b.input && typeof b.input === 'object')
+        content.push({ type: 'tool_use', id: b.id.slice(0, 64), name: b.name, input: b.input });
+      else if (b?.type === 'tool_result' && t.role === 'user' && typeof b.tool_use_id === 'string' && typeof b.content === 'string')
+        content.push({ type: 'tool_result', tool_use_id: b.tool_use_id.slice(0, 64), content: b.content.slice(0, MAX_BLOCK), ...(b.is_error && { is_error: true }) });
+      else return null;
+    }
+    turns.push({ role: t.role, content });
+  }
+  return turns[turns.length - 1].role === 'user' ? turns : null;
+}
+
 /**
- * The model behind the composer. It answers in a fixed shape (a reply in every app's voice and at
- * most one of the playground's flows), and the phone's brain plays that flow
- * exactly as a tile would. The model can't approve anything and never sees
- * more than the last few turns.
+ * The model behind the composer, one step at a time. The page sends the conversation (the person's messages and
+ * the tool calls so far with what they did); the model answers with its next calls, which the phone carries out
+ * and checks. The model can't approve anything.
  */
 export async function POST(req: NextRequest) {
   const key = process.env.ANTHROPIC_API_KEY;
@@ -93,29 +112,23 @@ export async function POST(req: NextRequest) {
 
   let body: Body;
   try {
-    body = (await req.json()) as Body;
+    const raw = await req.text();
+    if (raw.length > MAX_BODY) return fallback('invalid', 400);
+    body = JSON.parse(raw) as Body;
   } catch {
     return fallback('invalid', 400);
   }
   const connector = CONNECTORS.find((c) => c.id === body.connector)?.id as ConnectorId | undefined;
-  const text = typeof body.text === 'string' ? body.text.trim() : '';
-  if (!connector || !text || text.length > MAX_TEXT) return fallback('invalid', 400);
+  const turns = turnsOf(body.turns);
+  if (!connector || !turns) return fallback('invalid', 400);
+  const last = turns[turns.length - 1].content;
+  const message = last.find((b): b is Extract<Block, { type: 'text' }> => b.type === 'text');
+  if (message && message.text.length > MAX_TEXT) return fallback('invalid', 400);
 
+  // A new message from the person counts against their limit; the steps that carry it out only against the day's.
   const visitor = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.ip || 'local';
-  const limit = await takeTurn(visitor);
+  const limit = message ? await takeTurn(visitor) : await takeStep(visitor);
   if (limit !== 'ok') return fallback(limit);
-
-  const history = (Array.isArray(body.history) ? body.history : [])
-    .filter((t) => (t.role === 'user' || t.role === 'assistant') && typeof t.text === 'string' && t.text.trim())
-    .slice(-MAX_TURNS)
-    .map((t) => ({ role: t.role, text: t.text.slice(0, MAX_TEXT) }));
-  // The model wants turns to alternate and to start with the person.
-  const turns: ChatTurn[] = [];
-  for (const t of [...history, { role: 'user' as const, text }]) {
-    if (turns.length && turns[turns.length - 1].role === t.role) turns[turns.length - 1].text += `\n${t.text}`;
-    else turns.push({ ...t });
-  }
-  while (turns.length && turns[0].role !== 'user') turns.shift();
 
   const money = (v: unknown, or: string) => (typeof v === 'string' ? v.slice(0, 20) : or);
   const recipients = (Array.isArray(body.state?.recipients) ? body.state.recipients : [])
@@ -135,88 +148,59 @@ export async function POST(req: NextRequest) {
   };
 
   try {
-    const answer = await anthropicAdapter(key).answer({
-      system: systemPrompt(connector, state),
-      turns,
-      flows: FLOWS,
-      variants: VARIANTS,
-      countries: COUNTRY_CODES,
-      methods: METHODS,
-      assets: ASSETS,
-      networks: NETWORKS,
-      connectors: CONNECTOR_IDS,
-    });
-    const started = FLOWS.includes(answer.flow) ? (answer.flow as ActionId) : undefined;
-    const params = started ? await priced(key, paramsFor(started, answer, recipients)) : undefined;
-    // A flow missing what it needs doesn't start; the reply stands on its own.
-    const flow = params === null ? undefined : started;
-    if (params === null && process.env.NODE_ENV === 'development') console.info('[agent] dropped', started, JSON.stringify({ ...answer, replies: undefined }));
-    // A top-up or withdrawal with no amount: the flow asks how much in the app's own voice, so the model's line would only repeat it.
-    // A crypto send to an address it can't use: the flow says so, and "on it" first would contradict it.
-    const quiet =
-      ((flow === 'fund' || flow === 'cashout') && !params?.amount) ||
-      (flow === 'crypto' && !!params?.address && !canSend(params.address, params.asset));
-    // A gift card without its store or value doesn't start, so "on it!" would promise nothing: it asks for what's missing.
-    const brand = typeof answer.brand === 'string' ? answer.brand.replace(/[^A-Za-z\u00C0-\u024F0-9 '’&.+-]/g, '').trim().slice(0, 32) : '';
-    const giftAsk =
-      started === 'buy' && params === null && answer.kind === 'gift'
-        ? brand
-          ? 'gift.amount'
-          : 'gift.store'
-        : started === 'buy' && params === null && answer.kind === 'topup'
-          ? 'topup.amount'
-          : undefined;
-    const replies: Partial<Record<ConnectorId, string>> = {};
-    for (const id of CONNECTOR_IDS) {
-      const raw = giftAsk ? voiceFor(id).line(giftAsk, { brand }) : typeof answer.replies[id] === 'string' ? clean(answer.replies[id]) : '';
-      const line = raw && flow ? statement(raw) : raw;
-      // Still a question with the flow underway: the flow asks what it needs, so the line would only talk over it.
-      if (line && !quiet && !(flow && line.endsWith('?'))) replies[id] = line;
-    }
-    const reply = replies[connector] ?? '';
-    if (!reply && !quiet && !flow) return fallback('error');
-    const variant = flow === 'buy' && answer.variant === 'subscription' ? 1 : 0;
-    // The rest of what one message asked for, checked like the first; any that can't start are dropped.
-    const then = flow
-      ? (
-          await Promise.all(
-            (Array.isArray(answer.then) ? answer.then : []).map(async (t) => {
-              const id = FLOWS.includes(t?.flow) ? (t.flow as ActionId) : undefined;
-              const p = id ? await priced(key, paramsFor(id, { ...t, replies: answer.replies }, recipients)) : null;
-              return id && p !== null ? [{ flow: id, variant: id === 'buy' && t.variant === 'subscription' ? 1 : 0, ...(p ? { params: p } : {}) }] : [];
-            }),
-          )
-        ).flat()
-      : [];
-    // Suggestions are for countries and choices: guessing someone's name would be odd.
-    const suggestions = flow || /\bname\b/i.test(reply) ? [] : suggestionsOf(answer.suggestions);
-    return NextResponse.json({
-      reply,
-      replies,
-      ...(flow ? { flow, variant, ...(params ? { params } : {}), ...(then.length ? { then } : {}) } : {}),
-      ...(suggestions.length ? { suggestions } : {}),
-    } satisfies AgentResponse);
+    const { calls } = await anthropicAdapter(key).step({ system: systemPrompt(connector, state), turns });
+    const out = await Promise.all(calls.map((c) => tidy(key, c, connector)));
+    return NextResponse.json({ calls: out } satisfies AgentResponse);
   } catch (e) {
     if (process.env.NODE_ENV === 'development') console.error('[agent]', e);
     return fallback('error');
   }
 }
 
-/** A product they named that we don't list gets its current price from the web; the model's estimate stops at its training. */
-async function priced(key: string, p: FlowParams | null | undefined): Promise<FlowParams | null | undefined> {
-  if (!p || p.kind === 'gift' || isTailored(p) || listedFor(p)) return p;
-  // A product they named, or a brand we don't list with what they want from it ("buffalo trace bourbon").
-  const named = p.product ?? (p.brand && !listsBrand(p.brand) ? p.query : undefined);
-  if (!named) return p;
-  const price = await lookUpPrice(key, named, p.brand);
-  return price ? { ...p, typicalPrice: price } : p;
+/** Apps that text in all lowercase, names too; the rest write in sentence case. */
+const LOWERCASE = new Set<ConnectorId>(['dot', 'instinct']);
+
+/** Every app's line cleaned. One the model left out is filled from a sentence-case app's (lowercased for the apps that
+ *  text that way), so no app shows another's casing. */
+function saidBy(raw: unknown, connector: ConnectorId): Say | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const lines = raw as Record<string, unknown>;
+  const given = Object.fromEntries(CONNECTOR_IDS.map((id) => [id, typeof lines[id] === 'string' ? clean(lines[id] as string) : ''])) as Record<ConnectorId, string>;
+  const plain = (['yourapp', 'claude', 'muse', 'grok'] as ConnectorId[]).map((id) => given[id]).find(Boolean) ?? given[connector] ?? CONNECTOR_IDS.map((id) => given[id]).find(Boolean);
+  if (!plain) return undefined;
+  return Object.fromEntries(CONNECTOR_IDS.map((id) => [id, LOWERCASE.has(id) ? (given[id] || plain).toLowerCase() : given[id] || plain])) as Say;
 }
 
-/** A line that starts a flow doesn't ask anything (the flow does): a trailing question goes, if there's more to it. */
-function statement(reply: string): string {
-  if (!reply.endsWith('?')) return reply;
-  const sentences = reply.match(/[^.!?]+[.!?]+/g) ?? [reply];
-  return sentences.length > 1 ? sentences.slice(0, -1).join('').trim() : reply;
+/** A line that starts something doesn't ask anything (the tools do): a trailing question goes, if there's more to it. */
+function statement(line: string): string {
+  if (!line.endsWith('?')) return line;
+  const sentences = line.match(/[^.!?]+[.!?]+/g) ?? [line];
+  return sentences.length > 1 ? sentences.slice(0, -1).join('').trim() : line;
+}
+
+/** A call made ready for the phone: its lines cleaned, taps checked, and a product we don't list priced from the web. */
+async function tidy(key: string, call: ToolCall, connector: ConnectorId): Promise<ToolCall> {
+  const said = saidBy(call.input.say, connector);
+  const asks = call.name === 'reply' || call.name === 'offer_choices';
+  const input: ToolCall['input'] = { ...call.input, say: said && !asks ? (Object.fromEntries(Object.entries(said).map(([id, l]) => [id, statement(l ?? '')])) as Say) : said };
+  if (!input.say) delete input.say;
+  if (call.name === 'reply') input.suggestions = suggestionsOf(input.suggestions, false);
+  if (call.name === 'offer_choices') input.options = suggestionsOf(input.options, true);
+  if (call.name === 'search') {
+    const price = await priced(key, input);
+    if (price) input.typical_price_usd = price;
+  }
+  return { ...call, input };
+}
+
+/** A product they named that we don't list gets its current price from the web; the model's estimate stops at its training. */
+async function priced(key: string, input: Record<string, unknown>): Promise<number | undefined> {
+  const s = (k: string) => (typeof input[k] === 'string' ? (input[k] as string).slice(0, 60) : undefined);
+  const r: BuyRequest = { query: s('query'), product: s('product'), brand: s('brand'), kind: s('kind') as BuyRequest['kind'] };
+  if (r.kind === 'gift' || isTailored(r) || listedFor(r)) return undefined;
+  // A product they named, or a brand we don't list with what they want from it ("buffalo trace bourbon").
+  const named = r.product ?? (r.brand && !listsBrand(r.brand) ? r.query : undefined);
+  return named ? lookUpPrice(key, named, r.brand) : undefined;
 }
 
 const COUNTRY_ALIASES: Record<string, string> = { us: 'us', usa: 'us', uk: 'gb', uae: 'ae', england: 'gb', america: 'us' };
@@ -228,147 +212,15 @@ function countryNamed(s: string) {
   return BANK_COUNTRIES.find((c) => (code ? c.code === code : c.name.toLowerCase() === q));
 }
 
-/** Up to four short, plain suggestions, never bare amounts (people type those). Offering countries, only ones a payment can go to, as the list names them. */
-function suggestionsOf(raw: unknown): string[] {
+/** Up to four short, plain taps. Under a plain reply never bare amounts (people type those); offering countries, only
+ *  ones a payment can go to, as the list names them. */
+function suggestionsOf(raw: unknown, amounts: boolean): string[] {
   if (!Array.isArray(raw)) return [];
   const all = raw
     .filter((s): s is string => typeof s === 'string')
     .map((s) => s.replace(/[*_#`>]/g, '').trim())
-    .filter((s) => s && s.length <= 28 && !/^[$€£¥₹]?\s*\d[\d,.]*\s*\w{0,4}$/.test(s));
+    .filter((s) => s && s.length <= 28 && (amounts || !/^[$€£¥₹]?\s*\d[\d,.]*\s*\w{0,4}$/.test(s)));
   const countries = all.map(countryNamed);
-  const offersCountries = countries.some(Boolean);
+  const offersCountries = countries.filter(Boolean).length >= 2;
   return (offersCountries ? countries.filter((c) => c).map((c) => c!.name) : all).slice(0, 4);
-}
-
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const DAY = 86_400_000;
-
-/** Nights between two YYYY-MM-DD dates, if it's a real stay: checking in from today to a year out, 1 to 14 nights. */
-function stayNights(checkIn: unknown, checkOut: unknown): number | null {
-  if (typeof checkIn !== 'string' || typeof checkOut !== 'string' || !ISO_DATE.test(checkIn) || !ISO_DATE.test(checkOut)) return null;
-  const from = Date.parse(`${checkIn}T00:00:00Z`);
-  const to = Date.parse(`${checkOut}T00:00:00Z`);
-  const today = Date.parse(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`);
-  const nights = Math.round((to - from) / DAY);
-  if (Number.isNaN(nights) || nights < 1 || nights > 14 || from < today - DAY || from > today + 366 * DAY) return null;
-  return nights;
-}
-
-const positive = (v: unknown, max: number) => (typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= max ? v : undefined);
-const text = (v: unknown, max: number) => {
-  const s = typeof v === 'string' ? v.replace(/[^A-Za-z\u00C0-\u024F0-9 '’&.+-]/g, '').trim() : '';
-  return s && s.length <= max ? s : undefined;
-};
-
-/**
- * The details a flow runs with, checked: what the model gave, kept only if it fits. `null` when the flow can't
- * start without something it didn't give (a payment needs who, where and how much).
- */
-function paramsFor(flow: ActionId, a: ModelAnswer, saved: PromptState['recipients']): FlowParams | null | undefined {
-  switch (flow) {
-    case 'pay': {
-      const name = text(a.name, MAX_NAME);
-      const amount = positive(a.amount, 10_000_000);
-      if (!name || !amount) return null;
-      const first = name.split(' ')[0].toLowerCase();
-      const known = saved.find((r) => r.name.toLowerCase() === name.toLowerCase() || r.name.split(' ')[0].toLowerCase() === first);
-      const country = BANK_COUNTRIES.find((c) => c.code === (known?.country ?? a.country));
-      if (!country) return null;
-      const local = currencyFor(country);
-      const currency = typeof a.currency === 'string' && a.currency.toUpperCase() === local ? local : 'USD';
-      const day = typeof a.day === 'number' && Number.isInteger(a.day) && a.day >= 1 && a.day <= 31 ? Math.min(28, a.day) : undefined;
-      return {
-        name,
-        country: country.code,
-        amount,
-        currency,
-        ...(text(a.note, 40) ? { note: text(a.note, 40) } : {}),
-        ...(a.every === 'month' ? { every: 'month' as const, ...(day ? { day } : {}) } : {}),
-      };
-    }
-    case 'fund':
-      return {
-        ...(positive(a.amount, 10_000) ? { amount: a.amount } : {}),
-        ...((METHODS as string[]).includes(a.method ?? '') ? { method: a.method as FundMethod } : {}),
-        ...(ASSETS.includes(a.asset ?? '') ? { asset: a.asset as SendAsset } : {}),
-        ...(NETWORKS.includes(a.network ?? '') ? { network: a.network as DepositNetwork } : {}),
-      };
-    case 'cashout':
-      return positive(a.amount, 10_000) ? { amount: a.amount } : {};
-    case 'limits':
-      return {
-        ...(positive(a.approve, 100_000) ? { approve: a.approve } : {}),
-        ...(positive(a.perTx, 100_000) ? { perTx: a.perTx } : {}),
-        ...(positive(a.daily, 100_000) ? { daily: a.daily } : {}),
-      };
-    case 'buy': {
-      const card = a.method === 'card' ? ({ method: 'card' } as const) : undefined;
-      if (a.variant !== 'subscription') {
-        const query = text(a.query, 40);
-        const product = text(a.product, 60);
-        const brand = text(a.brand, 32);
-        const kind = a.kind === 'gift' || a.kind === 'digital' || a.kind === 'topup' ? (a.kind as BuyKind) : undefined;
-        const budget = positive(a.budget, 5_000);
-        const typicalPrice = positive(a.typicalPrice, 5_000);
-        // A value is a gift card's or a top-up's; a bill's only when they said it.
-        const amount = kind === 'gift' || kind === 'topup' || /\bbill/i.test(query ?? '') ? positive(a.amount, 2_000) : undefined;
-        const below = positive(a.below, 20_000);
-        // A gift card needs the store and the value, a top-up its value; the reply asks for whichever is missing.
-        if (kind === 'gift' && (!brand || !amount)) return null;
-        if (kind === 'topup' && !amount) return null;
-        const order = {
-          ...(query && { query }),
-          ...(product && { product }),
-          ...(brand && { brand }),
-          ...(kind && { kind }),
-          ...(budget && { budget }),
-          ...(typicalPrice && { typicalPrice }),
-          ...(amount && { amount }),
-          ...(below && { below }),
-          ...card,
-        };
-        return Object.keys(order).length ? order : undefined;
-      }
-      const merchant = text(a.merchant, 32);
-      const price = positive(a.price, 1_000);
-      return merchant && price ? { merchant, price, ...card } : card;
-    }
-    case 'agent': {
-      const city = text(a.city, 40);
-      const nights = stayNights(a.checkIn, a.checkOut);
-      if (!city || !nights) return null;
-      const guests = typeof a.guests === 'number' && Number.isInteger(a.guests) && a.guests >= 1 && a.guests <= 8 ? a.guests : undefined;
-      return { city, checkIn: a.checkIn, checkOut: a.checkOut, ...(guests ? { guests } : {}) };
-    }
-    case 'getpaid': {
-      const name = text(a.name, MAX_NAME);
-      const amount = positive(a.amount, 100_000);
-      // Splitting a bill they paid: the others, and the whole bill.
-      const people = (Array.isArray(a.people) ? a.people : []).map((p) => text(p, MAX_NAME)).filter((p): p is string => !!p).slice(0, 8);
-      if (people.length) return amount ? { people, amount } : null;
-      // Lucía's invoice is the one on file: naming her alone plays it.
-      if (!name || (/^luc[ií]a\b/i.test(name) && !amount)) return {};
-      return amount ? { name, amount } : null;
-    }
-    case 'crypto': {
-      // Kept as given, so a fragment ("0x12…ab") stays one and the flow says it can't send there.
-      const address = typeof a.address === 'string' ? a.address.replace(/[^A-Za-z0-9.…]/g, '').slice(0, 4096) : '';
-      return {
-        ...(address ? { address } : {}),
-        ...(positive(a.amount, 10_000) ? { amount: a.amount } : {}),
-        ...(ASSETS.includes(a.asset ?? '') ? { asset: a.asset as SendAsset } : {}),
-        ...(NETWORKS.includes(a.network ?? '') ? { network: a.network as DepositNetwork } : {}),
-      };
-    }
-    case 'connect':
-    case 'card':
-    case 'bank':
-    case 'balance':
-    case 'history':
-      return undefined;
-    default: {
-      const exhaustive: never = flow;
-      return exhaustive;
-    }
-  }
 }

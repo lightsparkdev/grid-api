@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ACTIONS, type ActionId } from '@/data/actions';
 import type { AgentEvent } from '@/data/agentEvents';
+import { BANK_COUNTRIES } from '@/data/bankCountries';
+import { ENDS_TURN, READS_RESULT, type Block, type Say, type ToolCall, type ToolResult, type Turn } from '@/lib/llm/tools';
 import type { Beat, Chip, PayTo, Said, StoredMessage } from '../conversation';
-import { FLOWS, needsSetup, planFor, topicFor, type FlowContext, type FlowParams } from '../flows';
+import { FLOWS, needsSetup, planFor, topicFor, type FlowContext } from '../flows';
+import { accountNow, flowOf, newToolMemory, runTool, topicOf } from '../tools/run';
 
 /** A tile's jump: put this flow's line in the composer. */
 export interface FlowEntry {
@@ -13,21 +16,17 @@ export interface FlowEntry {
   setup?: { connected: boolean; funded: number };
 }
 
-/** What the agent says to anything that isn't a flow's line. */
-export interface FreeTextReply {
-  said: Said;
-  /** A flow the reply starts, as if its tile's line had been sent, with the details the person gave. */
-  flow?: { id: ActionId; variant: number; params?: FlowParams };
-  /** More flows asked for in the same message: each starts once the one before it finishes. */
-  then?: { id: ActionId; variant: number; params?: FlowParams }[];
-  /** Replies the person might tap instead of typing, under a question. */
-  suggestions?: Chip[];
-}
+/** The model's next step: the tools it calls, or why the page answers with a canned line instead. */
+export type StepReply = { calls: ToolCall[] } | { fallback: 'fallback' | 'limited' };
 
 type Decision = 'allow' | 'deny' | 'cancel' | { swap: PayTo };
 type NewMessage = StoredMessage extends infer M ? (M extends StoredMessage ? Omit<M, 'id'> : never) : never;
 
 const MAX_MESSAGES = 200;
+/** The most model calls one message can take before the agent stops and waits. */
+const MAX_STEPS = 6;
+/** How much of the conversation the model sees: the latest turns, starting on something the person said. */
+const MAX_TURNS = 24;
 
 /** Under the greeting: things to try, so it's clear you can just type. A tap sends one as the person's own message, so each is in their words. */
 const STARTERS: Chip[] = [
@@ -60,18 +59,17 @@ function typedAmount(text: string, all?: number) {
   return usd > 0 ? usd : undefined;
 }
 
-/** Lines a flow opens with that answer the request themselves: a setup first, a no, or "already done". */
+/** Lines a tool opens with that answer the request themselves: a setup first, a no, or "already done". The model's own
+ *  line is dropped for them, so the two don't talk over each other. */
 const SPEAKS_FIRST = new Set([
+  'fund.amount',
+  'cashout.amount',
   'connect.intro',
   'connect.already',
   'cashout.noBalance',
   'cashout.empty',
   'cashout.bank',
   'pay.newRecipient',
-  'pay.where',
-  'crypto.invalid',
-  'crypto.mismatch',
-  'crypto.onchain',
   'balance.none',
   'history.none',
   'card.already',
@@ -86,6 +84,23 @@ const YES = /^\s*(y|yes|yeah|yep|yup|ok|okay|sure|approve|approved|do it|go ahea
 /** A reply that only declines it; anything that's neither is a new request, answered once the ask is declined. */
 const NO =
   /^\s*(?:(?:actually|wait|oh|ok(?:ay)?|hmm|um|so)[\s,.!]*)*(n|no|nope|nah|cancel|decline|deny|stop|don'?t|not now|never ?mind|forget (?:it|that)|hold off|scratch that)\b/i;
+
+/** A suggested reply as a chip: a country gets its flag. */
+function chipOf(label: string): Chip {
+  const country = BANK_COUNTRIES.find((c) => c.name.toLowerCase() === label.trim().toLowerCase());
+  return country ? { label: country.name, flag: country.code } : { label };
+}
+
+const resultBlock = (id: string, result: ToolResult, isError = false): Block => ({ type: 'tool_result', tool_use_id: id, content: JSON.stringify(result).slice(0, 2000), ...(isError && { is_error: true }) });
+
+/** The latest turns, cut so they start on something the person said, with no result left from a call cut off. */
+function windowOf(turns: Turn[]): Turn[] {
+  const recent = turns.slice(-MAX_TURNS);
+  while (recent.length && recent[0].role !== 'user') recent.shift();
+  if (!recent.length) return recent;
+  const content = recent[0].content.filter((b) => b.type !== 'tool_result');
+  return content.length ? [{ ...recent[0], content }, ...recent.slice(1)] : windowOf(recent.slice(1));
+}
 
 /** A run's handle: cancelling it settles whatever it was waiting on. */
 interface Run {
@@ -111,6 +126,7 @@ export function useAgentBrain({
   onRun,
   onCompleted,
   reply,
+  describe,
   readsFor = 0,
   typesFor = 0,
 }: {
@@ -122,8 +138,10 @@ export function useAgentBrain({
   /** A flow starts playing: its Grid calls group under it from here. */
   onRun?: (flow: ActionId) => void;
   onCompleted?: (flow: ActionId) => void;
-  /** Answers free text (the model, behind /api/agent). */
-  reply: (text: string) => Promise<FreeTextReply>;
+  /** The model's next step for the conversation so far (behind /api/agent). */
+  reply: (turns: Turn[]) => Promise<StepReply>;
+  /** What the agent said in these messages, in the app's words, for the model to read back. */
+  describe: (messages: StoredMessage[]) => string;
   /** How long the agent takes to read each of your messages before it reacts, types or carries on (ms). */
   readsFor?: number;
   /** The least time its typing bubble shows before a reply, however fast the model answers (ms). */
@@ -156,14 +174,42 @@ export function useAgentBrain({
   const [awaitingAmount, setAwaitingAmount] = useState(false);
   /** Something said over an open ask that wasn't a yes or a no: answered once the ask is declined and the run ends. */
   const queued = useRef<string | null>(null);
-  /** The rest of what one message asked for, in order. A no, or anything new, drops them. */
-  const followUps = useRef<NonNullable<FreeTextReply['then']>>([]);
+  /** The conversation as the model reads it: the person's messages, its tool calls and what they did. */
+  const transcript = useRef<Turn[]>([]);
+  /** Results owed for the model's last calls, sent ahead of the person's next message. */
+  const pending = useRef<Block[]>([]);
+  /** The step being carried out: its calls, and the results so far, so anything said over it still pairs each call. */
+  const owed = useRef<{ ids: string[]; done: Map<string, Block> } | null>(null);
+  const memory = useRef(newToolMemory());
+  const messagesRef = useRef<StoredMessage[]>([]);
   const askRef = useRef<((text: string, meant?: string, shown?: boolean) => Promise<void>) | null>(null);
   /** Suggested replies under the agent's last answer: a tap sends one as if typed. */
   const suggested = useRef<{ id: number; chips: Chip[] } | null>({ id: 2, chips: STARTERS });
 
-  const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, reply, readsFor, typesFor });
-  cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, reply, readsFor, typesFor };
+  const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, reply, describe, readsFor, typesFor });
+  cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, reply, describe, readsFor, typesFor };
+  messagesRef.current = messages;
+
+  const append = (role: Turn['role'], content: Block[]) => {
+    if (!content.length) return;
+    const t = transcript.current;
+    const last = t[t.length - 1];
+    if (last?.role === role) t[t.length - 1] = { role, content: [...last.content, ...content] };
+    else t.push({ role, content });
+  };
+  /** Whatever the last step still owed is settled: done if it finished, interrupted if the person cut in. */
+  const settle = () => {
+    const step = owed.current;
+    if (!step) return;
+    owed.current = null;
+    pending.current = step.ids.map((id) => step.done.get(id) ?? resultBlock(id, { status: 'interrupted', note: 'they said something else first' }));
+  };
+  /** Something the person said, after the results the model is still owed. */
+  const heard = (text: string) => {
+    settle();
+    append('user', [...pending.current, { type: 'text', text }]);
+    pending.current = [];
+  };
   /** Runs once the agent has read what you just sent. */
   const afterReading = (f: () => void) => {
     if (cb.current.readsFor > 0) setTimeout(f, cb.current.readsFor);
@@ -205,7 +251,6 @@ export function useAgentBrain({
   /** Stop whatever is playing: open asks and chips expire, typing settles. */
   const cancelRun = useCallback(() => {
     queued.current = null;
-    followUps.current = [];
     const run = runRef.current;
     if (!run) return;
     run.cancelled = true;
@@ -301,8 +346,7 @@ export function useAgentBrain({
             patch(id, (m) => (m.kind === 'ask' ? { ...m, state: 'denied' } : m));
             await sleep(500);
             if (!(await play(b.deny, run))) return false;
-            // A no ends the run: nothing after it plays, and the rest of what the message asked for is dropped.
-            followUps.current = [];
+            // A no ends the run: nothing after it plays.
             return false;
           }
           patch(id, (m) => (m.kind === 'ask' ? { ...m, state: 'pressing' } : m));
@@ -368,6 +412,7 @@ export function useAgentBrain({
   const start = useCallback(
     async (flow: ActionId | null, beats: Beat[], after = 0, topic?: string, request?: string) => {
       const run: Run = { flow, cancelled: false, request };
+      const from = nextId.current;
       runRef.current = run;
       if (flow) cb.current.onRun?.(flow);
       setRunning(flow);
@@ -381,21 +426,15 @@ export function useAgentBrain({
       setRunning(null);
       setBusy(false);
       if (finished && flow) cb.current.onCompleted?.(flow);
-      const following = finished ? followUps.current.shift() : undefined;
-      if (!finished) followUps.current = [];
-      if (following) {
-        const ctx: FlowContext = { ...cb.current.context(), variant: following.variant, params: following.params };
-        void startRef.current(following.id, planFor(following.id, ctx).filter((b) => !('react' in b)), 700, topicFor(following.id, ctx), run.request);
-        return;
-      }
+      // The model reads back what a scripted run said, so it knows where things stand.
+      const said = cb.current.describe(messagesRef.current.filter((m) => m.id >= from));
+      if (said) append('assistant', [{ type: 'text', text: said }]);
       const next = queued.current;
       queued.current = null;
       if (next) void askRef.current?.(next, next, false);
     },
     [play, clearWork, push],
   );
-  const startRef = useRef(start);
-  startRef.current = start;
 
   // A tile's jump, applied once: whatever was playing stops, and the tile's line goes out as the visitor's message.
   const lastNonce = useRef(0);
@@ -407,6 +446,7 @@ export function useAgentBrain({
     cancelRun();
     dropSuggestions();
     push({ kind: 'me', text });
+    heard(text);
     const ctx: FlowContext = { ...cb.current.context(), variant: entry.variant };
     // Still missing what it needs (a card-only account and a flow that holds money): ask, as the chat would.
     const beats = needsSetup(entry.flow, ctx.account()) ? planFor(entry.flow, ctx) : FLOWS[entry.flow](ctx);
@@ -426,6 +466,7 @@ export function useAgentBrain({
       dropSuggestions();
       const def = ACTIONS.find((a) => a.id === flow)!;
       push({ kind: 'me', text: def.prompts[0] });
+      heard(def.prompts[0]);
       const ctx: FlowContext = { ...cb.current.context(), variant: 0 };
       void start(flow, FLOWS[flow](ctx), cb.current.readsFor, topicFor(flow, ctx), def.prompts[0]);
     },
@@ -437,40 +478,182 @@ export function useAgentBrain({
     cb.current.onActiveFlow?.(activeFlow);
   }, [activeFlow]);
 
-  /** Free text to the model: its reply, then the flow it starts or the replies it suggests. */
+  /**
+   * Free text to the model, which plans with tools: each step it calls one or more, the phone carries them out (cards,
+   * sheets, approvals, the Grid calls), and what happened goes back for the next step. The turn ends when it replies
+   * or offers a choice, when the person says no, or once an action is done and it has nothing more planned.
+   */
   const ask = useCallback(
     async (text: string, meant = text, shown = true) => {
       if (shown) push({ kind: 'me', text, ...(meant !== text ? { meant } : {}) });
+      heard(meant);
+      const run: Run = { flow: null, cancelled: false, request: text };
+      runRef.current = run;
       setBusy(true);
-      const replying = cb.current.reply(meant);
       if (cb.current.readsFor > 0) await sleep(cb.current.readsFor);
-      const typingId = push({ kind: 'them', said: { text: '' }, typing: true });
-      const [answer] = await Promise.all([replying, sleep(cb.current.typesFor)]);
-      const ctx: FlowContext | null = answer.flow ? { ...cb.current.context(), variant: answer.flow.variant, params: answer.flow.params } : null;
-      const beats = answer.flow && ctx ? planFor(answer.flow.id, ctx) : null;
-      const topic = answer.flow && ctx ? topicFor(answer.flow.id, ctx) : undefined;
-      const opener = beats?.find((b) => !('react' in b));
-      // Nothing to say, or the flow opens with a setup step or a no of its own ("On it" would promise what it says next it can't do yet): the typing bubble just goes.
-      const silent = ('text' in answer.said && !answer.said.text) || (!!opener && 'say' in opener && SPEAKS_FIRST.has(opener.say));
-      if (silent) setMessages((list) => list.filter((m) => m.id !== typingId));
-      else patch(typingId, (m) => (m.kind === 'them' ? { ...m, said: answer.said, typing: false } : m));
-      // The reply that starts a flow is the run's first word, so the run's label goes above it.
-      if (!silent && answer.flow && topic) {
-        const label: StoredMessage = { id: nextId.current++, kind: 'eyebrow', flow: answer.flow.id, text: topic };
-        setMessages((list) => list.flatMap((m) => (m.id === typingId ? [label, m] : [m])));
+      /** The typing bubble the first thing it says lands in. */
+      let typing: number | null = run.cancelled ? null : push({ kind: 'them', said: { text: '' }, typing: true });
+      const dropTyping = () => {
+        if (typing === null) return;
+        const id = typing;
+        typing = null;
+        setMessages((list) => list.filter((m) => m.id !== id));
+      };
+      const say = async (lines: Say) => {
+        const said: Said = { text: lines.muse ?? Object.values(lines)[0] ?? '', voices: lines };
+        if (typing !== null) {
+          const id = typing;
+          typing = null;
+          patch(id, (m) => (m.kind === 'them' ? { ...m, said, typing: false } : m));
+          await sleep(700);
+          return;
+        }
+        const id = show({ kind: 'them', said, typing: true, replyTo: run.answered ? run.request : undefined });
+        await sleep(700);
+        patch(id, (m) => (m.kind === 'them' ? { ...m, typing: false } : m));
+        await sleep(600);
+      };
+      /** A run's label (Duet's eyebrow) goes above the first thing said about it. */
+      const label = (flow: ActionId, topic: string) => {
+        const eyebrow: StoredMessage = { id: nextId.current++, kind: 'eyebrow', flow, text: topic };
+        const at = typing;
+        setMessages((list) => (at !== null ? list.flatMap((m) => (m.id === at ? [eyebrow, m] : [m])) : [...list, eyebrow]));
+      };
+      let chips: Chip[] = [];
+      let flow: ActionId | null = null;
+      let reacted = false;
+      let spoke = false;
+      const finish = () => {
+        if (runRef.current !== run) return;
+        dropTyping();
+        clearWork();
+        runRef.current = null;
+        setRunning(null);
+        setBusy(false);
+      };
+
+      for (let step = 0; step < MAX_STEPS && !run.cancelled; step++) {
+        const [answer] = await Promise.all([cb.current.reply(windowOf(transcript.current)), step === 0 ? sleep(cb.current.typesFor) : undefined]);
+        if (run.cancelled) return;
+        if ('fallback' in answer) {
+          const said: Said = { key: answer.fallback };
+          if (typing !== null) patch(typing, (m) => (m.kind === 'them' ? { ...m, said, typing: false } : m));
+          else show({ kind: 'them', said, typing: false });
+          typing = null;
+          break;
+        }
+        const { calls } = answer;
+        append('assistant', calls.map((c) => ({ type: 'tool_use', id: c.id, name: c.name, input: c.input })));
+        const done = new Map<string, Block>();
+        owed.current = { ids: calls.map((c) => c.id), done };
+        // What it says goes first in the step, before any card, even when the model put it on a later call.
+        const speaker = spoke ? -1 : calls.findIndex((c) => c.input.say && !ENDS_TURN.has(c.name));
+        if (speaker > 0 && !ENDS_TURN.has(calls[0].name)) {
+          calls[0] = { ...calls[0], input: { ...calls[0].input, say: calls[speaker].input.say } };
+          calls[speaker] = { ...calls[speaker], input: { ...calls[speaker].input, say: undefined } };
+        }
+        let ended = false;
+        let failed = false;
+        let stopped = false;
+        for (let i = 0; i < calls.length; i++) {
+          const call: ToolCall = { ...calls[i], input: { ...calls[i].input } };
+          if (stopped) {
+            done.set(call.id, resultBlock(call.id, { status: 'skipped', note: 'an earlier call in this step stopped' }));
+            continue;
+          }
+          const ctx: FlowContext = { ...cb.current.context(), variant: 0 };
+          // One line from the model per turn, as it starts; after that the tools' own lines carry it, and it only speaks
+          // again to ask something. Decided before the tool is built, so the tool keeps the lines the model won't say.
+          if (call.input.say && !ENDS_TURN.has(call.name) && spoke) delete call.input.say;
+          // Checked before anything shows: a call that can't run says nothing, and the model's next step does.
+          const out = runTool({ ctx, memory: memory.current, next: calls[i + 1] }, call);
+          if ('error' in out) {
+            done.set(call.id, resultBlock(call.id, out.error, true));
+            failed = stopped = true;
+            continue;
+          }
+          // A step with nothing to show passes its line to the next call, so the line lands where something happens.
+          if (call.input.say && !out.beats.length && i + 1 < calls.length && !ENDS_TURN.has(calls[i + 1].name)) {
+            calls[i + 1] = { ...calls[i + 1], input: { ...calls[i + 1].input, say: call.input.say } };
+            delete call.input.say;
+          }
+          const opener = out.beats.find((b) => !('react' in b));
+          // A tool that opens the turn with an answer of its own (a setup first, a no) speaks for the turn: the model's
+          // line goes, here and later in the turn, as today.
+          if (!spoke && opener && 'say' in opener && SPEAKS_FIRST.has(opener.say)) {
+            delete call.input.say;
+            spoke = true;
+          }
+          const callFlow = flowOf(call);
+          if (callFlow && callFlow !== flow) {
+            flow = callFlow;
+            run.flow = callFlow;
+            cb.current.onRun?.(callFlow);
+            setRunning(callFlow);
+            if (call.input.say && !spoke) label(callFlow, topicOf(call, ctx));
+          }
+          if (call.input.say) {
+            await say(call.input.say);
+            spoke = true;
+          }
+          if (run.cancelled) return;
+          if (ENDS_TURN.has(call.name)) {
+            const options = call.name === 'offer_choices' ? call.input.options : call.input.suggestions;
+            chips = Array.isArray(options) ? options.filter((o): o is string => typeof o === 'string').map(chipOf) : [];
+            done.set(call.id, resultBlock(call.id, { status: 'shown' }));
+            ended = stopped = true;
+            continue;
+          }
+          if (!call.input.say) dropTyping();
+          // It reacts to the request once, as it starts on it.
+          const beats: Beat[] = reacted ? out.beats : [{ react: '👍' }, ...out.beats];
+          reacted = true;
+          const finished = await play(beats, run);
+          if (run.cancelled) return;
+          if (!finished) {
+            done.set(call.id, resultBlock(call.id, { status: 'declined', note: 'they said no; the turn ended' }));
+            ended = stopped = true;
+            continue;
+          }
+          // What it showed stopped short of the action (over the limit, too little in the balance): the model fixes it.
+          if (out.result.error) {
+            done.set(call.id, resultBlock(call.id, { ...out.result, account: accountNow(cb.current.context().account()) }, true));
+            failed = stopped = true;
+            continue;
+          }
+          done.set(call.id, resultBlock(call.id, { status: 'done', ...out.result, account: accountNow(cb.current.context().account()) }));
+          if (callFlow) cb.current.onCompleted?.(callFlow);
+        }
+        if (run.cancelled) return;
+        const last = calls[calls.length - 1];
+        // A limit raised for a payment goes on to that payment.
+        const goOn = !ended && (failed || READS_RESULT.has(last.name) || last.input.more === true || (last.name === 'raise_limit' && typeof last.input.for === 'string'));
+        owed.current = null;
+        const results = calls.map((c) => done.get(c.id)!);
+        if (!goOn || step === MAX_STEPS - 1) {
+          pending.current = results;
+          break;
+        }
+        append('user', results);
+        // Thinking between steps isn't something said: Dots still quotes the request if they answered something since.
+        if (typing === null) {
+          const answered = run.answered;
+          typing = push({ kind: 'them', said: { text: '' }, typing: true });
+          run.answered = answered;
+        }
       }
-      setBusy(false);
-      followUps.current = answer.then ?? [];
-      if (answer.flow && beats) {
-        if (!silent) await sleep(700);
-        void start(answer.flow.id, beats, 0, silent ? topic : undefined, text);
-      } else if (answer.suggestions?.length) {
+      finish();
+      if (chips.length && !run.cancelled) {
         await sleep(350);
-        const id = push({ kind: 'chips', chips: answer.suggestions, picked: null });
-        suggested.current = { id, chips: answer.suggestions };
+        const id = push({ kind: 'chips', chips, picked: null });
+        suggested.current = { id, chips };
       }
+      // Something said over an approval that wasn't a yes or a no: answered now the turn is over.
+      const next = queued.current;
+      queued.current = null;
+      if (next && !run.cancelled) void askRef.current?.(next, next, false);
     },
-    [push, patch, start],
+    [push, patch, show, play, clearWork],
   );
 
   askRef.current = ask;
@@ -480,6 +663,7 @@ export function useAgentBrain({
     async (chip: Chip, typed?: string) => {
       if (!chip.flow) return ask(typed ?? chip.label, chip.label);
       push({ kind: 'me', text: typed ?? chip.label });
+      heard(typed ?? chip.label);
       const ctx: FlowContext = { ...cb.current.context(), variant: 0 };
       void start(chip.flow, FLOWS[chip.flow](ctx), cb.current.readsFor, topicFor(chip.flow, ctx), typed ?? chip.label);
     },

@@ -1,85 +1,37 @@
-/* The model behind the composer, whatever provider runs it. It never touches
-   the phone: it answers in a fixed shape, and the brain decides what that
-   does (see apps/agents/brain). */
+/* The model behind the composer, whatever provider runs it. It plans with tools; the phone carries them out and
+   sends back what happened (see lib/llm/tools and apps/agents/tools). */
 
-import type { FlowParams } from '@/apps/agents/flows';
-import type { ActionId } from '@/data/actions';
-import type { ConnectorId } from '@/data/connectors';
+import type { ToolCall, Turn } from './tools';
 
 export interface ChatTurn {
   role: 'user' | 'assistant';
   text: string;
 }
 
-/** What the model must answer with: the reply in every app's voice, a flow or none, and the details the flow needs. */
-export interface ModelAnswer {
-  replies: Record<ConnectorId, string>;
-  flow: string;
-  variant?: string;
-  /** Replies to tap under a question. */
-  suggestions?: string[];
-  name?: string;
-  country?: string;
-  amount?: number;
-  currency?: string;
-  note?: string;
-  method?: string;
-  asset?: string;
-  network?: string;
-  address?: string;
-  approve?: number;
-  daily?: number;
-  perTx?: number;
-  merchant?: string;
-  price?: number;
-  query?: string;
-  kind?: string;
-  product?: string;
-  brand?: string;
-  budget?: number;
-  typicalPrice?: number;
-  below?: number;
-  every?: string;
-  day?: number;
-  people?: string[];
-  city?: string;
-  checkIn?: string;
-  checkOut?: string;
-  guests?: number;
-  /** More flows asked for in the same message, after this one, each with its own details. */
-  then?: (Omit<ModelAnswer, 'replies' | 'suggestions' | 'then'> & { flow: string })[];
-}
-
-export interface ModelRequest {
+export interface StepRequest {
   /** The instructions that never change (cached), then where things stand this turn. */
   system: { fixed: string; now: string };
-  turns: ChatTurn[];
-  /** The flows the model may start, for its schema. */
-  flows: string[];
-  variants: string[];
-  connectors: ConnectorId[];
-  /** Country codes a payment can go to. */
-  countries: string[];
-  methods: string[];
-  /** Crypto a top-up takes, and the networks it can arrive on. */
-  assets: string[];
-  networks: string[];
+  turns: Turn[];
+}
+
+export interface Usage {
+  input: number;
+  cacheRead: number;
+  cacheWrite: number;
+  output: number;
+}
+
+export interface StepAnswer {
+  calls: ToolCall[];
+  usage: Usage;
 }
 
 export interface ModelAdapter {
-  answer(req: ModelRequest): Promise<ModelAnswer>;
+  step(req: StepRequest): Promise<StepAnswer>;
 }
 
-/** What /api/agent sends the page: the reply and what it starts, or why it fell back to a scripted line. */
+/** What /api/agent sends the page: the next tool calls, or why it fell back to a scripted line. */
 export interface AgentResponse {
-  /** The reply in the app the person is in, and in every app's voice for when they switch. */
-  reply?: string;
-  replies?: Partial<Record<ConnectorId, string>>;
-  flow?: ActionId;
-  variant?: number;
-  params?: FlowParams;
-  /** Flows asked for in the same message, to run in order once this one finishes. */
-  then?: { flow: ActionId; variant: number; params?: FlowParams }[];
-  suggestions?: string[];
+  calls?: ToolCall[];
   fallback?: string;
 }

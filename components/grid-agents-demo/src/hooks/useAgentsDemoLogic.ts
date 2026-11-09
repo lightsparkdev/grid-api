@@ -1,8 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { FlowEntry, FreeTextReply } from '@/apps/agents/brain/useAgentBrain';
-import type { Chip } from '@/apps/agents/conversation';
+import type { FlowEntry, StepReply } from '@/apps/agents/brain/useAgentBrain';
 import { flowSpend, needsSetup, type FlowContext } from '@/apps/agents/flows';
 import { resetLinkedBank } from '@/apps/agents/linkedBank';
 import { resetRecipients, savedRecipients } from '@/apps/agents/recipients';
@@ -11,10 +10,10 @@ import type { Entry } from '@/components/ApiPanel/types';
 import { actionLabel, type ActionId } from '@/data/actions';
 import { createAgentSession, FAST_FORWARD_FUND_CENTS, type AccountSnapshot, type AgentSession, type CallStep } from '@/data/agentApiCalls';
 import type { AgentEvent } from '@/data/agentEvents';
-import { BANK_COUNTRIES } from '@/data/bankCountries';
 import type { ConnectorId } from '@/data/connectors';
 import type { PromptState } from '@/lib/llm/prompt';
-import type { AgentResponse, ChatTurn } from '@/lib/llm/types';
+import type { Turn } from '@/lib/llm/tools';
+import type { AgentResponse } from '@/lib/llm/types';
 
 /** Apps whose checkout has a Pay with row to switch the payment; the rest have the agent ask first. */
 const CHECKOUT_PICKER = new Set<ConnectorId>(['muse', 'dot']);
@@ -44,12 +43,6 @@ function prepare(session: AgentSession, id: ActionId, variant: number): NonNulla
   const funded = need && have < need && !onCard ? Math.max(FAST_FORWARD_FUND_CENTS, Math.ceil((need - have) / 10_000) * 10_000) : 0;
   if (funded) session.assumeFunded(funded);
   return { connected, funded };
-}
-
-/** A suggested reply as a chip: a country gets its flag. */
-function suggestionChip(label: string): Chip {
-  const country = BANK_COUNTRIES.find((c) => c.name.toLowerCase() === label.trim().toLowerCase());
-  return country ? { label: country.name, flag: country.code } : { label };
 }
 
 let groupSeq = 0;
@@ -177,8 +170,8 @@ export function useAgentsDemoLogic() {
     setRuns((r) => ({ ...r, [flow]: r[flow] + 1 }));
   }, []);
 
-  /** Free text goes to the model (/api/agent). Off, limited or failing, the agent points at the flows. */
-  const reply = useCallback(async (text: string, history: ChatTurn[]): Promise<FreeTextReply> => {
+  /** Free text goes to the model (/api/agent), a step at a time. Off, limited or failing, the agent points at the flows. */
+  const reply = useCallback(async (turns: Turn[]): Promise<StepReply> => {
     const a = sessionRef.current.snapshot();
     const money = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
     const state: PromptState = {
@@ -196,20 +189,13 @@ export function useAgentsDemoLogic() {
       const res = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ connector: connectorRef.current, text, history, state }),
+        body: JSON.stringify({ connector: connectorRef.current, turns, state }),
       });
       const data = (await res.json()) as AgentResponse;
-      if (data.reply || data.flow) {
-        return {
-          said: { text: data.reply ?? '', voices: data.replies },
-          flow: data.flow ? { id: data.flow, variant: data.variant ?? 0, params: data.params } : undefined,
-          then: data.then?.map((t) => ({ id: t.flow, variant: t.variant, params: t.params })),
-          suggestions: data.suggestions?.map(suggestionChip),
-        };
-      }
-      return { said: { key: data.fallback === 'visitor' || data.fallback === 'daily' ? 'limited' : 'fallback' } };
+      if (data.calls?.length) return { calls: data.calls };
+      return { fallback: data.fallback === 'visitor' || data.fallback === 'daily' ? 'limited' : 'fallback' };
     } catch {
-      return { said: { key: 'fallback' } };
+      return { fallback: 'fallback' };
     }
   }, []);
 

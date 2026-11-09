@@ -5,7 +5,7 @@ import { addressKind, canSend, NETWORK_FEE, NETWORKS_FOR, SENDS_ON, sendsLabel, 
 import type { Beat, ChipGlyph, Params, PayTo } from './conversation';
 import { depositDetails, formatMoney, linkedBank, pullsFrom } from './linkedBank';
 import { draftRecipient, payeeFor, recipientNamed, type Recipient } from './recipients';
-import { hash, merchantFor, stayFor, stayParams } from './hotels';
+import { hash, merchantFor, stayFor, stayParams, type Stay } from './hotels';
 import { purchaseFor, requestParams, shelfFor, shelfParams, shelfWith, type BuyKind, type Shelf } from './products';
 import { CASHOUT_AMOUNT, CRYPTO, FUND, LUCIA, NETWORK_NAME, NEW_LIMITS, SUBSCRIPTION, usd2, type CryptoAsset } from './story';
 
@@ -91,7 +91,7 @@ const cents = (usd: number | undefined) => (usd && usd > 0 ? Math.round(usd * 10
 const holdOr = (ctx: FlowContext, otherwise: Beat): Beat => (ctx.held ? { say: 'task.held', params: { what: ctx.held } } : otherwise);
 
 /** Add exactly what's short (USD cents) once the price is known, then carry on. */
-const addShort =
+export const addShort =
   (ctx: FlowContext) =>
   (short: number, then: () => Beat[]): Beat[] =>
     ctx.topUp ? ctx.topUp(short, then) : fund({ ...ctx, params: { amount: short / 100 }, then }).filter((b) => !('react' in b));
@@ -101,7 +101,7 @@ const limitParams = (ctx: FlowContext) => ({ limit: ctx.account().limits.approva
 const cryptoGlyph = (network: DepositNetwork): ChipGlyph => (network === 'LIGHTNING' ? 'bolt' : 'coin');
 
 /** What the balance card reads: the balance, today's spend against the limits, recent activity. */
-function balanceParams(ctx: FlowContext) {
+export function balanceParams(ctx: FlowContext) {
   const a = ctx.account();
   const rows = a.ledger.slice(0, 4).map((l) => ({
     title: l.title,
@@ -124,7 +124,7 @@ function balanceParams(ctx: FlowContext) {
  * Held for the person over the threshold; carried out on the agent's own authority under it. Face ID guards money
  * leaving to someone else; a withdrawal to your own bank is just a tap.
  */
-function approvalOr(
+export function approvalOr(
   ctx: FlowContext,
   needs: boolean,
   ask: { key: string; params?: Record<string, string | number>; swap?: (to: PayTo) => Beat[] },
@@ -148,7 +148,7 @@ function approvalOr(
 }
 
 /** Whether the account has a settled payment to or from `title` (the ledger names the other side). */
-const paid = (ctx: FlowContext, title: string) => ctx.account().ledger.some((l) => l.title === title && l.status === 'COMPLETED');
+export const paid = (ctx: FlowContext, title: string) => ctx.account().ledger.some((l) => l.title === title && l.status === 'COMPLETED');
 
 const connect = (ctx: FlowContext): Beat[] => {
   const l = (!ctx.account().connected && ctx.limits) || ctx.account().limits;
@@ -197,17 +197,17 @@ const fundChips = (ctx: FlowContext, method?: FundMethod): Beat => ({
 });
 
 /** An empty balance: the agent offers to fill it (`line` asks; `fund.offerShort` when the balance was just shown). */
-const offerFunds = (ctx: FlowContext, line = 'fund.offer'): Beat[] => [{ say: line }, fundChips(ctx)];
+export const offerFunds = (ctx: FlowContext, line = 'fund.offer'): Beat[] => [{ say: line }, fundChips(ctx)];
 
 /** A card or bank just went in and the balance is empty: add money from it. */
-const offerFundsFrom = (ctx: FlowContext, method: 'card' | 'bank'): Beat[] => {
+export const offerFundsFrom = (ctx: FlowContext, method: 'card' | 'bank'): Beat[] => {
   const a = ctx.account();
   if (!a.balanceOn || a.balanceCents > 0) return [];
   return [{ say: 'fund.offerFrom', params: { bank: method === 'bank' ? 1 : 0 } }, fundChips(ctx, method)];
 };
 
 /** No balance to withdraw from: set one up (it then offers to fill it), or later. */
-const noBalanceToMove = (ctx: FlowContext): Beat[] => [
+export const noBalanceToMove = (ctx: FlowContext): Beat[] => [
   { react: '👍' },
   { say: 'cashout.noBalance' },
   {
@@ -218,7 +218,7 @@ const noBalanceToMove = (ctx: FlowContext): Beat[] => [
 ];
 
 /** An empty balance to withdraw from: add money, or later. */
-const nothingToMove = (ctx: FlowContext): Beat[] => [{ react: '👍' }, { say: 'cashout.empty' }, fundChips(ctx)];
+export const nothingToMove = (ctx: FlowContext): Beat[] => [{ react: '👍' }, { say: 'cashout.empty' }, fundChips(ctx)];
 
 /** The top-up landed: say so, then carry on with whatever it was for. */
 const landed = (ctx: FlowContext, amount: number): Beat => ({
@@ -231,7 +231,7 @@ const landed = (ctx: FlowContext, amount: number): Beat => ({
 });
 
 /** Top up from a card: vault it the first time (each app's own way), then charge it. `onNo` follows a no to the card. */
-const cardTopUp = (ctx: FlowContext, amount: number, onNo: Beat[] = [{ say: 'card.denied' }]): Beat[] => [
+export const cardTopUp = (ctx: FlowContext, amount: number, onNo: Beat[] = [{ say: 'card.denied' }]): Beat[] => [
   {
     when: () => {
       const charge: Beat[] = [
@@ -261,28 +261,30 @@ const HOMES: { label: string; flag?: string; home: string }[] = [
 ];
 
 /** Link the person's own bank: what it's for and where it is (one line), then the app's consent for that country. */
-const linkOwnBank = (intro: string, after: Beat[], onNo: Beat[] = [{ say: 'bank.denied' }]): Beat[] => [
-  { say: intro },
-  {
-    chips: HOMES.map(({ label, flag }) => (flag ? { label, flag } : { label, glyph: 'bank' })),
-    reply: true,
-    then: (picked): Beat[] => [
-      { say: 'bank.opening', params: { home: HOMES[picked].home, country: HOMES[picked].label } },
-      {
-        ask: 'bank',
-        params: { home: HOMES[picked].home },
-        allow: [{ emit: { type: 'bank.link' } }, { meta: 'bank.linked' }, ...after],
-        deny: onNo,
-      },
-    ],
-  },
-];
+export const linkOwnBank = (intro: string, after: Beat[], onNo: Beat[] = [{ say: 'bank.denied' }], home?: string): Beat[] => {
+  const consent = (picked: number): Beat[] => [
+    { say: 'bank.opening', params: { home: HOMES[picked].home, country: HOMES[picked].label } },
+    {
+      ask: 'bank',
+      params: { home: HOMES[picked].home },
+      allow: [{ emit: { type: 'bank.link' } }, { meta: 'bank.linked' }, ...after],
+      deny: onNo,
+    },
+  ];
+  // Where it is was already said: straight to that country's consent.
+  const known = HOMES.findIndex((h) => h.home === home);
+  if (known >= 0) return consent(known);
+  return [
+    { say: intro },
+    { chips: HOMES.map(({ label, flag }) => (flag ? { label, flag } : { label, glyph: 'bank' })), reply: true, then: consent },
+  ];
+};
 
 /**
  * Top up from the person's bank, linked the first time (each app's consent). A US bank is pulled from over ACH;
  * anywhere else Grid can't pull, so the person sends it from their bank to the details Grid issues.
  */
-const bankTopUp = (ctx: FlowContext, amount: number, onNo?: Beat[]): Beat[] => [
+export const bankTopUp = (ctx: FlowContext, amount: number, onNo?: Beat[]): Beat[] => [
   {
     when: () => {
       // Just linked, "I'll keep it connected" and what happens next are one bubble.
@@ -323,7 +325,7 @@ const vaultThen = (ctx: FlowContext, intro: string, after: () => Beat[]): Beat[]
 ];
 
 /** After a card goes in with no balance yet: the card already works, and a balance is there if they want one. */
-const offerBalance = (ctx: FlowContext): Beat[] => [
+export const offerBalance = (ctx: FlowContext): Beat[] => [
   { say: 'balance.offer' },
   {
     chips: [
@@ -346,7 +348,7 @@ const shortOf = (ctx: FlowContext, price: number) => price - ctx.account().balan
  * it goes with what covers it (the card when the balance is short, `short` so the line says why); elsewhere the
  * agent asks. On the card, the balance isn't touched.
  */
-function payWith(ctx: FlowContext, price: number, go: (card: boolean, short?: boolean) => Beat[]): Beat[] {
+export function payWith(ctx: FlowContext, price: number, go: (card: boolean, short?: boolean) => Beat[]): Beat[] {
   const a = ctx.account();
   const onCard = () => (a.cardVaulted ? go(true) : vaultThen(ctx, 'card.forBuy', () => go(true)));
   if (ctx.params?.method === 'card' || !a.balanceOn) return onCard();
@@ -433,6 +435,26 @@ const FUND_GLYPH: Record<FundMethod, ChipGlyph> = { card: 'card', bank: 'bank', 
 const assetOn = (network?: DepositNetwork): CryptoAsset | undefined =>
   network === 'TRON' ? 'USDT' : network === 'LIGHTNING' ? 'BTC' : undefined;
 
+/** Deposit details for a coin on a network, then the money landing once they say they've sent it. */
+export function stableDeposit(ctx: FlowContext, asset: CryptoAsset, network: DepositNetwork, amount: number): Beat[] {
+  const lightning = network === 'LIGHTNING';
+  // A Lightning invoice is priced in dollars; a chain address takes the asset itself.
+  const currency = lightning ? 'USD' : asset;
+  const { label } = CRYPTO.find((o) => o.asset === asset)!;
+  const method = lightning ? 'Bitcoin over Lightning' : `${label} on ${NETWORK_NAME[network]}`;
+  const params = { method, network, currency: asset, amount };
+  return [
+    { emit: { type: 'fund.deposit', network, currency, amount } },
+    { say: 'fund.address', params },
+    { card: 'deposit', params },
+    {
+      chips: [{ label: 'I’ve sent it', glyph: 'check' }],
+      reply: true,
+      then: () => [{ pause: 900 }, { emit: { type: 'fund.received' } }, landed(ctx, amount)],
+    },
+  ];
+}
+
 const fund = (ctx: FlowContext): Beat[] => {
   const amount = cents(ctx.params?.amount);
   // Nobody named an amount (the tile): ask, then carry on as if they had.
@@ -443,28 +465,7 @@ const fund = (ctx: FlowContext): Beat[] => {
       { amount: true, options: [25, 50, 100], then: (usd) => fund({ ...ctx, params: { ...ctx.params, amount: usd } }).slice(1) },
     ];
   }
-  const deposit = (asset: CryptoAsset, network: DepositNetwork): Beat[] => {
-    const lightning = network === 'LIGHTNING';
-    // A Lightning invoice is priced in dollars; a chain address takes the asset itself.
-    const currency = lightning ? 'USD' : asset;
-    const { label } = CRYPTO.find((o) => o.asset === asset)!;
-    const method = lightning ? 'Bitcoin over Lightning' : `${label} on ${NETWORK_NAME[network]}`;
-    const params = { method, network, currency: asset, amount };
-    return [
-      { emit: { type: 'fund.deposit', network, currency, amount } },
-      { say: 'fund.address', params },
-      { card: 'deposit', params },
-      {
-        chips: [{ label: 'I’ve sent it', glyph: 'check' }],
-        reply: true,
-        then: () => [
-          { pause: 900 },
-          { emit: { type: 'fund.received' } },
-          landed(ctx, amount),
-        ],
-      },
-    ];
-  };
+  const deposit = (asset: CryptoAsset, network: DepositNetwork) => stableDeposit(ctx, asset, network, amount);
   // Crypto asks what they're sending, then on which network, skipping whatever they already said or has one answer.
   const onNetwork = (asset: CryptoAsset): Beat[] => {
     const { networks, label } = CRYPTO.find((o) => o.asset === asset)!;
@@ -528,7 +529,7 @@ const fund = (ctx: FlowContext): Beat[] => {
 };
 
 /** The limits someone asked for: what they named, the rest raised only as far as it has to be to stay in order. */
-function limitsFor(ctx: FlowContext, from: Limits): Limits {
+export function limitsFor(ctx: FlowContext, from: Limits): Limits {
   const p = ctx.params;
   if (!p || !(p.approve || p.daily || p.perTx)) return NEW_LIMITS;
   const approvalAbove = cents(p.approve) ?? from.approvalAbove;
@@ -585,7 +586,7 @@ const STORY_PAY: FlowParams = { name: 'Sofia', amount: 250, currency: 'BRL', not
 const railName = (rail: string) => (/^[A-Z0-9]+$/.test(rail) ? rail : rail.toLowerCase());
 
 /** Who's being paid, as the lines and the approval read them: by first name, as the person calls them. */
-function recipientParams(r: Recipient): Params {
+export function recipientParams(r: Recipient): Params {
   const c = r.bank.country;
   return { name: r.name, first: r.first, flag: c.code, country: c.name, rail: railName(c.rail), currency: r.bank.currency, bank: r.bank.bankName };
 }
@@ -593,15 +594,15 @@ function recipientParams(r: Recipient): Params {
 const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`;
 
 /** A payment that repeats each month on `day` (the 1st unless they said): the first goes now, the next on that day. */
-function monthly(day = 1): Params {
+export function monthly(day = 1): Params {
   const d = Math.min(28, Math.max(1, Math.round(day)));
   const now = new Date();
   const next = new Date(now.getFullYear(), now.getMonth() + (now.getDate() < d ? 0 : 1), d);
   return { monthly: 1, day: ordinal(d), next: next.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) };
 }
 
-/** What a payment to someone the agent already knows looks like: a quote, then sent or held for the person. */
-function sendTo(ctx: FlowContext, r: Recipient, p: FlowParams): Beat[] {
+/** A payment's quote: what they receive, and what the lines and the approval read. */
+export function payQuote(r: Recipient, p: FlowParams) {
   const payee = payeeFor(r, p.amount ?? 0, p.currency ?? 'USD');
   // The conversion reads from what they asked in: "$50 is ₱2,900", or "R$250 is $46.30".
   const inDollars = (p.currency ?? 'USD') === 'USD';
@@ -615,26 +616,36 @@ function sendTo(ctx: FlowContext, r: Recipient, p: FlowParams): Beat[] {
     note: p.note ?? '',
     ...(p.every === 'month' && monthly(p.day)),
   };
-  const send = (c: FlowContext): Beat[] => {
-    const sent = { ...params, balance: c.account().balanceCents };
-    return [
-      { emit: { type: 'pay.execute' } },
-      ...approvalOr(
-        c,
-        c.needsApproval(payee.usd),
-        { key: 'pay', params: sent },
-        'pay.auto',
-        [
-          { work: 'sending', ms: 1000 },
-          { card: 'receipt.pay', params: sent },
-          ...(p.every === 'month'
-            ? [{ say: 'pay.scheduled', params: sent } as const, { meta: 'pay.routine', params: sent } as const]
-            : [{ say: 'pay.done', params: sent } as const]),
-        ],
-        'pay.denied',
-      ),
-    ];
-  };
+  return { payee, params };
+}
+
+/** A quoted payment going out: sent on the agent's authority under the threshold, held for the person above it. */
+export function paySend(c: FlowContext, quote: ReturnType<typeof payQuote>, p: FlowParams): Beat[] {
+  const sent = { ...quote.params, balance: c.account().balanceCents };
+  return [
+    { emit: { type: 'pay.execute' } },
+    ...approvalOr(
+      c,
+      c.needsApproval(quote.payee.usd),
+      { key: 'pay', params: sent },
+      'pay.auto',
+      [
+        { work: 'sending', ms: 1000 },
+        { card: 'receipt.pay', params: sent },
+        ...(p.every === 'month'
+          ? [{ say: 'pay.scheduled', params: sent } as const, { meta: 'pay.routine', params: sent } as const]
+          : [{ say: 'pay.done', params: sent } as const]),
+      ],
+      'pay.denied',
+    ),
+  ];
+}
+
+/** What a payment to someone the agent already knows looks like: a quote, then sent or held for the person. */
+function sendTo(ctx: FlowContext, r: Recipient, p: FlowParams): Beat[] {
+  const quote = payQuote(r, p);
+  const { payee, params } = quote;
+  const send = (c: FlowContext): Beat[] => paySend(c, quote, p);
   // Over the limit, it says so once the quote is out, before any money is added for it.
   const fund = (c: FlowContext): Beat[] => {
     const short = payee.usd - c.account().balanceCents;
@@ -678,6 +689,34 @@ const pay = (ctx: FlowContext): Beat[] => {
 /** The tile's send when nobody typed one: 50 USDC to an address that could be on any EVM chain, so it asks which. */
 const STORY_CRYPTO: FlowParams = { address: '0x8C1d4bE27a9F3c05D6e1b2A4f7C9d0E3b5A6c2F1', amount: 50, asset: 'USDC' };
 
+/** A stablecoin send's quote (the network fee on top) and the beats that show it. */
+export function stableQuote(address: string, asset: SendAsset, network: DepositNetwork, amount: number) {
+  const fee = NETWORK_FEE[network];
+  const params: Params = { short: shortAddress(address), asset, network: NETWORK_NAME[network], sends: sendsLabel(asset, amount), usd: amount, fee, lightning: network === 'LIGHTNING' ? 1 : 0 };
+  const beats: Beat[] = [
+    { work: 'quoting', ms: 1100 },
+    { emit: { type: 'crypto.quote', payee: { address, network, asset, usd: amount, fee } } },
+    { say: 'crypto.intro', params },
+  ];
+  return { params, total: amount + fee, beats };
+}
+
+/** A quoted stablecoin send going out, held for the person above the threshold. */
+export function stableSend(c: FlowContext, quote: ReturnType<typeof stableQuote>): Beat[] {
+  const sent = { ...quote.params, balance: c.account().balanceCents };
+  return [
+    { emit: { type: 'crypto.execute' } },
+    ...approvalOr(
+      c,
+      c.needsApproval(quote.total),
+      { key: 'crypto', params: sent },
+      'pay.auto',
+      [{ work: 'sending', ms: 1000 }, { card: 'receipt.crypto', params: sent }, { say: 'crypto.done', params: sent }],
+      'pay.denied',
+    ),
+  ];
+}
+
 /**
  * Send crypto: what the address is, from its shape; the asset and network when it leaves them open; then a quote
  * and the send. A pasted fragment, or an address it can't send to, gets said so instead of guessed at.
@@ -698,35 +737,14 @@ const crypto = (ctx: FlowContext): Beat[] => {
     ];
   }
   const networks = NETWORKS_FOR[kind];
-  const short = shortAddress(address);
 
   const send = (asset: SendAsset, network: DepositNetwork): Beat[] => {
-    const fee = NETWORK_FEE[network];
-    const params: Params = { short, asset, network: NETWORK_NAME[network], sends: sendsLabel(asset, amount), usd: amount, fee, lightning: network === 'LIGHTNING' ? 1 : 0 };
-    const go = (c: FlowContext): Beat[] => {
-      const sent = { ...params, balance: c.account().balanceCents };
-      return [
-        { emit: { type: 'crypto.execute' } },
-        ...approvalOr(
-          c,
-          c.needsApproval(amount + fee),
-          { key: 'crypto', params: sent },
-          'pay.auto',
-          [{ work: 'sending', ms: 1000 }, { card: 'receipt.crypto', params: sent }, { say: 'crypto.done', params: sent }],
-          'pay.denied',
-        ),
-      ];
-    };
+    const quote = stableQuote(address, asset, network, amount);
     const fund = (c: FlowContext): Beat[] => {
-      const toAdd = amount + fee - c.account().balanceCents;
-      return toAdd > 0 ? addShort({ ...c, held: 'that send' })(toAdd, () => go(c)) : go(c);
+      const toAdd = quote.total - c.account().balanceCents;
+      return toAdd > 0 ? addShort({ ...c, held: 'that send' })(toAdd, () => stableSend(c, quote)) : stableSend(c, quote);
     };
-    return [
-      { work: 'quoting', ms: 1100 },
-      { emit: { type: 'crypto.quote', payee: { address, network, asset, usd: amount, fee } } },
-      { say: 'crypto.intro', params },
-      ...(overLimit(ctx, amount + fee, 'send', fund) ?? fund(ctx)),
-    ];
+    return [...quote.beats, ...(overLimit(ctx, quote.total, 'send', fund) ?? fund(ctx))];
   };
 
   // Which network, when the address could be on more than one that takes this asset.
@@ -763,7 +781,7 @@ function subscriptionFor(ctx: FlowContext): Purchase & { item: string } {
 }
 
 /** What a checkout's Pay with reads: the balance, whether there's a choice (a card and a balance), and whether it covers it. */
-const payParams = (ctx: FlowContext, price: number) => {
+export const payParams = (ctx: FlowContext, price: number) => {
   const a = ctx.account();
   return { balance: a.balanceCents, saved: a.cardVaulted && a.balanceOn ? 1 : 0, enough: a.balanceCents >= price ? 1 : 0 };
 };
@@ -772,7 +790,7 @@ const payParams = (ctx: FlowContext, price: number) => {
  * The checkout's Pay with, in an app that has one: the agent drops the card it asked for and comes back with a
  * checkout paid the new way, topping the balance up first if that's what was picked.
  */
-const swapFor = (ctx: FlowContext, price: number, again: (onCard: boolean) => Beat[]) =>
+export const swapFor = (ctx: FlowContext, price: number, again: (onCard: boolean) => Beat[]) =>
   ctx.picksInCheckout && ctx.account().cardVaulted && ctx.account().balanceOn
     ? (to: PayTo): Beat[] => {
         const drop: Beat = { emit: { type: 'buy.withdraw' } };
@@ -780,6 +798,23 @@ const swapFor = (ctx: FlowContext, price: number, again: (onCard: boolean) => Be
         return [drop, ...fund({ ...ctx, params: { amount: shortOf(ctx, price) / 100 }, then: () => again(false) }).slice(1)];
       }
     : undefined;
+
+/** A subscription's recurring card, locked to the merchant, which always waits for the person. */
+export function placeSubscription(ctx: FlowContext, sub: Purchase & { item: string }, onCard: boolean, short = false, again = false): Beat[] {
+  const p = { item: sub.item, merchant: sub.merchant, amount: sub.amount, card: onCard ? 1 : 0, short: short ? 1 : 0 };
+  return [
+    ...(again ? [] : [{ say: 'sub.card', params: p, join: true } as const]),
+    { emit: { type: 'buy.request', purchase: { ...sub, byCard: onCard } } },
+    ...approvalOr(
+      ctx,
+      true,
+      { key: 'sub', params: { ...p, ...payParams(ctx, sub.amount) }, swap: swapFor(ctx, sub.amount, (c) => placeSubscription(ctx, sub, c, false, true)) },
+      'buy.auto',
+      [{ work: 'paying', ms: 1000 }, { emit: { type: 'buy.checkout' } }, { card: 'receipt.sub', params: p }, { say: 'sub.done', params: p }, { meta: 'sub.reminder' }],
+      'sub.denied',
+    ),
+  ];
+}
 
 const buy = (outer: FlowContext): Beat[] => {
   const ctx: FlowContext = { ...outer, held: outer.variant % 2 === 1 ? 'the subscription' : 'the order' };
@@ -790,28 +825,7 @@ const buy = (outer: FlowContext): Beat[] => {
     const intro: Beat[] = ctx.params?.merchant ? [] : [{ say: 'sub.intro', params }];
     return [
       ...intro,
-      ...payWith(ctx, sub.amount, function place(onCard: boolean, short = false, again = false): Beat[] {
-        const p = { ...params, card: onCard ? 1 : 0, short: short ? 1 : 0 };
-        return [
-          ...(again ? [] : [{ say: 'sub.card', params: p, join: true }]),
-          { emit: { type: 'buy.request', purchase: { ...sub, byCard: onCard } } },
-          // A recurring card always waits for the person.
-          ...approvalOr(
-            ctx,
-            true,
-            { key: 'sub', params: { ...p, ...payParams(ctx, sub.amount) }, swap: swapFor(ctx, sub.amount, (c) => place(c, false, true)) },
-            'buy.auto',
-            [
-              { work: 'paying', ms: 1000 },
-              { emit: { type: 'buy.checkout' } },
-              { card: 'receipt.sub', params: p },
-              { say: 'sub.done', params: p },
-              { meta: 'sub.reminder' },
-            ],
-            'sub.denied',
-          ),
-        ];
-      }),
+      ...payWith(ctx, sub.amount, (onCard, short) => placeSubscription(ctx, sub, onCard, short)),
     ];
   }
   const shelf = shelfFor(ctx.params);
@@ -846,10 +860,15 @@ const buy = (outer: FlowContext): Beat[] => {
  * given up front. It saves a card first if there's nothing to pay with, so it can act the moment it drops. Already
  * under, it just buys it.
  */
-function watched(ctx: FlowContext, shelf: Shelf, below: number): Beat[] {
+export function watched(
+  ctx: FlowContext,
+  shelf: Shelf,
+  below: number,
+  buyIt: (ctx: FlowContext, shelf: Shelf) => Beat[] = order,
+  found: Beat[] = [{ react: '👍' }, { work: 'searching', ms: 1800, params: { ...shelfParams(shelf), below } }, { products: 'buy.options', params: { ...requestParams(ctx.params), only: 1 } }],
+): Beat[] {
   const params = { ...shelfParams(shelf), below };
-  const found: Beat[] = [{ react: '👍' }, { work: 'searching', ms: 1800, params }, { products: 'buy.options', params: { ...requestParams(ctx.params), only: 1 } }];
-  if (shelf.pick.amount <= below) return [...found, { say: 'watch.already', params }, ...order(ctx, shelf)];
+  if (shelf.pick.amount <= below) return [...found, { say: 'watch.already', params }, ...buyIt(ctx, shelf)];
   // A believable sale price: a few percent under what they set, ending in 9.
   const drop = Math.floor((below * 0.96) / 1000) * 1000 - 100;
   const dropped: Shelf = { ...shelf, pick: { ...shelf.pick, amount: drop } };
@@ -862,7 +881,7 @@ function watched(ctx: FlowContext, shelf: Shelf, below: number): Beat[] {
     { meta: 'watch.routine', params },
     { divider: 'Two days later' },
     { say: 'watch.dropped', params: { ...shelfParams(dropped), was: shelf.pick.amount } },
-    ...order({ ...c, preApproved: true, ...(!fromBalance && { params: { ...c.params, method: 'card' } }) }, dropped),
+    ...buyIt({ ...c, preApproved: true, ...(!fromBalance && { params: { ...c.params, method: 'card' } }) }, dropped),
   ];
   return [...found, ...(fromBalance || a.cardVaulted ? watch(ctx) : vaultThen(ctx, 'watch.card', () => watch(ctx)))];
 }
@@ -875,7 +894,7 @@ function order(ctx: FlowContext, shelf: Shelf): Beat[] {
 
 /** What the agent says once it's bought, by how it arrives: shipped or delivered (with tracking), a ride on its way,
  *  tickets or a table by email, a top-up on the phone, a bill paid. */
-function arrived(shelf: Shelf, p: Params): Beat[] {
+export function arrived(shelf: Shelf, p: Params): Beat[] {
   switch (shelf.delivery) {
     case 'ship':
     case 'now':
@@ -898,35 +917,53 @@ function arrived(shelf: Shelf, p: Params): Beat[] {
 /** What pays, then the card for it. Short of money with no card, it tops up first. */
 function checkout(ctx: FlowContext, shelf: Shelf): Beat[] {
   const purchase = purchaseFor(shelf);
-  const params = shelfParams(shelf);
-  const spend = purchaseSpendLimit(purchase.amount);
   // A card saved for this order: once it's through, the agent offers a balance, as when a card goes in on its own.
   const newCard = !ctx.account().cardVaulted;
+  return payWith(ctx, purchase.amount, (onCard, short) => [
+    ...placeOrder(ctx, shelf, onCard, short),
+    ...(onCard && newCard ? [{ when: () => (ctx.account().balanceOn ? [] : offerBalance(ctx)) }] : []),
+  ]);
+}
+
+/** The order's single-use card, paid from the card or the balance: held for the person above the threshold. */
+export function placeOrder(ctx: FlowContext, shelf: Shelf, onCard: boolean, short = false, again = false): Beat[] {
+  const purchase = purchaseFor(shelf);
+  const params = shelfParams(shelf);
+  const spend = purchaseSpendLimit(purchase.amount);
+  // Approved up front (a price watch, a raised limit), it doesn't ask again.
+  const p = { ...params, card: onCard ? 1 : 0, short: short ? 1 : 0, needs: ctx.needsApproval(spend) && !ctx.preApproved ? 1 : 0 };
   return [
-    ...payWith(ctx, purchase.amount, function place(onCard: boolean, short = false, again = false): Beat[] {
-      // Approved up front (a price watch, a raised limit), it doesn't ask again.
-      const p = { ...params, card: onCard ? 1 : 0, short: short ? 1 : 0, needs: ctx.needsApproval(spend) && !ctx.preApproved ? 1 : 0 };
-      return [
-        ...(again ? [] : [{ say: 'buy.card', params: p }]),
-        { emit: { type: 'buy.request', purchase: { ...purchase, byCard: onCard } } },
-        { work: 'filling', ms: again ? 700 : 1300, params },
-        ...approvalOr(
-          ctx,
-          ctx.needsApproval(spend),
-          { key: 'buy', params: { ...p, ...payParams(ctx, purchase.amount) }, swap: swapFor(ctx, purchase.amount, (c) => place(c, false, true)) },
-          'buy.auto',
-          [
-            { work: 'paying', ms: 1100, params },
-            { emit: { type: 'buy.checkout' } },
-            { card: 'receipt.buy', params: p },
-            ...arrived(shelf, p),
-            ...(onCard && newCard ? [{ when: () => (ctx.account().balanceOn ? [] : offerBalance(ctx)) }] : []),
-          ],
-          'buy.denied',
-          params,
-        ),
-      ];
-    }),
+    ...(again ? [] : [{ say: 'buy.card', params: p } as const]),
+    { emit: { type: 'buy.request', purchase: { ...purchase, byCard: onCard } } },
+    { work: 'filling', ms: again ? 700 : 1300, params },
+    ...approvalOr(
+      ctx,
+      ctx.needsApproval(spend),
+      { key: 'buy', params: { ...p, ...payParams(ctx, purchase.amount) }, swap: swapFor(ctx, purchase.amount, (c) => placeOrder(ctx, shelf, c, false, true)) },
+      'buy.auto',
+      [{ work: 'paying', ms: 1100, params }, { emit: { type: 'buy.checkout' } }, { card: 'receipt.buy', params: p }, ...arrived(shelf, p)],
+      'buy.denied',
+      params,
+    ),
+  ];
+}
+
+/** The hotel's agent paid for the stay, held for the person above the threshold. */
+export function payHotel(c: FlowContext, stay: Stay): Beat[] {
+  const params = stayParams(stay);
+  return [
+    { emit: { type: 'agent.execute' } },
+    ...approvalOr(c, c.needsApproval(stay.amount), { key: 'agent', params }, 'agent.auto', [{ card: 'receipt.agent', params }, { say: 'agent.done', params }], 'agent.denied', params),
+  ];
+}
+
+/** The hotel's agent finding the stay and quoting it. */
+export function hotelQuote(ctx: FlowContext, stay: Stay): Beat[] {
+  const params = stayParams(stay);
+  return [
+    { subagent: 'hotel', ms: 4200, params: { ...params, approve: ctx.account().limits.approvalAbove } },
+    { emit: { type: 'agent.quote', to: merchantFor(stay) } },
+    { say: 'agent.intro', params },
   ];
 }
 
@@ -937,32 +974,15 @@ const agent = (ctx: FlowContext): Beat[] => {
   const params = stayParams(stay);
   const booked = ctx.account().ledger.some((l) => l.title === to.name && l.detail === to.description && l.status === 'COMPLETED');
   if (booked) return [{ react: '👍' }, { say: 'agent.already', params }];
-  const pay = (c: FlowContext): Beat[] => [
-    { emit: { type: 'agent.execute' } },
-    ...approvalOr(
-      c,
-      c.needsApproval(stay.amount),
-      { key: 'agent', params },
-      'agent.auto',
-      [{ card: 'receipt.agent', params }, { say: 'agent.done', params }],
-      'agent.denied',
-      params,
-    ),
-  ];
+  const pay = (c: FlowContext): Beat[] => payHotel(c, stay);
   const fund = (c: FlowContext): Beat[] =>
     shortOf(c, stay.amount) > 0 ? addShort({ ...c, held: `booking ${stay.hotel}` })(shortOf(c, stay.amount), () => pay(c)) : pay(c);
   // The hotel's agent quotes first; only then the limit, and what's short.
-  return [
-    { react: '👍' },
-    { subagent: 'hotel', ms: 4200, params: { ...params, approve: ctx.account().limits.approvalAbove } },
-    { emit: { type: 'agent.quote', to } },
-    { say: 'agent.intro', params },
-    ...(overLimit(ctx, stay.amount, 'book', fund) ?? fund(ctx)),
-  ];
+  return [{ react: '👍' }, ...hotelQuote(ctx, stay), ...(overLimit(ctx, stay.amount, 'book', fund) ?? fund(ctx))];
 };
 
 /** Who's paying: Lucía's invoice from the tile, or whoever they named, for what they said, with an invoice of its own. */
-function payerFor(p?: FlowParams) {
+export function payerFor(p?: FlowParams) {
   const name = p?.name?.trim();
   if (!name) return { payer: LUCIA.name, first: LUCIA.first, amount: LUCIA.amount, invoice: LUCIA.invoice };
   return { payer: name, first: name.split(' ')[0], amount: cents(p?.amount) ?? LUCIA.amount, invoice: `INV-${String(43 + (hash(name) % 900)).padStart(4, '0')}` };
@@ -972,7 +992,7 @@ function payerFor(p?: FlowParams) {
  * Splitting a bill they paid: each person's share (the whole bill over everyone, them included), a request to each,
  * and each payment as it lands.
  */
-function split(ctx: FlowContext, people: string[], total: number): Beat[] {
+export function split(ctx: FlowContext, people: string[], total: number): Beat[] {
   const share = Math.round(total / (people.length + 1));
   const names = people.map((n) => n.split(' ')[0]);
   const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
@@ -990,7 +1010,7 @@ function split(ctx: FlowContext, people: string[], total: number): Beat[] {
   ];
 }
 
-const getpaid = (ctx: FlowContext): Beat[] => {
+export const getpaid = (ctx: FlowContext): Beat[] => {
   const people = ctx.params?.people?.filter(Boolean) ?? [];
   const total = cents(ctx.params?.amount);
   if (people.length && total) return split(ctx, people, total);
@@ -1018,6 +1038,25 @@ const getpaid = (ctx: FlowContext): Beat[] => {
   ];
 };
 
+/** A withdrawal's quote to the linked bank, in its currency over its rail. */
+export function bankPayout(ctx: FlowContext, amount: number) {
+  const bank = linkedBank();
+  const local = Math.round(amount * bank.country.usdToLocal);
+  const rail = bank.country.rail;
+  const p: Payee = { name: `${bank.bankName} •••• ${bank.last4}`, currency: bank.currency, amount: local, usd: amount, rail: rail.toUpperCase().replace(/ /g, '_'), bank: bank.bankName };
+  const params = { local: formatMoney(local, bank.currency), to: p.name, rail, usd: amount, flag: bank.country.code, bank: bank.bankName, balance: ctx.account().balanceCents };
+  const beats: Beat[] = [{ work: 'quoting', ms: 1000 }, { emit: { type: 'cashout.quote', payee: p } }];
+  return { params, beats };
+}
+
+/** The quoted withdrawal going out: a tap when it needs one, never Face ID (it's their own bank). */
+export function moveToBank(c: FlowContext, params: Params, amount: number): Beat[] {
+  return [
+    { emit: { type: 'cashout.execute' } },
+    ...approvalOr(c, c.needsApproval(amount), { key: 'cashout', params }, 'cashout.auto', [{ work: 'sending', ms: 900 }, { card: 'receipt.cashout', params }, { say: 'cashout.done' }], 'cashout.denied'),
+  ];
+}
+
 /** Withdraw goes to the person's own bank: the one they linked, or one they link now in the app's own sheet. */
 const cashout = (ctx: FlowContext): Beat[] => {
   const balance = ctx.account().balanceCents;
@@ -1043,25 +1082,10 @@ const cashout = (ctx: FlowContext): Beat[] => {
     ];
   }
   const send = (): Beat[] => {
-    const bank = linkedBank();
-    const local = Math.round(amount * bank.country.usdToLocal);
-    const rail = bank.country.rail;
-    const p: Payee = { name: `${bank.bankName} •••• ${bank.last4}`, currency: bank.currency, amount: local, usd: amount, rail: rail.toUpperCase().replace(/ /g, '_'), bank: bank.bankName };
-    const params = { local: formatMoney(local, bank.currency), to: p.name, rail, usd: amount, flag: bank.country.code, bank: bank.bankName, balance };
-    const move = (c: FlowContext): Beat[] => [
-      { emit: { type: 'cashout.execute' } },
-      ...approvalOr(
-        c,
-        c.needsApproval(amount),
-        { key: 'cashout', params },
-        'cashout.auto',
-        [{ work: 'sending', ms: 900 }, { card: 'receipt.cashout', params }, { say: 'cashout.done' }],
-        'cashout.denied',
-      ),
-    ];
+    const payout = bankPayout(ctx, amount);
     // "Moving $50 to your Chase…" says it's underway, so over the limit the raise comes before it, not after.
-    const moving = (c: FlowContext): Beat[] => [{ say: 'cashout.quote', params }, ...move(c)];
-    return [{ work: 'quoting', ms: 1000 }, { emit: { type: 'cashout.quote', payee: p } }, ...(overLimit(ctx, amount, 'move', moving) ?? moving(ctx))];
+    const moving = (c: FlowContext): Beat[] => [{ say: 'cashout.quote', params: payout.params }, ...moveToBank(c, payout.params, amount)];
+    return [...payout.beats, ...(overLimit(ctx, amount, 'move', moving) ?? moving(ctx))];
   };
   if (ctx.account().bankLinked) return [{ react: '👍' }, { when: send }];
   return [{ react: '👍' }, ...linkOwnBank('cashout.bank', [{ say: 'bank.kept' }, { when: send }], [holdOr({ ...ctx, held: 'the withdrawal' }, { say: 'bank.denied' })])];
@@ -1087,7 +1111,7 @@ const balance = (ctx: FlowContext): Beat[] => {
   ];
 };
 
-const balanceShown = (ctx: FlowContext): Beat[] => [
+export const balanceShown = (ctx: FlowContext): Beat[] => [
   { work: 'checking', ms: 700 },
   { emit: { type: 'account.overview' } },
   {
@@ -1103,7 +1127,7 @@ const balanceShown = (ctx: FlowContext): Beat[] => [
 const history = (ctx: FlowContext): Beat[] =>
   ctx.account().ledger.length ? historyShown(ctx) : [{ react: '👍' }, { say: 'history.none' }];
 
-const historyShown = (ctx: FlowContext): Beat[] => [
+export const historyShown = (ctx: FlowContext): Beat[] => [
   { work: 'checking', ms: 700 },
   { emit: { type: 'transactions.list' } },
   {
@@ -1165,7 +1189,7 @@ export function planFor(flow: ActionId, ctx: FlowContext): Beat[] {
 }
 
 /** The per-payment limit raised just past one payment (to the next $100), the daily with it. */
-function raisedFor(from: Limits, spend: number): Limits {
+export function raisedFor(from: Limits, spend: number): Limits {
   const perTransaction = Math.ceil(spend / 10_000) * 10_000;
   return { ...from, perTransaction, daily: Math.max(from.daily, perTransaction) };
 }
@@ -1183,7 +1207,7 @@ function coveringLimits(flow: ActionId, ctx: FlowContext): Limits | undefined {
  * just enough. That one approval ("Save and buy") is the payment's too, so a yes goes straight through without asking
  * again, and a no puts the task down out loud. `go` is what the button also does.
  */
-function overLimit(ctx: FlowContext, spend: number, go: string, then: (ctx: FlowContext) => Beat[]): Beat[] | undefined {
+export function overLimit(ctx: FlowContext, spend: number, go: string, then: (ctx: FlowContext) => Beat[]): Beat[] | undefined {
   // No agent yet: it's created on the way with limits that cover this (ctx.limits), so there's nothing to raise.
   const from = (!ctx.account().connected && ctx.limits) || ctx.account().limits;
   if (spend <= from.perTransaction) return undefined;

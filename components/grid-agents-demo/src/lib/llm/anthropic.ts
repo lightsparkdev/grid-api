@@ -1,60 +1,33 @@
-import type { ModelAdapter, ModelAnswer, ModelRequest } from './types';
+import { CONNECTOR_IDS, TOOL_DEFS, TOOL_NAMES, type ToolCall, type ToolName, type Turn } from './tools';
+import type { ModelAdapter, StepRequest, StepAnswer } from './types';
 
-/** A small, fast model: replies have to land like texts. */
-const DEFAULT_MODEL = 'claude-haiku-5-5';
-const MAX_TOKENS = 900;
-const TIMEOUT_MS = 12_000;
+export const MODELS = { haiku: 'claude-haiku-5-5', sonnet: 'claude-sonnet-5-5' } as const;
+/** The model behind the agent. Switch to MODELS.sonnet to compare; AGENT_MODEL overrides either. */
+const MODEL: string = MODELS.haiku;
 
-const usd = (description: string) => ({ type: 'number', description });
+const MAX_TOKENS = 1500;
+const TIMEOUT_MS = 15_000;
+
+/** The last block of the conversation marked for caching, so the next step only pays full price for what's new. */
+function cachedTurns(turns: Turn[]) {
+  return turns.map((t, i) =>
+    i === turns.length - 1 ? { ...t, content: t.content.map((b, j) => (j === t.content.length - 1 ? { ...b, cache_control: { type: 'ephemeral' } } : b)) } : t,
+  );
+}
+
+const TOOLS = TOOL_DEFS.map((t, i) => (i === TOOL_DEFS.length - 1 ? { ...t, cache_control: { type: 'ephemeral' } } : t));
 
 /**
- * Claude, forced to answer through one tool whose input is the answer's
- * schema, so the reply always arrives as `{ replies, flow, ... }` and never
- * as free-form text. The tools and the fixed instructions are marked for
- * caching, so each turn only pays full price for what changed.
+ * Claude, planning one step at a time: it must call at least one tool, and the calls come back for the phone to
+ * carry out. The tools, the fixed instructions and the conversation so far are marked for caching.
  */
-export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL || DEFAULT_MODEL): ModelAdapter {
+export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL || MODEL): ModelAdapter {
   return {
-    async answer({ system, turns, flows, variants, countries, methods, assets, networks, connectors }: ModelRequest): Promise<ModelAnswer> {
-      /** What a flow runs with: the top-level flow's details, and each queued flow's. */
-      const details = {
-        name: { type: 'string', description: 'pay: the person being paid; getpaid: the person paying them. As they were named (e.g. "Maria" or "Maria Lopez").' },
-        country: { type: 'string', enum: countries, description: 'pay: where that person banks.' },
-        amount: { type: 'number', description: 'pay: the amount, in `currency`. fund and cashout: the amount in USD. buy a gift card or phone top-up: its value in USD; a bill: the amount only if they said it. getpaid split: the whole bill in USD.' },
-        currency: { type: 'string', description: 'pay: "USD", or the ISO code of the recipient’s local currency if they gave it in that currency.' },
-        note: { type: 'string', description: 'pay: what it’s for, a few words, if they said.' },
-        every: { type: 'string', enum: ['month'], description: 'pay: "month" if they want it sent every month.' },
-        day: { type: 'number', description: 'pay every month: the day of the month (1–28), only if they said ("on the 1st" is 1).' },
-        people: { type: 'array', items: { type: 'string' }, description: 'getpaid split: the others splitting the bill with them, by first name.' },
-        method: { type: 'string', enum: methods, description: 'fund: where the money comes from, if they said. buy: "card" only if they want it on their credit or debit card.' },
-        asset: { type: 'string', enum: assets, description: 'fund in stablecoins, or crypto: the asset, if they said.' },
-        network: { type: 'string', enum: networks, description: 'fund in stablecoins, or crypto: the network, if they said.' },
-        address: { type: 'string', description: 'crypto: where to send, copied exactly as they gave it (a wallet address or a Spark address), even if it looks incomplete.' },
-        approve: usd('limits: the most you may spend without asking, USD.'),
-        daily: usd('limits: the daily limit, USD.'),
-        perTx: usd('limits: the per-payment limit, USD.'),
-        merchant: { type: 'string', description: 'buy subscription: the service, as it brands itself (e.g. "Spotify Premium").' },
-        price: usd('buy subscription: its monthly price, USD.'),
-        city: { type: 'string', description: 'agent: the city to stay in, as people name it ("Tokyo", "Mexico City").' },
-        checkIn: { type: 'string', description: 'agent: check-in date, YYYY-MM-DD.' },
-        checkOut: { type: 'string', description: 'agent: check-out date, YYYY-MM-DD.' },
-        guests: { type: 'number', description: 'agent: how many people are staying, only if they said.' },
-        query: { type: 'string', description: 'buy order: what they want to buy, in a few words ("noise cancelling headphones", "starbucks gift card").' },
-        kind: { type: 'string', enum: ['physical', 'gift', 'digital', 'topup'], description: 'buy order: "gift" for a gift card, "topup" for prepaid phone credit, "digital" for a game, app or other download, else "physical".' },
-        product: { type: 'string', description: 'buy order: the exact product, only if they named one, written the way its maker does ("AirPods Pro", "PS5", "iPhone Duo").' },
-        brand: { type: 'string', description: 'buy order: the brand or store they named ("Nike", "Starbucks"), or the maker of the product they named.' },
-        budget: usd('buy order: the most they want to spend, USD, only if they said ("under $100").'),
-        typicalPrice: usd('buy order: what it usually costs in the US, USD, your best estimate (the product or brand they named, else a typical one).'),
-        below: usd('buy order: only if they want it bought once its price drops under this, USD ("if it goes under $250").'),
-        variant: { type: 'string', enum: variants, description: 'buy: "order" for something to buy once, "subscription" for a subscription.' },
-      };
+    async step({ system, turns }: StepRequest): Promise<StepAnswer> {
+      const started = Date.now();
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
+        headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
         signal: AbortSignal.timeout(TIMEOUT_MS),
         body: JSON.stringify({
           model,
@@ -63,53 +36,26 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
             { type: 'text', text: system.fixed, cache_control: { type: 'ephemeral' } },
             { type: 'text', text: system.now },
           ],
-          messages: turns.map((t) => ({ role: t.role, content: t.text })),
-          tools: [
-            {
-              name: 'respond',
-              description: 'Your answer to the person: what you say, the flow it starts (if any), and the details that flow needs.',
-              input_schema: {
-                type: 'object',
-                properties: {
-                  replies: {
-                    type: 'object',
-                    description: 'What you text back, once per app in its own voice: one or two short sentences, plain text, the same message in each.',
-                    properties: Object.fromEntries(connectors.map((c) => [c, { type: 'string' }])),
-                    required: connectors,
-                  },
-                  flow: { type: 'string', enum: [...flows, 'none'], description: 'The flow your reply starts, or none while you still need details.' },
-                  suggestions: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    maxItems: 4,
-                    description: 'Only when your reply asks a question: up to 4 likely answers the person can tap, each 1 to 3 words.',
-                  },
-                  ...details,
-                  then: {
-                    type: 'array',
-                    maxItems: 3,
-                    description:
-                      'Only when one message asks for more than one thing ("add $100 from my card and $100 from my bank"): the other flows after this one, in the order they asked, each with its own details. Your reply covers all of them.',
-                    items: { type: 'object', properties: { flow: { type: 'string', enum: flows }, ...details }, required: ['flow'] },
-                  },
-                },
-                required: ['replies', 'flow'],
-              },
-            },
-          ],
-          tool_choice: { type: 'tool', name: 'respond' },
+          messages: cachedTurns(turns),
+          tools: TOOLS,
+          // Sonnet and Opus reject a forced tool choice; they're told to always call one, and plain text becomes a reply.
+          tool_choice: { type: /sonnet|opus/.test(model) ? 'auto' : 'any' },
         }),
       });
       if (!res.ok) throw new Error(`Anthropic ${res.status}: ${(await res.text()).slice(0, 300)}`);
-      const data = (await res.json()) as { content?: { type: string; input?: unknown }[]; usage?: Record<string, number> };
-      if (process.env.NODE_ENV === 'development' && data.usage) {
-        const u = data.usage;
-        console.info(`[agent] in ${u.input_tokens} · cache read ${u.cache_read_input_tokens ?? 0} · cache write ${u.cache_creation_input_tokens ?? 0} · out ${u.output_tokens}`);
+      const data = (await res.json()) as { content?: { type: string; id?: string; name?: string; input?: unknown; text?: string }[]; usage?: Record<string, number> };
+      const u = data.usage ?? {};
+      const usage = { input: u.input_tokens ?? 0, cacheRead: u.cache_read_input_tokens ?? 0, cacheWrite: u.cache_creation_input_tokens ?? 0, output: u.output_tokens ?? 0 };
+      if (process.env.NODE_ENV === 'development') {
+        console.info(`[agent] in ${usage.input} · cache read ${usage.cacheRead} · cache write ${usage.cacheWrite} · out ${usage.output} · ${Date.now() - started}ms · ${model}`);
       }
-      const call = data.content?.find((c) => c.type === 'tool_use');
-      const input = call?.input as Partial<ModelAnswer> | undefined;
-      if (!input || typeof input.replies !== 'object' || !input.replies || typeof input.flow !== 'string') throw new Error('No answer');
-      return input as ModelAnswer;
+      const calls: ToolCall[] = (data.content ?? [])
+        .filter((c) => c.type === 'tool_use' && typeof c.id === 'string' && (TOOL_NAMES as readonly string[]).includes(c.name ?? ''))
+        .map((c) => ({ id: c.id!, name: c.name as ToolName, input: (c.input ?? {}) as ToolCall['input'] }));
+      const text = (data.content ?? []).flatMap((c) => (c.type === 'text' && c.text?.trim() ? [c.text.trim()] : [])).join(' ');
+      if (!calls.length && text) calls.push({ id: `toolu_text_${started}`, name: 'reply', input: { say: Object.fromEntries(CONNECTOR_IDS.map((c) => [c, text])) } });
+      if (!calls.length) throw new Error('No tool call');
+      return { calls, usage };
     },
   };
 }

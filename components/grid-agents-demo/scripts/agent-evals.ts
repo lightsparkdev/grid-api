@@ -6,15 +6,24 @@
  *   npx tsx --tsconfig tsconfig.json scripts/agent-evals.ts --only gift,named
  *
  * Prompts go to a running dev server (`npm run dev`, or --base <url>) with AGENT_MODEL_ENABLED and the key in
- * .env.local. Each prompt gets its own X-Forwarded-For, so the per-visitor limit doesn't trip.
+ * .env.local. Each prompt gets its own X-Forwarded-For, so the per-visitor limit doesn't trip. The model plans with
+ * tools a step at a time; each prompt runs through the real tools headless (approvals allowed, the first option
+ * picked) for up to MAX_STEPS steps, and what it did is read back as the flow and details the checks expect.
  * Add anything that broke to agent-evals.regressions.json.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ActionId } from '@/data/actions';
 import type { ConnectorId } from '@/data/connectors';
-import type { AgentResponse } from '@/lib/llm/types';
+import type { AgentResponse as StepResponse } from '@/lib/llm/types';
+import type { Block, ToolCall, Turn } from '@/lib/llm/tools';
+import { ENDS_TURN, READS_RESULT } from '@/lib/llm/tools';
+import type { Beat } from '@/apps/agents/conversation';
+import type { FlowParams } from '@/apps/agents/flows';
+import type { AccountSnapshot } from '@/data/agentApiCalls';
 import { GIFT_CARDS, NAMED_PRODUCTS } from '@/apps/agents/namedProducts';
+import { draftRecipient, saveRecipient } from '@/apps/agents/recipients';
+import { accountNow, flowOf, newToolMemory, runTool } from '@/apps/agents/tools/run';
 import { requestOf, requestParams, shelfFor, shelfParams, type BuyRequest, type Shelf } from '@/apps/agents/products';
 import { CRYPTO, FUND, LUCIA, usd2 } from '@/apps/agents/story';
 import { ACTIONS } from '@/data/actions';
@@ -30,6 +39,21 @@ const BASE = option('base') ?? 'http://localhost:4003';
 const ONLY = option('only')?.split(',');
 const CONCURRENCY = Number(option('concurrency') ?? 6);
 const VOICES: ConnectorId[] = ['muse', 'grok', 'dot', 'instinct', 'claude'];
+const MAX_STEPS = 3;
+
+/** What one prompt came to, read back the way the flows took it: the reply, the flow it starts and its details. */
+interface AgentResponse {
+  reply?: string;
+  replies?: Partial<Record<ConnectorId, string>>;
+  flow?: ActionId;
+  variant?: number;
+  params?: FlowParams;
+  then?: { flow: ActionId; variant: number; params?: FlowParams }[];
+  /** Amounts the tools reported back, which the model may repeat. */
+  told: number[];
+  steps: number;
+  ms: number;
+}
 const ROOT = join(__dirname, '..');
 
 type Expect =
@@ -60,6 +84,8 @@ interface Case {
   why?: string;
   /** Earlier turns, for follow-ups ("ok raise it to 5000" after the agent said it's over the limit). */
   history?: { role: 'user' | 'assistant'; text: string }[];
+  /** The per-payment limit (USD) when the history already changed it. */
+  perTx?: number;
 }
 
 const buy = (extra: Omit<Extract<Expect, { flow: 'buy' }>, 'flow'> = {}): Expect => ({ flow: 'buy', ...extra });
@@ -228,7 +254,7 @@ const CASES: Case[] = [
       ['withdraw 20 dollars', 20],
       ['take out $500 to my bank', 500],
     ] as const
-  ).map(([text, amount]) => ({ tag: 'withdraw', text, expect: { flow: 'cashout', amount } as Expect })),
+  ).map(([text, amount]) => ({ tag: 'withdraw', text, expect: { flow: 'cashout', amount, ...(amount * 100 > 25_000 && { orAsk: true }) } as Expect })),
   { tag: 'withdraw', text: 'withdraw some money', expect: { flow: 'cashout', orAsk: true } },
   // Delivered now, a ride, tickets, a table, a top-up, a bill, a price watch: each a one-time card, arriving its own way.
   { tag: 'now', text: 'order me a pizza', expect: buy({ delivery: 'now' }) },
@@ -251,7 +277,7 @@ const CASES: Case[] = [
   { tag: 'split', text: 'split the $90 uber with jess', expect: { flow: 'getpaid', amount: 90, splitWith: 1 } },
   { tag: 'withdraw', text: 'how long does a withdrawal take?', expect: { flow: 'none' } },
   // Top-ups, payments, crypto, the rest.
-  { tag: 'fund', text: 'add $100 to my balance', expect: { flow: 'fund', amount: 100 } },
+  { tag: 'fund', text: 'add $100 to my balance', expect: { flow: 'fund', amount: 100, orAsk: true } },
   { tag: 'fund', text: 'top up $25 with my card', expect: { flow: 'fund', amount: 25 } },
   { tag: 'fund', text: 'deposit 50 USDC on base', expect: { flow: 'fund', amount: 50 } },
   { tag: 'pay', text: 'send $40 to Lucía', expect: { flow: 'pay', amount: 40 } },
@@ -295,6 +321,7 @@ const CASES: Case[] = [
       { role: 'user', text: 'ok raise to 5000' },
       { role: 'assistant', text: 'Done. I can spend up to $5,000 in one payment now.' },
     ],
+    perTx: 5000,
     expect: buy({ named: 'iPhone Duo' }),
   },
   {
@@ -501,13 +528,137 @@ function staticChecks(): Result[] {
 
 /* ------------------------------------------------------------------ model -- */
 
+/** The account the prompts start from, as the tools read it. */
+const ACCOUNT: AccountSnapshot = {
+  connected: true,
+  balanceOn: true,
+  cardVaulted: true,
+  bankLinked: true,
+  balanceCents: 25_000,
+  limits: { approvalAbove: 1_000, perTransaction: 100_000, daily: 250_000 },
+  spentTodayCents: 0,
+  ledger: [],
+};
+for (const r of STATE.recipients) saveRecipient(draftRecipient(r.name, r.country)!);
+
+/** Plays a tool's beats with nobody watching: every ask allowed, the first of any choice, every result written. */
+function playAll(beats: Beat[]): void {
+  for (const b of beats) {
+    if ('when' in b) playAll(b.when());
+    else if ('ask' in b) playAll(b.allow);
+    else if ('chips' in b) playAll(b.then(0));
+    else if ('amount' in b) playAll(b.then(b.options?.[0] ?? 50));
+  }
+}
+
+/** The details a call carries, as the flow it maps to reads them. */
+function paramsOf(call: ToolCall, all: ToolCall[]): FlowParams {
+  const i = call.input as Record<string, unknown>;
+  const n = (k: string) => (typeof i[k] === 'number' ? (i[k] as number) : undefined);
+  const t = (k: string) => (typeof i[k] === 'string' ? (i[k] as string) : undefined);
+  switch (call.name) {
+    case 'search': {
+      const watch = all.find((c) => c.name === 'checkout' && typeof c.input.buy_when_below_usd === 'number');
+      return { query: t('query'), kind: t('kind') as FlowParams['kind'], product: t('product'), brand: t('brand'), budget: n('budget_usd'), typicalPrice: n('typical_price_usd'), amount: n('value_usd'), below: watch?.input.buy_when_below_usd as number | undefined };
+    }
+    case 'subscribe':
+      return { merchant: t('merchant'), price: n('monthly_price_usd') };
+    case 'quote_payment':
+    case 'send_payment':
+      return { name: t('name'), country: t('country'), amount: n('amount'), currency: t('currency'), ...(n('monthly_on_day') && { every: 'month' as const, day: n('monthly_on_day') }) };
+    case 'withdraw':
+      return { amount: i.everything === true ? ACCOUNT.balanceCents / 100 : n('amount_usd') };
+    case 'raise_limit':
+      return { approve: n('ask_above_usd'), perTx: n('per_payment_usd'), daily: n('daily_usd') };
+    case 'request_payment':
+      return Array.isArray(i.split_with) ? { people: i.split_with as string[], amount: n('total_usd') } : { name: t('from'), amount: n('amount_usd') };
+    case 'fund':
+      return { amount: n('amount_usd') };
+    case 'send_stablecoins':
+      return { address: t('address'), amount: n('amount_usd') };
+    case 'book_stay':
+      return { city: t('city'), checkIn: t('check_in'), checkOut: t('check_out') };
+    default:
+      return {};
+  }
+}
+
 async function ask(c: Case, i: number): Promise<AgentResponse | { fallback: string }> {
-  const res = await fetch(`${BASE}/api/agent`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: BASE, 'X-Forwarded-For': `eval-${Date.now()}-${i}` },
-    body: JSON.stringify({ connector: VOICES[i % VOICES.length], text: c.text, history: c.history ?? [], state: STATE }),
-  });
-  return res.json();
+  const connector = VOICES[i % VOICES.length];
+  const turns: Turn[] = [];
+  for (const t of [...(c.history ?? []), { role: 'user' as const, text: c.text }]) turns.push({ role: t.role, content: [{ type: 'text', text: t.text }] });
+  const memory = newToolMemory();
+  const ctx = { account: () => account, needsApproval: (usd: number) => usd > account.limits.approvalAbove, variant: 0 };
+  const made: ToolCall[] = [];
+  /** What actually ran: a call that failed shows nothing in the phone. */
+  const ran: ToolCall[] = [];
+  const told: number[] = [];
+  const account: AccountSnapshot = c.perTx ? { ...ACCOUNT, limits: { ...ACCOUNT.limits, perTransaction: c.perTx * 100 } } : ACCOUNT;
+  const state = c.perTx ? { ...STATE, perTx: `$${c.perTx.toLocaleString('en-US')}` } : STATE;
+  let steps = 0;
+  let ms = 0;
+  for (; steps < MAX_STEPS; ) {
+    const t0 = Date.now();
+    const res = await fetch(`${BASE}/api/agent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: BASE, 'X-Forwarded-For': `eval-${Date.now()}-${i}` },
+      body: JSON.stringify({ connector, turns, state }),
+    });
+    const data = (await res.json()) as StepResponse;
+    ms += Date.now() - t0;
+    steps += 1;
+    if (!data.calls?.length) return { fallback: data.fallback ?? 'no calls' };
+    turns.push({ role: 'assistant', content: data.calls.map((k) => ({ type: 'tool_use', id: k.id, name: k.name, input: k.input })) });
+    const results: Block[] = [];
+    let stopped = false;
+    let failed = false;
+    for (let k = 0; k < data.calls.length; k++) {
+      const call = data.calls[k];
+      if (stopped) {
+        results.push({ type: 'tool_result', tool_use_id: call.id, content: '{"status":"skipped"}' });
+        continue;
+      }
+      made.push(call);
+      if (ENDS_TURN.has(call.name)) {
+        stopped = true;
+        results.push({ type: 'tool_result', tool_use_id: call.id, content: '{"status":"shown"}' });
+        continue;
+      }
+      const out = runTool({ ctx, memory, next: data.calls[k + 1] }, call);
+      if ('error' in out) {
+        results.push({ type: 'tool_result', tool_use_id: call.id, content: JSON.stringify(out.error), is_error: true });
+        told.push(...(JSON.stringify(out.error).match(/\d+(?:\.\d+)?/g) ?? []).map(Number));
+        failed = stopped = true;
+        continue;
+      }
+      playAll(out.beats);
+      ran.push(call);
+      const result = { ...(out.result.error ? {} : { status: 'done' }), ...out.result, account: accountNow(account) };
+      told.push(...(JSON.stringify(result).match(/\d+(?:\.\d+)?/g) ?? []).map(Number));
+      results.push({ type: 'tool_result', tool_use_id: call.id, content: JSON.stringify(result), ...(out.result.error ? { is_error: true } : {}) });
+      if (out.result.error) failed = stopped = true;
+    }
+    const last = data.calls[data.calls.length - 1];
+    if (stopped && !failed) break;
+    if (!failed && !READS_RESULT.has(last.name) && last.input.more !== true) break;
+    turns.push({ role: 'user', content: results });
+  }
+  // The first thing it does is the flow; a setup on the way to something else isn't it.
+  const actions = ran.filter((k) => flowOf(k) && !(k.name === 'setup_balance' && k.input.more));
+  const flows = actions.map((k) => ({ call: k, flow: flowOf(k)! })).filter((f, k, all) => k === 0 || f.flow !== all[k - 1].flow);
+  const lines = made.filter((k) => ran.includes(k) || ENDS_TURN.has(k.name)).flatMap((k) => (k.input.say ? [k.input.say] : []));
+  const replies: Partial<Record<ConnectorId, string>> = {};
+  for (const id of VOICES) replies[id] = lines.map((l) => l[id] ?? '').filter(Boolean).join(' ');
+  const head = flows[0];
+  return {
+    reply: replies[connector],
+    replies,
+    ...(head && { flow: head.flow, variant: head.call.name === 'subscribe' ? 1 : 0, params: paramsOf(head.call, made) }),
+    ...(flows.length > 1 && { then: flows.slice(1).map((f) => ({ flow: f.flow, variant: 0, params: paramsOf(f.call, made) })) }),
+    told,
+    steps,
+    ms,
+  };
 }
 
 /** What the phone would show for a buy: the shelf, the line over it, the products card. */
@@ -537,7 +688,7 @@ function judge(c: Case, r: AgentResponse | { fallback: string }): Result {
   // Amounts the person gave, in this message or earlier ones, with or without a "$" ("raise it to 5000").
   const given = [c.text, ...(c.history ?? []).filter((t) => t.role === 'user').map((t) => t.text)].join(' ');
   const bare = (given.match(/\b\d[\d,]{1,}(?:\.\d+)?\b/g) ?? []).map((m) => Number(m.replace(/,/g, '')));
-  const theirs = new Set([...dollars(asDollars(given)), ...bare, ...dollars(Object.values(STATE).filter((v) => typeof v === 'string').join(' '))]);
+  const theirs = new Set([...dollars(asDollars(given)), ...bare, ...dollars(Object.values(STATE).filter((v) => typeof v === 'string').join(' ')), ...r.told]);
   for (const d of dollars(replies)) if (!theirs.has(d)) problems.push(`reply names $${d}`);
   if (SLOW.test(replies) && /withdraw|cash ?out|bank/i.test(c.text)) problems.push('reply promises a delay');
   if (/crypto/i.test(replies)) problems.push('says crypto');
@@ -615,6 +766,8 @@ function judge(c: Case, r: AgentResponse | { fallback: string }): Result {
   return result(got);
 }
 
+const timing: { steps: number; ms: number }[] = [];
+
 async function runModel(cases: Case[]): Promise<Result[]> {
   const out: Result[] = new Array(cases.length);
   let next = 0;
@@ -623,7 +776,9 @@ async function runModel(cases: Case[]): Promise<Result[]> {
       while (next < cases.length) {
         const i = next++;
         try {
-          out[i] = judge(cases[i], await ask(cases[i], i));
+          const r = await ask(cases[i], i);
+          if (!('fallback' in r)) timing.push({ steps: r.steps, ms: r.ms });
+          out[i] = judge(cases[i], r);
         } catch (err) {
           out[i] = { tag: cases[i].tag, text: cases[i].text, ok: false, problems: [String(err)], got: '' };
         }
@@ -658,6 +813,11 @@ async function main() {
     console.log(`\nModel: ${cases.length} prompts against ${BASE}`);
     model = await runModel(cases);
     report('Model', model);
+    const ms = timing.map((t) => t.ms).sort((a, b) => a - b);
+    const avg = (xs: number[]) => xs.reduce((n, x) => n + x, 0) / Math.max(1, xs.length);
+    console.log(
+      `\nModel time per prompt: mean ${(avg(ms) / 1000).toFixed(2)}s, p50 ${(ms[Math.floor(ms.length / 2)] / 1000).toFixed(2)}s, p90 ${(ms[Math.floor(ms.length * 0.9)] / 1000).toFixed(2)}s; steps mean ${avg(timing.map((t) => t.steps)).toFixed(2)}`,
+    );
   }
   const all = [...fixed, ...model];
   const failed = all.filter((r) => !r.ok).length;

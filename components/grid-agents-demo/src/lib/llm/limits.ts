@@ -8,6 +8,8 @@ import { Redis } from '@upstash/redis';
 const PER_VISITOR = Number(process.env.AGENT_RATE_LIMIT ?? 50);
 const WINDOW_SECONDS = 10 * 60;
 const PER_DAY = Number(process.env.AGENT_DAILY_CAP ?? 20_000);
+/** The most model calls one message takes before the page stops the loop (the page enforces it too). */
+export const STEPS_PER_MESSAGE = 6;
 
 const redis =
   process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN
@@ -39,8 +41,18 @@ export type LimitResult = 'ok' | 'visitor' | 'daily';
 export async function takeTurn(visitor: string): Promise<LimitResult> {
   const mine = await bump(`rl:${visitor}`, WINDOW_SECONDS);
   if (mine > PER_VISITOR) return 'visitor';
+  return dailyCap();
+}
+
+/** Count one step that carries out a message: a model call after a tool ran, capped per visitor and per day. */
+export async function takeStep(visitor: string): Promise<LimitResult> {
+  const mine = await bump(`st:${visitor}`, WINDOW_SECONDS);
+  if (mine > PER_VISITOR * STEPS_PER_MESSAGE) return 'visitor';
+  return dailyCap();
+}
+
+async function dailyCap(): Promise<LimitResult> {
   const day = new Date().toISOString().slice(0, 10);
   const all = await bump(`day:${day}`, 26 * 60 * 60);
-  if (all > PER_DAY) return 'daily';
-  return 'ok';
+  return all > PER_DAY ? 'daily' : 'ok';
 }

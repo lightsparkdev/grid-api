@@ -3,10 +3,10 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useMemo, useRef } from 'react';
 import type { ConnectorId } from '@/data/connectors';
-import type { ChatTurn } from '@/lib/llm/types';
+import type { Turn } from '@/lib/llm/tools';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
-import { useAgentBrain, type FreeTextReply } from './brain/useAgentBrain';
-import type { Message } from './conversation';
+import { useAgentBrain, type StepReply } from './brain/useAgentBrain';
+import type { StoredMessage } from './conversation';
 import { OpenSheetsContext, type OpenSheets } from './openSheets';
 import { SKINS } from './skins';
 import type { ChatView } from './types';
@@ -22,24 +22,11 @@ const SKIN_EXIT = { ...SKIN_HIDDEN, pointerEvents: 'none' as const };
 
 type BrainOptions = Parameters<typeof useAgentBrain>[0];
 
-export interface AgentHostProps extends Omit<BrainOptions, 'reply' | 'readsFor' | 'typesFor'> {
+export interface AgentHostProps extends Omit<BrainOptions, 'reply' | 'describe' | 'readsFor' | 'typesFor'> {
   connector: ConnectorId;
   dark: boolean;
-  /** Answers free text, given the thread so far as this app says it. */
-  reply: (text: string, history: ChatTurn[]) => Promise<FreeTextReply>;
-}
-
-const HISTORY_TURNS = 12;
-
-/** The last few things said, as the model reads them. */
-function turnsOf(messages: Message[]): ChatTurn[] {
-  return messages
-    .flatMap((m): ChatTurn[] => {
-      if (m.kind === 'me') return [{ role: 'user', text: m.meant ?? m.text }];
-      if (m.kind === 'them' && !m.typing && m.text) return [{ role: 'assistant', text: m.text }];
-      return [];
-    })
-    .slice(-HISTORY_TURNS);
+  /** The model's next step for the conversation so far. */
+  reply: (turns: Turn[]) => Promise<StepReply>;
 }
 
 /**
@@ -48,21 +35,20 @@ function turnsOf(messages: Message[]): ChatTurn[] {
  * so a flow halfway through carries on in the next app's look and voice.
  */
 export function AgentHost({ connector, dark, reply, ...options }: AgentHostProps) {
-  const rendered = useRef<Message[]>([]);
-  // The model gets the person's message once, as the turn: if the thread has
-  // already rendered it, it's dropped from the history.
-  const replyWithHistory = useCallback(
-    (text: string) => {
-      const turns = turnsOf(rendered.current);
-      const last = turns[turns.length - 1];
-      return reply(text, last?.role === 'user' && last.text === text ? turns.slice(0, -1) : turns);
-    },
-    [reply],
-  );
-  const brain = useAgentBrain({ ...options, reply: replyWithHistory, readsFor: SKINS[connector].readsFor, typesFor: SKINS[connector].typesFor });
   const voice = useMemo(() => voiceFor(connector), [connector]);
+  const voiceRef = useRef(voice);
+  voiceRef.current = voice;
+  // What a scripted run said, in this app's words, for the model to read back.
+  const describe = useCallback(
+    (list: StoredMessage[]) =>
+      renderThread(list, voiceRef.current)
+        .flatMap((m) => (m.kind === 'them' && !m.typing && m.text ? [m.text] : []))
+        .join(' ')
+        .slice(0, 600),
+    [],
+  );
+  const brain = useAgentBrain({ ...options, reply, describe, readsFor: SKINS[connector].readsFor, typesFor: SKINS[connector].typesFor });
   const messages = useMemo(() => renderThread(brain.messages, voice), [brain.messages, voice]);
-  rendered.current = messages;
   const chat: ChatView = { ...brain, messages };
   const { Chat } = SKINS[connector];
   const sheets = useRef<OpenSheets>({ balance: false, ask: null, plaid: null });
