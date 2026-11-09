@@ -1,0 +1,112 @@
+---
+title: "Funding"
+description: "Get money into the Global Account an agent spends from: platform deposits and quotes, and agent-created Lightning invoices and stablecoin addresses."
+icon: "/images/icons/arrow-inbox.svg"
+"og:image": "/images/og/og-agents-playground-v2.webp"
+---
+
+<Note>
+The Agents API is experimental and in limited availability. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+</Note>
+
+An agent spends from the customer's Global Account, so funding an agent account means funding that Embedded Wallet. Incoming funds never need the customer's signature or approval. There are two ways in: your platform funds the account as it funds any internal account, or the agent creates a deposit target the customer (or anyone) pays.
+
+## Funded by your platform
+
+A Global Account is an internal account, so every way you already fund internal accounts works. Create a quote with the Global Account's `InternalAccount` id as the `destination`, from any source currency your platform supports, and Grid converts into the wallet's currency on execute. A real-time funding source returns `paymentInstructions` the customer follows to pay in.
+
+See [Fund the account](/global-accounts/implementation-overview#4-fund-the-account) in the Global Accounts walkthrough for the request.
+
+<Info>
+Pulling money into an agent account from the customer's linked bank account (ACH debit) is coming soon.
+</Info>
+
+## Deposits the agent creates
+
+With the `RECEIVE_FUNDS` permission, the agent can create a deposit target for the customer's account with `POST /agents/me/deposits`. `Idempotency-Key` is required: a retry with the same key returns the same deposit.
+
+| `sourceNetwork` | `sourceCurrency` | What the agent gets |
+|---|---|---|
+| `LIGHTNING` | `USD` | A BOLT11 invoice for an exact USD `amount` (in cents, required), with an expiry |
+| `BASE`, `ETHEREUM`, `SOLANA`, `POLYGON`, `ARBITRUM` | The asset sent on that chain | A deposit address on that chain. No amount is needed |
+| `TRON` | `USDT` only | A deposit address on Tron |
+
+`destinationInternalAccountId` must belong to the agent's customer and be allowed by the agent's policy.
+
+<CodeGroup>
+```bash Lightning
+curl -X POST "$GRID_BASE_URL/agents/me/deposits" \
+  -H "Authorization: Bearer $AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 2c7e9a1f-5b3d-4e8a-9c0f-6d1b4e8a2c75" \
+  -d '{
+    "sourceNetwork": "LIGHTNING",
+    "sourceCurrency": "USD",
+    "destinationInternalAccountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+    "amount": 2000
+  }'
+```
+
+```bash Stablecoin address
+curl -X POST "$GRID_BASE_URL/agents/me/deposits" \
+  -H "Authorization: Bearer $AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 9f1a3c5e-7b2d-4a6f-8e0c-3d5b7a9e1c42" \
+  -d '{
+    "sourceNetwork": "BASE",
+    "sourceCurrency": "USDC",
+    "destinationInternalAccountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+  }'
+```
+
+</CodeGroup>
+
+**Response:** `201 Created`
+
+```json
+{
+  "id": "AgentDeposit:019542f5-b3e7-1d02-0000-000000000001",
+  "status": "PENDING",
+  "sourceNetwork": "LIGHTNING",
+  "sourceCurrency": "USD",
+  "destinationInternalAccountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+  "destinationCurrency": "USDB",
+  "targetType": "LIGHTNING_INVOICE",
+  "target": "lnbc1pndepositpp5...",
+  "paymentLinks": {
+    "cashApp": "https://cash.app/launch/lightning/lnbc1pndepositpp5..."
+  },
+  "expiresAt": "2026-10-09T18:05:00Z",
+  "createdAt": "2026-10-09T18:00:00Z",
+  "updatedAt": "2026-10-09T18:00:00Z"
+}
+```
+
+### Lightning deposits
+
+The customer pays exactly `amount` in USD; deposit fees are deducted before the destination is credited, and `estimatedReceiveAmount` shows the estimate. The invoice must be paid by `expiresAt`. `paymentLinks.cashApp` opens the invoice in Cash App, and `paymentLinks.shortUrl` is a shortened link when one is available.
+
+### Chain deposits
+
+A chain request returns a standing address that does not expire. Grid counts the first payment the address receives from that network in that currency within 24 hours of the request. While that window is open with nothing paid, a second request for the same account, network and currency is refused with `409`; the error gives the time the window closes.
+
+Where Grid funds a chain deposit through a quote instead, the address is the quote's, the deposit carries the quote's `expiresAt`, and `quoteId` names the quote. A payment that arrives after it expired is not converted: the deposit stays `EXPIRED`, `paidAfterExpiry` becomes `true`, and Lightspark recovers the funds by hand. Do not send it again.
+
+### Tracking a deposit
+
+Read a deposit with `GET /agents/me/deposits/{depositId}`. `status` is `PENDING`, `PROCESSING`, `COMPLETED`, `EXPIRED`, `FAILED` or `REFUNDED`. The transaction that pays a deposit carries the deposit's `quoteId`, so you can match them, and your platform receives the usual `INCOMING_PAYMENT` webhook. A deposit reported `FAILED` or `EXPIRED` can still become `COMPLETED` when funds arrive late; you then receive `INCOMING_PAYMENT` for its transaction again, now `COMPLETED`.
+
+A `503` means the deposit provider is unavailable or holding the order for review. Retry with the same `Idempotency-Key`.
+
+## Limits before verification
+
+Until a business customer's KYB status is `APPROVED`, its agents' sends and deposits are held to the same limits as an unverified individual's, counted across the whole business. With `MANAGE_IDENTITY`, an agent can help an individual customer finish verification: read and update identity details (`GET`/`PATCH /agents/me/customer`), submit for KYC (`POST /agents/me/verifications`), or generate a single-use hosted KYC link (`POST /agents/me/kyc-link`).
+
+## Funding in sandbox
+
+In sandbox, credit any internal account instantly with `POST /sandbox/internal-accounts/{accountId}/fund`. See [Sandbox testing](/agent-accounts/platform-tools/sandbox-testing).
+
+## Next steps
+
+- [Payments](/agent-accounts/payments)
+- [Webhooks](/agent-accounts/platform-tools/webhooks)

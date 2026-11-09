@@ -127,7 +127,33 @@
           {
             "group": "Overview",
             "pages": [
-              "agent-accounts/demo"
+              "agent-accounts/demo",
+              "agent-accounts/index",
+              "agent-accounts/implementation-overview"
+            ]
+          },
+          {
+            "group": "Agents (experimental)",
+            "pages": [
+              "agent-accounts/creating-agents",
+              "agent-accounts/policies-and-permissions",
+              "agent-accounts/spending-limits",
+              "agent-accounts/approvals-and-audit"
+            ]
+          },
+          {
+            "group": "Moving money",
+            "pages": [
+              "agent-accounts/funding",
+              "agent-accounts/payments",
+              "agent-accounts/cards"
+            ]
+          },
+          {
+            "group": "Platform tools",
+            "pages": [
+              "agent-accounts/platform-tools/webhooks",
+              "agent-accounts/platform-tools/sandbox-testing"
             ]
           }
         ]

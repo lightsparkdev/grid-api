@@ -1,0 +1,97 @@
+---
+title: "Sandbox testing"
+description: "Run the whole agent account flow in sandbox: create and connect agents, delegate signing, fund the account, approve actions, and simulate card charges"
+icon: "/images/icons/hammer.svg"
+"og:image": "/images/og/og-agents-playground-v2.webp"
+---
+
+The Grid sandbox runs the agent APIs exactly as production does, with simulated money. Policies, spending pools, approvals, device codes and webhooks all behave as they will in production, so a flow that works in sandbox works live.
+
+## Sandbox setup
+
+1. Go to [app.lightspark.com](https://app.lightspark.com), create an account, and generate sandbox API keys from the dashboard.
+2. Ask your Lightspark contact to enable the Agents API for your sandbox platform, and any of spending pools, agent cards, purchase cards, stored cards, claimable payouts and payout runs you want to test.
+3. Use the normal base URL, `https://api.lightspark.com/grid/2025-10-13`, with your sandbox token over HTTP Basic auth.
+
+In sandbox, customers are KYC-approved on creation, and a Global Account is provisioned automatically when your platform has `USDB` in its supported currencies.
+
+## End-to-end test
+
+<Steps>
+<Step title="Create a customer and find the Global Account">
+  Follow steps 1 and 2 of the [Global Accounts walkthrough](/global-accounts/implementation-overview).
+</Step>
+
+<Step title="Create and connect an agent">
+  `POST /agents` with a policy, then redeem the returned device code with `POST /agents/device-codes/redeem` as the agent software would. Keep the `accessToken` as `$AGENT_TOKEN`. See [Creating agents](/agent-accounts/creating-agents).
+</Step>
+
+<Step title="Delegate signing">
+  Verify the customer's email OTP credential to get a session (the sandbox OTP code is always `000000`), then create the agent's delegated key with `POST /auth/delegated-keys`, stamping each leg with the session key. See [Sandbox testing](/global-accounts/platform-tools/sandbox-testing) for Global Accounts for the OTP and signing shortcuts.
+</Step>
+
+<Step title="Fund the Global Account">
+  ```bash
+  curl -X POST "$GRID_BASE_URL/sandbox/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000002/fund" \
+    -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+    -H "Content-Type: application/json" \
+    -d '{ "amount": 100000 }'
+  ```
+
+  This credits the account at once and fires the standard `INCOMING_PAYMENT` webhook.
+</Step>
+
+<Step title="Send under and over the threshold">
+  As the agent, quote and execute a send below the policy's `approvalThresholds.amount` and check it comes back `APPROVED`. Then send one above it and check it comes back `PENDING_APPROVAL` and your endpoint receives `AGENT_ACTION.PENDING_APPROVAL`.
+</Step>
+
+<Step title="Approve, reject and let one expire">
+  Approve one pending action and reject another with `POST /agents/{agentId}/actions/{actionId}/approve` and `.../reject`. Leave a third until its quote expires and check it ends `FAILED`. Poll each with `GET /agents/me/actions/{actionId}` as the agent would.
+</Step>
+
+<Step title="Test the edges">
+  Exceed `perTransactionLimit` and check the send is refused with `403`. Pause the agent with `PATCH /agents/{agentId}` and check it can no longer act. Retry a create with the same `Idempotency-Key` and check you get the original back.
+</Step>
+</Steps>
+
+## Simulating card charges
+
+Where your sandbox platform has a card program, charge an agent's cards with the card simulators. They support card programs where Grid makes authorization decisions. The simulation is accepted with `202` and its result arrives asynchronously, with the usual card webhooks.
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-000000000011/simulate/authorization" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 4999,
+    "currency": { "code": "USD" },
+    "merchant": { "descriptor": "EXAMPLE STORE", "mcc": "5942", "country": "US" }
+  }'
+```
+
+The last three characters of `merchant.descriptor` (1 to 25 characters) choose the outcome:
+
+| Suffix | Outcome |
+|---|---|
+| `002` | Declined, `INSUFFICIENT_FUNDS` |
+| `003` | Declined, `CARD_NOT_ACTIVE`; use against a `FROZEN` card |
+| `005` | Delayed pull (about 30 seconds), exercising `PENDING` to `CONFIRMED` |
+| `006` | Pull succeeds but the confirmation reports `FAILED` |
+| Anything else | Approved |
+
+Use them to check how your product shows an agent's card charges and declines, including charges above the agent's limits or spending pool. The other simulators under `/sandbox/cards/{id}/simulate/...` cover clearing, returns, reversals and disputes.
+
+## Webhooks
+
+All webhooks fire in sandbox. Use `POST /webhooks/test` to send a signed test event to your endpoint, and see [Webhooks](/agent-accounts/platform-tools/webhooks) for the agent events.
+
+<Warning>
+Do not send real money to sandbox addresses, invoices or accounts. They are not real destinations and will not receive funds.
+</Warning>
+
+## Moving to production
+
+1. Swap in production API tokens and ask your Lightspark contact to enable the agent features you use on your production platform.
+2. Remove sandbox shortcuts, such as the fixed OTP code, from your client and server code.
+3. Configure production webhook endpoints and confirm `AGENT_ACTION.PENDING_APPROVAL` reaches the customer as a notification.
+4. Start agents with conservative policies and small limits.

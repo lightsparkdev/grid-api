@@ -1,0 +1,192 @@
+---
+title: "Cards"
+description: "Give agents their own virtual cards, single-use and recurring purchase cards scoped to one merchant, and bounded access to cards the customer already owns."
+icon: "/images/icons/credit-card1.svg"
+"og:image": "/images/og/og-agents-playground-v2.webp"
+---
+
+<Note>
+The Agents API is experimental and in limited availability. Agent cards, purchase cards, recurring purchase cards and stored cards are each enabled per platform; until they are, their endpoints answer `403`. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+</Note>
+
+Most merchants an agent buys from take cards. Grid gives you four ways to let an agent pay by card, from the most bounded to the most flexible:
+
+| Card | What it is | Who holds the number |
+|---|---|---|
+| **Single-use purchase card** | A virtual card for one online purchase of a set amount, paid from the customer's Global Account. Closes after its first approved charge. | The agent, through a short-lived reveal link |
+| **Recurring purchase card** | A virtual card locked to the first merchant that charges it, up to a monthly amount. Always needs the customer's approval. | The agent, through a short-lived reveal link |
+| **Standard agent card** | A virtual card issued for the agent, spending from the customer's account under the agent's policy | The customer |
+| **Stored card** | A card the customer already owns, stored encrypted, which the agent may use one approved purchase at a time | Grid holds it only encrypted; the agent gets it through a single-use link |
+
+Authorizations on cards Grid issues for an agent count against the agent's [spending limits](/agent-accounts/policies-and-permissions#spending-limits) and [spending pool](/agent-accounts/spending-limits), and Grid's default merchant-category blocks for agent cards apply on top of any you set. Stored cards are different: the merchant charges the customer's own card, so Grid cannot enforce an amount on them.
+
+## Prerequisites
+
+- The customer's KYC status (KYB for a business) is `APPROVED`, and they have accepted the cardholder agreement if your platform requires one. Otherwise issuing fails with `CARDHOLDER_KYC_NOT_APPROVED` or `CARDHOLDER_AGREEMENT_NOT_ACCEPTED`.
+- The agent's policy grants `ISSUE_CARDS` to issue and `MANAGE_CARDS` to read, tighten, freeze and reveal.
+- For purchase cards, the funding source is an Embedded Wallet on which the agent holds an `ACTIVE` [delegated key](/agent-accounts/creating-agents#delegate-signing-on-the-global-account), and the agent's policy is in USD.
+
+## Purchase cards
+
+A purchase card is the standard way for an agent to pay a merchant: the agent asks for a card scoped to one order, the customer approves it if the policy says so, and the agent reads the number at checkout.
+
+### Request a single-use card
+
+```bash
+curl -X POST "$GRID_BASE_URL/agents/me/cards" \
+  -H "Authorization: Bearer $AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000" \
+  -d '{
+    "kind": "PURCHASE",
+    "fundingSource": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+    "amount": 4999,
+    "description": "Running shoes from example-store.com"
+  }'
+```
+
+`amount` is in USD cents. Grid sets the card's issuer-enforced limit, `purchase.spendLimit`, to `amount` plus an allowance for tax and shipping of 15% of `amount`, at most $10.00. `spendLimit` is also the amount checked against the agent's policy. Each platform sets the largest `amount` an agent may ask for.
+
+The outcome depends on the policy:
+
+- **Issued at once (`201`):** the limit is under the policy's approval threshold and the pool's, and `defaultExecutionMode` is `AUTO`. The response is the `AgentCard` with `purchase` set.
+- **Waits for approval (`202`):** otherwise. The response is an `ISSUE_PURCHASE_CARD` `AgentAction` in `PENDING_APPROVAL`, and your platform receives `AGENT_ACTION.PENDING_APPROVAL`. Approval issues the card and sets the action's `cardId`. The agent polls `GET /agents/me/actions/{actionId}`.
+- **Refused (`403`):** the policy denies it outright, for example over a spending limit. The error's reason starts with `Agent policy denied the purchase card:` followed by the denial.
+
+The card closes after its first approved authorization, and Grid closes it at `purchase.expiresAt` if it is still unused. An agent may hold only a limited number of open purchase cards, counting those awaiting approval; beyond that the request is refused with `409 PURCHASE_CARD_LIMIT_REACHED`.
+
+`Idempotency-Key` is required, because issuance cannot be reversed. Keys are scoped to the agent: a retry with the same key returns what the first request created (the card with `201`, or the action with `202` while it is pending, rejected or failed), and reusing a key for a different request is refused with `409`.
+
+### Request a recurring card
+
+For a subscription, a card saved with a merchant, a hotel or car rental, or an order that ships in parts, add `"recurring": true`:
+
+```json
+{
+  "kind": "PURCHASE",
+  "recurring": true,
+  "fundingSource": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+  "amount": 1599,
+  "description": "Monthly music subscription at example-music.com"
+}
+```
+
+- It always becomes an `ISSUE_PURCHASE_CARD` action awaiting the customer's approval (`202`), whatever the policy's threshold or mode. A request the policy denies is still refused with `403`.
+- It locks to the first merchant that charges it and declines every other merchant. That merchant may charge it again, up to `amount` in any trailing month, with no tax or shipping allowance added, so include those in `amount`.
+- It has no expiry and stays open until the customer or your platform closes it with `PATCH /cards/{id}` and `status: CLOSED`. Pausing the agent declines its charges without closing it; deleting the agent freezes it.
+- Recurring cards have their own, smaller limit on open cards, separate from single-use cards.
+
+### Read the card details
+
+At checkout, the agent calls `POST /agents/me/cards/{cardId}/reveal` on an open purchase card. Grid returns a short-lived signed URL of the card processor's page that shows the full number, expiry and CVV:
+
+```json
+{
+  "panEmbedUrl": "https://embed.lithic.com/iframe/...?t=...",
+  "expiresAt": "2026-05-08T14:16:00Z"
+}
+```
+
+The card details never pass through Grid. Open the URL right away where the purchase is being made, and never store or log it. Every reveal is audit-logged with the agent as the actor, and reveals are rate limited per agent and per card (`429 RATE_LIMITED`). Only `PURCHASE` cards can be revealed by the agent; revealing a closed or expired one answers `409 CARD_NOT_MUTABLE`.
+
+### Raise the amount before checkout
+
+If the total grows at checkout, for example when shipping is added, the agent can raise an open, unused single-use card with `POST /agents/me/cards/{cardId}/increase`, an `Idempotency-Key`, the new `amount` (strictly higher, in USD cents) and a `reason` the customer sees. It returns an `ISSUE_PURCHASE_CARD` action with `purchaseCard.increaseCardId` set, applied at once or waiting for approval as the current policy requires, and always waiting if the original card required approval. Recurring cards cannot be increased. This needs `ISSUE_CARDS` and `MANAGE_CARDS`.
+
+## Standard agent cards
+
+A standard card is a virtual card issued for the agent, whose spend comes from the customer's account. Issue it from your backend with `POST /cards` and `agentId`, or let the agent issue its own with `POST /agents/me/cards` and no `kind`:
+
+```json
+{ "fundingSource": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002" }
+```
+
+- An agent has at most one standard card that is not `CLOSED`; another request is refused with `409 AGENT_CARD_EXISTS`.
+- New cards start `PROCESSING` and send the same card status webhooks as cards issued with `POST /cards`. Charges are declined while the agent is paused.
+- The agent can read the card (`GET /agents/me/cards`, `GET /agents/me/cards/{cardId}`), and with `PATCH /agents/me/cards/{cardId}` freeze it or tighten its merchant categories. It can never loosen or unfreeze a card; your platform does that with `PATCH /cards/{id}`.
+- `effectiveBlockedMccs` lists every merchant category code the card declines, Grid's agent defaults included.
+- The card details are revealed to the customer, by your platform, with `POST /cards/{id}/reveal`. An agent cannot reveal a standard card.
+- With `MANAGE_CARDS`, the agent can add its standard card to Apple Pay, Google Pay or Samsung Pay on the cardholder's phone with `POST /agents/me/cards/{cardId}/tokenize`. Confirm with the cardholder first: a wallet token spends like the card.
+
+### Business customers
+
+Where your platform enables agents for business customers, an agent of a `BUSINESS` customer may be issued standard and purchase cards once the business's KYB status is `APPROVED`. Every request must name the person the card is for in `cardholder` (`firstName`, `lastName`, `email`, `phoneNumber` in E.164, and a complete US `address`). The card is issued on the business's card account with that person as its authorized user, and carries the agent's `actingFor`.
+
+### Hand a card to a new agent
+
+Deleting an agent freezes the standard card issued for it, and a frozen card still counts against the customer's card limit. When the customer reconnects the same agent software as a new agent, call `POST /agents/{agentId}/card-handover` on the new agent to move the card to it and unfreeze it. Pass `previousAgentId` to pick the deleted agent's card, or `kind=PURCHASE` to move recurring purchase cards one at a time (call again until `204`). It responds `204` when there is nothing to hand over. Single-use purchase cards are never handed over.
+
+## Stored cards
+
+A stored card is a card the customer already owns, such as their personal Visa, that your platform stores with Grid so the agents they choose can use it, one approved purchase at a time. Stored cards are available for individual customers.
+
+<Info>
+**How the card number stays protected.** Your app collects the card with Evervault's Card UI component, which encrypts the number and security code in the customer's browser before they reach your servers. Grid only ever holds the encrypted values. When an approved use or the owner needs the number, Grid issues a single-use link that goes through Evervault's Relay, which decrypts the number on its way to whoever opens the link. No Grid system stores, logs or returns the number itself, and Grid never stores the security code. Your servers handle only ciphertext, which keeps the raw card number out of your environment.
+</Info>
+
+### Store a card
+
+```bash
+curl -X POST "$GRID_BASE_URL/customers/Customer:019542f5-b3e7-1d02-0000-000000000010/stored-cards" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "number": "ev:Tk9D:number:...$",
+    "cvc": "ev:Tk9D:cvc:...$",
+    "lastFour": "0005",
+    "expiryMonth": 8,
+    "expiryYear": 2029,
+    "holderName": "Jane Doe",
+    "billingAddress": {
+      "line1": "123 Main Street",
+      "city": "San Francisco",
+      "state": "CA",
+      "postalCode": "94105",
+      "country": "US"
+    },
+    "nickname": "Personal Visa"
+  }'
+```
+
+- `number` and `cvc` must be Evervault ciphertext (starting `ev:`). A plaintext value is refused with `400 INVALID_INPUT` and never stored or logged.
+- Grid verifies the card with its issuer (security code, billing address and name) before storing it. A card the issuer does not confirm is refused with `400 STORED_CARD_VERIFICATION_FAILED`. The security code is then discarded.
+- The response is the `StoredCard`: display fields (`lastFour`, `brand`, `funding`, `issuerCountry`, expiry, `nickname`), `status: ACTIVE`, and `agentIds: []`. A new card is shared with no agent.
+
+List the customer's active cards with `GET /customers/{customerId}/stored-cards`, and read one (including a removed one) with `GET /customers/{customerId}/stored-cards/{storedCardId}`.
+
+### Share it with an agent
+
+```bash
+curl -X PUT "$GRID_BASE_URL/customers/Customer:019542f5-b3e7-1d02-0000-000000000010/stored-cards/StoredCard:019542f5-b3e7-1d02-0000-000000000077/agents/Agent:019542f5-b3e7-1d02-0000-000000000042" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+The agent must belong to the customer and also needs the `USE_STORED_CARDS` permission, which is never granted by default. Granting access hands the agent spending power on the customer's own card: confirm it with the customer (for example with a passkey or an emailed code) before calling. Stop an agent using the card with `DELETE` on the same path, which also clears its auto-approved merchants, stops its unopened links, and fails its uses awaiting approval.
+
+### How the agent uses it
+
+1. The agent lists the cards it may use with `GET /agents/me/stored-cards` (display fields only).
+2. It asks to use one with `POST /agents/me/stored-cards/{storedCardId}/reveal`, naming the `merchant`, the `amount` it expects to be charged, the `currency`, the `purpose`, and `needsCvc` when the checkout asks for the security code.
+3. Unless the customer chose to auto-approve this agent at this merchant up to this amount, Grid answers `202` with a `USE_STORED_CARD` action in `PENDING_APPROVAL`. A use with `needsCvc` always waits, because the customer enters the security code when approving.
+4. Your platform shows the request and approves it. For a `needsCvc` use, collect the security code with Evervault's Card component and send it as `storedCardCvc`. Send `autoApproveMerchant: true` if the customer wants to skip asking next time at this merchant, up to this amount.
+5. Once the action is `APPROVED`, the agent calls the same endpoint with only `actionId` and receives `200` with a single-use `detailsUrl`, valid for five minutes, plus the holder name and billing address for the checkout form.
+6. The agent opens `detailsUrl` once, right away, where the purchase is being made. It answers the number, expiry, holder name and, when `cvcIncluded` is `true`, the security code.
+
+Each approved use issues one link; asking again with the same `actionId` is refused with `409`. Uses are rate limited per card, per agent and per customer (`429 RATE_LIMITED`), and every use is audit-logged with the agent as the actor. An auto-approved use is created `APPROVED` and sent to your platform as an `AGENT_ACTION.APPROVED` webhook, so you can tell the customer about every use.
+
+<Warning>
+Grid cannot enforce the amount on a stored card: the merchant charges the customer's own card, and the merchant and amount are the agent's word. Show them as such, and let the customer remove access at any time.
+</Warning>
+
+### Show the card to its owner
+
+To show the customer their own stored card number, call `POST /customers/{customerId}/stored-cards/{storedCardId}/reveal` only after verifying the customer is present, for example with a fresh step-up. Grid returns a single-use `detailsUrl`, valid for two minutes, that answers the number, expiry and holder name, never the security code. Hand it only to that customer's browser, for Evervault's Reveal component to open: whoever opens it receives the number in plaintext. Only an `ACTIVE` card can be revealed, reveals are rate limited (`429` with `Retry-After`), and each issue and opening is recorded in the card's audit log.
+
+### Remove a card
+
+`DELETE /customers/{customerId}/stored-cards/{storedCardId}` erases the encrypted number, holder name and billing address at once, so the card cannot be recovered. Every agent loses access, unopened links stop working, and uses awaiting approval fail. The card stays readable with its display fields and `status: REMOVED`.
+
+## Next steps
+
+- [Approvals & audit](/agent-accounts/approvals-and-audit)
+- [Sandbox testing](/agent-accounts/platform-tools/sandbox-testing): simulate card authorizations

@@ -1,0 +1,161 @@
+---
+title: "Policies & permissions"
+description: "Bound what an agent can do with permissions, execution modes, spending limits, account restrictions and approval thresholds."
+icon: "/images/icons/shield.svg"
+"og:image": "/images/og/og-agents-playground-v2.webp"
+---
+
+<Note>
+The Agents API is experimental and in limited availability. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+</Note>
+
+Every agent has one policy. Grid evaluates it on every request the agent makes, so your platform does not need its own delegated-access model. Let customers see and change the policy in your product; Grid enforces whatever it says.
+
+A policy answers four questions:
+
+1. What may the agent do? (`permissions`)
+2. Does it act on its own or ask first? (`defaultExecutionMode`, `approvalThresholds`)
+3. How much may it spend? (`spendingLimits`)
+4. Which accounts may it use? (`accountRestrictions`)
+
+## Example policy
+
+```json
+{
+  "permissions": ["VIEW_TRANSACTIONS", "CREATE_QUOTES", "EXECUTE_QUOTES", "MANAGE_CARDS", "ISSUE_CARDS"],
+  "defaultExecutionMode": "AUTO",
+  "spendingLimits": {
+    "currency": "USD",
+    "perTransactionLimit": 50000,
+    "dailyLimit": 200000,
+    "dailyTransactionLimit": 10,
+    "monthlyLimit": 1000000
+  },
+  "approvalThresholds": {
+    "currency": "USD",
+    "amount": 2500
+  },
+  "accountRestrictions": {
+    "allowedAccountIds": ["InternalAccount:019542f5-b3e7-1d02-0000-000000000002"]
+  }
+}
+```
+
+With this policy the agent sends and buys on its own up to $25.00, asks the customer above that, and is refused above $500.00 a payment, $2,000.00 a day, ten payments a day, or $10,000.00 a month.
+
+<Info>
+All amounts are integers in the smallest unit of the policy currency: `50000` with `"currency": "USD"` is $500.00. When a payment is in another currency, Grid converts it to the policy currency at evaluation time.
+</Info>
+
+## Permissions
+
+Grant the smallest set the agent needs. Permissions are an allowlist: anything not granted is refused with `403`.
+
+| Permission | What it allows |
+|---|---|
+| `VIEW_TRANSACTIONS` | List and read transactions and account balances |
+| `CREATE_QUOTES` | Create quotes |
+| `EXECUTE_QUOTES` | Execute quotes, and send claimable payouts |
+| `MANAGE_EXTERNAL_ACCOUNTS` | Create and manage the customer's external accounts |
+| `RECEIVE_FUNDS` | Create deposit targets (a Lightning invoice or a stablecoin address) |
+| `MANAGE_IDENTITY` | Read and update the customer's identity details and start KYC verification |
+| `MANAGE_CARDS` | Read its cards, tighten their merchant categories, freeze them, and read a purchase card's details |
+| `ISSUE_CARDS` | Issue one standard virtual card for itself while it holds no live standard card, and single-use and recurring purchase cards where your platform enables them |
+| `USE_STORED_CARDS` | List the customer's stored cards it is allowed to use, and ask for a single-use link to one's details. Never granted by default |
+| `MANAGE_SETTLEMENT_RULES` | Propose rules that split the customer's incoming payments, read and delete the rules it created, and cancel their held executions |
+
+Some operations need more than one permission. Payout runs need `CREATE_QUOTES` and `EXECUTE_QUOTES`, and `MANAGE_EXTERNAL_ACCOUNTS` when a row pays a contact. Increasing a purchase card needs `ISSUE_CARDS` and `MANAGE_CARDS`.
+
+## Execution modes
+
+`defaultExecutionMode` decides what happens to a payment the policy allows:
+
+- `AUTO`: Grid executes it at once.
+- `APPROVAL_REQUIRED`: Grid creates an `AgentAction` in `PENDING_APPROVAL` and waits for your platform to approve or reject it.
+
+Even in `AUTO`, a payment above `approvalThresholds.amount` waits for approval. So does a payment above the approval threshold of the agent's [spending pool](/agent-accounts/spending-limits). Some requests ask regardless of mode: a recurring purchase card always does, and a use of the customer's stored card does unless the customer chose to auto-approve that merchant (one that needs the security code always does). See [Approvals & audit](/agent-accounts/approvals-and-audit).
+
+## Spending limits
+
+`spendingLimits` caps the agent's sends and the purchases on cards issued for it.
+
+| Field | Required | Meaning |
+|---|---|---|
+| `currency` | Yes | ISO 4217 code every amount is in. Immutable after the agent is created; changing it returns `400`. |
+| `perTransactionLimit` | Yes | Largest single send or card authorization |
+| `dailyLimit` | No | Most the agent may send and spend on its cards per day. `null` for no daily limit |
+| `dailyTransactionLimit` | No | Most sends and card authorizations per day |
+| `monthlyLimit` | No | Most the agent may send and spend on its cards per month. `null` for no monthly limit |
+
+`GET /agents/{agentId}` and the agent's own `GET /agents/me` return `usage` with the agent's running counters: `dailyTransactionCount`, `dailySpend`, `monthlySpend`, and when the daily and monthly counters reset (`dailyResetDate`, `monthlyResetMonth`). Show these next to the limits so the customer can see how much room is left.
+
+A payment over a limit is refused, not held for approval. Since a payment above `perTransactionLimit` is always refused, set `approvalThresholds.amount` below it for the threshold to ever ask.
+
+## Approval thresholds
+
+`approvalThresholds` forces approval for larger payments even when `defaultExecutionMode` is `AUTO`.
+
+| Field | Meaning |
+|---|---|
+| `currency` | Must equal `spendingLimits.currency`. Required when `amount` is set. |
+| `amount` | Any payment above this amount requires approval. `null` for no threshold. |
+
+## Account restrictions
+
+By default an agent can use all of the customer's internal accounts. Restrict it with `accountRestrictions`:
+
+- `allowedAccountIds`: the internal accounts the agent may use. `null` means all of them.
+- `accountRules`: per-account overrides. Each rule names an `accountId` and may set its own `executionMode` and `perTransactionLimit` (in the policy currency; `null` inherits the agent's limit).
+
+```json
+{
+  "accountRestrictions": {
+    "allowedAccountIds": [
+      "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+      "InternalAccount:019542f5-b3e7-1d02-0000-000000000003"
+    ],
+    "accountRules": [
+      {
+        "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000003",
+        "executionMode": "APPROVAL_REQUIRED",
+        "perTransactionLimit": 10000
+      }
+    ]
+  }
+}
+```
+
+The agent can discover the accounts available to it with `GET /agents/me/internal-accounts`.
+
+## Updating a policy
+
+`PATCH /agents/{agentId}/policy` takes a partial policy. Omitted fields keep their values, and the change takes effect immediately.
+
+```bash
+curl -X PATCH "$GRID_BASE_URL/agents/Agent:019542f5-b3e7-1d02-0000-000000000001/policy" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "approvalThresholds": { "currency": "USD", "amount": 10000 },
+    "spendingLimits": { "dailyLimit": 300000 }
+  }'
+```
+
+- `permissions`, when sent, replaces the whole list.
+- Within `spendingLimits`, only the fields you send change. `dailyLimit` and `monthlyLimit` accept `null` to remove them. `currency` may be sent only with its current value.
+- The response is the updated `Agent`.
+
+A policy change applies to decisions made after it. An action already waiting for approval is checked against the policy as it is when it is approved, so lowering a limit can make a pending action fail with `POLICY_DENIED`.
+
+## Practical guidance
+
+- Start new agents with the fewest permissions and `APPROVAL_REQUIRED`, and let the customer loosen them.
+- Keep read permissions (`VIEW_TRANSACTIONS`) separate from money movement (`EXECUTE_QUOTES`, `ISSUE_CARDS`).
+- Grant `MANAGE_EXTERNAL_ACCOUNTS` only when the agent needs to add destinations; a new destination is where most mistakes and most fraud start.
+- Grant `USE_STORED_CARDS` only after the customer has explicitly chosen to share a card with this agent.
+- Show the current policy and usage in your product, and confirm policy changes with the customer.
+
+## Next steps
+
+- [Spending limits](/agent-accounts/spending-limits): one budget shared by several agents
+- [Approvals & audit](/agent-accounts/approvals-and-audit): what happens when a payment needs the customer

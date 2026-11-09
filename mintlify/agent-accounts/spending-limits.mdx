@@ -1,0 +1,137 @@
+---
+title: "Spending limits"
+description: "Hold several of a customer's agents to one shared budget with spending pools, on top of each agent's own policy."
+icon: "/images/icons/coins.svg"
+"og:image": "/images/og/og-agents-playground-v2.webp"
+---
+
+<Note>
+The Agents API is experimental and in limited availability. Spending pools are available where Grid enables them for your platform; until then the endpoints answer `403`. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+</Note>
+
+Each agent's [policy](/agent-accounts/policies-and-permissions) limits that agent alone. A spending pool limits a group of a customer's agents together: a team budget, a project allowance, or a cap on everything the customer's agents spend on cards this month.
+
+A pool holds no money and no money moves between pools. It only limits what its agents may spend from the customer's balance, in addition to each agent's own policy. Limits of different pools may add up to more than the balance, and each agent belongs to at most one pool.
+
+## How a pool decides
+
+Every agent payment checks the pool: sends (including Lightning), bank payouts, and card authorizations. A payment must fit both the agent's own policy and its pool.
+
+- **Payment type.** A payment whose type is not in `allowedPaymentTypes` is refused.
+- **Limits.** A payment that would take the pool over `limitAmount`, `perTransactionLimit`, `dailyLimit` or `monthlyLimit` is refused.
+- **Approval.** A payment above the pool's `approvalThreshold` waits for the customer's approval, even when the agent's own policy would execute it at once. Card authorizations are never held for approval.
+
+A refused payment is rejected with `AGENT_POLICY_DENIED` and `details.policyDenialReason` set to `POOL_LIMIT_EXCEEDED` or `POOL_PAYMENT_TYPE_NOT_ALLOWED`; a refused card authorization is declined.
+
+Payments in flight hold their amount against the pool until they complete or fail, so concurrent payments cannot together exceed it.
+
+### Payment types
+
+| Value | Covers |
+|---|---|
+| `CARDS` | Authorizations on the agents' cards |
+| `CRYPTO_SENDS` | Sends to crypto destinations, Spark and Lightning included |
+| `BANK_PAYOUTS` | Payouts to bank accounts |
+
+### Limit types
+
+| `limitType` | `limitAmount` means |
+|---|---|
+| `RECURRING` | The most the pool's agents may spend together per `period`: `MONTH` (UTC calendar month) or `WEEK` (starting Monday 00:00 UTC). Resets at the start of each period. |
+| `TOTAL` | A running total that never resets. Raise `limitAmount` to allow more. |
+
+`dailyLimit` (per UTC day) and `monthlyLimit` (per UTC calendar month) are optional caps on top of `limitAmount`. `perTransactionLimit` caps a single payment.
+
+## Create a pool
+
+`POST /spending-pools` with platform credentials. `customerId`, `name`, `limitType`, `limitAmount` and `allowedPaymentTypes` are required; `period` is required with `RECURRING` and rejected with `TOTAL`. `currency` defaults to `USD`.
+
+```bash
+curl -X POST "$GRID_BASE_URL/spending-pools" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 7d1f3c2e-8a4b-4f6e-9c0d-2b5a7e9f1c3d" \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "name": "Marketing",
+    "currency": "USD",
+    "limitType": "RECURRING",
+    "period": "MONTH",
+    "limitAmount": 500000,
+    "perTransactionLimit": 50000,
+    "approvalThreshold": 25000,
+    "dailyLimit": 100000,
+    "allowedPaymentTypes": ["CARDS", "CRYPTO_SENDS"]
+  }'
+```
+
+**Response:** `201 Created`
+
+```json
+{
+  "id": "SpendingPool:019542f5-b3e7-1d02-0000-000000000007",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "name": "Marketing",
+  "currency": "USD",
+  "limitType": "RECURRING",
+  "period": "MONTH",
+  "limitAmount": 500000,
+  "perTransactionLimit": 50000,
+  "approvalThreshold": 25000,
+  "dailyLimit": 100000,
+  "allowedPaymentTypes": ["CARDS", "CRYPTO_SENDS"],
+  "requiresAdminApproval": false,
+  "isArchived": false,
+  "usage": {
+    "periodStart": "2026-11-01",
+    "periodEnd": "2026-12-01",
+    "spent": 0,
+    "remaining": 100000,
+    "dailySpent": 0,
+    "monthlySpent": 0
+  },
+  "createdAt": "2026-11-02T17:32:28Z",
+  "updatedAt": "2026-11-02T17:32:28Z"
+}
+```
+
+`usage.remaining` is the least room left under `limitAmount`, `dailyLimit` and `monthlyLimit`, never below zero, counting payments still in flight. Here it is `100000` because the daily cap is the tightest.
+
+`requiresAdminApproval` is stored for your platform: set it when your product requires an administrator, rather than the agent's own user, to approve the pool's payments that need approval. Grid does not act on it.
+
+### Idempotent creation
+
+`Idempotency-Key` is optional; send one so a retry cannot create a second pool. Keys are scoped to the customer.
+
+- A retry with a key already used returns the pool the first request created, with `200` instead of `201`.
+- The retry is compared with the pool as it is now. Reusing a key with a different name, currency, limit type, period, limit amount, per-transaction limit, approval threshold, daily or monthly limit, allowed payment types or `requiresAdminApproval`, after the pool was changed, or for a pool that was archived, is rejected with `409`.
+- The same key on another customer creates a separate pool.
+
+## Assign agents
+
+Put an agent in a pool when you create it (`spendingPoolId` on `POST /agents`), or move it later:
+
+```bash
+curl -X PATCH "$GRID_BASE_URL/agents/Agent:019542f5-b3e7-1d02-0000-000000000001" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "spendingPoolId": "SpendingPool:019542f5-b3e7-1d02-0000-000000000007" }'
+```
+
+Send `"spendingPoolId": null` to take the agent out of its pool. The pool must belong to the agent's customer, and the agent's policy must be in the pool's currency.
+
+## Read, change and archive
+
+| Task | Call |
+|---|---|
+| Read a pool with its current usage | `GET /spending-pools/{spendingPoolId}` |
+| List pools | `GET /spending-pools`, filtered by `customerId` and `isArchived`; `limit` (default 20, max 100) and `cursor` |
+| Change name, limits, payment types or `requiresAdminApproval` | `PATCH /spending-pools/{spendingPoolId}` with any of those fields; set a cap or `approvalThreshold` to `null` to remove it |
+| Archive | `DELETE /spending-pools/{spendingPoolId}`, refused with `409` while any agent is assigned |
+
+A change applies to payments decided after it. Lowering a limit below what is already spent refuses further payments; it never reverses one. Changing `limitType` to `RECURRING` requires `period`, and changing it to `TOTAL` removes `period`. An archived pool takes no agents, cannot be changed (`409`), and is still returned by `GET`.
+
+## Next steps
+
+- [Policies & permissions](/agent-accounts/policies-and-permissions): each agent's own limits
+- [Approvals & audit](/agent-accounts/approvals-and-audit): what happens to a payment above the pool's threshold

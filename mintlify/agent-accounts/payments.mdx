@@ -1,0 +1,191 @@
+---
+title: "Payments"
+description: "How an agent quotes and sends money from the customer's Global Account, pays people by phone or email, and pays many people at once, within its policy."
+icon: "/images/icons/paper-plane-top-right.svg"
+"og:image": "/images/og/og-agents-playground-v2.webp"
+---
+
+<Note>
+The Agents API is experimental and in limited availability. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+</Note>
+
+Agents send money with the same quote-then-execute pattern as the rest of Grid, through agent-scoped endpoints authenticated with the agent's token. Every send is checked against the agent's [policy](/agent-accounts/policies-and-permissions) and [spending pool](/agent-accounts/spending-limits), and either runs at once or waits for the customer's [approval](/agent-accounts/approvals-and-audit).
+
+## Before the agent can send
+
+- The policy grants `CREATE_QUOTES` and `EXECUTE_QUOTES`.
+- The customer has an `ACTIVE` [delegated key](/agent-accounts/creating-agents#delegate-signing-on-the-global-account) for this agent on the Global Account the agent pays from.
+- The Global Account is funded. See [Funding](/agent-accounts/funding).
+
+The agent finds its source account with `GET /agents/me/internal-accounts?type=EMBEDDED_WALLET`.
+
+## Quote a send
+
+`POST /agents/me/quotes` takes a `source`, a `destination`, `lockedCurrencySide` and `lockedCurrencyAmount`. The source is an `EMBEDDED_WALLET` internal account of the agent's customer. The destination is one of:
+
+| `destinationType` | Pays | Notes |
+|---|---|---|
+| `ACCOUNT` | Another Embedded Wallet on your platform, or one of the customer's active `SPARK_WALLET` external accounts in the source's currency | Save a Spark address first with `POST /agents/me/external-accounts` |
+| `CHAIN_ADDRESS` | A `USDC` or `USDT` address on `BASE`, `ETHEREUM`, `SOLANA`, `POLYGON`, `ARBITRUM` or `TRON` | Sends `USDB` from the wallet. `TRON` supports `USDT` only and `BASE` `USDC` only. Grid records and screens the address before quoting |
+| `LIGHTNING_INVOICE` | A BOLT11 invoice | The invoice must name an amount in whole satoshis, be for your platform's Bitcoin network, and not expire within the next minute |
+
+<CodeGroup>
+```bash Stablecoin address
+curl -X POST "$GRID_BASE_URL/agents/me/quotes" \
+  -H "Authorization: Bearer $AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 3b2f9c1e-6d4a-4e8b-a0f2-7c9d1e5b3a64" \
+  -d '{
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+    },
+    "destination": {
+      "destinationType": "CHAIN_ADDRESS",
+      "network": "BASE",
+      "currency": "USDC",
+      "address": "0x1234567890abcdef1234567890abcdef12345678"
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 2500
+  }'
+```
+
+```bash Lightning invoice
+curl -X POST "$GRID_BASE_URL/agents/me/quotes" \
+  -H "Authorization: Bearer $AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 8e4c2a7f-1b3d-4f9e-b6a0-5d2c8e7f1a93" \
+  -d '{
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+    },
+    "destination": {
+      "destinationType": "LIGHTNING_INVOICE",
+      "invoice": "lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs"
+    },
+    "lockedCurrencySide": "RECEIVING",
+    "lockedCurrencyAmount": 1500
+  }'
+```
+
+```bash Saved Spark address
+curl -X POST "$GRID_BASE_URL/agents/me/quotes" \
+  -H "Authorization: Bearer $AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: c5a1e9d3-2f7b-4c6e-8a0d-9b3f1e7c5a28" \
+  -d '{
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+    },
+    "destination": {
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 5000
+  }'
+```
+
+</CodeGroup>
+
+The response is the quote, with its amounts, fees, rate and `expiresAt`, plus agent-specific fields: `destinationChainAddress`, `destinationLightningInvoice` or `destinationSparkAddress` name what it pays, and `minimumReceivingAmount` is what a `CHAIN_ADDRESS` recipient receives.
+
+How each destination prices:
+
+- **`CHAIN_ADDRESS`**: with `SENDING`, the quote commits to the `USDB` amount; with `RECEIVING`, to exactly what the destination receives, with fees added to the `USDB` sent. Grid pays the chain at a locked rate, so `minimumReceivingAmount` equals `totalReceivingAmount`. If Grid cannot deliver a `RECEIVING` amount exactly, it refuses the quote with `400 EXACT_AMOUNT_UNAVAILABLE`.
+- **`LIGHTNING_INVOICE`**: `lockedCurrencySide` must be `RECEIVING` and `lockedCurrencyAmount` the invoice's amount in satoshis. Grid pays exactly the invoice and adds the fees to the amount debited. An invoice has one live quote at a time; another quote for it answers `409 INVOICE_ALREADY_USED` unless it repeats the same request with the same `Idempotency-Key`.
+
+`403 DESTINATION_NOT_ALLOWED` means Grid will not let the agent pay that destination, for example a Spark address that was refused or is held for review on any of the customer's records of it.
+
+## Execute the quote
+
+```bash
+curl -X POST "$GRID_BASE_URL/agents/me/quotes/Quote:019542f5-b3e7-1d02-0000-000000000006/execute" \
+  -H "Authorization: Bearer $AGENT_TOKEN" \
+  -H "Idempotency-Key: 0f6d3b8a-4c2e-4a1f-9e7b-2d5c8a1f6e30"
+```
+
+Execution returns an `AgentAction`:
+
+- **Within policy:** `status: APPROVED` with `transaction` set. Grid signs with the agent's delegated key and the money moves.
+- **Needs approval:** `status: PENDING_APPROVAL` with no `transaction` yet. This happens when the policy's `defaultExecutionMode` (or the source account's rule) is `APPROVAL_REQUIRED`, or the amount is above the agent's `approvalThresholds` or its spending pool's `approvalThreshold`. Grid sends `AGENT_ACTION.PENDING_APPROVAL` to your platform.
+- **Refused:** `403` when the policy does not permit the send, a spending limit would be exceeded, the agent has no active delegated key on the wallet, or the destination is no longer allowed. `409` when the quote was already executed, expired, or is in an invalid state.
+
+Executing a quote that already has an action returns that action, so the agent can retry safely. Once executed, a send cannot be cancelled.
+
+### Waiting for approval
+
+The agent polls `GET /agents/me/actions/{actionId}` (or lists `GET /agents/me/actions?status=PENDING_APPROVAL`) until the status changes. Tell the user in the agent's own words that the customer has been asked.
+
+Without `priceTolerance`, a pending send expires with its quote, which is often within minutes. Where Grid enables re-quoting for your platform, the action carries `priceTolerance` and waits until its own `expiresAt`; an approval after the quote expired quotes the send again. A retry of execute with the first quote's id still returns the action after approval replaced its quote. See [Re-quoted sends](/agent-accounts/approvals-and-audit#re-quoted-sends).
+
+## Idempotency keys
+
+Agents retry. Send an `Idempotency-Key` (up to 255 characters) on every write so a retry returns the first result instead of moving money twice.
+
+| Endpoint | Key |
+|---|---|
+| `POST /agents/me/quotes` | Optional |
+| `POST /agents/me/quotes/{quoteId}/execute` | Optional |
+| `POST /agents/me/deposits` | Required |
+| `POST /agents/me/cards` and `.../increase` | Required, scoped to the agent |
+| `POST /agents/me/claimable-payouts` | Required, scoped to the agent |
+| `POST /agents/me/payout-runs` | Required, scoped to the agent; the same key with a different body is refused with `409` |
+| `POST /agents/me/settlement-rules` | Required, scoped to the agent |
+
+## Saved destinations
+
+With `MANAGE_EXTERNAL_ACCOUNTS`, the agent manages the customer's external accounts under `/agents/me/external-accounts` (list, add, read, delete). `customerId` is inferred from the agent. Grid saves a Spark address under its network's current prefix (`spark1...`), so a legacy spelling (`sp1...`) of a saved address conflicts with it, and refuses to save a Spark address that was refused or is held for review (`DESTINATION_NOT_ALLOWED`).
+
+## Pay a person by phone or email
+
+Where your platform enables claimable payouts and agent bank payouts, an agent can send money to someone with no Grid account using `POST /agents/me/claimable-payouts`. The customer's KYC status must be `APPROVED`.
+
+```bash
+curl -X POST "$GRID_BASE_URL/agents/me/claimable-payouts" \
+  -H "Authorization: Bearer $AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 6a9e2c4f-8b1d-4e3a-9f7c-1d5b8e2a6c40" \
+  -d '{
+    "sourceAccountId": "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+    "amount": 5000,
+    "recipient": { "name": "Maria", "phoneNumber": "+639171234567" },
+    "note": "Happy birthday, Mom"
+  }'
+```
+
+- Exactly one of `phoneNumber` and `email` is set. `country` defaults to the phone number's country and is required with `email`.
+- Grid holds `amount` against the wallet's balance and the agent's limits from creation; the money stays in the wallet until the recipient claims it.
+- The payout is checked as a send of the same amount to a bank account. It needs `EXECUTE_QUOTES`, counts toward the spending limits, and waits for approval (`PENDING_APPROVAL`, with a `CLAIMABLE_PAYOUT` action) above the policy's or pool's threshold, in `APPROVAL_REQUIRED` mode, or above your platform's limit for bank payouts without approval. Otherwise it is created `AWAITING_CLAIM`.
+- Once it is `AWAITING_CLAIM`, your backend issues a claim token with `POST /claimable-payouts/{claimablePayoutId}/claim-token`, puts it in a link to your own claim page, and sends it to the recipient's phone or email. The token is returned once, and issuing another replaces it. Never show it to the agent. The recipient chooses how to be paid from what Grid pays out to in her country.
+- The claim window ends 7 days after approval. The agent can cancel with `POST /agents/me/claimable-payouts/{claimablePayoutId}/cancel` while it is `PENDING_APPROVAL` or `AWAITING_CLAIM`, which releases the hold.
+
+Statuses are `PENDING_APPROVAL`, `AWAITING_CLAIM`, `CLAIMED`, `PAID`, `EXPIRED`, `CANCELLED` and `FAILED`. Grid sends `CLAIMABLE_PAYOUT.*` webhooks when a payout is claimed, paid, expires or fails.
+
+## Pay many people at once
+
+Where your platform enables payout runs and agent payout runs, `POST /agents/me/payout-runs` pays up to 50 rows from the customer's stablecoin Embedded Wallet in one approved action. Each row pays a contact by phone or email (as a claimable payout) or one of the customer's own `ACTIVE` external accounts.
+
+- Validation is all or nothing: one row the agent may not send refuses the whole request.
+- The run is checked against the policy as one payment of `total`, and needs `CREATE_QUOTES` and `EXECUTE_QUOTES`, plus `MANAGE_EXTERNAL_ACCOUNTS` when a row pays a contact.
+- It runs at once (`PROCESSING`) when the policy allows it without approval; otherwise it waits as a `PAYOUT_RUN` action for up to 24 hours. The customer's one approval covers every row.
+- Rows succeed or fail one by one. `total` is what leaves the wallet; each row's fees come out of what its recipient receives.
+- Preview a run with `POST /agents/me/payout-runs/preview` first: it returns `total`, the wallet's free balance after it, and whether and why it would need approval, without creating or holding anything.
+
+Grid sends a `PAYOUT_RUN.*` webhook when no row is left to pay.
+
+## Split incoming payments
+
+With `MANAGE_SETTLEMENT_RULES`, and where your platform enables settlement rules, an agent can propose a standing rule that splits the customer's incoming payments into their stablecoin Embedded Wallet and pays shares onward (`POST /agents/me/settlement-rules`, previewed with `POST /agents/me/settlement-rules/preview`). A rule outside what the policy sends without approval waits for the customer as a `CREATE_SETTLEMENT_RULE` action for up to seven days. Each share is still checked against the agent's policy when it is paid.
+
+## Reading activity
+
+With `VIEW_TRANSACTIONS`, the agent lists the customer's transactions with `GET /agents/me/transactions` (filtered by account, status, type, reference and date) and reads one with `GET /agents/me/transactions/{transactionId}`. Your platform receives the usual `OUTGOING_PAYMENT` and `INCOMING_PAYMENT` webhooks for every send.
+
+## Next steps
+
+- [Approvals & audit](/agent-accounts/approvals-and-audit)
+- [Cards](/agent-accounts/cards)
