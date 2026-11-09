@@ -15,7 +15,7 @@ properties:
     type: string
     pattern: '^[0-9a-f]{64}$'
     description: Must match the deposit's `achPull.authorization.textSha256`.
-    example: dd686beb4942839dbd48f8ebf1289ed5f8f3f3a984c1bdc96c035560cdc2922d
+    example: e341cec8130241e0b34961bb2541adc23dca596c8bf4a68468a65037d4aaaf3d
   authorizedBy:
     type: string
     maxLength: 255

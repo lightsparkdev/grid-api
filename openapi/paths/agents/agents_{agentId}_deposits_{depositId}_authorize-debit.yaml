@@ -17,7 +17,8 @@ post:
     Records the customer's debit authorization for a `PENDING` `ACH_PULL`
     deposit and submits the debit. Call it only from an explicit action by
     the signed-in customer (or, for a business, an admin) on the platform's
-    own page, after showing `achPull.authorization.text` verbatim.
+    own page, after showing `achPull.authorization.text` verbatim, which the
+    platform can read with `GET /agents/{agentId}/deposits/{depositId}`.
     `textVersion` and `textSha256` must match the deposit's text, or the
     request is refused with `400` and nothing is recorded. Grid checks again
     the external-account pull gate, the account's validation, the limits and

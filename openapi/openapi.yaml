@@ -502,6 +502,8 @@ paths:
     $ref: paths/agents/agents_{agentId}_actions_{actionId}_approve.yaml
   /agents/{agentId}/actions/{actionId}/reject:
     $ref: paths/agents/agents_{agentId}_actions_{actionId}_reject.yaml
+  /agents/{agentId}/deposits/{depositId}:
+    $ref: paths/agents/agents_{agentId}_deposits_{depositId}.yaml
   /agents/{agentId}/deposits/{depositId}/authorize-debit:
     $ref: paths/agents/agents_{agentId}_deposits_{depositId}_authorize-debit.yaml
   /agents/{agentId}/external-accounts/{externalAccountId}/ach-validations:

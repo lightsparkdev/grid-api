@@ -10162,6 +10162,59 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/deposits/{depositId}:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+      - name: depositId
+        in: path
+        description: System-generated unique deposit identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get an agent deposit
+      description: Returns one of the agent's deposits, including `achPull.authorization.text` for an `ACH_PULL` deposit. The deposit must belong to the given agent on the calling platform, otherwise `404` is returned. This endpoint uses platform credentials, not agent credentials.
+      operationId: getAgentDeposit
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDeposit'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent or deposit not found for this platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /agents/{agentId}/deposits/{depositId}/authorize-debit:
     parameters:
       - name: agentId
@@ -10178,7 +10231,7 @@ paths:
           type: string
     post:
       summary: Authorize an agent deposit debit
-      description: 'Records the customer''s debit authorization for a `PENDING` `ACH_PULL` deposit and submits the debit. Call it only from an explicit action by the signed-in customer (or, for a business, an admin) on the platform''s own page, after showing `achPull.authorization.text` verbatim. `textVersion` and `textSha256` must match the deposit''s text, or the request is refused with `400` and nothing is recorded. Grid checks again the external-account pull gate, the account''s validation, the limits and any pull block; a refusal records nothing and leaves the deposit `PENDING`. On success the authorization is recorded and used once by this debit: the deposit becomes `PROCESSING` and the amount is credited to the destination USDB account at once. A repeat of the same request after success returns the deposit unchanged. This endpoint uses platform credentials, not agent credentials.'
+      description: 'Records the customer''s debit authorization for a `PENDING` `ACH_PULL` deposit and submits the debit. Call it only from an explicit action by the signed-in customer (or, for a business, an admin) on the platform''s own page, after showing `achPull.authorization.text` verbatim, which the platform can read with `GET /agents/{agentId}/deposits/{depositId}`. `textVersion` and `textSha256` must match the deposit''s text, or the request is refused with `400` and nothing is recorded. Grid checks again the external-account pull gate, the account''s validation, the limits and any pull block; a refusal records nothing and leaves the deposit `PENDING`. On success the authorization is recorded and used once by this debit: the deposit becomes `PROCESSING` and the amount is credited to the destination USDB account at once. A repeat of the same request after success returns the deposit unchanged. This endpoint uses platform credentials, not agent credentials.'
       operationId: authorizeAgentDepositDebit
       tags:
         - Agent Management
@@ -37062,7 +37115,7 @@ components:
           type: string
           pattern: ^[0-9a-f]{64}$
           description: Must match the deposit's `achPull.authorization.textSha256`.
-          example: dd686beb4942839dbd48f8ebf1289ed5f8f3f3a984c1bdc96c035560cdc2922d
+          example: e341cec8130241e0b34961bb2541adc23dca596c8bf4a68468a65037d4aaaf3d
         authorizedBy:
           type: string
           maxLength: 255
