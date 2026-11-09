@@ -1,5 +1,5 @@
 The card network can't reach into Sandbox to send real authorizations,
-so Sandbox exposes three simulate helpers that drive the same internal
+so Sandbox exposes 16 card simulate routes that drive the same internal
 `authorize` and `reconcile` paths the issuer would call in production.
 Production returns `404` on these paths.
 
@@ -7,7 +7,46 @@ Production returns `404` on these paths.
 POST /sandbox/cards/{id}/simulate/authorization
 POST /sandbox/cards/{id}/simulate/clearing
 POST /sandbox/cards/{id}/simulate/return
+POST /sandbox/cards/{id}/simulate/balance_inquiry
+POST /sandbox/cards/{id}/simulate/credit_authorization
+POST /sandbox/cards/{id}/simulate/financial_authorization
+POST /sandbox/cards/{id}/simulate/financial_credit_authorization
+POST /sandbox/cards/{id}/simulate/authorization_advice
+POST /sandbox/cards/{id}/simulate/credit_authorization_advice
+POST /sandbox/cards/{id}/simulate/return_reversal
+POST /sandbox/cards/{id}/simulate/authorization_reversal
+POST /sandbox/cards/{id}/simulate/authorization_expiry
+POST /sandbox/cards/{id}/simulate/dispute_open
+POST /sandbox/cards/{id}/simulate/dispute_provisional_credit
+POST /sandbox/cards/{id}/simulate/dispute_provisional_credit_reversal
+POST /sandbox/cards/{id}/simulate/dispute_close
 ```
+
+Authorization, clearing and return have their own sections below. The other
+routes simulate:
+
+| Route | What it simulates |
+|-------|-------------------|
+| `balance_inquiry` | A `0`-amount balance-inquiry authorization. The request carries only `merchant`, no `amount` |
+| `credit_authorization` | A merchant-initiated credit to the card, such as a refund pushed as an authorization |
+| `financial_authorization` | A single-message authorization that clears in the same message, such as an ATM withdrawal |
+| `financial_credit_authorization` | A single-message credit that clears in the same message, such as an ATM deposit or push credit |
+| `authorization_advice` | An advice that re-sizes an open authorization. `amount` is the new total authorized amount; the transaction must be `AUTHORIZED` or `PARTIALLY_SETTLED` |
+| `credit_authorization_advice` | A network-initiated credit authorization advice, keyed by the card and `merchant` rather than an existing transaction |
+| `return_reversal` | A reversal of a posted return. Pass the return's own `CREDIT` `CardTransaction` id as `cardTransactionId` |
+| `authorization_reversal` | The merchant cancelling an unsettled authorization. Omit `amount` to reverse all of it (`VOIDED`, with a `CARD_TRANSACTION.VOIDED` webhook), or pass it to shrink the hold |
+| `authorization_expiry` | An unsettled authorization lapsing. The transaction moves to `VOIDED` and Grid sends `CARD_TRANSACTION.VOIDED` |
+| `dispute_open` | A cardholder dispute on a settled transaction. Creates the dispute with an `OPENED` event |
+| `dispute_provisional_credit` | A provisional credit to the cardholder on the open dispute |
+| `dispute_provisional_credit_reversal` | Taking back a provisional credit when the cardholder is found liable |
+| `dispute_close` | Closing the open dispute with a disposition. For `PARTIALLY_WON`, set `recoveredAmount` |
+
+`credit_authorization`, `financial_authorization`,
+`financial_credit_authorization` and `credit_authorization_advice` use the
+same `merchant.descriptor` suffixes as
+[authorization simulate](#authorization-simulate). `authorization_reversal`
+and `authorization_expiry` apply only while no part of the transaction has
+settled.
 
 Authorization outcomes are deterministic and driven by magic-value suffixes
 on `merchant.descriptor`. Other Sandbox helpers use the identifier suffixes
