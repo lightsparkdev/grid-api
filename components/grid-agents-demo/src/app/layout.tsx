@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
+import { AccessGate } from '@/components/AccessGate/AccessGate';
 import { easingVarsStylesheet } from '@/lib/easing';
 import { CONFIGURE_COL_PX, DOCS_SIDEBAR_EXPANDED_PX, LAYOUT_WIDE_PX, NAV_COLLAPSED_MAX_PX } from '@/lib/layout';
 import './globals.scss';
@@ -97,7 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <style dangerouslySetInnerHTML={{ __html: easingVarsStylesheet() }} />
       </head>
-      <body>{children}</body>
+      <body>{process.env.PLAYGROUND_PASSWORD ? <AccessGate>{children}</AccessGate> : children}</body>
     </html>
   );
 }

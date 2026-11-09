@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { FlowEntry, StepReply } from '@/apps/agents/brain/useAgentBrain';
 import { flowSpend, needsSetup, type FlowContext } from '@/apps/agents/flows';
 import { resetLinkedBank } from '@/apps/agents/linkedBank';
@@ -11,6 +11,8 @@ import { actionLabel, type ActionId } from '@/data/actions';
 import { createAgentSession, FAST_FORWARD_FUND_CENTS, type AccountSnapshot, type AgentSession, type CallStep } from '@/data/agentApiCalls';
 import type { AgentEvent } from '@/data/agentEvents';
 import type { ConnectorId } from '@/data/connectors';
+import { accessHeaders } from '@/lib/access';
+import { appFor } from '@/lib/forApp';
 import type { PromptState } from '@/lib/llm/prompt';
 import type { Turn } from '@/lib/llm/tools';
 import type { AgentResponse } from '@/lib/llm/types';
@@ -83,6 +85,11 @@ export function useAgentsDemoLogic() {
   const [connector, setConnector] = useState<ConnectorId>('muse');
   const connectorRef = useRef(connector);
   connectorRef.current = connector;
+  // A link made for one app (`?for=`) opens on it, before the first paint.
+  useLayoutEffect(() => {
+    const app = appFor(window.location.search);
+    if (app) setConnector(app);
+  }, []);
   const sessionRef = useRef<AgentSession>(createAgentSession(() => voiceFor(connectorRef.current).name));
   const [account, setAccount] = useState<AccountSnapshot>(() => sessionRef.current.snapshot());
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -188,7 +195,7 @@ export function useAgentsDemoLogic() {
     try {
       const res = await fetch('/api/agent', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', ...accessHeaders() },
         body: JSON.stringify({ connector: connectorRef.current, turns, state }),
       });
       const data = (await res.json()) as AgentResponse;

@@ -1,0 +1,131 @@
+// The password page, in the GoFundMe demo's layout and the playground's colors and type.
+.page {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: var(--spacing-xl);
+  background: var(--surface-secondary);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  width: min(320px, 100%);
+}
+
+.title {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 var(--spacing-md);
+  color: var(--text-primary);
+  font-size: 32px;
+  font-weight: var(--font-weight-regular);
+  line-height: 1.2;
+  letter-spacing: var(--font-tracking-tighter);
+  text-wrap: pretty;
+}
+
+.titleSecondary {
+  color: var(--text-secondary);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.label {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  line-height: 20px;
+}
+
+.inputWrap {
+  position: relative;
+}
+
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 40px;
+  padding: 0 40px 0 var(--spacing-md);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--corner-radius-md);
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus-visible {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--border-focus) 20%, transparent);
+  }
+
+  &[aria-invalid] {
+    border-color: var(--border-critical);
+  }
+}
+
+// The show/hide toggle, inside the field's right end.
+.reveal {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--icon-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease;
+
+  @media (hover: hover) {
+    &:hover {
+      color: var(--icon-primary);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: -6px;
+    border-radius: var(--corner-radius-md);
+  }
+}
+
+.error {
+  color: var(--text-critical);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.button {
+  height: 40px;
+  border: 0;
+  border-radius: var(--corner-radius-md);
+  background: var(--surface-inverse);
+  color: var(--text-inverse);
+  font: inherit;
+  font-size: 15px;
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      background-image: linear-gradient(var(--surface-inverse-hover), var(--surface-inverse-hover));
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
