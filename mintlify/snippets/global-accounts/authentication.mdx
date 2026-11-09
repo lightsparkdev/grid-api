@@ -605,9 +605,47 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
 
 Same pattern as the first activation: call `/challenge` to send a new OTP and receive a fresh `otpEncryptionTargetBundle`, generate a new TEK key pair, build the `encryptedOtpBundle`, and complete the two-step verify flow.
 
-### Changing the email OTP address
+### Changing the sign-in email or phone number
 
-The `EMAIL_OTP` address comes from the customer email on file. To change it, update the customer with `PATCH /customers/{customerId}`. If the customer has tied Embedded Wallet `EMAIL_OTP` credentials, Grid returns a signed-retry challenge; stamp the returned `payloadToSign` with an active session signing key, then retry the same customer update with `Grid-Wallet-Signature` and `Request-Id`. Grid syncs the customer email and tied `EMAIL_OTP` credential email together.
+The `EMAIL_OTP` address is the customer email on file, and the `SMS_OTP` number is the customer phone number. The customer must prove they control a new address or number before it replaces the one they sign in with. Changing it takes four calls, and the same steps apply to `phoneNumber` with `SMS_OTP`.
+
+<Steps>
+  <Step title="Register the new address">
+    Call `POST /auth/credentials` with the new address. Grid sends a code to it and returns the replacement credential with an `otpEncryptionTargetBundle`. The current credential keeps working until the change lands.
+
+    ```bash
+    curl -X POST "$GRID_BASE_URL/auth/credentials" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "type": "EMAIL_OTP",
+        "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+        "email": "jane.new@example.com"
+      }'
+    ```
+  </Step>
+  <Step title="Verify the code">
+    Encrypt the code the customer received to that `otpEncryptionTargetBundle`, as for a login, and send it to `POST /auth/credentials/{id}/verify` with the replacement's id. Grid answers `204` with no session. A replacement that is not verified within 24 hours expires.
+  </Step>
+  <Step title="Update the customer">
+    Call `PATCH /customers/{customerId}` with only `customerType` and the new address. Grid answers `202` with `payloadToSign`, `requestId`, and `expiresAt`. Make this call soon after verifying. If the verification would lapse before the challenge does, Grid returns `400 AUTH_CREDENTIAL_VERIFICATION_EXPIRED`, and the customer must verify again.
+
+    ```bash
+    curl -X PATCH "$GRID_BASE_URL/customers/Customer:019542f5-b3e7-1d02-0000-000000000001" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "customerType": "INDIVIDUAL",
+        "email": "jane.new@example.com"
+      }'
+    ```
+  </Step>
+  <Step title="Signed retry">
+    The client stamps `payloadToSign` with an active session signing key on the same account. Retry the identical request with `Grid-Wallet-Signature` and `Request-Id`. Grid answers `200` with the updated customer, and the new address becomes the account's `EMAIL_OTP` credential in place of the old one. A `200` with `{ "status": "PROCESSING" }` means the change is still landing: re-send the identical signed request until it returns the customer.
+  </Step>
+</Steps>
+
+A `PATCH` that changes the sign-in address without a verified replacement returns `400 AUTH_CREDENTIAL_VERIFICATION_REQUIRED`. The change must be sent on its own, so a request that also changes other customer fields returns `400 INVALID_INPUT`. Customers without an `EMAIL_OTP` or `SMS_OTP` credential of that type change `email` or `phoneNumber` with a plain update.
 
 ## Managing credentials
 
@@ -650,7 +688,7 @@ The response is not paginated — each account holds a small, bounded number of 
 
 ### The signed-retry pattern
 
-Adding an additional credential, revoking a credential, refreshing or revoking a session, exporting a wallet, updating wallet privacy, and updating a customer email tied to `EMAIL_OTP` all share the same shape:
+Adding an additional credential, revoking a credential, refreshing or revoking a session, exporting a wallet, updating wallet privacy, and changing a sign-in email or phone number all share the same shape:
 
 ```mermaid
 sequenceDiagram
@@ -703,6 +741,7 @@ Every signed-retry endpoint can return it on the retry step:
 | `DELETE /auth/credentials/{id}` | Revoke a credential |
 | `DELETE /auth/sessions/{id}` | Revoke a session |
 | `POST /internal-accounts/{id}/export` | Export wallet credentials |
+| `PATCH /customers/{customerId}` | Change a sign-in email or phone number |
 
 To handle it:
 
@@ -711,7 +750,7 @@ To handle it:
 3. **Keep retrying with backoff** until you get a terminal response — the success code above, or an error. Grid also reconciles the operation to its terminal state on its own, so even a client that stops retrying and checks back later (for example via `GET /auth/credentials` or `GET /auth/sessions`) will see the settled result. **Wallet export is the exception**: Grid never stores the encrypted credentials, so re-sending the signed retry is the only way to receive them. Grid's own reconciliation settles the operation but has nothing to hand back, and the export challenge expires like any other (typically 5 minutes) — if it lapses, start a fresh export.
 
 <Note>
-  `verify`, `challenge`, and `export` already use `200` for their terminal success body (`AuthSession`, the challenge response, or the encrypted credentials). For those three, `200` alone doesn't tell you which case you're in — check the response body's `status` field for `"PROCESSING"` to distinguish it from a settled success. The other four endpoints (`add credential`, `session refresh`, `revoke credential`, `revoke session`) use `201` or `204` on success, so a `200` by itself already means still-processing.
+  `verify`, `challenge`, `export`, and the customer update already use `200` for their terminal success body (`AuthSession`, the challenge response, the encrypted credentials, or the customer). For those four, `200` alone doesn't tell you which case you're in — check the response body's `status` field for `"PROCESSING"` to distinguish it from a settled success. The other four endpoints (`add credential`, `session refresh`, `revoke credential`, `revoke session`) use `201` or `204` on success, so a `200` by itself already means still-processing.
 </Note>
 
 ### Add an additional credential
