@@ -1,7 +1,7 @@
 ---
 icon: "/images/icons/checkmark1.svg"
 title: "Trusted beneficiaries"
-description: "Whitelist a payee so future sends skip the per-transaction ceremony"
+description: "Mark an IBAN or USDC address as a known payee"
 "og:image": "/images/og/og-get-started.png"
 ---
 
@@ -10,11 +10,14 @@ Applies only to customers in an SCA-required region (EU). Every endpoint here
 returns **`409`** for other customers.
 </Note>
 
-Trusting a beneficiary is a one-time, SCA-gated step that whitelists an external
-account. Only **USDC addresses** can be trusted today. Once trusted, future sends
-to that payee are no longer dynamically linked; they drop to a lighter
-authentication instead of a full per-transaction challenge. Use it for recurring
-payouts to known destinations.
+Trusting a beneficiary is a one-time, SCA-gated step that marks an external
+account as a known payee. You can trust an EUR IBAN or a USDC address. Sends to
+a trusted payee still need per-transaction SCA with `SMS_OTP` or `PASSKEY`, and a
+trusted account can't be deleted until it's untrusted.
+
+Trust is available to individual customers. For a business customer,
+`POST /customers/external-accounts/{externalAccountId}/trust` returns `501`
+`NOT_IMPLEMENTED`.
 
 The beneficiary is identified end-to-end by its **`externalAccountId`** in the
 path, so there is no separate whitelist handle to track. All paths below are
@@ -41,9 +44,9 @@ confirm directly without a `challengeId`.
 </Step>
 <Step title="Confirm the trust">
 Submit the proof for the factor Grid returned in `scaChallenge`: `code` for
-`SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`. Echo
-`challengeId` when start issued one. Do not assume a factor is available unless
-it appears in `scaChallenge.availableFactors`.
+`SMS_OTP`, or `passkeyAssertion` + `origin` for `PASSKEY`. Echo `challengeId`
+when start issued one. Do not assume a factor is available unless it appears in
+`scaChallenge.availableFactors`.
 
 ```bash
 POST /customers/external-accounts/{externalAccountId}/trust/confirm
@@ -78,8 +81,8 @@ caller then confirms without a `challengeId`).
 <Step title="Confirm the untrust">
 
 Submit the proof for the factor Grid returned in `scaChallenge`: `code` for
-`SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`. Echo
-`challengeId` when start issued one. Returns `trusted: false`.
+`SMS_OTP`, or `passkeyAssertion` + `origin` for `PASSKEY`. Echo `challengeId`
+when start issued one. Returns `trusted: false`.
 
 ```bash
 POST /customers/external-accounts/{externalAccountId}/untrust/confirm
@@ -89,9 +92,6 @@ POST /customers/external-accounts/{externalAccountId}/untrust/confirm
 
 </Step>
 </Steps>
-
-Once untrusted, sends to that beneficiary are dynamically linked again and each
-one requires a full per-transaction challenge.
 
 ## Deleting a trusted account
 

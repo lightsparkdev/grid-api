@@ -37,11 +37,11 @@ may use. `scaChallenge.factor` is the one in use (default `SMS_OTP`).
 |--------|-----------|-----------------------|
 | `SMS_OTP` | None; a code is sent to the customer's verified phone | ✅ Default |
 | `PASSKEY` | Required (WebAuthn credential) | ✅ |
-| `TOTP` | Required (authenticator app) | Available only where the challenge is not dynamically linked |
+| `TOTP` | Required (authenticator app) | Not accepted |
 
-TOTP cannot satisfy a dynamically linked debit because its code cannot be bound
-to the amount and payee. For a non-dynamically-linked challenge, use TOTP only
-when it appears in `scaChallenge.availableFactors`; that field is authoritative.
+A TOTP code can't be bound to a payment's amount and payee, so Grid accepts TOTP
+only for the [SCA login](/platform-overview/sca/login-and-sessions). Use the
+factors in `scaChallenge.availableFactors`; that field is authoritative.
 
 Request a specific factor per transaction with the optional top-level `scaFactor`
 field on `execute` (`SMS_OTP` default, or `PASSKEY`).
@@ -76,18 +76,21 @@ authorize that one too and repeat until it leaves `PENDING_AUTHORIZATION`.
 </Warning>
 
 Once the quote is in `PENDING_AUTHORIZATION`, authorize it:
-`POST /quotes/{quoteId}/authorize`. This is the single authorize path for both
-`execute` (pre-funded) and realtime-funding quotes. The challenge — and the SMS
+`POST /quotes/{quoteId}/authorize`. The challenge — and the SMS
 code or passkey assertion that satisfies it — only exists after the challenge is
 issued, so the proof is always supplied on this follow-up call, never on the
 originating request.
 
 <Note>
-For a **realtime-funding quote**, the `202` / `PENDING_AUTHORIZATION` response
-**withholds `paymentInstructions`** until the challenge is authorized. Authorize
-first, then read `paymentInstructions` from the returned (advanced) quote. If you
-read them off the initial pending response you'll show the customer nothing to
-fund.
+An SCA-required customer can't fund a quote in realtime. A quote with
+`REALTIME_FUNDING` as its source returns `400`:
+
+```json
+{
+  "code": "INVALID_INPUT",
+  "reason": "Realtime funding is not supported for this region. Fund the quote from the customer's internal account instead."
+}
+```
 </Note>
 
 If an SMS code lapses before it's used, re-send it. The existing challenge is
@@ -107,11 +110,11 @@ have the customer authorize while the new challenge is live.
 In **sandbox**, the SMS code is always `000000`.
 </Note>
 
-### Reducing prompts for repeat payees
+### Trusted beneficiaries
 
-Trusting a beneficiary (a one-time SCA-gated whitelisting step) lets subsequent
-sends to that payee skip the per-transaction challenge. Use this for recurring
-payouts to known destinations rather than authorizing every send.
+[Trusting a beneficiary](/platform-overview/sca/trusted-beneficiaries) marks an
+IBAN or USDC address as a known payee. Sends to a trusted payee still need
+per-transaction SCA with `SMS_OTP` or `PASSKEY`.
 
 ### Calling a customer outside SCA-regulated regions
 
