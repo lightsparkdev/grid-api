@@ -5061,6 +5061,63 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /quotes/by-idempotency-key:
+    get:
+      summary: Get quote by idempotency key
+      description: |
+        Retrieve the quote that a `POST /quotes` request created, by the `Idempotency-Key` that request carried. Use it when the response to `POST /quotes` was lost: the quote, and its `transactionId` once it has executed, come back exactly as `GET /quotes/{quoteId}` returns them.
+
+        Idempotency keys do not expire. A key finds its quote for as long as the quote exists, whatever the quote's status.
+
+        A `404` means no transaction exists under the key yet. A `POST /quotes` still in flight can create one afterwards, so to send the payment again, resend `POST /quotes` with the same `Idempotency-Key` and the same body: Grid creates the quote once, whichever request arrives first.
+
+        Only keys sent to `POST /quotes` are looked up. Keys sent to `POST /transfer-in` and `POST /transfer-out` are not.
+      operationId: getQuoteByIdempotencyKey
+      tags:
+        - Cross-Currency Transfers
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: key
+          in: query
+          description: The `Idempotency-Key` header value sent with `POST /quotes`. Leading and trailing whitespace is ignored, as it is on `POST /quotes`.
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+            example: 3f1c2b9e-7d4a-4f0e-9b1a-2c6d8e5f7a10
+      responses:
+        '200':
+          description: The quote created under this idempotency key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '400':
+          description: Bad request. Returned when `key` is missing or blank.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: No transaction was created under this idempotency key (`QUOTE_NOT_FOUND`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /quotes/{quoteId}:
     get:
       summary: Get quote by ID
@@ -5148,7 +5205,7 @@ paths:
           in: header
           required: false
           description: |
-            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request. Keys do not expire. If a response is lost, look the quote up with `GET /quotes/by-idempotency-key`.
             Required when the request includes `documentIds`. A request that fails with `409 PAYMENT_DOCUMENT_ALREADY_USED`, `410 PAYMENT_DOCUMENT_EXPIRED`, or `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED` created no quote, so a retry with the same key runs the request again.
           schema:
             type: string

@@ -41,7 +41,9 @@ post:
       required: false
       description: >
         A unique identifier for the request. If the same key is sent multiple times,
-        the server will return the same response as the first request.
+        the server will return the same response as the first request. Keys do
+        not expire. If a response is lost, look the quote up with
+        `GET /quotes/by-idempotency-key`.
 
         Required when the request includes `documentIds`. A request that fails
         with `409 PAYMENT_DOCUMENT_ALREADY_USED`, `410 PAYMENT_DOCUMENT_EXPIRED`,
