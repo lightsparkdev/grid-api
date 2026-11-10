@@ -10,7 +10,7 @@ properties:
     type: boolean
     description: >-
       Whether this card program supports platform-managed limits through
-      `/card-velocity-limits`. Supported where Grid makes authorization
+      `/cards/velocity-limits`. Supported where Grid makes authorization
       decisions; false where the issuer makes them. Amounts use the card's
       currency, regardless of its funding source.
     example: true

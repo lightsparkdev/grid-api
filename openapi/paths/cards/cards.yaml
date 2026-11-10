@@ -11,7 +11,7 @@ post:
     `Idempotency-Key` header is required. Retries must carry the same key.
 
 
-    Configure card velocity limits through `POST /card-velocity-limits`.
+    Configure card velocity limits through `POST /cards/velocity-limits`.
     Omit cardId to set platform defaults before issuance, or supply the returned
     card id to set card-specific limits after issuance. Limits use the smallest
     unit of the card's currency, including USD cents for USDB-funded USD cards.

@@ -6,7 +6,7 @@ description: >-
   card's `effectiveBlockedMccs`, and `allowedMccs` may only lose codes once set.
   The only status an agent may set is `FROZEN`; unfreezing and loosening happen
   on the platform through `PATCH /cards/{id}`. The platform manages card
-  velocity limits through `/card-velocity-limits`.
+  velocity limits through `/cards/velocity-limits`.
 properties:
   status:
     type: string

@@ -29,7 +29,7 @@ patch:
   summary: Update platform configuration
   description: >-
     Update platform configuration settings. Configure platform-wide card
-    velocity limits through `POST /card-velocity-limits` without cardId.
+    velocity limits through `POST /cards/velocity-limits` without cardId.
     cardConfigs contains card presentation, authentication, risk, and merchant
     category settings. Set `cardConfigs.allowedMccs` and `cardConfigs.blockedMccs`
     to restrict new authorizations on this platform's cards where Grid makes

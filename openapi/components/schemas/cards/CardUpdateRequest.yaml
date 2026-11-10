@@ -14,7 +14,7 @@ description: >-
   `ACTIVE` / `PENDING_AUTH` automatically. `PENDING_AUTH` cannot be requested.
   `CLOSED` is terminal and irreversible and cannot be combined with
   `fundingSource` or `maxNetworkRiskScore`. Manage velocity limits through
-  `/card-velocity-limits`.
+  `/cards/velocity-limits`.
 properties:
   status:
     $ref: ./CardUpdateStatus.yaml
