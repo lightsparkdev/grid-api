@@ -5451,8 +5451,7 @@ paths:
 
         Use it for a quote that `POST /quotes/{quoteId}/execute`, or `POST /quotes`
         with `immediatelyExecute`, returned in `PENDING_AUTHORIZATION`. A customer
-        who needs SCA can't fund a quote in realtime: `POST /quotes` with
-        `REALTIME_FUNDING` as the source returns `400` `INVALID_INPUT`.
+        who needs SCA can't fund a quote in realtime.
 
         As with all SCA, a quote may require more than one authorization: after
         authorizing, if the quote is still `PENDING_AUTHORIZATION` it carries the

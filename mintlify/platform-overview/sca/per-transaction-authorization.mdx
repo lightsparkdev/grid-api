@@ -45,19 +45,8 @@ send.
 </Tab>
 
 <Tab title="Realtime-funding quote">
-An SCA-required customer can't fund a quote in realtime, because the EU
-provider has no deposit address unique to a quote. `POST /quotes` with
-`REALTIME_FUNDING` as the source returns `400`:
-
-```json
-{
-  "code": "INVALID_INPUT",
-  "reason": "Realtime funding is not supported for this region. Fund the quote from the customer's internal account instead."
-}
-```
-
-Fund the customer's internal account first, then send from it with a prefunded
-quote.
+An SCA-required customer can't fund a quote in realtime. Instead, fund the
+customer's internal account first, then send from it with a prefunded quote.
 </Tab>
 
 <Tab title="Transfer-out (deprecated)">

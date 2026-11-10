@@ -13,11 +13,8 @@ returns **`409`** for other customers.
 Trusting a beneficiary is a one-time, SCA-gated step that marks an external
 account as a known payee. You can trust an EUR IBAN or a USDC address. Sends to
 a trusted payee still need per-transaction SCA with `SMS_OTP` or `PASSKEY`, and a
-trusted account can't be deleted until it's untrusted.
-
-Trust is available to individual customers. For a business customer,
-`POST /customers/external-accounts/{externalAccountId}/trust` returns `501`
-`NOT_IMPLEMENTED`.
+trusted account can't be deleted until it's untrusted. Trust is available to
+individual customers.
 
 The beneficiary is identified end-to-end by its **`externalAccountId`** in the
 path, so there is no separate whitelist handle to track. All paths below are

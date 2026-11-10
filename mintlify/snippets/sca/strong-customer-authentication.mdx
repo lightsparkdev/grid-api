@@ -81,18 +81,6 @@ code or passkey assertion that satisfies it — only exists after the challenge 
 issued, so the proof is always supplied on this follow-up call, never on the
 originating request.
 
-<Note>
-An SCA-required customer can't fund a quote in realtime. A quote with
-`REALTIME_FUNDING` as its source returns `400`:
-
-```json
-{
-  "code": "INVALID_INPUT",
-  "reason": "Realtime funding is not supported for this region. Fund the quote from the customer's internal account instead."
-}
-```
-</Note>
-
 If an SMS code lapses before it's used, re-send it. The existing challenge is
 reused, and its `expiresAt` is not extended. Use the quote resend endpoint:
 `POST /quotes/{quoteId}/authorize/resend`.

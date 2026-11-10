@@ -71,9 +71,8 @@ use; `scaChallenge.factor` is the one in use (default `SMS_OTP`).
 
 An authenticator code is derived only from a clock and a shared secret, so it
 can't be bound to a payment's amount and payee. Grid accepts TOTP only for the
-[SCA login](/platform-overview/sca/login-and-sessions). Every money movement,
-trust, and untrust uses `SMS_OTP` or `PASSKEY`. Always use the factors in
-`scaChallenge.availableFactors`; that field, not the operation name, is the
+[SCA login](/platform-overview/sca/login-and-sessions). Always use the factors
+in `scaChallenge.availableFactors`; that field, not the operation name, is the
 source of truth for the challenge Grid issued.
 
 ## The authorization flow
