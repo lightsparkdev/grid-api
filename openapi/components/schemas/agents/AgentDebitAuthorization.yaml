@@ -19,15 +19,15 @@ properties:
     type: string
     description: >-
       Exact authorization text Grid rendered for this deposit, including the
-      amount, account ending, date and how to revoke. Show it verbatim to the
-      customer.
+      amount, account ending, date and how to cancel before authorizing and how
+      to dispute. Show it verbatim to the customer.
     example: >-
-      I authorize Lightspark Group, Inc. and its partner bank to debit $20.00 once from my CHECKING account ending ••6789 at Chase on or after November 9, 2026, to add funds to my Lightspark Agents account. This authorizes a single debit only. I can revoke it before the debit is sent by cancelling it on this page or by contacting support@lightspark.com; revoking does not affect a debit already sent.
+      I authorize Lightspark Group, Inc. and its partner bank to debit $20.00 once from my CHECKING account ending ••6789 at Chase on or after November 9, 2026, to add funds to my Lightspark Agents account. This authorizes a single debit only. You can cancel on this page before you authorize. After you authorize, the debit is sent right away; to dispute it, contact your bank or support@lightspark.com.
   textSha256:
     type: string
     pattern: '^[0-9a-f]{64}$'
     description: Lowercase hex SHA-256 of the UTF-8 `text`.
-    example: e341cec8130241e0b34961bb2541adc23dca596c8bf4a68468a65037d4aaaf3d
+    example: 2d494b47886a8499234de8b6990a843d38006488697234aad1a00c053407993c
   authorizedAt:
     type: string
     format: date-time
