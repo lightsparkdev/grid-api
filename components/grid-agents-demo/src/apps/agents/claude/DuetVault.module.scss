@@ -11,6 +11,7 @@
   --dv-tile: #fff;
   --dv-ink: #141413;
   --dv-ink-text: #fff;
+  --dv-save: #252524;
   --dv-avatar: #e9e8e3;
   font-family: 'Anthropic Sans', var(--font-family-sf-pro);
 
@@ -24,6 +25,7 @@
     --dv-tile: #1f1e1d;
     --dv-ink: #f5f4ef;
     --dv-ink-text: #1f1e1d;
+    --dv-save: #f5f4ef;
     --dv-avatar: #3d3c38;
   }
 
@@ -282,6 +284,14 @@
 .saveDisc {
   width: 44px;
   height: 44px;
+}
+
+// Duet's dark check (IMG_1988 at 3x): a #252524 fill, a dark hairline (faint on the caps, strong on the sides) and a
+// ~1pt band of ~23% white just inside the caps, gone ~2pt in.
+.saveDisc .saveGlass {
+  --glass-rim-inset: rgba(255, 255, 255, 0.27);
+  --glass-rim-cap: rgba(0, 0, 0, 0.4);
+  --glass-rim-side: rgba(0, 0, 0, 0.65);
 }
 
 .saveInk {

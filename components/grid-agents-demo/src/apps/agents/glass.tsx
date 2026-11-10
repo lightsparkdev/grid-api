@@ -69,18 +69,21 @@ const LIGHT_LINE_CAPS = [
   [0.42, 0],
 ] as const;
 /**
- * Prominent (filled) glass's glow, measured on IMG_1859's blue Done: a bright line just inside the ring, dropping
- * fast into a long faint tail. No lift: on a dark fill the clear glass's white would wash it grey.
+ * Prominent (filled) glass's glow (IMG_1859's blue Done, IMG_1988's dark check): a bright line just inside the ring
+ * that follows the outline round the caps, dropping fast into a faint tail. Nested inset bands (depth, opacity) that
+ * stack to ~0.9 within 0.8pt, ~0.4 by 1.3pt, ~0.1 by 2.4pt. No lift: on a dark fill the clear glass's white would wash it
+ * grey.
  */
-const PROMINENT_GLOW = [
+const PROMINENT_BANDS = [
+  [0.8, 0.8],
+  [1.3, 0.35],
+  [2.4, 0.1],
+] as const;
+/** ...lit on the caps and gone before the sides: (offset down the glass, opacity), mirrored. */
+const PROMINENT_CAPS = [
   [0, 1],
-  [1, 1],
-  [1.33, 0.66],
-  [1.67, 0.34],
-  [2, 0.18],
-  [3, 0.14],
-  [5, 0.07],
-  [7, 0],
+  [0.14, 0.55],
+  [0.3, 0],
 ] as const;
 /** Dark rim (IMG_1949/1950 at 3x): ~29% white on the outer device pixel, falling to ~6% over the next two... */
 const DARK_BANDS = [
@@ -165,7 +168,7 @@ function GlassRim({ radius, prominent }: { radius: number; prominent?: boolean }
         {caps('band', '#fff', BAND_CAPS)}
         {caps('glow', 'var(--glass-rim-inset)', LIGHT_GLOW_CAPS)}
         {caps('line', 'var(--glass-rim-inset)', LIGHT_LINE_CAPS)}
-        {vertical('prominentGlow', 'var(--glass-rim-inset)', PROMINENT_GLOW, PROMINENT_GLOW)}
+        {caps('prominentGlow', 'var(--glass-rim-inset)', PROMINENT_CAPS)}
         <linearGradient id={`${id}lift`} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={0} y2={h}>
           {LIGHT_LIFT.map(([pt, o]) => (
             <stop key={pt} offset={Math.min(1, pt / h)} style={{ stopColor: 'var(--glass-rim-inset)' }} stopOpacity={o} />
@@ -175,7 +178,7 @@ function GlassRim({ radius, prominent }: { radius: number; prominent?: boolean }
       </defs>
       <g clipPath={`url(#${id}in)`} className={styles.rimLight}>
         {prominent ? (
-          <path d={d} fill={`url(#${id}prominentGlow)`} />
+          PROMINENT_BANDS.map(([depth, o]) => band('prominentGlow', depth, o))
         ) : (
           <>
             <path d={d} fill={`url(#${id}lift)`} />
