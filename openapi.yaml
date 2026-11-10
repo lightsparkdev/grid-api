@@ -18173,7 +18173,6 @@ webhooks:
                           accountNumber: '****4321'
                         endToEndId: E2E-9f2c6b6f
                         uetr: f47bbdd1-3d90-44c4-998d-a02bd814d5d3
-                        instructionId: 20250815021214862B2Z1Q45804374247
                         transactionId: 20250815021214862B2Z1Q45804374247
                         settledAt: '2025-08-15T14:30:02Z'
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
@@ -32029,10 +32028,6 @@ components:
               type: string
               description: Unique End-to-end Transaction Reference assigned to the payment. Often absent on FedNow.
               example: f47bbdd1-3d90-44c4-998d-a02bd814d5d3
-            instructionId:
-              type: string
-              description: Instruction identification the instructing bank assigned to the payment.
-              example: 20260607021214862B2Z1Q45804374247
             transactionId:
               type: string
               description: Transaction identification the first instructing bank assigned. Give it to the counterparty's bank to trace the payment.
@@ -32080,10 +32075,6 @@ components:
               type: string
               description: Unique End-to-end Transaction Reference assigned to the payment.
               example: f47bbdd1-3d90-44c4-998d-a02bd814d5d3
-            instructionId:
-              type: string
-              description: Instruction identification the instructing bank assigned to the payment.
-              example: 20260607021214862B2Z1Q45804374247
             transactionId:
               type: string
               description: Transaction identification the first instructing bank assigned. Give it to the counterparty's bank to trace the payment.

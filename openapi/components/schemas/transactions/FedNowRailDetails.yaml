@@ -22,11 +22,6 @@ allOf:
         description: >-
           Unique End-to-end Transaction Reference assigned to the payment. Often absent on FedNow.
         example: f47bbdd1-3d90-44c4-998d-a02bd814d5d3
-      instructionId:
-        type: string
-        description: >-
-          Instruction identification the instructing bank assigned to the payment.
-        example: 20260607021214862B2Z1Q45804374247
       transactionId:
         type: string
         description: >-
