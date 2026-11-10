@@ -41,4 +41,13 @@ description: >-
   in advance, `ACH` continues to settle same-business-day on production platforms; it
   already settles next-business-day on sandbox platforms. To guarantee same-day
   settlement after that date, request `ACH_SAME_DAY`.
+
+
+  `BANK_TRANSFER` pays the recipient's bank account. Where a currency has more than one
+  bank rail, Grid picks one for each payout.
+
+
+  These rail names are deprecated for payouts: `ACH_COLOMBIA`, `BRE_B`, `SEPA`,
+  `SEPA_INSTANT`, `NEFT`, `RTGS`, `INSTAPAY` and `PESONET`. Requests that send them still
+  work. Payout responses will show `BANK_TRANSFER` in their place.
 example: ACH
