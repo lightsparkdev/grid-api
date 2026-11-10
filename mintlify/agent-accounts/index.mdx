@@ -1,0 +1,80 @@
+---
+title: "Agent Accounts"
+sidebarTitle: "Introduction"
+description: "Let your customers give AI agents bounded access to their Grid account: policies, approvals, spending limits, payments and cards."
+icon: "/images/icons/agent.svg"
+mode: "wide"
+"og:image": "/images/og/og-agents-playground-v2.webp"
+---
+
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
+<Note>
+The Agents API is experimental and in limited availability. Details may change as the agent product surface expands. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+</Note>
+
+An agent account lets one of your customers hand an AI agent a bounded way to spend from their Grid account. The agent can run in your product, on the customer's device, or in a third-party app. Grid does not run the agent. Grid issues the agent its own credential, evaluates every request against the policy you set, holds anything that needs a human decision as an approval request, and executes what the policy and the customer allow.
+
+Your platform creates the agent, sets its policy, shows the customer what the agent wants to do, and sends the customer's decision back to Grid. The agent calls Grid directly with its own token, and every call is scoped to the one customer it acts for.
+
+## Who it's for
+
+- **Agent apps** that want their assistant to pay, buy, and get paid on a user's behalf, without holding card numbers or bank credentials.
+- **Wallets and fintechs** that want to let customers connect the agents they already use to their account, with limits and approvals the customer controls.
+- **Businesses** that want several agents spending under one shared budget, each acting for a named person.
+
+## Key concepts
+
+| Concept | What it is |
+|---|---|
+| **Customer** | The person or business whose money the agent spends. An agent belongs to exactly one customer and can only see and act on that customer's accounts. |
+| **Agent** | A delegated actor with a name, a policy, and its own credential (`Agent:...`). Your backend creates it; the agent software connects by redeeming a one-time device code. |
+| **Policy** | What the agent may do (permissions), how it executes (automatically or only with approval), how much it may spend (spending limits), which accounts it may use, and above what amount it must ask. |
+| **Agent action** | Every money movement an agent asks for becomes an `AgentAction` (`AgentAction:...`). Grid executes it at once or holds it in `PENDING_APPROVAL` until your platform approves or rejects it. |
+| **Spending pool** | A limit several of a customer's agents share, on top of each agent's own policy. A pool holds no money. |
+| **Delegated key** | A Grid-custodied signing key the customer authorizes once, so Grid can sign the agent's approved sends from their Global Account without the customer signing each one. |
+| **Cards** | Agents can be issued their own virtual cards, request single-use or recurring purchase cards, or use a card the customer already owns that you stored for them. |
+
+## Core capabilities
+
+<FeatureCardGrid cols={3}>
+  <FeatureCard icon="/images/icons/shield.svg" title="Grid-enforced policy">
+    Permissions, spending limits, account restrictions and approval thresholds are checked by Grid before any agent request executes.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/receipt-check.svg" title="Customer approvals">
+    Requests over the threshold wait for the customer. Grid sends you the full request in a webhook so you can ask them in your own UI.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/coins.svg" title="Shared spending pools">
+    Hold a customer's agents to one budget together, with its own payment types and approval threshold.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/paper-plane-top-right.svg" title="Sends and payouts">
+    Agents quote and send to wallets, stablecoin addresses and Lightning invoices, and pay people by phone or email.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/credit-card1.svg" title="Cards for agents">
+    Single-use purchase cards scoped to one order, recurring cards locked to one merchant, and access to the customer's own stored cards.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/bell.svg" title="Webhooks and audit">
+    Every request and decision is an `AgentAction` you can list, and Grid sends a webhook at each step.
+  </FeatureCard>
+</FeatureCardGrid>
+
+## How it fits with Global Accounts
+
+An agent's sends and purchase cards are paid from the customer's [Global Account](/global-accounts), the self-custodial Embedded Wallet (`type: EMBEDDED_WALLET`) Grid provisions for them. Outbound payments from a Global Account normally need the customer's signature on every send. For an agent, the customer instead authorizes a delegated key for that agent and wallet once, and Grid signs only the sends its policy and the customer's approvals allow. The customer can pause the agent, revoke the key, or delete the agent at any time.
+
+## Where to next
+
+<CardGroup cols={2}>
+  <Card title="Playground" href="/agent-accounts/demo" icon="play">
+    Give an agent an account and watch the API calls behind each step.
+  </Card>
+  <Card title="Implementation overview" href="/agent-accounts/implementation-overview" icon="rocket">
+    The end-to-end integration: create an agent, connect it, fund the account, and handle approvals.
+  </Card>
+  <Card title="Policies & permissions" href="/agent-accounts/policies-and-permissions" icon="shield-check">
+    Decide what an agent may do, how much it may spend, and when it must ask.
+  </Card>
+  <Card title="Approvals & audit" href="/agent-accounts/approvals-and-audit" icon="receipt">
+    Show approval requests to the customer and send their decision to Grid.
+  </Card>
+</CardGroup>

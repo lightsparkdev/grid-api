@@ -1,0 +1,61 @@
+---
+title: "Webhooks"
+description: "Receive agent action, payout and payment webhooks for agent accounts, and verify their signatures"
+icon: "/images/icons/bell.svg"
+"og:image": "/images/og/og-agents-playground-v2.webp"
+---
+
+import Webhooks from '/snippets/webhooks.mdx';
+
+Grid tells your backend about agent activity with the same signed webhooks it uses for everything else. Configure your endpoint in the dashboard, then handle the events below.
+
+## Agent events
+
+| Event | Sent when | Payload |
+|---|---|---|
+| `AGENT_ACTION.PENDING_APPROVAL` | An agent's request needs the customer's approval | The full `AgentAction`, including the quote, purchase card, stored card use, payout, payout run or settlement rule it is for |
+| `AGENT_ACTION.APPROVED` | An action was approved, including a stored card use Grid auto-approved because the customer chose to | The `AgentAction` |
+| `AGENT_ACTION.REJECTED` | An action was rejected | The `AgentAction`, with `rejectionReason` when one was given |
+| `AGENT_ACTION.FAILED` | An action was not executed, or execution failed | The `AgentAction`, with `failureReason` |
+| `CLAIMABLE_PAYOUT.CLAIMED`, `.PAID`, `.EXPIRED`, `.FAILED` | A claimable payout was claimed, paid, expired or failed. `EXPIRED` and `FAILED` mean the hold on the sender's wallet was released | The `ClaimablePayout` |
+| `PAYOUT_RUN.COMPLETED`, `.PARTIALLY_FAILED`, `.FAILED` | No row of a payout run is left to pay. A cancelled run sends none | The run with its row counts |
+| `SETTLEMENT_RULE.EXECUTED`, `.FAILED`, `.SKIPPED` | A settlement rule's execution on an incoming payment finished | The execution |
+
+The money itself moves with the standard `INCOMING_PAYMENT` and `OUTGOING_PAYMENT` webhooks, and agent cards send the same card status and card transaction webhooks as any card.
+
+### Pending approval example
+
+```json
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000021",
+  "type": "AGENT_ACTION.PENDING_APPROVAL",
+  "timestamp": "2026-10-26T15:00:00Z",
+  "data": {
+    "id": "AgentAction:019542f5-b3e7-1d02-0000-000000000098",
+    "agentId": "Agent:019542f5-b3e7-1d02-0000-000000000042",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000010",
+    "platformCustomerId": "user-a1b2c3",
+    "status": "PENDING_APPROVAL",
+    "type": "ISSUE_PURCHASE_CARD",
+    "purchaseCard": {
+      "amount": 12000,
+      "spendLimit": 13000,
+      "currency": "USD",
+      "description": "Concert tickets from example-tickets.com",
+      "fundingSource": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+    },
+    "expiresAt": "2026-10-26T15:15:00Z",
+    "createdAt": "2026-10-26T15:00:00Z",
+    "updatedAt": "2026-10-26T15:00:00Z"
+  }
+}
+```
+
+### Handling agent webhooks
+
+- Respond `200` quickly and do the work asynchronously. A webhook whose `id` you have already processed can be acknowledged and skipped.
+- On `AGENT_ACTION.PENDING_APPROVAL`, notify the customer immediately. A send without `priceTolerance` expires with its quote, often within minutes.
+- Don't rely on webhooks alone for the approval queue. `GET /agents/approvals` rebuilds it if your endpoint was down.
+- Send a signed test event to your endpoint at any time with `POST /webhooks/test`.
+
+<Webhooks />

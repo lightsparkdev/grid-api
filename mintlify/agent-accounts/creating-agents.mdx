@@ -1,0 +1,193 @@
+---
+title: "Creating agents"
+description: "Create an agent for a customer, connect the agent software with a one-time device code, and delegate signing on the customer's Global Account."
+icon: "/images/icons/people-add.svg"
+"og:image": "/images/og/og-agents-playground-v2.webp"
+---
+
+<Note>
+The Agents API is experimental and in limited availability. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+</Note>
+
+An agent goes from nothing to spending in three steps: your backend creates it, the agent software redeems a device code for its own token, and the customer authorizes Grid to sign the agent's sends from their Global Account.
+
+## Create an agent
+
+Call `POST /agents` from your backend with platform credentials. `name`, `customerId` and `policy` are required. See [Policies & permissions](/agent-accounts/policies-and-permissions) for every policy field.
+
+```bash
+curl -X POST "$GRID_BASE_URL/agents" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000" \
+  -d '{
+    "name": "Shopping assistant",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "policy": {
+      "permissions": ["VIEW_TRANSACTIONS", "CREATE_QUOTES", "EXECUTE_QUOTES"],
+      "defaultExecutionMode": "APPROVAL_REQUIRED",
+      "spendingLimits": {
+        "currency": "USD",
+        "perTransactionLimit": 50000,
+        "dailyLimit": 200000,
+        "dailyTransactionLimit": 5
+      }
+    }
+  }'
+```
+
+**Response:** `201 Created`
+
+```json
+{
+  "agent": {
+    "id": "Agent:019542f5-b3e7-1d02-0000-000000000001",
+    "name": "Shopping assistant",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "isPaused": false,
+    "isConnected": false,
+    "policy": {
+      "permissions": ["VIEW_TRANSACTIONS", "CREATE_QUOTES", "EXECUTE_QUOTES"],
+      "defaultExecutionMode": "APPROVAL_REQUIRED",
+      "spendingLimits": {
+        "currency": "USD",
+        "perTransactionLimit": 50000,
+        "dailyLimit": 200000,
+        "dailyTransactionLimit": 5
+      }
+    },
+    "usage": {
+      "dailyTransactionCount": 0,
+      "dailySpend": 0,
+      "monthlySpend": 0
+    },
+    "createdAt": "2025-07-21T17:32:28Z",
+    "updatedAt": "2025-07-21T17:32:28Z"
+  },
+  "deviceCode": {
+    "code": "jqzJR3AgI9OAwb_enypARw",
+    "agentId": "Agent:019542f5-b3e7-1d02-0000-000000000001",
+    "expiresAt": "2025-07-21T17:47:28Z",
+    "redeemed": false
+  }
+}
+```
+
+### Optional fields
+
+| Field | Use |
+|---|---|
+| `spendingPoolId` | Put the agent in one of the customer's [spending pools](/agent-accounts/spending-limits), where your platform enables them. The agent's policy must be in the pool's currency. |
+| `actingFor` | Your own reference for the person the agent acts for, such as a member id within a business (1 to 255 characters). Grid stores it as given, never interprets it, and copies it onto every card the agent is issued. Required for a `BUSINESS` customer, optional for an `INDIVIDUAL`, and it cannot be changed later. |
+
+Agents of `BUSINESS` customers are available only where your platform enables them, and `actingFor` is required for them. Until the business's KYB status is `APPROVED`, its agents' sends and deposits are held to the same limits as an unverified individual's, counted across the whole business.
+
+### Idempotent creation
+
+`Idempotency-Key` is optional on `POST /agents` but you should always send one. Without a key, Grid cannot recognize a retry, so each request creates its own agent.
+
+- A retry with a key already used returns the agent the first request created, with `200` instead of `201`, and a **new device code** that replaces any unredeemed one.
+- The retry is compared with the agent as it is now. Reusing a key with a different customer, name, policy, `actingFor` or `spendingPoolId`, after the agent's policy or pool was changed, for an agent that was deleted, or for one that is already connected, is rejected with `409`. Use a new key for a new agent.
+
+## Connect the agent software
+
+The `deviceCode.code` is an opaque 22-character string the agent software exchanges for its own credential. Hand it to the customer to paste into the agent, or pass it to the agent through your own install flow.
+
+- Grid stores only a hash of the code, so it is returned only when it is issued.
+- It can be redeemed once, and only before `expiresAt`. Codes expire 15 minutes after they are issued by default; Grid can set your platform's lifetime between 1 and 60 minutes.
+- An agent has at most one unredeemed code. If it expires or is lost, issue a new one with `POST /agents/{agentId}/device-codes`, which invalidates the previous code. Regenerating is refused with `409` once the agent is connected.
+
+### Redeem the code
+
+The agent software calls `POST /agents/device-codes/redeem`. It needs no platform credentials: the code itself is the proof.
+
+```bash
+curl -X POST "$GRID_BASE_URL/agents/device-codes/redeem" \
+  -H "Content-Type: application/json" \
+  -d '{ "code": "jqzJR3AgI9OAwb_enypARw" }'
+```
+
+```json
+{
+  "agentId": "Agent:019542f5-b3e7-1d02-0000-000000000001",
+  "agentName": "Shopping assistant",
+  "accessToken": "gat_ed0ad25881e234cc28fb2dec0a4fe64e4172a3b9",
+  "policy": {
+    "permissions": ["VIEW_TRANSACTIONS", "CREATE_QUOTES", "EXECUTE_QUOTES"],
+    "defaultExecutionMode": "APPROVAL_REQUIRED",
+    "spendingLimits": {
+      "currency": "USD",
+      "perTransactionLimit": 50000,
+      "dailyLimit": 200000,
+      "dailyTransactionLimit": 5
+    }
+  }
+}
+```
+
+<Warning>
+`accessToken` is returned only once and cannot be retrieved again. The agent software must store it securely and send it as `Authorization: Bearer <accessToken>` on every `/agents/me/...` call. Grid cannot return it again, and a connected agent cannot be issued a new device code.
+</Warning>
+
+Redemption is rate limited in fixed 60-second windows: 10 calls per client IP address and 1,000 across all callers without platform credentials, or 600 per platform for calls made with platform credentials. A caller over a limit receives `429 RATE_LIMITED` and should wait for the window to reset.
+
+### Watch for the connection
+
+From your backend, poll `POST /agents/device-codes/status` with the code. `status` is one of:
+
+| Status | Meaning |
+|---|---|
+| `PENDING` | Active and not yet redeemed |
+| `REDEEMED` | Redeemed; the agent is connected |
+| `EXPIRED` | Expired before it was redeemed |
+| `INVALIDATED` | Superseded by a newer code, or otherwise invalidated |
+
+Once redeemed, the agent's `isConnected` is `true`. You can also list connected agents with `GET /agents?isConnected=true`.
+
+### What the agent can call
+
+With its token, the agent reads its own profile, policy and current usage from `GET /agents/me`, and calls the operations its permissions allow: quotes and sends, deposits, external accounts, cards, and identity. Every `/agents/me/...` request is bound to the agent's customer; the agent cannot name another customer, and a resource of another customer answers `404`.
+
+## Delegate signing on the Global Account
+
+Sends from a Global Account must be signed for the wallet. For an agent, the customer authorizes Grid to sign on the agent's behalf by creating a delegated key for that agent and wallet with `POST /auth/delegated-keys`:
+
+```json
+{
+  "agentId": "Agent:019542f5-b3e7-1d02-0000-000000000001",
+  "internalAccountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+  "nickname": "Shopping assistant key"
+}
+```
+
+Creation is a three-leg signed-retry flow, signed with the session key of a verified credential on the wallet:
+
+1. Call `POST /auth/delegated-keys` with no signature headers. Grid responds `202` with a `payloadToSign` and `requestId`.
+2. Stamp `payloadToSign` with the customer's session key and retry with `Grid-Wallet-Signature` and `Request-Id`. Grid responds with a second `202` and a new `payloadToSign`.
+3. Stamp the new payload and retry once more. Grid responds `201` with the `DelegatedKey` in `ACTIVE` status.
+
+Send the same body on all three legs. See [Client keys & signing](/global-accounts/client-keys) for building the stamp.
+
+Once the key is `ACTIVE`, Grid uses it to sign the agent's sends that its policy allows or the customer approves; your platform never handles the key material. Each agent and wallet pair may have at most one unrevoked (`PENDING` or `ACTIVE`) key. A flow abandoned after the second leg leaves a `PENDING` key that blocks a new one until you revoke it.
+
+<Warning>
+A delegated key authorizes signing for the wallet and cannot itself be scoped to amounts or recipients. The agent's policy, spending pool and the customer's approvals are what bound it. Revoke the key with `DELETE /auth/delegated-keys/{id}` when the customer disconnects the agent.
+</Warning>
+
+## Manage the agent
+
+| Task | Call |
+|---|---|
+| Rename, pause or resume, or move between spending pools | `PATCH /agents/{agentId}` with `name`, `isPaused` or `spendingPoolId` (`null` takes it out of its pool) |
+| Change the policy | `PATCH /agents/{agentId}/policy` (see [Policies & permissions](/agent-accounts/policies-and-permissions)) |
+| Read one agent | `GET /agents/{agentId}` |
+| List agents | `GET /agents`, filtered by `customerId`, `actingFor`, `isPaused`, `isConnected`, or created and updated time; paginated with `limit` (default 20, max 100) and `cursor` |
+| Delete permanently | `DELETE /agents/{agentId}`; connected agent software loses access immediately |
+
+A paused agent cannot initiate any action. Deleting an agent freezes the standard card issued for it; if the customer reconnects the same agent software as a new agent, `POST /agents/{agentId}/card-handover` moves that card to the new agent and unfreezes it. See [Cards](/agent-accounts/cards#hand-a-card-to-a-new-agent).
+
+## Next steps
+
+- [Policies & permissions](/agent-accounts/policies-and-permissions)
+- [Funding](/agent-accounts/funding)
+- [Payments](/agent-accounts/payments)
