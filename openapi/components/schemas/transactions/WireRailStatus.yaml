@@ -2,6 +2,8 @@ type: string
 enum:
   - PENDING
   - SETTLED
+  - RETURNED
+  - PARTIALLY_RETURNED
   - FAILED
 description: |-
   Status of the wire on Fedwire.
@@ -10,5 +12,10 @@ description: |-
   |--------|-------------|
   | `PENDING` | Submitted to Fedwire and not yet delivered. |
   | `SETTLED` | Fedwire delivered the wire. |
+  | `RETURNED` | The recipient's bank sent the wire back. The amount returned can be short of the original when banks deducted fees along the way; the wire still counts as fully returned. |
+  | `PARTIALLY_RETURNED` | The recipient's bank sent back only part of the wire and kept the rest. |
   | `FAILED` | Fedwire or the receiving bank rejected the wire and no funds moved. |
+
+  Each return is listed in `returns`. A return can arrive days after the wire settled,
+  and moves a payout to `FAILED`.
 example: SETTLED

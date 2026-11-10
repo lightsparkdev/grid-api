@@ -17,9 +17,27 @@ allOf:
         $ref: ./WireRailStatus.yaml
       imad:
         type: string
-        description: Fedwire Input Message Accountability Data assigned when the wire was sent.
+        description: >-
+          Fedwire Input Message Accountability Data, assigned by the Fedwire Funds
+          Service to the sending bank's message. Quote it to a bank when asking about
+          this wire.
         example: 20260929MMQFMP9C000123
+      omad:
+        type: string
+        description: >-
+          Fedwire Output Message Accountability Data, assigned when Fedwire delivered
+          the wire to the receiving bank. Present once the wire is delivered, when the
+          sending bank reports it.
+        example: 20260929MMQFMP9C00012309291504FT03
       originatorToBeneficiaryInformation:
         type: string
         description: Free-form originator-to-beneficiary information (OBI) sent with the wire.
         example: 'INV-12345'
+      returns:
+        type: array
+        description: >-
+          Wires the recipient's bank sent back for this one, oldest first. A wire can
+          be returned in several pieces, each a separate wire with its own IMAD. Empty
+          until the first return.
+        items:
+          $ref: ./WireReturn.yaml

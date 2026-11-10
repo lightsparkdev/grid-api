@@ -1,0 +1,38 @@
+title: Wire Return
+type: object
+description: A wire the recipient's bank sent back for all or part of the original wire.
+required:
+  - amount
+  - returnedAt
+properties:
+  amount:
+    type: integer
+    format: int64
+    description: >-
+      Amount that came back, in the smallest unit of the wire's currency. Banks along
+      the way can deduct fees, so a full return can be short of the original amount.
+    example: 99500
+  returnCode:
+    type: string
+    description: >-
+      ISO 20022 return reason code the returning bank sent, such as `AC04` (account
+      closed) or `AC01` (incorrect account number). Banks may send other codes, so
+      accept any value.
+    example: AC04
+  returnReason:
+    type: string
+    description: Free-text reason the returning bank sent.
+    example: Beneficiary account closed
+  imad:
+    type: string
+    description: IMAD of the return wire. Quote it to your bank when asking about this return.
+    example: 20261001MMQFMP9C000456
+  omad:
+    type: string
+    description: OMAD of the return wire, when the bank reports it.
+    example: 20261001MMQFMP9C00045610011402FT03
+  returnedAt:
+    type: string
+    format: date-time
+    description: When the returned funds were credited.
+    example: '2026-10-01T14:02:00Z'

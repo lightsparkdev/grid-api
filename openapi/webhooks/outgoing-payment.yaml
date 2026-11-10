@@ -198,6 +198,70 @@ post:
                 description: Vendor payout
                 paymentInstructions: []
                 failureReason: PAYOUT_RETURNED
+          outgoingWirePaymentReturned:
+            summary: Wire payout returned by the recipient's bank
+            description: >-
+              The wire was delivered, and the recipient's bank later sent it back. The
+              transaction moves to `FAILED` with `PAYOUT_RETURNED`, and the destination's
+              `railDetails` moves to `RETURNED`. The return wire arrived $5.00 short
+              because of bank fees along the way, and still counts as a full return.
+              `returns` lists each return with its own IMAD; a wire returned in several
+              pieces sends `OUTGOING_PAYMENT.FAILED` again for each later piece.
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000021
+              type: OUTGOING_PAYMENT.FAILED
+              timestamp: '2025-08-18T15:02:00Z'
+              data:
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000022
+                status: FAILED
+                type: OUTGOING
+                direction: DEBIT
+                source:
+                  sourceType: ACCOUNT
+                  accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                destination:
+                  destinationType: ACCOUNT
+                  accountId: ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456
+                  railDetails:
+                    paymentRail: WIRE
+                    status: RETURNED
+                    bankAccount:
+                      accountHolderName: Jane Receiver
+                      routingNumber: '021000021'
+                      accountNumber: '****4321'
+                      bankName: Chase Bank
+                    imad: 20250815MMQFMP9C000123
+                    omad: 20250815MMQFMP9C00012308151430FT03
+                    originatorToBeneficiaryInformation: 'INV-2025-0815'
+                    settledAt: '2025-08-15T14:30:00Z'
+                    returns:
+                      - amount: 99500
+                        returnCode: AC04
+                        returnReason: Beneficiary account closed
+                        imad: 20250818MMQFMP9C000456
+                        returnedAt: '2025-08-18T15:00:00Z'
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                sentAmount:
+                  amount: 100000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                receivedAmount:
+                  amount: 100000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                quoteId: Quote:019542f5-b3e7-1d02-0000-000000000023
+                settledAt: '2025-08-15T14:30:00Z'
+                createdAt: '2025-08-15T14:25:18Z'
+                description: Vendor payout
+                paymentInstructions: []
+                failureReason: PAYOUT_RETURNED
           failedPayment:
             summary: Failed outgoing payment
             value:

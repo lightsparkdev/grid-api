@@ -18199,6 +18199,64 @@ webhooks:
                     description: Vendor payout
                     paymentInstructions: []
                     failureReason: PAYOUT_RETURNED
+              outgoingWirePaymentReturned:
+                summary: Wire payout returned by the recipient's bank
+                description: The wire was delivered, and the recipient's bank later sent it back. The transaction moves to `FAILED` with `PAYOUT_RETURNED`, and the destination's `railDetails` moves to `RETURNED`. The return wire arrived $5.00 short because of bank fees along the way, and still counts as a full return. `returns` lists each return with its own IMAD; a wire returned in several pieces sends `OUTGOING_PAYMENT.FAILED` again for each later piece.
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000021
+                  type: OUTGOING_PAYMENT.FAILED
+                  timestamp: '2025-08-18T15:02:00Z'
+                  data:
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000022
+                    status: FAILED
+                    type: OUTGOING
+                    direction: DEBIT
+                    source:
+                      sourceType: ACCOUNT
+                      accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    destination:
+                      destinationType: ACCOUNT
+                      accountId: ExternalAccount:b23dcbd6-dced-4ec4-b756-3c3a9ea3d456
+                      railDetails:
+                        paymentRail: WIRE
+                        status: RETURNED
+                        bankAccount:
+                          accountHolderName: Jane Receiver
+                          routingNumber: '021000021'
+                          accountNumber: '****4321'
+                          bankName: Chase Bank
+                        imad: 20250815MMQFMP9C000123
+                        omad: 20250815MMQFMP9C00012308151430FT03
+                        originatorToBeneficiaryInformation: INV-2025-0815
+                        settledAt: '2025-08-15T14:30:00Z'
+                        returns:
+                          - amount: 99500
+                            returnCode: AC04
+                            returnReason: Beneficiary account closed
+                            imad: 20250818MMQFMP9C000456
+                            returnedAt: '2025-08-18T15:00:00Z'
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    sentAmount:
+                      amount: 100000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    receivedAmount:
+                      amount: 100000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    quoteId: Quote:019542f5-b3e7-1d02-0000-000000000023
+                    settledAt: '2025-08-15T14:30:00Z'
+                    createdAt: '2025-08-15T14:25:18Z'
+                    description: Vendor payout
+                    paymentInstructions: []
+                    failureReason: PAYOUT_RETURNED
               failedPayment:
                 summary: Failed outgoing payment
                 value:
@@ -31883,6 +31941,8 @@ components:
       enum:
         - PENDING
         - SETTLED
+        - RETURNED
+        - PARTIALLY_RETURNED
         - FAILED
       description: |-
         Status of the wire on Fedwire.
@@ -31891,8 +31951,47 @@ components:
         |--------|-------------|
         | `PENDING` | Submitted to Fedwire and not yet delivered. |
         | `SETTLED` | Fedwire delivered the wire. |
+        | `RETURNED` | The recipient's bank sent the wire back. The amount returned can be short of the original when banks deducted fees along the way; the wire still counts as fully returned. |
+        | `PARTIALLY_RETURNED` | The recipient's bank sent back only part of the wire and kept the rest. |
         | `FAILED` | Fedwire or the receiving bank rejected the wire and no funds moved. |
+
+        Each return is listed in `returns`. A return can arrive days after the wire settled,
+        and moves a payout to `FAILED`.
       example: SETTLED
+    WireReturn:
+      title: Wire Return
+      type: object
+      description: A wire the recipient's bank sent back for all or part of the original wire.
+      required:
+        - amount
+        - returnedAt
+      properties:
+        amount:
+          type: integer
+          format: int64
+          description: Amount that came back, in the smallest unit of the wire's currency. Banks along the way can deduct fees, so a full return can be short of the original amount.
+          example: 99500
+        returnCode:
+          type: string
+          description: ISO 20022 return reason code the returning bank sent, such as `AC04` (account closed) or `AC01` (incorrect account number). Banks may send other codes, so accept any value.
+          example: AC04
+        returnReason:
+          type: string
+          description: Free-text reason the returning bank sent.
+          example: Beneficiary account closed
+        imad:
+          type: string
+          description: IMAD of the return wire. Quote it to your bank when asking about this return.
+          example: 20261001MMQFMP9C000456
+        omad:
+          type: string
+          description: OMAD of the return wire, when the bank reports it.
+          example: 20261001MMQFMP9C00045610011402FT03
+        returnedAt:
+          type: string
+          format: date-time
+          description: When the returned funds were credited.
+          example: '2026-10-01T14:02:00Z'
     WireRailDetails:
       title: Wire Transfer
       description: A domestic wire over Fedwire.
@@ -31913,12 +32012,21 @@ components:
               $ref: '#/components/schemas/WireRailStatus'
             imad:
               type: string
-              description: Fedwire Input Message Accountability Data assigned when the wire was sent.
+              description: Fedwire Input Message Accountability Data, assigned by the Fedwire Funds Service to the sending bank's message. Quote it to a bank when asking about this wire.
               example: 20260929MMQFMP9C000123
+            omad:
+              type: string
+              description: Fedwire Output Message Accountability Data, assigned when Fedwire delivered the wire to the receiving bank. Present once the wire is delivered, when the sending bank reports it.
+              example: 20260929MMQFMP9C00012309291504FT03
             originatorToBeneficiaryInformation:
               type: string
               description: Free-form originator-to-beneficiary information (OBI) sent with the wire.
               example: INV-12345
+            returns:
+              type: array
+              description: Wires the recipient's bank sent back for this one, oldest first. A wire can be returned in several pieces, each a separate wire with its own IMAD. Empty until the first return.
+              items:
+                $ref: '#/components/schemas/WireReturn'
     FedNowRailStatus:
       type: string
       enum:
