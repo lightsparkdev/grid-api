@@ -234,7 +234,7 @@ For customers in regions where Strong Customer Authentication (SCA) is required 
 Where the challenge appears depends on how the quote is funded:
 
 - **Prefunded** — `POST /quotes/{quoteId}/execute` returns `PENDING_AUTHORIZATION` with the challenge instead of initiating the transfer. The challenge does not exist until `execute` is called, so the proof always goes on the follow-up authorize; re-calling `execute` returns `409`.
-- **Realtime (JIT) funded** — the challenge arrives earlier and `paymentInstructions` are withheld until it is satisfied.
+- **Realtime (JIT) funded**: not available, fund the customer's internal account and send from it instead.
 
 **Quote response with SCA challenge:**
 

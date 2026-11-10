@@ -8,9 +8,10 @@ parameters:
 post:
   summary: Start trusting a beneficiary
   description: |
-    Begin trusting (whitelisting) an external account so future sends to it can
-    skip the per-transaction SCA ceremony. Returns the `scaChallenge` to satisfy
-    (when one is issued). Complete with
+    Begin trusting an external account (an EUR IBAN or a USDC address), which
+    marks it as a known payee. Sends to a trusted payee still need
+    per-transaction SCA. A trusted account can't be deleted until it's
+    untrusted. Returns the `scaChallenge` to satisfy (when one is issued). Complete with
     `POST /customers/external-accounts/{externalAccountId}/trust/confirm`.
 
     This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
@@ -50,6 +51,14 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error409.yaml
+    '501':
+      description: >-
+        Not implemented. Returned for a business customer, which can't trust a
+        beneficiary yet.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml
     '500':
       description: Internal service error
       content:

@@ -2492,9 +2492,10 @@ paths:
     post:
       summary: Start trusting a beneficiary
       description: |
-        Begin trusting (whitelisting) an external account so future sends to it can
-        skip the per-transaction SCA ceremony. Returns the `scaChallenge` to satisfy
-        (when one is issued). Complete with
+        Begin trusting an external account (an EUR IBAN or a USDC address), which
+        marks it as a known payee. Sends to a trusted payee still need
+        per-transaction SCA. A trusted account can't be deleted until it's
+        untrusted. Returns the `scaChallenge` to satisfy (when one is issued). Complete with
         `POST /customers/external-accounts/{externalAccountId}/trust/confirm`.
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
@@ -2540,6 +2541,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented. Returned for a business customer, which can't trust a beneficiary yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /customers/external-accounts/{externalAccountId}/trust/confirm:
     parameters:
       - name: externalAccountId
@@ -2618,9 +2625,8 @@ paths:
     post:
       summary: Start untrusting a beneficiary
       description: |
-        Begin untrusting (removing the trusted mark from) an external account, so
-        future sends to it are dynamically linked and require the per-transaction SCA
-        ceremony again. Returns the `scaChallenge` to satisfy (when one is issued).
+        Begin untrusting (removing the trusted mark from) an external account.
+        Returns the `scaChallenge` to satisfy (when one is issued).
         Complete with
         `POST /customers/external-accounts/{externalAccountId}/untrust/confirm`.
 
@@ -5502,10 +5508,9 @@ paths:
         Satisfy the Strong Customer Authentication challenge carried by a quote in
         `PENDING_AUTHORIZATION` status by submitting an `ScaAuthorization` proof.
 
-        This is used for realtime-funding quotes: the quote is returned with an
-        `scaChallenge` and **without** `paymentInstructions`; once authorized, the
-        quote advances and its `paymentInstructions` are populated so the customer
-        can fund the transfer.
+        Use it for a quote that `POST /quotes/{quoteId}/execute`, or `POST /quotes`
+        with `immediatelyExecute`, returned in `PENDING_AUTHORIZATION`. A customer
+        who needs SCA can't fund a quote in realtime.
 
         As with all SCA, a quote may require more than one authorization: after
         authorizing, if the quote is still `PENDING_AUTHORIZATION` it carries the
@@ -5587,7 +5592,7 @@ paths:
     post:
       summary: Resend a quote's SCA challenge code
       description: |
-        Re-send the one-time code for a realtime-funding quote in
+        Re-send the one-time code for a quote in
         `PENDING_AUTHORIZATION` status whose `scaChallenge.factor` is `SMS_OTP`. The
         existing challenge is reused — no new challenge is issued, and its
         `scaChallenge.expiresAt` is **not** extended; once the challenge is past
@@ -23120,7 +23125,7 @@ components:
           description: The SCA challenge to satisfy on the confirm call. Omitted when no challenge is issued.
     BeneficiaryTrustConfirmRequest:
       type: object
-      description: Confirms trusting or untrusting a beneficiary by submitting the SCA proof. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`) and, when the start issued one, the `challengeId`. The beneficiary is identified by the `externalAccountId` in the path — no separate handle is needed. Provide exactly one of `code` or `passkeyAssertion`, with `origin` alongside a `passkeyAssertion`.
+      description: Confirms trusting or untrusting a beneficiary by submitting the SCA proof. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP`, or `passkeyAssertion` + `origin` for `PASSKEY`) and, when the start issued one, the `challengeId`. The beneficiary is identified by the `externalAccountId` in the path — no separate handle is needed. Provide exactly one of `code` or `passkeyAssertion`, with `origin` alongside a `passkeyAssertion`.
       properties:
         challengeId:
           type:
@@ -23131,7 +23136,7 @@ components:
           type:
             - string
             - 'null'
-          description: The one-time code the customer received by SMS, or read from their authenticator app. Provide for `SMS_OTP` / `TOTP`. In sandbox, the code is always `000000`.
+          description: The one-time code the customer received by SMS. Provide for `SMS_OTP`. In sandbox, the code is always `000000`.
           example: '000000'
         passkeyAssertion:
           type:

@@ -1,8 +1,8 @@
 type: object
 description: >-
   Confirms trusting or untrusting a beneficiary by submitting the SCA proof.
-  Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` /
-  `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`) and, when the start
+  Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP`,
+  or `passkeyAssertion` + `origin` for `PASSKEY`) and, when the start
   issued one, the `challengeId`. The beneficiary is identified by the
   `externalAccountId` in the path — no separate handle is needed. Provide
   exactly one of `code` or `passkeyAssertion`, with `origin` alongside a
@@ -20,9 +20,8 @@ properties:
       - string
       - 'null'
     description: >-
-      The one-time code the customer received by SMS, or read from their
-      authenticator app. Provide for `SMS_OTP` / `TOTP`. In sandbox, the code is
-      always `000000`.
+      The one-time code the customer received by SMS. Provide for `SMS_OTP`. In
+      sandbox, the code is always `000000`.
     example: '000000'
   passkeyAssertion:
     type:

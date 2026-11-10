@@ -46,26 +46,8 @@ challenge.**
 </Tab>
 
 <Tab title="Realtime-funding quote">
-Here the challenge is issued at *quote* time and `paymentInstructions` are
-withheld until you clear it — you authorize before you fund.
-
-<Steps>
-<Step title="Request the quote">
-`POST /quotes` for a realtime-funded send returns `202` /
-`PENDING_AUTHORIZATION` with an `scaChallenge`. `paymentInstructions` are
-**omitted** from this response.
-</Step>
-<Step title="Authorize the quote">
-`POST /quotes/{quoteId}/authorize` with the proof — the challenge is carried by
-the quote. Re-inspect the returned quote and continue the authorization loop if
-it remains `PENDING_AUTHORIZATION`.
-</Step>
-<Step title="Read the payment instructions">
-Read `paymentInstructions` from the returned (advanced) quote and fund the
-transfer. Reading them off the initial pending response would show the customer
-nothing to fund.
-</Step>
-</Steps>
+An SCA-required customer can't fund a quote in realtime. Instead, fund the
+customer's internal account first, then send from it with a prefunded quote.
 </Tab>
 
 <Tab title="Transfer-out (deprecated)">
