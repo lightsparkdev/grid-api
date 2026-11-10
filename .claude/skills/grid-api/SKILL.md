@@ -294,7 +294,7 @@ Returns:
 - `totalFee` — total cost in withdrawal currency (network fee converted + application fee)
 - `netAmount` — amount recipient receives after all fees
 
-Supported networks: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `ARBITRUM`, `SPARK`, `LIGHTNING`, `BITCOIN`
+Supported networks: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `ARBITRUM`, `OPTIMISM`, `AVALANCHE`, `SPARK`, `LIGHTNING`, `BITCOIN`
 
 ### Quotes (Cross-Currency Transfers)
 
@@ -567,7 +567,7 @@ Use this flow when the user asks for a "realtime quote" or "just in time" funded
 
 **Compatible instant methods:**
 
-- **Crypto:** BTC (Lightning, Spark), USDC (Solana, Base, Polygon, Ethereum, Arbitrum), USDT (Tron, Ethereum, Plasma, Arbitrum)
+- **Crypto:** BTC (Lightning, Spark), USDC (Solana, Base, Polygon, Ethereum, Arbitrum, Optimism, Avalanche), USDT (Tron, Ethereum, Plasma, Arbitrum)
 - **Fiat:** RTP, SEPA Instant, and other instant payment rails
 
 **Flow:**

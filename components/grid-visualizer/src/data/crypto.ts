@@ -35,6 +35,8 @@ export const cryptoAssets: CryptoAsset[] = [
       { type: 'BASE_WALLET', label: 'Wallet', network: 'Base' },
       { type: 'ETHEREUM_WALLET', label: 'Wallet', network: 'Ethereum' },
       { type: 'ARBITRUM_WALLET', label: 'Wallet', network: 'Arbitrum' },
+      { type: 'OPTIMISM_WALLET', label: 'Wallet', network: 'Optimism' },
+      { type: 'AVALANCHE_WALLET', label: 'Wallet', network: 'Avalanche C-Chain' },
     ],
     examplePerson: { fullName: 'Alex Rivera', nationality: 'US' },
   },

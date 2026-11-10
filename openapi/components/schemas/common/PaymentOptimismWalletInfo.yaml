@@ -1,0 +1,11 @@
+title: Optimism Wallet
+allOf:
+  - $ref: ./BasePaymentAccountInfo.yaml
+  - $ref: ./OptimismWalletInfo.yaml
+  - type: object
+    properties:
+      assetType:
+        type: string
+        description: Type of asset
+        enum:
+          - USDC

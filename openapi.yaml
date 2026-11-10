@@ -23604,6 +23604,8 @@ components:
         - TRON_WALLET
         - PLASMA_WALLET
         - ARBITRUM_WALLET
+        - OPTIMISM_WALLET
+        - AVALANCHE_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
         - ETHEREUM_WALLET
@@ -24156,6 +24158,58 @@ components:
           properties:
             assetType:
               $ref: '#/components/schemas/StablecoinAssetType'
+    OptimismWalletInfo:
+      type: object
+      required:
+        - address
+        - accountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - OPTIMISM_WALLET
+        address:
+          type: string
+          description: Optimism wallet address
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+    PaymentOptimismWalletInfo:
+      title: Optimism Wallet
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/OptimismWalletInfo'
+        - type: object
+          properties:
+            assetType:
+              type: string
+              description: Type of asset
+              enum:
+                - USDC
+    AvalancheWalletInfo:
+      type: object
+      required:
+        - address
+        - accountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - AVALANCHE_WALLET
+        address:
+          type: string
+          description: Avalanche C-Chain wallet address
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+    PaymentAvalancheWalletInfo:
+      title: Avalanche Wallet
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/AvalancheWalletInfo'
+        - type: object
+          properties:
+            assetType:
+              type: string
+              description: Type of asset
+              enum:
+                - USDC
     TronWalletInfo:
       type: object
       required:
@@ -24257,6 +24311,8 @@ components:
             - $ref: '#/components/schemas/PaymentBaseWalletInfo'
             - $ref: '#/components/schemas/PaymentPolygonWalletInfo'
             - $ref: '#/components/schemas/PaymentArbitrumWalletInfo'
+            - $ref: '#/components/schemas/PaymentOptimismWalletInfo'
+            - $ref: '#/components/schemas/PaymentAvalancheWalletInfo'
             - $ref: '#/components/schemas/PaymentTronWalletInfo'
             - $ref: '#/components/schemas/PaymentPlasmaWalletInfo'
             - $ref: '#/components/schemas/PaymentEmbeddedWalletInfo'
@@ -24278,6 +24334,8 @@ components:
               BASE_WALLET: '#/components/schemas/PaymentBaseWalletInfo'
               POLYGON_WALLET: '#/components/schemas/PaymentPolygonWalletInfo'
               ARBITRUM_WALLET: '#/components/schemas/PaymentArbitrumWalletInfo'
+              OPTIMISM_WALLET: '#/components/schemas/PaymentOptimismWalletInfo'
+              AVALANCHE_WALLET: '#/components/schemas/PaymentAvalancheWalletInfo'
               TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
               PLASMA_WALLET: '#/components/schemas/PaymentPlasmaWalletInfo'
               EMBEDDED_WALLET: '#/components/schemas/PaymentEmbeddedWalletInfo'
@@ -24558,6 +24616,8 @@ components:
         - LIGHTNING
         - PLASMA_WALLET
         - ARBITRUM_WALLET
+        - OPTIMISM_WALLET
+        - AVALANCHE_WALLET
         - POLYGON_WALLET
         - SOLANA_WALLET
         - SPARK_WALLET
@@ -29346,6 +29406,20 @@ components:
         - $ref: '#/components/schemas/ArbitrumWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+    OptimismWalletExternalAccountInfo:
+      title: Optimism Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/OptimismWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
+    AvalancheWalletExternalAccountInfo:
+      title: Avalanche Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/AvalancheWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
@@ -29943,6 +30017,8 @@ components:
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/OptimismWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/AvalancheWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -29997,6 +30073,8 @@ components:
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           PLASMA_WALLET: '#/components/schemas/PlasmaWalletExternalAccountInfo'
           ARBITRUM_WALLET: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
+          OPTIMISM_WALLET: '#/components/schemas/OptimismWalletExternalAccountInfo'
+          AVALANCHE_WALLET: '#/components/schemas/AvalancheWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -30942,6 +31020,8 @@ components:
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/OptimismWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/AvalancheWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -30995,6 +31075,8 @@ components:
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           PLASMA_WALLET: '#/components/schemas/PlasmaWalletExternalAccountInfo'
           ARBITRUM_WALLET: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
+          OPTIMISM_WALLET: '#/components/schemas/OptimismWalletExternalAccountInfo'
+          AVALANCHE_WALLET: '#/components/schemas/AvalancheWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -31731,6 +31813,8 @@ components:
         - TRON
         - PLASMA
         - ARBITRUM
+        - OPTIMISM
+        - AVALANCHE
         - SPARK
       description: The blockchain network an on-chain transaction settled on. Whether this is the mainnet or a test network (e.g. Solana devnet) is determined by your platform's environment — sandbox platforms operate on test networks, production platforms on mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
       example: SOLANA
@@ -33283,7 +33367,7 @@ components:
               example: USD
             cryptoNetwork:
               type: string
-              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `ARBITRUM`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
+              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `ARBITRUM`, `OPTIMISM`, `AVALANCHE`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
               example: SOLANA
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSourceOneOf:
@@ -33793,7 +33877,7 @@ components:
           example: USDC
         cryptoNetwork:
           type: string
-          description: 'The blockchain network for the withdrawal. Example values: SOLANA, ETHEREUM, BASE, POLYGON, ARBITRUM, SPARK, LIGHTNING, BITCOIN.'
+          description: 'The blockchain network for the withdrawal. Example values: SOLANA, ETHEREUM, BASE, POLYGON, ARBITRUM, OPTIMISM, AVALANCHE, SPARK, LIGHTNING, BITCOIN.'
           example: SOLANA
         amount:
           type: integer
