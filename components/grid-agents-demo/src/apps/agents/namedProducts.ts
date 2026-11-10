@@ -5,7 +5,7 @@
  * never the real product's. Where each price was checked: namedProducts.sources.json.
  */
 
-export const PRICES_CHECKED = '2026-11-08';
+export const PRICES_CHECKED = '2026-11-10';
 
 export interface NamedProduct {
   /** The listing's full name. */
@@ -100,6 +100,12 @@ export const NAMED_PRODUCTS: NamedProduct[] = [
   { name: 'Nintendo Switch 2 Pro Controller', brand: 'Nintendo', model: 'Nintendo Switch 2 Pro Controller', category: 'controller', price: 89.99, aliases: ['switch 2 pro controller', 'switch 2 pro', 'nintendo switch 2 pro controller', 'pro controller 2'] },
   { name: 'Mario Kart World (Nintendo Switch 2)', brand: 'Nintendo', model: 'Mario Kart World', category: 'game', price: 79.99, aliases: ['mario kart world', 'mkw', 'mario kart switch 2', 'mario kart 9'] },
   { name: 'The Legend of Zelda: Tears of the Kingdom (Nintendo Switch)', brand: 'Nintendo', model: 'The Legend of Zelda: Tears of the Kingdom', category: 'game', price: 69.99, aliases: ['tears of the kingdom', 'totk', 'zelda tears of the kingdom', 'zelda totk'] },
+  { name: 'Grand Theft Auto VI (PS5)', brand: 'Rockstar Games', model: 'Grand Theft Auto VI', category: 'game', price: 79.99, aliases: ['gta vi', 'gta 6', 'gta', 'grand theft auto vi', 'grand theft auto 6', 'grand theft auto', 'new gta'] },
+  { name: 'Call of Duty: Modern Warfare 4 (PS5)', brand: 'Activision', model: 'Call of Duty: Modern Warfare 4', category: 'game', price: 69.99, aliases: ['call of duty', 'modern warfare 4', 'mw4', 'cod mw4', 'new call of duty', 'new cod', 'cod'] },
+  { name: 'EA Sports FC 27 (PS5)', brand: 'Electronic Arts', model: 'EA Sports FC 27', category: 'game', price: 69.99, aliases: ['ea fc', 'ea sports fc', 'fc 27', 'fc27', 'ea fc 27', 'fifa', 'new fifa', 'fifa 27'] },
+  { name: 'Madden NFL 27 (PS5)', brand: 'Electronic Arts', model: 'Madden NFL 27', category: 'game', price: 69.99, aliases: ['madden', 'madden 27', 'madden nfl 27', 'madden nfl', 'new madden'] },
+  { name: 'NBA 2K27 (PS5)', brand: '2K', model: 'NBA 2K27', category: 'game', price: 69.99, aliases: ['nba 2k', '2k27', 'nba 2k27', '2k 27', 'new 2k'] },
+  { name: 'Pokémon Pokopia (Nintendo Switch 2)', brand: 'Nintendo', model: 'Pokémon Pokopia', category: 'game', price: 69.99, aliases: ['pokopia', 'pokemon pokopia', 'pokemon game', 'new pokemon game', 'pokemon switch 2'] },
   { name: 'PlayStation Portal Remote Player', brand: 'Sony', model: 'PlayStation Portal', category: 'console', price: 249, aliases: ['playstation portal', 'ps portal', 'ps5 portal', 'portal remote player'] },
   { name: 'Apple TV 4K (4th generation)', brand: 'Apple', model: 'Apple TV 4K', category: 'streaming', price: 299, aliases: ['apple tv', 'apple tv 4k', 'appletv', 'apple tv 4k 2026'] },
   { name: 'Roku Streaming Stick 4K', brand: 'Roku', model: 'Roku Streaming Stick 4K', category: 'streaming', price: 79.99, aliases: ['roku stick', 'roku streaming stick 4k', 'roku 4k stick', 'streaming stick 4k'] },

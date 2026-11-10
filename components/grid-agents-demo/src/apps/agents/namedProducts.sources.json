@@ -1278,6 +1278,42 @@
    "max": 500,
    "source": "https://www.nike.com/t/digital-gift-card-emailed-in-approximately-2-hours-or-less-B9Mv2K/GIFTCARD-D7503",
    "note": ""
+  },
+  {
+   "name": "Grand Theft Auto VI (PS5)",
+   "price": 79.99,
+   "source": "https://store.playstation.com/en-us/product/EP1004-PPSA01547_00-GTAVISTANDARD001",
+   "note": "Standard Edition $79.99 on PS5 and Xbox Series X|S (Take-Two press release, Jun 24 2026). Launches Nov 19 2026; physical ships Nov 12."
+  },
+  {
+   "name": "Call of Duty: Modern Warfare 4 (PS5)",
+   "price": 69.99,
+   "source": "https://store.playstation.com/en-us/product/UP0002-PPSA01649_00-CODMW4STANDARD01",
+   "note": "Standard Edition $69.99. Released Oct 23 2026."
+  },
+  {
+   "name": "EA Sports FC 27 (PS5)",
+   "price": 69.99,
+   "source": "https://store.ea.com/commerce/app/products/ea-sports-fc-27",
+   "note": "Standard Edition USD 69.99."
+  },
+  {
+   "name": "Madden NFL 27 (PS5)",
+   "price": 69.99,
+   "source": "https://www.ea.com/games/madden-nfl/madden-nfl-27/buy",
+   "note": "Standard Edition $69.99 on PS Store and Steam."
+  },
+  {
+   "name": "NBA 2K27 (PS5)",
+   "price": 69.99,
+   "source": "https://gamerant.com/loaded-discount-sports-games-nba-2k27/",
+   "note": "Standard Edition $69.99. Released Aug 31 2026."
+  },
+  {
+   "name": "Pokémon Pokopia (Nintendo Switch 2)",
+   "price": 69.99,
+   "source": "https://www.nintendo.com/us/store/products/pokemon-pokopia-switch-2/",
+   "note": "Regular price $69.99. Switch 2 exclusive, released Mar 5 2026."
   }
  ]
 }

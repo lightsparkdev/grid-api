@@ -211,12 +211,8 @@ const CATEGORIES: Category[] = [
   },
   {
     key: 'game',
-    // A video game by what it is, or by the franchises people ask for by name ("gta vi", "the new call of duty").
-    words: [
-      'video game', 'video games', 'game', 'games', 'ps5 game', 'xbox game', 'switch game', 'gta', 'grand theft auto', 'call of duty', 'fifa', 'ea fc',
-      'madden', 'nba 2k', 'mario', 'zelda', 'pokemon', 'minecraft', 'elden ring', 'halo', 'final fantasy', 'resident evil', 'god of war', 'red dead',
-      'cyberpunk', 'hogwarts legacy', 'assassins creed', 'spider man',
-    ],
+    // A game asked for by name ("gta vi") is that game, from the checked list or the model's price, never one of these.
+    words: ['video game', 'video games', 'game', 'games', 'ps5 game', 'xbox game', 'switch game'],
     items: [
       { brand: 'Northwind Studios', model: 'Skyline Heist', title: 'Skyline Heist', price: 6_999, rating: '4.7' },
       { brand: 'Ember Games', model: 'Emberfall', title: 'Emberfall: Deluxe Edition', price: 5_999, rating: '4.6' },
