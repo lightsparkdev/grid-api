@@ -39,7 +39,8 @@ with an `scaChallenge`.
 `POST /quotes/{quoteId}/authorize` with the proof. Re-inspect the returned quote:
 if it remains `PENDING_AUTHORIZATION`, authorize its next `scaChallenge`. Do not
 assume a fixed number of challenges for a cross-currency or other multi-step
-send.
+send. **In sandbox, the code is always `000000`, and `111111` expires the
+challenge.**
 </Step>
 </Steps>
 </Tab>
