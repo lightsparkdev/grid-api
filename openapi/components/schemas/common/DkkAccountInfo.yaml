@@ -11,3 +11,4 @@ allOf:
         enum:
         - SEPA
         - SEPA_INSTANT
+        - BANK_TRANSFER
