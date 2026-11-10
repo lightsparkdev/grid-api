@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis';
+import { takeLookup } from './limits';
 
 /* The current US price of a product we don't list, looked up on the web and remembered for a week. The model's
    own estimate stops at its training, so a new launch (the iPhone Duo) would otherwise get a guess. Remembered in
@@ -26,6 +27,7 @@ export async function lookUpPrice(apiKey: string, product: string, brand?: strin
   const store = `agents:${env}:price:${key}`;
   const known = memory.get(key) ?? (redis ? await redis.get<number | 'none'>(store).catch(() => null) : null);
   if (known != null) return known === 'none' ? undefined : known;
+  if (!(await takeLookup())) return undefined;
   const found = await search(apiKey, named);
   if (found === 'error') return undefined;
   memory.set(key, found);

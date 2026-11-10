@@ -9,6 +9,7 @@ import { systemPrompt, type PromptState } from '@/lib/llm/prompt';
 import { CONNECTOR_IDS, TOOL_NAMES, type Block, type Say, type ToolCall, type Turn } from '@/lib/llm/tools';
 import type { AgentResponse } from '@/lib/llm/types';
 import { ACCESS_HEADER, hasAccess } from '@/lib/access';
+import { VISITOR_HEADER, visitorOf } from '@/lib/visitor';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -127,8 +128,11 @@ export async function POST(req: NextRequest) {
   const message = last.find((b): b is Extract<Block, { type: 'text' }> => b.type === 'text');
   if (message && message.text.length > MAX_TEXT) return fallback('invalid', 400);
 
-  // A new message from the person counts against their limit; the steps that carry it out only against the day's.
-  const visitor = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.ip || 'local';
+  // A new message counts against the person's message limit; the steps that carry it out, against their step limit.
+  const visitor = {
+    browser: visitorOf(req.headers.get(VISITOR_HEADER)),
+    network: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.ip || 'local',
+  };
   const limit = message ? await takeTurn(visitor) : await takeStep(visitor);
   if (limit !== 'ok') return fallback(limit);
 

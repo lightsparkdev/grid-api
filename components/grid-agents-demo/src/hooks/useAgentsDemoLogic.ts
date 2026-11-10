@@ -16,6 +16,7 @@ import { appFor } from '@/lib/forApp';
 import type { PromptState } from '@/lib/llm/prompt';
 import type { Turn } from '@/lib/llm/tools';
 import type { AgentResponse } from '@/lib/llm/types';
+import { visitorHeaders } from '@/lib/visitor';
 
 /** Apps whose checkout has a Pay with row to switch the payment; the rest have the agent ask first. */
 const CHECKOUT_PICKER = new Set<ConnectorId>(['muse', 'dot']);
@@ -195,7 +196,7 @@ export function useAgentsDemoLogic() {
     try {
       const res = await fetch('/api/agent', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', ...accessHeaders() },
+        headers: { 'content-type': 'application/json', ...accessHeaders(), ...visitorHeaders() },
         body: JSON.stringify({ connector: connectorRef.current, turns, state }),
       });
       const data = (await res.json()) as AgentResponse;
