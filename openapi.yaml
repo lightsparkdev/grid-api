@@ -322,7 +322,7 @@ paths:
         - Filter by specific destination currency or currencies
         - Provide a sending amount to get calculated receiving amounts
 
-        Each rate reports whether its corridor is paying out now (`isAvailable`).
+        Each rate reports whether its corridor is paying out now (`corridorStatus`).
       operationId: getExchangeRates
       tags:
         - Exchange Rates
@@ -390,7 +390,7 @@ paths:
                           fixed: 100
                           total: 150
                         updatedAt: '2025-02-05T12:00:00Z'
-                        isAvailable: true
+                        corridorStatus: OPEN
                       - sourceCurrency:
                           code: USD
                           decimals: 2
@@ -411,7 +411,7 @@ paths:
                           fixed: 10
                           total: 15
                         updatedAt: '2025-02-05T12:00:00Z'
-                        isAvailable: false
+                        corridorStatus: MAINTENANCE
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -20843,6 +20843,21 @@ components:
           description: Total fees in the smallest unit of the sending currency (e.g., cents for USD). This value may change depending on the sending amount used; if no sending amount is specified, it falls back to the default.
           minimum: 0
           example: 100
+    CorridorStatus:
+      type: string
+      enum:
+        - OPEN
+        - OUTAGE
+        - MAINTENANCE
+      description: |
+        Whether Grid is paying out on this corridor now.
+
+        | Status | Description |
+        |--------|-------------|
+        | OPEN | Grid is paying out on this corridor. |
+        | OUTAGE | Payouts are paused because of an outage. Retry later. |
+        | MAINTENANCE | Payouts are paused for scheduled maintenance. Retry later. |
+      example: OPEN
     ExchangeRate:
       type: object
       description: Exchange rate information for a currency corridor
@@ -20857,7 +20872,7 @@ components:
         - exchangeRate
         - fees
         - updatedAt
-        - isAvailable
+        - corridorStatus
       properties:
         sourceCurrency:
           $ref: '#/components/schemas/Currency'
@@ -20904,10 +20919,8 @@ components:
           format: date-time
           description: Timestamp when this exchange rate was last refreshed
           example: '2025-02-05T12:00:00Z'
-        isAvailable:
-          type: boolean
-          description: Whether Grid is currently paying out on this corridor. False while the corridor is paused, including during scheduled maintenance.
-          example: true
+        corridorStatus:
+          $ref: '#/components/schemas/CorridorStatus'
     ExchangeRateListResponse:
       type: object
       required:
@@ -38263,7 +38276,7 @@ components:
           example: PH
         options:
           type: array
-          description: Empty when Grid cannot pay out in `country`. A row with `isAvailable` false is paused and cannot be claimed to now.
+          description: Empty when Grid cannot pay out in `country`. A row whose `rate.corridorStatus` is not `OPEN` is paused and cannot be claimed to now.
           items:
             $ref: '#/components/schemas/ClaimablePayoutOption'
     ClaimablePayoutQuoteRequest:

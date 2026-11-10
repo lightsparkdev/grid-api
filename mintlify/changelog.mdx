@@ -10,6 +10,12 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
+## Exchange rates report why a corridor is paused
+
+Each rate from `GET /exchange-rates` now has `corridorStatus`: `OPEN`, `OUTAGE`, or
+`MAINTENANCE`. It replaces `isAvailable`, which is removed. Read `corridorStatus ==
+OPEN` where you read `isAvailable` before.
+
 ## Tell a corridor outage from maintenance
 
 A paused corridor now tells you why. The account lookup and `POST /quotes` fail with

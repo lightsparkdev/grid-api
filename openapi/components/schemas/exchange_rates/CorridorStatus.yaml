@@ -1,0 +1,14 @@
+type: string
+enum:
+  - OPEN
+  - OUTAGE
+  - MAINTENANCE
+description: |
+  Whether Grid is paying out on this corridor now.
+
+  | Status | Description |
+  |--------|-------------|
+  | OPEN | Grid is paying out on this corridor. |
+  | OUTAGE | Payouts are paused because of an outage. Retry later. |
+  | MAINTENANCE | Payouts are paused for scheduled maintenance. Retry later. |
+example: OPEN
