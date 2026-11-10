@@ -60,6 +60,13 @@ properties:
     maxLength: 1024
     description: Optional description/memo for the transfer
     example: 'Invoice #1234 payment'
+  platformTransactionId:
+    type: string
+    maxLength: 255
+    description: >-
+      Your platform's ID for the resulting transaction. Must be unique per
+      platform.
+    example: txn_9f84e0c2a72c4fa
   remittanceInformation:
     type: string
     maxLength: 80

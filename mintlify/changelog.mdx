@@ -10,6 +10,12 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
+## Tag transactions with your own ID
+
+`POST /quotes`, `POST /transfer-in`, and `POST /transfer-out` take an optional
+`platformTransactionId`, unique per platform. Transactions return it, and
+`GET /transactions` filters by it.
+
 ## Issue a business's card to a named person
 
 `POST /cards` takes an optional `cardholder` for a `BUSINESS` customer: the person the

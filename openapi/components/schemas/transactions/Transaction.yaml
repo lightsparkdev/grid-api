@@ -42,6 +42,10 @@ properties:
     type: string
     description: Platform-specific ID of the customer this transaction belongs to
     example: 18d3e5f7b4a9c2
+  platformTransactionId:
+    type: string
+    description: Platform-specific ID of this transaction, if one was provided
+    example: txn_9f84e0c2a72c4fa
   settledAt:
     type: string
     format: date-time

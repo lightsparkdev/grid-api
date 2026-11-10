@@ -5645,8 +5645,8 @@ paths:
       summary: List transactions
       description: |
         Retrieve a paginated list of transactions with optional filtering.
-        The transactions can be filtered by customer ID, platform customer ID, UMA address,
-        date range, status, and transaction type.
+        The transactions can be filtered by customer ID, platform customer ID, platform
+        transaction ID, UMA address, date range, status, and transaction type.
 
         Card transactions are included and identified by `type: CARD`. In Sandbox this is how
         you discover a `CardTransaction` id after simulating an authorization — list the
@@ -5673,6 +5673,12 @@ paths:
         - name: platformCustomerId
           in: query
           description: Filter by platform-specific customer ID
+          required: false
+          schema:
+            type: string
+        - name: platformTransactionId
+          in: query
+          description: Filter by platform-specific transaction ID
           required: false
           schema:
             type: string
@@ -22101,6 +22107,7 @@ components:
             | DOCUMENT_ALREADY_EXISTS | A document of this type already exists for the holder; replace it with PUT |
             | DUPLICATE_EXTERNAL_ACCOUNT | The `platformAccountId` is already used, or, without one, the wallet is already registered. When the conflicting account belongs to your platform, `details.externalAccountId` and `details.platformAccountId` identify it; otherwise `details` is omitted |
             | DUPLICATE_PAY_REQUEST | A pay request with this idempotency key already exists |
+            | DUPLICATE_PLATFORM_TRANSACTION_ID | The `platformTransactionId` is already used by another transaction |
             | OPERATION_IN_PROGRESS | A conflicting Embedded Wallet operation is still in progress |
             | SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS | The phone number is already associated with an SMS_OTP credential |
             | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
@@ -22132,6 +22139,7 @@ components:
             - DOCUMENT_ALREADY_EXISTS
             - DUPLICATE_EXTERNAL_ACCOUNT
             - DUPLICATE_PAY_REQUEST
+            - DUPLICATE_PLATFORM_TRANSACTION_ID
             - OPERATION_IN_PROGRESS
             - SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS
             - STABLECOIN_SYMBOL_ALREADY_EXISTS
@@ -31618,6 +31626,11 @@ components:
           format: int64
           description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
           example: 12550
+        platformTransactionId:
+          type: string
+          maxLength: 255
+          description: Your platform's ID for the resulting transaction. Must be unique per platform.
+          example: txn_9f84e0c2a72c4fa
     TransactionStatus:
       type: string
       enum:
@@ -32169,6 +32182,10 @@ components:
           type: string
           description: Platform-specific ID of the customer this transaction belongs to
           example: 18d3e5f7b4a9c2
+        platformTransactionId:
+          type: string
+          description: Platform-specific ID of this transaction, if one was provided
+          example: txn_9f84e0c2a72c4fa
         settledAt:
           type: string
           format: date-time
@@ -32866,6 +32883,11 @@ components:
           format: int64
           description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
           example: 12550
+        platformTransactionId:
+          type: string
+          maxLength: 255
+          description: Your platform's ID for the resulting transaction. Must be unique per platform.
+          example: txn_9f84e0c2a72c4fa
         remittanceInformation:
           type: string
           maxLength: 80
@@ -33491,6 +33513,11 @@ components:
           maxLength: 1024
           description: Optional description/memo for the transfer
           example: 'Invoice #1234 payment'
+        platformTransactionId:
+          type: string
+          maxLength: 255
+          description: Your platform's ID for the resulting transaction. Must be unique per platform.
+          example: txn_9f84e0c2a72c4fa
         remittanceInformation:
           type: string
           maxLength: 80
