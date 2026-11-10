@@ -9,7 +9,7 @@ get:
     - Filter by specific destination currency or currencies
     - Provide a sending amount to get calculated receiving amounts
 
-    Each rate reports whether its corridor is paying out now (`isAvailable`).
+    Each rate reports whether its corridor is paying out now (`corridorStatus`).
 
   operationId: getExchangeRates
   tags:
@@ -81,7 +81,7 @@ get:
                       fixed: 100
                       total: 150
                     updatedAt: "2025-02-05T12:00:00Z"
-                    isAvailable: true
+                    corridorStatus: OPEN
                   - sourceCurrency:
                       code: USD
                       decimals: 2
@@ -102,7 +102,7 @@ get:
                       fixed: 10
                       total: 15
                     updatedAt: "2025-02-05T12:00:00Z"
-                    isAvailable: false
+                    corridorStatus: MAINTENANCE
     "400":
       description: Bad request - Invalid parameters
       content:
