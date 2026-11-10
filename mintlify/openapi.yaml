@@ -31630,6 +31630,7 @@ components:
           example: 12550
         platformTransactionId:
           type: string
+          minLength: 1
           maxLength: 255
           description: Your platform's ID for the resulting transaction. Must be unique per platform.
           example: txn_9f84e0c2a72c4fa
@@ -32887,6 +32888,7 @@ components:
           example: 12550
         platformTransactionId:
           type: string
+          minLength: 1
           maxLength: 255
           description: Your platform's ID for the resulting transaction. Must be unique per platform.
           example: txn_9f84e0c2a72c4fa
@@ -33517,6 +33519,7 @@ components:
           example: 'Invoice #1234 payment'
         platformTransactionId:
           type: string
+          minLength: 1
           maxLength: 255
           description: Your platform's ID for the resulting transaction. Must be unique per platform.
           example: txn_9f84e0c2a72c4fa
