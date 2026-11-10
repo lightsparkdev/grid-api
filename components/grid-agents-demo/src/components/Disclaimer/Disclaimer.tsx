@@ -6,7 +6,7 @@ export function Disclaimer() {
   return (
     <p className={styles.line}>
       Illustrative only: no partnership or endorsement implied. All trademarks belong to their owners. The agents in
-      this demo are running on a small model, so they make mistakes.
+      this demo are running on a small model, so they can make mistakes.
     </p>
   );
 }
