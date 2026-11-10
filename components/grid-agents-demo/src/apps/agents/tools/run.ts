@@ -1,6 +1,6 @@
 import type { ActionId } from '@/data/actions';
 import type { AccountSnapshot } from '@/data/agentApiCalls';
-import { purchaseSpendLimit, type DepositNetwork } from '@/data/agentEvents';
+import { purchaseSpendLimit, type DepositNetwork, type SendNetwork } from '@/data/agentEvents';
 import { BANK_COUNTRIES, currencyFor } from '@/data/bankCountries';
 import { addressKind, NETWORKS_FOR, SENDS_ON, type SendAsset } from '@/data/cryptoSend';
 import { ENDS_TURN, type ToolCall, type ToolResult } from '@/lib/llm/tools';
@@ -625,7 +625,7 @@ function sendStablecoins(env: ToolEnv, call: ToolCall): Outcome {
   const asset = asked ?? (takes.length === 1 ? takes[0] : undefined);
   if (!asset) return fail('need_asset', { options: takes });
   const fits = networks.filter((n) => SENDS_ON[n].includes(asset));
-  const network = call.input.network && fits.includes(call.input.network as DepositNetwork) ? (call.input.network as DepositNetwork) : fits.length === 1 ? fits[0] : undefined;
+  const network = call.input.network && fits.includes(call.input.network as SendNetwork) ? (call.input.network as SendNetwork) : fits.length === 1 ? fits[0] : undefined;
   if (!network) return fail('need_network', { asset, options: fits.map((n) => NETWORK_NAME[n]) });
   const quote = stableQuote(address, asset, network, cents(amountUsd));
   const result: ToolResult = {};

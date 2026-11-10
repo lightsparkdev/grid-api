@@ -97,7 +97,7 @@ isn't one. There's no KYC step.
 
 ### 2026-11-05: the panel nests Grid calls under the agent's tool calls
 
-Each agent action is a tool call named like Lightspark's MCP tools
+Each agent action is a tool call named as the agent app's own tools
 (`quote_send`, `execute_send`, `request_purchase_card`, `get_account_overview`,
 and so on), with Arguments and Result tabs. The Grid calls it makes sit under
 it, behind a "N Lightspark API calls" toggle. Platform calls (create the agent,
@@ -408,6 +408,33 @@ Ahead of the spec: Pay someone and Withdraw quote to bank accounts on local
 rails (PIX, RTP), as the Figma's panel shows. Pay an agent uses a real
 destination: the merchant agent's Embedded Wallet on the same platform.
 
+### 2026-11-09: the panel matches the spec on main
+
+An audit against main (3f5424cd) reworked `agentApiCalls.ts`:
+
+- Paying a bank account, someone else's or the person's own, is a one-row
+  payout run (`/agents/me/payout-runs/preview`, then create), since agent
+  quotes can't reach a bank. What arrives is an estimate, so the approval
+  says "about R$500" when the currency changes.
+- A saved card uses Grid's stored cards (Evervault): `POST
+  /customers/{id}/stored-cards`, shared with the agent. Buying with it is a
+  `USE_STORED_CARD` request the person approves each time, then a
+  single-use link; the merchant charges the card and no money moves through
+  Grid. A card top-up is charged by the platform's own processor, settles
+  into its `BULK_SETTLEMENT` account, and a quote credits the wallet.
+- Connect adds the agent's delegated key on the wallet; the policy locks the
+  agent to that wallet and carries the card permissions its calls need.
+- Every transaction has its direction, rails sit in `railDetails`, deposits
+  and their payments share a `quoteId`, and the agent's status checks show
+  their GET calls.
+
+A card use the person already agreed to in the app (raising the limit for
+that purchase, a price watch) is still held by Grid; the platform approves it
+at once instead of asking again.
+
+Open: the international-wire top-up still uses a real-time funded quote,
+which the spec reserves for instant rails.
+
 ### 2026-11-05: the same layout breakpoint as the cards playground
 
 Three columns start at 1600px, as in the cards demo, so both playgrounds
@@ -429,7 +456,9 @@ rates, deposit addresses, and timing; the merchant agent's offer; Face ID; the
 app.instinct.com page.
 
 Real-shaped: every request body, response body, and webhook envelope follows
-the agent schemas on main, except the bank payout destinations noted above.
+the schemas on main, except the open item in the 2026-11-09 entry. The
+card processor's charge for a top-up happens outside Grid and is described in
+the note, not shown as a call.
 
 ## Open items
 

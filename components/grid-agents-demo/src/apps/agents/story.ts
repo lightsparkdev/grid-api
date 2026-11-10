@@ -1,4 +1,4 @@
-import type { DepositNetwork, Limits, Purchase } from '@/data/agentEvents';
+import type { DepositNetwork, Limits, Purchase, SendNetwork } from '@/data/agentEvents';
 
 /* The one story every app tells: the same person, the same people they pay,
    the same purchases. Only the voice and the look change between apps. */
@@ -31,7 +31,7 @@ export const CRYPTO: { asset: CryptoAsset; label: string; networks: DepositNetwo
   { asset: 'USDT', label: 'USDT', networks: ['TRON', 'ETHEREUM', 'SOLANA', 'POLYGON', 'ARBITRUM'] },
 ];
 
-export const NETWORK_NAME: Record<DepositNetwork, string> = {
+export const NETWORK_NAME: Record<SendNetwork, string> = {
   LIGHTNING: 'Lightning',
   SPARK: 'Spark',
   BASE: 'Base',

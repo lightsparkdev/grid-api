@@ -1,4 +1,4 @@
-import type { DepositNetwork } from './agentEvents';
+import type { SendNetwork } from './agentEvents';
 
 /* Sending crypto out of the balance, as Grid's agent quotes allow: USDC or USDT to an address on another chain
    (`CHAIN_ADDRESS`, `AgentSendNetwork`), a Lightning invoice (`LIGHTNING_INVOICE`), or USDB to a Spark address
@@ -11,7 +11,7 @@ export type AddressKind = 'evm' | 'solana' | 'tron' | 'lightning' | 'spark' | 'b
 
 export interface CryptoPayee {
   address: string;
-  network: DepositNetwork;
+  network: SendNetwork;
   asset: SendAsset;
   /** What the recipient gets, USD cents (stablecoins and USDB are a dollar each; a Lightning invoice is priced in dollars here). */
   usd: number;
@@ -34,7 +34,7 @@ export function addressKind(raw: string): AddressKind {
 }
 
 /** The networks an address of each kind can be on. One EVM address works on every EVM chain, so the person picks. */
-export const NETWORKS_FOR: Record<Exclude<AddressKind, 'bitcoin' | 'invalid'>, DepositNetwork[]> = {
+export const NETWORKS_FOR: Record<Exclude<AddressKind, 'bitcoin' | 'invalid'>, SendNetwork[]> = {
   evm: ['BASE', 'ETHEREUM', 'POLYGON', 'ARBITRUM'],
   solana: ['SOLANA'],
   tron: ['TRON'],
@@ -43,7 +43,7 @@ export const NETWORKS_FOR: Record<Exclude<AddressKind, 'bitcoin' | 'invalid'>, D
 };
 
 /** What each network can receive from the agent. */
-export const SENDS_ON: Record<DepositNetwork, SendAsset[]> = {
+export const SENDS_ON: Record<SendNetwork, SendAsset[]> = {
   BASE: ['USDC'],
   ETHEREUM: ['USDC', 'USDT'],
   SOLANA: ['USDC', 'USDT'],
@@ -55,7 +55,7 @@ export const SENDS_ON: Record<DepositNetwork, SendAsset[]> = {
 };
 
 /** Each network's fee in USD cents, made up but in proportion: Ethereum mainnet costs, the rest are near free. */
-export const NETWORK_FEE: Record<DepositNetwork, number> = {
+export const NETWORK_FEE: Record<SendNetwork, number> = {
   BASE: 2,
   ETHEREUM: 150,
   SOLANA: 1,

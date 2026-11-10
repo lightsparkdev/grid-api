@@ -122,7 +122,7 @@ const giftRange = (p: Params | undefined) =>
   n(p, 'asked') ? ` ${s(p, 'merchant')} cards ${n(p, 'asked') > n(p, 'amount') ? 'top out' : 'start'} at ${usd(n(p, 'amount'))}.` : '';
 
 /** " R$250 is $46.30 right now.", or " $50.00 is ₱2,900 right now." when they asked in dollars; nothing for a payment in dollars. */
-export const converted = (p: Params | undefined, how = 'right now') => (n(p, 'converted') ? ` ${s(p, 'from')} is ${s(p, 'to')} ${how}.` : '');
+export const converted = (p: Params | undefined, how = 'right now') => (n(p, 'converted') ? ` ${s(p, 'from')} is about ${s(p, 'to')} ${how}.` : '');
 
 export type LineFn = (p?: Params) => string;
 export type AskFn = (p?: Params) => AgentAsk;
@@ -310,7 +310,7 @@ export const LINES = {
   'buy.short': (p) => `You have ${usd2(n(p, 'balance'))} in ${yours(p)}. I can put this on your card instead, or you can add ${usd(n(p, 'amount'))} first.`,
   'buy.card': (p) =>
     n(p, 'card')
-      ? `${short(p)}I’ll pay with a one-time card for exactly this ${orderNoun(p)}, charged to your ${CARD}.`
+      ? `${short(p)}I’ll check out with your ${CARD} once you approve it.`
       : `I’ll pay from ${yours(p)} with a one-time card for exactly this ${orderNoun(p)}.`,
   'buy.auto': (p) =>
     `It’s under your ${usd(n(p, 'limit'))} limit, so I’m ${byErrand(p, { order: 'checking out', ride: 'booking it', bill: 'paying it', topup: 'sending it', tickets: 'buying them', table: 'booking it' })}.`,
@@ -330,8 +330,12 @@ export const LINES = {
     `Okay, I won’t ${byErrand(p, { order: 'place the order', ride: 'book the ride', bill: 'pay the bill', topup: 'send the top-up', tickets: 'buy the tickets', table: 'book the table' })}. Nothing was charged.`,
 
   'sub.intro': (p) => `It’s ${usd2(n(p, 'amount'))} a month for ${s(p, 'item')}.`,
-  'sub.card': (p) => `${short(p)}I’ll get a card that only ${s(p, 'merchant')} can charge, up to ${usd2(n(p, 'amount'))} a month${n(p, 'card') ? `, billed to your ${CARD}` : ''}.`,
-  'sub.done': (p) => `You’re subscribed. The card is locked to ${s(p, 'merchant')} now, so nobody else can use it.`,
+  'sub.card': (p) =>
+    n(p, 'card')
+      ? `${short(p)}I’ll sign you up with your ${CARD} once you approve it. ${s(p, 'merchant')} bills it each month.`
+      : `I’ll get a card that only ${s(p, 'merchant')} can charge, up to ${usd2(n(p, 'amount'))} a month.`,
+  'sub.done': (p) =>
+    n(p, 'card') ? `You’re subscribed. ${s(p, 'merchant')} bills your ${CARD} each month.` : `You’re subscribed. The card is locked to ${s(p, 'merchant')} now, so nobody else can use it.`,
   'sub.denied': () => 'Okay, no subscription.',
 
   'agent.intro': (p) =>
@@ -351,7 +355,7 @@ export const LINES = {
   'cashout.bank': () => 'I’ll need your bank first. Link it once and I can move money there any time. Where is it?',
   'cashout.over': (p) => `You have ${usd2(n(p, 'balance'))} in ${yours(p)}, so I can move up to that.`,
   'cashout.empty': (p) => `There’s nothing in ${yours(p)} to move yet.`,
-  'cashout.quote': (p) => `Moving ${s(p, 'local')} to your ${s(p, 'to')} over ${s(p, 'rail')}. ${WITHDRAW_TIMING}`,
+  'cashout.quote': (p) => `Moving ${s(p, 'about')}${s(p, 'local')} to your ${s(p, 'to')} over ${s(p, 'rail')}. ${WITHDRAW_TIMING}`,
   'cashout.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m sending it now.`,
   'cashout.done': () => 'Done. It’s in your account.',
   'cashout.noBalance': (p) => `There’s nothing to move yet. Set up ${a(p)} and add money, then I can move it to your bank.`,
@@ -431,9 +435,9 @@ export const ASKS = {
     denied: 'Not now',
   }),
   pay: (p) => ({
-    title: `Send ${s(p, 'local')} to ${s(p, 'first')}${n(p, 'monthly') ? ', then monthly' : ''}`,
-    who: { name: s(p, 'first'), flag: s(p, 'flag'), bank: s(p, 'bank'), detail: `${s(p, 'local')} to ${s(p, 'bank')} via ${s(p, 'rail')}` },
-    amount: s(p, 'local'),
+    title: `Send ${s(p, 'about')}${s(p, 'local')} to ${s(p, 'first')}${n(p, 'monthly') ? ', then monthly' : ''}`,
+    who: { name: s(p, 'first'), flag: s(p, 'flag'), bank: s(p, 'bank'), detail: `${s(p, 'about')}${s(p, 'local')} to ${s(p, 'bank')} via ${s(p, 'rail')}` },
+    amount: `${s(p, 'about') ? '≈ ' : ''}${s(p, 'local')}`,
     method: `From ${s(p, 'wallet')} · ${usd2(n(p, 'usd'))}`,
     allow: 'Approve',
     allowed: 'Paid',
@@ -451,9 +455,9 @@ export const ASKS = {
     denied: 'Declined',
   }),
   cashout: (p) => ({
-    title: `Move ${s(p, 'local')} to ${s(p, 'to')}`,
-    who: { name: s(p, 'to'), flag: s(p, 'flag') || undefined, bank: s(p, 'bank'), detail: `${s(p, 'local')} over ${s(p, 'rail')}` },
-    amount: s(p, 'local'),
+    title: `Move ${s(p, 'about')}${s(p, 'local')} to ${s(p, 'to')}`,
+    who: { name: s(p, 'to'), flag: s(p, 'flag') || undefined, bank: s(p, 'bank'), detail: `${s(p, 'about')}${s(p, 'local')} over ${s(p, 'rail')}` },
+    amount: `${s(p, 'about') ? '≈ ' : ''}${s(p, 'local')}`,
     method: `From ${s(p, 'wallet')} · ${usd2(n(p, 'usd'))}`,
     allow: 'Approve',
     allowed: 'Sent',
@@ -461,10 +465,10 @@ export const ASKS = {
   }),
   buy: (p) => ({
     title: ['ship', 'now', ''].includes(s(p, 'delivery')) ? `Buy at ${s(p, 'merchant')}` : Buying(p),
-    who: { name: s(p, 'merchant'), icon: s(p, 'image'), detail: `${s(p, 'item')} · one-time card` },
+    who: { name: s(p, 'merchant'), icon: s(p, 'image'), detail: `${s(p, 'item')} · ${n(p, 'card') ? 'your card' : 'one-time card'}` },
     amount: usd2(n(p, 'amount')),
     where: whereOf(p),
-    method: `From ${paidFrom(p)} · one-time card`,
+    method: n(p, 'card') ? `${CARD} · shared once, for this ${orderNoun(p)}` : `From ${paidFrom(p)} · one-time card`,
     pay: payOf(p),
     allow: 'Approve',
     allowed: 'Approved',
@@ -472,9 +476,12 @@ export const ASKS = {
   }),
   sub: (p) => ({
     title: `Subscribe to ${s(p, 'item')}`,
-    who: { name: s(p, 'merchant'), detail: `Up to ${usd2(n(p, 'amount'))} a month · card locked to ${s(p, 'merchant')}` },
+    who: {
+      name: s(p, 'merchant'),
+      detail: n(p, 'card') ? `${usd2(n(p, 'amount'))} a month · billed to your ${CARD}` : `Up to ${usd2(n(p, 'amount'))} a month · card locked to ${s(p, 'merchant')}`,
+    },
     amount: `${usd2(n(p, 'amount'))}/mo`,
-    method: `From ${paidFrom(p)} · card only ${s(p, 'merchant')} can charge`,
+    method: n(p, 'card') ? `${CARD} · ${s(p, 'merchant')} keeps it on file` : `From ${paidFrom(p)} · card only ${s(p, 'merchant')} can charge`,
     pay: payOf(p),
     allow: 'Approve',
     allowed: 'Approved',
@@ -580,22 +587,22 @@ export const NOTES = {
   }),
   'receipt.buy': (p) => ({
     title: `${usd2(n(p, 'amount'))} at ${s(p, 'merchant')}`,
-    lines: [n(p, 'card') ? `Paid with ${CARD}` : `Paid from ${yours(p)}`, 'One-time card'],
+    lines: [n(p, 'card') ? `Paid with ${CARD}` : `Paid from ${yours(p)}`, n(p, 'card') ? 'Your own card' : 'One-time card'],
     done: true,
     stats: [
       { label: 'Total', value: usd2(n(p, 'amount')) },
       { label: 'Paid with', value: n(p, 'card') ? CARD : walletName(p) },
-      { label: 'Card', value: 'One-time' },
+      { label: 'Card', value: n(p, 'card') ? 'Your own' : 'One-time' },
     ],
   }),
   'receipt.sub': (p) => ({
     title: `${usd2(n(p, 'amount'))} at ${s(p, 'merchant')}`,
-    lines: [`Recurring Visa · renews monthly, only for ${s(p, 'merchant')}`, ...(n(p, 'card') ? [`Billed to ${CARD}`] : [])],
+    lines: n(p, 'card') ? [`Renews monthly · billed to ${CARD}`] : [`Recurring Visa · renews monthly, only for ${s(p, 'merchant')}`],
     done: true,
     stats: [
       { label: 'Monthly', value: usd2(n(p, 'amount')) },
       { label: 'Billed to', value: n(p, 'card') ? CARD : walletName(p) },
-      { label: 'Card', value: `${s(p, 'merchant')} only` },
+      { label: 'Card', value: n(p, 'card') ? 'Your own' : `${s(p, 'merchant')} only` },
     ],
   }),
   'receipt.agent': (p) => ({
@@ -638,7 +645,7 @@ export type NoteKey = keyof typeof NOTES;
 /** Deposit addresses in each network's own format, whole, so copying one gets all of it; cards shorten them. */
 const ADDRESS_ON: Record<string, string> = {
   LIGHTNING: 'lnbc1pn5x9qhpp5w8u3kzj4d2fh0xa7t6vlr9cq5mgy3ens8p4w2ke7rz0h6dlc9qsdqqcqzzsxqyz5vqsp5q7mxt0',
-  SPARK: 'sp1pqzu5y8t3rk0v7w2xg6hn4c9ldm5qf8ja3ze6xp2t0w4rs7kv9n3h7f3k',
+  SPARK: 'spark1pqzu5y8t3rk0v7w2xg6hn4c9ldm5qf8ja3ze6xp2t0w4rs7kv9n3h7f3k',
   BASE: '0x4f2a8B3c71dE9056aF2b4C8d1e7F3a9B6c0D9c1e',
   ETHEREUM: '0x4f2a8B3c71dE9056aF2b4C8d1e7F3a9B6c0D9c1e',
   POLYGON: '0x4f2a8B3c71dE9056aF2b4C8d1e7F3a9B6c0D9c1e',

@@ -241,7 +241,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'buy.which': (p) => `i’d go with the **${s(p, 'merchant')} ${s(p, 'model')}**! want that one, or one of the others?`,
       'buy.card': (p) =>
         n(p, 'card')
-          ? `${n(p, 'short') ? 'your **Dots balance** won’t cover it, so ' : ''}i’ll put it on your **${CARD}** through a one-time card for exactly this ${orderNoun(p)}.${n(p, 'needs') ? ' opening it for you' : ''}`
+          ? `${n(p, 'short') ? 'your **Dots balance** won’t cover it, so ' : ''}i’ll check out with your **${CARD}** once you approve it.${n(p, 'needs') ? ' opening it for you' : ''}`
           : `i’ll pay from your **Dots balance** with a one-time card for exactly this ${orderNoun(p)}.${n(p, 'needs') ? ' opening it for you' : ''}`,
       'buy.payWith': () => `want me to pay from your **Dots balance** or your **${CARD}**?`,
       'buy.short': (p) => `you’ve got ${usd2(n(p, 'balance'))} in your **Dots balance**. i can put this on your card instead, or you can add ${usd(n(p, 'amount'))} first!`,
@@ -252,7 +252,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'bank.kept': () => 'i’ll keep this account connected for next time, for adding money and withdrawing.',
       'buy.done': (p) => (n(p, 'now') ? 'ordered! it’ll be there in **about 30 minutes**.' : 'ordered! it arrives **thursday**.'),
       'buy.sent': () => 'sent! it’s in your **inbox**.',
-      'pay.intro': (p) => `${lower(p, 'first')} banks with **${s(p, 'bank')}**, so i’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'from')} is **${s(p, 'to')}** right now.` : ''}`,
+      'pay.intro': (p) => `${lower(p, 'first')} banks with **${s(p, 'bank')}**, so i’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'from')} is about **${s(p, 'to')}** right now.` : ''}`,
       fallback: () => 'i can only help with money here! paying people, shopping, getting paid.',
     },
     asks: {
@@ -318,7 +318,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'pay.denied': () => 'ok, not sending',
       'buy.card': (p) =>
         n(p, 'card')
-          ? `${n(p, 'short') ? 'your Instinct balance won’t cover it, so ' : ''}i’ll put it on your ${CARD} with a one-time card for exactly this ${orderNoun(p)}`
+          ? `${n(p, 'short') ? 'your Instinct balance won’t cover it, so ' : ''}i’ll check out with your ${CARD} once you ok it`
           : `i’ll pay from your Instinct balance with a one-time card for exactly this ${orderNoun(p)}`,
       'buy.payWith': () => `your Instinct balance or your ${CARD}?`,
       'buy.short': (p) => `you’ve got ${usd2(n(p, 'balance'))} in your Instinct balance. i can put this on your card, or you can add ${usd(n(p, 'amount'))} first`,
@@ -384,11 +384,14 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'connect.self': (p) => (n(p, 'hasAgent') ? 'Here’s the Duet balance, with limits you set.' : 'I’ll need my own account, with limits you set. Here’s exactly what I’m asking for.'),
       'connect.done': (p) => (n(p, 'hasAgent') ? 'Your Duet balance is on, and I’ll stay inside the limits you set.' : 'Connected. I have my own account now, and I’ll stay inside the limits you set.'),
       'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank details yet. Add them here once, and I’ll send it right after.`,
-      'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so I’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'from')} comes to ${s(p, 'to')} at today’s rate.` : ''}`,
-      'buy.card': (p) => `${short(p)}I’ll pay with a virtual card locked to this one ${orderNoun(p)}${n(p, 'card') ? `, charged to your ${CARD}` : ''}.`,
+      'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so I’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'from')} comes to about ${s(p, 'to')} at today’s rate.` : ''}`,
+      'buy.card': (p) => (n(p, 'card') ? `${short(p)}I’ll check out with your ${CARD} once you approve.` : `${short(p)}I’ll pay with a virtual card locked to this one ${orderNoun(p)}.`),
       'buy.done': (p) => (n(p, 'now') ? 'Done. It gets there in about 30 minutes, and the receipt is filed.' : 'Done. It arrives Thursday, and the receipt is filed.'),
       'buy.sent': () => 'Done. It’s in your inbox, and the receipt is filed.',
-      'sub.card': (p) => `${short(p)}I’ll use a card only ${s(p, 'merchant')} can charge, capped at ${usd2(n(p, 'amount'))} a month${n(p, 'card') ? `, billed to your ${CARD}` : ''}.`,
+      'sub.card': (p) =>
+        n(p, 'card')
+          ? `${short(p)}I’ll sign you up with your ${CARD} once you approve. ${s(p, 'merchant')} bills it monthly.`
+          : `${short(p)}I’ll use a card only ${s(p, 'merchant')} can charge, capped at ${usd2(n(p, 'amount'))} a month.`,
       'agent.done': () => 'Booked. I added it to your calendar and filed the receipt.',
       'history.answer': () => 'Here’s what moved this week.',
       fallback: () => 'I can only help with money here: paying people, shopping, and getting paid.',

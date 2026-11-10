@@ -78,6 +78,10 @@ export interface DepositDetails {
   info: Record<string, unknown>;
 }
 
+/** What a real-time funded BRL quote returns to pay with: a PIX copy-and-paste code. COP returns a payment page. */
+const PIX_CODE = '00020126580014br.gov.bcb.pix0136a3f1c2e4-7b9d-4e21-9c6a-2d8f5b1e0a475204000053039865802BR6304A1B2';
+const COP_LINK = 'https://pagos.example.co/t/7Q4K2X';
+
 /**
  * The details to push a top-up from the linked bank to, as the Global Accounts playground shows them
  * (receiveFields). Real-time funded quotes issue local details for MXN, BRL, EUR and COP; any other bank
@@ -93,8 +97,8 @@ export function depositDetails(bank: LinkedBank, usdCents: number): DepositDetai
     case 'BRL_ACCOUNT':
       return {
         ...local,
-        rows: [['PIX key', 'a3f1c2e4-7b9d-4e21-9c6a-2d8f5b1e0a47']],
-        info: { accountType: 'BRL_ACCOUNT', paymentRails: rails, pixKey: 'a3f1c2e4-7b9d-4e21-9c6a-2d8f5b1e0a47', pixKeyType: 'RANDOM', reference },
+        rows: [['PIX code', PIX_CODE]],
+        info: { accountType: 'BRL_ACCOUNT', qrCode: PIX_CODE },
       };
     case 'EUR_ACCOUNT':
       return {
@@ -105,8 +109,8 @@ export function depositDetails(bank: LinkedBank, usdCents: number): DepositDetai
     case 'COP_ACCOUNT':
       return {
         ...local,
-        rows: [['Account number', '00012345678'], ['Bank', 'Bancolombia']],
-        info: { accountType: 'COP_ACCOUNT', paymentRails: rails, accountNumber: '00012345678', bankAccountType: 'SAVINGS', bankName: 'Bancolombia', reference },
+        rows: [['Payment link', COP_LINK]],
+        info: { accountType: 'COP_ACCOUNT', paymentUrl: COP_LINK },
       };
     default:
       return {
@@ -115,7 +119,16 @@ export function depositDetails(bank: LinkedBank, usdCents: number): DepositDetai
         amount: usdCents,
         reference,
         rows: [['Account number', '000123456789'], ['SWIFT', 'CHASUS33']],
-        info: { accountType: 'SWIFT_ACCOUNT', paymentRails: ['SWIFT'], accountHolderName: PERSON.full, swiftCode: 'CHASUS33', accountNumber: '000123456789', country: 'US', reference },
+        info: {
+          accountType: 'SWIFT_ACCOUNT',
+          paymentRails: ['SWIFT'],
+          accountHolderName: PERSON.full,
+          bankName: 'JPMorgan Chase Bank',
+          swiftCode: 'CHASUS33',
+          accountNumber: '000123456789',
+          country: 'US',
+          reference,
+        },
       };
   }
 }

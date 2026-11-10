@@ -35,14 +35,15 @@ const syntaxClasses = {
 };
 
 /** Method colours as the API reference shows them (Mintlify's defaults):
- *  GET green, POST blue, PATCH orange (yellow is the nearest the Badge has),
- *  DELETE red. Webhooks take the reference's blue WEBHOOK pill. */
+ *  GET green, POST blue, PUT and PATCH orange (yellow is the nearest the Badge
+ *  has), DELETE red. Webhooks take the reference's blue WEBHOOK pill. */
 function methodBadgeVariant(method: ApiCall['method']): 'blue' | 'green' | 'yellow' | 'red' {
   switch (method) {
     case 'GET':
       return 'green';
     case 'POST':
       return 'blue';
+    case 'PUT':
     case 'PATCH':
       return 'yellow';
     case 'DELETE':

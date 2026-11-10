@@ -7,7 +7,9 @@ import type { CryptoPayee } from './cryptoSend';
 
 import type { LinkedBank } from '@/apps/agents/linkedBank';
 
-export type DepositNetwork = 'LIGHTNING' | 'SPARK' | 'BASE' | 'ETHEREUM' | 'SOLANA' | 'POLYGON' | 'ARBITRUM' | 'TRON';
+export type DepositNetwork = 'LIGHTNING' | 'BASE' | 'ETHEREUM' | 'SOLANA' | 'POLYGON' | 'ARBITRUM' | 'TRON';
+/** Where a send can go: any deposit network, or a Spark address. */
+export type SendNetwork = DepositNetwork | 'SPARK';
 
 /** A bank account or mobile wallet the agent pays out to, on a local rail. */
 export interface Payee {
@@ -38,8 +40,10 @@ export interface Purchase {
   amount: number;
   /** A card that locks to the first merchant that charges it and renews monthly. */
   recurring?: boolean;
-  /** Funded by the person's vaulted card instead of the balance, which stays as it is. */
+  /** Paid with the person's own saved card at the merchant instead of from the balance, which stays as it is. */
   byCard?: boolean;
+  /** The person already agreed to it (a price watch, a raised limit): a card use goes through as auto-approved. */
+  approved?: boolean;
 }
 
 /** What a single-use card for `amount` may be charged: the amount plus 15% for
@@ -66,9 +70,9 @@ export type AgentEvent =
   | { type: 'fund.deposit'; network: DepositNetwork; currency: string; amount: number }
   /** The deposit, or the bank transfer, landed. */
   | { type: 'fund.received' }
-  /** The person's credit or debit card goes into the account's PCI vault (the agent only ever sees its id). */
+  /** The person saves their credit or debit card with Grid's stored cards and shares it with the agent. */
   | { type: 'card.vault' }
-  /** A top-up charged to the vaulted card. */
+  /** A top-up charged to the saved card by the platform's card processor, credited from its settlement account. */
   | { type: 'fund.card'; amount: number }
   /** The person links their bank as an external account (the agent only ever sees its id). */
   | { type: 'bank.link' }
@@ -93,7 +97,7 @@ export type AgentEvent =
   /** The agent quotes a send to a crypto address or Lightning invoice, then executes it. */
   | { type: 'crypto.quote'; payee: CryptoPayee }
   | { type: 'crypto.execute' }
-  /** The agent asks for a purchase card for one purchase (or one subscription). */
+  /** The agent asks for a purchase card for one purchase (or one subscription), or to use the person's saved card. */
   | { type: 'buy.request'; purchase: Purchase }
   /** The agent drops the purchase card it asked for: the person chose another way to pay before approving. */
   | { type: 'buy.withdraw' }

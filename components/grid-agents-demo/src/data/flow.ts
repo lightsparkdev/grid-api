@@ -9,7 +9,7 @@ export const GRID_API_BASE_URL = 'https://api.lightspark.com/grid/2025-10-13';
 export type ApiAuth = 'platform' | 'agent' | 'none';
 
 export interface ApiCall {
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   path: string;
   /** Defaults to `platform`. Ignored for inbound webhooks. */
   auth?: ApiAuth;

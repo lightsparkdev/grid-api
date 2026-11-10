@@ -138,7 +138,7 @@ function Eyebrow({ m }: { m: Extract<Message, { kind: 'eyebrow' }> }) {
 }
 
 /** Cards, bank accounts, invoices and addresses inside a line, as Duet sets a file or task in its text. */
-const TOKEN = '((?:\\p{Lu}[\\p{L}&.\\-]*(?: \\p{Lu}[\\p{L}&.\\-]*)?) •••• \\d{4}|INV-\\d{4}|0x[0-9a-fA-F]{4}…[0-9a-fA-F]{4}|sp1\\w{4}…\\w{4})';
+const TOKEN = '((?:\\p{Lu}[\\p{L}&.\\-]*(?: \\p{Lu}[\\p{L}&.\\-]*)?) •••• \\d{4}|INV-\\d{4}|0x[0-9a-fA-F]{4}…[0-9a-fA-F]{4}|(?:spark1|sp1)\\w{0,4}…\\w{4})';
 function withChips(text: string): ReactNode {
   const parts = text.split(new RegExp(TOKEN, 'gu'));
   if (parts.length === 1) return text;
