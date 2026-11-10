@@ -23740,6 +23740,7 @@ components:
                 enum:
                   - SEPA
                   - SEPA_INSTANT
+                  - BANK_TRANSFER
     PaymentEurAccountInfo:
       title: EUR Account
       allOf:
@@ -25426,6 +25427,7 @@ components:
                 enum:
                   - SEPA
                   - SEPA_INSTANT
+                  - BANK_TRANSFER
     DkkBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -26522,6 +26524,7 @@ components:
                   - UPI
                   - NEFT
                   - RTGS
+                  - BANK_TRANSFER
     InrBeneficiary:
       title: Individual Beneficiary
       type: object
