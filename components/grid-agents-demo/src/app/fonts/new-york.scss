@@ -1,0 +1,8 @@
+// Apple's New York, variable (wght, opsz): Instinct's serif, which only Apple devices have built in.
+@font-face {
+  font-family: 'New York';
+  src: url('/fonts/NewYork.woff2') format('woff2');
+  font-weight: 100 1000;
+  font-style: normal;
+  font-display: swap;
+}

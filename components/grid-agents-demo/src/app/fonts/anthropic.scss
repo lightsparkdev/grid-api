@@ -1,0 +1,16 @@
+// Anthropic Sans and Serif, variable (wght): Claude's own faces, which Duet sets its text and receipt headings in.
+@font-face {
+  font-family: 'Anthropic Sans';
+  src: url('/fonts/AnthropicSans.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Anthropic Serif';
+  src: url('/fonts/AnthropicSerif.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}

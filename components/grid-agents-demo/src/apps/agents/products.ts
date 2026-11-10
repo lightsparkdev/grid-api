@@ -210,6 +210,20 @@ const CATEGORIES: Category[] = [
     ],
   },
   {
+    key: 'game',
+    // A video game by what it is, or by the franchises people ask for by name ("gta vi", "the new call of duty").
+    words: [
+      'video game', 'video games', 'game', 'games', 'ps5 game', 'xbox game', 'switch game', 'gta', 'grand theft auto', 'call of duty', 'fifa', 'ea fc',
+      'madden', 'nba 2k', 'mario', 'zelda', 'pokemon', 'minecraft', 'elden ring', 'halo', 'final fantasy', 'resident evil', 'god of war', 'red dead',
+      'cyberpunk', 'hogwarts legacy', 'assassins creed', 'spider man',
+    ],
+    items: [
+      { brand: 'Northwind Studios', model: 'Skyline Heist', title: 'Skyline Heist', price: 6_999, rating: '4.7' },
+      { brand: 'Ember Games', model: 'Emberfall', title: 'Emberfall: Deluxe Edition', price: 5_999, rating: '4.6' },
+      { brand: 'Ember Games', model: 'Valley of Echoes', title: 'Valley of Echoes', price: 4_999, rating: '4.5' },
+    ],
+  },
+  {
     key: 'controller',
     words: ['controller', 'gamepad', 'game controller', 'joystick', 'console', 'gaming'],
     items: [
@@ -476,6 +490,8 @@ function categoryFor(query: string): Category | undefined {
       if (q.includes(` ${w} `) && (!best || w.length > best.len)) best = { c, len: w.length };
     }
   }
+  // A board or card game isn't a video game.
+  if (best?.c.key === 'game' && / (board|card|party|lawn) games? /.test(q)) return undefined;
   if (best) return best.c;
   // Just "food" (not a pet's): something to eat from a restaurant nearby.
   if (/ (food|meal|grub) /.test(q) && !/ (dog|cat|pet|puppy|kitten|baby|bird|fish) /.test(q)) return CATEGORIES.find((c) => c.key === 'takeout');

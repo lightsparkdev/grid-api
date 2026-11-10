@@ -4,6 +4,12 @@
 
 .lift {
   filter: var(--part-shadow);
+
+  // The lift is the only shadow: a card's own (the shared parts draw one) falls outside its clip, round-cornered
+  // and cut off by any scroller it sits in.
+  * {
+    --part-shadow: none;
+  }
 }
 
 .options {
