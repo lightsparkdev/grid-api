@@ -2559,13 +2559,13 @@ paths:
       summary: Confirm trusting a beneficiary
       description: |
         Finalize trusting a beneficiary (identified by the `externalAccountId` in the
-        path) by submitting the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
+        path) by submitting the SCA proof (`code` for `SMS_OTP`, or
         `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
         one was issued. Returns `trusted: true`.
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
-        In sandbox, the SMS/TOTP code is always `000000`.
+        In sandbox, the SMS code is always `000000`.
       operationId: confirmBeneficiaryTrust
       tags:
         - Strong Customer Authentication
@@ -2685,13 +2685,13 @@ paths:
       summary: Confirm untrusting a beneficiary
       description: |
         Finalize untrusting a beneficiary (identified by the `externalAccountId` in
-        the path) by submitting the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
+        the path) by submitting the SCA proof (`code` for `SMS_OTP`, or
         `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
         one was issued. Returns `trusted: false`.
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
-        In sandbox, the SMS/TOTP code is always `000000`.
+        In sandbox, the SMS code is always `000000`.
       operationId: confirmBeneficiaryUntrust
       tags:
         - Strong Customer Authentication
@@ -32973,7 +32973,7 @@ components:
         - COMPLETED
         - FAILED
         - EXPIRED
-      description: 'Current status of the quote. `PENDING_AUTHORIZATION` occurs only for customers in a region where Strong Customer Authentication is required (e.g. EU): the quote carries an `scaChallenge` that must be authorized before execution, and for realtime-funding sources `paymentInstructions` are withheld until it is satisfied.'
+      description: 'Current status of the quote. `PENDING_AUTHORIZATION` occurs only for customers in a region where Strong Customer Authentication is required (e.g. EU): the quote carries an `scaChallenge` that must be authorized before execution.'
       example: PENDING
     QuoteSourceType:
       type: string
@@ -33231,7 +33231,7 @@ components:
             - PaymentDocument:019542f5-b3e7-1d02-0000-000000000003
         scaChallenge:
           $ref: '#/components/schemas/ScaChallenge'
-          description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this quote can be executed (or, for realtime-funding sources, before `paymentInstructions` are issued). Omitted for customers outside SCA-regulated regions (non-EU).'
+          description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this quote can be executed. Omitted for customers outside SCA-regulated regions (non-EU).'
     QuoteLockSide:
       type: string
       enum:
@@ -33323,9 +33323,6 @@ components:
             - PaymentDocument:019542f5-b3e7-1d02-0000-000000000003
         platformFeeOverride:
           $ref: '#/components/schemas/PlatformFeeOverride'
-        scaFactor:
-          $ref: '#/components/schemas/ScaFactor'
-          description: Optional preferred factor for a Strong Customer Authentication challenge issued at quote creation. Only relevant for a realtime-funding source in a region where SCA is required (e.g. EU); ignored otherwise. Valid values are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected. When the quote is returned in `PENDING_AUTHORIZATION`, authorize it via `POST /quotes/{quoteId}/authorize`.
         senderCustomerInfo:
           type: object
           additionalProperties: true
