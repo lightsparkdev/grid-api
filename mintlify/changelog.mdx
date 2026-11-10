@@ -10,6 +10,14 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
+## Wire tracking numbers and returns on `railDetails`
+
+Wire legs now carry `railDetails` with `paymentRail: WIRE`. Alongside `imad`, a wire
+reports its `omad` once delivered, and a `returns` list with one item per wire the
+recipient's bank sent back, each with its own `amount`, `returnCode`, `imad` and
+`returnedAt`. `WireRailStatus` gains `RETURNED`, for a wire the bank sent back (even
+when bank fees reduced the amount).
+
 ## Exchange rates report why a corridor is paused
 
 Each rate from `GET /exchange-rates` now has `corridorStatus`: `OPEN`, `OUTAGE`, or
