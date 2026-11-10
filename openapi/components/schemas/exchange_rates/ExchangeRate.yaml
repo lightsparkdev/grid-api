@@ -38,7 +38,11 @@ properties:
   destinationPaymentRail:
     allOf:
       - $ref: ../common/PaymentRail.yaml
-      - description: The payment rail used for the destination (e.g., UPI, SEPA_INSTANT, MOBILE_MONEY, FASTER_PAYMENTS)
+      - description: >-
+          The payment rail used for the destination (e.g., UPI, BANK_TRANSFER,
+          MOBILE_MONEY, FASTER_PAYMENTS). A destination currency can have one
+          rate for each rail, each with its own limits. For example, COP has one
+          rate for BANK_TRANSFER and one for MOBILE_MONEY.
         example: UPI
   receivingAmount:
     type: integer
