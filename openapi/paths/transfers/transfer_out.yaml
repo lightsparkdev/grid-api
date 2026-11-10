@@ -89,11 +89,6 @@ post:
         return window, which takes a few banking days. The account is not
         rejected, so retry once validation completes. An account that failed
         validation outright returns `400` with `INVALID_BANK_ACCOUNT`.
-
-        Returned with `DUPLICATE_PLATFORM_TRANSACTION_ID` when another
-        transaction on your platform already uses the `platformTransactionId`.
-        `details.transactionId` identifies that transaction. Grid created no
-        transaction. Retry with a different `platformTransactionId`.
       content:
         application/json:
           schema:

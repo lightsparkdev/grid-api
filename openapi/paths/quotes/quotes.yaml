@@ -266,11 +266,6 @@ post:
         Lightning invoice can still be executed or funded, or was executed.
         Ask the recipient for a new invoice, or retry once Grid has closed
         the earlier quote as expired.
-
-        Returned with `DUPLICATE_PLATFORM_TRANSACTION_ID` when another
-        transaction on your platform already uses the `platformTransactionId`.
-        `details.transactionId` identifies that transaction. Grid created no
-        transaction. Retry with a different `platformTransactionId`.
       content:
         application/json:
           schema:

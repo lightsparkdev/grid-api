@@ -39,10 +39,7 @@ get:
         type: string
     - name: platformTransactionId
       in: query
-      description: >-
-        Filter by the `platformTransactionId` your platform set when it created
-        the transaction. The value is unique per platform, so at most one
-        transaction matches.
+      description: Filter by platform-specific transaction ID
       required: false
       schema:
         type: string

@@ -44,12 +44,7 @@ properties:
     example: 18d3e5f7b4a9c2
   platformTransactionId:
     type: string
-    description: >-
-      Your platform's identifier for this transaction, as set in
-      `platformTransactionId` on the request that created it. Unique across
-      your platform's transactions. Absent when the
-      request did not set one, and on transactions your platform did not
-      initiate, such as incoming payments.
+    description: Platform-specific ID of this transaction, if one was provided
     example: txn_9f84e0c2a72c4fa
   settledAt:
     type: string

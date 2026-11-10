@@ -20,11 +20,6 @@ properties:
     type: string
     maxLength: 255
     description: >-
-      Your platform's identifier for the transaction this request creates.
-      It must be unique across your platform's transactions, including
-      transactions that expired, failed, or were refunded. A value that is
-      already in use returns `409 DUPLICATE_PLATFORM_TRANSACTION_ID`. Grid
-      returns it on the transaction in API responses and webhooks. To look
-      up a transaction by this value, use the `platformTransactionId` filter
-      on `GET /transactions`.
+      Your platform's ID for the resulting transaction. Must be unique per
+      platform.
     example: txn_9f84e0c2a72c4fa
