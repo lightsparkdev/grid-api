@@ -1,4 +1,4 @@
-A sandbox platform created with `EUR` among its currencies simulates the extra steps Grid requires for EU customers in production: contact verification, Strong Customer Authentication (SCA), wallet ownership proof, and Travel Rule holds on USDC deposits. Sandbox sends no email or SMS. Every one-time code is `000000`.
+If you use Grid to serve EU customers, they have extra requirements: contact verification, Strong Customer Authentication (SCA), wallet ownership proof, and Travel Rule holds on USDC deposits. You can simulate these on a sandbox platform created with `EUR` among its currencies. Sandbox sends no email or SMS, and every one-time code is `000000`.
 
 ### Contact verification
 
@@ -53,20 +53,3 @@ The customer's saved wallet for that address decides what happens to the deposit
 When the customer saves or verifies the sending wallet, Grid decides a held deposit again. A deposit the wallet now clears moves to `COMPLIANCE_REVIEW` and is credited about 60 seconds later. Saving the wallet as `THIRD_PARTY` fails a deposit of 5 USDC or more.
 
 On a sandbox platform without `EUR`, Grid ignores `senderAddress` and credits the deposit.
-
-### Requests refused as in production
-
-Sandbox refuses the same requests for EU customers as production:
-
-- `POST /quotes/{quoteId}/execute` without a live SCA login session returns `409 SCA_SESSION_REQUIRED`.
-- A quote with a `REALTIME_FUNDING` source returns `400`.
-- `POST /transfer-out` returns `400`.
-- Executing a payout with `scaFactor: TOTP` returns `400`.
-- Saving a wallet without `ownershipType` returns `400`.
-- A payout to a Polygon wallet returns `400`.
-- Starting beneficiary trust for a business customer returns `501`.
-
-### Not simulated
-
-- A payout that converts USDC before sending asks for one authorization. Production asks for one per step, so keep the authorization loop described in [Per-transaction authorization](/platform-overview/sca/per-transaction-authorization).
-- Sandbox doesn't simulate two-factor reset or the lockout after repeated failed SCA attempts.
