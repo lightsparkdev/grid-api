@@ -40,8 +40,11 @@ post:
       in: header
       required: false
       description: >
-        A unique identifier for the request. If the same key is sent multiple times,
-        the server will return the same response as the first request.
+        A unique identifier for the request. Sending a key already used for a
+        quote returns the original quote and does not create or execute another
+        one, even when `immediatelyExecute` is set. Reusing a key with a
+        different request, such as a different amount, destination, or
+        `platformFeeOverride`, returns `400 INVALID_INPUT`.
 
         Required when the request includes `documentIds`. A request that fails
         with `409 PAYMENT_DOCUMENT_ALREADY_USED`, `410 PAYMENT_DOCUMENT_EXPIRED`,
@@ -205,8 +208,9 @@ post:
         parameters. These include `documentIds` without an `Idempotency-Key`
         header, `documentIds` sent to a destination that does not require
         documents, a document whose `documentType` fills no remaining
-        requirement for the `purposeOfPayment`, and a `purposeOfPayment` the
-        destination does not accept.
+        requirement for the `purposeOfPayment`, a `purposeOfPayment` the
+        destination does not accept, and an `Idempotency-Key` already used for a
+        different request.
       content:
         application/json:
           schema:
