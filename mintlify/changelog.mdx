@@ -10,6 +10,76 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
+## Add a card to Apple Pay or Google Pay from your website
+
+`POST /cards/{id}/web-tokenize` returns the payload that Apple's and Google's website
+"Add to Wallet" scripts need. For Apple Pay, send `wallet` and pass the returned
+`applePay.jws` and `applePay.state` to `initAddToAppleWallet`. For Google Pay, also send
+the `serverSessionId`, `publicDeviceId`, and `publicWalletId` from Google's
+`onSessionCreated`, and pass the returned `googlePay` values to
+`googlepay.pushPaymentCredentials`. The card issuer enables web push provisioning for
+each website, and each wallet provider reviews the site. Until then the call returns
+`409 CONFLICT`. See
+[Digital wallet tokenization](/cards/card-management/digital-wallet-tokenization).
+
+## Add and remove administrators on a business's Embedded Wallet
+
+A `BUSINESS` customer's Embedded Wallet can now have more than one administrator.
+`POST /auth/admin-credentials` adds an `EMAIL_OTP` or `PASSKEY` credential for another
+administrator, tagged with your `adminReference`. Each step needs a signature from an
+existing verified credential on the account, so Grid never adds an administrator on its
+own. `DELETE /auth/admin-credentials/{adminReference}` revokes every credential carrying
+that reference, and refuses to remove the account's last active credential. Auth methods
+now return `adminReference`. An administrator's session cannot sign
+`POST /auth/credentials`, which returns `403 FORBIDDEN`. See
+[Managing credentials](/global-accounts/authentication#managing-credentials).
+
+## `platformAccountId` is the duplicate check for wallet external accounts
+
+When you create a wallet external account with a `platformAccountId`, Grid checks for
+duplicates by that `platformAccountId`. You can register the same wallet address,
+network, and currency under different `platformAccountId` values. Reusing a
+`platformAccountId` returns `409 DUPLICATE_EXTERNAL_ACCOUNT`. A wallet registered without
+a `platformAccountId` still returns `409 DUPLICATE_EXTERNAL_ACCOUNT` when the same wallet,
+network, and currency is already registered without one.
+
+<Warning>
+If you send a new `platformAccountId` on every create request and rely on the `409` to
+catch a wallet you already registered, reuse your own `platformAccountId` for that wallet
+or omit the field.
+</Warning>
+
+## Customers can enroll two SCA passkeys
+
+A customer can now enroll up to two passkeys as SCA factors, not one. Enrolling a third
+returns `409 PASSKEY_ALREADY_ENROLLED`. To replace a passkey, enroll the new one before
+you delete the old one. See [Factor enrollment](/platform-overview/sca/factor-enrollment).
+
+## Individual customers can use a non-US tax ID
+
+An individual customer's `identifier` can now be a non-US tax ID. Set `idType` to
+`NON_US_TAX_ID` and `countryOfIssuance` to the non-US country that issued it.
+`countryOfIssuance` `US` is rejected for this type. US residents still provide an SSN or
+ITIN, and `countryOfIssuance` for those must be `US` or omitted.
+
+## USD wires may require the beneficiary's city
+
+Depending on the bank that sends wires for your platform, wires to a USD external account
+can require the beneficiary's `address.city`, at most 35 characters. When it is required,
+creating the account without a `city`, or with a longer one, fails with
+`INVALID_INPUT`. Before, Grid accepted the account and the first wire quote failed.
+
+## `platformFeeOverride` works with any source currency
+
+`platformFeeOverride` on `POST /quotes` is no longer limited to quotes whose source
+currency is USD. `platformFixedFee` is still denominated in the quote's source currency.
+
+## Service IPs also send Grid's outbound requests
+
+The [Service IPs](/api-reference/environments#service-ips) are also the source
+addresses for webhook deliveries and other outbound requests from Grid. If you restrict
+traffic by IP, allowlist all three addresses.
+
 ## Issue a business's card to a named person
 
 `POST /cards` takes an optional `cardholder` for a `BUSINESS` customer: the person the
