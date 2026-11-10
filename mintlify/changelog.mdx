@@ -10,6 +10,14 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
+## Tell a corridor outage from maintenance
+
+A paused corridor now tells you why. The account lookup and `POST /quotes` fail with
+`403 CORRIDOR_UNDER_OUTAGE` when an outage pauses the corridor, and with `403
+CORRIDOR_UNDER_MAINTENANCE` for scheduled maintenance. Retry later in both cases. In
+sandbox, an external account whose account number ends in `015` simulates an outage. See
+[sandbox testing](/payouts-and-b2b/platform-tools/sandbox-testing#testing-cross-currency-quotes).
+
 ## Tag transactions with your own ID
 
 `POST /quotes`, `POST /transfer-in`, and `POST /transfer-out` take an optional
