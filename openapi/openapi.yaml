@@ -384,6 +384,8 @@ paths:
     $ref: paths/payment-documents/payment_documents.yaml
   /payment-documents/{paymentDocumentId}:
     $ref: paths/payment-documents/payment_documents_{paymentDocumentId}.yaml
+  /quotes/by-idempotency-key:
+    $ref: paths/quotes/quotes_by-idempotency-key.yaml
   /quotes/{quoteId}:
     $ref: paths/quotes/quotes_{quoteId}.yaml
   /quotes:

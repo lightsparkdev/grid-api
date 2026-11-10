@@ -10,6 +10,13 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
+## Look up a quote by its idempotency key
+
+`GET /quotes/by-idempotency-key?key=...` returns the quote a `POST /quotes` request created,
+by the `Idempotency-Key` it carried, with its `transactionId` once it has executed. Use it
+when the response to `POST /quotes` was lost. It returns `404 QUOTE_NOT_FOUND` when no
+transaction exists under the key. Idempotency keys do not expire.
+
 ## Issue a business's card to a named person
 
 `POST /cards` takes an optional `cardholder` for a `BUSINESS` customer: the person the
