@@ -406,4 +406,19 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: true,
   },
+  CHF_ACCOUNT: {
+    accountType: 'CHF_ACCOUNT',
+    fields: [
+      { name: 'iban', example: 'CH9300762011623852957', description: 'Swiss IBAN (21 characters)' },
+    ],
+    beneficiaryRequired: true,
+  },
+  TRY_ACCOUNT: {
+    accountType: 'TRY_ACCOUNT',
+    fields: [
+      { name: 'iban', example: 'TR330006100519786457841326', description: 'Turkish IBAN (26 characters)' },
+      { name: 'bankName', example: 'Garanti BBVA', description: 'From GET /discoveries' },
+    ],
+    beneficiaryRequired: true,
+  },
 };
