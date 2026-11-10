@@ -1,0 +1,64 @@
+parameters:
+  - name: settlementRuleId
+    in: path
+    required: true
+    description: System-generated unique settlement rule identifier
+    schema:
+      type: string
+    example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+  - name: executionId
+    in: path
+    required: true
+    description: System-generated unique settlement rule execution identifier
+    schema:
+      type: string
+    example: SettlementRuleExecution:019542f5-b3e7-1d02-0000-000000000003
+post:
+  summary: Cancel a held execution
+  description: |
+    Stop a `HELD` execution before it fires. It becomes `SKIPPED` with
+    `CANCELLED`, nothing is paid, and the customer keeps the payment.
+
+    Requires an API token with the `UMA_TRANSACT` permission.
+  operationId: cancelSettlementRuleExecution
+  tags:
+    - Settlement Rules
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: The cancelled execution
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRuleExecution.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform, or the caller is not an API token with the UMA_TRANSACT permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - No settlement rule with this id, or no execution with this id under it
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - The execution is not held
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

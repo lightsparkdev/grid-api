@@ -1,0 +1,13 @@
+type: string
+enum:
+  - PERCENT
+  - FIXED
+  - REMAINDER
+description: |
+  How a share is sized.
+
+  | Type | Share |
+  |------|-------|
+  | `PERCENT` | `basisPoints` of the payment, rounded down to the smallest unit. |
+  | `FIXED` | `amount`, in the smallest unit of the rule's currency. |
+  | `REMAINDER` | What every other share leaves, in any row. At most one. |

@@ -1,0 +1,23 @@
+type: string
+enum:
+  - VALIDATING
+  - PENDING_APPROVAL
+  - SCHEDULED
+  - PROCESSING
+  - COMPLETED
+  - PARTIALLY_FAILED
+  - FAILED
+  - CANCELLED
+description: |
+  Status of a payout run.
+
+  | Status | Description |
+  |--------|-------------|
+  | `VALIDATING` | Grid is validating the rows. No row is paid yet. |
+  | `PENDING_APPROVAL` | An agent's run waiting for the customer to approve its `PAYOUT_RUN` action. No row is paid yet. Approving it makes the run `PROCESSING`; rejecting it, or letting it expire, makes it `CANCELLED`. |
+  | `SCHEDULED` | Accepted, waiting for `scheduledAt`. |
+  | `PROCESSING` | Rows are being paid. |
+  | `COMPLETED` | Every accepted row completed or is held for a claim, and none failed. |
+  | `PARTIALLY_FAILED` | At least one row completed or is held for a claim, and at least one failed. |
+  | `FAILED` | No row completed or is held for a claim. |
+  | `CANCELLED` | Cancelled. Rows that had not started are `SKIPPED`. |

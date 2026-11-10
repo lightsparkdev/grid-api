@@ -1,0 +1,85 @@
+type: object
+required:
+  - id
+  - payoutRunId
+  - clientRowId
+  - rowIndex
+  - state
+  - lockedCurrencySide
+  - lockedCurrencyAmount
+  - destination
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique row identifier
+    example: PayoutRunRow:019542f5-b3e7-1d02-0000-000000000002
+  payoutRunId:
+    type: string
+    example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+  clientRowId:
+    type: string
+    example: contractor-0042
+  rowIndex:
+    type: integer
+    description: The row's zero-based position in the create request.
+    example: 41
+  state:
+    $ref: ./PayoutRunRowState.yaml
+  lockedCurrencySide:
+    $ref: ../quotes/QuoteLockSide.yaml
+  lockedCurrencyAmount:
+    type: integer
+    format: int64
+    example: 125000
+  destination:
+    $ref: ./PayoutRunRowDestination.yaml
+  description:
+    type: string
+    example: October invoice
+  purposeOfPayment:
+    $ref: ../quotes/PurposeOfPayment.yaml
+  quoteId:
+    type: string
+    description: The quote that pays this row, once its payment has started.
+    example: Quote:019542f5-b3e7-1d02-0000-000000000006
+  transactionId:
+    type: string
+    description: The transaction that pays this row, once its payment has started.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+  claimablePayoutId:
+    type: string
+    description: The claimable payout that pays a `CONTACT` row of an agent's run, once it is sent.
+    example: ClaimablePayout:019542f5-b3e7-1d02-0000-000000000007
+  failureCode:
+    type: string
+    description: |
+      Why the row failed, or on an agent's run why it was skipped. A Grid error code (for example `INSUFFICIENT_FUNDS` or `ACCOUNT_NOT_FOUND`) when the row was refused before any money moved, or `TRANSACTION_FAILED` when its transaction failed; the transaction carries the details.
+
+      An agent's run uses these codes:
+
+      | Code | Description |
+      |------|-------------|
+      | `SEND_FAILED` | The row's send to an external account failed |
+      | `CLAIM_EXPIRED` | The recipient did not claim the row's claimable payout in time |
+      | `CLAIM_FAILED` | The row's claimable payout failed |
+      | `DESTINATION_NOT_ALLOWED` | The destination is no longer one the agent may pay, or screening refused it |
+      | `INSUFFICIENT_FUNDS` | The wallet did not hold the row's amount on top of what it already holds |
+      | `AGENT_INACTIVE` | The agent was paused or deleted, or lost its delegated key, before the row was paid |
+      | `CANCELLED` | Skipped: the agent cancelled the run before the row was paid |
+      | `APPROVAL_REJECTED` | Skipped: the customer rejected the run |
+      | `APPROVAL_EXPIRED` | Skipped: the run was not approved in time |
+    example: INSUFFICIENT_FUNDS
+  failureReason:
+    type: string
+    description: A human-readable explanation of `failureCode`.
+    example: Insufficient balance on the source account.
+  createdAt:
+    type: string
+    format: date-time
+    example: '2026-11-04T22:00:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    example: '2026-11-05T02:14:00Z'

@@ -220,6 +220,25 @@ base64-encoded in PEM form; `nonce` and `nonceSignature` are base64.
   </Tab>
 </Tabs>
 
+## Web push provisioning: "Add to Wallet" on your website
+
+Apple and Google also offer an "Add to Wallet" button for websites. Their
+script runs the flow in the browser and asks your page for the card; your
+backend calls
+[`POST /cards/{id}/web-tokenize`](/api-reference/cards/add-a-card-to-a-digital-wallet-from-a-website)
+and hands the response to the script.
+
+| Wallet | Script | What your page sends Grid | What Grid returns |
+|--------|--------|---------------------------|-------------------|
+| Apple Pay | Apple's `initAddToAppleWallet`, from its `jwsResolver` | `wallet` only | `applePay.jws` and `applePay.state` |
+| Google Pay | Google's `googlepay.openAppWindow`, from its `onSessionCreated` | `serverSessionId`, `publicDeviceId`, `publicWalletId` | `googlePay.tspOpc` and, when Google asks for it, `googlePay.googleOpc`, for `googlepay.pushPaymentCredentials` |
+
+Authenticate the cardholder before the button starts the flow. Web push
+provisioning is enabled per website by the card issuer and needs each
+wallet provider's review of your site, so contact your Lightspark
+representative before building it. Until it is enabled, the call returns
+`409 CONFLICT` and manual entry still works.
+
 ## Errors
 
 | Status | Code | When |

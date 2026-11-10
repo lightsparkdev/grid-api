@@ -1,0 +1,50 @@
+post:
+  summary: Preview a settlement rule
+  description: |
+    What a rule the agent drafts would pay on a payment of `amount`, and which of the customer's recent payments it would have fired on, as `POST /settlement-rules/preview` answers for a draft. Nothing is created or paid. The body is the draft's fields and `amount`, with no `customerId`: the rule is for the agent's customer.
+
+    The draft is checked as `POST /agents/me/settlement-rules` checks a rule, so a draft the agent could not create is refused here first: every selector's `creditedAccountId` is the customer's stablecoin Embedded Wallet that holds this agent's key, `currency` is the wallet's, and every share pays a destination an agent may pay, or the preview is refused with `DESTINATION_NOT_ALLOWED`.
+
+    Requires the MANAGE_SETTLEMENT_RULES permission.
+  operationId: agentPreviewSettlementRule
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentSettlementRulePreviewRequest.yaml
+  responses:
+    '200':
+      description: The preview
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRulePreview.yaml
+    '400':
+      description: Bad request - The body is invalid, a selector does not name the customer's Embedded Wallet, or `currency` is not the wallet's
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform, the agent lacks MANAGE_SETTLEMENT_RULES or has no key for the wallet, or a share pays a destination an agent may not pay (`DESTINATION_NOT_ALLOWED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

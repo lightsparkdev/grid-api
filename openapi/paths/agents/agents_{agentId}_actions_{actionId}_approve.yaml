@@ -34,10 +34,22 @@ post:
     matching `failureReason`, and one past its `expiresAt` with `APPROVAL_EXPIRED`.
 
     For `ISSUE_PURCHASE_CARD` actions, approval issues the purchase card and the action
-    carries its `cardId`. The card's limit is checked against the agent's policy again
+    carries its `cardId`. When `purchaseCard.increaseCardId` is set, approval instead
+    raises that existing card to the new amount and limit. The card's limit is checked against the agent's policy again
     first; an action past its `expiresAt` fails with `APPROVAL_EXPIRED`, one the policy now
     denies with `POLICY_DENIED`, a paused or deleted agent with `AGENT_INACTIVE`, and one
     the card issuer refuses with `EXECUTION_FAILED`.
+
+    For `USE_STORED_CARD` actions, approval lets the agent collect one single-use
+    link to the card's details. A use with `storedCardUse.needsCvc` needs
+    `storedCardCvc`, the security code encrypted by Evervault's Card component;
+    without it the request is refused with `400`. `autoApproveMerchant` also lets
+    the agent use the card at the same merchant again, up to the same amount,
+    without asking. Grid cannot verify the customer here: confirm the decision
+    with them (for example with a passkey or an emailed code) before calling. An
+    action past its `expiresAt` fails with `APPROVAL_EXPIRED`, and one whose card
+    was removed, or whose agent lost access or is paused or deleted, with
+    `AGENT_INACTIVE`.
 
     This endpoint is called by the platform's backend using platform credentials,
     not by the agent itself.
@@ -46,6 +58,12 @@ post:
     - Agent Management
   security:
     - BasicAuth: []
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentActionApproveRequest.yaml
   responses:
     '200':
       description: >-

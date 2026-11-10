@@ -108,7 +108,8 @@
             "pages": [
               "global-accounts/agents/overview",
               "global-accounts/agents/policies-and-permissions",
-              "global-accounts/agents/approvals-and-audit"
+              "global-accounts/agents/approvals-and-audit",
+              "global-accounts/agents/claimable-payouts"
             ]
           },
           {
@@ -192,6 +193,12 @@
               "payouts-and-b2b/platform-tools/webhooks",
               "payouts-and-b2b/platform-tools/sandbox-testing",
               "payouts-and-b2b/platform-tools/postman-collection"
+            ]
+          },
+          {
+            "group": "Launch",
+            "pages": [
+              "payouts-and-b2b/launch/checklist"
             ]
           }
         ]
@@ -389,7 +396,7 @@
               "api-reference/authentication",
               "api-reference/webhooks",
               "api-reference/sandbox-testing",
-              "api-reference/sdks"
+              "api-reference/cli"
             ]
           },
           {
@@ -494,6 +501,7 @@
     ]
   },
   "redirects": [
+    { "source": "/api-reference/sdks", "destination": "/api-reference/cli" },
     { "source": "/payouts-and-b2b/embedded-wallets/overview", "destination": "/payouts-and-b2b/global-accounts/overview" },
     { "source": "/payouts-and-b2b/embedded-wallets/client-keys", "destination": "/payouts-and-b2b/global-accounts/client-keys" },
     { "source": "/payouts-and-b2b/embedded-wallets/authentication", "destination": "/payouts-and-b2b/global-accounts/authentication" },

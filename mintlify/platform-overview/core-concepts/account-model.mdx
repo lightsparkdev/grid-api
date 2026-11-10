@@ -212,7 +212,7 @@ PENDING → ACTIVE
 
 - **PENDING**: Created, undergoing verification/screening
 - **ACTIVE**: Verified, ready for transactions
-- **INACTIVE**: Disabled (can be reactivated)
+- **INACTIVE**: Deleted, by you or by Lightspark. This is final: an inactive account can't be reactivated or used for payments
 - **UNDER_REVIEW**: Additional review required
 
 You'll receive `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks when account status changes (e.g., PENDING to ACTIVE, or ACTIVE to UNDER_REVIEW). If the receiving bank corrects the account details via an ACH notification of change (NOC), you'll receive `EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED` with the corrected `accountInfo`.

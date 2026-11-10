@@ -65,11 +65,48 @@ properties:
       The purchase card the agent asked for, so an approval decision can show
       its amount, limit, description and funding account. Present for
       `ISSUE_PURCHASE_CARD`.
+  claimablePayout:
+    $ref: ../claimable_payouts/ClaimablePayout.yaml
+    description: >-
+      The claimable payout the agent asked to send, so an approval decision
+      can show its amount and recipient. Present for `CLAIMABLE_PAYOUT`.
+      Approving the action makes the payout `AWAITING_CLAIM`; rejecting it,
+      or letting it expire, ends the payout and releases its hold.
+  storedCardUse:
+    $ref: ../stored_cards/AgentStoredCardUse.yaml
+    description: >-
+      The stored card the agent asked to use, where, and for how much, so an
+      approval decision can show them. Present for `USE_STORED_CARD`.
+      Approving the action lets the agent collect a single-use link with
+      `POST /agents/me/stored-cards/{storedCardId}/reveal` and `actionId`.
+  settlementRule:
+    $ref: ../settlement_rules/SettlementRule.yaml
+    description: >-
+      The settlement rule the agent proposed, so an approval decision can
+      show what it matches, who it pays and its limits. Present for
+      `CREATE_SETTLEMENT_RULE` and `UPDATE_SETTLEMENT_RULE`. For
+      `CREATE_SETTLEMENT_RULE`, approving the action makes the rule
+      `ACTIVE`; rejecting it, or letting it expire, deletes it. For
+      `UPDATE_SETTLEMENT_RULE`, it is the rule as the change would make it,
+      with the rule's `id`; approving the action applies the change, and
+      rejecting it, or letting it expire, drops it while the rule keeps its
+      terms. Approving a rule does not approve its payments in advance.
+      Each share is still checked against the agent's policy when it is
+      sent.
+  payoutRun:
+    $ref: ./AgentActionPayoutRun.yaml
+    description: >-
+      The payout run the agent created, so an approval decision can show
+      every row. Present for `PAYOUT_RUN`. Approving the action starts the
+      run; rejecting it, or letting it expire, cancels the run and skips
+      every row. The approval covers each row's own approval, so no row
+      waits for another.
   cardId:
     type: string
     description: >-
-      The purchase card the action issued. Present for an `ISSUE_PURCHASE_CARD`
-      action once it is `APPROVED` and the card is issued; read it with
+      The purchase card the action issued, or for an increase the card whose
+      amount it raised. Present for an `ISSUE_PURCHASE_CARD` action once it is
+      `APPROVED` and the card is issued or increased; read it with
       `GET /agents/me/cards/{cardId}`.
     example: Card:019542f5-b3e7-1d02-0000-000000000011
   transaction:
@@ -100,8 +137,11 @@ properties:
       `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the
       quote's own expiry; a pending action that reaches it fails with
       `QUOTE_EXPIRED`, and approval never creates a replacement quote. For
-      `ISSUE_PURCHASE_CARD`, this is the end of the approval window, after
-      which a pending action fails with `APPROVAL_EXPIRED`.
+      `ISSUE_PURCHASE_CARD`, `USE_STORED_CARD`, `CREATE_SETTLEMENT_RULE`,
+      `UPDATE_SETTLEMENT_RULE` and `PAYOUT_RUN`, this is the end of the
+      approval window, after which a pending action fails with
+      `APPROVAL_EXPIRED`; a settlement rule's window is seven days, and a
+      payout run's 24 hours.
     example: '2025-10-03T15:05:00Z'
   createdAt:
     type: string

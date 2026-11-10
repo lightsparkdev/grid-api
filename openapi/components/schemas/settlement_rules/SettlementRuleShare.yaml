@@ -1,0 +1,20 @@
+type: object
+description: How much of a payment a row pays. Set `basisPoints` for a `PERCENT` share, `amount` for a `FIXED` share, and neither for a `REMAINDER` share.
+required:
+  - type
+properties:
+  type:
+    $ref: ./SettlementRuleShareType.yaml
+  basisPoints:
+    type: integer
+    minimum: 1
+    maximum: 10000
+    description: The share in basis points of the payment. Set for `PERCENT` shares only.
+    example: 4000
+  amount:
+    type: integer
+    format: int64
+    minimum: 1
+    maximum: 9000000000000000
+    description: The share in the smallest unit of the rule's currency. Set for `FIXED` shares only.
+    example: 50000

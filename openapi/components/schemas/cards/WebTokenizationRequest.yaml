@@ -1,0 +1,9 @@
+type: object
+description: >-
+  Fields shared by every web add-to-wallet request. Send them from your
+  backend when the wallet provider's web button asks for the card.
+required:
+  - wallet
+properties:
+  wallet:
+    $ref: ./WebDigitalWallet.yaml

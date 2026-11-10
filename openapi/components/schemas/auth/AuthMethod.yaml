@@ -34,6 +34,13 @@ properties:
       the OIDC token; for PASSKEY credentials it is the validated nickname
       provided at registration time.
     example: example@lightspark.com
+  adminReference:
+    type: string
+    description: >-
+      The platform's reference for the administrator this credential belongs
+      to, for a credential added with `POST /auth/admin-credentials`. Absent
+      for the account owner's credentials.
+    example: member_8f2c1a
   createdAt:
     type: string
     format: date-time

@@ -39,7 +39,7 @@ properties:
       | SUSPECTED_FRAUD | Document suspected of being forged or edited |
       | UNSUITABLE_DOCUMENT | Document type is not accepted or not supported |
       | INCOMPLETE | Document is missing pages or sides |
-      | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
+      | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | The account holder already has an EMAIL_OTP credential on the target internal account; the holder may have one. Administrators' credentials, added with `POST /auth/admin-credentials`, are not counted |
       | SMS_OTP_CREDENTIAL_ALREADY_EXISTS | An SMS_OTP credential is already registered on the target internal account; only one SMS OTP credential is supported per internal account at this time |
       | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential with the same WebAuthn credentialId is already registered on the target internal account |
       | AUTH_CREDENTIAL_VERIFICATION_REQUIRED | The new email or phone number has no verified replacement credential |
@@ -47,6 +47,7 @@ properties:
       | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
       | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
       | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+      | STORED_CARD_VERIFICATION_FAILED | The card's issuer did not confirm the card: its security code, billing address or name did not match. Nothing was stored |
       | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
       | ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED | The customer create request omits an accountholder agreement its accounts require |
       | CARDHOLDER_AGREEMENT_NOT_ACCEPTED | The customer has not accepted the cardholder agreement the platform requires before a card is issued |
@@ -111,6 +112,7 @@ properties:
       - STABLECOIN_PROVIDER_ACCOUNT_INVALID
       - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
       - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+      - STORED_CARD_VERIFICATION_FAILED
       - CARDHOLDER_KYC_NOT_APPROVED
       - ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED
       - CARDHOLDER_AGREEMENT_NOT_ACCEPTED

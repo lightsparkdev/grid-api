@@ -15,4 +15,6 @@ description: |
   | `DAILY_LIMIT_EXCEEDED` | The amount would exceed the daily spending limit |
   | `MONTHLY_LIMIT_EXCEEDED` | The amount would exceed the monthly spending limit |
   | `DAILY_TRANSACTION_LIMIT_EXCEEDED` | The agent has made its daily number of transactions |
+  | `POOL_LIMIT_EXCEEDED` | The amount would exceed a limit of the agent's spending pool |
+  | `POOL_PAYMENT_TYPE_NOT_ALLOWED` | The agent's spending pool does not allow this kind of payment |
 example: DAILY_LIMIT_EXCEEDED

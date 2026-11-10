@@ -1,0 +1,12 @@
+type: object
+required:
+  - wallet
+properties:
+  wallet:
+    type: string
+    enum:
+      - APPLE_PAY
+    description: >-
+      Discriminator value identifying an Apple Pay request. Apple's web
+      button needs nothing else from the page.
+    example: APPLE_PAY

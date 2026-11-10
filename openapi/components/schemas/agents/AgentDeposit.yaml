@@ -51,6 +51,12 @@ properties:
     description: >-
       Estimated amount credited to the destination internal account after fees,
       denominated in the destination asset. Present for `LIGHTNING` deposits.
+  quoteId:
+    type: string
+    description: >-
+      The quote that funds the deposit. The transaction that pays the deposit
+      carries the same `quoteId`, so a payment can be matched to its deposit.
+    example: Quote:019542f5-b3e7-1d02-0000-000000000006
   targetType:
     $ref: ./AgentDepositTargetType.yaml
     description: Whether `target` is a Lightning invoice or chain address.
@@ -83,9 +89,20 @@ properties:
       - 'null'
     format: date-time
     description: >-
-      Expiration time for a `LIGHTNING` invoice. Omitted or null for standing
-      chain deposit addresses, which do not expire.
+      When the deposit must be paid by: the invoice's expiry for `LIGHTNING`,
+      or the quote's for a chain deposit Grid funds through a quote. Omitted or
+      null for standing chain deposit addresses, which do not expire.
     example: '2026-10-09T18:05:00Z'
+  paidAfterExpiry:
+    type: boolean
+    description: >-
+      Whether a payment for this deposit arrived after `expiresAt`, so only a
+      deposit with an `expiresAt` can have one. A chain payment that arrives
+      after its quote expired is not converted: the deposit stays `EXPIRED`
+      and Lightspark is alerted to recover the funds by hand, so the payment
+      must not be sent again. Absent or `false` while no late payment is
+      known.
+    example: false
   createdAt:
     type: string
     format: date-time

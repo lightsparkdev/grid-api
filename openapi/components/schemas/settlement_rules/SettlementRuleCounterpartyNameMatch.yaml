@@ -1,0 +1,20 @@
+type: object
+description: |
+  A pattern for the sender name Grid records on a bank deposit (the
+  `accountHolderName` of the deposit's bank account). Set exactly one of
+  `prefix` and `contains`. The comparison trims both names and ignores
+  case, as the transaction list groups senders. A bank often truncates
+  the name. A payment with no recorded sender name never matches.
+properties:
+  prefix:
+    type: string
+    minLength: 1
+    maxLength: 140
+    description: The sender name starts with this.
+    example: GLOSSIER
+  contains:
+    type: string
+    minLength: 1
+    maxLength: 140
+    description: The sender name contains this.
+    example: glossier inc

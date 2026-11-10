@@ -1,0 +1,13 @@
+type: object
+required:
+  - wallet
+  - googlePay
+properties:
+  wallet:
+    type: string
+    enum:
+      - GOOGLE_PAY
+    description: Discriminator value identifying a Google Pay response.
+    example: GOOGLE_PAY
+  googlePay:
+    $ref: ./CardWebTokenizationGooglePayPayload.yaml

@@ -1,0 +1,60 @@
+type: object
+description: >-
+  Partial update to a spending pool. At least one field must be provided. A
+  cap or `approvalThreshold` set to `null` is removed. Changing `limitType`
+  to `RECURRING` requires `period`; changing it to `TOTAL` removes `period`. Lowering a limit below
+  what is already spent refuses further payments; it never reverses one.
+properties:
+  name:
+    type: string
+    minLength: 1
+    maxLength: 255
+    example: Marketing
+  limitType:
+    $ref: ./SpendingPoolLimitType.yaml
+  period:
+    $ref: ./SpendingPoolPeriod.yaml
+  limitAmount:
+    type: integer
+    format: int64
+    minimum: 1
+    example: 600000
+  perTransactionLimit:
+    type:
+      - integer
+      - 'null'
+    format: int64
+    minimum: 1
+    example: 50000
+  approvalThreshold:
+    type:
+      - integer
+      - 'null'
+    format: int64
+    minimum: 0
+    example: 25000
+  dailyLimit:
+    type:
+      - integer
+      - 'null'
+    format: int64
+    minimum: 1
+    example: 100000
+  monthlyLimit:
+    type:
+      - integer
+      - 'null'
+    format: int64
+    minimum: 1
+    example: 400000
+  allowedPaymentTypes:
+    type: array
+    items:
+      $ref: ./SpendingPoolPaymentType.yaml
+    uniqueItems: true
+    example:
+      - CARDS
+      - BANK_PAYOUTS
+  requiresAdminApproval:
+    type: boolean
+    example: true

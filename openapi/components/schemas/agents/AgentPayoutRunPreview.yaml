@@ -1,0 +1,29 @@
+type: object
+required:
+  - sourceAccountId
+  - total
+  - walletBalanceAfter
+  - rows
+  - approval
+properties:
+  sourceAccountId:
+    type: string
+    example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+  total:
+    $ref: ../common/CurrencyAmount.yaml
+    description: The sum of the rows' amounts, which is what leaves the wallet if every row is paid. Fees are not added to it.
+  estimatedFees:
+    $ref: ../common/CurrencyAmount.yaml
+    description: The sum of the rows' known fee estimates. Absent when no row's fee is known.
+  walletBalanceAfter:
+    $ref: ../common/CurrencyAmount.yaml
+    description: The wallet's free balance, after what is already held for its claimable payouts and payments in flight, minus `total`. Negative when the wallet cannot pay every row.
+  rows:
+    type: array
+    items:
+      $ref: ./AgentPayoutRunPreviewRow.yaml
+  approval:
+    $ref: ./AgentPayoutRunApproval.yaml
+  denialReason:
+    $ref: ./AgentPolicyDenialReason.yaml
+    description: Set when the agent's policy or spending pool would refuse the run, so the create would be refused with `AGENT_POLICY_DENIED`.

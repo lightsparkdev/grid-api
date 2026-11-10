@@ -1,0 +1,27 @@
+type: object
+description: The payout run a `PAYOUT_RUN` action asks to start, with every row, so an approval decision can show who is paid and how much.
+required:
+  - id
+  - status
+  - sourceAccountId
+  - total
+  - rowCount
+  - rows
+properties:
+  id:
+    type: string
+    example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+  status:
+    $ref: ../payout_runs/PayoutRunStatus.yaml
+  sourceAccountId:
+    type: string
+    example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+  total:
+    $ref: ../common/CurrencyAmount.yaml
+  rowCount:
+    type: integer
+    example: 12
+  rows:
+    type: array
+    items:
+      $ref: ./AgentActionPayoutRunRow.yaml

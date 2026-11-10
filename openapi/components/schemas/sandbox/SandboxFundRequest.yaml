@@ -43,3 +43,11 @@ properties:
       description comes from the account's sweep rule, so sending it returns
       `400 INVALID_INPUT`.
     example: 'Test deposit for invoice reconciliation'
+  senderAddress:
+    type: string
+    maxLength: 128
+    description: >-
+      The wallet the deposit comes from, as an Ethereum (`0x…`) or Solana
+      address. For an EU customer, Grid can hold the deposit until the customer
+      adds or verifies this wallet.
+    example: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b'

@@ -1,0 +1,116 @@
+parameters:
+  - name: customerId
+    in: path
+    description: System-generated unique customer identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Store a card
+  description: >
+    Store a card the customer already owns so the agents they choose can use
+    it. Collect the card with Evervault's Card UI component and send its
+    ciphertext: a number or security code that is not Evervault ciphertext is
+    refused with `400 INVALID_INPUT` and never stored or logged.
+
+
+    Grid verifies the card with its issuer before storing it: the security
+    code, billing address and name. A card the issuer does not confirm is
+    refused with `400 STORED_CARD_VERIFICATION_FAILED`. The security code is
+    then discarded; Grid never stores it. The new card is shared with no agent:
+    add one with `PUT /customers/{customerId}/stored-cards/{storedCardId}/agents/{agentId}`.
+    Available where the platform enables stored cards, for individual
+    customers.
+  operationId: createStoredCard
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/stored_cards/StoredCardCreateRequest.yaml
+  responses:
+    '201':
+      description: Card stored
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stored_cards/StoredCard.yaml
+    '400':
+      description: Bad request, including `STORED_CARD_VERIFICATION_FAILED` when the issuer did not confirm the card
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`), or the customer is a business
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '429':
+      description: Too many cards added for this customer; retry later
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List stored cards
+  description: The customer's `ACTIVE` stored cards, newest first.
+  operationId: listStoredCards
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stored_cards/StoredCardListResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,8 @@
+type: string
+maxLength: 32
+description: >-
+  The card network, from the issuer's BIN data. Known values: `VISA`,
+  `MASTERCARD`, `AMERICAN_EXPRESS`, `DISCOVER`, `DINERS_CLUB`, `JCB`,
+  `UNIONPAY`, `UNKNOWN`. Treat an unrecognized value as `UNKNOWN` rather than
+  an error.
+example: VISA

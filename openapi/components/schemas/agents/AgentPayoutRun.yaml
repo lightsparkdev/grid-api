@@ -1,0 +1,25 @@
+allOf:
+  - $ref: ../payout_runs/PayoutRun.yaml
+  - type: object
+    description: A payout run an agent created. `allOrNothing` is always `false`, and `scheduledAt` is never set.
+    required:
+      - agentId
+      - agentActionId
+      - total
+      - rowCount
+    properties:
+      agentId:
+        type: string
+        description: The agent that created the run.
+        example: Agent:019542f5-b3e7-1d02-0000-000000000042
+      agentActionId:
+        type: string
+        description: The run's `PAYOUT_RUN` agent action, which the customer approves or rejects when the run needs approval.
+        example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+      total:
+        $ref: ../common/CurrencyAmount.yaml
+        description: The sum of the rows' amounts, in the source account's currency. This is what leaves the wallet if every row is paid.
+      rowCount:
+        type: integer
+        description: How many rows the run has.
+        example: 12
