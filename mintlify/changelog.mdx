@@ -16,9 +16,6 @@ Each rate from `GET /exchange-rates` now has `corridorStatus`: `OPEN`, `OUTAGE`,
 `MAINTENANCE`. It replaces `isAvailable`, which is removed. Read `corridorStatus ==
 OPEN` where you read `isAvailable` before.
 
-Each option's `rate` in `POST /claimable-payouts/claim/options` changes the same way.
-Read `rate.corridorStatus == OPEN` where you read `rate.isAvailable` before.
-
 ## Tell a corridor outage from maintenance
 
 A paused corridor now tells you why. The account lookup and `POST /quotes` fail with
