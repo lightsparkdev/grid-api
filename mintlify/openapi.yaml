@@ -404,7 +404,7 @@ paths:
                           decimals: 2
                           name: Euro
                           symbol: €
-                        destinationPaymentRail: SEPA_INSTANT
+                        destinationPaymentRail: BANK_TRANSFER
                         receivingAmount: 9250
                         exchangeRate: 1.081081
                         fees:
@@ -20672,7 +20672,7 @@ components:
         destinationPaymentRail:
           allOf:
             - $ref: '#/components/schemas/PaymentRail'
-            - description: The payment rail used for the destination (e.g., UPI, SEPA_INSTANT, MOBILE_MONEY, FASTER_PAYMENTS)
+            - description: The payment rail used for the destination (e.g., UPI, BANK_TRANSFER, MOBILE_MONEY, FASTER_PAYMENTS). A destination currency can have one rate for each rail, each with its own limits. For example, COP has one rate for BANK_TRANSFER and one for MOBILE_MONEY.
               example: UPI
         receivingAmount:
           type: integer
@@ -32411,7 +32411,7 @@ components:
               anyOf:
                 - $ref: '#/components/schemas/PaymentRail'
                 - type: 'null'
-              description: The payment rail used to settle this transaction (e.g. ACH, WIRE, NEFT, FASTER_PAYMENTS). Uses the same values as the PaymentRail sent on quote requests. Null when no external rail is used (e.g. instant or intra-network transfers, or non-direct-destination transactions) or before a rail is resolved.
+              description: The payment rail used to settle this transaction (e.g. ACH, WIRE, BANK_TRANSFER, FASTER_PAYMENTS). Uses the same values as the PaymentRail sent on quote requests. Null when no external rail is used (e.g. instant or intra-network transfers, or non-direct-destination transactions) or before a rail is resolved.
             railSelectionMode:
               $ref: '#/components/schemas/RailSelectionMode'
               description: How the rail was chosen — MANUAL when the platform specified a paymentRail on the destination, AUTO when Lightspark selects it.
@@ -37856,7 +37856,7 @@ components:
         paymentRail:
           allOf:
             - $ref: '#/components/schemas/PaymentRail'
-          description: The rail the recipient chose from `POST /claimable-payouts/claim/options`, when her account type is paid on more than one (for example `SEPA` or `SEPA_INSTANT`). Omit it to use the account type's default rail.
+          description: The rail the recipient chose from `POST /claimable-payouts/claim/options`, when her account type is paid on more than one (for example `BANK_TRANSFER` or `MOBILE_MONEY`). Omit it to use the account type's default rail.
     ClaimablePayoutQuote:
       type: object
       description: A locked quote paying the claimable payout to the recipient. Confirm it before `quote.expiresAt`; after that, request another.
