@@ -11,7 +11,8 @@ description: >-
   means the debit was submitted to the bank and the amount was credited to
   the destination USDB account. `COMPLETED` means the debit settled. `FAILED`
   means Grid refused the debit at submission or the bank returned it (see
-  `achPull.returnCode`). A return after crediting does not remove the credit.
+  `achPull.returnCode`). A return after crediting does not remove the USDB
+  credit, unlike platform ACH pulls, whose returns take the funds back.
 required:
   - id
   - status

@@ -17719,6 +17719,8 @@ webhooks:
 
         An ACH deposit can be returned after `COMPLETED`, days after it settled. The return takes the funds back, so the payment moves to `FAILED` and `INCOMING_PAYMENT.FAILED` is sent with `source.railDetails.status` set to `RETURNED` and `returnedAt` set. If the return is dishonored and the funds come back, the payment moves to `COMPLETED` again and `INCOMING_PAYMENT.COMPLETED` is sent with `railDetails.status` set to `RETURN_DISHONORED` and `dishonoredAt` set. A contested dishonor sends `INCOMING_PAYMENT.FAILED` once more with `RETURN_CONTESTED`.
 
+        An agent `ACH_PULL` deposit (see `POST /agents/me/deposits`) credits the destination USDB account when the debit is submitted. If the bank later returns the debit, the payment's transaction follows the return rules above, but the USDB already credited is not taken back. The deposit reports `FAILED` with `achPull.returnCode`.
+
         Bank-rail incoming payments (e.g. SWIFT) are informational at every status, including PENDING: the funds have already moved interbank, so the approval mechanism and the 5-second response window do not apply.
       operationId: incomingPaymentWebhook
       tags:
@@ -36696,7 +36698,7 @@ components:
           example: R01
     AgentDeposit:
       type: object
-      description: A deposit that converts funds from an external network into an internal account belonging to the agent's customer. For networks other than `ACH_PULL`, a deposit reported `FAILED` or `EXPIRED` can still become `COMPLETED` when the funds arrive late; the platform then receives the `INCOMING_PAYMENT` webhook for the deposit's transaction again, now `COMPLETED`. For `ACH_PULL`, `PENDING` means the deposit was created and is waiting for the customer's debit authorization; nothing has moved. It becomes `EXPIRED` at `expiresAt`, 30 minutes after creation. `PROCESSING` means the debit was submitted to the bank and the amount was credited to the destination USDB account. `COMPLETED` means the debit settled. `FAILED` means Grid refused the debit at submission or the bank returned it (see `achPull.returnCode`). A return after crediting does not remove the credit.
+      description: A deposit that converts funds from an external network into an internal account belonging to the agent's customer. For networks other than `ACH_PULL`, a deposit reported `FAILED` or `EXPIRED` can still become `COMPLETED` when the funds arrive late; the platform then receives the `INCOMING_PAYMENT` webhook for the deposit's transaction again, now `COMPLETED`. For `ACH_PULL`, `PENDING` means the deposit was created and is waiting for the customer's debit authorization; nothing has moved. It becomes `EXPIRED` at `expiresAt`, 30 minutes after creation. `PROCESSING` means the debit was submitted to the bank and the amount was credited to the destination USDB account. `COMPLETED` means the debit settled. `FAILED` means Grid refused the debit at submission or the bank returned it (see `achPull.returnCode`). A return after crediting does not remove the USDB credit, unlike platform ACH pulls, whose returns take the funds back.
       required:
         - id
         - status
