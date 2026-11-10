@@ -8,7 +8,7 @@ description: >-
 
 
   - `PENDING`: The policy-creation leg never completed, so the key cannot sign
-  yet. Only `GRID_GENERATED` keys are ever `PENDING`.
+  yet. Only keys for an Embedded Wallet internal account are ever `PENDING`.
 
   - `ACTIVE`: Grid holds material that can sign for the card funding source or
   agent.

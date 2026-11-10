@@ -1,9 +1,9 @@
 post:
   summary: Create a delegated signing key
   description: >
-    Only `GRID_GENERATED` keys are created through this endpoint. Grid creates
-    `PROVIDER_DELEGATED` keys itself, when the cardholder has delegated the
-    wallet at the provider and a card is funded by that wallet.
+    Only keys for an Embedded Wallet internal account are created through this
+    endpoint. Grid creates provider wallet keys itself, when the cardholder has
+    delegated the wallet at the provider and a card is funded by that wallet.
 
 
     Delegate Spark token-transaction signing authority for a card funding
@@ -111,7 +111,6 @@ post:
               summary: Active delegated key
               value:
                 id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
-                keySource: GRID_GENERATED
                 cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                 fundingSourceId: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002

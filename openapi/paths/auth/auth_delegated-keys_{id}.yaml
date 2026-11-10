@@ -59,7 +59,7 @@ delete:
     anything, and deleting them is unnecessary for correctness or security.
 
 
-    Revoking a `PROVIDER_DELEGATED` key revokes the wallet's whole delegation:
+    Revoking a provider wallet key revokes the wallet's whole delegation:
     every key on that wallet becomes `REVOKED`, and Grid deletes its share and
     asks the provider to stop reporting the wallet as delegated. No cardholder
     approval is needed. To stop a single card, freeze or close it instead. When
