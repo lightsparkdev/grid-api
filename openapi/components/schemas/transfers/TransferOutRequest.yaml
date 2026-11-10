@@ -18,6 +18,7 @@ properties:
     example: 12550
   platformTransactionId:
     type: string
+    minLength: 1
     maxLength: 255
     description: >-
       Your platform's ID for the resulting transaction. Must be unique per
