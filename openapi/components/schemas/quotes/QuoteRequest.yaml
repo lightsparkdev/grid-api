@@ -60,6 +60,16 @@ properties:
     maxLength: 1024
     description: Optional description/memo for the transfer
     example: 'Invoice #1234 payment'
+  platformTransactionId:
+    type: string
+    maxLength: 255
+    description: >-
+      Your platform's identifier for the transaction this request creates.
+      Grid stores it on the transaction and returns it in transaction
+      responses and webhooks. Grid does not require it to be unique. To find
+      transactions by this value, use the `platformTransactionId` filter on
+      `GET /transactions`.
+    example: txn_9f84e0c2a72c4fa
   remittanceInformation:
     type: string
     maxLength: 80

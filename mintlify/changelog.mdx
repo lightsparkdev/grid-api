@@ -10,6 +10,15 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
+## Tag transactions with your own ID
+
+`POST /quotes`, `POST /transfer-in`, and `POST /transfer-out` take an optional
+`platformTransactionId`: your platform's identifier for the transaction the request
+creates. Grid returns it as `platformTransactionId` on the transaction, in both API
+responses and webhooks. To find transactions by it, pass `platformTransactionId` to
+`GET /transactions`. Grid does not require the value to be unique, so the filter returns
+every match.
+
 ## Issue a business's card to a named person
 
 `POST /cards` takes an optional `cardholder` for a `BUSINESS` customer: the person the

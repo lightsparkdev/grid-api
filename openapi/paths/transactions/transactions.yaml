@@ -2,8 +2,8 @@ get:
   summary: List transactions
   description: |
     Retrieve a paginated list of transactions with optional filtering.
-    The transactions can be filtered by customer ID, platform customer ID, UMA address,
-    date range, status, and transaction type.
+    The transactions can be filtered by customer ID, platform customer ID, platform
+    transaction ID, UMA address, date range, status, and transaction type.
 
     Card transactions are included and identified by `type: CARD`. In Sandbox this is how
     you discover a `CardTransaction` id after simulating an authorization — list the
@@ -34,6 +34,15 @@ get:
     - name: platformCustomerId
       in: query
       description: Filter by platform-specific customer ID
+      required: false
+      schema:
+        type: string
+    - name: platformTransactionId
+      in: query
+      description: >-
+        Filter by the `platformTransactionId` your platform set when it created
+        the transaction. Grid does not require the value to be unique, so every
+        matching transaction is returned.
       required: false
       schema:
         type: string
