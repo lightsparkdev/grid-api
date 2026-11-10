@@ -7,6 +7,8 @@ enum:
   - POLYGON
   - ARBITRUM
   - TRON
+  - ACH_PULL
 description: >-
   Network from which an agent customer can fund a deposit. `TRON` deposits
-  support `USDT` only.
+  support `USDT` only. `ACH_PULL` is an ACH debit from one of the customer's
+  own US bank accounts (external accounts).

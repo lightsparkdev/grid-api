@@ -17,6 +17,8 @@ properties:
       | SANCTION_BLOCKED | Blocked by sanction screening |
       | DESTINATION_NOT_ALLOWED | The agent may not pay this destination |
       | CORRIDOR_UNDER_MAINTENANCE | Payments to this corridor are paused for maintenance. |
+      | ACH_PULL_NOT_ENABLED | External-account pulls are not enabled for the platform |
+      | ACH_PULL_BLOCKED | Pulls are blocked for this customer after an unauthorized ACH return |
     enum:
       - FORBIDDEN
       - USER_NOT_READY
@@ -27,6 +29,8 @@ properties:
       - SANCTION_BLOCKED
       - DESTINATION_NOT_ALLOWED
       - CORRIDOR_UNDER_MAINTENANCE
+      - ACH_PULL_NOT_ENABLED
+      - ACH_PULL_BLOCKED
   reason:
     type: string
     description: Error message

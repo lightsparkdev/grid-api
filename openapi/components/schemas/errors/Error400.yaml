@@ -72,6 +72,9 @@ properties:
       | STABLECOIN_VERIFICATION_FAILED | The stablecoin could not be verified with the provider |
       | DOCUMENTS_REQUIRED | The destination requires supporting documents for the quote's `purposeOfPayment` that the request did not supply. `details.missingRequirements` lists the requirement ID of each one |
       | EXACT_AMOUNT_UNAVAILABLE | The quote cannot deliver exactly the requested receiving amount at the current rate; quote again shortly or lock the sending amount |
+      | DEBIT_AUTHORIZATION_MISMATCH | The authorization text version or hash does not match the deposit's |
+      | BANK_ACCOUNT_NOT_VALIDATED | The external account has no ACH validation accepted for pulls |
+      | ACH_PULL_LIMIT_EXCEEDED | The amount exceeds the per-pull limit or the customer's rolling 7-day or 30-day pull limit |
     enum:
       - INVALID_INPUT
       - END_USER_TERMS_VERSION_NOT_FOUND
@@ -137,6 +140,9 @@ properties:
       - STABLECOIN_VERIFICATION_FAILED
       - DOCUMENTS_REQUIRED
       - EXACT_AMOUNT_UNAVAILABLE
+      - DEBIT_AUTHORIZATION_MISMATCH
+      - BANK_ACCOUNT_NOT_VALIDATED
+      - ACH_PULL_LIMIT_EXCEEDED
   reason:
     type: string
     description: Error message

@@ -11,6 +11,10 @@ A pull differs from a push deposit in one way: the customer's bank can return a 
 
 This page covers what Lightspark checks before the first debit, how long each step takes, when the funds become spendable, and what a return does.
 
+<Note>
+This page covers platform ACH pulls. Agents `ACH_PULL` deposits (`POST /agents/me/deposits`) credit the destination USDB account when the debit is submitted. A bank return does not take back that credit.
+</Note>
+
 ## Prerequisites
 
 - Your platform is enabled for ACH pull. Lightspark turns it on after compliance approval. Until then, a quote funded from an external account returns `501 NOT_IMPLEMENTED`.
