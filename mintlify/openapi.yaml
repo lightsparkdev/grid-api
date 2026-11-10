@@ -5069,7 +5069,7 @@ paths:
 
         Idempotency keys do not expire. A key finds its quote for as long as the quote exists, whatever the quote's status.
 
-        A `404` means no transaction exists under the key yet. A `POST /quotes` still in flight can create one afterwards, so to send the payment again, resend `POST /quotes` with the same `Idempotency-Key` and the same body: Grid creates the quote once, whichever request arrives first.
+        A `404` means no transaction exists under the key yet. A `POST /quotes` still in flight can create one afterwards, so to send the payment again, resend `POST /quotes` with the same `Idempotency-Key` and the same body: Grid creates the quote once, whichever request arrives first. If that retry returns `400` asking for a new `Idempotency-Key`, the first request stopped before creating a transaction, and a new key is safe to use.
 
         Only keys sent to `POST /quotes` are looked up. Keys sent to `POST /transfer-in` and `POST /transfer-out` are not.
       operationId: getQuoteByIdempotencyKey
