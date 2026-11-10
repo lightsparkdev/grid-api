@@ -56,7 +56,7 @@ patch:
   description: >
     Update a card's status, funding source, merchant categories, risk ceiling,
     or threeDSecurePassword. At least one field must be supplied. Manage
-    velocity limits through `/card-velocity-limits`.
+    velocity limits through `/cards/velocity-limits`.
 
 
     - `status` transitions include `ACTIVE ⇄ FROZEN`,

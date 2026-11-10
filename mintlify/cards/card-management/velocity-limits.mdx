@@ -4,7 +4,7 @@ description: "Manage card and platform amount and transaction-count limits"
 icon: "/images/icons/credit-card1.svg"
 ---
 
-Use `/card-velocity-limits` to manage card authorization amount and count
+Use `/cards/velocity-limits` to manage card authorization amount and count
 caps. Card issuance, card updates, and platform configuration do not configure
 velocity limits.
 
@@ -65,7 +65,7 @@ on the first, `QUARTER` in January/April/July/October, and `YEAR` on January 1.
 ### Platform daily default
 
 ```bash
-curl -X POST "$GRID_BASE_URL/card-velocity-limits" \
+curl -X POST "$GRID_BASE_URL/cards/velocity-limits" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
@@ -93,7 +93,7 @@ The response is `201 Created`:
 ### Card-specific authorization cap
 
 ```bash
-curl -X POST "$GRID_BASE_URL/card-velocity-limits" \
+curl -X POST "$GRID_BASE_URL/cards/velocity-limits" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
@@ -112,17 +112,17 @@ authorizations; attempt counts apply to real-time requests only.
 
 ## List and retrieve limits
 
-`GET /card-velocity-limits` lists platform defaults. Add `cardId` to list only
+`GET /cards/velocity-limits` lists platform defaults. Add `cardId` to list only
 rules configured directly on that card. A card list does not include inherited
 platform or Lightspark limits. Use `limit` and `cursor` for pagination.
 
 ```bash
-curl "$GRID_BASE_URL/card-velocity-limits?cardId=Card:019542f5-b3e7-1d02-0000-000000000010&limit=50" \
+curl "$GRID_BASE_URL/cards/velocity-limits?cardId=Card:019542f5-b3e7-1d02-0000-000000000010&limit=50" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 ```bash
-curl "$GRID_BASE_URL/card-velocity-limits/CardVelocityRule:019542f5-b3e7-1d02-0000-000000000004" \
+curl "$GRID_BASE_URL/cards/velocity-limits/CardVelocityRule:019542f5-b3e7-1d02-0000-000000000004" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
@@ -143,7 +143,7 @@ coexist. Each target can hold at most 50 rules.
 Delete the existing rule, then create its replacement:
 
 ```bash
-curl -X DELETE "$GRID_BASE_URL/card-velocity-limits/CardVelocityRule:019542f5-b3e7-1d02-0000-000000000004" \
+curl -X DELETE "$GRID_BASE_URL/cards/velocity-limits/CardVelocityRule:019542f5-b3e7-1d02-0000-000000000004" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
