@@ -15,9 +15,10 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 `POST /quotes`, `POST /transfer-in`, and `POST /transfer-out` take an optional
 `platformTransactionId`: your platform's identifier for the transaction the request
 creates. Grid returns it as `platformTransactionId` on the transaction, in both API
-responses and webhooks. To find transactions by it, pass `platformTransactionId` to
-`GET /transactions`. Grid does not require the value to be unique, so the filter returns
-every match.
+responses and webhooks. To look up a transaction by it, pass `platformTransactionId` to
+`GET /transactions`. The value must be unique across your platform's transactions,
+including expired and failed ones. A value already in use returns
+`409 DUPLICATE_PLATFORM_TRANSACTION_ID`.
 
 ## Issue a business's card to a named person
 

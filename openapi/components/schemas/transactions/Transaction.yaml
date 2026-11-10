@@ -46,7 +46,8 @@ properties:
     type: string
     description: >-
       Your platform's identifier for this transaction, as set in
-      `platformTransactionId` on the request that created it. Absent when the
+      `platformTransactionId` on the request that created it. Unique across
+      your platform's transactions. Absent when the
       request did not set one, and on transactions your platform did not
       initiate, such as incoming payments.
     example: txn_9f84e0c2a72c4fa

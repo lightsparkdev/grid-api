@@ -41,8 +41,8 @@ get:
       in: query
       description: >-
         Filter by the `platformTransactionId` your platform set when it created
-        the transaction. Grid does not require the value to be unique, so every
-        matching transaction is returned.
+        the transaction. The value is unique per platform, so at most one
+        transaction matches.
       required: false
       schema:
         type: string

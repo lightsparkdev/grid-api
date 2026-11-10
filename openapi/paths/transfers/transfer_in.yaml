@@ -79,6 +79,16 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `DUPLICATE_PLATFORM_TRANSACTION_ID` when another
+        transaction on your platform already uses the `platformTransactionId`.
+        `details.transactionId` identifies that transaction. Grid created no
+        transaction. Retry with a different `platformTransactionId`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
     '500':
       description: Internal service error
       content:

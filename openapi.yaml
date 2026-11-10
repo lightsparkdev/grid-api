@@ -4627,6 +4627,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. Returned with `DUPLICATE_PLATFORM_TRANSACTION_ID` when another transaction on your platform already uses the `platformTransactionId`. `details.transactionId` identifies that transaction. Grid created no transaction. Retry with a different `platformTransactionId`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -4717,7 +4723,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict. Returned with `BANK_ACCOUNT_VALIDATION_PENDING` when the US bank account on the request is still being validated. Grid verifies a newly added ACH account by sending a micro-entry and waiting out the return window, which takes a few banking days. The account is not rejected, so retry once validation completes. An account that failed validation outright returns `400` with `INVALID_BANK_ACCOUNT`.
+          description: |-
+            Conflict. Returned with `BANK_ACCOUNT_VALIDATION_PENDING` when the US bank account on the request is still being validated. Grid verifies a newly added ACH account by sending a micro-entry and waiting out the return window, which takes a few banking days. The account is not rejected, so retry once validation completes. An account that failed validation outright returns `400` with `INVALID_BANK_ACCOUNT`.
+            Returned with `DUPLICATE_PLATFORM_TRANSACTION_ID` when another transaction on your platform already uses the `platformTransactionId`. `details.transactionId` identifies that transaction. Grid created no transaction. Retry with a different `platformTransactionId`.
           content:
             application/json:
               schema:
@@ -5322,6 +5330,7 @@ paths:
             Conflict. Returned with `BANK_ACCOUNT_VALIDATION_PENDING` when the US bank account on the request is still being validated. Grid verifies a newly added ACH account by sending a micro-entry and waiting out the return window, which takes a few banking days. The account is not rejected, so retry once validation completes. An account that failed validation outright returns `400` with `INVALID_BANK_ACCOUNT`.
             Returned with `PAYMENT_DOCUMENT_ALREADY_USED` when a document in `documentIds` is already attached to a quote. A document can be used on one quote only. Upload the file again and retry with the new ID. Grid created no quote, so you can reuse the same `Idempotency-Key`.
             Returned with `INVOICE_ALREADY_USED` when another quote for the same Lightning invoice can still be executed or funded, or was executed. Ask the recipient for a new invoice, or retry once Grid has closed the earlier quote as expired.
+            Returned with `DUPLICATE_PLATFORM_TRANSACTION_ID` when another transaction on your platform already uses the `platformTransactionId`. `details.transactionId` identifies that transaction. Grid created no transaction. Retry with a different `platformTransactionId`.
           content:
             application/json:
               schema:
@@ -5673,7 +5682,7 @@ paths:
             type: string
         - name: platformTransactionId
           in: query
-          description: Filter by the `platformTransactionId` your platform set when it created the transaction. Grid does not require the value to be unique, so every matching transaction is returned.
+          description: Filter by the `platformTransactionId` your platform set when it created the transaction. The value is unique per platform, so at most one transaction matches.
           required: false
           schema:
             type: string
@@ -21901,6 +21910,7 @@ components:
             | DOCUMENT_ALREADY_EXISTS | A document of this type already exists for the holder; replace it with PUT |
             | DUPLICATE_EXTERNAL_ACCOUNT | The `platformAccountId` is already used, or, without one, the wallet is already registered. When the conflicting account belongs to your platform, `details.externalAccountId` and `details.platformAccountId` identify it; otherwise `details` is omitted |
             | DUPLICATE_PAY_REQUEST | A pay request with this idempotency key already exists |
+            | DUPLICATE_PLATFORM_TRANSACTION_ID | Another transaction on your platform already uses this `platformTransactionId`. `details.transactionId` identifies it |
             | OPERATION_IN_PROGRESS | A conflicting Embedded Wallet operation is still in progress |
             | SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS | The phone number is already associated with an SMS_OTP credential |
             | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
@@ -21931,6 +21941,7 @@ components:
             - DOCUMENT_ALREADY_EXISTS
             - DUPLICATE_EXTERNAL_ACCOUNT
             - DUPLICATE_PAY_REQUEST
+            - DUPLICATE_PLATFORM_TRANSACTION_ID
             - OPERATION_IN_PROGRESS
             - SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS
             - STABLECOIN_SYMBOL_ALREADY_EXISTS
@@ -31419,7 +31430,7 @@ components:
         platformTransactionId:
           type: string
           maxLength: 255
-          description: Your platform's identifier for the transaction this request creates. Grid stores it on the transaction and returns it in transaction responses and webhooks. Grid does not require it to be unique. To find transactions by this value, use the `platformTransactionId` filter on `GET /transactions`.
+          description: Your platform's identifier for the transaction this request creates. It must be unique across your platform's transactions, including transactions that expired, failed, or were refunded. A value that is already in use returns `409 DUPLICATE_PLATFORM_TRANSACTION_ID`. Grid returns it on the transaction in API responses and webhooks. To look up a transaction by this value, use the `platformTransactionId` filter on `GET /transactions`.
           example: txn_9f84e0c2a72c4fa
     TransactionStatus:
       type: string
@@ -31974,7 +31985,7 @@ components:
           example: 18d3e5f7b4a9c2
         platformTransactionId:
           type: string
-          description: Your platform's identifier for this transaction, as set in `platformTransactionId` on the request that created it. Absent when the request did not set one, and on transactions your platform did not initiate, such as incoming payments.
+          description: Your platform's identifier for this transaction, as set in `platformTransactionId` on the request that created it. Unique across your platform's transactions. Absent when the request did not set one, and on transactions your platform did not initiate, such as incoming payments.
           example: txn_9f84e0c2a72c4fa
         settledAt:
           type: string
@@ -32676,7 +32687,7 @@ components:
         platformTransactionId:
           type: string
           maxLength: 255
-          description: Your platform's identifier for the transaction this request creates. Grid stores it on the transaction and returns it in transaction responses and webhooks. Grid does not require it to be unique. To find transactions by this value, use the `platformTransactionId` filter on `GET /transactions`.
+          description: Your platform's identifier for the transaction this request creates. It must be unique across your platform's transactions, including transactions that expired, failed, or were refunded. A value that is already in use returns `409 DUPLICATE_PLATFORM_TRANSACTION_ID`. Grid returns it on the transaction in API responses and webhooks. To look up a transaction by this value, use the `platformTransactionId` filter on `GET /transactions`.
           example: txn_9f84e0c2a72c4fa
         remittanceInformation:
           type: string
@@ -33306,7 +33317,7 @@ components:
         platformTransactionId:
           type: string
           maxLength: 255
-          description: Your platform's identifier for the transaction this request creates. Grid stores it on the transaction and returns it in transaction responses and webhooks. Grid does not require it to be unique. To find transactions by this value, use the `platformTransactionId` filter on `GET /transactions`.
+          description: Your platform's identifier for the transaction this request creates. It must be unique across your platform's transactions, including transactions that expired, failed, or were refunded. A value that is already in use returns `409 DUPLICATE_PLATFORM_TRANSACTION_ID`. Grid returns it on the transaction in API responses and webhooks. To look up a transaction by this value, use the `platformTransactionId` filter on `GET /transactions`.
           example: txn_9f84e0c2a72c4fa
         remittanceInformation:
           type: string
