@@ -279,6 +279,20 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: false,
   },
+  OPTIMISM_WALLET: {
+    accountType: 'OPTIMISM_WALLET',
+    fields: [
+      { name: 'address', example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12' },
+    ],
+    beneficiaryRequired: false,
+  },
+  AVALANCHE_WALLET: {
+    accountType: 'AVALANCHE_WALLET',
+    fields: [
+      { name: 'address', example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12' },
+    ],
+    beneficiaryRequired: false,
+  },
   AED_ACCOUNT: {
     accountType: 'AED_ACCOUNT',
     fields: [

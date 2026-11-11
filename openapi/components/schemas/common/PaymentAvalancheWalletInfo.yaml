@@ -1,0 +1,11 @@
+title: Avalanche Wallet
+allOf:
+  - $ref: ./BasePaymentAccountInfo.yaml
+  - $ref: ./AvalancheWalletInfo.yaml
+  - type: object
+    properties:
+      assetType:
+        type: string
+        description: Type of asset
+        enum:
+          - USDC

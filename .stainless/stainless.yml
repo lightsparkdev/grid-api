@@ -219,6 +219,8 @@ resources:
           tron_wallet_info: '#/components/schemas/TronWalletExternalAccountInfo'
           plasma_wallet_info: '#/components/schemas/PlasmaWalletExternalAccountInfo'
           arbitrum_wallet_info: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
+          optimism_wallet_info: '#/components/schemas/OptimismWalletExternalAccountInfo'
+          avalanche_wallet_info: '#/components/schemas/AvalancheWalletExternalAccountInfo'
           polygon_wallet_info: '#/components/schemas/PolygonWalletExternalAccountInfo'
           lightning_wallet_info: '#/components/schemas/LightningExternalAccountInfo'
           base_wallet_info: '#/components/schemas/BaseWalletExternalAccountInfo'
@@ -949,6 +951,8 @@ openapi:
           - "$.components.schemas.PaymentTronWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentPlasmaWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentArbitrumWalletInfo.allOf[0]"
+          - "$.components.schemas.PaymentOptimismWalletInfo.allOf[0]"
+          - "$.components.schemas.PaymentAvalancheWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentPolygonWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentBaseWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentEthereumWalletInfo.allOf[0]"
@@ -1004,6 +1008,8 @@ openapi:
           - "$.components.schemas.TronWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.PlasmaWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.ArbitrumWalletExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.OptimismWalletExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.AvalancheWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.PolygonWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.BaseWalletExternalAccountInfo.allOf[0]"
         keys: [ "$ref" ]

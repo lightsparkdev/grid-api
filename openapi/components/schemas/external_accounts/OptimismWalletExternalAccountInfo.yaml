@@ -1,0 +1,6 @@
+title: Optimism Wallet
+allOf:
+  - $ref: ./BaseExternalAccountInfo.yaml
+  - $ref: ../common/OptimismWalletInfo.yaml
+  - $ref: ./WalletBeneficiaryFields.yaml
+  - $ref: ./WalletCustodyFields.yaml
