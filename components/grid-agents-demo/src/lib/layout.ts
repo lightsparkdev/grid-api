@@ -22,8 +22,19 @@ export const APP_COL_FULL_PX = 466;
  *  in between never occurs, so the midpoint is a safe cut. */
 export const NAV_COLLAPSED_MAX_PX = 160;
 
-/** The frame width where the tight 3 columns fit: the phone at full size between two configure-width columns. */
-export const LAYOUT_TIGHT_PX = CONFIGURE_COL_PX * 2 + APP_COL_FULL_PX;
+/**
+ * The narrowest app column the tight 3 columns start at. Less than the phone at full size: on a laptop the phone is
+ * fitted to the frame's height long before its width (a 14" shows it ~312px wide), and side by side it still comes
+ * out larger than stacked, where the API panel's peek takes height from it.
+ */
+export const APP_COL_TIGHT_PX = 360;
+
+/**
+ * The frame width where the tight 3 columns fit: the phone between two configure-width columns. 1160, so beside the
+ * expanded sidebar a 1440px window gets them, with slack under a MacBook Pro 14" (1512) for browsers that frame the
+ * page (Arc takes ~16px).
+ */
+export const LAYOUT_TIGHT_PX = CONFIGURE_COL_PX * 2 + APP_COL_TIGHT_PX;
 
 /** Where 3 columns fit with the API column at its default (sidebar + configure): 1600 expanded, 1368 collapsed. */
 const fullAt = (sidebar: number) => LAYOUT_WIDE_PX - DOCS_SIDEBAR_EXPANDED_PX + sidebar;
@@ -32,7 +43,8 @@ const fullAt = (sidebar: number) => LAYOUT_WIDE_PX - DOCS_SIDEBAR_EXPANDED_PX + 
  * Where stacked flips to 3 columns (Configure 400 | App | API) beside a docs sidebar this wide: room for the phone at
  * full size next to the API column. Collapsed to the rail, that's the API column at its default: 1368, so a MacBook
  * Pro 14" (a 1464px embed) gets 3 columns. Beside an expanded sidebar the API column may go tight, down to the
- * configure column's width: 1266, so a MacBook Pro 16" (a 1448px embed) gets 3 columns with the sidebar open.
+ * configure column's width: 1160, so a MacBook Pro 16" (a 1448px embed) and a 14" (1232px) get 3 columns with the
+ * sidebar open.
  */
 export const wideAt = (sidebar = DOCS_SIDEBAR_EXPANDED_PX) =>
   sidebar <= NAV_COLLAPSED_MAX_PX ? fullAt(sidebar) : Math.min(fullAt(sidebar), LAYOUT_TIGHT_PX);
