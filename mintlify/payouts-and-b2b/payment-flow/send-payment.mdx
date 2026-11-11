@@ -404,8 +404,8 @@ Other errors on a quote with documents:
 | `410 PAYMENT_DOCUMENT_EXPIRED` | A document passed its `expiresAt` | Upload the file again and retry with the new ID |
 | `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED` | Grid could not attach a document to the payment | Retry the same request with the same `Idempotency-Key` |
 
-`details.documentIds` lists the documents that caused a `404`, `409`, `410`, or `424`. To
-trigger these errors in sandbox, see
+`details.documentIds` lists the documents that caused a `404`, `409`, `410`, or `424`. It is
+absent on a `424` that no single document caused. To trigger these errors in sandbox, see
 [sandbox testing](/payouts-and-b2b/platform-tools/sandbox-testing#payment-documents).
 
 A request that fails with a `409`, `410`, or `424` created no quote. A retry with the same
