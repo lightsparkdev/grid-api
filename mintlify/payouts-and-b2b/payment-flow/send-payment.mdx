@@ -461,7 +461,7 @@ production. Grid matches the name without its extension, ignoring case:
 | File name | Result |
 | --- | --- |
 | `sandbox-expired` | The document is uploaded already expired: `status` is `EXPIRED` and `expiresAt` equals `createdAt`. A quote that uses it returns `410 PAYMENT_DOCUMENT_EXPIRED` |
-| `sandbox-attach-failed` | A quote that uses it returns `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED`, and Grid creates no quote |
+| `sandbox-attach-failed` | A quote that uses it returns `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED`, and Grid creates no quote. It fails on every quote that uses it, including a retry with the same `Idempotency-Key`. To finish the payout, upload the file again under another name |
 
 To see a partner rejecting the payout after you execute the quote, send it to an external
 account whose account number ends in `010`. The transaction fails with
