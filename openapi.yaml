@@ -35540,7 +35540,7 @@ components:
       enum:
         - USDC
         - USDT
-      description: Asset an agent can send to an address on another chain. `TRON` supports `USDT` only, and `BASE` supports `USDC` only.
+      description: Asset an agent can send to an address on another chain. `TRON` supports `USDT` only, and `BASE`, `OPTIMISM` and `AVALANCHE` support `USDC` only.
     AgentChainAddressDestination:
       title: Chain Address
       type: object
@@ -35562,7 +35562,7 @@ components:
           example: BASE
         currency:
           $ref: '#/components/schemas/AgentSendCurrency'
-          description: 'Asset the recipient receives: `USDC` or `USDT`. `TRON` supports `USDT` only, and `BASE` supports `USDC` only.'
+          description: 'Asset the recipient receives: `USDC` or `USDT`. `TRON` supports `USDT` only, and `BASE`, `OPTIMISM` and `AVALANCHE` support `USDC` only.'
           example: USDC
         address:
           type: string
