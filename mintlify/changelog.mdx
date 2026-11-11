@@ -10,14 +10,6 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
-## Payment document errors name the documents
-
-On `POST /quotes`, `404 PAYMENT_DOCUMENT_NOT_FOUND`, `409 PAYMENT_DOCUMENT_ALREADY_USED`,
-`410 PAYMENT_DOCUMENT_EXPIRED`, and `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED` now list the
-documents that caused them in `details.documentIds`. In sandbox, upload a file named
-`sandbox-expired` or `sandbox-attach-failed` to get the `410` or the `424`. See
-[supporting documents](/payouts-and-b2b/payment-flow/send-payment#supporting-documents).
-
 ## Exchange rates report why a corridor is paused
 
 Each rate from `GET /exchange-rates` now has `corridorStatus`: `OPEN`, `OUTAGE`, or
