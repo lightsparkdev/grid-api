@@ -527,6 +527,7 @@
     ]
   },
   "redirects": [
+    { "source": "/agents", "destination": "/agent-accounts/demo" },
     { "source": "/api-reference/sdks", "destination": "/api-reference/cli" },
     { "source": "/payouts-and-b2b/embedded-wallets/overview", "destination": "/payouts-and-b2b/global-accounts/overview" },
     { "source": "/payouts-and-b2b/embedded-wallets/client-keys", "destination": "/payouts-and-b2b/global-accounts/client-keys" },
