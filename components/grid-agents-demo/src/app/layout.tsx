@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { AccessGate } from '@/components/AccessGate/AccessGate';
 import { easingVarsStylesheet } from '@/lib/easing';
-import { CONFIGURE_COL_PX, DOCS_SIDEBAR_EXPANDED_PX, LAYOUT_WIDE_PX, NAV_COLLAPSED_MAX_PX } from '@/lib/layout';
+import { CONFIGURE_COL_PX, DOCS_SIDEBAR_EXPANDED_PX, LAYOUT_TIGHT_PX, LAYOUT_WIDE_PX, NAV_COLLAPSED_MAX_PX } from '@/lib/layout';
 import './globals.scss';
 
 const TITLE = 'Lightspark Agent Accounts — Playground';
@@ -64,12 +64,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Boot attributes, set before first paint to avoid flashes — an
             effect is too late (the SSR HTML paints long before hydration):
             - data-embed / data-theme from the URL (embed) or stored pref
-            - data-layout (stacked ⇄ 3-col) from the viewport width and the
-              docs sidebar beside it (wideAt in lib/layout.ts)
+            - data-layout (stacked ⇄ 3-col) and data-tight (3-col with the
+              API column squeezed) from the viewport width and the docs
+              sidebar beside it (wideAt, isTight in lib/layout.ts)
             - --api-col-default from the embed's ?nav param (the live docs
-              sidebar width), so the wide layout's code column paints at its
-              real default — sidebar + configure column — instead of the
-              expanded-sidebar assumption and re-fitting after hydration.
+              sidebar width) and the viewport, so the wide layout's code
+              column paints at its real default (defaultWidth in
+              useColumnResize) instead of re-fitting after hydration.
             - data-nav (collapsed ⇄ expanded) from the same ?nav param, so
               chrome keyed on the docs sidebar state paints right first time.
               Absent standalone (no ?nav), where the rules don't apply. */}
@@ -88,9 +89,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               document.documentElement.setAttribute('data-theme',t);
               var nav=parseFloat(p.get('nav'));
               var side=isFinite(nav)&&nav>=0?nav:${DOCS_SIDEBAR_EXPANDED_PX};
-              document.documentElement.setAttribute('data-layout',window.innerWidth<${LAYOUT_WIDE_PX - DOCS_SIDEBAR_EXPANDED_PX}+side?'stacked':'wide');
+              var w=window.innerWidth,full=${LAYOUT_WIDE_PX - DOCS_SIDEBAR_EXPANDED_PX}+side;
+              var at=side<=${NAV_COLLAPSED_MAX_PX}?full:Math.min(full,${LAYOUT_TIGHT_PX});
+              document.documentElement.setAttribute('data-layout',w<at?'stacked':'wide');
+              if(w>=at&&w<full){document.documentElement.setAttribute('data-tight','');}
+              document.documentElement.style.setProperty('--api-col-default',(w<full?${CONFIGURE_COL_PX}:Math.round(side)+${CONFIGURE_COL_PX})+'px');
               if(isFinite(nav)&&nav>=0){
-                document.documentElement.style.setProperty('--api-col-default',(Math.round(nav)+${CONFIGURE_COL_PX})+'px');
                 document.documentElement.setAttribute('data-nav',nav<=${NAV_COLLAPSED_MAX_PX}?'collapsed':'expanded');
               }
             }catch(e){}})();`,

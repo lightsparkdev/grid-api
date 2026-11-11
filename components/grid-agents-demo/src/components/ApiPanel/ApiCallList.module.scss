@@ -370,13 +370,13 @@
 /* Side-by-side the panel wears the docs-chrome gray, so the cards step down
    with it: pure white (light) / gray-925 (dark) read too hot on the chrome —
    one notch softer keeps the same card-to-panel delta as the stacked layout. */
-@include layout-wide {
+@include layout-wide-chrome {
   .callCard {
     --call-card-bg: var(--surface-primary);
   }
 }
 
-:global(html[data-layout='wide'][data-theme='dark']) .callCard {
+:global(html[data-layout='wide']:not([data-tight])[data-theme='dark']) .callCard {
   --call-card-bg: var(--color-gray-950);
 }
 

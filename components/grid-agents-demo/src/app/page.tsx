@@ -12,7 +12,7 @@ import { ThemeSync } from '@/components/ThemeSync';
 import { ComposerDials } from '@/apps/agents/ComposerBeam';
 import { useColumnResize } from '@/hooks/useColumnResize';
 import { useAgentsDemoLogic } from '@/hooks/useAgentsDemoLogic';
-import { layoutFor } from '@/lib/layout';
+import { isTight, layoutFor } from '@/lib/layout';
 import type { ActionId } from '@/data/actions';
 import styles from './page.module.scss';
 
@@ -46,8 +46,10 @@ export default function Page() {
   useLayoutEffect(() => {
     const nav = parseFloat(new URLSearchParams(window.location.search).get('nav') ?? '');
     let sidebar = Number.isFinite(nav) && nav >= 0 ? nav : undefined;
-    const apply = () =>
+    const apply = () => {
       document.documentElement.setAttribute('data-layout', layoutFor(window.innerWidth, sidebar));
+      document.documentElement.toggleAttribute('data-tight', isTight(window.innerWidth, sidebar));
+    };
     const onMessage = (e: MessageEvent) => {
       if (e.data?.type !== 'nav-sync' || typeof e.data.sidebarWidth !== 'number') return;
       sidebar = e.data.sidebarWidth;

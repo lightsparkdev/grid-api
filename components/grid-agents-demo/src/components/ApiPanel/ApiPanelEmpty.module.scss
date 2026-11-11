@@ -41,7 +41,7 @@
   }
 
   /* Side-by-side the panel wears the docs-chrome gray (both modes). */
-  :global(html[data-layout='wide']) & {
+  :global(html[data-layout='wide']:not([data-tight])) & {
     --cover-bg: var(--surface-secondary);
   }
 }

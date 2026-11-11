@@ -15,6 +15,14 @@ $layout-laptop-api-content-max-width: 680px;
   }
 }
 
+/** 3 columns with the panels in the docs-chrome gray: wide, and not the tight arrangement (which keeps the stacked
+    layout's colors). */
+@mixin layout-wide-chrome {
+  :global(html[data-layout='wide']:not([data-tight])) {
+    @content;
+  }
+}
+
 @mixin layout-stacked {
   :global(html[data-layout='stacked']) {
     @content;
