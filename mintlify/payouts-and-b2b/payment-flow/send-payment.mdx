@@ -400,30 +400,13 @@ Other errors on a quote with documents:
 | --- | --- | --- |
 | `400 INVALID_INPUT` | No `Idempotency-Key`, a document whose type fills no remaining requirement, or a purpose outside the table | Fix the request and send it with a new `Idempotency-Key` |
 | `404 PAYMENT_DOCUMENT_NOT_FOUND` | An ID doesn't match a document of the sending customer, or of the platform when it is the sender | Fix the IDs and send the request with a new `Idempotency-Key` |
-| `409 PAYMENT_DOCUMENT_ALREADY_USED` | A document is already attached to another quote | Upload those files again and retry with the new IDs |
-| `410 PAYMENT_DOCUMENT_EXPIRED` | A document passed its `expiresAt` | Upload those files again and retry with the new IDs |
+| `409 PAYMENT_DOCUMENT_ALREADY_USED` | A document is already attached to another quote | Upload the file again and retry with the new ID |
+| `410 PAYMENT_DOCUMENT_EXPIRED` | A document passed its `expiresAt` | Upload the file again and retry with the new ID |
 | `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED` | Grid could not attach a document to the payment | Retry the same request with the same `Idempotency-Key` |
 
-For `404`, `409`, and `410`, `details.documentIds` lists every document in `documentIds`
-that caused the error, so you can replace them all before you retry. For `424`, it names the
-document whose attachment failed, and is absent when no single document caused the failure.
-An ID that isn't a valid ID at all is listed exactly as you sent it.
-
-```json
-{
-  "code": "PAYMENT_DOCUMENT_EXPIRED",
-  "reason": "Payment documents in documentIds have expired. details.documentIds lists each. Upload those files again and retry with the new ids.",
-  "details": {
-    "documentIds": [
-      "PaymentDocument:019542f5-b3e7-1d02-0000-000000000001",
-      "PaymentDocument:019542f5-b3e7-1d02-0000-000000000003"
-    ]
-  }
-}
-```
-
-When documents fail in more than one way, Grid returns one error. `404` comes before `409`,
-and `409` before `410`. Fix what the error lists, and the retry reports anything left.
+`details.documentIds` lists the documents that caused a `404`, `409`, `410`, or `424`. To
+trigger these errors in sandbox, see
+[sandbox testing](/payouts-and-b2b/platform-tools/sandbox-testing#payment-documents).
 
 A request that fails with a `409`, `410`, or `424` created no quote. A retry with the same
 `Idempotency-Key` runs the request again.
@@ -446,30 +429,9 @@ Grid attaches it. To avoid a rejected or delayed payout:
   15 calendar days.
 </Warning>
 
-If the partner rejects the payout after you execute the quote, the transaction moves to
-`FAILED`, usually with `failureReason: COMPLIANCE_REJECTED`, and Grid refunds the source. The partner
-reports the rejection for the payout as a whole, so the transaction doesn't name a
-document. Documents can't be replaced on a submitted payout. Upload them again and create a
-new quote.
-</Accordion>
-
-<Accordion title="Test in sandbox">
-A sandbox platform takes the same documents for the same purposes as in production. Grid
-doesn't send the files to a partner. Some file names make a document fail as it can in
-production. Grid matches the name without its extension, ignoring case:
-
-| File name | Result |
-| --- | --- |
-| `sandbox-expired` | The document is uploaded already expired: `status` is `EXPIRED` and `expiresAt` equals `createdAt`. A quote that uses it returns `410 PAYMENT_DOCUMENT_EXPIRED` |
-| `sandbox-attach-failed` | A quote that uses it returns `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED`, and Grid creates no quote. It fails on every quote that uses it, including a retry with the same `Idempotency-Key`. To finish the payout, upload the file again under another name |
-
-To see a partner rejecting the payout after you execute the quote, send it to an external
-account whose account number ends in `010`. The transaction fails with
-`failureReason: COMPLIANCE_REJECTED` and is refunded, with the same webhooks as in
-production: `OUTGOING_PAYMENT.FAILED`, then `OUTGOING_PAYMENT.REFUND_PENDING` and
-`OUTGOING_PAYMENT.REFUND_COMPLETED`. See
-[sandbox testing](/payouts-and-b2b/platform-tools/sandbox-testing) for the other account
-number suffixes.
+If the partner rejects the payout after you execute the quote, the transaction fails, usually
+with `failureReason: COMPLIANCE_REJECTED`, and Grid refunds the source. To try again, upload
+the documents again and create a new quote.
 </Accordion>
 </AccordionGroup>
 
