@@ -1,0 +1,10 @@
+type: string
+enum:
+  - ETHEREUM
+description: >-
+  The chain whose message-signing rules an `EXTERNAL_WALLET` credential's
+  wallet follows. It decides the form of the wallet's `address` and of every
+  signature the wallet sends.
+
+  - `ETHEREUM`: An Ethereum or other EVM wallet. Its `address` is the
+  `0x`-prefixed 20-byte address, and it signs with `personal_sign` (EIP-191).
