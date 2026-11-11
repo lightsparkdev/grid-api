@@ -141,6 +141,55 @@ post:
                 createdAt: '2025-08-15T14:25:18Z'
                 description: USDC withdrawal to self-custody wallet
                 paymentInstructions: []
+          outgoingRtpPaymentCompleted:
+            summary: Completed RTP payout
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000014
+              type: OUTGOING_PAYMENT.COMPLETED
+              timestamp: '2025-08-15T14:30:05Z'
+              data:
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000015
+                status: COMPLETED
+                type: OUTGOING
+                direction: DEBIT
+                source:
+                  sourceType: ACCOUNT
+                  accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                destination:
+                  destinationType: ACCOUNT
+                  accountId: ExternalAccount:c34dcbd6-dced-4ec4-b756-3c3a9ea3d789
+                  railDetails:
+                    paymentRail: RTP
+                    status: SETTLED
+                    bankAccount:
+                      accountHolderName: Jane Receiver
+                      routingNumber: '021000021'
+                      accountNumber: '****4321'
+                    endToEndId: E2E-9f2c6b6f
+                    uetr: f47bbdd1-3d90-44c4-998d-a02bd814d5d3
+                    transactionId: 20250815021214862B2Z1Q45804374247
+                    settledAt: '2025-08-15T14:30:02Z'
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                sentAmount:
+                  amount: 25000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                receivedAmount:
+                  amount: 25000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                quoteId: Quote:019542f5-b3e7-1d02-0000-000000000016
+                settledAt: '2025-08-15T14:30:02Z'
+                createdAt: '2025-08-15T14:29:51Z'
+                description: Vendor payout
+                paymentInstructions: []
           outgoingAchPaymentReturned:
             summary: ACH payout returned by the receiving bank
             description: >-

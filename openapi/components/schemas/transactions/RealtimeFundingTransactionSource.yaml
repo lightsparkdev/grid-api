@@ -73,9 +73,9 @@ allOf:
         type: string
         deprecated: true
         description: >-
-          Deprecated. Use `railDetails.endToEndId`. The originator's own
-          end-to-end reference for the payment. Still populated on rails without a
-          `railDetails` variant, such as SWIFT.
+          Deprecated. Use `railDetails.endToEndId`, and `railDetails.uetr` on RTP
+          and FedNow. The payment's network reference. Still populated on rails
+          without a `railDetails` variant, such as SWIFT.
         example: E2E-9f2c6b6f
       traceNumber:
         type: string
