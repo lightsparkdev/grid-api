@@ -22181,7 +22181,7 @@ components:
             | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
             | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
             | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
-            | PAYMENT_DOCUMENT_ALREADY_USED | The payment document is already attached to a quote. A document can be used on one quote only, so upload the file again to use it on another quote |
+            | PAYMENT_DOCUMENT_ALREADY_USED | The payment document is already attached to a quote. A document can be used on one quote only, so upload the file again to use it on another quote. `details.documentIds` lists each such document |
             | INVOICE_ALREADY_USED | Another quote for the Lightning invoice can still be executed or funded, or was executed. An invoice has one live quote at a time; ask the recipient for a new one, or retry once Grid has closed the earlier quote as expired |
             | DEPOSIT_NOT_PENDING | The deposit is not waiting for authorization (already authorized, expired or failed) |
           enum:
@@ -22257,7 +22257,7 @@ components:
             | STABLECOIN_NOT_FOUND | Stablecoin not found |
             | STABLECOIN_OPERATION_NOT_FOUND | Stablecoin operation not found |
             | VERIFICATION_NOT_FOUND | Verification not found |
-            | PAYMENT_DOCUMENT_NOT_FOUND | Payment document not found |
+            | PAYMENT_DOCUMENT_NOT_FOUND | Payment document not found. On `POST /quotes`, `details.documentIds` lists each ID in `documentIds` that matches no document of the sender |
           enum:
             - TRANSACTION_NOT_FOUND
             - INVITATION_NOT_FOUND
@@ -22302,7 +22302,7 @@ components:
             | Error Code | Description |
             |------------|-------------|
             | CUSTOMER_DELETED | Customer has been permanently deleted |
-            | PAYMENT_DOCUMENT_EXPIRED | The payment document passed its `expiresAt` without being attached to a quote. Upload the file again |
+            | PAYMENT_DOCUMENT_EXPIRED | The payment document passed its `expiresAt` without being attached to a quote. Upload the file again. `details.documentIds` lists each such document |
           enum:
             - CUSTOMER_DELETED
             - PAYMENT_DOCUMENT_EXPIRED
@@ -33100,7 +33100,7 @@ components:
             | COUNTERPARTY_PUBKEY_FETCH_ERROR | Error fetching counterparty public key |
             | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
             | LNURLP_REQUEST_FAILED | LNURLP request failed |
-            | PAYMENT_DOCUMENT_ATTACHMENT_FAILED | Grid could not attach a supporting document to the payment, so it created no quote. Retry the same request with the same `Idempotency-Key` |
+            | PAYMENT_DOCUMENT_ATTACHMENT_FAILED | Grid could not attach a supporting document to the payment, so it created no quote. Retry the same request with the same `Idempotency-Key`. `details.documentIds` names the document that failed. It is absent when the failure was not caused by one document |
           enum:
             - PAYREQ_REQUEST_FAILED
             - COUNTERPARTY_PUBKEY_FETCH_ERROR
