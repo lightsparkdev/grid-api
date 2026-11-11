@@ -32,7 +32,8 @@ properties:
       this is the email address; for SMS_OTP credentials this is the E.164
       phone number; for OAUTH credentials it is typically the email claim from
       the OIDC token; for PASSKEY credentials it is the validated nickname
-      provided at registration time.
+      provided at registration time; for EVM_WALLET credentials it is the
+      wallet's address.
     example: example@lightspark.com
   adminReference:
     type: string

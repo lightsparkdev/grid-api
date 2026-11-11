@@ -7704,6 +7704,8 @@ paths:
         Embedded Wallet internal accounts are initialized with an `EMAIL_OTP` credential tied to the customer email on the account. Use this endpoint to add another credential (`SMS_OTP`, `OAUTH`, or `PASSKEY`), or to add `EMAIL_OTP` / `SMS_OTP` back after it has been removed. The account holder may have one `EMAIL_OTP` and one `SMS_OTP` credential per internal account; multiple distinct `PASSKEY` credentials may be registered. Administrators' credentials, added with `POST /auth/admin-credentials`, are not counted.
 
         Adding a credential requires a signature from an existing verified credential on the same account. An administrator's session cannot sign it: a credential added here carries no `adminReference`, so it would outlive the administrator's removal. Grid refuses an administrator's signature with `403 FORBIDDEN`; administrators add their own credentials with `POST /auth/admin-credentials`. Call this endpoint with the new credential's details to receive `202` with `payloadToSign` and `requestId`. Use the session API keypair of an existing verified credential (the session signing key the client holds for it) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For OTP credentials, the one-time password is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
+
+        An `EVM_WALLET` credential first proves that the user controls the wallet. The first call returns `202` with a `payloadToSign` message and a `requestId`. Have the wallet sign that message, then retry the same request with the signature as the `Grid-Wallet-Ownership-Signature` header and the `requestId` as `Request-Id`. If the account has no wallet yet, that retry creates it, with this wallet as its only credential, and returns `201`. Otherwise it returns a second `202`, whose `payloadToSign` an existing verified credential's session stamps as above, and that retry returns `201`. The same wallet may be a credential on more than one internal account.
       operationId: createAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -7720,10 +7722,16 @@ paths:
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned in a prior `202` response, echoed back exactly on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry when registering a credential; must be paired with `Grid-Wallet-Signature`.
+          description: The `requestId` returned in a prior `202` response, echoed back exactly on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry when registering a credential; must be paired with `Grid-Wallet-Signature`, or with `Grid-Wallet-Ownership-Signature` on an `EVM_WALLET` credential's first retry.
           schema:
             type: string
           example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+        - name: Grid-Wallet-Ownership-Signature
+          in: header
+          required: false
+          description: The EVM wallet's signature over the `payloadToSign` of the first `202` for an `EVM_WALLET` credential. Required on that retry, with its `requestId` as `Request-Id`.
+          schema:
+            $ref: '#/components/schemas/EvmWalletSignature'
       requestBody:
         required: true
         content:
@@ -7773,6 +7781,12 @@ paths:
                     transports:
                       - internal
                       - hybrid
+              evmWallet:
+                summary: Add an EVM wallet credential
+                value:
+                  type: EVM_WALLET
+                  accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  address: '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23'
       responses:
         '200':
           description: 'An additional-credential setup leg''s underlying wallet-provider activity is still in flight — a `WalletOperationProcessing` body with `status: "PROCESSING"`. The client re-sends the byte-identical stamped retry (same `Request-Id`) until the credential is added; the backend also reconciles the activity to terminal on its own.'
@@ -7825,8 +7839,17 @@ paths:
                     nickname: iPhone Face-ID
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
+                evmWallet:
+                  summary: EVM wallet credential created
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: EVM_WALLET
+                    nickname: '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23'
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:30:01Z'
         '202':
-          description: Challenge issued. Build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account, then send that full stamp as `Grid-Wallet-Signature` and echo `requestId` as `Request-Id` on the retry.
+          description: Challenge issued. Build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account, then send that full stamp as `Grid-Wallet-Signature` and echo `requestId` as `Request-Id` on the retry. For an `EVM_WALLET` credential's first `202`, the EVM wallet signs `payloadToSign` instead, and the retry sends that signature as `Grid-Wallet-Ownership-Signature`.
           content:
             application/json:
               schema:
@@ -7860,14 +7883,26 @@ paths:
                     payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"authenticators":[{"attestation":{"attestationObject":"o2NmbXRk...","clientDataJson":"eyJjaGFsbGVuZ2UiOiJBcktRa...","credentialId":"AdKXJEch1aV5Wo7bj7qLHskVY4OoNaj9qu8TPdJ7kSAgUeRxWNngXlcNIGt4gexZGKVGcqZpqqWordXb_he1izY"},"authenticatorName":"iPhone Face-ID","challenge":"ArkQi2yAYHPlgnJNFBlneIwchQdWXBOTrdB-AmMUB21Lx","transports":["internal","hybrid"]}],"userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_CREATE_AUTHENTICATORS_V2"}'
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
+                evmWalletOwnership:
+                  summary: EVM wallet ownership challenge
+                  value:
+                    type: EVM_WALLET
+                    payloadToSign: |-
+                      Sign in to Grid with this wallet.
+                      Account: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                      Address: 0x2c7536E3605D9C16a7a3D7b1898e529396a65c23
+                      Nonce: 7c4a8d09ca374e3e9e0d8c2b3e9a1f21
+                      Expires: 2026-04-08T15:35:00Z
+                    requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
         '400':
-          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while the account holder already has one (administrators' credentials are not counted), `SMS_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an SMS OTP credential while one already exists, `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account, or `INVALID_INPUT` when an OAuth `oidcToken` is malformed or has an unsupported issuer, or when a passkey's key algorithm is not ES256 (-7) or RS256 (-257).
+          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while the account holder already has one (administrators' credentials are not counted), `SMS_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an SMS OTP credential while one already exists, `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account, `WALLET_CREDENTIAL_ALREADY_EXISTS` when registering an EVM wallet already attached to the internal account, or `INVALID_INPUT` when an OAuth `oidcToken` is malformed or has an unsupported issuer, or when a passkey's key algorithm is not ES256 (-7) or RS256 (-257).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending challenge for an additional credential on the target internal account, when the `Request-Id` does not match an unexpired pending challenge, or when OAuth token authentication fails during credential registration.
+          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending challenge for an additional credential on the target internal account, when the `Request-Id` does not match an unexpired pending challenge, when an `EVM_WALLET` credential's `Grid-Wallet-Ownership-Signature` is missing, malformed, or not made by `address` over the challenge, or when OAuth token authentication fails during credential registration.
           content:
             application/json:
               schema:
@@ -8099,7 +8134,7 @@ paths:
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned in a prior `202` response from this endpoint, echoed back exactly here so the server can correlate the signed retry with the issued challenge. Required on the signed retry that completes an `EMAIL_OTP` or `SMS_OTP` verification; must be paired with `Grid-Wallet-Signature`. For `PASSKEY` verification, the `requestId` issued from `POST /auth/credentials/{id}/challenge` is echoed here instead so the server can correlate the assertion with the pending challenge.
+          description: The `requestId` returned in a prior `202` response from this endpoint, echoed back exactly here so the server can correlate the signed retry with the issued challenge. Required on the signed retry that completes an `EMAIL_OTP` or `SMS_OTP` verification; must be paired with `Grid-Wallet-Signature`. For `PASSKEY` verification, the `requestId` issued from `POST /auth/credentials/{id}/challenge` is echoed here instead so the server can correlate the assertion with the pending challenge. `EVM_WALLET` verification echoes the challenge endpoint's `requestId` the same way.
           schema:
             type: string
           example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
@@ -8210,6 +8245,8 @@ paths:
         `OAUTH` credentials do not have a challenge step. To authenticate or reauthenticate an OAuth credential, call `POST /auth/credentials/{id}/verify` with a fresh OIDC token and a `clientPublicKey`.
 
         For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Send it as a compressed P-256 key in lowercase hex (66 characters, `02` or `03` prefix). The client keeps the matching private key as the resulting session signing key. An uppercase or uncompressed key is rejected with `400 INVALID_INPUT`. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation body, not a base64url string; that body is returned as `payloadToSign` so the client can check what the passkey authorizes before signing. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
+
+        For `EVM_WALLET` credentials, the request body also carries the client's `clientPublicKey`. The response is an `EvmWalletAuthChallenge`: the credential's fields plus `payloadToSign`, `requestId` and `expiresAt`. Have the wallet sign `payloadToSign` as given, then send the signature to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
       operationId: challengeAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -8223,7 +8260,7 @@ paths:
           schema:
             type: string
       requestBody:
-        description: Request body. Required when re-challenging a `PASSKEY` credential (must carry `clientPublicKey`). Ignored for `EMAIL_OTP` and `SMS_OTP`, where the credential type alone is sufficient — the OTP is delivered out-of-band. OAuth credentials do not use this endpoint.
+        description: Request body. Required when re-challenging a `PASSKEY` or `EVM_WALLET` credential (must carry `clientPublicKey`). Ignored for `EMAIL_OTP` and `SMS_OTP`, where the credential type alone is sufficient — the OTP is delivered out-of-band. OAuth credentials do not use this endpoint.
         required: false
         content:
           application/json:
@@ -20769,6 +20806,7 @@ components:
             | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | The account holder already has an EMAIL_OTP credential on the target internal account; the holder may have one. Administrators' credentials, added with `POST /auth/admin-credentials`, are not counted |
             | SMS_OTP_CREDENTIAL_ALREADY_EXISTS | An SMS_OTP credential is already registered on the target internal account; only one SMS OTP credential is supported per internal account at this time |
             | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential with the same WebAuthn credentialId is already registered on the target internal account |
+            | WALLET_CREDENTIAL_ALREADY_EXISTS | A wallet credential for the same address is already registered on the target internal account |
             | AUTH_CREDENTIAL_VERIFICATION_REQUIRED | The new email or phone number has no verified replacement credential |
             | AUTH_CREDENTIAL_VERIFICATION_EXPIRED | The replacement credential's verification has expired |
             | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
@@ -20837,6 +20875,7 @@ components:
             - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
             - SMS_OTP_CREDENTIAL_ALREADY_EXISTS
             - PASSKEY_CREDENTIAL_ALREADY_EXISTS
+            - WALLET_CREDENTIAL_ALREADY_EXISTS
             - AUTH_CREDENTIAL_VERIFICATION_REQUIRED
             - AUTH_CREDENTIAL_VERIFICATION_EXPIRED
             - STABLECOIN_PROVIDER_ACCOUNT_INVALID
@@ -35007,12 +35046,14 @@ components:
         - EMAIL_OTP
         - SMS_OTP
         - PASSKEY
+        - EVM_WALLET
       description: |-
         The type of authentication credential.
         - `OAUTH`: OpenID Connect (OIDC) token issued by an identity provider such as Google or Apple.
         - `EMAIL_OTP`: A one-time password delivered to the user's email address.
         - `SMS_OTP`: A one-time password delivered to the user's phone number.
         - `PASSKEY`: A WebAuthn passkey bound to the user's device.
+        - `EVM_WALLET`: An Ethereum or other EVM wallet the user already holds outside Grid. It proves control by signing with its own key, using `personal_sign` (EIP-191).
     AuthCredentialCreateRequest:
       type: object
       required:
@@ -35155,7 +35196,7 @@ components:
           example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
         nickname:
           type: string
-          description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for SMS_OTP credentials this is the E.164 phone number; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the validated nickname provided at registration time.
+          description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for SMS_OTP credentials this is the E.164 phone number; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the validated nickname provided at registration time; for EVM_WALLET credentials it is the wallet's address.
           example: example@lightspark.com
         adminReference:
           type: string
@@ -35211,6 +35252,11 @@ components:
           description: List of authentication credentials registered on the internal account.
           items:
             $ref: '#/components/schemas/AuthMethod'
+    EvmWalletSignature:
+      type: string
+      pattern: ^0x[0-9a-fA-F]{130}$
+      description: 'The wallet''s `personal_sign` (EIP-191) signature over the exact UTF-8 bytes of `payloadToSign`: the `0x`-prefixed 65-byte result (r, s and v), as wallets and `eth_sign` libraries return it. Sign the string as given, without parsing, re-serializing or trimming it.'
+      example: '0x87f6856afaa7684bc6ecccef96246c155da984e7889dbdda1ae59940bdab8e676cd3055bd38ac073cd5710e3040f1ed08073ca026266caeb097213d52665c4c01b'
     EmailOtpCredentialCreateRequestFields:
       type: object
       required:
@@ -35277,12 +35323,34 @@ components:
       allOf:
         - $ref: '#/components/schemas/AuthCredentialCreateRequest'
         - $ref: '#/components/schemas/PasskeyCredentialCreateRequestFields'
+    EvmWalletCredentialCreateRequestFields:
+      type: object
+      required:
+        - type
+        - address
+      properties:
+        type:
+          type: string
+          enum:
+            - EVM_WALLET
+          description: Discriminator value identifying this as an EVM wallet credential.
+        address:
+          type: string
+          pattern: ^0x[0-9a-fA-F]{40}$
+          description: The wallet's `0x`-prefixed 20-byte address, in any letter case. Grid checks that the wallet's signature on the retry comes from this address, and shows it back as the credential's `nickname`.
+          example: '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23'
+    EvmWalletCredentialCreateRequest:
+      title: EVM Wallet Credential Create Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialCreateRequest'
+        - $ref: '#/components/schemas/EvmWalletCredentialCreateRequestFields'
     AuthCredentialCreateRequestOneOf:
       oneOf:
         - $ref: '#/components/schemas/EmailOtpCredentialCreateRequest'
         - $ref: '#/components/schemas/SmsOtpCredentialCreateRequest'
         - $ref: '#/components/schemas/OauthCredentialCreateRequest'
         - $ref: '#/components/schemas/PasskeyCredentialCreateRequest'
+        - $ref: '#/components/schemas/EvmWalletCredentialCreateRequest'
       discriminator:
         propertyName: type
         mapping:
@@ -35290,6 +35358,7 @@ components:
           SMS_OTP: '#/components/schemas/SmsOtpCredentialCreateRequest'
           OAUTH: '#/components/schemas/OauthCredentialCreateRequest'
           PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
+          EVM_WALLET: '#/components/schemas/EvmWalletCredentialCreateRequest'
     AuthCredentialVerifyRequest:
       type: object
       required:
@@ -35418,12 +35487,31 @@ components:
       allOf:
         - $ref: '#/components/schemas/AuthCredentialVerifyRequest'
         - $ref: '#/components/schemas/PasskeyCredentialVerifyRequestFields'
+    EvmWalletCredentialVerifyRequestFields:
+      type: object
+      required:
+        - type
+        - signature
+      properties:
+        type:
+          type: string
+          enum:
+            - EVM_WALLET
+          description: Discriminator value identifying this as an EVM wallet verification.
+        signature:
+          $ref: '#/components/schemas/EvmWalletSignature'
+    EvmWalletCredentialVerifyRequest:
+      title: EVM Wallet Credential Verify Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialVerifyRequest'
+        - $ref: '#/components/schemas/EvmWalletCredentialVerifyRequestFields'
     AuthCredentialVerifyRequestOneOf:
       oneOf:
         - $ref: '#/components/schemas/EmailOtpCredentialVerifyRequest'
         - $ref: '#/components/schemas/SmsOtpCredentialVerifyRequest'
         - $ref: '#/components/schemas/OauthCredentialVerifyRequest'
         - $ref: '#/components/schemas/PasskeyCredentialVerifyRequest'
+        - $ref: '#/components/schemas/EvmWalletCredentialVerifyRequest'
       discriminator:
         propertyName: type
         mapping:
@@ -35431,6 +35519,7 @@ components:
           SMS_OTP: '#/components/schemas/SmsOtpCredentialVerifyRequest'
           OAUTH: '#/components/schemas/OauthCredentialVerifyRequest'
           PASSKEY: '#/components/schemas/PasskeyCredentialVerifyRequest'
+          EVM_WALLET: '#/components/schemas/EvmWalletCredentialVerifyRequest'
     AuthSession:
       title: Authentication Session
       description: An authentication session on an Embedded Wallet internal account. Returned from `GET /auth/sessions` (list) and `POST /auth/credentials/{id}/verify` (on credential verification) or `POST /auth/sessions/{id}/refresh` (on mid-session refresh). The client generates and keeps the session signing key, so session-issuing responses carry no key material.
@@ -35470,7 +35559,7 @@ components:
           pattern: ^0[23][0-9a-f]{64}$
           minLength: 66
           maxLength: 66
-          description: 'Required for `PASSKEY` credentials. Client-generated P-256 public key as a compressed SEC1 point in lowercase hex: 66 characters, a `02` or `03` prefix followed by the 32-byte X coordinate. The client keeps the matching private key as the session signing key. An uppercase or uncompressed key is rejected with `400 INVALID_INPUT`. Grid bakes this public key into the session-creation payload that the returned `challenge` is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`.'
+          description: 'Required for `PASSKEY` and `EVM_WALLET` credentials. Client-generated P-256 public key as a compressed SEC1 point in lowercase hex: 66 characters, a `02` or `03` prefix followed by the 32-byte X coordinate. The client keeps the matching private key as the session signing key. An uppercase or uncompressed key is rejected with `400 INVALID_INPUT`. Grid bakes this public key into the session-creation payload that the returned `challenge` is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`.'
           example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     PasskeyAuthChallenge:
       title: Passkey Auth Challenge
@@ -35505,18 +35594,49 @@ components:
               format: date-time
               description: Timestamp after which the issued challenge is no longer valid. The assertion must reach `POST /auth/credentials/{id}/verify` before this time; otherwise the client must request a fresh challenge via `POST /auth/credentials/{id}/challenge`.
               example: '2026-04-08T15:35:00Z'
+    EvmWalletAuthChallenge:
+      title: EVM Wallet Auth Challenge
+      description: Extended `AuthMethod` shape returned for `EVM_WALLET` credentials from `POST /auth/credentials/{id}/challenge`. The wallet signs `payloadToSign` and the client sends that signature, with `requestId` as the `Request-Id` header, to `POST /auth/credentials/{id}/verify`.
+      allOf:
+        - $ref: '#/components/schemas/AuthMethod'
+        - type: object
+          required:
+            - payloadToSign
+            - requestId
+            - expiresAt
+          properties:
+            type:
+              type: string
+              enum:
+                - EVM_WALLET
+              description: Always `EVM_WALLET` for this shape.
+            payloadToSign:
+              type: string
+              description: The exact canonical JSON of the session request the wallet's signature authorizes. It registers the client's own `clientPublicKey` as the session key. Have the wallet sign this string as given, without parsing, re-serializing or trimming it.
+              example: '{"organizationId":"5c1e8a3f-7b2d-4e9a-9c41-2f6d8b0a1e37","parameters":{"expirationSeconds":"900","publicKey":"02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"},"timestampMs":"1775662500000","type":"ACTIVITY_TYPE_STAMP_LOGIN"}'
+            requestId:
+              type: string
+              description: Grid-issued `Request:<uuid>` identifier for this pending authentication. Echo it exactly as the `Request-Id` header on `POST /auth/credentials/{id}/verify`.
+              example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+            expiresAt:
+              type: string
+              format: date-time
+              description: Timestamp after which the challenge is no longer valid. Request a fresh one via `POST /auth/credentials/{id}/challenge`.
+              example: '2026-04-08T15:35:00Z'
     AuthCredentialResponseOneOf:
       title: Auth Credential Response
       description: Discriminated response shape returned from `POST /auth/credentials/{id}/challenge`. For `EMAIL_OTP` and `SMS_OTP` credentials the body is a plain `AuthMethod` (wrapped as `AuthMethodResponse` to disambiguate the oneOf). For `PASSKEY` credentials the body is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, Grid-issued `challenge`, `requestId`, and `expiresAt` that drive the subsequent assertion. OAuth credentials do not use the challenge endpoint. Registration responses from `POST /auth/credentials` use the simpler `AuthMethodResponse` shape directly for all credential types.
       oneOf:
         - $ref: '#/components/schemas/AuthMethodResponse'
         - $ref: '#/components/schemas/PasskeyAuthChallenge'
+        - $ref: '#/components/schemas/EvmWalletAuthChallenge'
       discriminator:
         propertyName: type
         mapping:
           EMAIL_OTP: '#/components/schemas/AuthMethodResponse'
           SMS_OTP: '#/components/schemas/AuthMethodResponse'
           PASSKEY: '#/components/schemas/PasskeyAuthChallenge'
+          EVM_WALLET: '#/components/schemas/EvmWalletAuthChallenge'
     AuthCredentialChallengeResponse:
       title: Auth Credential Challenge Response
       description: 'Response body for `POST /auth/credentials/{id}/challenge`. Normally an `AuthCredentialResponseOneOf` — the re-issued challenge or re-sent OTP. When the OTP send''s underlying wallet-provider activity is still in flight, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"` — re-request the challenge until the send settles; the backend also reconciles it to terminal on its own.'
