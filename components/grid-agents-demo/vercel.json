@@ -1,4 +1,4 @@
 {
-  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- .",
+  "ignoreCommand": "[ -n \"$VERCEL_GIT_PREVIOUS_SHA\" ] && git diff \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD --quiet -- .",
   "installCommand": "npm install --ignore-scripts && npx patch-package"
 }
