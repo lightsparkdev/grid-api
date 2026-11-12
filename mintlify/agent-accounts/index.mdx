@@ -1,7 +1,7 @@
 ---
 title: "Agent Accounts"
 sidebarTitle: "Introduction"
-description: "Let your customers give AI agents bounded access to their Grid account: policies, approvals, spending limits, payments and cards."
+description: "Let your customers' AI agents get paid, pay people and spend, from an account the customer owns, under limits and approvals Grid enforces."
 icon: "/images/icons/agent.svg"
 mode: "wide"
 "og:image": "/images/og/og-agents-playground-v2.webp"
@@ -13,15 +13,52 @@ import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 The Agents API must be enabled for your platform; until it is, agent endpoints answer `403`. To enable it, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
 </Note>
 
-An agent account lets one of your customers hand an AI agent a bounded way to spend from their Grid account. The agent can run in your product, on the customer's device, or in a third-party app. Grid does not run the agent. Grid issues the agent its own credential, evaluates every request against the policy you set, holds anything that needs a human decision as an approval request, and executes what the policy and the customer allow.
+Let your customers connect an AI agent to their account and hand it real financial work: getting paid, paying people and suppliers, buying online, and splitting revenue. This works for individuals and for businesses. A business can give each team member's agent its own budget on one shared balance, pay contractors who have no account, and pay a whole list of people in one approved run.
 
-Your platform creates the agent, sets its policy, shows the customer what the agent wants to do, and sends the customer's decision back to Grid. The agent calls Grid directly with its own token, and every call is scoped to the one customer it acts for.
+The customer keeps ownership of the account. Grid checks every agent action against the policy the customer set, and either runs it, refuses it, or holds it for the customer to approve. The agent can run in an AI app, on the customer's device, or in your own product. Grid does not run the agent. It provides the agent's credentials, policy checks, approvals and the audit trail.
 
-## Who it's for
+## Two ways to offer agent accounts
 
-- **Agent apps** that want their assistant to pay, buy, and get paid on a user's behalf, without holding card numbers or bank credentials.
-- **Wallets and fintechs** that want to let customers connect the agents they already use to their account, with limits and approvals the customer controls.
-- **Businesses** that want several agents spending under one shared budget, each acting for a named person.
+<CardGroup cols={2}>
+  <Card title="Add Lightspark to your AI app" href="/agent-accounts/ai-app-connector" icon="plug">
+    For AI companies. List Lightspark as a connector in your app. Your users sign up, verify and approve payments with Lightspark, and your assistant calls Lightspark over MCP. You run no payments backend.
+  </Card>
+  <Card title="Add agents to your Grid platform" href="/agent-accounts/implementation-overview" icon="code">
+    For Grid platforms. Your backend creates an agent for each of your customers, sets its policy, and shows approvals in your own app. Your customers keep their accounts with you.
+  </Card>
+</CardGroup>
+
+Both paths give the agent the same capabilities. The rest of this tab documents the Agents API, the path for Grid platforms.
+
+## What an agent can do
+
+<FeatureCardGrid cols={2}>
+  <FeatureCard icon="/images/icons/arrow-inbox.svg" title="Add money and get paid">
+    Receive stablecoins and Lightning payments, and pull from the customer's own bank account with a recorded debit authorization.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/paper-plane-top-right.svg" title="Pay people">
+    Pay someone by phone number or email even if they have no account, pay up to 50 people in one approved run, or send stablecoins and Lightning payments.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/credit-card1.svg" title="Buy online">
+    Use its own virtual card, a single-use or recurring card for one merchant, or, with the customer's permission, one of the customer's saved cards.
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/coins.svg" title="Split revenue automatically">
+    Propose a standing rule that shares incoming payments with partners, collaborators or the customer's other accounts, active once the customer approves it.
+  </FeatureCard>
+</FeatureCardGrid>
+
+Cards, stored cards, bank pulls, claimable payouts, payout runs and settlement rules are each enabled per platform. Ask your Lightspark contact.
+
+## For businesses
+
+A business customer, verified through KYB, can run its money through agents the same way an individual can, with controls built for a team:
+
+- **Bank details to get paid.** Once verified, a business gets a US bank account and routing number: the `USD_ACCOUNT` entry in the `fundingPaymentInstructions` of its USD internal account. Clients pay it by ordinary bank transfer.
+- **Invoicing.** The [Lightspark connector](/agent-accounts/ai-app-connector) lets an agent send a client an invoice with its own payment page and matches the payment to the invoice. The Agents API has no invoice object; if you invoice from your own product, point payers at the bank details above.
+- **An agent per person.** Each agent records which team member it acts for (`actingFor`), and that reference is copied onto every card it is issued.
+- **Team budgets on one balance.** Put agents in a [spending pool](/agent-accounts/spending-limits) to cap what they spend together each week, each month or in total, and which kinds of payment they may make. Pools hold no money, so there is nothing to move between them.
+- **Pay contractors and suppliers.** Pay someone by phone number or email with a [claimable payout](/agent-accounts/payments#pay-a-person-by-phone-or-email), one at a time or in a [payout run](/agent-accounts/payments#pay-many-people-at-once).
+- **Share revenue.** [Settlement rules](/agent-accounts/payments#split-incoming-payments) split incoming payments by the shares the business approves.
 
 ## Key concepts
 
@@ -37,21 +74,15 @@ Your platform creates the agent, sets its policy, shows the customer what the ag
 
 ## Core capabilities
 
-<FeatureCardGrid cols={3}>
+<FeatureCardGrid cols={2}>
   <FeatureCard icon="/images/icons/shield.svg" title="Grid-enforced policy">
-    Permissions, spending limits, account restrictions and approval thresholds are checked by Grid before any agent request executes.
+    Grid checks permissions, per-agent limits, shared team budgets and approval thresholds before any agent request runs, including card purchases.
   </FeatureCard>
   <FeatureCard icon="/images/icons/receipt-check.svg" title="Customer approvals">
     Requests over the threshold wait for the customer. Grid sends you the full request in a webhook so you can ask them in your own UI.
   </FeatureCard>
   <FeatureCard icon="/images/icons/coins.svg" title="Shared spending pools">
     Hold a customer's agents to one budget together, with its own payment types and approval threshold.
-  </FeatureCard>
-  <FeatureCard icon="/images/icons/paper-plane-top-right.svg" title="Sends and payouts">
-    Agents quote and send to wallets, stablecoin addresses and Lightning invoices, and pay people by phone or email.
-  </FeatureCard>
-  <FeatureCard icon="/images/icons/credit-card1.svg" title="Cards for agents">
-    Single-use purchase cards scoped to one order, recurring cards locked to one merchant, and access to the customer's own stored cards.
   </FeatureCard>
   <FeatureCard icon="/images/icons/bell.svg" title="Webhooks and audit">
     Every request and decision is an `AgentAction` you can list, and Grid sends a webhook at each step.
@@ -68,8 +99,11 @@ An agent's sends and purchase cards are paid from the customer's [Global Account
   <Card title="Playground" href="/agent-accounts/demo" icon="play">
     Give an agent an account and watch the API calls behind each step.
   </Card>
-  <Card title="Implementation overview" href="/agent-accounts/implementation-overview" icon="rocket">
-    The end-to-end integration: create an agent, connect it, fund the account, and handle approvals.
+  <Card title="AI app connector" href="/agent-accounts/ai-app-connector" icon="plug">
+    List Lightspark in your AI app so your users get an account inside your assistant.
+  </Card>
+  <Card title="Agents API integration" href="/agent-accounts/implementation-overview" icon="rocket">
+    For Grid platforms: create an agent, connect it, fund the account, and handle approvals.
   </Card>
   <Card title="Policies & permissions" href="/agent-accounts/policies-and-permissions" icon="shield-check">
     Decide what an agent may do, how much it may spend, and when it must ask.
