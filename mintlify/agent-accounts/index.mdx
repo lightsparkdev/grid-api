@@ -15,7 +15,7 @@ The Agents API must be enabled for your platform; until it is, agent endpoints a
 
 Let your customers connect an AI agent to their account and hand it real financial work: getting paid, paying people and suppliers, buying online, and splitting revenue. This works for individuals and for businesses. A business can give each team member's agent its own budget on one shared balance, pay contractors who have no account, and pay a whole list of people in one approved run.
 
-The customer keeps ownership of the account. Grid checks every agent action against the policy the customer set, and either runs it, refuses it, or holds it for the customer to approve. The agent can run in an AI app, on the customer's device, or in your own product. Grid does not run the agent. It provides the agent's credentials, policy checks, approvals and the audit trail.
+The customer keeps ownership of the account. Grid checks every agent action against the policy the customer set, and either runs it, refuses it, or holds it for the customer to approve. The agent can run in an AI app, on the customer's device, or in your own product. Grid does not run the agent - it provides the agent's credentials, policy checks, approvals and the audit trail.
 
 ## Two ways to offer agent accounts
 
@@ -34,10 +34,10 @@ Both paths give the agent the same capabilities. The rest of this tab documents 
 
 <FeatureCardGrid cols={2}>
   <FeatureCard icon="/images/icons/arrow-inbox.svg" title="Add money and get paid">
-    Receive stablecoins and Lightning payments, and pull from the customer's own bank account with a recorded debit authorization.
+    Receive stablecoins, Lightning payments and bank transfers from anyone into the customer's account details, and pull from the customer's own bank account with a recorded debit authorization or from their debit card.
   </FeatureCard>
   <FeatureCard icon="/images/icons/paper-plane-top-right.svg" title="Pay people">
-    Pay someone by phone number or email even if they have no account, pay up to 50 people in one approved run, or send stablecoins and Lightning payments.
+    Pay someone by phone number or email even if they have no account, pay up to 50 people in one approved run, or send stablecoins, Lightning payments and payments directly to a bank account.
   </FeatureCard>
   <FeatureCard icon="/images/icons/credit-card1.svg" title="Buy online">
     Use its own virtual card, a single-use or recurring card for one merchant, or, with the customer's permission, one of the customer's saved cards.
@@ -47,13 +47,11 @@ Both paths give the agent the same capabilities. The rest of this tab documents 
   </FeatureCard>
 </FeatureCardGrid>
 
-Cards, stored cards, bank pulls, claimable payouts, payout runs and settlement rules are each enabled per platform. Ask your Lightspark contact.
-
 ## For businesses
 
-A business customer, verified through KYB, can run its money through agents the same way an individual can, with controls built for a team:
+A business customer can run its money through agents the same way an individual can, with controls built for a team:
 
-- **Bank details to get paid.** Once verified, a business gets a US bank account and routing number: the `USD_ACCOUNT` entry in the `fundingPaymentInstructions` of its USD internal account. Clients pay it by ordinary bank transfer.
+- **Bank details to get paid.** Once verified, a business gets a US bank account and routing number: the `USD_ACCOUNT` entry in the `fundingPaymentInstructions` of its USD internal account. Anyone can pay it by ordinary bank transfer, such as a client or an employer.
 - **Invoicing.** The [Lightspark connector](/agent-accounts/ai-app-connector) lets an agent send a client an invoice with its own payment page and matches the payment to the invoice. The Agents API has no invoice object; if you invoice from your own product, point payers at the bank details above.
 - **An agent per person.** Each agent records which team member it acts for (`actingFor`), and that reference is copied onto every card it is issued.
 - **Team budgets on one balance.** Put agents in a [spending pool](/agent-accounts/spending-limits) to cap what they spend together each week, each month or in total, and which kinds of payment they may make. Pools hold no money, so there is nothing to move between them.
@@ -70,7 +68,7 @@ A business customer, verified through KYB, can run its money through agents the 
 | **Agent action** | Every money movement an agent asks for becomes an `AgentAction` (`AgentAction:...`). Grid executes it at once or holds it in `PENDING_APPROVAL` until your platform approves or rejects it. |
 | **Spending pool** | A limit several of a customer's agents share, on top of each agent's own policy. A pool holds no money. |
 | **Delegated key** | A Grid-custodied signing key the customer authorizes once, so Grid can sign the agent's approved sends from their Global Account without the customer signing each one. |
-| **Cards** | Agents can be issued their own virtual cards, request single-use or recurring purchase cards, or use a card the customer already owns that you stored for them. |
+| **Cards** | Agents can be issued their own virtual cards, request single-use or recurring purchase cards, or use a card the customer already owns, which Grid stores encrypted so your platform never handles the card number. |
 
 ## Core capabilities
 

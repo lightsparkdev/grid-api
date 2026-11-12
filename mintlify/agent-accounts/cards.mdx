@@ -118,7 +118,7 @@ Deleting an agent freezes the standard card issued for it, and a frozen card sti
 
 ## Stored cards
 
-A stored card is a card the customer already owns, such as their personal Visa, that your platform stores with Grid so the agents they choose can use it, one approved purchase at a time. Stored cards are available for individual customers.
+A stored card is a card the customer already owns, such as their personal Visa, that Grid stores, encrypted, so the agents they choose can use it, one approved purchase at a time. Stored cards are available for individual customers.
 
 <Info>
 **How the card number stays protected.** Your app collects the card with Evervault's Card UI component, which encrypts the number and security code in the customer's browser before they reach your servers. Grid only ever holds the encrypted values. When an approved use or the owner needs the number, Grid issues a single-use link that goes through Evervault's Relay, which decrypts the number on its way to whoever opens the link. No Grid system stores, logs or returns the number itself, and Grid never stores the security code. Your servers handle only ciphertext, which keeps the raw card number out of your environment.

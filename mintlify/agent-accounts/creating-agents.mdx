@@ -129,7 +129,7 @@ curl -X POST "$GRID_BASE_URL/agents/device-codes/redeem" \
 `accessToken` is returned only once and cannot be retrieved again. The agent software must store it securely and send it as `Authorization: Bearer <accessToken>` on every `/agents/me/...` call. Grid cannot return it again, and a connected agent cannot be issued a new device code.
 </Warning>
 
-Redemption is rate limited in fixed 60-second windows: 10 calls per client IP address and 1,000 across all callers without platform credentials, or 600 per platform for calls made with platform credentials. A caller over a limit receives `429 RATE_LIMITED` and should wait for the window to reset.
+Redemption is rate limited. A caller over the limit gets `429 RATE_LIMITED` with a `Retry-After` header and should wait that long before retrying.
 
 ### Watch for the connection
 
