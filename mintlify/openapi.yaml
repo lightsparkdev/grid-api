@@ -20138,6 +20138,15 @@ components:
         - maxAmount
         - requiredCounterpartyFields
         - enabledTransactionTypes
+    WalletProvisioning:
+      type: string
+      enum:
+        - AT_CUSTOMER_CREATE
+        - AT_FIRST_CREDENTIAL
+      description: |-
+        When a customer's embedded wallet is created. Each customer keeps the mode the platform had when the customer was created.
+        - `AT_CUSTOMER_CREATE`: Once the customer is eligible, with the customer's email as the wallet's first `EMAIL_OTP` credential. Creating a customer requires an email.
+        - `AT_FIRST_CREDENTIAL`: When the first auth credential is added to the customer's embedded-wallet account. Once the customer is eligible, the account is created and stays `PENDING` until then. Creating a customer requires no email.
     EmbeddedWalletConfig:
       type: object
       description: |
@@ -20195,6 +20204,12 @@ components:
           maxLength: 512
           description: URL to a PNG logo for the OTP email. Resized to 340x124px.
           example: https://acme.com/logo.png
+        walletProvisioning:
+          $ref: '#/components/schemas/WalletProvisioning'
+          description: |
+            When new customers' embedded wallets are created. Defaults to
+            `AT_CUSTOMER_CREATE`. A change applies to customers created after it;
+            existing customers keep their mode.
     CardTokenization2FAEmailConfig:
       type: object
       description: Email branding and sender settings for card-tokenization authentication messages. Invalid or unverified sender identities can cause delivery to fail.
