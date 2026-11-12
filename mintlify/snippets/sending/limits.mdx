@@ -77,6 +77,7 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/receiver/external-accoun
     {
       "currency": { "code": "MXN", "name": "Mexican Peso", "symbol": "$", "decimals": 2 },
       "estimatedExchangeRate": 18.5,
+      "exchangeRate": 0.054,
       "min": 2000,
       "max": 185000000,
       "minSendingAmount": 109,
@@ -109,6 +110,12 @@ currencies, so expect more than one entry in `supportedCurrencies`, each with it
   `estimatedExchangeRate`, and treat the result as looser than the real limit — the sending
   leg can impose a bound of its own that the converted receiving bound doesn't reflect.
 </Info>
+
+<Tip>
+  `estimatedExchangeRate` is receiving currency per sending currency. `exchangeRate` is the
+  inverse — sending currency per receiving currency — matching the direction of `exchangeRate`
+  on a quote, so you can compare lookup estimates to actual quotes directly without inverting.
+</Tip>
 
 Reuse the `lookupId` on `POST /quotes` to price against the same lookup. It is required for
 UMA destinations.
