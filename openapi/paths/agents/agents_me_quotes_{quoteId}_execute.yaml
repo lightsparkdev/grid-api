@@ -71,7 +71,7 @@ post:
         not permit this operation, a spending limit was exceeded, an `EMBEDDED_WALLET`
         source has no active delegated key for this agent, or the agent may no longer
         pay the quote's destination (`DESTINATION_NOT_ALLOWED`), for example a Spark
-        address that was removed. Executing a quote that already has an action
+        address or bank account that was removed. Executing a quote that already has an action
         returns that action instead, even once its destination is refused.
       content:
         application/json:
