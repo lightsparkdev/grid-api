@@ -66,7 +66,8 @@
   background: var(--surface-primary);
   color: var(--text-primary);
   font: inherit;
-  font-size: 15px;
+  // 16px or more, or iPhone Safari zooms the page in when the field is focused.
+  font-size: 16px;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
