@@ -10633,7 +10633,7 @@ paths:
       summary: Create a transfer quote
       description: |
         Generate a quote for a cross-currency transfer on behalf of the authenticated agent's customer. Accounts referenced in the request must belong to the agent's customer. Requires the CREATE_QUOTES permission in the agent's policy.
-        The destination is another embedded wallet or one of the customer's Spark addresses saved with `POST /agents/me/external-accounts` (`ACCOUNT`), an address on another chain (`CHAIN_ADDRESS`), or a BOLT11 Lightning invoice (`LIGHTNING_INVOICE`). Grid answers `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held for review, on any of the customer's records of it, under either prefix and including removed ones. A `CHAIN_ADDRESS` quote sends `USDB`. Grid pays the chain itself at a locked rate, so the amount the recipient receives is fixed when the quote is created and equals the quote's `minimumReceivingAmount`. A `LIGHTNING_INVOICE` quote debits the source wallet and pays exactly the invoice's amount, which it locks on the receiving side in satoshis, through the platform's Lightning invoice quote (`POST /quotes`).
+        The destination is another embedded wallet, one of the customer's Spark addresses, or one of the customer's saved bank accounts (`ACCOUNT`; save a Spark address or bank account with `POST /agents/me/external-accounts`), an address on another chain (`CHAIN_ADDRESS`), or a BOLT11 Lightning invoice (`LIGHTNING_INVOICE`). Grid answers `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held for review, on any of the customer's records of it, under either prefix and including removed ones. A bank account must belong to the agent's customer on the agent's platform and be `ACTIVE`, which Grid sets when it screens the account; any other bank account is refused with `DESTINATION_NOT_ALLOWED`. A bank payout cannot be called back once it leaves, so executing one needs the customer's approval unless it is at or below a small amount Lightspark sets for the platform, whatever the agent's `defaultExecutionMode` and approval thresholds. Spending pools count it as a `BANK_PAYOUTS` payment. An `ACCOUNT` destination must not set `paymentRail`; a quote that does is refused with `400`. A `CHAIN_ADDRESS` quote sends `USDB`. Grid pays the chain itself at a locked rate, so the amount the recipient receives is fixed when the quote is created and equals the quote's `minimumReceivingAmount`. A `LIGHTNING_INVOICE` quote debits the source wallet and pays exactly the invoice's amount, which it locks on the receiving side in satoshis, through the platform's Lightning invoice quote (`POST /quotes`).
         If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount exceeds the agent's approvalThresholds or the approvalThreshold of the spending pool the agent belongs to, the resulting transaction will require explicit approval before funds move.
       operationId: agentCreateQuote
       tags:
@@ -10676,7 +10676,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden - Agents API is not enabled for the platform, the agent policy does not permit this operation, the agent may not pay the destination (`DESTINATION_NOT_ALLOWED`), or the platform does not pay Lightning invoices for agents (`FORBIDDEN`)
+          description: Forbidden - Agents API is not enabled for the platform, the agent policy does not permit this operation, the agent may not pay the destination (`DESTINATION_NOT_ALLOWED`, including a bank account that is not the customer's own active one), or the platform does not pay Lightning invoices for agents (`FORBIDDEN`)
           content:
             application/json:
               schema:
@@ -10821,7 +10821,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden. The Agents API is not enabled for the platform, the agent policy does not permit this operation, a spending limit was exceeded, an `EMBEDDED_WALLET` source has no active delegated key for this agent, or the agent may no longer pay the quote's destination (`DESTINATION_NOT_ALLOWED`), for example a Spark address that was removed. Executing a quote that already has an action returns that action instead, even once its destination is refused.
+          description: Forbidden. The Agents API is not enabled for the platform, the agent policy does not permit this operation, a spending limit was exceeded, an `EMBEDDED_WALLET` source has no active delegated key for this agent, or the agent may no longer pay the quote's destination (`DESTINATION_NOT_ALLOWED`), for example a Spark address or bank account that was removed. Executing a quote that already has an action returns that action instead, even once its destination is refused.
           content:
             application/json:
               schema:
@@ -36294,7 +36294,7 @@ components:
         | `AGENT_INACTIVE` | The agent was paused or deleted before execution |
         | `EXECUTION_FAILED` | Grid could not execute the approved action. For `ISSUE_PURCHASE_CARD`, the card issuer did not issue the card |
         | `PRICE_MOVED` | Reserved and legacy. Quotes to a `CHAIN_ADDRESS` pay out at a locked rate and no longer fail with this reason |
-        | `ADDRESS_REFUSED` | Grid refused the send's destination before it signed the send: the destination is no longer one the agent may send to (for example, a Spark address removed from the customer's saved addresses), or one of the customer's records of the address was refused or is held for review. A `CHAIN_ADDRESS` that screening refuses fails with `EXECUTION_FAILED` |
+        | `ADDRESS_REFUSED` | Grid refused the send's destination before it signed the send: the destination is no longer one the agent may send to (for example, a Spark address or bank account removed from the customer's saved accounts), or one of the customer's records of the address was refused or is held for review. A `CHAIN_ADDRESS` that screening refuses fails with `EXECUTION_FAILED` |
         | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD`, `CREATE_SETTLEMENT_RULE`, `UPDATE_SETTLEMENT_RULE` or `PAYOUT_RUN` action, or an `EXECUTE_QUOTE` action with `priceTolerance`, was not approved before its `expiresAt` |
         | `DELETED_BY_AGENT` | The agent deleted the settlement rule a `CREATE_SETTLEMENT_RULE` or `UPDATE_SETTLEMENT_RULE` action would make or change before the action was decided |
         | `AGENT_CANCELLED` | The agent cancelled the payout run a `PAYOUT_RUN` action would start before the action was decided |
@@ -37473,7 +37473,7 @@ components:
     AgentQuoteRequest:
       type: object
       description: |-
-        A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET` internal account of the agent's customer. The destination is either an `ACCOUNT`: another `EMBEDDED_WALLET` on the platform, or one of the customer's active `SPARK_WALLET` external accounts in the source's currency; an address on another chain (`CHAIN_ADDRESS`); or a BOLT11 Lightning invoice (`LIGHTNING_INVOICE`).
+        A transfer quote requested by an agent. The source is an `EMBEDDED_WALLET` internal account of the agent's customer. The destination is either an `ACCOUNT`: another `EMBEDDED_WALLET` on the platform, one of the customer's active `SPARK_WALLET` external accounts in the source's currency, or one of the customer's active saved bank accounts; an address on another chain (`CHAIN_ADDRESS`); or a BOLT11 Lightning invoice (`LIGHTNING_INVOICE`).
 
         A `CHAIN_ADDRESS` quote sends `USDB`. With `lockedCurrencySide` `SENDING` it commits to the `USDB` amount; with `RECEIVING` it commits to exactly the amount the destination receives, in the smallest unit of the destination's `currency`, and the fees are added to the `USDB` sent. Grid pays the chain itself at a locked rate, so the amount the destination receives is fixed when the quote is created and returned as `minimumReceivingAmount`. When Grid cannot deliver a `RECEIVING` amount exactly, it refuses the quote with 400 `EXACT_AMOUNT_UNAVAILABLE`.
 
