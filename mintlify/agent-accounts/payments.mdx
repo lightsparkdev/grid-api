@@ -148,13 +148,13 @@ With `MANAGE_EXTERNAL_ACCOUNTS`, the agent can save a US bank account as one of 
 2. Quote the send with `POST /agents/me/quotes`: `destination` is `{ "destinationType": "ACCOUNT", "accountId": "ExternalAccount:..." }`, with the wallet as `source`, `lockedCurrencySide` and `lockedCurrencyAmount`. A destination takes no payment rail.
 3. Execute it as in [Execute the quote](#execute-the-quote).
 
-The account must be one of the agent's customer's saved bank accounts on your platform and `ACTIVE`. Any other bank account is refused with `403 DESTINATION_NOT_ALLOWED`, at quote and again at execute and approval, so an account removed in between fails the action with `ADDRESS_REFUSED`.
+The account must be one of the agent's customer's saved bank accounts on your platform and `ACTIVE`. Any other bank account is refused with `403 DESTINATION_NOT_ALLOWED` when the agent quotes or executes. If the account is removed while the action waits for approval, approving it fails the action with `ADDRESS_REFUSED`.
 
-A bank payout cannot be called back once it leaves, so it waits in `PENDING_APPROVAL` for the customer whatever the agent's `defaultExecutionMode` and approval thresholds say, unless it is a small amount. A spending pool counts it as a `BANK_PAYOUTS` payment.
+A bank payout cannot be called back once it leaves, so above a small amount that Lightspark sets for your platform it waits in `PENDING_APPROVAL` for the customer, whatever the agent's `defaultExecutionMode` and approval thresholds say. At or below that amount the usual rules still apply: `APPROVAL_REQUIRED`, the approval thresholds and the spending pool can each still hold it for approval. A spending pool counts it as a `BANK_PAYOUTS` payment.
 
 ## Withdraw to the customer's own bank account
 
-Withdrawing is the same send to a bank account the customer owns. The customer's own account is one of the `ACTIVE` USD external accounts that `GET /agents/me/external-accounts?currency=USD` returns, including a bank account your platform validated through Plaid for [bank pulls](/agent-accounts/funding#pull-from-the-customers-bank-account). The agent quotes with that account's `ExternalAccount:...` id as the `ACCOUNT` destination and executes the quote. The same rules apply as for any bank payout: the account must be `ACTIVE`, a payout above a small amount always waits for the customer's approval, and `403 DESTINATION_NOT_ALLOWED` means Grid will not pay that account.
+Withdrawing is the same send to a bank account the customer owns. The customer's own account is one of the `ACTIVE` USD external accounts that `GET /agents/me/external-accounts?currency=USD` returns, including a bank account your platform validated through Plaid for [bank pulls](/agent-accounts/funding#pull-from-the-customers-bank-account). The agent quotes with that account's `ExternalAccount:...` id as the `ACCOUNT` destination and executes the quote. The same rules apply as for any bank payout: the account must be `ACTIVE`, a payout above the platform's small-payout amount always waits for the customer's approval, and below it the policy and pool rules decide, and `403 DESTINATION_NOT_ALLOWED` means Grid will not pay that account.
 
 ## Pay a person by phone or email
 
