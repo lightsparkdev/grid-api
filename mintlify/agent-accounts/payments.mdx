@@ -175,6 +175,27 @@ curl -X POST "$GRID_BASE_URL/agents/me/claimable-payouts" \
 - Once it is `AWAITING_CLAIM`, your backend issues a claim token with `POST /claimable-payouts/{claimablePayoutId}/claim-token`, puts it in a link to your own claim page, and sends it to the recipient's phone or email. The token is returned once, and issuing another replaces it. Never show it to the agent. The recipient chooses how to be paid from what Grid pays out to in her country.
 - The claim window ends 7 days after approval. The agent can cancel with `POST /agents/me/claimable-payouts/{claimablePayoutId}/cancel` while it is `PENDING_APPROVAL` or `AWAITING_CLAIM`, which releases the hold.
 
+### Build the claim page
+
+Your claim page takes the recipient from the link to payment:
+
+<Steps>
+  <Step title="Look up the payout">
+    Call `POST /claimable-payouts/claim/lookup` with the token. Show only the sender's name and the amount until the recipient enters a one-time code that you send to the payout's phone number or email. A forwarded link alone must not be enough to claim the payout.
+  </Step>
+  <Step title="List payout options">
+    Call `POST /claimable-payouts/claim/options` to list the currencies and rails Grid pays out to in her country, priced for the payout.
+  </Step>
+  <Step title="Lock a quote">
+    Call `POST /claimable-payouts/claim/quote` with her account details and chosen rail. Grid validates and screens them, saves her as an external account under the sender's customer, and locks a quote.
+  </Step>
+  <Step title="Confirm the payment">
+    Call `POST /claimable-payouts/claim/confirm` to pay her on that quote. The payout becomes `CLAIMED`, then `PAID` or `FAILED`.
+  </Step>
+</Steps>
+
+Because the recipient is saved as an external account, the agent can pay her again later without a link.
+
 Statuses are `PENDING_APPROVAL`, `AWAITING_CLAIM`, `CLAIMED`, `PAID`, `EXPIRED`, `CANCELLED` and `FAILED`. Grid sends `CLAIMABLE_PAYOUT.*` webhooks when a payout is claimed, paid, expires or fails.
 
 ## Pay many people at once
