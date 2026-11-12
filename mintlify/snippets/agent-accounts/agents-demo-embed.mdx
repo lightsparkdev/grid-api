@@ -5,9 +5,7 @@ export const AgentsDemoEmbed = () => {
     const previewSuffix = '.mintlify.site';
     const previewPrefix = 'ramps-';
     const isPreview = hostname.endsWith(previewSuffix) && hostname.startsWith(previewPrefix);
-    // Docs sites that publish a branch under their own domain, and the branch whose playground they embed.
-    const branchSites = { 'agents-docs.lightspark.com': 'lightspark-agents' };
-    const branch = isPreview ? hostname.slice(previewPrefix.length, -previewSuffix.length) : branchSites[hostname] || '';
+    const branch = isPreview ? hostname.slice(previewPrefix.length, -previewSuffix.length) : '';
     const base = isLocal
       ? 'http://localhost:4003'
       : branch
