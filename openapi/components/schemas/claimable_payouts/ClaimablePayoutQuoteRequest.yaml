@@ -19,5 +19,5 @@ properties:
       - $ref: ../common/PaymentRail.yaml
     description: >-
       The rail the recipient chose from `POST /claimable-payouts/claim/options`,
-      when her account type is paid on more than one (for example `BANK_TRANSFER`
+      when their account type is paid on more than one (for example `BANK_TRANSFER`
       or `MOBILE_MONEY`). Omit it to use the account type's default rail.
