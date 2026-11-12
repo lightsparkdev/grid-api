@@ -1,6 +1,6 @@
 ---
 title: "Funding"
-description: "Get money into the Global Account an agent spends from: platform deposits and quotes, bank transfers, pulls from the customer's own bank account, and agent-created Lightning invoices and stablecoin addresses."
+description: "Get money into the Global Account an agent spends from: platform deposits and quotes, bank transfers, pulls from the customer's own bank account or debit card, and agent-created Lightning invoices and stablecoin addresses."
 icon: "/images/icons/arrow-inbox.svg"
 "og:image": "/images/og/og-agents-playground-v2.webp"
 ---
@@ -19,7 +19,7 @@ See [Fund the account](/global-accounts/implementation-overview#4-fund-the-accou
 
 ### Bank transfers to the customer's account details
 
-Once a business customer is verified, its USD internal account carries a US account and routing number: the `USD_ACCOUNT` entry in its `fundingPaymentInstructions`. The account number is unique to that account, so its clients can pay it by ordinary bank transfer without a reference.
+Once a customer is verified, their USD internal account carries a US account and routing number: the `USD_ACCOUNT` entry in its `fundingPaymentInstructions`, which lists the payment rails it accepts (for example `ACH` and `WIRE`). Anyone can pay it, not only the customer: clients, employers and other people send an ordinary bank transfer on one of those rails, and the customer or your platform can share the details with any payer. The account number is unique to that account, so payers need no reference.
 
 ## Deposits the agent creates
 
@@ -33,7 +33,7 @@ With the `RECEIVE_FUNDS` permission, the agent can create a deposit target for t
 
 `destinationInternalAccountId` must belong to the agent's customer and be allowed by the agent's policy.
 
-To pull from the customer's own bank account instead, see [Pull from the customer's bank account](#pull-from-the-customers-bank-account).
+To pull from the customer's own bank account or debit card instead, see [Pull from the customer's bank account](#pull-from-the-customers-bank-account) and [Pull from the customer's debit card](#pull-from-the-customers-debit-card).
 
 <CodeGroup>
 ```bash Lightning
@@ -112,11 +112,13 @@ On success the debit is submitted, the deposit becomes `PROCESSING`, and the amo
 
 ### Pull from the customer's debit card
 
-<Info>
-**Coming soon.** Pulling money in from the customer's own debit card is not available yet, and there is no API for it today.
-</Info>
+Where your platform enables card pulls, the agent can ask to pull USD from one of the customer's own debit cards into their USDB Global Account with `sourceNetwork: DEBIT_CARD_PULL`. It works like the bank pull above, with a [stored card](/agent-accounts/cards#stored-cards) in place of a bank account. Grid stores the card encrypted, so your platform never handles the card number. Until card pulls are enabled, the request is refused with `403` (`DEBIT_CARD_PULL_NOT_ENABLED`).
 
-The customer will authorize the pull from their own debit card. Grid stores the card encrypted, as it does for [stored cards](/agent-accounts/cards#stored-cards), so your platform never handles the card number.
+1. The customer's debit card is stored with `POST /customers/{customerId}/stored-cards`, as in [Cards](/agent-accounts/cards#store-a-card). A pull needs an `ACTIVE` stored card that is a debit card, belongs to the agent's customer, and is shared with the agent.
+2. The agent creates the deposit with `POST /agents/me/deposits`, giving `sourceCurrency: USD`, `amount` in cents, `sourceStoredCardId`, and the customer's USDB `EMBEDDED_WALLET` as `destinationInternalAccountId`. This moves no money. The deposit is `PENDING` and carries `debitCardPull.authorization.text`, the debit authorization the customer must accept, and `debitCardPull.limits`, how much more the customer can pull.
+3. Your product shows that text verbatim to the signed-in customer (for a business, an admin) and confirms their decision with a fresh step-up, such as a passkey or an emailed code. When they accept, your backend calls `POST /agents/{agentId}/deposits/{depositId}/authorize-debit` with platform credentials, sending the text's `textVersion` and `textSha256`.
+
+On success the card is charged, the deposit becomes `PROCESSING`, and the amount is credited to the Global Account at once. It becomes `COMPLETED` when the charge settles, or `FAILED` if Grid refuses it or the card issuer declines or reverses it (`debitCardPull.returnCode`). A deposit that is not authorized within 30 minutes becomes `EXPIRED`. The agent can never authorize a debit itself. Track the deposit and its `INCOMING_PAYMENT` webhooks as in [Tracking a deposit](#tracking-a-deposit).
 
 ## Limits before verification
 

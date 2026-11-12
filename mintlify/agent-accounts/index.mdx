@@ -34,7 +34,7 @@ Both paths give the agent the same capabilities. The rest of this tab documents 
 
 <FeatureCardGrid cols={2}>
   <FeatureCard icon="/images/icons/arrow-inbox.svg" title="Add money and get paid">
-    Receive stablecoins, Lightning payments and bank transfers into the customer's account details, and pull from the customer's own bank account with a recorded debit authorization or from their debit card.
+    Receive stablecoins, Lightning payments and bank transfers from anyone into the customer's account details, and pull from the customer's own bank account with a recorded debit authorization or from their debit card.
   </FeatureCard>
   <FeatureCard icon="/images/icons/paper-plane-top-right.svg" title="Pay people">
     Pay someone by phone number or email even if they have no account, pay up to 50 people in one approved run, or send stablecoins, Lightning payments and payments directly to a bank account.
@@ -51,7 +51,7 @@ Both paths give the agent the same capabilities. The rest of this tab documents 
 
 A business customer can run its money through agents the same way an individual can, with controls built for a team:
 
-- **Bank details to get paid.** Once verified, a business gets a US bank account and routing number: the `USD_ACCOUNT` entry in the `fundingPaymentInstructions` of its USD internal account. Clients pay it by ordinary bank transfer.
+- **Bank details to get paid.** Once verified, a business gets a US bank account and routing number: the `USD_ACCOUNT` entry in the `fundingPaymentInstructions` of its USD internal account. Anyone can pay it by ordinary bank transfer, such as a client or an employer.
 - **Invoicing.** The [Lightspark connector](/agent-accounts/ai-app-connector) lets an agent send a client an invoice with its own payment page and matches the payment to the invoice. The Agents API has no invoice object; if you invoice from your own product, point payers at the bank details above.
 - **An agent per person.** Each agent records which team member it acts for (`actingFor`), and that reference is copied onto every card it is issued.
 - **Team budgets on one balance.** Put agents in a [spending pool](/agent-accounts/spending-limits) to cap what they spend together each week, each month or in total, and which kinds of payment they may make. Pools hold no money, so there is nothing to move between them.
