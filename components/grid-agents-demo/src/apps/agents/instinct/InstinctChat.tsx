@@ -669,6 +669,13 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
     }
   };
 
+  // A text can't raise Face ID: a yes in Messages approves on its own. The vault page in Safari keeps it (a passkey).
+  const authingByText = chat.messages.some((m) => m.kind === 'ask' && m.state === 'authing' && !linksOut(m.ask));
+  const { authed } = chat;
+  useEffect(() => {
+    if (authingByText) authed();
+  }, [authingByText, authed]);
+
   const tone = dark ? 'light' : 'default';
   const showSafari = (view === 'safari' || switchTo !== null) && (open || page);
 
@@ -680,7 +687,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           messages={thread}
           render={render}
           rowMotion={(m) => (m.kind === 'me' ? STILL : NATIVE_IN)}
-          faceId={chat.authing}
+          faceId={chat.authing && !authingByText}
           onFaceIdDone={chat.authed}
           gap={3}
           threadTop={178}
