@@ -54,3 +54,9 @@ properties:
     maxLength: 512
     description: URL to a PNG logo for the OTP email. Resized to 340x124px.
     example: https://acme.com/logo.png
+  walletProvisioning:
+    $ref: ./WalletProvisioning.yaml
+    description: |
+      When new customers' embedded wallets are created. Defaults to
+      `AT_CUSTOMER_CREATE`. A change applies to customers created after it;
+      existing customers keep their mode.
