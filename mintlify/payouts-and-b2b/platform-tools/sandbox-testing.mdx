@@ -140,6 +140,19 @@ POST /quotes
 
 The IBAN ending in `003` triggers the slow payment test pattern.
 
+### Payment documents
+
+A payment document uploaded with one of these file names fails when a quote uses it. Grid
+ignores the extension and letter case.
+
+| File name | Behavior |
+|-----------|----------|
+| `sandbox-expired` | Uploaded already expired. The quote fails with `410 PAYMENT_DOCUMENT_EXPIRED` |
+| `sandbox-attach-failed` | The quote fails with `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED`, including a retry with the same `Idempotency-Key` |
+
+To test the payout partner rejecting the documents after you execute the quote, use an
+account number ending in `010`.
+
 ### Executing Quotes in Sandbox
 
 For quotes from an external account source, execute as in production via `/quotes/{quoteId}/execute`. The sandbox will:
