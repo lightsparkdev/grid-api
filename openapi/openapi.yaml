@@ -115,9 +115,9 @@ tags:
       Endpoints called by the agent itself using its own credentials
       (obtained via device code redemption). Scoped to the agent's associated customer — all requests
       automatically operate on behalf of that customer and are subject to the agent's
-      policy. When an action requires approval, the resulting transaction enters a pending
-      state and must be approved by the platform via
-      `POST /transactions/{transactionId}/approve`.
+      policy. When a request requires approval, it is held as an agent action in
+      `PENDING_APPROVAL` until the platform approves it via
+      `POST /agents/{agentId}/actions/{actionId}/approve` or rejects it.
   - name: Claimable Payouts
     description: >-
       Endpoints the platform's claim page calls for a claimable payout an
