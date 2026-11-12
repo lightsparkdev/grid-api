@@ -1,7 +1,7 @@
 # Agent Accounts Playground: approach
 
 Design log for the interactive Agent Accounts demo that the docs embed at
-`docs.lightspark.com/agent-accounts/demo`. Started 2026-11-04; v2 on 2026-11-05.
+`docs.lightspark.com/demo`. Started 2026-11-04; v2 on 2026-11-05.
 
 Sources: Figma `website-q4-2026` node 124:3873 (the playground), 15:8134 and
 15:8564 (pitch deck), the "Agent Accounts. Every way in. Every way out."
@@ -27,7 +27,7 @@ send.
 with the cards demo: `cornerShape` ×2, `superellipse`). Dev server on 4003;
 `node scripts/flow-sweep.mjs light` (and `dark`, `SWEEP_DENY=1`,
 `SWEEP_ENGINE=webkit`) runs every flow in every app; the docs embed is
-`make mint` → `/agent-accounts/demo`. Any change to a flow or a line gets
+`make mint` → `/demo`. Any change to a flow or a line gets
 checked against the conversation checklist below.
 
 ## Decisions
