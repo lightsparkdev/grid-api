@@ -110,6 +110,14 @@ Where your platform enables external-account pulls, the agent can ask to pull US
 
 On success the debit is submitted, the deposit becomes `PROCESSING`, and the amount is credited to the Global Account at once. It becomes `COMPLETED` when the debit settles, or `FAILED` if Grid refuses it or the bank returns it (`achPull.returnCode`). A deposit that is not authorized within 30 minutes becomes `EXPIRED`. The agent can never authorize a debit itself.
 
+### Pull from the customer's debit card
+
+<Info>
+**Coming soon.** Pulling money in from the customer's own debit card is not available yet, and there is no API for it today.
+</Info>
+
+The customer will authorize the pull from their own debit card. Grid stores the card encrypted, as it does for [stored cards](/agent-accounts/cards#stored-cards), so your platform never handles the card number.
+
 ## Limits before verification
 
 Until a business customer's KYB status is `APPROVED`, its agents' sends and deposits are held to the same limits as an unverified individual's, counted across the whole business. With `MANAGE_IDENTITY`, an agent can help an individual customer finish verification: read and update identity details (`GET`/`PATCH /agents/me/customer`), submit for KYC (`POST /agents/me/verifications`), or generate a single-use hosted KYC link (`POST /agents/me/kyc-link`).
