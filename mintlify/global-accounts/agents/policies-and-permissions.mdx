@@ -40,6 +40,12 @@ Grid exposes explicit allowlists instead of broad agent access. Available permis
 | `CREATE_QUOTES` | Create quotes |
 | `EXECUTE_QUOTES` | Execute quotes |
 | `MANAGE_EXTERNAL_ACCOUNTS` | Create and manage external accounts |
+| `RECEIVE_FUNDS` | Create deposit targets for receiving funds |
+| `MANAGE_IDENTITY` | Read and update customer identity information and start verification |
+| `MANAGE_CARDS` | Read, tighten, and freeze its cards |
+| `ISSUE_CARDS` | Issue one standard virtual card for itself while it holds no live standard card, and single-use and recurring purchase cards where the platform enables them |
+| `USE_STORED_CARDS` | List the customer's stored cards it is allowed to use and ask for a single-use link to one's details. Never granted by default |
+| `MANAGE_SETTLEMENT_RULES` | Propose settlement rules that split the customer's incoming payments, read and delete the rules it created, and cancel their held executions |
 
 These permissions are intentionally narrow and map to concrete Grid-backed actions rather than broad scopes such as "manage wallet."
 
@@ -67,6 +73,10 @@ Common controls:
 - Daily transaction count limit
 
 Keep limits in the smallest currency unit used by Grid so comparisons are exact and auditable.
+
+## Spending pools
+
+Agents in a spending pool are also held to the pool's shared limits and allowed payment types. A pool holds no money: it only limits what its agents may spend together on the customer's balance. A pool's approval threshold can hold a payment the agent's own policy would have run at once. Card authorizations are never held for approval.
 
 ## Execution modes
 
