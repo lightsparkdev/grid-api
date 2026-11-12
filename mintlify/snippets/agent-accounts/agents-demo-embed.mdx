@@ -32,7 +32,7 @@ export const AgentsDemoEmbed = () => {
       iframe.id = 'agents-demo-iframe';
       iframe.className = 'ls-playground-iframe';
       iframe.src = base + '/?embed=true&theme=' + (isDark() ? 'dark' : 'light') + '&nav=' + navWidth() + (forApp ? '&for=' + encodeURIComponent(forApp) : '');
-      iframe.title = 'Lightspark Agent Accounts — playground';
+      iframe.title = 'Lightspark Agent Accounts — Playground';
       iframe.setAttribute('allow', 'clipboard-write; autoplay');
       iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;';
       host.appendChild(iframe);
