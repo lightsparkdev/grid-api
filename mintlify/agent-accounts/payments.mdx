@@ -140,6 +140,18 @@ Agents retry. Send an `Idempotency-Key` (up to 255 characters) on every write so
 
 With `MANAGE_EXTERNAL_ACCOUNTS`, the agent manages the customer's external accounts under `/agents/me/external-accounts` (list, add, read, delete). `customerId` is inferred from the agent. Grid saves a Spark address under its network's current prefix (`spark1...`), so a legacy spelling (`sp1...`) of a saved address conflicts with it, and refuses to save a Spark address that was refused or is held for review (`DESTINATION_NOT_ALLOWED`).
 
+## Pay a bank account
+
+With `MANAGE_EXTERNAL_ACCOUNTS`, the agent can save someone's US bank account as an external account and pay it directly, with the same quote and execute flow as any other send.
+
+1. Save the recipient with `POST /agents/me/external-accounts`, giving `currency: USD` and an `accountInfo` with `accountType: USD_ACCOUNT`, `accountNumber`, `routingNumber`, `bankAccountType`, `bankName` and the `beneficiary` (`beneficiaryType`, `fullName`, `address`). The response is the `ExternalAccount`. `GET /agents/me/external-accounts?currency=USD` lists the ones already saved, and an account that already exists is refused with `409`.
+2. Quote the send with `POST /agents/me/quotes`: `destination` is `{ "destinationType": "ACCOUNT", "accountId": "ExternalAccount:..." }`, with the wallet as `source`, `lockedCurrencySide` and `lockedCurrencyAmount`.
+3. Execute it as in [Execute the quote](#execute-the-quote). The same policy, spending limits and approval thresholds apply, so a send can be `APPROVED` at once or wait in `PENDING_APPROVAL` for the customer.
+
+## Withdraw to the customer's own bank account
+
+The agent can move money out to a bank account the customer owns the same way. The customer's own account is one of the `ACTIVE` USD external accounts that `GET /agents/me/external-accounts?currency=USD` returns, including a bank account your platform validated through Plaid for [bank pulls](/agent-accounts/funding#pull-from-the-customers-bank-account). The agent quotes with that account's `ExternalAccount:...` id as the `ACCOUNT` destination and executes the quote under the same policy and approvals as any other send.
+
 ## Pay a person by phone or email
 
 Where your platform enables claimable payouts and agent bank payouts, an agent can send money to someone with no Grid account using `POST /agents/me/claimable-payouts`. The customer's KYC status must be `APPROVED`.
