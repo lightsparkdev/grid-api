@@ -25,7 +25,7 @@ The agent finds its source account with `GET /agents/me/internal-accounts?type=E
 
 | `destinationType` | Pays | Notes |
 |---|---|---|
-| `ACCOUNT` | Another Embedded Wallet on your platform, or one of the customer's active `SPARK_WALLET` external accounts in the source's currency | Save a Spark address first with `POST /agents/me/external-accounts` |
+| `ACCOUNT` | Another Embedded Wallet on your platform, one of the customer's active `SPARK_WALLET` external accounts in the source's currency, or one of the customer's active bank accounts | Save a Spark address or bank account first with `POST /agents/me/external-accounts` |
 | `CHAIN_ADDRESS` | A `USDC` or `USDT` address on `BASE`, `ETHEREUM`, `SOLANA`, `POLYGON`, `ARBITRUM` or `TRON` | Sends `USDB` from the wallet. `TRON` supports `USDT` only and `BASE` `USDC` only. Grid records and screens the address before quoting |
 | `LIGHTNING_INVOICE` | A BOLT11 invoice | The invoice must name an amount in whole satoshis, be for your platform's Bitcoin network, and not expire within the next minute |
 
@@ -98,7 +98,7 @@ How each destination prices:
 - **`CHAIN_ADDRESS`**: with `SENDING`, the quote commits to the `USDB` amount; with `RECEIVING`, to exactly what the destination receives, with fees added to the `USDB` sent. Grid pays the chain at a locked rate, so `minimumReceivingAmount` equals `totalReceivingAmount`. If Grid cannot deliver a `RECEIVING` amount exactly, it refuses the quote with `400 EXACT_AMOUNT_UNAVAILABLE`.
 - **`LIGHTNING_INVOICE`**: `lockedCurrencySide` must be `RECEIVING` and `lockedCurrencyAmount` the invoice's amount in satoshis. Grid pays exactly the invoice and adds the fees to the amount debited. An invoice has one live quote at a time; another quote for it answers `409 INVOICE_ALREADY_USED` unless it repeats the same request with the same `Idempotency-Key`.
 
-`403 DESTINATION_NOT_ALLOWED` means Grid will not let the agent pay that destination, for example a Spark address that was refused or is held for review on any of the customer's records of it.
+`403 DESTINATION_NOT_ALLOWED` means Grid will not let the agent pay that destination, for example a Spark address that was refused or is held for review on any of the customer's records of it, or a bank account that is not the customer's own and `ACTIVE`.
 
 ## Execute the quote
 
@@ -142,15 +142,19 @@ With `MANAGE_EXTERNAL_ACCOUNTS`, the agent manages the customer's external accou
 
 ## Pay a bank account
 
-With `MANAGE_EXTERNAL_ACCOUNTS`, the agent can save someone's US bank account as an external account and pay it directly, with the same quote and execute flow as any other send.
+With `MANAGE_EXTERNAL_ACCOUNTS`, the agent can save a US bank account as one of the customer's external accounts and pay it directly, with the same quote and execute flow as any other send.
 
-1. Save the recipient with `POST /agents/me/external-accounts`, giving `currency: USD` and an `accountInfo` with `accountType: USD_ACCOUNT`, `accountNumber`, `routingNumber`, `bankAccountType`, `bankName` and the `beneficiary` (`beneficiaryType`, `fullName`, `address`). The response is the `ExternalAccount`. `GET /agents/me/external-accounts?currency=USD` lists the ones already saved, and an account that already exists is refused with `409`.
-2. Quote the send with `POST /agents/me/quotes`: `destination` is `{ "destinationType": "ACCOUNT", "accountId": "ExternalAccount:..." }`, with the wallet as `source`, `lockedCurrencySide` and `lockedCurrencyAmount`.
-3. Execute it as in [Execute the quote](#execute-the-quote). The same policy, spending limits and approval thresholds apply, so a send can be `APPROVED` at once or wait in `PENDING_APPROVAL` for the customer.
+1. Save the recipient with `POST /agents/me/external-accounts`, giving `currency: USD` and an `accountInfo` with `accountType: USD_ACCOUNT`, `accountNumber`, `routingNumber`, `bankAccountType`, `bankName` and the `beneficiary` (`beneficiaryType`, `fullName`, `address`). The response is the `ExternalAccount`. `GET /agents/me/external-accounts?currency=USD` lists the ones already saved, and an account that already exists is refused with `409`. Grid screens the account, and only one it cleared becomes `ACTIVE`.
+2. Quote the send with `POST /agents/me/quotes`: `destination` is `{ "destinationType": "ACCOUNT", "accountId": "ExternalAccount:..." }`, with the wallet as `source`, `lockedCurrencySide` and `lockedCurrencyAmount`. A destination takes no payment rail.
+3. Execute it as in [Execute the quote](#execute-the-quote).
+
+The account must be one of the agent's customer's saved bank accounts on your platform and `ACTIVE`. Any other bank account is refused with `403 DESTINATION_NOT_ALLOWED` when the agent quotes or executes. If the account is removed while the action waits for approval, approving it fails the action with `ADDRESS_REFUSED`.
+
+A bank payout cannot be called back once it leaves, so above a small amount that Lightspark sets for your platform it waits in `PENDING_APPROVAL` for the customer, whatever the agent's `defaultExecutionMode` and approval thresholds say. At or below that amount the usual rules still apply: `APPROVAL_REQUIRED`, the approval thresholds and the spending pool can each still hold it for approval. A spending pool counts it as a `BANK_PAYOUTS` payment.
 
 ## Withdraw to the customer's own bank account
 
-The agent can move money out to a bank account the customer owns the same way. The customer's own account is one of the `ACTIVE` USD external accounts that `GET /agents/me/external-accounts?currency=USD` returns, including a bank account your platform validated through Plaid for [bank pulls](/agent-accounts/funding#pull-from-the-customers-bank-account). The agent quotes with that account's `ExternalAccount:...` id as the `ACCOUNT` destination and executes the quote under the same policy and approvals as any other send.
+Withdrawing is the same send to a bank account the customer owns. The customer's own account is one of the `ACTIVE` USD external accounts that `GET /agents/me/external-accounts?currency=USD` returns, including a bank account your platform validated through Plaid for [bank pulls](/agent-accounts/funding#pull-from-the-customers-bank-account). The agent quotes with that account's `ExternalAccount:...` id as the `ACCOUNT` destination and executes the quote. The same rules apply as for any bank payout: the account must be `ACTIVE`, a payout above the platform's small-payout amount always waits for the customer's approval, and below it the policy and pool rules decide, and `403 DESTINATION_NOT_ALLOWED` means Grid will not pay that account.
 
 ## Pay a person by phone or email
 
