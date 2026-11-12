@@ -41,12 +41,32 @@ get:
                 data:
                   - bankName: Bank of the Philippine Islands (BPI)
                     displayName: Bank of the Philippine Islands (BPI)
+                    paymentRails:
+                      - BANK_TRANSFER
                     country: PH
                     currency: PHP
                   - bankName: BDO Network Bank
                     displayName: BDO Network Bank / One Network Bank
+                    paymentRails:
+                      - BANK_TRANSFER
                     country: PH
                     currency: PHP
+            chinaProviders:
+              summary: Payment rails for China (CNY)
+              value:
+                data:
+                  - bankName: AliPay
+                    displayName: AliPay
+                    paymentRails:
+                      - MOBILE_MONEY
+                    country: CN
+                    currency: CNY
+                  - bankName: China Construction Bank
+                    displayName: China Construction Bank
+                    paymentRails:
+                      - BANK_TRANSFER
+                    country: CN
+                    currency: CNY
     "400":
       description: Bad request - Invalid parameters
       content:

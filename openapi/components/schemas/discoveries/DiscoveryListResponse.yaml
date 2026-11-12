@@ -8,6 +8,7 @@ properties:
       required:
         - bankName
         - displayName
+        - paymentRails
         - country
         - currency
       properties:
@@ -19,6 +20,15 @@ properties:
         displayName:
           type: string
           description: Human-friendly display name for this payment rail.
+        paymentRails:
+          type: array
+          items:
+            $ref: ../common/PaymentRail.yaml
+          description: >
+            The payment rails you can use with this `bankName`. Send them as
+            `paymentRails` when you create the external account. `MOBILE_MONEY`
+            means this is a mobile money provider, such as MTN or AliPay, and
+            the account needs a `phoneNumber`.
         country:
           type: string
           description: ISO 3166-1 alpha-2 country code.
