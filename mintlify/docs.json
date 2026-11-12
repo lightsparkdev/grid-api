@@ -104,7 +104,7 @@
             ]
           },
           {
-            "group": "Agents (experimental)",
+            "group": "Agents",
             "pages": [
               "global-accounts/agents/overview",
               "global-accounts/agents/policies-and-permissions",
@@ -134,7 +134,7 @@
             ]
           },
           {
-            "group": "Agents (experimental)",
+            "group": "Agents",
             "pages": [
               "agent-accounts/creating-agents",
               "agent-accounts/policies-and-permissions",

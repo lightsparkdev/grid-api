@@ -6,7 +6,7 @@ icon: "/images/icons/paper-plane-top-right.svg"
 ---
 
 <Note>
-The Agents API is experimental and in limited availability. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+The Agents API must be enabled for your platform; until it is, agent endpoints answer `403`. To enable it, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
 </Note>
 
 Agents send money with the same quote-then-execute pattern as the rest of Grid, through agent-scoped endpoints authenticated with the agent's token. Every send is checked against the agent's [policy](/agent-accounts/policies-and-permissions) and [spending pool](/agent-accounts/spending-limits), and either runs at once or waits for the customer's [approval](/agent-accounts/approvals-and-audit).
