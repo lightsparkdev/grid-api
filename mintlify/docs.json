@@ -104,15 +104,6 @@
             ]
           },
           {
-            "group": "Agents",
-            "pages": [
-              "global-accounts/agents/overview",
-              "global-accounts/agents/policies-and-permissions",
-              "global-accounts/agents/approvals-and-audit",
-              "global-accounts/agents/claimable-payouts"
-            ]
-          },
-          {
             "group": "Platform tools",
             "pages": [
               "global-accounts/platform-tools/webhooks",
@@ -534,6 +525,10 @@
   },
   "redirects": [
     { "source": "/agents", "destination": "/agent-accounts/demo" },
+    { "source": "/global-accounts/agents/overview", "destination": "/agent-accounts" },
+    { "source": "/global-accounts/agents/policies-and-permissions", "destination": "/agent-accounts/policies-and-permissions" },
+    { "source": "/global-accounts/agents/approvals-and-audit", "destination": "/agent-accounts/approvals-and-audit" },
+    { "source": "/global-accounts/agents/claimable-payouts", "destination": "/agent-accounts/payments#pay-a-person-by-phone-or-email" },
     { "source": "/api-reference/sdks", "destination": "/api-reference/cli" },
     { "source": "/payouts-and-b2b/embedded-wallets/overview", "destination": "/payouts-and-b2b/global-accounts/overview" },
     { "source": "/payouts-and-b2b/embedded-wallets/client-keys", "destination": "/payouts-and-b2b/global-accounts/client-keys" },
