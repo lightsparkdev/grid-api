@@ -37856,7 +37856,7 @@ components:
         paymentRail:
           allOf:
             - $ref: '#/components/schemas/PaymentRail'
-          description: The rail the recipient chose from `POST /claimable-payouts/claim/options`, when her account type is paid on more than one (for example `BANK_TRANSFER` or `MOBILE_MONEY`). Omit it to use the account type's default rail.
+          description: The rail the recipient chose from `POST /claimable-payouts/claim/options`, when their account type is paid on more than one (for example `BANK_TRANSFER` or `MOBILE_MONEY`). Omit it to use the account type's default rail.
     ClaimablePayoutQuote:
       type: object
       description: A locked quote paying the claimable payout to the recipient. Confirm it before `quote.expiresAt`; after that, request another.
