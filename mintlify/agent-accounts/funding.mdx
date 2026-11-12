@@ -1,12 +1,12 @@
 ---
 title: "Funding"
-description: "Get money into the Global Account an agent spends from: platform deposits and quotes, and agent-created Lightning invoices and stablecoin addresses."
+description: "Get money into the Global Account an agent spends from: platform deposits and quotes, bank transfers, pulls from the customer's own bank account, and agent-created Lightning invoices and stablecoin addresses."
 icon: "/images/icons/arrow-inbox.svg"
 "og:image": "/images/og/og-agents-playground-v2.webp"
 ---
 
 <Note>
-The Agents API is experimental and in limited availability. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+The Agents API must be enabled for your platform; until it is, agent endpoints answer `403`. To enable it, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
 </Note>
 
 An agent spends from the customer's Global Account, so funding an agent account means funding that Embedded Wallet. Incoming funds never need the customer's signature or approval. There are two ways in: your platform funds the account as it funds any internal account, or the agent creates a deposit target the customer (or anyone) pays.
@@ -17,9 +17,9 @@ A Global Account is an internal account, so every way you already fund internal 
 
 See [Fund the account](/global-accounts/implementation-overview#4-fund-the-account) in the Global Accounts walkthrough for the request.
 
-<Info>
-Pulling money into an agent account from the customer's linked bank account (ACH debit) is coming soon.
-</Info>
+### Bank transfers to the customer's account details
+
+Once a business customer is verified, its USD internal account carries a US account and routing number: the `USD_ACCOUNT` entry in its `fundingPaymentInstructions`. The account number is unique to that account, so its clients can pay it by ordinary bank transfer without a reference.
 
 ## Deposits the agent creates
 
@@ -32,6 +32,8 @@ With the `RECEIVE_FUNDS` permission, the agent can create a deposit target for t
 | `TRON` | `USDT` only | A deposit address on Tron |
 
 `destinationInternalAccountId` must belong to the agent's customer and be allowed by the agent's policy.
+
+To pull from the customer's own bank account instead, see [Pull from the customer's bank account](#pull-from-the-customers-bank-account).
 
 <CodeGroup>
 ```bash Lightning
@@ -94,9 +96,19 @@ Where Grid funds a chain deposit through a quote instead, the address is the quo
 
 ### Tracking a deposit
 
-Read a deposit with `GET /agents/me/deposits/{depositId}`. `status` is `PENDING`, `PROCESSING`, `COMPLETED`, `EXPIRED`, `FAILED` or `REFUNDED`. The transaction that pays a deposit carries the deposit's `quoteId`, so you can match them, and your platform receives the usual `INCOMING_PAYMENT` webhook. A deposit reported `FAILED` or `EXPIRED` can still become `COMPLETED` when funds arrive late; you then receive `INCOMING_PAYMENT` for its transaction again, now `COMPLETED`.
+Read a deposit with `GET /agents/me/deposits/{depositId}`. `status` is `PENDING`, `PROCESSING`, `COMPLETED`, `EXPIRED`, `FAILED` or `REFUNDED`. The transaction that pays a deposit carries the deposit's `quoteId`, so you can match them, and your platform receives the usual `INCOMING_PAYMENT` webhook. Except for bank pulls, a deposit reported `FAILED` or `EXPIRED` can still become `COMPLETED` when funds arrive late; you then receive `INCOMING_PAYMENT` for its transaction again, now `COMPLETED`.
 
 A `503` means the deposit provider is unavailable or holding the order for review. Retry with the same `Idempotency-Key`.
+
+### Pull from the customer's bank account
+
+Where your platform enables external-account pulls, the agent can ask to pull USD from one of the customer's own US bank accounts into their USDB Global Account with `sourceNetwork: ACH_PULL`. Until then, the request is refused with `403` (`ACH_PULL_NOT_ENABLED`).
+
+1. Your backend validates the customer's bank account through Plaid and records it with `POST /agents/{agentId}/external-accounts/{externalAccountId}/ach-validations`. A pull needs an `ACTIVE` USD external account of the agent's customer with a recorded validation.
+2. The agent creates the deposit with `POST /agents/me/deposits`, giving `sourceCurrency: USD`, `amount` in cents, `sourceExternalAccountId`, and the customer's USDB `EMBEDDED_WALLET` as `destinationInternalAccountId`. This moves no money. The deposit is `PENDING` and carries `achPull.authorization.text`, the debit authorization the customer must accept, and `achPull.limits`, how much more the customer can pull.
+3. Your product shows that text verbatim to the signed-in customer (for a business, an admin). When they accept, your backend calls `POST /agents/{agentId}/deposits/{depositId}/authorize-debit` with platform credentials, sending the text's `textVersion` and `textSha256`.
+
+On success the debit is submitted, the deposit becomes `PROCESSING`, and the amount is credited to the Global Account at once. It becomes `COMPLETED` when the debit settles, or `FAILED` if Grid refuses it or the bank returns it (`achPull.returnCode`). A deposit that is not authorized within 30 minutes becomes `EXPIRED`. The agent can never authorize a debit itself.
 
 ## Limits before verification
 

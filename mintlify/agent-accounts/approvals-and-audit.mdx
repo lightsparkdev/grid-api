@@ -6,7 +6,7 @@ icon: "/images/icons/receipt-check.svg"
 ---
 
 <Note>
-The Agents API is experimental and in limited availability. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+The Agents API must be enabled for your platform; until it is, agent endpoints answer `403`. To enable it, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
 </Note>
 
 Every money movement an agent asks for is an `AgentAction`. Grid creates it, decides whether it can run on its own, and when it can't, holds it in `PENDING_APPROVAL` until your platform sends the customer's decision. Grid owns the approval state and the execution; your product owns how the request reaches the customer.

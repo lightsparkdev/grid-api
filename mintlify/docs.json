@@ -104,7 +104,7 @@
             ]
           },
           {
-            "group": "Agents (experimental)",
+            "group": "Agents",
             "pages": [
               "global-accounts/agents/overview",
               "global-accounts/agents/policies-and-permissions",
@@ -129,13 +129,19 @@
             "group": "Overview",
             "pages": [
               "agent-accounts/demo",
-              "agent-accounts/index",
-              "agent-accounts/implementation-overview"
+              "agent-accounts/index"
             ]
           },
           {
-            "group": "Agents (experimental)",
+            "group": "Add to your AI app",
             "pages": [
+              "agent-accounts/ai-app-connector"
+            ]
+          },
+          {
+            "group": "Build on the Agents API",
+            "pages": [
+              "agent-accounts/implementation-overview",
               "agent-accounts/creating-agents",
               "agent-accounts/policies-and-permissions",
               "agent-accounts/spending-limits",

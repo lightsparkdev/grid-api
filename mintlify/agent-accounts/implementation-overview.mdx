@@ -1,13 +1,16 @@
 ---
-title: "Implementation overview"
-description: "End-to-end integration: create an agent with a policy, connect the agent software, delegate signing, fund the account, and handle approvals."
+title: "Agents API integration"
+sidebarTitle: "API integration"
+description: "For Grid platforms: create agents for your customers, connect their agent software, delegate signing, fund the account, and handle approvals from your backend."
 icon: "/images/icons/code.svg"
 "og:image": "/images/og/og-agents-playground-v2.webp"
 ---
 
 <Note>
-The Agents API is experimental and in limited availability. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+The Agents API must be enabled for your platform; until it is, agent endpoints answer `403`. To enable it, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
 </Note>
+
+This guide is for Grid platforms adding agents for their own customers. If you build an AI app and want your users to get a Lightspark account inside it, see [AI app connector](/agent-accounts/ai-app-connector) instead.
 
 This page walks the happy path from a verified customer to an agent that pays on its own under a limit and asks the customer above it. Each step links to the page that covers it in depth.
 

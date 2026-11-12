@@ -1,0 +1,44 @@
+---
+title: "Add Lightspark to your AI app"
+sidebarTitle: "AI app connector"
+description: "List Lightspark as a connector in your AI app so your users can open an account, get paid, pay people and run a business through your assistant, with no payments backend of your own."
+icon: "/images/icons/agent.svg"
+"og:image": "/images/og/og-agents-playground-v2.webp"
+---
+
+<Note>
+The Lightspark connector is in limited availability. To list it in your app, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+</Note>
+
+Lightspark runs an MCP server your app can add as a connector. Your users connect their Lightspark account to your assistant through OAuth, and the assistant can then check balances, add money, pay people, use cards and, for a business, send invoices and manage team budgets, all within limits the user agrees to. Lightspark handles sign-up, identity checks, approvals and the account itself. You do not need a Grid platform or a backend of your own.
+
+## How a user connects
+
+1. The user picks Lightspark in your app's connector list.
+2. Your app starts a standard MCP OAuth flow. Lightspark supports dynamic client registration, or can issue your app its own client.
+3. The user signs in or signs up with Lightspark, for example with a one-time code sent to their email, and accepts the terms. Lightspark opens their account.
+4. The user sees what your app is asking for, read-only or full access and the spending limits that come with it, and approves. For full access, their browser authorizes Lightspark to sign the assistant's payments within those limits.
+5. Your app receives its token, and the assistant can call Lightspark.
+
+## Approvals stay with the user
+
+Payments above the user's approval threshold wait for them. Lightspark sends them an email or text, and they approve or decline on Lightspark's page. The user can pause or disconnect your app at any time from their Lightspark account.
+
+## Getting paid
+
+Once verified, a user gets a US bank account and routing number that anyone can pay by bank transfer, alongside crypto and Lightning. A business can also send a client an invoice: the client gets a payment page, and the payment is matched to the invoice when it arrives.
+
+## For businesses
+
+A user can set up a business account through the assistant, complete business verification, invite team members, and give each member's assistant its own budget on the business's shared balance. Admins can be required to approve team payments.
+
+## What your app does
+
+- Add the connector and pass the OAuth flow through to the user.
+- Show the assistant's results. Where your app renders MCP Apps, Lightspark returns cards for things like invoices.
+
+Everything else, including identity verification, approvals, notifications and the account itself, runs on Lightspark.
+
+## Building your own account experience instead?
+
+If you are a Grid platform and want agents to act on accounts your customers already hold with you, with approvals in your own app, use the [Agents API](/agent-accounts/implementation-overview).
