@@ -19,7 +19,7 @@ Treat approval requests like first-class user tasks. They should be easy to find
 
 When an agent submits an action that is not eligible for automatic execution, Grid creates an `AgentAction` in `PENDING_APPROVAL` status and fires an `AGENT_ACTION.PENDING_APPROVAL` webhook to your backend. The full action payload is included in the webhook body so you can render the approval UI and send a push notification to the customer without a second API call.
 
-1. Agent submits an action (quote execution or transfer).
+1. Agent submits an action, such as executing a quote, issuing a purchase card, sending a claimable payout, or starting a payout run.
 2. Grid creates an `AgentAction` with `status: PENDING_APPROVAL` and returns it to the agent.
 3. Grid fires `AGENT_ACTION.PENDING_APPROVAL` to your [webhook endpoint](/global-accounts/platform-tools/webhooks) with the full action payload.
 4. Your backend sends a push notification to the customer.
@@ -60,8 +60,9 @@ An approval is not always a guarantee that the action will execute. Your product
 - `agentId` — the agent that submitted the action
 - `customerId` / `platformCustomerId` — the customer on whose behalf the agent acted
 - `status` — `PENDING_APPROVAL` while awaiting a decision; transitions to `APPROVED`, `REJECTED`, or `FAILED`
-- `type` — `EXECUTE_QUOTE`
-- `quote` — the full quote object including amounts, currencies, exchange rate, and destination
+- `type`: one of `EXECUTE_QUOTE`, `ISSUE_PURCHASE_CARD`, `CLAIMABLE_PAYOUT`, `USE_STORED_CARD`, `CREATE_SETTLEMENT_RULE`, `UPDATE_SETTLEMENT_RULE`, or `PAYOUT_RUN`
+- `quote`: for `EXECUTE_QUOTE`, the full quote object including amounts, currencies, exchange rate, and destination
+- `purchaseCard`, `claimablePayout`, `storedCardUse`, `settlementRule`, `payoutRun`: the details for the matching action type
 - `transaction` — populated after the action is approved and execution begins; absent while pending or rejected
 - `rejectionReason` — optional reason string set when your platform rejects the action
 - `createdAt` / `updatedAt` — timestamps for the action lifecycle

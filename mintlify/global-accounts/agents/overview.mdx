@@ -1,6 +1,6 @@
 ---
 title: "Overview"
-description: "Experimental native Grid functionality for connecting AI agents to Global Accounts with managed policy and approval flows"
+description: "Let your customers' AI agents get paid, pay people and spend, from an account the customer owns, under limits and approvals Grid enforces"
 icon: "/images/icons/agent.svg"
 "og:image": "/images/og/og-global-accounts.webp"
 ---
@@ -8,10 +8,12 @@ icon: "/images/icons/agent.svg"
 import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
 <Note>
-This section describes experimental Grid functionality. Details may evolve as the agent product surface expands. Agent connectivity is currently limited availability. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+Agent connectivity is currently limited availability. To request access, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
 </Note>
 
-Use Grid-managed agent connectivity to let your users connect AI agents to Global Accounts. The connected agent may run in your product, on the user's device, or through a third-party tool such as OpenClaw or Codex. Grid does not run the agent runtime. Grid powers install, delegated credentials, policy evaluation, approval state, and execution boundaries for agent-initiated actions, while your product surfaces the connection, approval, and history experience to the end user.
+Let your customers connect an AI agent to their Global Account and hand it real financial work: getting paid, paying people and suppliers, buying online, and splitting revenue. This works for individuals and for businesses. A business can give each team member's agent its own budget on one shared balance, pay contractors who have no account, and pay a whole list of people in one approved run.
+
+The customer keeps ownership of the account. Grid checks every agent action against the policy the customer set, and either runs it, refuses it, or holds it for the customer to approve in your product. The agent can run in your product, on the user's device, or in a third-party tool such as OpenClaw or Codex. Grid does not run the agent. It provides the install flow, the agent's credentials, policy checks, approvals and the audit trail, and your product shows the connection, approvals and history to the customer.
 
 <video
   controls
@@ -77,7 +79,7 @@ sequenceDiagram
 1. Your platform creates or links a Global Account for the customer.
 2. The customer connects an existing agent through a Grid-powered install flow embedded in your product.
 3. Grid creates the agent connection, provisions delegated credentials, and saves the configured policy.
-4. The agent requests an action such as creating a quote, creating an external account, or executing a withdrawal.
+4. The agent requests an action such as paying someone, issuing a purchase card, or proposing a revenue split.
 5. Grid applies the saved policy for that connection.
 6. The request is either denied, executed automatically, or delivered to your product as a permission request.
 7. Your user reviews the request in a trusted surface you control.
