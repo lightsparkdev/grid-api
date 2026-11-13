@@ -623,7 +623,7 @@ To verify the signature:
 1. **Obtain the Grid Public Key**: You should receive your P-256 (secp256r1) public key in PEM format from Grid during your integration. Store it securely (e.g., as an environment variable).
 2. **Get the Raw Request Body**: It is crucial to use the exact raw byte string of the incoming request body. Do not parse or modify it before hashing.
 3. **Create a SHA-256 Hash of the Request Body**: Compute the SHA-256 hash of the raw request body.
-4. **Extract the Signature**: The `X-Grid-Signature` header contains a JSON string, for example: `{"v": "1", "s": "BASE64_ENCODED_SIGNATURE"}`. Parse this JSON and extract the Base64-encoded signature string from the `s` field.
+4. **Extract the Signature**: The `X-Grid-Signature` header contains a JSON string, for example: `{"v": 1, "s": "BASE64_ENCODED_SIGNATURE"}`. Parse this JSON and extract the Base64-encoded signature string from the `s` field.
 5. **Decode the Signature**: Base64 decode the extracted signature string to get the raw signature bytes.
 6. **Verify the Signature**: Use a standard cryptographic library that supports ECDSA with the P-256 curve and SHA-256. Verify the SHA-256 hash of the request body (from step 3) against the decoded signature bytes (from step 5) using your Grid P-256 public key.
 
