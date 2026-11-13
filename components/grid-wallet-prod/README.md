@@ -51,7 +51,7 @@ and the Activity row, and the balance is re-read from the API.
 ## Webhooks
 
 `POST /api/webhooks` verifies `X-Grid-Signature` against `GRID_WEBHOOK_PUBKEY` (SHA256/ECDSA over
-the raw body, P-256 SPKI PEM). Grid sends `{"v":"1","s":"<base64>"}`; a bare base64 header is also
+the raw body, P-256 SPKI PEM). Grid sends `{"v":1,"s":"<base64>"}`; a bare base64 header is also
 accepted, per the docs. Verified deliveries are **pushed** to the panel over SSE
 (`GET /api/webhooks/stream`) — nothing polls.
 

@@ -18,7 +18,7 @@ describe('verifyGridSignature', () => {
   // short field names, and a STRING version. Getting this wrong 401s every real
   // delivery while a self-signed test using the wrong shape still passes.
   it('accepts Grid’s {"v","s"} header', () => {
-    const h = JSON.stringify({ v: '1', s: sign(body, privateKey) });
+    const h = JSON.stringify({ v: 1, s: sign(body, privateKey) });
     expect(verifyGridSignature(body, h, pem)).toBe(true);
   });
 
@@ -63,6 +63,7 @@ describe('verifyGridSignature', () => {
 
   describe('parseSignatureHeader', () => {
     it('reads both JSON field namings', () => {
+      expect(parseSignatureHeader('{"v":1,"s":"AAA"}')).toEqual({ version: '1', signature: 'AAA' });
       expect(parseSignatureHeader('{"v":"1","s":"AAA"}')).toEqual({ version: '1', signature: 'AAA' });
       expect(parseSignatureHeader('{"version":1,"signature":"AAA"}')).toEqual({
         version: '1',
