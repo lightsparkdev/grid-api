@@ -469,8 +469,6 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
       "accountType": "INR_ACCOUNT",
       "accountNumber": "000111222333",
       "ifsc": "HDFC0001234",
-      "rail": "NEFT",
-      "bankName": "HDFC Bank",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
         "fullName": "Priya Sharma",
@@ -489,9 +487,10 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 ```
 
 <Note>
-  UPI requires `vpa`. NEFT and RTGS require `accountNumber` (9-18 digits), `ifsc`
-  (11-character branch code), and `rail` (`NEFT` or `RTGS`). `bankName` is optional
-  on both. Do not send `paymentRails` — Grid returns it on the created account.
+  UPI requires `vpa`. NEFT and RTGS require `accountNumber` (9-18 digits) and `ifsc`
+  (11-character branch code). Do not send `paymentRails`. Grid returns it on the
+  created account. Grid picks NEFT or RTGS for each payout from the amount. To pick
+  the rail yourself, set `destination.paymentRail` when you create the quote.
 </Note>
 </Tab>
 
