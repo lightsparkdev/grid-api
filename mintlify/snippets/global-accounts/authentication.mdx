@@ -77,6 +77,8 @@ The `challenge` on `POST /auth/credentials` is the one your backend issued for W
 
 The client never talks to Grid. It talks to your integrator backend — the snippets below simulate that call with `fetch('/my-backend/...')`, which your backend then relays to Grid.
 
+Grid accepts only ES256 (-7) and RS256 (-257) passkeys, so request both in `pubKeyCredParams` with ES256 first.
+
 <CodeGroup>
 ```typescript Web (TypeScript)
 // 1. Ask your backend for a registration challenge.
@@ -96,7 +98,10 @@ const attestation = (await navigator.credentials.create({
       name: user.email,
       displayName: user.displayName,
     },
-    pubKeyCredParams: [{ type: "public-key", alg: -7 }], // ES256
+    pubKeyCredParams: [
+      { type: "public-key", alg: -7 }, // ES256
+      { type: "public-key", alg: -257 }, // RS256
+    ],
     authenticatorSelection: { residentKey: "required", userVerification: "required" },
     timeout: 60_000,
   },

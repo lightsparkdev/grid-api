@@ -41,9 +41,9 @@ properties:
       Base64url-encoded signature produced by the authenticator over
       `authenticatorData || SHA-256(clientDataJSON)`. Corresponds to
       `AuthenticatorAssertionResponse.signature`. The signature byte
-      format is determined by the credential's public-key algorithm —
-      DER-encoded ECDSA for ES256 (P-256, typical for passkeys), PKCS#1
-      v1.5 for RS256, or a raw 64-byte signature for EdDSA.
+      format follows the credential's public-key algorithm. It is
+      DER-encoded ECDSA for ES256 (P-256, typical for passkeys) or PKCS#1
+      v1.5 for RS256.
     example: MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900
   userHandle:
     type: string

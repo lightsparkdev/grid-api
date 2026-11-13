@@ -28,7 +28,10 @@ properties:
     description: >-
       Base64url-encoded CBOR attestation object produced by the authenticator
       during registration. Corresponds to
-      `AuthenticatorAttestationResponse.attestationObject`.
+      `AuthenticatorAttestationResponse.attestationObject`. Grid accepts a
+      passkey whose public key is ES256 (COSE algorithm -7) or RS256 (-257).
+      Any other algorithm, such as EdDSA (-8), is refused with
+      `400 INVALID_INPUT` on `attestation.attestationObject`.
     example: o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFPdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQHSlyRHIdWleVqO24-6ix7JFWODqDWo_arvEz3Se5EgIFHkcVjZ4F5XDSBreIHsWRilRnKmaaqlqK3V2_4XtYs2pQECAyYgASFYID5PQTZQQg6haZFQWFzqfAOyQ_ENsMH8xxQ4GRiNPsqrIlggU8IVUOV8qpgk_Jh-OTaLuZL52KdX1fTht07X4DiQPow
   transports:
     type: array

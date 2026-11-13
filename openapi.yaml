@@ -7601,7 +7601,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthSignedRequestChallenge'
         '400':
-          description: Bad request, including a customer that is not a business or an email already on the account
+          description: Bad request, including a customer that is not a business, an email already on the account, or a passkey key algorithm other than ES256 (-7) or RS256 (-257)
           content:
             application/json:
               schema:
@@ -7861,7 +7861,7 @@ paths:
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
-          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while the account holder already has one (administrators' credentials are not counted), `SMS_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an SMS OTP credential while one already exists, `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account, or `INVALID_INPUT` when an OAuth `oidcToken` is malformed or has an unsupported issuer.
+          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while the account holder already has one (administrators' credentials are not counted), `SMS_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an SMS OTP credential while one already exists, `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account, or `INVALID_INPUT` when an OAuth `oidcToken` is malformed or has an unsupported issuer, or when a passkey's key algorithm is not ES256 (-7) or RS256 (-257).
           content:
             application/json:
               schema:
@@ -35038,7 +35038,7 @@ components:
           example: eyJjaGFsbGVuZ2UiOiJBcktRaTJ5QVlIUGxnbkpORkJsbmVJd2NoUWRXWEJPVHJkQi1BbU1VQjIxTHgiLCJjbGllbnRFeHRlbnNpb25zIjp7fSwiaGFzaEFsZ29yaXRobSI6IlNIQS0yNTYiLCJvcmlnaW4iOiJodHRwczovL2Rldi5kb250bmVlZGEucHciLCJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIn0
         attestationObject:
           type: string
-          description: Base64url-encoded CBOR attestation object produced by the authenticator during registration. Corresponds to `AuthenticatorAttestationResponse.attestationObject`.
+          description: Base64url-encoded CBOR attestation object produced by the authenticator during registration. Corresponds to `AuthenticatorAttestationResponse.attestationObject`. Grid accepts a passkey whose public key is ES256 (COSE algorithm -7) or RS256 (-257). Any other algorithm, such as EdDSA (-8), is refused with `400 INVALID_INPUT` on `attestation.attestationObject`.
           example: o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjFPdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KBFAAAAAAAAAAAAAAAAAAAAAAAAAAAAQQHSlyRHIdWleVqO24-6ix7JFWODqDWo_arvEz3Se5EgIFHkcVjZ4F5XDSBreIHsWRilRnKmaaqlqK3V2_4XtYs2pQECAyYgASFYID5PQTZQQg6haZFQWFzqfAOyQ_ENsMH8xxQ4GRiNPsqrIlggU8IVUOV8qpgk_Jh-OTaLuZL52KdX1fTht07X4DiQPow
         transports:
           type: array
@@ -35357,7 +35357,7 @@ components:
           example: PdxHEOnAiLIp26idVjIguzn3Ipr_RlsKZWsa-5qK-KABAAAAkA
         signature:
           type: string
-          description: Base64url-encoded signature produced by the authenticator over `authenticatorData || SHA-256(clientDataJSON)`. Corresponds to `AuthenticatorAssertionResponse.signature`. The signature byte format is determined by the credential's public-key algorithm — DER-encoded ECDSA for ES256 (P-256, typical for passkeys), PKCS#1 v1.5 for RS256, or a raw 64-byte signature for EdDSA.
+          description: Base64url-encoded signature produced by the authenticator over `authenticatorData || SHA-256(clientDataJSON)`. Corresponds to `AuthenticatorAssertionResponse.signature`. The signature byte format follows the credential's public-key algorithm. It is DER-encoded ECDSA for ES256 (P-256, typical for passkeys) or PKCS#1 v1.5 for RS256.
           example: MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900
         userHandle:
           type: string
