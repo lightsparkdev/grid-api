@@ -24739,6 +24739,7 @@ components:
         - TRY_ACCOUNT
         - CHF_ACCOUNT
         - RON_ACCOUNT
+        - KRW_ACCOUNT
       description: Type of external account or wallet
       example: AED_ACCOUNT
     BaseExternalAccountInfo:
@@ -30208,6 +30209,136 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/RonBeneficiary'
                   BUSINESS: '#/components/schemas/RonBusinessBeneficiary'
+    KrwAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - accountNumber
+        - bankName
+      properties:
+        accountType:
+          type: string
+          enum:
+            - KRW_ACCOUNT
+        accountNumber:
+          type: string
+          description: South Korean bank account number
+          minLength: 1
+          maxLength: 34
+          example: '1002123456789'
+        bankName:
+          type: string
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
+          minLength: 1
+          maxLength: 255
+          example: Kookmin Bank
+      example:
+        accountType: KRW_ACCOUNT
+        accountNumber: '1002123456789'
+        bankName: Kookmin Bank
+    KrwAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/KrwAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+    KrwBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          maxLength: 250
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    KrwBusinessBeneficiary:
+      title: Business Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - legalName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+        legalName:
+          type: string
+          maxLength: 250
+          description: The legal name of the business
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          maxLength: 100
+          description: The company registration number of the business
+        taxId:
+          type: string
+          maxLength: 100
+          description: The tax identification number of the business
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    KrwExternalAccountInfo:
+      title: KRW Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/KrwAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/KrwBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/KrwBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/KrwBeneficiary'
+                  BUSINESS: '#/components/schemas/KrwBusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountInfo'
@@ -30263,6 +30394,7 @@ components:
         - $ref: '#/components/schemas/TryExternalAccountInfo'
         - $ref: '#/components/schemas/ChfExternalAccountInfo'
         - $ref: '#/components/schemas/RonExternalAccountInfo'
+        - $ref: '#/components/schemas/KrwExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -30320,6 +30452,7 @@ components:
           TRY_ACCOUNT: '#/components/schemas/TryExternalAccountInfo'
           CHF_ACCOUNT: '#/components/schemas/ChfExternalAccountInfo'
           RON_ACCOUNT: '#/components/schemas/RonExternalAccountInfo'
+          KRW_ACCOUNT: '#/components/schemas/KrwExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
@@ -31232,6 +31365,26 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/RonBeneficiary'
                   BUSINESS: '#/components/schemas/RonBusinessBeneficiary'
+    KrwExternalAccountCreateInfo:
+      title: KRW Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/KrwAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/KrwBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/KrwBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/KrwBeneficiary'
+                  BUSINESS: '#/components/schemas/KrwBusinessBeneficiary'
     ExternalAccountCreateInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountCreateInfo'
@@ -31287,6 +31440,7 @@ components:
         - $ref: '#/components/schemas/TryExternalAccountCreateInfo'
         - $ref: '#/components/schemas/ChfExternalAccountCreateInfo'
         - $ref: '#/components/schemas/RonExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/KrwExternalAccountCreateInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -31343,6 +31497,7 @@ components:
           TRY_ACCOUNT: '#/components/schemas/TryExternalAccountCreateInfo'
           CHF_ACCOUNT: '#/components/schemas/ChfExternalAccountCreateInfo'
           RON_ACCOUNT: '#/components/schemas/RonExternalAccountCreateInfo'
+          KRW_ACCOUNT: '#/components/schemas/KrwExternalAccountCreateInfo'
     CustomerExternalAccountCreateRequest:
       type: object
       required:
