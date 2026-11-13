@@ -53,5 +53,6 @@ enum:
 - TRY_ACCOUNT
 - CHF_ACCOUNT
 - RON_ACCOUNT
+- KRW_ACCOUNT
 description: Type of external account or wallet
 example: AED_ACCOUNT

@@ -1,0 +1,19 @@
+title: KRW Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/KrwAccountInfoBase.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/KrwBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/KrwBusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/KrwBeneficiary.yaml
+          BUSINESS: ../common/KrwBusinessBeneficiary.yaml

@@ -1,0 +1,28 @@
+type: object
+required:
+- accountType
+- accountNumber
+- bankName
+properties:
+  accountType:
+    type: string
+    enum:
+    - KRW_ACCOUNT
+  accountNumber:
+    type: string
+    description: South Korean bank account number
+    minLength: 1
+    maxLength: 34
+    example: '1002123456789'
+  bankName:
+    type: string
+    description: The name of the bank. Must be one of the `bankName` values `GET /discoveries`
+      returns for this country and currency. Send it exactly as returned; any other
+      name is rejected.
+    minLength: 1
+    maxLength: 255
+    example: Kookmin Bank
+example:
+  accountType: KRW_ACCOUNT
+  accountNumber: '1002123456789'
+  bankName: Kookmin Bank
