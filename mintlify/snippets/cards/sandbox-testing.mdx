@@ -56,7 +56,10 @@ Outcomes are controlled by the last three characters of
 network's acceptor-name field. A longer one is rejected with `400`
 `INVALID_INPUT`.
 
-The response is the resulting `CardTransaction`.
+The endpoint returns `202` with a body containing only an
+`issuerTransactionToken`. The resulting transaction arrives asynchronously
+via the `CARD_TRANSACTION` webhook; use the token to correlate that event
+with the simulate call.
 
 ## Clearing simulate
 
