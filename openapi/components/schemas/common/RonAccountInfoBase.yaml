@@ -1,0 +1,19 @@
+type: object
+required:
+- accountType
+- iban
+properties:
+  accountType:
+    type: string
+    enum:
+    - RON_ACCOUNT
+  iban:
+    type: string
+    description: Romanian IBAN (24 characters, starting with RO)
+    example: RO49AAAA1B31007593840000
+    minLength: 24
+    maxLength: 24
+    pattern: ^RO[0-9]{2}[A-Z]{4}[0-9A-Z]{16}$
+example:
+  accountType: RON_ACCOUNT
+  iban: RO49AAAA1B31007593840000
