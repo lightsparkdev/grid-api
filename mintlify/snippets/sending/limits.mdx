@@ -40,14 +40,17 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/exchange-rates?sourceCur
       "receivingAmount": 825000,
       "exchangeRate": 0.012121,
       "fees": { "fixed": 100, "total": 150 },
-      "updatedAt": "2025-02-05T12:00:00Z"
+      "updatedAt": "2025-02-05T12:00:00Z",
+      "isAvailable": true
     }
   ]
 }
 ```
 
 `minSendingAmount` and `maxSendingAmount` are in the smallest unit of `sourceCurrency` — on
-this corridor, \$1.00 to \$100,000.00.
+this corridor, \$1.00 to \$100,000.00. `isAvailable` indicates whether the corridor is currently
+accepting payments — check it before creating a quote, as an unavailable corridor returns
+`403 CORRIDOR_UNDER_MAINTENANCE`.
 
 Omit `destinationCurrency` to get every corridor available from a source currency, each with
 its own bounds and rail. Repeat the parameter to compare a few:
