@@ -1,0 +1,19 @@
+title: RON Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/RonAccountInfoBase.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/RonBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/RonBusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/RonBeneficiary.yaml
+          BUSINESS: ../common/RonBusinessBeneficiary.yaml

@@ -51,6 +51,7 @@ oneOf:
 - $ref: ./IlsExternalAccountCreateInfo.yaml
 - $ref: ./TryExternalAccountCreateInfo.yaml
 - $ref: ./ChfExternalAccountCreateInfo.yaml
+- $ref: ./RonExternalAccountCreateInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -106,3 +107,4 @@ discriminator:
     ILS_ACCOUNT: ./IlsExternalAccountCreateInfo.yaml
     TRY_ACCOUNT: ./TryExternalAccountCreateInfo.yaml
     CHF_ACCOUNT: ./ChfExternalAccountCreateInfo.yaml
+    RON_ACCOUNT: ./RonExternalAccountCreateInfo.yaml
