@@ -53,6 +53,15 @@ own dated `CardTransaction` row (`direction: CREDIT`) linked to the
 purchase via `originalTransactionId`; the purchase keeps its `SETTLED`
 status.
 
+## Foreign transaction fee
+
+A fee charged when the merchant's country differs from the country the card
+was issued in. It is 0.5% of the cleared amount by default, and the rate is set
+per platform. The fee is held at authorization and collected when the purchase
+settles. A return refunds the fee on the returned amount. It appears in the
+card transaction's `fees` with `type: "DEBIT_CARD_FOREIGN_TRANSACTION"`. See
+[Reconciliation](/cards/transactions/reconciliation#fees).
+
 ## Exception
 
 A transaction that settled to the card network but whose corresponding
