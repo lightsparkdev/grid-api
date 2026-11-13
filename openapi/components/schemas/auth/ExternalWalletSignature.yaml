@@ -1,0 +1,9 @@
+type: string
+pattern: '^0x[0-9a-fA-F]{130}$'
+description: >-
+  The wallet's signature over the exact UTF-8 bytes of `payloadToSign`, made
+  the way the credential's `chain` signs messages. For `ETHEREUM`, the
+  `0x`-prefixed 65-byte `personal_sign` result (r, s and v), as wallets and
+  `eth_sign` libraries return it. Sign the string as given, without parsing,
+  re-serializing or trimming it.
+example: '0x87f6856afaa7684bc6ecccef96246c155da984e7889dbdda1ae59940bdab8e676cd3055bd38ac073cd5710e3040f1ed08073ca026266caeb097213d52665c4c01b'

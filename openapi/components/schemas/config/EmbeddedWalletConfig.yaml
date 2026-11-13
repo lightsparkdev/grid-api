@@ -54,3 +54,19 @@ properties:
     maxLength: 512
     description: URL to a PNG logo for the OTP email. Resized to 340x124px.
     example: https://acme.com/logo.png
+  walletProvisioning:
+    $ref: ./WalletProvisioning.yaml
+    description: |
+      When new customers' embedded wallets are created. Defaults to
+      `AT_CUSTOMER_CREATE`. A change applies to customers created after it;
+      existing customers keep their mode.
+  sessionLifetime:
+    type: integer
+    minimum: 60
+    description: |
+      How long each new embedded-wallet session lasts, in seconds, for this
+      platform's customers: every sign-in and every session refresh. Defaults
+      to 900 (15 minutes) when not set. At most the maximum a platform can
+      configure, currently one year; a value above it is rejected. A change
+      applies to sessions created after it.
+    example: 3600

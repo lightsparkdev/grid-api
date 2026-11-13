@@ -1,0 +1,41 @@
+title: External Wallet Auth Challenge
+description: >-
+  Extended `AuthMethod` shape returned for `EXTERNAL_WALLET` credentials from
+  `POST /auth/credentials/{id}/challenge`. The wallet signs `payloadToSign`
+  and the client sends that signature, with `requestId` as the `Request-Id`
+  header, to `POST /auth/credentials/{id}/verify`.
+allOf:
+  - $ref: ./AuthMethod.yaml
+  - type: object
+    required:
+      - payloadToSign
+      - requestId
+      - expiresAt
+    properties:
+      type:
+        type: string
+        enum:
+          - EXTERNAL_WALLET
+        description: Always `EXTERNAL_WALLET` for this shape.
+      payloadToSign:
+        type: string
+        description: >-
+          The exact canonical JSON of the session request the wallet's
+          signature authorizes. It registers the client's own
+          `clientPublicKey` as the session key. Have the wallet sign this
+          string as given, without parsing, re-serializing or trimming it.
+        example: '{"organizationId":"5c1e8a3f-7b2d-4e9a-9c41-2f6d8b0a1e37","parameters":{"expirationSeconds":"900","publicKey":"02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"},"timestampMs":"1775662500000","type":"ACTIVITY_TYPE_STAMP_LOGIN"}'
+      requestId:
+        type: string
+        description: >-
+          Grid-issued `Request:<uuid>` identifier for this pending
+          authentication. Echo it exactly as the `Request-Id` header on
+          `POST /auth/credentials/{id}/verify`.
+        example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      expiresAt:
+        type: string
+        format: date-time
+        description: >-
+          Timestamp after which the challenge is no longer valid. Request a
+          fresh one via `POST /auth/credentials/{id}/challenge`.
+        example: '2026-04-08T15:35:00Z'

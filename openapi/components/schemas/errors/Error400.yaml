@@ -42,6 +42,7 @@ properties:
       | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | The account holder already has an EMAIL_OTP credential on the target internal account; the holder may have one. Administrators' credentials, added with `POST /auth/admin-credentials`, are not counted |
       | SMS_OTP_CREDENTIAL_ALREADY_EXISTS | An SMS_OTP credential is already registered on the target internal account; only one SMS OTP credential is supported per internal account at this time |
       | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential with the same WebAuthn credentialId is already registered on the target internal account |
+      | EXTERNAL_WALLET_CREDENTIAL_ALREADY_EXISTS | An EXTERNAL_WALLET credential for the same wallet is already registered on the target internal account |
       | AUTH_CREDENTIAL_VERIFICATION_REQUIRED | The new email or phone number has no verified replacement credential |
       | AUTH_CREDENTIAL_VERIFICATION_EXPIRED | The replacement credential's verification has expired |
       | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
@@ -110,6 +111,7 @@ properties:
       - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
       - SMS_OTP_CREDENTIAL_ALREADY_EXISTS
       - PASSKEY_CREDENTIAL_ALREADY_EXISTS
+      - EXTERNAL_WALLET_CREDENTIAL_ALREADY_EXISTS
       - AUTH_CREDENTIAL_VERIFICATION_REQUIRED
       - AUTH_CREDENTIAL_VERIFICATION_EXPIRED
       - STABLECOIN_PROVIDER_ACCOUNT_INVALID
