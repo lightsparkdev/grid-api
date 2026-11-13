@@ -167,6 +167,7 @@ post:
                       accountNumber: '****4321'
                     endToEndId: E2E-9f2c6b6f
                     uetr: f47bbdd1-3d90-44c4-998d-a02bd814d5d3
+                    instructionId: 20250815021214862B2Z1Q45804374247-1
                     transactionId: 20250815021214862B2Z1Q45804374247
                     settledAt: '2025-08-15T14:30:02Z'
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
