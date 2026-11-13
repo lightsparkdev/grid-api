@@ -89,15 +89,16 @@ The full event model is covered in
 ## Testing in Sandbox
 
 Sandbox cannot receive real authorizations from the card network, so
-it exposes three simulate endpoints that drive the same internal paths
-the issuer would call in production:
+it exposes card simulate endpoints that drive the same internal paths
+the issuer would call in production. The core three are:
 
 - `POST /sandbox/cards/{id}/simulate/authorization`
 - `POST /sandbox/cards/{id}/simulate/clearing`
 - `POST /sandbox/cards/{id}/simulate/return`
 
 Outcomes are deterministic — driven by magic-value suffixes on the
-relevant id. See [Sandbox testing](/cards/platform-tools/sandbox-testing).
+relevant id. See [Sandbox testing](/cards/platform-tools/sandbox-testing)
+for the full list, including reversal, expiry, advice and dispute routes.
 
 ## Enabling Production
 
