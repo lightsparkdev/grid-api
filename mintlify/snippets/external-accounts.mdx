@@ -493,6 +493,14 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   (11-character branch code), and `rail` (`NEFT` or `RTGS`). `bankName` is optional
   on both. Do not send `paymentRails` — Grid returns it on the created account.
 </Note>
+
+<Note>
+  When a UPI account is created, Grid checks the beneficiary name against the account
+  holder name. The response includes `beneficiaryVerificationStatus` (`MATCHED`,
+  `PARTIAL_MATCH`, `NOT_MATCHED`, or `UNSUPPORTED` if verification is unavailable) and
+  `beneficiaryVerifiedData.fullName`, the name returned by the rail. A mismatch is
+  informational and does not block account creation.
+</Note>
 </Tab>
 
 <Tab title="Nigeria">
