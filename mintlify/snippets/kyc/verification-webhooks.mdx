@@ -3,6 +3,7 @@ The `CUSTOMER.KYC_*` and `CUSTOMER.KYB_*` events above tell you the decision. Th
 | Event | Meaning | What to do |
 |-------|---------|------------|
 | `VERIFICATION.RESOLVE_ERRORS` | Blocked on missing, invalid, or rejected data | Resolve every entry in `errors`, then re-submit |
+| `VERIFICATION.READY_FOR_VERIFICATION` | All requirements met — no missing data or rejected documents remain; ready to submit | Call `POST /verifications` if you have not already submitted |
 | `VERIFICATION.PENDING_MANUAL_REVIEW` | A reviewer is assessing the case | Nothing — wait for the terminal event |
 | `VERIFICATION.IN_PROGRESS` | Submitted; provider checks are running | Nothing — wait |
 | `VERIFICATION.APPROVED` | Verification passed | Unlock funding and money movement |
@@ -113,6 +114,11 @@ app.post('/webhooks/verification-status', async (req, res) => {
       await requestOutstandingItems(data.customerId, data.errors);
       break;
     }
+
+    case 'VERIFICATION.READY_FOR_VERIFICATION':
+      // Nothing is outstanding. Submit if this verification hasn't been yet.
+      await submitVerificationIfNeeded(data.customerId);
+      break;
 
     case 'VERIFICATION.PENDING_MANUAL_REVIEW':
     case 'VERIFICATION.IN_PROGRESS':
