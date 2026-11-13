@@ -1501,6 +1501,78 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 </Note>
 </Tab>
 
+<Tab title="Switzerland">
+**Bank Transfer (IBAN)**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "currency": "CHF",
+      "platformAccountId": "ch_bank_001",
+      "accountInfo": {
+        "accountType": "CHF_ACCOUNT",
+        "iban": "CH9300762011623852957",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Anna Meier",
+          "birthDate": "1988-04-20",
+          "nationality": "CH",
+          "address": {
+            "line1": "Bahnhofstrasse 10",
+            "city": "Zurich",
+            "postalCode": "8001",
+            "country": "CH"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `iban` is required and must be a 21-character Swiss IBAN starting with `CH`.
+</Note>
+</Tab>
+
+<Tab title="Turkey">
+**Bank Transfer (IBAN)**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "currency": "TRY",
+      "platformAccountId": "tr_bank_001",
+      "accountInfo": {
+        "accountType": "TRY_ACCOUNT",
+        "iban": "TR330006100519786457841326",
+        "bankName": "Garanti BBVA",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Mehmet Yilmaz",
+          "birthDate": "1985-09-15",
+          "nationality": "TR",
+          "countryOfResidence": "TR",
+          "address": {
+            "line1": "Istiklal Caddesi 45",
+            "city": "Istanbul",
+            "postalCode": "34430",
+            "country": "TR"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `iban` must be a 26-character Turkish IBAN starting with `TR`. `bankName` is required and must match a value from `GET /discoveries?country=TR&currency=TRY`. Beneficiary requires `countryOfResidence`.
+</Note>
+</Tab>
+
 <Tab title="Hong Kong">
 **Bank Transfer**
 
