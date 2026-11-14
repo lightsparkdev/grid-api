@@ -1,4 +1,4 @@
-.PHONY: install build build-openapi mint lint lint-openapi lint-spectral lint-markdown cli-install cli-build cli
+.PHONY: install build build-openapi mint lint lint-openapi lint-spectral lint-markdown cli-install cli-build cli og
 
 install:
 	npm install
@@ -24,6 +24,9 @@ lint-spectral:
 
 lint-markdown:
 	npm run lint:markdown
+
+og:
+	cd scripts && npm install && npx playwright install chromium && node og-images.mjs
 
 cli-install:
 	cd cli && npm install
