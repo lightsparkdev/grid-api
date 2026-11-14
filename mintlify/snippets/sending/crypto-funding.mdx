@@ -12,6 +12,7 @@ Transfers can be funded via USDC and BTC on popular blockchains including Solana
 | Polygon | USDC |
 | Ethereum | USDC, USDT |
 | Plasma | USDT |
+| Stellar | USDC |
 | Arbitrum | USDC, USDT |
 | Optimism | USDC |
 | Avalanche C-Chain | USDC |
@@ -83,6 +84,10 @@ Grid automatically detects blockchain deposits and processes the transfer once f
 <Steps>
 <Step title="Send USDC to the provided address">
   Transfer the exact amount of USDC specified in `totalSendingAmount` to your chosen blockchain wallet address.
+
+  <Warning>
+    On Stellar, the address is shared, so include the instruction's `memo` with the payment. Grid credits a Stellar deposit by its memo; one sent without it is not credited automatically.
+  </Warning>
 </Step>
 
 <Step title="Grid detects the deposit">

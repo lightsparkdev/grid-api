@@ -218,6 +218,7 @@ resources:
           solana_wallet_info: '#/components/schemas/SolanaWalletExternalAccountInfo'
           tron_wallet_info: '#/components/schemas/TronWalletExternalAccountInfo'
           plasma_wallet_info: '#/components/schemas/PlasmaWalletExternalAccountInfo'
+          stellar_wallet_info: '#/components/schemas/StellarWalletExternalAccountInfo'
           arbitrum_wallet_info: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
           optimism_wallet_info: '#/components/schemas/OptimismWalletExternalAccountInfo'
           avalanche_wallet_info: '#/components/schemas/AvalancheWalletExternalAccountInfo'
@@ -950,6 +951,7 @@ openapi:
           - "$.components.schemas.PaymentSolanaWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentTronWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentPlasmaWalletInfo.allOf[0]"
+          - "$.components.schemas.PaymentStellarWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentArbitrumWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentOptimismWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentAvalancheWalletInfo.allOf[0]"
@@ -1007,6 +1009,7 @@ openapi:
           - "$.components.schemas.SolanaWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.TronWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.PlasmaWalletExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.StellarWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.ArbitrumWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.OptimismWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.AvalancheWalletExternalAccountInfo.allOf[0]"

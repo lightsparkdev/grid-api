@@ -38,6 +38,7 @@ properties:
     - $ref: ../common/PaymentAvalancheWalletInfo.yaml
     - $ref: ../common/PaymentTronWalletInfo.yaml
     - $ref: ../common/PaymentPlasmaWalletInfo.yaml
+    - $ref: ../common/PaymentStellarWalletInfo.yaml
     - $ref: ../common/PaymentEmbeddedWalletInfo.yaml
     discriminator:
       propertyName: accountType
@@ -61,4 +62,5 @@ properties:
         AVALANCHE_WALLET: ../common/PaymentAvalancheWalletInfo.yaml
         TRON_WALLET: ../common/PaymentTronWalletInfo.yaml
         PLASMA_WALLET: ../common/PaymentPlasmaWalletInfo.yaml
+        STELLAR_WALLET: ../common/PaymentStellarWalletInfo.yaml
         EMBEDDED_WALLET: ../common/PaymentEmbeddedWalletInfo.yaml
