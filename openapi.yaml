@@ -23717,6 +23717,7 @@ components:
         - SOLANA_WALLET
         - TRON_WALLET
         - PLASMA_WALLET
+        - STELLAR_WALLET
         - ARBITRUM_WALLET
         - OPTIMISM_WALLET
         - AVALANCHE_WALLET
@@ -24376,6 +24377,39 @@ components:
               description: Type of asset
               enum:
                 - USDT
+    StellarWalletInfo:
+      type: object
+      required:
+        - address
+        - accountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - STELLAR_WALLET
+        address:
+          type: string
+          description: Stellar account address (a `G…` public key). Muxed `M…` addresses are not supported.
+          example: GAHK7EEG2WWHVKDNT4CEQFZGKF2LGDSW2IVM4S5DP42RBW3K6BTODB4A
+    PaymentStellarWalletInfo:
+      title: Stellar Wallet
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/StellarWalletInfo'
+        - type: object
+          required:
+            - memo
+          properties:
+            assetType:
+              type: string
+              description: Type of asset
+              enum:
+                - USDC
+            memo:
+              type: string
+              description: Memo to include with the payment. The address is shared, so Grid credits a payment to this account or quote by its memo. Send it as a Stellar ID memo or as a text memo containing these digits. A payment without this memo, or with a different one, is not credited automatically.
+              pattern: ^[0-9]{1,20}$
+              example: '4294967296'
     PaymentEmbeddedWalletInfo:
       title: Embedded Wallet
       allOf:
@@ -24429,6 +24463,7 @@ components:
             - $ref: '#/components/schemas/PaymentAvalancheWalletInfo'
             - $ref: '#/components/schemas/PaymentTronWalletInfo'
             - $ref: '#/components/schemas/PaymentPlasmaWalletInfo'
+            - $ref: '#/components/schemas/PaymentStellarWalletInfo'
             - $ref: '#/components/schemas/PaymentEmbeddedWalletInfo'
           discriminator:
             propertyName: accountType
@@ -24452,6 +24487,7 @@ components:
               AVALANCHE_WALLET: '#/components/schemas/PaymentAvalancheWalletInfo'
               TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
               PLASMA_WALLET: '#/components/schemas/PaymentPlasmaWalletInfo'
+              STELLAR_WALLET: '#/components/schemas/PaymentStellarWalletInfo'
               EMBEDDED_WALLET: '#/components/schemas/PaymentEmbeddedWalletInfo'
     SweepRuleDestination:
       title: Sweep Rule Destination
@@ -24729,6 +24765,7 @@ components:
         - ETHEREUM_WALLET
         - LIGHTNING
         - PLASMA_WALLET
+        - STELLAR_WALLET
         - ARBITRUM_WALLET
         - OPTIMISM_WALLET
         - AVALANCHE_WALLET
@@ -29550,6 +29587,21 @@ components:
         - $ref: '#/components/schemas/PlasmaWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+    StellarWalletExternalAccountInfo:
+      title: Stellar Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/StellarWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
+        - type: object
+          properties:
+            memo:
+              type: string
+              description: Memo to send with every payment to this address. Exchanges and other custodial wallets share one address across their customers and need the customer's memo to credit them. Sent as a Stellar text memo, which holds at most 28 bytes of UTF-8. Non-ASCII characters take more than one byte each.
+              minLength: 1
+              maxLength: 28
+              example: '1234567890'
     ArbitrumWalletExternalAccountInfo:
       title: Arbitrum Wallet
       allOf:
@@ -30420,6 +30472,7 @@ components:
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/StellarWalletExternalAccountInfo'
         - $ref: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/OptimismWalletExternalAccountInfo'
         - $ref: '#/components/schemas/AvalancheWalletExternalAccountInfo'
@@ -30478,6 +30531,7 @@ components:
           LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           PLASMA_WALLET: '#/components/schemas/PlasmaWalletExternalAccountInfo'
+          STELLAR_WALLET: '#/components/schemas/StellarWalletExternalAccountInfo'
           ARBITRUM_WALLET: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
           OPTIMISM_WALLET: '#/components/schemas/OptimismWalletExternalAccountInfo'
           AVALANCHE_WALLET: '#/components/schemas/AvalancheWalletExternalAccountInfo'
@@ -31467,6 +31521,7 @@ components:
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/StellarWalletExternalAccountInfo'
         - $ref: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/OptimismWalletExternalAccountInfo'
         - $ref: '#/components/schemas/AvalancheWalletExternalAccountInfo'
@@ -31524,6 +31579,7 @@ components:
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           PLASMA_WALLET: '#/components/schemas/PlasmaWalletExternalAccountInfo'
+          STELLAR_WALLET: '#/components/schemas/StellarWalletExternalAccountInfo'
           ARBITRUM_WALLET: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
           OPTIMISM_WALLET: '#/components/schemas/OptimismWalletExternalAccountInfo'
           AVALANCHE_WALLET: '#/components/schemas/AvalancheWalletExternalAccountInfo'
@@ -32264,6 +32320,7 @@ components:
         - POLYGON
         - TRON
         - PLASMA
+        - STELLAR
         - ARBITRUM
         - OPTIMISM
         - AVALANCHE
@@ -33891,7 +33948,7 @@ components:
               example: USD
             cryptoNetwork:
               type: string
-              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `ARBITRUM`, `OPTIMISM`, `AVALANCHE`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
+              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `STELLAR`, `ARBITRUM`, `OPTIMISM`, `AVALANCHE`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
               example: SOLANA
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSourceOneOf:
@@ -34401,7 +34458,7 @@ components:
           example: USDC
         cryptoNetwork:
           type: string
-          description: 'The blockchain network for the withdrawal. Example values: SOLANA, ETHEREUM, BASE, POLYGON, ARBITRUM, OPTIMISM, AVALANCHE, SPARK, LIGHTNING, BITCOIN.'
+          description: 'The blockchain network for the withdrawal. Example values: SOLANA, ETHEREUM, BASE, POLYGON, ARBITRUM, OPTIMISM, AVALANCHE, STELLAR, SPARK, LIGHTNING, BITCOIN.'
           example: SOLANA
         amount:
           type: integer
@@ -34411,6 +34468,12 @@ components:
           type: string
           description: The blockchain address to withdraw funds to.
           example: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+        destinationMemo:
+          type: string
+          description: Memo to send with the withdrawal, for networks that route by memo (`STELLAR`). Exchanges need it to credit their customer. Sent as a text memo, which holds at most 28 bytes of UTF-8. Non-ASCII characters take more than one byte each.
+          minLength: 1
+          maxLength: 28
+          example: '1234567890'
     EstimateCryptoWithdrawalFeeResponse:
       type: object
       required:

@@ -10,6 +10,14 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
+## USDC on Stellar
+
+`STELLAR` joins `CryptoNetwork`, with a `STELLAR_WALLET` account type for payment
+instructions and external accounts. Stellar funding instructions share one address
+and carry a required `memo`: include it with every deposit, or Grid cannot credit it
+automatically. A Stellar external account takes an optional `memo` for exchange
+destinations, and `POST /crypto/estimate-withdrawal-fee` accepts `destinationMemo`.
+
 ## Wire tracking numbers and returns on `railDetails`
 
 Wire legs now carry `railDetails` with `paymentRail: WIRE`. Alongside `imad`, a wire

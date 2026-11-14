@@ -18,7 +18,8 @@ properties:
     type: string
     description: >-
       The blockchain network for the withdrawal. Example values: SOLANA,
-      ETHEREUM, BASE, POLYGON, ARBITRUM, OPTIMISM, AVALANCHE, SPARK, LIGHTNING, BITCOIN.
+      ETHEREUM, BASE, POLYGON, ARBITRUM, OPTIMISM, AVALANCHE, STELLAR, SPARK, LIGHTNING,
+      BITCOIN.
     example: SOLANA
   amount:
     type: integer
@@ -28,3 +29,13 @@ properties:
     type: string
     description: The blockchain address to withdraw funds to.
     example: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+  destinationMemo:
+    type: string
+    description: >-
+      Memo to send with the withdrawal, for networks that route by memo
+      (`STELLAR`). Exchanges need it to credit their customer. Sent as a text
+      memo, which holds at most 28 bytes of UTF-8. Non-ASCII characters take
+      more than one byte each.
+    minLength: 1
+    maxLength: 28
+    example: '1234567890'
