@@ -15,7 +15,7 @@
 // Pages in `keep` are left as they are.
 // The designs come from the og-studio repo (github.com/patcapulong/og-studio).
 
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -210,36 +210,44 @@ async function main() {
     jobs.push({ out: `${PAGES_DIR}/${page}.${ext}`, html: pageImage(tab, title, look), page });
   }
 
-  rmSync(join(MINT, PAGES_DIR), { recursive: true, force: true });
-  const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 2 });
-  let html = '';
-  await page.route('http://og.local/**', (route) => {
-    const path = new URL(route.request().url()).pathname;
-    if (path === '/') return route.fulfill({ contentType: 'text/html', body: html });
-    return route.fulfill({ path: join(OG, decodeURIComponent(path)) });
-  });
-
-  for (const job of jobs) {
-    html = job.html;
-    await page.goto('http://og.local/');
-    await page.evaluate(async () => {
-      await document.fonts.ready;
-      await Promise.all([...document.images].map((img) => img.decode().catch(() => {})));
+  // Render everything into a staging folder first, so a failed run leaves the
+  // current images and pages untouched.
+  const staging = join(MINT, 'images/og/.staging');
+  rmSync(staging, { recursive: true, force: true });
+  try {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 2 });
+    let html = '';
+    await page.route('http://og.local/**', (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (path === '/') return route.fulfill({ contentType: 'text/html', body: html });
+      return route.fulfill({ path: join(OG, decodeURIComponent(path)) });
     });
-    const png = await page.locator('.og').screenshot({ type: 'png' });
-    const file = join(MINT, job.out);
-    mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, job.out.endsWith('.webp') ? await toWebp(page, png) : png);
-    if (job.page) {
-      const mdx = join(MINT, `${job.page}.mdx`);
-      writeFileSync(mdx, withOgImage(readFileSync(mdx, 'utf8'), `/${job.out}`));
+    for (const job of jobs) {
+      html = job.html;
+      await page.goto('http://og.local/');
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+        await Promise.all([...document.images].map((img) => img.decode().catch(() => {})));
+      });
+      const png = await page.locator('.og').screenshot({ type: 'png' });
+      const file = join(staging, job.out);
+      mkdirSync(dirname(file), { recursive: true });
+      writeFileSync(file, job.out.endsWith('.webp') ? await toWebp(page, png) : png);
     }
+    await browser.close();
+
+    rmSync(join(MINT, PAGES_DIR), { recursive: true, force: true });
+    renameSync(join(staging, PAGES_DIR), join(MINT, PAGES_DIR));
+    renameSync(join(staging, HOME_IMAGE), join(MINT, HOME_IMAGE));
+  } finally {
+    rmSync(staging, { recursive: true, force: true });
   }
-  await browser.close();
-  for (const page of homeLinks) {
+
+  const links = jobs.map((job) => [job.page, job.out]).concat(homeLinks.map((page) => [page, HOME_IMAGE]));
+  for (const [page, out] of links) {
     const mdx = join(MINT, `${page}.mdx`);
-    writeFileSync(mdx, withOgImage(readFileSync(mdx, 'utf8'), `/${HOME_IMAGE}`));
+    writeFileSync(mdx, withOgImage(readFileSync(mdx, 'utf8'), `/${out}`));
   }
   console.log(`Wrote ${jobs.length} OG images. ${jobs.length + homeLinks.length} pages updated (${homeLinks.length} use the homepage image).`);
 }
