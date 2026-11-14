@@ -3,6 +3,7 @@ import type { AccountSnapshot } from '@/data/agentApiCalls';
 import { purchaseSpendLimit, type DepositNetwork, type SendNetwork } from '@/data/agentEvents';
 import { BANK_COUNTRIES, currencyFor } from '@/data/bankCountries';
 import { addressKind, NETWORKS_FOR, SENDS_ON, type SendAsset } from '@/data/cryptoSend';
+import { cleanName } from '@/data/mode';
 import { ENDS_TURN, type ToolCall, type ToolResult } from '@/lib/llm/tools';
 import type { Beat } from '../conversation';
 import {
@@ -39,6 +40,8 @@ import {
   type FlowContext,
   type FlowParams,
 } from '../flows';
+import { payrollTotal, TEAM, teamMember } from '../business';
+import { companySetup, employeeCard, payBill, payContractor, runPayroll, sendInvoice, teamBudget, trackInvoices } from '../businessFlows';
 import { stayFor, type Stay } from '../hotels';
 import { purchaseFor, requestParams, shelfFor, shelfParams, shelfWith, type BuyKind, type BuyRequest, type Shelf } from '../products';
 import { draftRecipient, recipientNamed, type Recipient } from '../recipients';
@@ -133,6 +136,20 @@ function heldFor(next?: ToolCall): string | undefined {
       return 'the request';
     case 'send_stablecoins':
       return 'that send';
+    case 'set_team_budget':
+      return 'the team budget';
+    case 'issue_employee_card':
+      return `${first(next.input.name) || 'their'}’s card`;
+    case 'send_invoice':
+      return 'the invoice';
+    case 'list_invoices':
+      return 'checking invoices';
+    case 'pay_bill':
+      return `paying ${typeof next.input.vendor === 'string' ? next.input.vendor : 'the bill'}`;
+    case 'pay_contractor':
+      return `paying ${first(next.input.name) || 'them'}`;
+    case 'run_payroll':
+      return 'payroll';
     default:
       return undefined;
   }
@@ -142,7 +159,12 @@ const heldOr = (env: ToolEnv, otherwise: Beat): Beat => {
   return what ? { say: 'task.held', params: { what } } : otherwise;
 };
 
-const needsBalance = (a: AccountSnapshot) => (a.balanceOn ? undefined : fail('no_balance', { fix: 'call setup_balance (with more) first, then this again' }));
+const needsBalance = (env: ToolEnv) =>
+  env.ctx.account().balanceOn
+    ? undefined
+    : env.ctx.mode === 'business'
+      ? fail('no_company', { fix: 'call setup_company (with more) first, then this again' })
+      : fail('no_balance', { fix: 'call setup_balance (with more) first, then this again' });
 
 /**
  * A follow-up offer from today's flows, added once the step is done, and noted in the result (`offered`) so the model
@@ -160,6 +182,7 @@ function offering(result: ToolResult, make: () => { what: string; beats: Beat[] 
 }
 const ADD_MONEY = 'adding money to the empty balance (taps: Add money, Not now)';
 const A_BALANCE = 'a balance (taps: Set up a balance, Not now)';
+const A_COMPANY = 'setting up the company (taps: Set up my company, Not now)';
 
 /** Over the per-payment limit, today's ask to raise it (the product or quote on screen), or else straight on. */
 const withinLimit = (ctx: FlowContext, spend: number, go: 'buy' | 'send' | 'book', then: (c: FlowContext) => Beat[]): Beat[] => overLimit(ctx, spend, go, then) ?? then(ctx);
@@ -277,7 +300,7 @@ function costOf(env: ToolEnv, id: string): number | undefined {
 
 function fund(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
-  const missing = needsBalance(a);
+  const missing = needsBalance(env);
   if (missing) return missing;
   let amount: number | undefined;
   if (typeof call.input.cover === 'string') {
@@ -291,6 +314,7 @@ function fund(env: ToolEnv, call: ToolCall): Outcome {
     amount = cents(usdAmount);
   }
   const { method: m, asset, network } = call.input;
+  if (m === 'card' && env.ctx.mode === 'business') return fail('no_card_on_business', { fix: 'a business adds money from its bank or stablecoins' });
   const method = m === 'card' || m === 'bank' ? m : m === 'stablecoins' ? 'crypto' : undefined;
   const params: FlowParams = {
     ...(amount && { amount: amount / 100 }),
@@ -479,7 +503,7 @@ function quotePayment(env: ToolEnv, call: ToolCall): Outcome {
 }
 
 function sendPayment(env: ToolEnv, call: ToolCall): Outcome {
-  const missing = needsBalance(env.ctx.account());
+  const missing = needsBalance(env);
   if (missing) return missing;
   const q = quoted(env, call.input);
   if ('error' in q || 'beats' in q) return q;
@@ -523,7 +547,7 @@ function sendPayment(env: ToolEnv, call: ToolCall): Outcome {
 }
 
 function requestPayment(env: ToolEnv, call: ToolCall): Outcome {
-  const missing = needsBalance(env.ctx.account());
+  const missing = needsBalance(env);
   if (missing) return missing;
   const people = (Array.isArray(call.input.split_with) ? call.input.split_with : []).map((p) => text(p, 40)).filter((p): p is string => !!p).slice(0, 8);
   const result: ToolResult = {};
@@ -592,7 +616,7 @@ function raiseLimit(env: ToolEnv, call: ToolCall): Outcome {
 
 function withdraw(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
-  if (!a.balanceOn) return { result: { status: 'no_balance', offered: A_BALANCE }, beats: noBalanceToMove(env.ctx).filter((b) => !('react' in b)) };
+  if (!a.balanceOn) return { result: { status: 'no_balance', offered: env.ctx.mode === 'business' ? A_COMPANY : A_BALANCE }, beats: noBalanceToMove(env.ctx).filter((b) => !('react' in b)) };
   const amount = call.input.everything === true ? a.balanceCents : positive(call.input.amount_usd, 10_000) ? cents(call.input.amount_usd as number) : undefined;
   // Today's Withdraw: nothing in it offers to add money, no amount asks, more than there is offers the whole balance;
   // then the bank (linked first if it isn't), the limit, and the move.
@@ -609,7 +633,7 @@ function withdraw(env: ToolEnv, call: ToolCall): Outcome {
 
 function sendStablecoins(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
-  const missing = needsBalance(a);
+  const missing = needsBalance(env);
   if (missing) return missing;
   const address = typeof call.input.address === 'string' ? call.input.address.replace(/[^A-Za-z0-9.…]/g, '').slice(0, 4096) : '';
   if (!address) return fail('need_address');
@@ -638,7 +662,7 @@ const DAY = 86_400_000;
 
 function bookStay(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
-  const missing = needsBalance(a);
+  const missing = needsBalance(env);
   if (missing) return missing;
   const city = text(call.input.city, 40);
   const { check_in: checkIn, check_out: checkOut } = call.input;
@@ -667,8 +691,127 @@ function showAccount(env: ToolEnv, call: ToolCall): Outcome {
     if (!a.ledger.length) return { result: { status: 'nothing_yet' }, beats: [{ say: 'history.none' }] };
     return { result: { status: 'shown', recent: a.ledger.slice(0, 6).map((l) => ({ what: l.title, usd: usd(l.cents) })) }, beats: historyShown(env.ctx) };
   }
-  if (!a.balanceOn) return { result: { status: 'no_balance', offered: a.cardVaulted ? A_BALANCE : 'a balance or a card (taps: Set up a balance, Add a card)' }, beats: FLOWS.balance(env.ctx).filter((b) => !('react' in b)) };
+  if (!a.balanceOn) {
+    const offered = env.ctx.mode === 'business' ? A_COMPANY : a.cardVaulted ? A_BALANCE : 'a balance or a card (taps: Set up a balance, Add a card)';
+    return { result: { status: 'no_balance', offered }, beats: FLOWS.balance(env.ctx).filter((b) => !('react' in b)) };
+  }
   return { result: { status: 'shown', ...(a.balanceCents <= 0 && { offered: ADD_MONEY }) }, beats: balanceShown(env.ctx) };
+}
+
+/* ── The business's tools ─────────────────────────────────────────── */
+
+const noReact = (beats: Beat[]) => beats.filter((b) => !('react' in b));
+const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[A-Za-z]{2,}$/;
+const ownName = (v: unknown) => (typeof v === 'string' && cleanName(v)) || undefined;
+
+function setupCompany(env: ToolEnv, call: ToolCall): Outcome {
+  const a = env.ctx.account();
+  const onWay = onTheWay(env, call);
+  if (a.balanceOn) return { beats: onWay ? [] : noReact(companySetup(env.ctx)), result: { status: 'already_set_up' } };
+  const company = ownName(call.input.company);
+  const owner = ownName(call.input.owner);
+  const result: ToolResult =
+    a.business?.named || (company && owner)
+      ? {}
+      : { asked: company ? 'the owner’s name (they type it or tap the suggestion)' : 'the company’s name, then the owner’s (they type them or tap the suggestions)' };
+  const held = heldFor(env.next);
+  // On the way to something else, that's next once it's set up; asked for itself, it shows the account and offers to fill it.
+  const ctx: FlowContext = { ...env.ctx, ...(held && { held }), ...(onWay && { then: () => [] }) };
+  const done = record(result, () => {
+    const now = env.ctx.account();
+    return { status: 'set_up', company: now.business?.company, ...(!onWay && now.balanceCents <= 0 && { offered: ADD_MONEY }) };
+  });
+  return { result, beats: noReact(companySetup(ctx, { company, owner }, [done])) };
+}
+
+function setTeamBudget(env: ToolEnv, call: ToolCall): Outcome {
+  const missing = needsBalance(env);
+  if (missing) return missing;
+  const monthly = positive(call.input.monthly_usd, 50_000);
+  const already = env.ctx.account().business?.budget;
+  const result: ToolResult = {};
+  const set = record(result, () => ({ status: already ? 'already_set_up' : 'set_up', monthly_usd: usd(env.ctx.account().business?.budget ?? 0), team: TEAM.map((m) => m.name) }));
+  return { result, beats: [...noReact(teamBudget({ ...env.ctx, params: monthly ? { amount: monthly } : {} })), set] };
+}
+
+function issueEmployeeCard(env: ToolEnv, call: ToolCall): Outcome {
+  const missing = needsBalance(env);
+  if (missing) return missing;
+  const name = text(call.input.name, 40);
+  if (!name) return fail('need_name', { fix: 'ask which teammate' });
+  const member = teamMember(name);
+  if (!member) return { result: { status: 'not_on_team', team: TEAM.map((m) => m.name) }, beats: noReact(employeeCard({ ...env.ctx, params: { name } })) };
+  const purpose = text(call.input.purpose, 30)?.toLowerCase();
+  const had = env.ctx.account().business?.team.find((m) => m.name === member.name)?.hasCard;
+  const result: ToolResult = {};
+  const issued = record(result, () => ({ status: had ? 'already_has_card' : 'issued', to: member.name }));
+  return { result, beats: [...noReact(employeeCard({ ...env.ctx, params: { name: member.name, ...(purpose && { note: purpose }) } })), issued] };
+}
+
+function sendInvoiceTool(env: ToolEnv, call: ToolCall): Outcome {
+  const missing = needsBalance(env);
+  if (missing) return missing;
+  const client = text(call.input.client, 40);
+  const amount = positive(call.input.amount_usd, 100_000);
+  if (!client) return fail('need_client', { fix: 'ask who it’s for' });
+  if (!amount) return fail('need_amount', { fix: 'ask how much' });
+  const memo = text(call.input.memo, 40);
+  const result: ToolResult = {};
+  const paidUp = record(result, () => {
+    const invoice = env.ctx.account().business?.invoices.slice(-1)[0];
+    return { status: 'sent_and_paid', invoice: invoice?.number, client, amount_usd: amount, note: 'the client paid it by bank transfer and the app matched it' };
+  });
+  return { result, beats: [...noReact(sendInvoice({ ...env.ctx, params: { name: client, amount, ...(memo && { note: memo }) } })), paidUp] };
+}
+
+function listInvoices(env: ToolEnv): Outcome {
+  const missing = needsBalance(env);
+  if (missing) return missing;
+  const invoices = env.ctx.account().business?.invoices ?? [];
+  const open = invoices.filter((i) => i.status === 'OPEN');
+  const result: ToolResult = {
+    invoices: invoices.map((i) => ({ number: i.number, client: i.client, amount_usd: usd(i.amount), status: i.status === 'PAID' ? 'paid' : `open, due ${i.due}` })),
+    ...(open.length && { offered: 'a reminder for the open one (taps: Send a reminder, Not now)' }),
+  };
+  return { result, beats: noReact(trackInvoices(env.ctx)) };
+}
+
+function payBillTool(env: ToolEnv, call: ToolCall): Outcome {
+  const missing = needsBalance(env);
+  if (missing) return missing;
+  const vendor = text(call.input.vendor, 40);
+  const amount = positive(call.input.amount_usd, 100_000);
+  if (!vendor) return fail('need_vendor', { fix: 'ask which company' });
+  if (!amount) return fail('need_amount', { fix: 'ask how much' });
+  const asked = typeof call.input.country === 'string' ? call.input.country.toLowerCase() : 'us';
+  if (!COUNTRY_CODES.has(asked)) return fail('country_not_supported', { country: asked });
+  const note = text(call.input.note, 40);
+  const result: ToolResult = {};
+  const params: FlowParams = { name: vendor, country: asked, amount, currency: 'USD', ...(note && { note }) };
+  return { result, beats: [...noReact(payBill({ ...env.ctx, params })), record(result, () => ({ status: 'paid', to: vendor, amount_usd: amount }))] };
+}
+
+function payContractorTool(env: ToolEnv, call: ToolCall): Outcome {
+  const missing = needsBalance(env);
+  if (missing) return missing;
+  const name = text(call.input.name, 40);
+  const amount = positive(call.input.amount_usd, 50_000);
+  if (!name || RELATION.test(name)) return fail('need_name', { fix: 'ask their name' });
+  if (!amount) return fail('need_amount', { fix: 'ask how much' });
+  const email = typeof call.input.email === 'string' ? call.input.email.trim().slice(0, 80) : '';
+  if (!EMAIL.test(email)) return fail('need_email', { fix: email ? 'that email looks mistyped: ask for it again' : 'ask for their email' });
+  const note = text(call.input.note, 40);
+  const result: ToolResult = {};
+  const claimed = record(result, () => ({ status: 'claimed', to: name, amount_usd: amount, how: 'claim link by email, into their own bank' }));
+  return { result, beats: [...noReact(payContractor({ ...env.ctx, params: { name, email, amount, ...(note && { note }) } })), claimed] };
+}
+
+function runPayrollTool(env: ToolEnv): Outcome {
+  const missing = needsBalance(env);
+  if (missing) return missing;
+  const result: ToolResult = {};
+  const paidOut = record(result, () => ({ status: 'paid', people: TEAM.map((m) => m.name), total_usd: usd(payrollTotal()) }));
+  return { result, beats: [...noReact(runPayroll(env.ctx)), paidOut] };
 }
 
 /** What a call is about, for an app that labels runs (Duet's eyebrow): who's paid, the hotel, the service, or the flow. */
@@ -678,7 +821,7 @@ export function topicOf(call: ToolCall, ctx: FlowContext): string {
   const i = call.input;
   const s = (v: unknown) => (typeof v === 'string' ? v : undefined);
   const params: FlowParams = {
-    name: s(i.name) ?? s(i.from),
+    name: s(i.name) ?? s(i.from) ?? s(i.client) ?? s(i.vendor),
     city: s(i.city),
     checkIn: s(i.check_in),
     checkOut: s(i.check_out),
@@ -723,6 +866,22 @@ export function flowOf(call: ToolCall): ActionId | null {
       return 'agent';
     case 'show_account':
       return call.input.show === 'history' ? 'history' : 'balance';
+    case 'setup_company':
+      return 'company';
+    case 'set_team_budget':
+      return 'team';
+    case 'issue_employee_card':
+      return 'empcard';
+    case 'send_invoice':
+      return 'invoice';
+    case 'list_invoices':
+      return 'invoices';
+    case 'pay_bill':
+      return 'bill';
+    case 'pay_contractor':
+      return 'contractor';
+    case 'run_payroll':
+      return 'payroll';
     case 'reply':
     case 'offer_choices':
       return null;
@@ -766,6 +925,22 @@ export function runTool(env: ToolEnv, call: ToolCall): Outcome {
       return bookStay(env, call);
     case 'show_account':
       return showAccount(env, call);
+    case 'setup_company':
+      return setupCompany(env, call);
+    case 'set_team_budget':
+      return setTeamBudget(env, call);
+    case 'issue_employee_card':
+      return issueEmployeeCard(env, call);
+    case 'send_invoice':
+      return sendInvoiceTool(env, call);
+    case 'list_invoices':
+      return listInvoices(env);
+    case 'pay_bill':
+      return payBillTool(env, call);
+    case 'pay_contractor':
+      return payContractorTool(env, call);
+    case 'run_payroll':
+      return runPayrollTool(env);
     case 'reply':
     case 'offer_choices':
       return { result: { status: 'shown' }, beats: [] };

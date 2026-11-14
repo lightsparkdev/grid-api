@@ -1,5 +1,6 @@
 import { BANK_COUNTRIES } from '@/data/bankCountries';
 import { CONNECTORS, type ConnectorId } from '@/data/connectors';
+import type { Mode } from '@/data/mode';
 
 /* The agent's tools: what the model can do, each checked and carried out in the phone (apps/agents/tools). The
    model plans; the tools own prices, limits, approvals and the Grid calls, and answer with a result or an error
@@ -23,8 +24,25 @@ export const TOOL_NAMES = [
   'send_stablecoins',
   'book_stay',
   'show_account',
+  'setup_company',
+  'set_team_budget',
+  'issue_employee_card',
+  'send_invoice',
+  'list_invoices',
+  'pay_bill',
+  'pay_contractor',
+  'run_payroll',
 ] as const;
 export type ToolName = (typeof TOOL_NAMES)[number];
+
+/** What each account can do: a business invoices, pays bills, contractors and payroll, and doesn't shop. */
+const PERSONAL_ONLY = new Set<ToolName>(['setup_balance', 'add_card', 'search', 'checkout', 'subscribe', 'request_payment', 'book_stay']);
+const BUSINESS_ONLY = new Set<ToolName>(['setup_company', 'set_team_budget', 'issue_employee_card', 'send_invoice', 'list_invoices', 'pay_bill', 'pay_contractor', 'run_payroll']);
+const TOOLS_IN: Record<Mode, ReadonlySet<ToolName>> = {
+  personal: new Set(TOOL_NAMES.filter((t) => !BUSINESS_ONLY.has(t))),
+  business: new Set(TOOL_NAMES.filter((t) => !PERSONAL_ONLY.has(t))),
+};
+export const toolsIn = (mode: Mode) => TOOLS_IN[mode];
 
 /** Tools that end the turn: the person answers next. */
 export const ENDS_TURN = new Set<ToolName>(['reply', 'offer_choices']);
@@ -229,4 +247,34 @@ export const TOOL_DEFS: ToolDef[] = [
     guests: num('How many are staying, only if they said.'),
   }, ['city', 'check_in', 'check_out']),
   tool('show_account', 'Show the balance card (balance and limits) or recent activity.', { show: str('Which.', { enum: ['balance', 'history'] }) }, ['show'], { more: false }),
+  tool('setup_company', 'Set up the business’s own account, verified, with US bank details clients pay, at the default limits: the app asks for the company’s name and the owner’s if you don’t pass them, then shows its consent sheet. Needed before anything else on the business.', {
+    company: str('The company’s name, only if they said it.'),
+    owner: str('The owner’s full name, only if they said it.'),
+  }),
+  tool('set_team_budget', 'Give everyone on the team their own agent, sharing one monthly budget from the business’s account. The owner approves it.', {
+    monthly_usd: num('The team’s monthly budget, USD, only if they said.'),
+  }),
+  tool('issue_employee_card', 'Issue a Visa in a teammate’s name, spending from the business’s account (inside the team budget once there is one). Only for someone on the team. The owner approves it.', {
+    name: str('The teammate, as they named them.'),
+    purpose: str('What it’s for, a few words, only if they said ("travel").'),
+  }, ['name']),
+  tool('send_invoice', 'Write an invoice in the app and send it to a client, with the business’s bank details and the invoice number on it; the app matches the client’s bank transfer to it when it lands.', {
+    client: str('Who’s paying: the client, as they named them.'),
+    amount_usd: num('How much, USD.'),
+    memo: str('What it’s for, a few words, only if they said.'),
+  }, ['client', 'amount_usd']),
+  tool('list_invoices', 'Show the invoices: which are paid and which are still open, with a reminder to send for an open one.', {}, [], { more: false }),
+  tool('pay_bill', 'Pay a company’s bill (internet, software, utilities, office rent, a supplier) to its bank from the business’s account. A company paid for the first time gets its bank added in the app’s form, as a business.', {
+    vendor: str('The company, as it brands itself ("Wavelink Fiber").'),
+    amount_usd: num('How much, USD.'),
+    note: str('What it’s for, a few words, only if they said.'),
+    country: str('Where the company banks (ISO code), only if it isn’t the US.', { enum: COUNTRY_CODES }),
+  }, ['vendor', 'amount_usd']),
+  tool('pay_contractor', 'Pay a freelancer or contractor who isn’t on the team: they get a link by email and claim it into their own bank, so no bank details are needed. Above the approval limit the owner approves.', {
+    name: str('Their name, as the owner said it.'),
+    email: str('Their email, exactly as the owner gave it. Ask for it if they didn’t.'),
+    amount_usd: num('How much, USD.'),
+    note: str('What it’s for, a few words, only if they said.'),
+  }, ['name', 'amount_usd']),
+  tool('run_payroll', 'Pay everyone on the team their usual pay in one run: the app shows the preview, and the owner approves it once.', {}),
 ];

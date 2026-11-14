@@ -26,7 +26,7 @@ import { SheetDisc } from '../SheetPage';
 import type { AgentAsk, AgentMeta, AgentNote, Message, PayTo, Product } from '../conversation';
 import { linkedBank } from '../linkedBank';
 import { recipientNamed } from '../recipients';
-import { AddressQr, BalanceCard, copyLabel, Divider, NoteCard, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
+import { AddressQr, BalanceCard, copyLabel, Divider, InvoiceCard, NoteCard, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from '../vault/useAskSheet';
@@ -733,6 +733,8 @@ export function DotChat({ chat }: AgentChatProps) {
             className={styles.accountSkin}
             onOpen={() => balance.open(b.wallet)}
           />
+        ) : m.card.invoice ? (
+          <InvoiceCard invoice={m.card.invoice} className={styles.invoiceSkin} />
         ) : m.card.code ? (
           <NotePill note={m.card} onOpen={() => setAddress({ note: m.card, open: true })} />
         ) : (

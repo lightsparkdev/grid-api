@@ -2,6 +2,7 @@
 
 import clsx from 'clsx';
 import { LayoutGroup, motion } from 'motion/react';
+import type { ReactNode } from 'react';
 import { CONNECTORS, type ConnectorDef, type ConnectorId } from '@/data/connectors';
 import { motionTransition } from '@/lib/easing';
 import { pressable } from '@/lib/sounds';
@@ -10,6 +11,8 @@ import styles from './ConnectorPicker.module.scss';
 interface ConnectorPickerProps {
   selected: ConnectorId;
   onSelect: (id: ConnectorId) => void;
+  /** A full-width row under the agents, inside their group. */
+  footer?: ReactNode;
 }
 
 function Logo({ logo }: { logo: ConnectorDef['logo'] }) {
@@ -22,10 +25,10 @@ function Logo({ logo }: { logo: ConnectorDef['logo'] }) {
 
 /** Select agent: the agent app on the phone (Figma 124:3873). Switching
  *  mid-flow is fine: the conversation carries on in the next app's look. */
-export function ConnectorPicker({ selected, onSelect }: ConnectorPickerProps) {
+export function ConnectorPicker({ selected, onSelect, footer }: ConnectorPickerProps) {
   return (
     <LayoutGroup>
-      <div className={styles.group}>
+      <div className={styles.group} data-footer={footer ? '' : undefined}>
         {CONNECTORS.map((c) => {
           const isSelected = selected === c.id;
           return (
@@ -51,6 +54,7 @@ export function ConnectorPicker({ selected, onSelect }: ConnectorPickerProps) {
             </button>
           );
         })}
+        {footer}
       </div>
     </LayoutGroup>
   );

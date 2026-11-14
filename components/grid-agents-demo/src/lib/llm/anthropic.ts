@@ -1,4 +1,5 @@
-import { CONNECTOR_IDS, TOOL_DEFS, TOOL_NAMES, type ToolCall, type ToolName, type Turn } from './tools';
+import { MODES, type Mode } from '@/data/mode';
+import { CONNECTOR_IDS, TOOL_DEFS, toolsIn, type ToolCall, type ToolName, type Turn } from './tools';
 import type { ModelAdapter, StepRequest, StepAnswer } from './types';
 
 export const MODELS = { haiku: 'claude-haiku-5-5', sonnet: 'claude-sonnet-5-5' } as const;
@@ -15,7 +16,13 @@ function cachedTurns(turns: Turn[]) {
   );
 }
 
-const TOOLS = TOOL_DEFS.map((t, i) => (i === TOOL_DEFS.length - 1 ? { ...t, cache_control: { type: 'ephemeral' } } : t));
+/** Each account's tools, the last marked for caching. */
+const TOOLS = Object.fromEntries(
+  MODES.map((mode) => {
+    const defs = TOOL_DEFS.filter((t) => toolsIn(mode).has(t.name));
+    return [mode, defs.map((t, i) => (i === defs.length - 1 ? { ...t, cache_control: { type: 'ephemeral' } } : t))];
+  }),
+) as Record<Mode, (typeof TOOL_DEFS)[number][]>;
 
 /**
  * Claude, planning one step at a time: it must call at least one tool, and the calls come back for the phone to
@@ -23,7 +30,7 @@ const TOOLS = TOOL_DEFS.map((t, i) => (i === TOOL_DEFS.length - 1 ? { ...t, cach
  */
 export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL || MODEL): ModelAdapter {
   return {
-    async step({ system, turns }: StepRequest): Promise<StepAnswer> {
+    async step({ system, turns, mode }: StepRequest): Promise<StepAnswer> {
       const started = Date.now();
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -37,7 +44,7 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
             { type: 'text', text: system.now },
           ],
           messages: cachedTurns(turns),
-          tools: TOOLS,
+          tools: TOOLS[mode],
           // Sonnet and Opus reject a forced tool choice; they're told to always call one, and plain text becomes a reply.
           tool_choice: { type: /sonnet|opus/.test(model) ? 'auto' : 'any' },
         }),
@@ -50,7 +57,7 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
         console.info(`[agent] in ${usage.input} · cache read ${usage.cacheRead} · cache write ${usage.cacheWrite} · out ${usage.output} · ${Date.now() - started}ms · ${model}`);
       }
       const calls: ToolCall[] = (data.content ?? [])
-        .filter((c) => c.type === 'tool_use' && typeof c.id === 'string' && (TOOL_NAMES as readonly string[]).includes(c.name ?? ''))
+        .filter((c) => c.type === 'tool_use' && typeof c.id === 'string' && toolsIn(mode).has(c.name as ToolName))
         .map((c) => ({ id: c.id!, name: c.name as ToolName, input: (c.input ?? {}) as ToolCall['input'] }));
       const text = (data.content ?? []).flatMap((c) => (c.type === 'text' && c.text?.trim() ? [c.text.trim()] : [])).join(' ');
       if (!calls.length && text) calls.push({ id: `toolu_text_${started}`, name: 'reply', input: { say: Object.fromEntries(CONNECTOR_IDS.map((c) => [c, text])) } });

@@ -4,7 +4,7 @@ import { IconAiBotHead } from '@central-icons-react/round-filled-radius-2-stroke
 import { ChatFrame, ComposerField, Said, ScrollEdge } from '../ChatFrame';
 import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
-import { AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
+import { AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, InvoiceCard, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
 import { useBalancePage } from '../BalancePage';
 import { useBankLink, useCardSheet, VaultBankAsk, VaultCardAsk } from '../vault/BankLink';
 import type { AgentChatProps } from '../types';
@@ -35,6 +35,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
         return <AskCard ask={m.ask} state={m.state} onAllow={chat.allow} onDeny={chat.deny} />;
       case 'card': {
         const b = m.card.balance;
+        if (m.card.invoice) return <InvoiceCard invoice={m.card.invoice} className={styles.invoiceSkin} />;
         return b ? <BalanceCard balance={b} onOpen={() => balance.open(b.wallet)} className={styles.accountSkin} /> : <NoteCard note={m.card} />;
       }
       case 'chips':

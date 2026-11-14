@@ -1092,3 +1092,10 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
     animation: none;
   }
 }
+
+/* The document inside Meta Pay's frame, on the white of its detail blocks. */
+.invoiceSkin {
+  --part-surface: var(--muse-card);
+  --part-radius: 16px;
+  width: auto;
+}

@@ -8,6 +8,21 @@ import { draftRecipient, payeeFor, recipientNamed, type Recipient } from './reci
 import { hash, merchantFor, stayFor, stayParams, type Stay } from './hotels';
 import { purchaseFor, requestParams, shelfFor, shelfParams, shelfWith, type BuyKind, type Shelf } from './products';
 import { CASHOUT_AMOUNT, CRYPTO, FUND, FUND_DETAIL, LUCIA, NETWORK_NAME, NEW_LIMITS, SUBSCRIPTION, usd2, type CryptoAsset } from './story';
+import type { Mode } from '@/data/mode';
+import {
+  BUSINESS_HELD,
+  BUSINESS_TOPIC,
+  businessSpend,
+  companySetup,
+  employeeCard,
+  noCompanyYet,
+  payBill,
+  payContractor,
+  runPayroll,
+  sendInvoice,
+  teamBudget,
+  trackInvoices,
+} from './businessFlows';
 
 /* What each flow does once the visitor sends its line: the agent's beats, the
    Grid events at each beat, and the points where it waits on the visitor.
@@ -61,9 +76,14 @@ export interface FlowParams {
   pay?: 'balance';
   /** Buy online, a named product: buy it once it's under this (USD), not now. */
   below?: number;
+  /** Pay someone: a business, paid as one (a bill's vendor). Pay a contractor: their email. */
+  vendor?: boolean;
+  email?: string;
 }
 
 export interface FlowContext {
+  /** Which account the flow runs on: the person's own, or their business. */
+  mode?: Mode;
   account: () => AccountSnapshot;
   needsApproval: (usdCents: number) => boolean;
   /** Which of the tile's prompts this run started from (Buy online has two). */
@@ -88,7 +108,7 @@ export interface FlowContext {
 const cents = (usd: number | undefined) => (usd && usd > 0 ? Math.round(usd * 100) : undefined);
 
 /** A no to a setup step on the way to a task: the task waits, and the agent says so. */
-const holdOr = (ctx: FlowContext, otherwise: Beat): Beat => (ctx.held ? { say: 'task.held', params: { what: ctx.held } } : otherwise);
+export const holdOr = (ctx: FlowContext, otherwise: Beat): Beat => (ctx.held ? { say: 'task.held', params: { what: ctx.held } } : otherwise);
 
 /** Add exactly what's short (USD cents) once the price is known, then carry on. */
 export const addShort =
@@ -151,6 +171,7 @@ export function approvalOr(
 export const paid = (ctx: FlowContext, title: string) => ctx.account().ledger.some((l) => l.title === title && l.status === 'COMPLETED');
 
 const connect = (ctx: FlowContext): Beat[] => {
+  if (ctx.mode === 'business') return companySetup(ctx);
   const l = (!ctx.account().connected && ctx.limits) || ctx.account().limits;
   const hasAgent = ctx.account().connected ? 1 : 0;
   if (ctx.account().balanceOn) {
@@ -207,7 +228,7 @@ export const offerFundsFrom = (ctx: FlowContext, method: 'card' | 'bank'): Beat[
 };
 
 /** No balance to withdraw from: set one up (it then offers to fill it), or later. */
-export const noBalanceToMove = (ctx: FlowContext): Beat[] => [
+export const noBalanceToMove = (ctx: FlowContext): Beat[] => ctx.mode === 'business' ? noCompanyYet(ctx) : [
   { react: '👍' },
   { say: 'cashout.noBalance' },
   {
@@ -427,8 +448,9 @@ const bank = (ctx: FlowContext): Beat[] => {
   return [{ react: '👍' }, ...linkOwnBank('bank.intro', [{ say: 'bank.done' }, { when: () => offerFundsFrom(ctx, 'bank') }])];
 };
 
-/** Add funds' sources, in its chips' order. */
+/** Add funds' sources, in its chips' order. A business can't use a saved card: stored cards are an individual's own. */
 const FUND_METHODS: FundMethod[] = ['card', 'bank', 'crypto'];
+const fundMethodsFor = (ctx: FlowContext): FundMethod[] => (ctx.mode === 'business' ? ['bank', 'crypto'] : FUND_METHODS);
 const FUND_GLYPH: Record<FundMethod, ChipGlyph> = { card: 'card', bank: 'bank', crypto: 'coin' };
 const fundChip = (m: FundMethod) => ({ label: FUND[m], glyph: FUND_GLYPH[m], detail: FUND_DETAIL[m] });
 
@@ -495,36 +517,44 @@ const fund = (ctx: FlowContext): Beat[] => {
       },
     ];
   };
+  const methods = fundMethodsFor(ctx);
   // Topping up for something else, a no to the card or the bank offers the other ways, or puts the task on hold.
-  const otherWays = (tried: number[]): Beat[] | undefined => {
+  const otherWays = (tried: FundMethod[]): Beat[] | undefined => {
     if (!ctx.then) return undefined;
-    const rest = FUND_METHODS.map((_, i) => i).filter((i) => !tried.includes(i));
+    const rest = methods.filter((m) => !tried.includes(m));
     return [
       { say: 'fund.other', params: { amount, again: tried.length > 1 ? 1 : 0 } },
       {
-        chips: [...rest.map((i) => fundChip(FUND_METHODS[i])), { label: 'Not now' }],
+        chips: [...rest.map(fundChip), { label: 'Not now' }],
         reply: true,
         then: (picked) => (picked < rest.length ? from(rest[picked], tried) : [holdOr(ctx, { say: 'fund.later' })]),
       },
     ];
   };
-  const from = (picked: number, tried: number[] = []): Beat[] =>
-    picked === 0
-      ? cardTopUp(ctx, amount, otherWays([...tried, 0]))
-      : picked === 1
-        ? bankTopUp(ctx, amount, otherWays([...tried, 1]))
-        : crypto();
+  const from = (method: FundMethod, tried: FundMethod[] = []): Beat[] => {
+    switch (method) {
+      case 'card':
+        return cardTopUp(ctx, amount, otherWays([...tried, 'card']));
+      case 'bank':
+        return bankTopUp(ctx, amount, otherWays([...tried, 'bank']));
+      case 'crypto':
+        return crypto();
+      default: {
+        const exhaustive: never = method;
+        return exhaustive;
+      }
+    }
+  };
   const named = ctx.params?.method ?? (ctx.params?.asset || ctx.params?.network ? 'crypto' : undefined);
-  const method = named ? FUND_METHODS.indexOf(named) : -1;
-  if (method >= 0) return [{ react: '👍' }, ...from(method)];
+  if (named && methods.includes(named)) return [{ react: '👍' }, ...from(named)];
   return [
     { react: '👍' },
     // Topping up for something else, it says what it needs and why.
     ctx.then ? { say: 'fund.needed', params: { amount }, join: true } : { say: 'fund.ask' },
     {
-      chips: FUND_METHODS.map(fundChip),
+      chips: methods.map(fundChip),
       reply: true,
-      then: from,
+      then: (picked) => from(methods[picked]),
     },
   ];
 };
@@ -680,7 +710,7 @@ const pay = (ctx: FlowContext): Beat[] => {
         {
           when: () => {
             const saved = recipientNamed(draft.name) ?? draft;
-            return [{ emit: { type: 'recipient.add', name: saved.name, bank: saved.bank } }, ...sendTo(ctx, saved, p)];
+            return [{ emit: { type: 'recipient.add', name: saved.name, bank: saved.bank, ...(p.vendor && { vendor: true }) } }, ...sendTo(ctx, saved, p)];
           },
         },
       ],
@@ -1102,6 +1132,7 @@ const cashout = (ctx: FlowContext): Beat[] => {
 const balance = (ctx: FlowContext): Beat[] => {
   const a = ctx.account();
   if (a.balanceOn) return balanceShown(ctx);
+  if (ctx.mode === 'business') return noCompanyYet(ctx);
   if (a.cardVaulted) return [{ react: '👍' }, { say: 'balance.none', params: { card: 1 } }, ...offerBalance(ctx).slice(1)];
   return [
     { react: '👍' },
@@ -1153,6 +1184,8 @@ export const historyShown = (ctx: FlowContext): Beat[] => [
   },
 ];
 
+/* The business flows live in businessFlows.ts and use the pieces here; they're reached through these wrappers so the
+   two modules can import each other. */
 export const FLOWS: Record<ActionId, (ctx: FlowContext) => Beat[]> = {
   connect,
   card,
@@ -1167,6 +1200,14 @@ export const FLOWS: Record<ActionId, (ctx: FlowContext) => Beat[]> = {
   cashout,
   balance,
   history,
+  company: (ctx) => companySetup(ctx),
+  team: (ctx) => teamBudget(ctx),
+  empcard: (ctx) => employeeCard(ctx),
+  invoice: (ctx) => sendInvoice(ctx),
+  invoices: (ctx) => trackInvoices(ctx),
+  bill: (ctx) => payBill(ctx),
+  contractor: (ctx) => payContractor(ctx),
+  payroll: (ctx) => runPayroll(ctx),
 };
 
 /**
@@ -1188,10 +1229,11 @@ export function planFor(flow: ActionId, ctx: FlowContext): Beat[] {
   const run: FlowContext = covering && !a.connected ? { ...ctx, limits: covering } : ctx;
   if (needsSetup(flow, a)) {
     const task = () => FLOWS[flow](run).filter((b) => !('react' in b));
-    return connect({ ...run, then: task, held: HELD[flow]?.(ctx.params) });
+    return connect({ ...run, then: task, held: (HELD[flow] ?? BUSINESS_HELD[flow])?.(ctx.params) });
   }
   // Asked for directly, the agent's reply already says it's setting up.
   if (flow === 'connect') return connect(ctx).filter((b) => !('say' in b && b.say === 'connect.self'));
+  if (flow === 'company') return companySetup(ctx).filter((b) => !('say' in b && b.say === 'company.self'));
   return FLOWS[flow](run);
 }
 
@@ -1241,7 +1283,7 @@ export function overLimit(ctx: FlowContext, spend: number, go: string, then: (ct
 }
 
 /** Flows whose one payment the per-payment limit caps, checked before anything else happens. */
-const OVER_LIMIT: Partial<Record<ActionId, boolean>> = { pay: true, crypto: true, buy: true, agent: true, cashout: true };
+const OVER_LIMIT: Partial<Record<ActionId, boolean>> = { pay: true, crypto: true, buy: true, agent: true, cashout: true, bill: true, contractor: true, payroll: true };
 
 /** What a run is about, for an app that labels it (Duet's eyebrow): who's paid, the hotel, the invoice, or the flow. */
 /** "Geoff, Jay and Anita". */
@@ -1290,7 +1332,7 @@ const TOPIC: Partial<Record<ActionId, (ctx: FlowContext) => string>> = {
     }
   },
 };
-export const topicFor = (flow: ActionId, ctx: FlowContext) => TOPIC[flow]?.(ctx) ?? actionLabel(flow);
+export const topicFor = (flow: ActionId, ctx: FlowContext) => TOPIC[flow]?.(ctx) ?? BUSINESS_TOPIC[flow]?.(ctx) ?? actionLabel(flow);
 
 /** What a setup on the way to a task is for, so a no to it says what's on hold. */
 const HELD: Partial<Record<ActionId, (p?: FlowParams) => string>> = {
@@ -1318,6 +1360,15 @@ export function flowSpend(flow: ActionId, params?: FlowParams, variant = 0): num
       return stayFor(params).amount;
     case 'cashout':
       return cents(params?.amount) ?? CASHOUT_AMOUNT;
+    case 'bill':
+    case 'contractor':
+    case 'payroll':
+      return businessSpend(flow, params);
+    case 'company':
+    case 'team':
+    case 'empcard':
+    case 'invoice':
+    case 'invoices':
     case 'connect':
     case 'card':
     case 'bank':
@@ -1356,4 +1407,12 @@ const NEEDS_CONNECTION: Record<ActionId, boolean> = {
   cashout: true,
   balance: true,
   history: false,
+  company: false,
+  team: true,
+  empcard: true,
+  invoice: true,
+  invoices: true,
+  bill: true,
+  contractor: true,
+  payroll: true,
 };

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ACTIONS, type ActionId } from '@/data/actions';
+import { cleanName, type Mode } from '@/data/mode';
 import { BANK_REACH } from '@/data/bankCountries';
 import type { AgentEvent } from '@/data/agentEvents';
 import { BANK_COUNTRIES } from '@/data/bankCountries';
@@ -30,12 +31,20 @@ const MAX_STEPS = 6;
 const MAX_TURNS = 24;
 
 /** Under the greeting: things to try, so it's clear you can just type. A tap sends one as the person's own message, so each is in their words. */
-const STARTERS: Chip[] = [
-  { label: 'Set up a balance', flow: 'connect', detail: 'Spend from it, within limits you set' },
-  { label: 'Add a card', flow: 'card', detail: 'Save it once, I’ll pay when you ask' },
-  { label: 'Send money to friends (US and abroad)', detail: `To banks in ${BANK_REACH} countries` },
-  { label: 'What can you do?', detail: 'A quick tour of what I can handle' },
-];
+const STARTERS: Record<Mode, Chip[]> = {
+  personal: [
+    { label: 'Set up a balance', flow: 'connect', detail: 'Spend from it, within limits you set' },
+    { label: 'Add a card', flow: 'card', detail: 'Save it once, I’ll pay when you ask' },
+    { label: 'Send money to friends (US and abroad)', detail: `To banks in ${BANK_REACH} countries` },
+    { label: 'What can you do?', detail: 'A quick tour of what I can handle' },
+  ],
+  business: [
+    { label: 'Set up my company', flow: 'company', detail: 'A business account with US bank details' },
+    { label: 'Send an invoice', flow: 'invoice', detail: 'Paid by bank transfer, matched for you' },
+    { label: 'Run payroll', flow: 'payroll', detail: 'Pay the team in one approved run' },
+    { label: 'What can you do?', detail: 'A quick tour of what I can handle for the business' },
+  ],
+};
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Which option a typed reply picks: its number, or its label; -1 for neither. */
 function typedChoice(text: string, chips: Chip[]) {
@@ -78,6 +87,13 @@ const SPEAKS_FIRST = new Set([
   'limits.same',
   'agent.already',
   'getpaid.already',
+  'company.name',
+  'company.intro',
+  'company.already',
+  'company.none',
+  'team.already',
+  'empcard.already',
+  'empcard.notTeam',
 ]);
 
 /** A reply that approves an open ask; anything else declines it. */
@@ -130,6 +146,7 @@ export function useAgentBrain({
   describe,
   readsFor = 0,
   typesFor = 0,
+  mode = 'personal',
 }: {
   entry?: FlowEntry;
   context: () => Omit<FlowContext, 'variant'>;
@@ -147,11 +164,13 @@ export function useAgentBrain({
   readsFor?: number;
   /** The least time its typing bubble shows before a reply, however fast the model answers (ms). */
   typesFor?: number;
+  /** The account this conversation is on: its greeting and the things it offers first. */
+  mode?: Mode;
 }) {
   const [messages, setMessages] = useState<StoredMessage[]>(() => [
     { id: 0, kind: 'stamp', text: 'Today' },
-    { id: 1, kind: 'them', said: { key: 'greeting' }, typing: false },
-    { id: 2, kind: 'chips', chips: STARTERS, picked: null },
+    { id: 1, kind: 'them', said: { key: mode === 'business' ? 'greeting.business' : 'greeting' }, typing: false },
+    { id: 2, kind: 'chips', chips: STARTERS[mode], picked: null },
   ]);
   // The clock is the visitor's, so it lands after hydration.
   useEffect(() => {
@@ -173,6 +192,11 @@ export function useAgentBrain({
   /** An open question for an amount, waiting on what they type. */
   const amountRef = useRef<{ take: (usd: number) => void; all?: number } | null>(null);
   const [awaitingAmount, setAwaitingAmount] = useState(false);
+  /** An open question for a name, waiting on what they type (an empty answer lapses it). */
+  const nameRef = useRef<((value: string) => void) | null>(null);
+  const [awaitingName, setAwaitingName] = useState(false);
+  /** The open name question's options, so typing one (or its number) picks it. */
+  const nameChoices = useRef<string[] | null>(null);
   /** Something said over an open ask that wasn't a yes or a no: answered once the ask is declined and the run ends. */
   const queued = useRef<string | null>(null);
   /** The conversation as the model reads it: the person's messages, its tool calls and what they did. */
@@ -185,7 +209,7 @@ export function useAgentBrain({
   const messagesRef = useRef<StoredMessage[]>([]);
   const askRef = useRef<((text: string, meant?: string, shown?: boolean) => Promise<void>) | null>(null);
   /** Suggested replies under the agent's last answer: a tap sends one as if typed. */
-  const suggested = useRef<{ id: number; chips: Chip[] } | null>({ id: 2, chips: STARTERS });
+  const suggested = useRef<{ id: number; chips: Chip[] } | null>({ id: 2, chips: STARTERS[mode] });
 
   const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, reply, describe, readsFor, typesFor });
   cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, reply, describe, readsFor, typesFor };
@@ -259,9 +283,11 @@ export function useAgentBrain({
     decideRef.current?.('cancel');
     pickRef.current?.(-1);
     amountRef.current?.take(-1);
+    nameRef.current?.('');
     authRef.current?.();
-    decideRef.current = pickRef.current = amountRef.current = authRef.current = null;
+    decideRef.current = pickRef.current = amountRef.current = authRef.current = nameRef.current = null;
     setAwaitingAmount(false);
+    setAwaitingName(false);
     setMessages((list) =>
       list
         .filter((m) => m.kind !== 'work')
@@ -403,6 +429,34 @@ export function useAgentBrain({
           if (usd <= 0 || run.cancelled) return false;
           setBusy(true);
           if (!(await play(b.then(usd), run))) return false;
+        } else if ('name' in b) {
+          setBusy(false);
+          setAwaitingName(true);
+          const labels = [b.suggestion, 'Type my own'];
+          const chipsId = show({ kind: 'chips', chips: labels.map((label) => ({ label })), picked: null });
+          nameChoices.current = labels;
+          const value = await new Promise<string>((r) => {
+            nameRef.current = r;
+            pickRef.current = (i) => {
+              if (i < 0) return r('');
+              pickRef.current = null;
+              nameChoices.current = null;
+              patch(chipsId, (m) => (m.kind === 'chips' ? { ...m, picked: i } : m));
+              if (!pickedByText.current) push({ kind: 'me', text: labels[i] });
+              pickedByText.current = false;
+              // Type my own: it asks for one, and the typed name still answers.
+              if (i === 1) void play([{ pause: 500 }, { say: b.other }], run).then(() => setBusy(false));
+              else window.setTimeout(() => r(b.suggestion), 600);
+            };
+          });
+          nameRef.current = null;
+          pickRef.current = null;
+          nameChoices.current = null;
+          setAwaitingName(false);
+          patch(chipsId, (m) => (m.kind === 'chips' && m.picked === null ? { ...m, expired: true } : m));
+          if (!value || run.cancelled) return false;
+          setBusy(true);
+          if (!(await play(b.named(value), run))) return false;
         }
       }
       return !run.cancelled;
@@ -537,7 +591,7 @@ export function useAgentBrain({
         const [answer] = await Promise.all([cb.current.reply(windowOf(transcript.current)), step === 0 ? sleep(cb.current.typesFor) : undefined]);
         if (run.cancelled) return;
         if ('fallback' in answer) {
-          const said: Said = { key: answer.fallback };
+          const said: Said = { key: answer.fallback === 'fallback' && mode === 'business' ? 'fallback.business' : answer.fallback };
           if (typing !== null) patch(typing, (m) => (m.kind === 'them' ? { ...m, said, typing: false } : m));
           else show({ kind: 'them', said, typing: false });
           typing = null;
@@ -666,7 +720,8 @@ export function useAgentBrain({
       push({ kind: 'me', text: typed ?? chip.label });
       heard(typed ?? chip.label);
       const ctx: FlowContext = { ...cb.current.context(), variant: 0 };
-      void start(chip.flow, FLOWS[chip.flow](ctx), cb.current.readsFor, topicFor(chip.flow, ctx), typed ?? chip.label);
+      const beats = needsSetup(chip.flow, ctx.account()) ? planFor(chip.flow, ctx) : FLOWS[chip.flow](ctx);
+      void start(chip.flow, beats, cb.current.readsFor, topicFor(chip.flow, ctx), typed ?? chip.label);
     },
     [ask, push, start],
   );
@@ -683,6 +738,31 @@ export function useAgentBrain({
       const yes = YES.test(text);
       if (!yes && !NO.test(text)) queued.current = text;
       afterReading(() => decide(yes ? 'allow' : 'deny'));
+      return;
+    }
+    // An open question for a name takes whatever they type as the name.
+    const naming = nameRef.current;
+    if (naming) {
+      // Its options' numbers or labels (Instinct lists them as text) pick that option instead.
+      const choices = nameChoices.current;
+      const pickName = pickRef.current;
+      const n = Number.parseInt(text, 10);
+      const byNumber = String(n) === text && n >= 1 && choices && n <= choices.length ? n - 1 : -1;
+      const i = byNumber >= 0 ? byNumber : (choices?.findIndex((c) => c.toLowerCase() === text.toLowerCase()) ?? -1);
+      if (pickName && i >= 0) {
+        setComposer('');
+        push({ kind: 'me', text });
+        pickedByText.current = true;
+        afterReading(() => pickName(i));
+        return;
+      }
+      const value = cleanName(text);
+      setComposer('');
+      if (!value) return;
+      nameRef.current = null;
+      pickRef.current = null;
+      push({ kind: 'me', text: value });
+      afterReading(() => naming(value));
       return;
     }
     // An open question for an amount takes one; anything else lapses it and the agent answers what they said.
@@ -766,9 +846,11 @@ export function useAgentBrain({
     composer,
     setComposer,
     send,
-    canSend: composer.trim().length > 0 && (answering || awaitingAmount || (!running && !busy)),
+    canSend: composer.trim().length > 0 && (answering || awaitingAmount || awaitingName || (!running && !busy)),
     /** A flow is waiting on a typed dollar amount ("How much?"). */
     awaitingAmount,
+    /** A flow is waiting on a typed name (the company, the owner). */
+    awaitingName,
     busy,
     allow,
     deny,

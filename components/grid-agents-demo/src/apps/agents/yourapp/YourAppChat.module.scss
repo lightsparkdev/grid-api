@@ -193,3 +193,12 @@
     --acct-edge: none;
   }
 }
+
+.invoiceSkin {
+  --part-radius: 20px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+
+  :global([data-theme='dark']) & {
+    box-shadow: none;
+  }
+}

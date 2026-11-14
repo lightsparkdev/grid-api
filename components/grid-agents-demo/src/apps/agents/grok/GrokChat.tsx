@@ -13,8 +13,8 @@ import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5
 import { Flag } from '@/apps/shared/Flag';
 import { ChatFrame, ComposerField, NATIVE_IN, ScrollEdge, useOpenedMarks, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton, ScanGlyph } from '../glass';
-import type { AgentAsk, AgentNote, Chip, Message, Product } from '../conversation';
-import { BalanceCard, copyLabel, Divider, NoteCard, shortCode, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
+import type { AgentAsk, AgentNote, Chip, Invoice, Message, Product } from '../conversation';
+import { BalanceCard, copyLabel, CopyCode, Divider, NoteCard, shortCode, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from '../vault/useAskSheet';
@@ -270,6 +270,55 @@ function FormSheet({ ask, onCancel, onDone }: { ask: AgentAsk; onCancel: () => v
 }
 
 /** Money out: the order card, Pay in black; it collapses while it pays, then tracks. */
+/** An invoice as Grok's order card: the business, what happened to it, and (still open) the details to pay it at. */
+function GrokInvoice({ invoice }: { invoice: Invoice }) {
+  const paid = invoice.status === 'paid';
+  return (
+    <div className={styles.order} data-state="done">
+      <div className={styles.orderHead}>
+        <span className={styles.orderTile}>
+          <span>{invoice.from[0]}</span>
+        </span>
+        <span>{invoice.from}</span>
+        <small>{invoice.number}</small>
+      </div>
+      <strong className={styles.orderTitle}>{paid ? 'Invoice paid' : 'Invoice sent'}</strong>
+      <span className={styles.orderSub}>{paid ? `${invoice.amount} from ${invoice.to}, by bank transfer` : `To ${invoice.to}`}</span>
+      {paid ? (
+        <div className={styles.track} data-full>
+          <span className={styles.trackEnd}>
+            <IconPaperPlane size={12} />
+          </span>
+          <span className={styles.trackBar}>
+            <i />
+          </span>
+          <span className={styles.trackMark}>
+            <IconCheckmark1 size={12} />
+          </span>
+        </div>
+      ) : (
+        <>
+          <div className={styles.orderLines}>
+            <span>Amount</span>
+            <strong>{invoice.amount}</strong>
+            <span>Due</span>
+            <span>{invoice.due}</span>
+            <span>For</span>
+            <span>{invoice.memo}</span>
+          </div>
+          <div className={styles.orderLines}>
+            <span>Bank</span>
+            <span>{invoice.bank}</span>
+            <span>Routing</span>
+            <span>{invoice.routing}</span>
+          </div>
+          <CopyCode value={invoice.account} />
+        </>
+      )}
+    </div>
+  );
+}
+
 function OrderCard({ m, onAllow, onDeny }: { m: Ask; onAllow: () => void; onDeny: () => void }) {
   const { ask, state } = m;
   const who = ask.who;
@@ -420,6 +469,7 @@ export function GrokChat({ chat }: AgentChatProps) {
           );
         }
         if (m.card.done && settledByOrder(i, all)) return null;
+        if (m.card.invoice) return <GrokInvoice invoice={m.card.invoice} />;
         if (m.card.code) return <AddressForm note={m.card} />;
         return <NoteCard note={m.card} className={styles.note} />;
       }

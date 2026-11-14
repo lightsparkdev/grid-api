@@ -1,4 +1,4 @@
-import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, AskRow, Params, Product, SubAgent } from '../conversation';
+import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, AskRow, Invoice, Params, Product, SubAgent } from '../conversation';
 import { BANK_REACH } from '@/data/bankCountries';
 import { linkedBank, pullsFrom } from '../linkedBank';
 import { requestOf, shelfFor } from '../products';
@@ -143,6 +143,10 @@ export const STATUS = {
   talking: (p) => `Talking to ${s(p, 'hotel')}’s agent`,
   watching: () => 'Waiting for the payment',
   adding: () => 'Adding money',
+  company: (p) => `Setting up ${s(p, 'company')}`,
+  team: () => 'Setting up the team',
+  issuing: () => 'Issuing the card',
+  invoicing: () => 'Writing the invoice',
 } satisfies Record<string, LineFn>;
 
 export type StatusKey = keyof typeof STATUS;
@@ -364,6 +368,60 @@ export const LINES = {
   'balance.answer': (p) => `You have ${usd2(n(p, 'balance'))}. Here’s where things stand.`,
   'history.answer': () => 'Here’s what moved recently.',
   'history.none': () => 'Nothing yet. Once I pay for something or money comes in, it shows up here.',
+
+  'fallback.business': () => 'I can only help with the business’s money here: invoices, bills, contractors, payroll and the team’s cards.',
+  'greeting.business': () =>
+    'Hi! I can run your business’s money: send invoices, pay bills and contractors, run payroll, and give your team cards. Set up your company to start, or ask me anything.',
+
+  'company.name': () => 'Let’s set up your company’s account. What’s the company called?',
+  'company.name.other': () => 'Sure. What’s it called?',
+  'company.owner.other': () => 'Sure. What’s your full name?',
+  'company.owner': (p) => `Got it. And what’s your name? You’ll own ${s(p, 'company')}’s account and approve what I can’t do alone.`,
+  'company.self': (p) => `Here’s the account I’d set up for ${s(p, 'company')}, with limits you set.`,
+  'company.intro': (p) => `First I need an account for ${s(p, 'company')}, with limits you set. Here’s what I’m asking for.`,
+  'company.done': (p) => `${s(p, 'company')} is set up and verified. Clients can pay it by bank transfer, and I’ll stay inside your limits.`,
+  'company.denied': (p) => `No problem. I won’t touch ${s(p, 'company')}’s money until you set it up.`,
+  'company.already': (p) => `${s(p, 'company')} is already set up. Here’s its account.`,
+  'company.none': () => 'Your business doesn’t have an account yet. Want me to set one up?',
+  'company.later': () => 'Okay. Just say when you want to set it up.',
+
+  'team.intro': (p) =>
+    `I’ll give ${s(p, 'people')} their own agents, sharing a ${usd(n(p, 'budget'))} monthly budget. Each can spend up to ${usd(n(p, 'perTx'))} a payment, and asks you above ${usd(n(p, 'approve'))}.`,
+  'team.done': (p) => `Done. ${s(p, 'people')} each have an agent now, on one ${usd(n(p, 'budget'))} monthly budget from ${s(p, 'company')}’s balance.`,
+  'team.denied': () => 'Okay, no agents for the team for now.',
+  'team.already': (p) => `The team’s already set up. ${s(p, 'people')} share a ${usd(n(p, 'budget'))} monthly budget.`,
+
+  'empcard.intro': (p) =>
+    `I’ll get ${s(p, 'first')} a Visa in their name for ${s(p, 'purpose')}. It spends from ${s(p, 'company')}’s balance${n(p, 'budget') ? ', inside the team budget' : ''}.`,
+  'empcard.done': (p) => `${s(p, 'first')}’s card is ready: Visa •••• ${s(p, 'last4')}. Every charge on it shows up here.`,
+  'empcard.denied': (p) => `Okay, no card for ${s(p, 'first')}.`,
+  'empcard.already': (p) => `${s(p, 'first')} already has a card: Visa •••• ${s(p, 'last4')}.`,
+  'empcard.notTeam': (p) => `${s(p, 'name')} isn’t on the team. Right now that’s ${s(p, 'team')}. Want a card for one of them?`,
+
+  'invoice.intro': (p) =>
+    `I’ll invoice ${s(p, 'client')} ${usd2(n(p, 'amount'))} for ${s(p, 'memo').toLowerCase()}, due ${s(p, 'due')}. They pay ${s(p, 'company')}’s account by bank transfer.`,
+  'invoice.sent': (p) => `Sent ${s(p, 'number')} to ${s(p, 'client')}. When their payment comes in, I’ll match it to the invoice.`,
+  'invoice.paid': (p) => `${s(p, 'client')} paid ${s(p, 'number')}. ${usd2(n(p, 'amount'))} is in ${yours(p)}.`,
+
+  'invoices.answer': (p) =>
+    n(p, 'open') === 1
+      ? `One invoice is still open: ${s(p, 'number')}, ${usd2(n(p, 'openTotal'))} from ${s(p, 'first')}.`
+      : `${n(p, 'open')} invoices are still open, ${usd2(n(p, 'openTotal'))} in all.`,
+  'invoices.allPaid': () => 'Every invoice is paid. Nothing to chase.',
+  'invoices.reminded': (p) => `Sent ${s(p, 'first')} a reminder about ${s(p, 'number')}, with the bank details again.`,
+  'invoices.later': () => 'Okay, I’ll leave it for now.',
+
+  'contractor.intro': (p) =>
+    `${s(p, 'first')} doesn’t need an account. I’ll send ${usd2(n(p, 'amount'))} as a link to ${s(p, 'email')}, and they claim it into their own bank.`,
+  'contractor.auto': (p) => `It’s under the ${usd(n(p, 'limit'))} I can send alone, so I’m sending it.`,
+  'contractor.sent': (p) => `The link is on its way to ${s(p, 'first')}.`,
+  'contractor.done': (p) => `${s(p, 'first')} claimed it. ${usd2(n(p, 'amount'))} landed in their bank.`,
+  'contractor.denied': (p) => `Okay, I didn’t send ${s(p, 'first')} anything.`,
+
+  'payroll.intro': (p) => `Payroll for ${s(p, 'people')} is ${usd2(n(p, 'total'))}, in one run, each to the bank they’re paid at.`,
+  'payroll.auto': (p) => `It’s under the ${usd(n(p, 'limit'))} I can send alone, so it’s going out.`,
+  'payroll.done': (p) => `Payroll’s done. ${s(p, 'people')} are paid, ${usd2(n(p, 'total'))} in all.`,
+  'payroll.denied': () => 'Okay, payroll is on hold.',
 } satisfies Record<string, LineFn>;
 
 export type LineKey = keyof typeof LINES;
@@ -496,6 +554,62 @@ export const ASKS = {
     allowed: 'Paid',
     denied: 'Declined',
   }),
+  company: (p) => ({
+    heading: { title: s(p, 'company') },
+    title: `Set up ${s(p, 'company')}’s account`,
+    rows: [
+      { text: 'A verified business account', sub: 'With US bank details clients can pay', icon: 'wallet' },
+      { text: `Up to ${usd(n(p, 'perTx'))} a payment`, sub: `${usd(n(p, 'daily'))} a day`, icon: 'gauge' },
+      { text: `Asks you above ${usd(n(p, 'approve'))}`, sub: `${s(p, 'owner')} approves with Face ID`, icon: 'lock' },
+    ],
+    allow: 'Set up',
+    allowed: 'Set up',
+  }),
+  team: (p) => ({
+    heading: { title: s(p, 'company') },
+    title: `Agents for ${s(p, 'people')}`,
+    rows: [
+      { text: `${usd(n(p, 'budget'))} a month, shared`, sub: `From ${s(p, 'company')}’s balance`, icon: 'wallet' },
+      { text: `Up to ${usd(n(p, 'perTx'))} a payment each`, sub: 'Cards and bank payments', icon: 'gauge' },
+      { text: `Asks you above ${usd(n(p, 'approve'))}`, sub: 'Face ID to approve', icon: 'lock' },
+    ],
+    allow: 'Approve',
+    allowed: 'Approved',
+    denied: 'Declined',
+  }),
+  empcard: (p) => ({
+    heading: { title: s(p, 'company') },
+    title: `A card for ${s(p, 'first')}`,
+    rows: [
+      { text: s(p, 'name'), sub: `${s(p, 'role')} · Visa in their name`, icon: 'card' },
+      { text: `For ${s(p, 'purpose')}`, sub: `From ${s(p, 'company')}’s balance${n(p, 'budget') ? ', inside the team budget' : ''}`, icon: 'wallet' },
+    ],
+    allow: 'Issue card',
+    allowed: 'Issued',
+    denied: 'Declined',
+  }),
+  contractor: (p) => ({
+    title: `Send ${usd2(n(p, 'amount'))} to ${s(p, 'first')}`,
+    who: { name: s(p, 'name'), detail: `For ${s(p, 'note').toLowerCase()}` },
+    amount: usd2(n(p, 'amount')),
+    method: `From ${s(p, 'wallet')}, by claim link`,
+    allow: 'Approve',
+    allowed: 'Sent',
+    denied: 'Declined',
+  }),
+  payroll: (p) => ({
+    title: `Run payroll for ${s(p, 'people')}`,
+    rows: (JSON.parse(s(p, 'rows') || '[]') as { title: string; detail: string; amount: string; initials: string }[]).map((r) => ({
+      text: r.title,
+      sub: `${r.amount} ${r.detail.replace(/^To/, 'to')}`,
+      initials: r.initials,
+    })),
+    amount: usd2(n(p, 'total')),
+    method: `From ${s(p, 'wallet')}, in one run`,
+    allow: 'Approve',
+    allowed: 'Paid',
+    denied: 'Declined',
+  }),
 } satisfies Record<string, AskFn>;
 
 export type AskKey = keyof typeof ASKS;
@@ -518,6 +632,20 @@ function balanceOf(p: Params | undefined, note: string): AgentBalance {
     activity: JSON.parse(s(p, 'rows') || '[]'),
   };
 }
+
+/** The invoice a flow's params describe, as the document card draws it. */
+const invoiceOf = (p: Params | undefined, status: Invoice['status']): Invoice => ({
+  number: s(p, 'number'),
+  from: s(p, 'company'),
+  to: s(p, 'client'),
+  memo: s(p, 'memo'),
+  amount: usd2(n(p, 'amount')),
+  due: s(p, 'due'),
+  status,
+  bank: s(p, 'bank'),
+  routing: s(p, 'routing'),
+  account: s(p, 'account'),
+});
 
 export const NOTES = {
   'account.ready': (p) => ({
@@ -637,6 +765,82 @@ export const NOTES = {
     title: 'Recent activity',
     lines: [],
     rows: JSON.parse(s(p, 'rows') || '[]'),
+  }),
+  'company.ready': (p) => ({
+    title: `${s(p, 'company')} is set up`,
+    lines: [`Balance ${usd2(n(p, 'balance'))}`, `Clients pay into ${s(p, 'bank')}`],
+    done: true,
+    name: 'Account',
+    balance: balanceOf(p, `Account ${s(p, 'account')}`),
+  }),
+  'team.ready': (p) => ({
+    title: 'Team budget',
+    lines: [`${usd(n(p, 'budget'))} a month, shared`, `Agents for ${s(p, 'people')}`],
+    done: true,
+    name: 'Budget',
+    stats: [
+      { label: 'Monthly', value: usd(n(p, 'budget')) },
+      { label: 'Agents', value: String(n(p, 'count')) },
+      { label: 'Asks above', value: usd(n(p, 'approve')) },
+    ],
+  }),
+  'receipt.empcard': (p) => ({
+    title: `${s(p, 'first')}’s Visa •••• ${s(p, 'last4')}`,
+    lines: [`In ${s(p, 'name')}’s name`, `Spends from ${s(p, 'company')}’s balance`],
+    done: true,
+    name: 'Card',
+    stats: [
+      { label: 'Card', value: `•••• ${s(p, 'last4')}` },
+      { label: 'Holder', value: s(p, 'first') },
+      { label: 'For', value: s(p, 'purpose') },
+    ],
+  }),
+  invoice: (p) => ({
+    title: `Invoice ${s(p, 'number')}`,
+    lines: [`${usd2(n(p, 'amount'))} to ${s(p, 'client')}`, `Due ${s(p, 'due')}`],
+    invoice: invoiceOf(p, 'open'),
+    name: 'Invoice',
+  }),
+  'receipt.invoice': (p) => ({
+    title: `${usd2(n(p, 'amount'))} from ${s(p, 'client')}`,
+    lines: ['Paid by bank transfer', `Invoice ${s(p, 'number')}`],
+    done: true,
+    invoice: invoiceOf(p, 'paid'),
+    name: 'Invoice',
+  }),
+  invoices: (p) => ({
+    title: 'Invoices',
+    lines: [],
+    rows: JSON.parse(s(p, 'rows') || '[]'),
+  }),
+  'contractor.link': (p) => ({
+    title: `Claim link for ${s(p, 'first')}`,
+    lines: [`${usd2(n(p, 'amount'))} sent to ${s(p, 'email')}`, 'They pick their bank', 'Expires in 7 days'],
+  }),
+  'receipt.contractor': (p) => ({
+    title: `${usd2(n(p, 'amount'))} to ${s(p, 'first')}`,
+    lines: ['Claimed into their bank', `For ${s(p, 'note').toLowerCase()}`],
+    done: true,
+    stats: [
+      { label: 'Paid', value: usd2(n(p, 'amount')) },
+      { label: 'How', value: 'Claim link' },
+      { label: 'For', value: s(p, 'note') },
+    ],
+  }),
+  'payroll.preview': (p) => ({
+    title: `${usd2(n(p, 'total'))} payroll`,
+    lines: [],
+    rows: JSON.parse(s(p, 'rows') || '[]'),
+  }),
+  'receipt.payroll': (p) => ({
+    title: `Paid ${usd2(n(p, 'total'))} in payroll`,
+    lines: [`To ${s(p, 'people')}, in one run`, `From ${yours(p)}`],
+    done: true,
+    stats: [
+      { label: 'Total', value: usd2(n(p, 'total')) },
+      { label: 'People', value: String(n(p, 'count')) },
+      { label: 'Via', value: 'Bank transfer' },
+    ],
   }),
 } satisfies Record<string, NoteFn>;
 

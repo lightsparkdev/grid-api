@@ -464,10 +464,11 @@ export function ChatFrame({
 }
 
 /** What the agent is waiting on, if anything, which the field's placeholder then says. */
-type Waiting = 'amount' | 'card' | 'bank' | 'ask' | 'choice' | 'answer';
+type Waiting = 'amount' | 'name' | 'card' | 'bank' | 'ask' | 'choice' | 'answer';
 
 const WAITING: Record<Waiting, string> = {
   amount: 'Type an amount, like $50',
+  name: 'Type a name',
   card: 'Add your card, or ask something else',
   bank: 'Link your bank, or ask something else',
   ask: 'Approve it, or type a change',
@@ -476,7 +477,11 @@ const WAITING: Record<Waiting, string> = {
 };
 
 /** The placeholder: what the agent is waiting on (an amount, a card or bank, an approval, a choice, an answer), else the app's invitation. */
-function hintFor(chat: Pick<ChatView, 'messages' | 'awaitingAmount'>, invite: string, own: Partial<Record<Waiting, string>> = {}): string {
+function hintFor(
+  chat: Pick<ChatView, 'messages' | 'awaitingAmount' | 'awaitingName'>,
+  invite: string,
+  own: Partial<Record<Waiting, string>> = {},
+): string {
   const said = chat.messages.filter((m) => m.kind !== 'work' && m.kind !== 'meta' && m.kind !== 'stamp');
   const last = said[said.length - 1];
   const open = chat.messages.find((m) => m.kind === 'ask' && m.state === 'open');
@@ -484,17 +489,19 @@ function hintFor(chat: Pick<ChatView, 'messages' | 'awaitingAmount'>, invite: st
     ? undefined
     : chat.awaitingAmount
       ? 'amount'
-      : open?.kind === 'ask'
-        ? open.ask.card
-          ? 'card'
-          : open.ask.bank
-            ? 'bank'
-            : 'ask'
-        : chat.messages.some((m) => m.kind === 'chips' && m.picked === null && !m.expired)
-          ? 'choice'
-          : last?.kind === 'them' && !last.typing && last.text.trim().endsWith('?')
-            ? 'answer'
-            : undefined;
+      : chat.awaitingName
+        ? 'name'
+        : open?.kind === 'ask'
+          ? open.ask.card
+            ? 'card'
+            : open.ask.bank
+              ? 'bank'
+              : 'ask'
+          : chat.messages.some((m) => m.kind === 'chips' && m.picked === null && !m.expired)
+            ? 'choice'
+            : last?.kind === 'them' && !last.typing && last.text.trim().endsWith('?')
+              ? 'answer'
+              : undefined;
   if (!waiting) return invite;
   // An app whose invitation opens lowercase (Instinct's "iMessage") says it lowercase too.
   const text = own[waiting] ?? WAITING[waiting];
@@ -515,7 +522,7 @@ export function ComposerField({
   className,
   onMultiline,
 }: {
-  chat: Pick<ChatView, 'composer' | 'setComposer' | 'send' | 'messages' | 'awaitingAmount'>;
+  chat: Pick<ChatView, 'composer' | 'setComposer' | 'send' | 'messages' | 'awaitingAmount' | 'awaitingName'>;
   /** The app's invitation to type ("Ask Muse to buy, pay or send…"), shown until the agent waits on something. */
   placeholder: string;
   /** The app's own words for what it's waiting on, where they differ (Instinct's approvals are a typed yes). */

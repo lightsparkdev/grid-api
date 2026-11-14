@@ -980,3 +980,12 @@
     --acct-accent-ink: #000;
   }
 }
+
+/* The invoice in dot's gray, round as its balance card. */
+.invoiceSkin {
+  --part-surface: var(--dot-them);
+  --part-sunk: var(--dot-bg);
+  --part-text: var(--dot-text);
+  --part-muted: var(--dot-secondary);
+  --part-radius: 24px;
+}

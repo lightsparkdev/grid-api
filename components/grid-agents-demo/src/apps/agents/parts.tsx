@@ -8,7 +8,7 @@ import { Flag } from '@/apps/shared/Flag';
 import { BankMark } from './BankMark';
 import { SfSymbol } from '@/apps/shared/icons';
 import { cubicBezierCss, easeOutSnappy } from '@/lib/easing';
-import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, AskRow, AskState, Chip, Message, Product, SubAgent } from './conversation';
+import type { AgentAsk, AgentBalance, AgentMeta, AgentNote, AskRow, AskState, Chip, Invoice, Message, Product, SubAgent } from './conversation';
 import { AppSheet } from './sheet';
 import styles from './parts.module.scss';
 
@@ -29,6 +29,7 @@ const ROW_SYMBOL = {
 /** An ask row's lead: its image, or a symbol the playground has. */
 export function RowGlyph({ row, size = 18 }: { row: AskRow; size?: number }) {
   if (row.image) return <img className={styles.rowImage} src={row.image} alt="" width={32} height={32} />;
+  if (row.initials) return <span className={styles.rowInitials}>{row.initials}</span>;
   const icon = row.icon;
   if (icon && icon in ROW_SYMBOL) return <SfSymbol name={ROW_SYMBOL[icon as keyof typeof ROW_SYMBOL]} size={size} />;
   return <span className={styles.rowDot} />;
@@ -124,6 +125,48 @@ export function NoteCard({ note, className }: { note: AgentNote; className?: str
               </span>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * An invoice as a document: the amount and when it's due, who it's from and to, and the bank details to pay it at, the
+ * account number copyable. In the skin's `--part-*` tokens; `--doc-serif` sets the title and amount in an app's serif.
+ */
+export function InvoiceCard({ invoice, className }: { invoice: Invoice; className?: string }) {
+  const paid = invoice.status === 'paid';
+  return (
+    <div className={`${styles.invoice} ${className ?? ''}`}>
+      <span className={styles.invoiceHead}>
+        <span className={styles.invoiceTitle}>Invoice {invoice.number}</span>
+        <span className={styles.invoiceStatus} data-paid={paid || undefined}>
+          {paid ? 'Paid' : 'Open'}
+        </span>
+      </span>
+      <strong className={styles.invoiceAmount}>{invoice.amount}</strong>
+      <span className={styles.invoiceDue}>{paid ? 'Paid by bank transfer' : `Due ${invoice.due}`}</span>
+      <dl className={styles.invoiceRows}>
+        <dt>From</dt>
+        <dd>{invoice.from}</dd>
+        <dt>To</dt>
+        <dd>{invoice.to}</dd>
+        <dt>For</dt>
+        <dd>{invoice.memo}</dd>
+      </dl>
+      {!paid && (
+        <div className={styles.invoicePay}>
+          <span className={styles.invoicePayLabel}>Pay by bank transfer</span>
+          <dl className={styles.invoiceRows}>
+            <dt>Bank</dt>
+            <dd>{invoice.bank}</dd>
+            <dt>Routing</dt>
+            <dd>{invoice.routing}</dd>
+            <dt>Reference</dt>
+            <dd>{invoice.number}</dd>
+          </dl>
+          <CopyCode value={invoice.account} />
         </div>
       )}
     </div>

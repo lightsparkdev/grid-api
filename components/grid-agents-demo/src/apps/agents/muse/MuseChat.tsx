@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { TextMorph } from 'torph/react';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
+import { IconFileText } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconFileText';
 import { IconArrowUpRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpRight';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
@@ -9,8 +10,8 @@ import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { ChatFrame, ComposerField, ScrollEdge, STILL, TypingDots, useOpenedIds, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton, useContinuousCorners } from '../glass';
-import type { AgentBalance, AgentNote, AskRow, Chip, Message, Product } from '../conversation';
-import { AddressQr, askButtons, copyLabel, Divider, MetaLine, MORPH, NoteCard, RowGlyph, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
+import type { AgentBalance, AgentNote, AskRow, Chip, Invoice, Message, Product } from '../conversation';
+import { AddressQr, askButtons, copyLabel, Divider, MetaLine, MORPH, InvoiceCard, NoteCard, RowGlyph, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { useMuseBalance } from './MuseBalance';
 import { ConnectorCard, useMuseBank, useMuseCard, useMusePayWith } from './MuseConnect';
@@ -251,6 +252,24 @@ function Choices({
       {chips.map((c, i) => (
         <Choice key={c.label} label={c.label} state={picked === i ? 'selected' : settled ? 'dimmed' : 'open'} onPick={() => onPick(i)} />
       ))}
+    </div>
+  );
+}
+
+/** An invoice in Meta Pay's frame, as its approvals are: the business and where it went, over the document. */
+function MuseInvoice({ invoice, pos }: { invoice: Invoice; pos?: string }) {
+  return (
+    <div className={styles.card} data-ready data-pos={pos}>
+      <div className={styles.browserHead}>
+        <span className={styles.globe}>
+          <IconFileText size={18} />
+        </span>
+        <span className={styles.browserTitle}>
+          <strong>{invoice.from}</strong>
+          <small>{invoice.status === 'paid' ? `Paid by ${invoice.to}` : `Sent to ${invoice.to}`}</small>
+        </span>
+      </div>
+      <InvoiceCard invoice={invoice} className={styles.invoiceSkin} />
     </div>
   );
 }
@@ -506,6 +525,7 @@ export function MuseChat({ chat }: AgentChatProps) {
       case 'card': {
         const b = m.card.balance;
         if (b) return <BalanceArtifact balance={b} pos={groupPosition(i, all)} onOpen={() => balance.open(b.wallet)} />;
+        if (m.card.invoice) return <MuseInvoice invoice={m.card.invoice} pos={groupPosition(i, all)} />;
         if (m.card.code) return <AddressCard note={m.card} pos={groupPosition(i, all)} />;
         return (
           <div className={styles.noteWrap} data-pos={groupPosition(i, all)}>

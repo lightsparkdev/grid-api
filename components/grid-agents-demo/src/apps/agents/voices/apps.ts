@@ -205,6 +205,49 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
           submitted: 'Saved new limits',
         },
       }),
+      company: (p) => ({
+        ...ASKS.company(p),
+        form: {
+          title: `Set up ${s(p, 'company')}`,
+          sub: 'A verified business account. Only you can change its limits.',
+          sheetTitle: s(p, 'company'),
+          fields: [
+            { label: 'Per payment', value: usd(n(p, 'perTx')) },
+            { label: 'Per day', value: usd(n(p, 'daily')) },
+            { label: 'Ask me above', value: usd(n(p, 'approve')) },
+          ],
+          toggle: 'Face ID for anything over the limit',
+          submitted: `Set up ${s(p, 'company')}`,
+        },
+      }),
+      team: (p) => ({
+        ...ASKS.team(p),
+        form: {
+          title: `Agents for ${s(p, 'people')}`,
+          sub: `One monthly budget from ${s(p, 'company')}’s balance.`,
+          sheetTitle: 'Team budget',
+          fields: [
+            { label: 'Per month, shared', value: usd(n(p, 'budget')) },
+            { label: 'Per payment, each', value: usd(n(p, 'perTx')) },
+            { label: 'Ask me above', value: usd(n(p, 'approve')) },
+          ],
+          submitted: 'Set up the team budget',
+        },
+      }),
+      empcard: (p) => ({
+        ...ASKS.empcard(p),
+        form: {
+          title: `A card for ${s(p, 'first')}`,
+          sub: `A Visa in ${s(p, 'name')}’s name, on ${s(p, 'company')}’s balance.`,
+          sheetTitle: 'Team card',
+          fields: [
+            { label: 'Cardholder', value: s(p, 'name') },
+            { label: 'Role', value: s(p, 'role') },
+            { label: 'For', value: s(p, 'purpose') },
+          ],
+          submitted: `Issued ${s(p, 'first')}’s card`,
+        },
+      }),
     },
   },
 
@@ -369,6 +412,18 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
         title: 'Update your limits',
         text: `new limits: i’d act alone up to ${usd(n(p, 'approve'))}${wasText(p, 'approve', 'fromApprove')}, ${usd(n(p, 'daily'))} a day${wasText(p, 'daily', 'fromDaily')}, ${usd(n(p, 'perTx'))} a payment${wasText(p, 'perTx', 'fromPerTx')}. reply yes to save them${s(p, 'go') ? ` and ${s(p, 'go')} it` : ''}`,
       }),
+      company: (p) => ({
+        ...ASKS.company(p),
+        text: `here’s what i’d set up for ${s(p, 'company')}: a verified business account, up to ${usd(n(p, 'perTx'))} a payment, ${usd(n(p, 'daily'))} a day, and i’ll text you before anything over ${usd(n(p, 'approve'))}. reply yes and i’ll set it up`,
+      }),
+      team: (p) => ({
+        ...ASKS.team(p),
+        text: `${s(p, 'people')} each get their own agent, sharing ${usd(n(p, 'budget'))} a month from ${s(p, 'company')}’s balance. up to ${usd(n(p, 'perTx'))} a payment each, and i’ll text you before anything over ${usd(n(p, 'approve'))}. reply yes to set it up`,
+      }),
+      empcard: (p) => ({
+        ...ASKS.empcard(p),
+        text: `a Visa in ${s(p, 'name')}’s name for ${s(p, 'purpose')}, on ${s(p, 'company')}’s balance. reply yes and i’ll issue it`,
+      }),
     },
   },
 
@@ -412,6 +467,20 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       buy: duetSpend('buy'),
       sub: duetSpend('sub'),
       agent: duetSpend('agent'),
+      contractor: duetSpend('contractor'),
+      payroll: duetSpend('payroll'),
+      company: (p) => ({
+        ...ASKS.company(p),
+        text: `A verified business account for ${s(p, 'company')}: up to ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day. I’ll check with you before anything over ${usd(n(p, 'approve'))}, and you can change these any time.`,
+      }),
+      team: (p) => ({
+        ...ASKS.team(p),
+        text: `${s(p, 'people')} each get an agent, sharing ${usd(n(p, 'budget'))} a month from ${s(p, 'company')}’s balance, up to ${usd(n(p, 'perTx'))} a payment each. Anything over ${usd(n(p, 'approve'))} comes to you.`,
+      }),
+      empcard: (p) => ({
+        ...ASKS.empcard(p),
+        text: `A Visa in ${s(p, 'name')}’s name for ${s(p, 'purpose')}, spending from ${s(p, 'company')}’s balance${n(p, 'budget') ? ' inside the team budget' : ''}.`,
+      }),
     },
   },
 

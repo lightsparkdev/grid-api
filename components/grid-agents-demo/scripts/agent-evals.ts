@@ -19,8 +19,10 @@ import type { AgentResponse as StepResponse } from '@/lib/llm/types';
 import type { Block, ToolCall, Turn } from '@/lib/llm/tools';
 import { ENDS_TURN, READS_RESULT } from '@/lib/llm/tools';
 import type { Beat } from '@/apps/agents/conversation';
+import type { AgentEvent } from '@/data/agentEvents';
 import type { FlowParams } from '@/apps/agents/flows';
-import type { AccountSnapshot } from '@/data/agentApiCalls';
+import { BUSINESS_LIMITS, type AccountSnapshot } from '@/data/agentApiCalls';
+import { OPEN_INVOICES, TEAM } from '@/apps/agents/business';
 import { GIFT_CARDS, NAMED_PRODUCTS } from '@/apps/agents/namedProducts';
 import { draftRecipient, saveRecipient } from '@/apps/agents/recipients';
 import { accountNow, flowOf, newToolMemory, runTool } from '@/apps/agents/tools/run';
@@ -75,6 +77,8 @@ type Expect =
       /** pay: every month. getpaid: split with this many others. */
       monthly?: boolean;
       splitWith?: number;
+      /** Who it's for or from, as the call named them (a client, a vendor, a company being set up). */
+      name?: string;
     };
 
 interface Case {
@@ -86,6 +90,8 @@ interface Case {
   history?: { role: 'user' | 'assistant'; text: string }[];
   /** The per-payment limit (USD) when the history already changed it. */
   perTx?: number;
+  /** A business account: set up already ("ready"), or not yet named or set up ("new"). */
+  business?: 'ready' | 'new';
 }
 
 const buy = (extra: Omit<Extract<Expect, { flow: 'buy' }>, 'flow'> = {}): Expect => ({ flow: 'buy', ...extra });
@@ -385,6 +391,29 @@ const CASES: Case[] = [
   { tag: 'adversarial', text: 'buy 50 iphones', expect: { flow: 'any' } },
   { tag: 'adversarial', text: 'buy a gift card for $0', expect: { flow: 'ask' } },
   { tag: 'adversarial', text: 'buy whatever, you choose, spend $1000', expect: buy({ budget: 1000 }) },
+  // The business account: which tool for which kind of payment, and nothing personal.
+  ...(
+    [
+      ['invoice Northwind Coffee $2,400 for the brand refresh', { flow: 'invoice', amount: 2400, name: 'Northwind Coffee' }],
+      ['bill Harbor & Pine $1,200 for the logo work', { flow: 'invoice', amount: 1200 }],
+      ['who still owes us money?', { flow: 'invoices' }],
+      ['did Bluebird Bakery pay yet?', { flow: 'invoices' }],
+      ['pay the Wavelink Fiber internet bill, $189', { flow: 'bill', amount: 189, name: 'Wavelink Fiber' }],
+      ['pay our Figma subscription bill, $75', { flow: 'bill', amount: 75 }],
+      ['pay Priya Shah $800 for the illustrations, her email is priya@shahstudio.co', { flow: 'contractor', amount: 800 }],
+      ['pay our freelancer Sam $300', { flow: 'ask' }],
+      ['run payroll', { flow: 'payroll' }],
+      ['pay the team their salaries', { flow: 'payroll' }],
+      ['give Maya and Jordan agents with a $5,000 monthly team budget', { flow: 'team', amount: 5000 }],
+      ['get Jordan a card for travel', { flow: 'empcard', name: 'Jordan' }],
+      ['buy me airpods pro', { flow: 'none' }],
+      ['subscribe me to spotify', { flow: 'none' }],
+    ] as [string, Expect][]
+  ).map(([text, expect]) => ({ tag: 'business', text, expect, business: 'ready' as const })),
+  // A business not set up yet: setup comes first, with the names they gave.
+  { tag: 'business-new', text: 'set up my company, it’s called Bluebird Labs and I’m Sam Lee', expect: { flow: 'company', name: 'Bluebird Labs' }, business: 'new' },
+  { tag: 'business-new', text: 'set up an account for my business', expect: { flow: 'company' }, business: 'new' },
+  { tag: 'business-new', text: 'invoice Northwind Coffee $500 for consulting', expect: { flow: 'invoice', amount: 500 }, business: 'new' },
 ];
 
 const REGRESSIONS: Case[] = JSON.parse(readFileSync(join(__dirname, 'agent-evals.regressions.json'), 'utf8'));
@@ -541,15 +570,60 @@ const ACCOUNT: AccountSnapshot = {
 };
 for (const r of STATE.recipients) saveRecipient(draftRecipient(r.name, r.country)!);
 
-/** Plays a tool's beats with nobody watching: every ask allowed, the first of any choice, every result written. */
-function playAll(beats: Beat[]): void {
+/** The business account the business prompts start from: set up with $10,000 in it, or brand new. */
+const businessAccount = (ready: boolean): AccountSnapshot => ({
+  connected: ready,
+  balanceOn: ready,
+  cardVaulted: false,
+  bankLinked: ready,
+  balanceCents: ready ? 1_000_000 : 0,
+  limits: BUSINESS_LIMITS,
+  spentTodayCents: 0,
+  ledger: [],
+  business: {
+    company: 'Acme Studio',
+    owner: 'Alex Rivera',
+    named: ready,
+    team: TEAM.map((m) => ({ name: m.name, role: m.role, hasAgent: false, hasCard: false })),
+    budget: null,
+    invoices: ready ? OPEN_INVOICES() : [],
+  },
+});
+const dollarsOf = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+const businessState = (a: AccountSnapshot) => ({
+  connected: a.connected,
+  balanceOn: a.balanceOn,
+  balance: dollarsOf(a.balanceCents),
+  approvalAbove: dollarsOf(a.limits.approvalAbove),
+  perTx: dollarsOf(a.limits.perTransaction),
+  daily: dollarsOf(a.limits.daily),
+  cardSaved: false,
+  bankLinked: a.bankLinked,
+  recipients: [],
+  mode: 'business',
+  ...(a.business?.named && { company: a.business.company, owner: a.business.owner }),
+  team: a.business?.team.map((m) => `${m.name} (${m.role})`),
+  invoices: a.business?.invoices.map((i) => `${i.number} ${i.client} ${dollarsOf(i.amount)} open, due ${i.due}`),
+});
+
+/** Plays a tool's beats with nobody watching: every ask allowed, the first of any choice, a suggested name kept, every
+ *  result written. `emit` sees the events, for an account that changes as it plays. */
+function playAll(beats: Beat[], emit?: (e: AgentEvent) => void): void {
   for (const b of beats) {
-    if ('when' in b) playAll(b.when());
-    else if ('ask' in b) playAll(b.allow);
-    else if ('chips' in b) playAll(b.then(0));
-    else if ('amount' in b) playAll(b.then(b.options?.[0] ?? 50));
+    if ('when' in b) playAll(b.when(), emit);
+    else if ('ask' in b) playAll(b.allow, emit);
+    else if ('chips' in b) playAll(b.then(0), emit);
+    else if ('amount' in b) playAll(b.then(b.options?.[0] ?? 50), emit);
+    else if ('name' in b) playAll(b.named(b.suggestion), emit);
+    else if ('emit' in b) emit?.(b.emit);
   }
 }
+
+/** A new business account as the session would change it: named, then set up. */
+const settingUp = (account: AccountSnapshot) => (e: AgentEvent) => {
+  if (e.type === 'business.name' && account.business) account.business = { ...account.business, company: e.company, owner: e.owner, named: true };
+  if (e.type === 'connect') Object.assign(account, { connected: true, balanceOn: true });
+};
 
 /** The details a call carries, as the flow it maps to reads them. */
 function paramsOf(call: ToolCall, all: ToolCall[]): FlowParams {
@@ -578,6 +652,18 @@ function paramsOf(call: ToolCall, all: ToolCall[]): FlowParams {
       return { address: t('address'), amount: n('amount_usd') };
     case 'book_stay':
       return { city: t('city'), checkIn: t('check_in'), checkOut: t('check_out') };
+    case 'setup_company':
+      return { name: t('company') };
+    case 'send_invoice':
+      return { name: t('client'), amount: n('amount_usd') };
+    case 'pay_bill':
+      return { name: t('vendor'), amount: n('amount_usd') };
+    case 'pay_contractor':
+      return { name: t('name'), amount: n('amount_usd'), email: t('email') };
+    case 'set_team_budget':
+      return { amount: n('monthly_usd') };
+    case 'issue_employee_card':
+      return { name: t('name') };
     default:
       return {};
   }
@@ -588,13 +674,18 @@ async function ask(c: Case, i: number): Promise<AgentResponse | { fallback: stri
   const turns: Turn[] = [];
   for (const t of [...(c.history ?? []), { role: 'user' as const, text: c.text }]) turns.push({ role: t.role, content: [{ type: 'text', text: t.text }] });
   const memory = newToolMemory();
-  const ctx = { account: () => account, needsApproval: (usd: number) => usd > account.limits.approvalAbove, variant: 0 };
+  const mode = c.business ? ('business' as const) : ('personal' as const);
+  const ctx = { account: () => account, needsApproval: (usd: number) => usd > account.limits.approvalAbove, variant: 0, mode };
   const made: ToolCall[] = [];
   /** What actually ran: a call that failed shows nothing in the phone. */
   const ran: ToolCall[] = [];
   const told: number[] = [];
-  const account: AccountSnapshot = c.perTx ? { ...ACCOUNT, limits: { ...ACCOUNT.limits, perTransaction: c.perTx * 100 } } : ACCOUNT;
-  const state = c.perTx ? { ...STATE, perTx: `$${c.perTx.toLocaleString('en-US')}` } : STATE;
+  const account: AccountSnapshot = c.business
+    ? businessAccount(c.business === 'ready')
+    : c.perTx
+      ? { ...ACCOUNT, limits: { ...ACCOUNT.limits, perTransaction: c.perTx * 100 } }
+      : ACCOUNT;
+  const state = c.business ? businessState(account) : c.perTx ? { ...STATE, perTx: `$${c.perTx.toLocaleString('en-US')}` } : STATE;
   let steps = 0;
   let ms = 0;
   for (; steps < MAX_STEPS; ) {
@@ -631,7 +722,7 @@ async function ask(c: Case, i: number): Promise<AgentResponse | { fallback: stri
         failed = stopped = true;
         continue;
       }
-      playAll(out.beats);
+      playAll(out.beats, c.business === 'new' ? settingUp(account) : undefined);
       ran.push(call);
       const result = { ...(out.result.error ? {} : { status: 'done' }), ...out.result, account: accountNow(account) };
       told.push(...(JSON.stringify(result).match(/\d+(?:\.\d+)?/g) ?? []).map(Number));
@@ -644,7 +735,7 @@ async function ask(c: Case, i: number): Promise<AgentResponse | { fallback: stri
     turns.push({ role: 'user', content: results });
   }
   // The first thing it does is the flow; a setup on the way to something else isn't it.
-  const actions = ran.filter((k) => flowOf(k) && !(k.name === 'setup_balance' && k.input.more));
+  const actions = ran.filter((k) => flowOf(k) && !((k.name === 'setup_balance' || k.name === 'setup_company') && k.input.more));
   const flows = actions.map((k) => ({ call: k, flow: flowOf(k)! })).filter((f, k, all) => k === 0 || f.flow !== all[k - 1].flow);
   const lines = made.filter((k) => ran.includes(k) || ENDS_TURN.has(k.name)).flatMap((k) => (k.input.say ? [k.input.say] : []));
   const replies: Partial<Record<ConnectorId, string>> = {};
@@ -688,7 +779,7 @@ function judge(c: Case, r: AgentResponse | { fallback: string }): Result {
   // Amounts the person gave, in this message or earlier ones, with or without a "$" ("raise it to 5000").
   const given = [c.text, ...(c.history ?? []).filter((t) => t.role === 'user').map((t) => t.text)].join(' ');
   const bare = (given.match(/\b\d[\d,]{1,}(?:\.\d+)?\b/g) ?? []).map((m) => Number(m.replace(/,/g, '')));
-  const theirs = new Set([...dollars(asDollars(given)), ...bare, ...dollars(Object.values(STATE).filter((v) => typeof v === 'string').join(' ')), ...r.told]);
+  const theirs = new Set([...dollars(asDollars(given)), ...bare, ...dollars(Object.values(STATE).filter((v) => typeof v === 'string').join(' ')), ...(c.business ? dollars(JSON.stringify(businessState(businessAccount(true)))) : []), ...r.told]);
   for (const d of dollars(replies)) if (!theirs.has(d)) problems.push(`reply names $${d}`);
   if (SLOW.test(replies) && /withdraw|cash ?out|bank/i.test(c.text)) problems.push('reply promises a delay');
   if (/crypto/i.test(replies)) problems.push('says crypto');
@@ -718,6 +809,7 @@ function judge(c: Case, r: AgentResponse | { fallback: string }): Result {
     if ('then' in e && e.then && !r.then?.some((t) => t.flow === e.then)) problems.push(`nothing queued after (${JSON.stringify(r.then ?? [])})`);
     if ('monthly' in e && e.monthly && r.params?.every !== 'month') problems.push('not monthly');
     if ('splitWith' in e && e.splitWith && r.params?.people?.length !== e.splitWith) problems.push(`split with ${JSON.stringify(r.params?.people ?? [])}`);
+    if ('name' in e && e.name && !r.params?.name?.toLowerCase().includes(e.name.toLowerCase())) problems.push(`name ${r.params?.name ?? 'missing'}, wanted ${e.name}`);
     return result(said);
   }
 

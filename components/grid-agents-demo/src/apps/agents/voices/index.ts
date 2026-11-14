@@ -36,29 +36,37 @@ export interface Voice {
 const PROPER =
   /^(Visa|Muse|Dots|Bot|Grok|Duet|Claude|Instinct|Plaid|Chase|Hotel|PIX|SPEI|ACH|SEPA|UPI|USDC|Bitcoin|Lightning|Spark|Base|Solana|Ethereum|Polygon|Arbitrum|Tron|Duolingo|Netflix|Spotify|[A-Z]{2,})/;
 
+/** The names a business line says (its params always carry the company), kept as written: "acme Studio" reads wrong. */
+const NAMED = ['company', 'owner', 'client', 'name', 'first', 'people'];
+const namesIn = (p?: Params) => (p?.company ? NAMED.flatMap((k) => String(p[k] ?? '').split(/\s+/)).filter(Boolean) : []);
+
 /** A neutral line in a lowercase voice (Dots, Instinct): each sentence opens lowercase, and so does "I". */
-export function casual(text: string): string {
+export function casual(text: string, keep: string[] = []): string {
   return text
-    .replace(/(^|[.!?]\s+)([A-Z][\w’']*)/g, (m, pre: string, word: string) => (PROPER.test(word) ? m : pre + word[0].toLowerCase() + word.slice(1)))
+    .replace(/(^|[.!?]\s+)([A-Z][\w’']*)/g, (m, pre: string, word: string) =>
+      PROPER.test(word) || keep.includes(word.replace(/[’']s$/, '')) ? m : pre + word[0].toLowerCase() + word.slice(1),
+    )
     .replace(/\bI(?=[’'\s,.!?]|$)/g, 'i');
 }
 
 /** Lines said as one bubble; Instinct's unpunctuated texts get a period between them. */
 export const joinLines = (lines: string[]) => lines.reduce((all, line) => (!all ? line : /[.!?:]$/.test(all) ? `${all} ${line}` : `${all}. ${line}`), '');
 
-/** An app's voice: its own lines where it has them, the neutral ones otherwise. */
-export function voiceFor(connector: ConnectorId): Voice {
+/** An app's voice: its own lines where it has them, the neutral ones otherwise. On a business account its money is the
+ *  business's (`wallet`: "Acme Studio balance"), not the app's. */
+export function voiceFor(connector: ConnectorId, opts: { wallet?: string } = {}): Voice {
   const v = VOICES[connector];
-  const withName = (p?: Params) => ({ agent: v.name, wallet: v.wallet, ...p });
+  const wallet = opts.wallet ?? v.wallet;
+  const withName = (p?: Params) => ({ agent: v.name, wallet, ...p });
   return {
     id: connector,
     name: v.name,
-    wallet: v.wallet.charAt(0).toUpperCase() + v.wallet.slice(1),
+    wallet: wallet.charAt(0).toUpperCase() + wallet.slice(1),
     line: (key, params) => {
       const own = v.lines?.[key as LineKey];
       if (own) return own(withName(params));
       const text = (LINES[key as LineKey] ?? (() => key))(withName(params));
-      return v.casual ? casual(text) : text;
+      return v.casual ? casual(text, namesIn(params)) : text;
     },
     ask: (key, params) => (v.asks?.[key as AskKey] ?? ASKS[key as AskKey])(withName(params)),
     note: (key, params) => (v.notes?.[key as NoteKey] ?? NOTES[key as NoteKey])(withName(params)),
