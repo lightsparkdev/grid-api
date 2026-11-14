@@ -28,6 +28,15 @@ export interface Chip {
 export type ChipGlyph = 'card' | 'bank' | 'coin' | 'bolt' | 'check' | 'wallet';
 
 /** A row of an approval card: what, where, who, paid with. */
+/** What the business verification page shows, filled in from what the platform already knows. */
+export interface Verification {
+  company: string;
+  entity: string;
+  taxId: string;
+  address: string;
+  owner: string;
+}
+
 export interface AskRow {
   text: string;
   sub?: string;
@@ -244,7 +253,9 @@ export type Beat =
   | { react: string }
   | { meta: string; params?: Params }
   | { divider: string }
-  | { ask: string; params?: Params; faceId?: boolean; allow: Beat[]; deny: Beat[]; swap?: (to: PayTo) => Beat[] }
+  /** An approval. `verify` opens the business verification page when it's approved, before Face ID; closing the page
+   *  leaves it waiting. */
+  | { ask: string; params?: Params; faceId?: boolean; verify?: Verification; allow: Beat[]; deny: Beat[]; swap?: (to: PayTo) => Beat[] }
   /**
    * A choice. Picked on a page the app opened (Instinct's options) there's no reply bubble, so `onPage` says what
    * was picked before `then`.

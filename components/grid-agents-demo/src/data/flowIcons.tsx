@@ -13,6 +13,7 @@ import { IconLimit } from '@central-icons-react/round-outlined-radius-3-stroke-1
 import { IconMoneyHand } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMoneyHand';
 import { IconPaperPlaneTopRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPaperPlaneTopRight';
 import { IconPeople } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPeople';
+import { IconPeopleAdd } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPeopleAdd';
 import { IconPeopleIdCard } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPeopleIdCard';
 import { IconPlugin1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlugin1';
 import { IconPlusLarge } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusLarge';
@@ -39,6 +40,7 @@ export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
   balance: IconWallet1,
   history: IconHistory,
   company: IconBuildings,
+  teammate: IconPeopleAdd,
   team: IconPeople,
   empcard: IconPeopleIdCard,
   invoice: IconFileText,
@@ -67,8 +69,9 @@ export const FLOW_ICON_COLORS: Record<ActionId, string> = {
   buy: '#0082ED',
   agent: 'var(--icon-info)',
   company: '#34C759',
-  team: '#2ABD66',
-  empcard: '#22B96C',
+  teammate: '#2ABD66',
+  team: '#22B96C',
+  empcard: 'var(--icon-success)',
   invoice: '#00A2EE',
   invoices: '#0098EE',
   bill: 'var(--color-blue-500)',

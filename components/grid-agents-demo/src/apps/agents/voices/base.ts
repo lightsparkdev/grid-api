@@ -237,7 +237,7 @@ export const LINES = {
   'fund.other': (p) => (n(p, 'again') ? 'Okay. Stablecoins work too, or I can hold off.' : `No problem. Want to add the ${usd(n(p, 'amount'))} another way?`),
   'fund.later': () => 'Okay, no money added. Just say when.',
   'task.held': (p) => `Okay, I’ll hold off on ${s(p, 'what')}. Just say when.`,
-  'fund.bank': (p) => `Pulling ${usd(n(p, 'amount'))} from your ${linkedBank().bankName} •••• ${linkedBank().last4} over ACH.`,
+  'fund.bank': (p) => `Pulling ${usd(n(p, 'amount'))} from your ${linkedBank().bankName} •••• ${linkedBank().last4}.`,
   'fund.push': (p) =>
     `Send ${s(p, 'send')} from your ${linkedBank().bankName} by ${s(p, 'rail')} to these details. It lands in ${yours(p)} as dollars.`,
   'bank.intro': () => `Link a bank once and you can move money in and out any time, in ${BANK_REACH} countries. Where is it?`,
@@ -369,6 +369,7 @@ export const LINES = {
   'history.answer': () => 'Here’s what moved recently.',
   'history.none': () => 'Nothing yet. Once I pay for something or money comes in, it shows up here.',
 
+  'next.ask': () => 'What would you like to do next?',
   'fallback.business': () => 'I can only help with the business’s money here: invoices, bills, contractors, payroll and the team’s cards.',
   'greeting.business': () =>
     'Hi! I can run your business’s money: send invoices, pay bills and contractors, run payroll, and give your team cards. Set up your company to start, or ask me anything.',
@@ -386,22 +387,40 @@ export const LINES = {
   'company.later': () => 'Okay. Just say when you want to set it up.',
 
   'team.intro': (p) =>
-    `I’ll give ${s(p, 'people')} their own agents, sharing a ${usd(n(p, 'budget'))} monthly budget. Each can spend up to ${usd(n(p, 'perTx'))} a payment, and asks you above ${usd(n(p, 'approve'))}.`,
-  'team.done': (p) => `Done. ${s(p, 'people')} each have an agent now, on one ${usd(n(p, 'budget'))} monthly budget from ${s(p, 'company')}’s balance.`,
+    n(p, 'count') > 1
+      ? `I’ll give ${s(p, 'people')} their own agents, sharing a ${usd(n(p, 'budget'))} monthly budget. Each can spend up to ${usd(n(p, 'perTx'))} a payment, and asks you above ${usd(n(p, 'approve'))}.`
+      : `I’ll give ${s(p, 'people')} their own agent, on a ${usd(n(p, 'budget'))} monthly budget. It can spend up to ${usd(n(p, 'perTx'))} a payment, and asks you above ${usd(n(p, 'approve'))}.`,
+  'team.done': (p) =>
+    `Done. ${s(p, 'people')} ${n(p, 'count') > 1 ? 'each have' : 'has'} an agent now, on a ${usd(n(p, 'budget'))} monthly budget from ${s(p, 'company')}’s balance.`,
   'team.denied': () => 'Okay, no agents for the team for now.',
-  'team.already': (p) => `The team’s already set up. ${s(p, 'people')} share a ${usd(n(p, 'budget'))} monthly budget.`,
+  'team.already': (p) => `The team’s already set up. ${s(p, 'people')} ${n(p, 'count') > 1 ? 'share' : 'has'} a ${usd(n(p, 'budget'))} monthly budget.`,
+  'team.none': () => 'Nobody’s on the team yet. Let’s add someone first.',
+
+  'teammate.name': () => 'Who’s joining the team?',
+  'teammate.name.other': () => 'Sure. What’s their full name?',
+  'teammate.role': (p) => `What does ${s(p, 'first')} do?`,
+  'teammate.pay': (p) => `What’s ${s(p, 'first')}’s monthly pay?`,
+  'teammate.bank': (p) => `Last thing: ${s(p, 'first')}’s bank, so payroll can pay them.`,
+  'teammate.done': (p) =>
+    n(p, 'count') > 1
+      ? `${s(p, 'people')} are on the team. They’re in payroll now, and you can give them cards or agents.`
+      : `${s(p, 'people')} is on the team. They’re in payroll now, and you can give them a card or an agent.`,
+  'teammate.many': (p) => `I’ll add ${s(p, 'people')} one at a time. ${s(p, 'first')} first.`,
+  'teammate.next': (p) => `Now ${s(p, 'first')}.`,
+  'teammate.denied': (p) => `Okay, I didn’t add ${s(p, 'first')}.`,
 
   'empcard.intro': (p) =>
     `I’ll get ${s(p, 'first')} a Visa in their name for ${s(p, 'purpose')}. It spends from ${s(p, 'company')}’s balance${n(p, 'budget') ? ', inside the team budget' : ''}.`,
   'empcard.done': (p) => `${s(p, 'first')}’s card is ready: Visa •••• ${s(p, 'last4')}. Every charge on it shows up here.`,
   'empcard.denied': (p) => `Okay, no card for ${s(p, 'first')}.`,
   'empcard.already': (p) => `${s(p, 'first')} already has a card: Visa •••• ${s(p, 'last4')}.`,
-  'empcard.notTeam': (p) => `${s(p, 'name')} isn’t on the team. Right now that’s ${s(p, 'team')}. Want a card for one of them?`,
+  'empcard.who': () => 'Who’s the card for?',
+  'empcard.notTeam': (p) => `${s(p, 'first')} isn’t on the team yet. Let’s add them first.`,
 
   'invoice.intro': (p) =>
     `I’ll invoice ${s(p, 'client')} ${usd2(n(p, 'amount'))} for ${s(p, 'memo').toLowerCase()}, due ${s(p, 'due')}. They pay ${s(p, 'company')}’s account by bank transfer.`,
   'invoice.sent': (p) => `Sent ${s(p, 'number')} to ${s(p, 'client')}. When their payment comes in, I’ll match it to the invoice.`,
-  'invoice.paid': (p) => `${s(p, 'client')} paid ${s(p, 'number')}. ${usd2(n(p, 'amount'))} is in ${yours(p)}.`,
+  'invoice.paid': (p) => `${s(p, 'client')} just paid ${s(p, 'number')}. ${usd2(n(p, 'amount'))} is in ${yours(p)}.`,
 
   'invoices.answer': (p) =>
     n(p, 'open') === 1
@@ -411,16 +430,12 @@ export const LINES = {
   'invoices.reminded': (p) => `Sent ${s(p, 'first')} a reminder about ${s(p, 'number')}, with the bank details again.`,
   'invoices.later': () => 'Okay, I’ll leave it for now.',
 
-  'contractor.intro': (p) =>
-    `${s(p, 'first')} doesn’t need an account. I’ll send ${usd2(n(p, 'amount'))} as a link to ${s(p, 'email')}, and they claim it into their own bank.`,
-  'contractor.auto': (p) => `It’s under the ${usd(n(p, 'limit'))} I can send alone, so I’m sending it.`,
-  'contractor.sent': (p) => `The link is on its way to ${s(p, 'first')}.`,
-  'contractor.done': (p) => `${s(p, 'first')} claimed it. ${usd2(n(p, 'amount'))} landed in their bank.`,
-  'contractor.denied': (p) => `Okay, I didn’t send ${s(p, 'first')} anything.`,
 
-  'payroll.intro': (p) => `Payroll for ${s(p, 'people')} is ${usd2(n(p, 'total'))}, in one run, each to the bank they’re paid at.`,
+  'payroll.intro': (p) =>
+    `Payroll for ${s(p, 'people')} is ${usd2(n(p, 'total'))}${n(p, 'count') > 1 ? ', in one run, each to the bank they’re paid at' : ', to the bank they’re paid at'}.`,
+  'payroll.none': () => 'There’s nobody on payroll yet. Let’s add someone to the team first.',
   'payroll.auto': (p) => `It’s under the ${usd(n(p, 'limit'))} I can send alone, so it’s going out.`,
-  'payroll.done': (p) => `Payroll’s done. ${s(p, 'people')} are paid, ${usd2(n(p, 'total'))} in all.`,
+  'payroll.done': (p) => `Payroll’s done. ${s(p, 'people')} ${n(p, 'count') > 1 ? 'are' : 'is'} paid, ${usd2(n(p, 'total'))} in all.`,
   'payroll.denied': () => 'Okay, payroll is on hold.',
 } satisfies Record<string, LineFn>;
 
@@ -563,7 +578,7 @@ export const ASKS = {
       { text: `Asks you above ${usd(n(p, 'approve'))}`, sub: `${s(p, 'owner')} approves with Face ID`, icon: 'lock' },
     ],
     allow: 'Set up',
-    allowed: 'Set up',
+    allowed: 'Verified',
   }),
   team: (p) => ({
     heading: { title: s(p, 'company') },
@@ -588,15 +603,7 @@ export const ASKS = {
     allowed: 'Issued',
     denied: 'Declined',
   }),
-  contractor: (p) => ({
-    title: `Send ${usd2(n(p, 'amount'))} to ${s(p, 'first')}`,
-    who: { name: s(p, 'name'), detail: `For ${s(p, 'note').toLowerCase()}` },
-    amount: usd2(n(p, 'amount')),
-    method: `From ${s(p, 'wallet')}, by claim link`,
-    allow: 'Approve',
-    allowed: 'Sent',
-    denied: 'Declined',
-  }),
+
   payroll: (p) => ({
     title: `Run payroll for ${s(p, 'people')}`,
     rows: (JSON.parse(s(p, 'rows') || '[]') as { title: string; detail: string; amount: string; initials: string }[]).map((r) => ({
@@ -695,7 +702,7 @@ export const NOTES = {
   }),
   'receipt.pay': (p) => ({
     title: `${s(p, 'local')} to ${s(p, 'first')}`,
-    lines: [`${s(p, 'bank')} · ${s(p, 'rail')}`, `${usd2(n(p, 'usd'))} from ${s(p, 'wallet')}`],
+    lines: [`To ${s(p, 'bank')} over ${s(p, 'rail')}`, `${usd2(n(p, 'usd'))} from ${s(p, 'wallet')}`],
     done: true,
     stats: [
       { label: 'Sent', value: s(p, 'local') },
@@ -773,6 +780,12 @@ export const NOTES = {
     name: 'Account',
     balance: balanceOf(p, `Account ${s(p, 'account')}`),
   }),
+  'teammate.ready': (p) => ({
+    title: `${s(p, 'name')} joined ${s(p, 'company')}`,
+    lines: [s(p, 'role'), `${usd2(n(p, 'pay'))} a month`, `Paid to ${s(p, 'bank')} •••• ${s(p, 'last4')}`],
+    done: true,
+    name: 'Teammate',
+  }),
   'team.ready': (p) => ({
     title: 'Team budget',
     lines: [`${usd(n(p, 'budget'))} a month, shared`, `Agents for ${s(p, 'people')}`],
@@ -813,20 +826,7 @@ export const NOTES = {
     lines: [],
     rows: JSON.parse(s(p, 'rows') || '[]'),
   }),
-  'contractor.link': (p) => ({
-    title: `Claim link for ${s(p, 'first')}`,
-    lines: [`${usd2(n(p, 'amount'))} sent to ${s(p, 'email')}`, 'They pick their bank', 'Expires in 7 days'],
-  }),
-  'receipt.contractor': (p) => ({
-    title: `${usd2(n(p, 'amount'))} to ${s(p, 'first')}`,
-    lines: ['Claimed into their bank', `For ${s(p, 'note').toLowerCase()}`],
-    done: true,
-    stats: [
-      { label: 'Paid', value: usd2(n(p, 'amount')) },
-      { label: 'How', value: 'Claim link' },
-      { label: 'For', value: s(p, 'note') },
-    ],
-  }),
+
   'payroll.preview': (p) => ({
     title: `${usd2(n(p, 'total'))} payroll`,
     lines: [],

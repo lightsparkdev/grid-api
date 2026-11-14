@@ -8,6 +8,7 @@ import { smoothShapeClip, type CapsuleQuarter } from '@/lib/squircle/path';
 import { ComposerBeam, useComposerDials } from './ComposerBeam';
 import type { Message } from './conversation';
 import type { ChatView } from './types';
+import { BusinessVerify, type VerifyApp } from './vault/BusinessVerify';
 import styles from './ChatFrame.module.scss';
 
 const ROW_IN = motionTransition(easeOutSnappy, 0.5);
@@ -356,12 +357,15 @@ export function ChatFrame({
   rowMotion,
   scroll,
   overlay,
+  verify,
 }: {
   className?: string;
   /** How the thread follows each kind of growth (measured per app); defaults to the ease-in-out most of them use. */
   scroll?: (cause: ScrollCause) => ScrollCurve;
   /** Above everything in the screen, in the skin's colors: its sheets. */
   overlay?: ReactNode;
+  /** The business verification page, as this app hosts it, while an approval waits on it. */
+  verify?: { app: VerifyApp; chat: Pick<ChatView, 'verifying' | 'verified' | 'verifyClosed'> };
   messages: Message[];
   /** How each row arrives; defaults to a soft rise. */
   rowMotion?: (m: Message) => RowMotion;
@@ -457,6 +461,7 @@ export function ChatFrame({
       </div>
       <div className={styles.overlay} data-chat-overlay>
         {overlay}
+        {verify && <BusinessVerify app={verify.app} details={verify.chat.verifying} onVerified={verify.chat.verified} onClose={verify.chat.verifyClosed} />}
       </div>
       {screenOverlay && onFaceIdDone && createPortal(<FaceIdAuth active={!!faceId} onDone={onFaceIdDone} />, screenOverlay)}
     </div>
@@ -478,7 +483,7 @@ const WAITING: Record<Waiting, string> = {
 
 /** The placeholder: what the agent is waiting on (an amount, a card or bank, an approval, a choice, an answer), else the app's invitation. */
 function hintFor(
-  chat: Pick<ChatView, 'messages' | 'awaitingAmount' | 'awaitingName'>,
+  chat: Pick<ChatView, 'messages' | 'awaitingAmount' | 'awaitingName' | 'mode'>,
   invite: string,
   own: Partial<Record<Waiting, string>> = {},
 ): string {
@@ -504,7 +509,7 @@ function hintFor(
               : undefined;
   if (!waiting) return invite;
   // An app whose invitation opens lowercase (Instinct's "iMessage") says it lowercase too.
-  const text = own[waiting] ?? WAITING[waiting];
+  const text = own[waiting] ?? (waiting === 'amount' && chat.mode === 'business' ? 'Type an amount, like $5,000' : WAITING[waiting]);
   return /^[a-z]/.test(invite) ? text.toLowerCase() : text;
 }
 
@@ -522,7 +527,7 @@ export function ComposerField({
   className,
   onMultiline,
 }: {
-  chat: Pick<ChatView, 'composer' | 'setComposer' | 'send' | 'messages' | 'awaitingAmount' | 'awaitingName'>;
+  chat: Pick<ChatView, 'composer' | 'setComposer' | 'send' | 'messages' | 'awaitingAmount' | 'awaitingName' | 'mode'>;
   /** The app's invitation to type ("Ask Muse to buy, pay or send…"), shown until the agent waits on something. */
   placeholder: string;
   /** The app's own words for what it's waiting on, where they differ (Instinct's approvals are a typed yes). */

@@ -510,6 +510,7 @@ export function GrokChat({ chat }: AgentChatProps) {
   return (
     <div className={styles.stage}>
       <ChatFrame
+        verify={{ app: 'grok', chat }}
         className={styles.screen}
         messages={chat.messages}
         render={render}

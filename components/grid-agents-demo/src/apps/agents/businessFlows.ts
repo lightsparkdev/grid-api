@@ -1,8 +1,23 @@
 import type { ActionId } from '@/data/actions';
 import { DEFAULT_BUSINESS } from '@/data/mode';
-import { COMPANY_BANK, inDays, payrollTotal, STORY_BILL, STORY_CONTRACTOR, STORY_INVOICE, TEAM, TEAM_BUDGET, teamMember } from './business';
+import {
+  COMPANY_ADDRESS,
+  COMPANY_BANK,
+  inDays,
+  memberOf,
+  newMember,
+  nextSuggestion,
+  payrollTotal,
+  ROLES,
+  STORY_BILL,
+  STORY_CONTRACTOR,
+  STORY_INVOICE,
+  TEAM_BUDGET,
+  type TeamMember,
+} from './business';
 import type { Beat, Params } from './conversation';
-import { addShort, approvalOr, balanceParams, FLOWS, holdOr, offerFunds, type FlowContext, type FlowParams } from './flows';
+import { addShort, approvalOr, balanceParams, FLOWS, holdOr, offerFunds, recipientParams, type FlowContext, type FlowParams } from './flows';
+import { draftRecipient, recipientNamed } from './recipients';
 import { renameBusinessBank } from './linkedBank';
 import { usd2 } from './story';
 
@@ -23,6 +38,102 @@ function biz(ctx: FlowContext) {
 function names(ctx: FlowContext): Params {
   const b = biz(ctx);
   return { company: b.company, owner: b.owner, ownerFirst: b.owner.split(' ')[0] };
+}
+
+/** Who's on the team, in the order they were added. */
+const teamOf = (ctx: FlowContext) => biz(ctx).team;
+
+const firstNames = (team: readonly { first: string }[]) => {
+  const names = team.map((m) => m.first);
+  return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : (names[0] ?? '');
+};
+
+const initials = (name: string) =>
+  name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+/** Everyone named in one answer ("Danny Glover and Jeremy Klein", "Ava, Sam & Lee"), in order. */
+const namesIn = (value: string) =>
+  value
+    .split(/\s*(?:,|&|\band\b)\s*/i)
+    .map((n) => n.trim())
+    .filter(Boolean);
+
+/** Monthly pay the pay question offers, in dollars, besides a suggested person's own. */
+const PAY_OPTIONS = [3_000, 5_000, 7_500];
+
+/**
+ * Someone joins the team: their name (one tap away, or typed), their role and their monthly pay, then the bank payroll
+ * pays, added in the app's own sheet as a vendor's is. Several named at once join one after another. `then` carries on
+ * with whatever needed them, with the last one added.
+ */
+export function addTeammate(ctx: FlowContext, given: { name?: string } = {}, then?: (member: TeamMember) => Beat[]): Beat[] {
+  const suggested = nextSuggestion(teamOf(ctx));
+  const withBank = (name: string, role: string, pay: number, next: (member: TeamMember) => Beat[]): Beat[] => {
+    const draft = draftRecipient(name, 'us');
+    if (!draft) return [];
+    const p = { ...names(ctx), ...recipientParams(draft), name, role, pay };
+    return [
+      { say: 'teammate.bank', params: p },
+      {
+        ask: 'recipient',
+        params: p,
+        allow: [
+          {
+            when: () => {
+              const saved = recipientNamed(name) ?? draft;
+              const member = newMember(saved.name, role, pay, { name: saved.bank.bankName, last4: saved.bank.last4 }, biz(ctx).company);
+              const ready = { ...p, name: member.name, first: member.first, bank: member.bank.name, last4: member.bank.last4 };
+              return [
+                { emit: { type: 'recipient.add', name: member.name, bank: saved.bank } },
+                { emit: { type: 'team.member', member } },
+                { card: 'teammate.ready', params: ready },
+                { when: () => next(member) },
+              ];
+            },
+          },
+        ],
+        deny: [holdOr(ctx, { say: 'teammate.denied', params: p })],
+      },
+    ];
+  };
+  const askPay = (name: string, role: string, next: (member: TeamMember) => Beat[]): Beat[] => {
+    const usual = suggested.name === name ? suggested.pay / 100 : undefined;
+    const options = usual ? [usual, ...PAY_OPTIONS.filter((o) => o !== usual).slice(0, 2)].sort((a, b) => a - b) : PAY_OPTIONS;
+    return [
+      { say: 'teammate.pay', params: { first: name.split(' ')[0] } },
+      { amount: true, options, then: (usd) => withBank(name, role, Math.round(usd * 100), next) },
+    ];
+  };
+  const askRole = (name: string, next: (member: TeamMember) => Beat[]): Beat[] => {
+    const roles = suggested.name === name ? [suggested.role, ...ROLES.filter((r) => r !== suggested.role)] : ROLES;
+    return [
+      { say: 'teammate.role', params: { first: name.split(' ')[0] } },
+      { chips: roles.map((label) => ({ label })), reply: true, then: (picked) => askPay(name, roles[picked], next) },
+    ];
+  };
+  const addAll = (people: string[], added: TeamMember[] = []): Beat[] => {
+    const [name, ...rest] = people;
+    return askRole(name, (member) => {
+      const all = [...added, member];
+      if (rest.length) return [{ say: 'teammate.next', params: { first: rest[0].split(' ')[0] } }, ...addAll(rest, all)];
+      return then ? then(member) : [{ say: 'teammate.done', params: { people: firstNames(all), count: all.length } }];
+    });
+  };
+  const start = (value: string): Beat[] => {
+    const people = namesIn(value);
+    const many: Beat[] = people.length > 1 ? [{ say: 'teammate.many', params: { people: firstNames(people.map((n) => ({ first: n.split(' ')[0] }))), first: people[0].split(' ')[0] } }] : [];
+    return [...many, ...addAll(people.length ? people : [value])];
+  };
+  if (given.name) return start(given.name);
+  return [
+    { say: 'teammate.name', params: names(ctx) },
+    { name: true, suggestion: suggested.name, other: 'teammate.name.other', named: start },
+  ];
 }
 
 /** The company's account card: its balance, and the US bank details clients pay it at. */
@@ -54,6 +165,13 @@ export function companySetup(ctx: FlowContext, given: { company?: string; owner?
         ask: 'company',
         params: p,
         faceId: true,
+        verify: {
+          company: biz(ctx).company,
+          entity: 'LLC',
+          taxId: '84-2193057',
+          address: `${COMPANY_ADDRESS.line1}, ${COMPANY_ADDRESS.line2}, ${COMPANY_ADDRESS.city}, ${COMPANY_ADDRESS.state} ${COMPANY_ADDRESS.postalCode}`,
+          owner: biz(ctx).owner,
+        },
         allow: [
           { work: 'company', ms: 1400, params: p },
           { emit: { type: 'connect' } },
@@ -105,12 +223,13 @@ export function noCompanyYet(ctx: FlowContext): Beat[] {
 /** A budget the team shares and an agent for each person on it, approved by the owner. */
 export function teamBudget(ctx: FlowContext): Beat[] {
   const b = biz(ctx);
+  if (!b.team.length) return [{ react: '👍' }, { say: 'team.none', params: names(ctx) }, ...addTeammate(ctx, {}, () => teamBudget(ctx).slice(1))];
   const limit = cents(ctx.params?.amount) ?? TEAM_BUDGET;
   const p = {
     ...names(ctx),
     budget: b.budget ?? limit,
-    people: TEAM.map((m) => m.first).join(' and '),
-    count: TEAM.length,
+    people: firstNames(b.team),
+    count: b.team.length,
     perTx: 100_000,
     approve: 25_000,
   };
@@ -136,9 +255,25 @@ export function teamBudget(ctx: FlowContext): Beat[] {
 /** A card in a teammate's name, issued by their own agent. Someone not on the team is said so, not given a card. */
 export function employeeCard(ctx: FlowContext): Beat[] {
   const asked = ctx.params?.name;
-  const m = teamMember(asked) ?? (asked ? undefined : TEAM[1]);
-  if (!m)
-    return [{ react: '👍' }, { say: 'empcard.notTeam', params: { ...names(ctx), name: asked ?? '', team: TEAM.map((t) => t.first).join(' and ') } }];
+  const team = teamOf(ctx);
+  // More than one teammate without a card: it asks who it's for.
+  const without = team.filter((t) => !t.hasCard);
+  if (!asked && without.length > 1)
+    return [
+      { react: '👍' },
+      { say: 'empcard.who', params: names(ctx) },
+      {
+        chips: without.map((t) => ({ label: t.name })),
+        reply: true,
+        then: (picked) => employeeCard({ ...ctx, params: { ...ctx.params, name: without[picked].name } }).slice(1),
+      },
+    ];
+  const m = memberOf(team, asked) ?? (asked ? undefined : (team.find((t) => !t.hasCard) ?? team[team.length - 1]));
+  const forThem = (member: TeamMember) => employeeCard({ ...ctx, params: { ...ctx.params, name: member.name } }).slice(1);
+  if (!m) {
+    const first = asked?.trim().split(' ')[0] ?? '';
+    return [{ react: '👍' }, { say: asked ? 'empcard.notTeam' : 'team.none', params: { ...names(ctx), first } }, ...addTeammate(ctx, asked ? { name: asked.trim() } : {}, forThem)];
+  }
   const b = biz(ctx);
   const p = {
     ...names(ctx),
@@ -146,10 +281,10 @@ export function employeeCard(ctx: FlowContext): Beat[] {
     first: m.first,
     role: m.role,
     purpose: ctx.params?.note || 'travel',
-    last4: m.first === 'Maya' ? '3381' : '7729',
+    last4: String(1000 + (m.name.split('').reduce((h, ch) => h * 31 + ch.charCodeAt(0), 7) % 9000)),
     budget: b.budget ?? 0,
   };
-  if (b.team.find((t) => t.name === m.name)?.hasCard) return [{ react: '👍' }, { say: 'empcard.already', params: p }];
+  if (team.find((t) => t.name === m.name)?.hasCard) return [{ react: '👍' }, { say: 'empcard.already', params: p }];
   return [
     { react: '👍' },
     { say: 'empcard.intro', params: p },
@@ -196,12 +331,12 @@ export function sendInvoice(ctx: FlowContext): Beat[] {
     { emit: { type: 'invoice.send', number, client, amount, memo, due } },
     { card: 'invoice', params: p },
     { say: 'invoice.sent', params: p },
-    { divider: 'Two days later' },
+    { pause: 2600 },
     { emit: { type: 'invoice.paid', number } },
     {
       when: () => [
-        { card: 'receipt.invoice', params: p },
         { say: 'invoice.paid', params: { ...p, balance: ctx.account().balanceCents } },
+        { card: 'receipt.invoice', params: p },
       ],
     },
   ];
@@ -241,7 +376,7 @@ export function trackInvoices(ctx: FlowContext): Beat[] {
           { say: 'invoices.answer', params: p },
           { card: 'invoices', params: p },
           {
-            chips: [{ label: 'Send a reminder', glyph: 'check' }, { label: 'Not now' }],
+            chips: [{ label: `Remind ${open[0].client}`, glyph: 'check' }, { label: 'Not now' }],
             reply: true,
             then: (picked) => [{ say: picked === 0 ? 'invoices.reminded' : 'invoices.later', params: p }],
           },
@@ -259,57 +394,22 @@ export function payBill(ctx: FlowContext): Beat[] {
   return FLOWS.pay({ ...ctx, params: p });
 }
 
-/** Someone with no account gets a link to claim the money into their own bank; over the threshold, the owner approves. */
+/** A contractor is paid to their own bank, at home or abroad, in their currency: Pay someone's flow, in dollars. */
 export function payContractor(ctx: FlowContext): Beat[] {
   const p = ctx.params?.name ? ctx.params : undefined;
-  const name = p?.name?.trim() || STORY_CONTRACTOR.name;
-  const first = name.split(' ')[0];
-  const email = p?.email?.trim() || (p ? `${first.toLowerCase()}@example.com` : STORY_CONTRACTOR.email);
-  const country = (p?.country ?? STORY_CONTRACTOR.country).toUpperCase();
-  const amount = cents(p?.amount) ?? STORY_CONTRACTOR.amount;
-  const note = p?.note?.trim() || (p ? 'Contract work' : STORY_CONTRACTOR.note);
-  const params = { ...names(ctx), name, first, email, amount, note };
-  const send = (c: FlowContext): Beat[] => [
-    { emit: { type: 'contractor.send', name, email, country, amount, note } },
-    ...approvalOr(
-      c,
-      c.needsApproval(amount),
-      { key: 'contractor', params },
-      'contractor.auto',
-      [
-        { card: 'contractor.link', params },
-        { say: 'contractor.sent', params },
-        { divider: 'Later that day' },
-        { emit: { type: 'contractor.claimed' } },
-        { card: 'receipt.contractor', params },
-        { when: () => [{ say: 'contractor.done', params: { ...params, balance: ctx.account().balanceCents } }] },
-      ],
-      'contractor.denied',
-      params,
-    ),
-  ];
-  const short = amount - ctx.account().balanceCents;
-  return [
-    { react: '👍' },
-    { say: 'contractor.intro', params },
-    ...(short > 0 ? addShort({ ...ctx, held: `paying ${first}` })(short, () => send(ctx)) : send(ctx)),
-  ];
+  const params: FlowParams = p
+    ? { ...p, country: p.country ?? 'us', currency: 'USD' }
+    : { name: STORY_CONTRACTOR.name, country: STORY_CONTRACTOR.country, amount: STORY_CONTRACTOR.amount, currency: 'USD', note: STORY_CONTRACTOR.note };
+  return FLOWS.pay({ ...ctx, params });
 }
 
 /** Everyone on the team, in one run: previewed, then one approval for every row. */
 export function runPayroll(ctx: FlowContext): Beat[] {
-  const total = payrollTotal();
-  const rows = TEAM.map((m) => ({
-    title: m.name,
-    detail: `To ${m.bank.name} •••• ${m.bank.last4}`,
-    amount: usd2(m.pay),
-    incoming: false,
-    initials: m.name
-      .split(' ')
-      .map((w) => w[0])
-      .join(''),
-  }));
-  const params = { ...names(ctx), count: TEAM.length, people: TEAM.map((m) => m.first).join(' and '), total, rows: JSON.stringify(rows) };
+  const team = teamOf(ctx);
+  if (!team.length) return [{ react: '👍' }, { say: 'payroll.none', params: names(ctx) }, ...addTeammate(ctx, {}, () => runPayroll(ctx).slice(1))];
+  const total = payrollTotal(team);
+  const rows = team.map((m) => ({ title: m.name, detail: `To ${m.bank.name} •••• ${m.bank.last4}`, amount: usd2(m.pay), incoming: false, initials: initials(m.name) }));
+  const params = { ...names(ctx), count: team.length, people: firstNames(team), total, rows: JSON.stringify(rows) };
   const run = (c: FlowContext): Beat[] => [
     { work: 'quoting', ms: 1000 },
     { emit: { type: 'payroll.preview' } },
@@ -341,7 +441,8 @@ export function runPayroll(ctx: FlowContext): Beat[] {
 export const BUSINESS_TOPIC: Partial<Record<ActionId, (ctx: FlowContext) => string>> = {
   company: (ctx) => (biz(ctx).named ? `Set up ${biz(ctx).company}` : 'Set up your company'),
   team: () => 'Team budget',
-  empcard: (ctx) => `Card for ${(teamMember(ctx.params?.name) ?? TEAM[1]).first}`,
+  teammate: () => 'Add a teammate',
+  empcard: (ctx) => (ctx.params?.name ? `Card for ${ctx.params.name.split(' ')[0]}` : 'Team card'),
   invoice: (ctx) => `${ctx.params?.name ?? STORY_INVOICE.client} invoice`,
   invoices: () => 'Invoices',
   bill: (ctx) => `${ctx.params?.name ?? STORY_BILL.name} bill`,
@@ -352,7 +453,8 @@ export const BUSINESS_TOPIC: Partial<Record<ActionId, (ctx: FlowContext) => stri
 /** What a setup on the way to a business task is for, so a no to it says what's on hold. */
 export const BUSINESS_HELD: Partial<Record<ActionId, (p?: FlowParams) => string>> = {
   team: () => 'the team budget',
-  empcard: (p) => `${(teamMember(p?.name) ?? TEAM[1]).first}’s card`,
+  teammate: () => 'adding them to the team',
+  empcard: (p) => (p?.name ? `${p.name.split(' ')[0]}’s card` : 'the card'),
   invoice: () => 'the invoice',
   invoices: () => 'checking invoices',
   bill: (p) => `paying ${p?.name ?? STORY_BILL.name}`,
@@ -361,14 +463,14 @@ export const BUSINESS_HELD: Partial<Record<ActionId, (p?: FlowParams) => string>
 };
 
 /** The most a business run spends (USD cents), so a jump to it can top the balance up first. */
-export function businessSpend(flow: 'bill' | 'contractor' | 'payroll', params?: FlowParams): number {
+export function businessSpend(flow: 'bill' | 'contractor' | 'payroll', params?: FlowParams, team: readonly TeamMember[] = []): number {
   switch (flow) {
     case 'bill':
       return cents(params?.amount) ?? STORY_BILL.amount * 100;
     case 'contractor':
-      return cents(params?.amount) ?? STORY_CONTRACTOR.amount;
+      return cents(params?.amount ?? STORY_CONTRACTOR.amount) ?? 0;
     case 'payroll':
-      return payrollTotal();
+      return payrollTotal(team);
     default: {
       const exhaustive: never = flow;
       return exhaustive;

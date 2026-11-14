@@ -46,7 +46,7 @@ const wasText = (p: Params | undefined, key: string, from: string) => was(p, key
 /** Muse's send and withdraw checkouts: what pays sits in a Pay with row above the total, as its order sheet does. */
 const museSpend =
   (key: 'pay' | 'cashout' | 'crypto'): AskFn =>
-  (p) => ({ ...ASKS[key](p), payWith: 'Muse balance', method: `${usd2(n(p, 'balance'))} available` });
+  (p) => ({ ...ASKS[key](p), payWith: s(p, 'wallet') || 'Muse balance', method: `${usd2(n(p, 'balance'))} available` });
 
 /** Claude Duet's spend card: a clock on the request, Approve, then Paid. */
 const duetSpend =
@@ -418,7 +418,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       }),
       team: (p) => ({
         ...ASKS.team(p),
-        text: `${s(p, 'people')} each get their own agent, sharing ${usd(n(p, 'budget'))} a month from ${s(p, 'company')}’s balance. up to ${usd(n(p, 'perTx'))} a payment each, and i’ll text you before anything over ${usd(n(p, 'approve'))}. reply yes to set it up`,
+        text: `${s(p, 'people')} ${n(p, 'count') > 1 ? 'each get their own agent, sharing' : 'gets their own agent, on'} ${usd(n(p, 'budget'))} a month from ${s(p, 'company')}’s balance. up to ${usd(n(p, 'perTx'))} a payment each, and i’ll text you before anything over ${usd(n(p, 'approve'))}. reply yes to set it up`,
       }),
       empcard: (p) => ({
         ...ASKS.empcard(p),
@@ -467,7 +467,6 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       buy: duetSpend('buy'),
       sub: duetSpend('sub'),
       agent: duetSpend('agent'),
-      contractor: duetSpend('contractor'),
       payroll: duetSpend('payroll'),
       company: (p) => ({
         ...ASKS.company(p),
@@ -475,7 +474,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       }),
       team: (p) => ({
         ...ASKS.team(p),
-        text: `${s(p, 'people')} each get an agent, sharing ${usd(n(p, 'budget'))} a month from ${s(p, 'company')}’s balance, up to ${usd(n(p, 'perTx'))} a payment each. Anything over ${usd(n(p, 'approve'))} comes to you.`,
+        text: `${s(p, 'people')} ${n(p, 'count') > 1 ? 'each get an agent, sharing' : 'gets an agent, on'} ${usd(n(p, 'budget'))} a month from ${s(p, 'company')}’s balance, up to ${usd(n(p, 'perTx'))} a payment each. Anything over ${usd(n(p, 'approve'))} comes to you.`,
       }),
       empcard: (p) => ({
         ...ASKS.empcard(p),

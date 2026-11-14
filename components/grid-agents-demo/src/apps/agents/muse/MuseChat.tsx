@@ -581,6 +581,7 @@ export function MuseChat({ chat }: AgentChatProps) {
 
   return (
     <ChatFrame
+      verify={{ app: 'muse', chat }}
       className={styles.screen}
       messages={chat.messages}
       render={render}

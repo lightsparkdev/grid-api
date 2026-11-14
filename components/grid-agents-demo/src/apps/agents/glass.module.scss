@@ -14,19 +14,13 @@ $shadow:
   box-shadow: $shadow;
 }
 
-// GlassRim: drawn on the glass's own outline, with light and dark sets measured separately.
+// GlassRim: drawn on the glass's own outline, with light and dark sets measured separately. It sits between the
+// frost and the content by order alone: a z-index would group it away from the frost's backdrop.
 .rim {
   position: absolute;
   inset: 0;
-  z-index: -1;
   overflow: visible;
   pointer-events: none;
-}
-
-// The panel's content wrapper holds the rim behind the glass's own content (a glyph needn't be positioned), and
-// in front of the frost. Not on the panel itself: grouping it there would cut the frost off from its backdrop.
-.pill > div:last-child {
-  isolation: isolate;
 }
 
 .rimDark {

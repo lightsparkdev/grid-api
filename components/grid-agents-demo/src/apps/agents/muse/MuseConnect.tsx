@@ -108,7 +108,7 @@ function Permission({ onConnect, onCancel }: { onConnect: () => void; onCancel: 
           <IconGlobe2 size={16} />
           <span>
             <b>Banks in {BANK_REACH} countries</b>
-            Muse links your account over its local rail, like ACH, SEPA, PIX, SPEI or UPI.
+            Muse links your account over its local rail, like RTP, SEPA, PIX, SPEI or UPI.
           </span>
         </li>
         <li>

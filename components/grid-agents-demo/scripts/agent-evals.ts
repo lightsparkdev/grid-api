@@ -22,7 +22,7 @@ import type { Beat } from '@/apps/agents/conversation';
 import type { AgentEvent } from '@/data/agentEvents';
 import type { FlowParams } from '@/apps/agents/flows';
 import { BUSINESS_LIMITS, type AccountSnapshot } from '@/data/agentApiCalls';
-import { OPEN_INVOICES, TEAM } from '@/apps/agents/business';
+import { newMember, OPEN_INVOICES, SUGGESTED_TEAM } from '@/apps/agents/business';
 import { GIFT_CARDS, NAMED_PRODUCTS } from '@/apps/agents/namedProducts';
 import { draftRecipient, saveRecipient } from '@/apps/agents/recipients';
 import { accountNow, flowOf, newToolMemory, runTool } from '@/apps/agents/tools/run';
@@ -400,8 +400,10 @@ const CASES: Case[] = [
       ['did Bluebird Bakery pay yet?', { flow: 'invoices' }],
       ['pay the Wavelink Fiber internet bill, $189', { flow: 'bill', amount: 189, name: 'Wavelink Fiber' }],
       ['pay our Figma subscription bill, $75', { flow: 'bill', amount: 75 }],
-      ['pay Priya Shah $800 for the illustrations, her email is priya@shahstudio.co', { flow: 'contractor', amount: 800 }],
-      ['pay our freelancer Sam $300', { flow: 'ask' }],
+      ['pay Priya Shah $800 for the illustrations, she banks in India', { flow: 'contractor', amount: 800 }],
+      ['pay our freelancer Sam $300', { flow: 'contractor', amount: 300 }],
+      ['we just hired Sam Lee', { flow: 'teammate' }],
+      ['add someone to the team', { flow: 'teammate' }],
       ['run payroll', { flow: 'payroll' }],
       ['pay the team their salaries', { flow: 'payroll' }],
       ['give Maya and Jordan agents with a $5,000 monthly team budget', { flow: 'team', amount: 5000 }],
@@ -584,7 +586,7 @@ const businessAccount = (ready: boolean): AccountSnapshot => ({
     company: 'Acme Studio',
     owner: 'Alex Rivera',
     named: ready,
-    team: TEAM.map((m) => ({ name: m.name, role: m.role, hasAgent: false, hasCard: false })),
+    team: SUGGESTED_TEAM.slice(0, 2).map((m) => ({ ...newMember(m.name, m.role, m.pay, { name: 'Chase', last4: '4417' }, 'Acme Studio'), hasAgent: false, hasCard: false })),
     budget: null,
     invoices: ready ? OPEN_INVOICES() : [],
   },

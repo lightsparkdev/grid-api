@@ -40,8 +40,8 @@ import {
   type FlowContext,
   type FlowParams,
 } from '../flows';
-import { payrollTotal, TEAM, teamMember } from '../business';
-import { companySetup, employeeCard, payBill, payContractor, runPayroll, sendInvoice, teamBudget, trackInvoices } from '../businessFlows';
+import { memberOf, payrollTotal } from '../business';
+import { addTeammate, companySetup, employeeCard, payBill, payContractor, runPayroll, sendInvoice, teamBudget, trackInvoices } from '../businessFlows';
 import { stayFor, type Stay } from '../hotels';
 import { purchaseFor, requestParams, shelfFor, shelfParams, shelfWith, type BuyKind, type BuyRequest, type Shelf } from '../products';
 import { draftRecipient, recipientNamed, type Recipient } from '../recipients';
@@ -136,6 +136,8 @@ function heldFor(next?: ToolCall): string | undefined {
       return 'the request';
     case 'send_stablecoins':
       return 'that send';
+    case 'add_teammate':
+      return `adding ${first(next.input.name) || 'them'} to the team`;
     case 'set_team_budget':
       return 'the team budget';
     case 'issue_employee_card':
@@ -309,8 +311,9 @@ function fund(env: ToolEnv, call: ToolCall): Outcome {
     amount = cost - a.balanceCents;
     if (amount <= 0) return fail('already_covered', { balance_usd: usd(a.balanceCents), cost_usd: usd(cost) });
   } else if (call.input.amount_usd !== undefined) {
-    const usdAmount = positive(call.input.amount_usd, 10_000);
-    if (!usdAmount) return fail('bad_amount', { fix: 'up to $10,000' });
+    const most = env.ctx.mode === 'business' ? 100_000 : 10_000;
+    const usdAmount = positive(call.input.amount_usd, most);
+    if (!usdAmount) return fail('bad_amount', { fix: `up to $${most.toLocaleString('en-US')}` });
     amount = cents(usdAmount);
   }
   const { method: m, asset, network } = call.input;
@@ -701,7 +704,6 @@ function showAccount(env: ToolEnv, call: ToolCall): Outcome {
 /* ── The business's tools ─────────────────────────────────────────── */
 
 const noReact = (beats: Beat[]) => beats.filter((b) => !('react' in b));
-const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[A-Za-z]{2,}$/;
 const ownName = (v: unknown) => (typeof v === 'string' && cleanName(v)) || undefined;
 
 function setupCompany(env: ToolEnv, call: ToolCall): Outcome {
@@ -724,13 +726,25 @@ function setupCompany(env: ToolEnv, call: ToolCall): Outcome {
   return { result, beats: noReact(companySetup(ctx, { company, owner }, [done])) };
 }
 
+function addTeammateTool(env: ToolEnv, call: ToolCall): Outcome {
+  const missing = needsBalance(env);
+  if (missing) return missing;
+  const name = text(call.input.name, 40);
+  if (name && RELATION.test(name)) return fail('need_name', { fix: 'ask their name' });
+  const team = env.ctx.account().business?.team ?? [];
+  if (name && memberOf(team, name)) return { result: { status: 'already_on_team', team: team.map((m) => m.name) }, beats: [] };
+  const result: ToolResult = { asked: name ? 'their role, pay and bank (they tap or type them)' : 'their name, role, pay and bank (they tap or type them)' };
+  const added = record(result, () => ({ status: 'added', team: (env.ctx.account().business?.team ?? []).map((m) => `${m.name} (${m.role})`) }));
+  return { result, beats: [...addTeammate(env.ctx, name ? { name } : {}), added] };
+}
+
 function setTeamBudget(env: ToolEnv, call: ToolCall): Outcome {
   const missing = needsBalance(env);
   if (missing) return missing;
   const monthly = positive(call.input.monthly_usd, 50_000);
   const already = env.ctx.account().business?.budget;
   const result: ToolResult = {};
-  const set = record(result, () => ({ status: already ? 'already_set_up' : 'set_up', monthly_usd: usd(env.ctx.account().business?.budget ?? 0), team: TEAM.map((m) => m.name) }));
+  const set = record(result, () => ({ status: already ? 'already_set_up' : 'set_up', monthly_usd: usd(env.ctx.account().business?.budget ?? 0), team: (env.ctx.account().business?.team ?? []).map((m) => m.name) }));
   return { result, beats: [...noReact(teamBudget({ ...env.ctx, params: monthly ? { amount: monthly } : {} })), set] };
 }
 
@@ -739,8 +753,9 @@ function issueEmployeeCard(env: ToolEnv, call: ToolCall): Outcome {
   if (missing) return missing;
   const name = text(call.input.name, 40);
   if (!name) return fail('need_name', { fix: 'ask which teammate' });
-  const member = teamMember(name);
-  if (!member) return { result: { status: 'not_on_team', team: TEAM.map((m) => m.name) }, beats: noReact(employeeCard({ ...env.ctx, params: { name } })) };
+  const team = env.ctx.account().business?.team ?? [];
+  const member = memberOf(team, name);
+  if (!member) return { result: { status: 'not_on_team', offered: `adding ${name} to the team first, then the card` }, beats: noReact(employeeCard({ ...env.ctx, params: { name } })) };
   const purpose = text(call.input.purpose, 30)?.toLowerCase();
   const had = env.ctx.account().business?.team.find((m) => m.name === member.name)?.hasCard;
   const result: ToolResult = {};
@@ -771,7 +786,7 @@ function listInvoices(env: ToolEnv): Outcome {
   const open = invoices.filter((i) => i.status === 'OPEN');
   const result: ToolResult = {
     invoices: invoices.map((i) => ({ number: i.number, client: i.client, amount_usd: usd(i.amount), status: i.status === 'PAID' ? 'paid' : `open, due ${i.due}` })),
-    ...(open.length && { offered: 'a reminder for the open one (taps: Send a reminder, Not now)' }),
+    ...(open.length && { offered: `a reminder for the open one (taps: Remind ${open[0].client}, Not now)` }),
   };
   return { result, beats: noReact(trackInvoices(env.ctx)) };
 }
@@ -798,19 +813,20 @@ function payContractorTool(env: ToolEnv, call: ToolCall): Outcome {
   const amount = positive(call.input.amount_usd, 50_000);
   if (!name || RELATION.test(name)) return fail('need_name', { fix: 'ask their name' });
   if (!amount) return fail('need_amount', { fix: 'ask how much' });
-  const email = typeof call.input.email === 'string' ? call.input.email.trim().slice(0, 80) : '';
-  if (!EMAIL.test(email)) return fail('need_email', { fix: email ? 'that email looks mistyped: ask for it again' : 'ask for their email' });
+  const country = typeof call.input.country === 'string' ? call.input.country.toLowerCase() : 'us';
+  if (!COUNTRY_CODES.has(country)) return fail('country_not_supported', { country });
   const note = text(call.input.note, 40);
   const result: ToolResult = {};
-  const claimed = record(result, () => ({ status: 'claimed', to: name, amount_usd: amount, how: 'claim link by email, into their own bank' }));
-  return { result, beats: [...noReact(payContractor({ ...env.ctx, params: { name, email, amount, ...(note && { note }) } })), claimed] };
+  const paid = record(result, () => ({ status: 'paid', to: name, amount_usd: amount, how: 'to their own bank, in their currency' }));
+  return { result, beats: [...noReact(payContractor({ ...env.ctx, params: { name, country, amount, ...(note && { note }) } })), paid] };
 }
 
 function runPayrollTool(env: ToolEnv): Outcome {
   const missing = needsBalance(env);
   if (missing) return missing;
   const result: ToolResult = {};
-  const paidOut = record(result, () => ({ status: 'paid', people: TEAM.map((m) => m.name), total_usd: usd(payrollTotal()) }));
+  const team = () => env.ctx.account().business?.team ?? [];
+  const paidOut = record(result, () => ({ status: 'paid', people: team().map((m) => m.name), total_usd: usd(payrollTotal(team())) }));
   return { result, beats: [...noReact(runPayroll(env.ctx)), paidOut] };
 }
 
@@ -868,6 +884,8 @@ export function flowOf(call: ToolCall): ActionId | null {
       return call.input.show === 'history' ? 'history' : 'balance';
     case 'setup_company':
       return 'company';
+    case 'add_teammate':
+      return 'teammate';
     case 'set_team_budget':
       return 'team';
     case 'issue_employee_card':
@@ -927,6 +945,8 @@ export function runTool(env: ToolEnv, call: ToolCall): Outcome {
       return showAccount(env, call);
     case 'setup_company':
       return setupCompany(env, call);
+    case 'add_teammate':
+      return addTeammateTool(env, call);
     case 'set_team_budget':
       return setTeamBudget(env, call);
     case 'issue_employee_card':

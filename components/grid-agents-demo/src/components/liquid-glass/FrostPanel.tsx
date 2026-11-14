@@ -145,6 +145,8 @@ export interface FrostPanelProps {
   shape?: (width: number, height: number) => string | null;
   className?: string;
   style?: CSSProperties;
+  /** Drawn over the frost across the whole panel, under the children however they're laid out: a rim. */
+  overlay?: ReactNode;
   children?: ReactNode;
 }
 
@@ -192,6 +194,7 @@ export function FrostPanel({
   shape,
   className,
   style,
+  overlay,
   children,
 }: FrostPanelProps) {
   const { ref, size } = useElementSize();
@@ -542,6 +545,7 @@ export function FrostPanel({
         </svg>
       )}
 
+      {overlay}
       <div style={{ position: 'relative' }}>{children}</div>
     </div>
   );

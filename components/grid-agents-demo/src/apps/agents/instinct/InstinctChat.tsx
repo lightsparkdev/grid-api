@@ -684,6 +684,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
     <div className={styles.stage}>
       <div ref={messagesCard} className={styles.card} data-away={(view === 'safari' && !switchTo) || undefined}>
         <ChatFrame
+          verify={{ app: 'instinct', chat }}
           className={styles.screen}
           messages={thread}
           render={render}

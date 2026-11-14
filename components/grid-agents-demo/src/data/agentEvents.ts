@@ -6,6 +6,7 @@ import type { CryptoPayee } from './cryptoSend';
    the calls can follow the spec without touching a flow. */
 
 import type { LinkedBank } from '@/apps/agents/linkedBank';
+import type { TeamMember } from '@/apps/agents/business';
 
 export type DepositNetwork = 'LIGHTNING' | 'BASE' | 'ETHEREUM' | 'SOLANA' | 'POLYGON' | 'ARBITRUM' | 'TRON';
 /** Where a send can go: any deposit network, or a Spark address. */
@@ -118,6 +119,8 @@ export type AgentEvent =
   /* ── The business account ── */
   /** The visitor named the company and themselves as it's set up. Nothing goes to Grid until the account is created. */
   | { type: 'business.name'; company: string; owner: string }
+  /** Someone added to the team: their pay, and the bank payroll pays (added as an external account first). */
+  | { type: 'team.member'; member: TeamMember }
   /** A shared budget for the team, and an agent for each person on it, acting for them. */
   | { type: 'team.budget'; limit: number }
   /** A card in a team member's name, issued by their agent (created first if they don't have one). */
@@ -128,10 +131,6 @@ export type AgentEvent =
   | { type: 'invoice.paid'; number: string }
   /** The agent checks which payments have come in, to match them to open invoices. */
   | { type: 'invoices.check' }
-  /** Someone with no account is paid from a link they claim; held for approval above the threshold. */
-  | { type: 'contractor.send'; name: string; email: string; country: string; amount: number; note: string }
-  /** They claimed it and the money landed in their bank. */
-  | { type: 'contractor.claimed' }
   /** Payroll for the team: previewed, then created as one run with a row per person. */
   | { type: 'payroll.preview' }
   | { type: 'payroll.execute' };

@@ -26,6 +26,7 @@ export const TOOL_NAMES = [
   'show_account',
   'setup_company',
   'set_team_budget',
+  'add_teammate',
   'issue_employee_card',
   'send_invoice',
   'list_invoices',
@@ -37,7 +38,7 @@ export type ToolName = (typeof TOOL_NAMES)[number];
 
 /** What each account can do: a business invoices, pays bills, contractors and payroll, and doesn't shop. */
 const PERSONAL_ONLY = new Set<ToolName>(['setup_balance', 'add_card', 'search', 'checkout', 'subscribe', 'request_payment', 'book_stay']);
-const BUSINESS_ONLY = new Set<ToolName>(['setup_company', 'set_team_budget', 'issue_employee_card', 'send_invoice', 'list_invoices', 'pay_bill', 'pay_contractor', 'run_payroll']);
+const BUSINESS_ONLY = new Set<ToolName>(['setup_company', 'add_teammate', 'set_team_budget', 'issue_employee_card', 'send_invoice', 'list_invoices', 'pay_bill', 'pay_contractor', 'run_payroll']);
 const TOOLS_IN: Record<Mode, ReadonlySet<ToolName>> = {
   personal: new Set(TOOL_NAMES.filter((t) => !BUSINESS_ONLY.has(t))),
   business: new Set(TOOL_NAMES.filter((t) => !PERSONAL_ONLY.has(t))),
@@ -251,10 +252,13 @@ export const TOOL_DEFS: ToolDef[] = [
     company: str('The company’s name, only if they said it.'),
     owner: str('The owner’s full name, only if they said it.'),
   }),
+  tool('add_teammate', 'Add someone to the team: the app asks their role, their pay each payroll and the bank payroll pays, in its own taps and sheet, and asks their name too if you don’t pass it. Team budgets, team cards and payroll cover whoever is on the team.', {
+    name: str('Their full name, only if the owner said it.'),
+  }),
   tool('set_team_budget', 'Give everyone on the team their own agent, sharing one monthly budget from the business’s account. The owner approves it.', {
     monthly_usd: num('The team’s monthly budget, USD, only if they said.'),
   }),
-  tool('issue_employee_card', 'Issue a Visa in a teammate’s name, spending from the business’s account (inside the team budget once there is one). Only for someone on the team. The owner approves it.', {
+  tool('issue_employee_card', 'Issue a Visa in a teammate’s name, spending from the business’s account (inside the team budget once there is one). For someone not on the team yet, the app adds them first. The owner approves it.', {
     name: str('The teammate, as they named them.'),
     purpose: str('What it’s for, a few words, only if they said ("travel").'),
   }, ['name']),
@@ -270,9 +274,9 @@ export const TOOL_DEFS: ToolDef[] = [
     note: str('What it’s for, a few words, only if they said.'),
     country: str('Where the company banks (ISO code), only if it isn’t the US.', { enum: COUNTRY_CODES }),
   }, ['vendor', 'amount_usd']),
-  tool('pay_contractor', 'Pay a freelancer or contractor who isn’t on the team: they get a link by email and claim it into their own bank, so no bank details are needed. Above the approval limit the owner approves.', {
+  tool('pay_contractor', 'Pay a freelancer or contractor who isn’t on the team, straight to their own bank, at home or abroad, in their currency. The app adds their bank in its own sheet the first time. Above the approval limit the owner approves.', {
     name: str('Their name, as the owner said it.'),
-    email: str('Their email, exactly as the owner gave it. Ask for it if they didn’t.'),
+    country: str('Where they’re paid (ISO code), only if it isn’t the US.', { enum: COUNTRY_CODES }),
     amount_usd: num('How much, USD.'),
     note: str('What it’s for, a few words, only if they said.'),
   }, ['name', 'amount_usd']),

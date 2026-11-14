@@ -20,6 +20,7 @@ export type ActionId =
   | 'history'
   // The business account's own flows.
   | 'company'
+  | 'teammate'
   | 'team'
   | 'empcard'
   | 'invoice'
@@ -43,6 +44,7 @@ export const ACTION_IDS: ActionId[] = [
   'balance',
   'history',
   'company',
+  'teammate',
   'team',
   'empcard',
   'invoice',
@@ -162,21 +164,27 @@ export const ACTIONS: ActionDef[] = [
   },
   {
     id: 'company',
-    label: 'Get verified',
+    label: 'Company',
     desc: 'A business account, with US bank details',
     prompts: ['Set up an account for my business'],
+  },
+  {
+    id: 'teammate',
+    label: 'Add member',
+    desc: 'Their role, pay and bank, for payroll and cards',
+    prompts: ['Add someone to the team'],
   },
   {
     id: 'team',
     label: 'Team budget',
     desc: 'An agent per teammate, on one shared budget',
-    prompts: ['Give Maya and Jordan agents with a $5,000 monthly team budget'],
+    prompts: ['Give the team agents with a $5,000 monthly budget'],
   },
   {
     id: 'empcard',
     label: 'Team card',
     desc: 'A card in a teammate’s name',
-    prompts: ['Get Jordan a card for travel'],
+    prompts: ['Give a teammate a card for travel'],
   },
   {
     id: 'invoice',
@@ -199,14 +207,14 @@ export const ACTIONS: ActionDef[] = [
   {
     id: 'contractor',
     label: 'Pay a contractor',
-    desc: 'They claim it from a link, no account needed',
+    desc: 'Paid to their bank, anywhere, in their currency',
     prompts: ['Pay Priya Shah $800 for the illustrations'],
   },
   {
     id: 'payroll',
     label: 'Run payroll',
     desc: 'Pay the team in one approved run',
-    prompts: ['Run payroll for Maya and Jordan'],
+    prompts: ['Run payroll for the team'],
   },
 ];
 
@@ -224,7 +232,7 @@ export const FLOW_GROUPS: Record<Mode, FlowGroup[]> = {
     { label: 'Explore payment flows', flows: ['pay', 'getpaid', 'buy', 'agent'], columns: 1 },
   ],
   business: [
-    { label: 'Explore account flows', flows: ['company', 'team', 'empcard', 'fund', 'balance', 'history'] },
+    { label: 'Explore account flows', flows: ['company', 'teammate', 'team', 'empcard', 'fund', 'balance', 'history'] },
     { label: 'Explore payment flows', flows: ['invoice', 'invoices', 'bill', 'contractor', 'payroll'], columns: 1 },
   ],
 };

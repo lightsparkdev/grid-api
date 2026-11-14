@@ -234,8 +234,8 @@ export function GlassPill({
       edge="none"
       className={`${styles.pill} ${tone === 'blue' ? styles.blue : ''} ${className ?? ''}`}
       style={{ borderRadius: radius, ...(absolute && { position: 'absolute' }), ...style }}
+      overlay={<GlassRim radius={radius} prominent={prominent} />}
     >
-      <GlassRim radius={radius} prominent={prominent} />
       {children}
     </FrostPanel>
   );

@@ -69,6 +69,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
 
   return (
     <ChatFrame
+      verify={{ app: 'yourapp', chat }}
       className={styles.screen}
       messages={chat.messages}
       render={render}

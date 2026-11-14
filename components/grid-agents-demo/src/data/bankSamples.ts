@@ -4,15 +4,23 @@
 import { BANK_ACCOUNT_SCHEMAS } from './bankAccountFields.generated';
 import { BANK_COUNTRIES, type BankCountry } from './bankCountries';
 
-function randomizeDigits(value: string): string {
-  return value.replace(/\d/g, () => String(Math.floor(Math.random() * 10)));
+function randomizeDigits(value: string, pattern?: string): string {
+  const shuffle = () => value.replace(/\d/g, () => String(Math.floor(Math.random() * 10)));
+  if (!pattern) return shuffle();
+  // Some codes fix a digit (an IFSC's fifth character is always 0): a shuffle that breaks the spec's pattern is redrawn.
+  const valid = new RegExp(pattern);
+  for (let tries = 0; tries < 20; tries++) {
+    const next = shuffle();
+    if (valid.test(next)) return next;
+  }
+  return value;
 }
 
 export function sampleValuesFor(country: BankCountry): Record<string, string> {
   const values: Record<string, string> = {};
   for (const f of BANK_ACCOUNT_SCHEMAS[country.accountType].fields) {
     const base = country.sampleOverrides?.[f.key] ?? f.example ?? '';
-    values[f.key] = f.enum ? base : randomizeDigits(base);
+    values[f.key] = f.enum ? base : randomizeDigits(base, f.pattern);
   }
   if (country.region) values.region = country.region;
   return values;

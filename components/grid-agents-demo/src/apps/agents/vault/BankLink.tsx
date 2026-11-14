@@ -368,7 +368,7 @@ export function VaultBankAsk({
       <span className={styles.askNote}>
         {ask.recipient
           ? `Add it once and your agent can pay ${ask.recipient.first} whenever you ask.`
-          : `Banks in ${BANK_REACH} countries, over local rails like ACH, SEPA, PIX, SPEI and UPI.`}
+          : `Banks in ${BANK_REACH} countries, over local rails like RTP, SEPA, PIX, SPEI and UPI.`}
       </span>
       {!b.settled && (
         <span className={styles.askActions}>

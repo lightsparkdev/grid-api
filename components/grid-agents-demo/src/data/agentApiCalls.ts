@@ -35,9 +35,8 @@ import {
   COMPANY_ADDRESS,
   COMPANY_BANK,
   OPEN_INVOICES,
+  memberOf,
   OWNER_ACTING_FOR,
-  TEAM,
-  teamMember,
   type Invoice,
   type TeamMember,
 } from '@/apps/agents/business';
@@ -306,9 +305,6 @@ type Run = {
   sendTool: string;
 };
 
-/** A payout someone claims from a link, waiting for approval or for them to claim it. */
-type Claim = { id: string; action: string; name: string; email: string; country: string; amount: number; note: string; createdAt: string; expiresAt: string };
-
 /** Payroll as one run: a row per person on the team, to the account payroll pays them at. */
 type Payroll = { id: string; action: string; rows: { member: TeamMember; accountId: string; clientRowId: string }[]; total: number; fee: number };
 
@@ -317,7 +313,6 @@ type Pending =
   | { kind: 'card'; action: string; purchase: Purchase }
   | { kind: 'use'; action: string; purchase: Purchase }
   | { kind: 'run'; action: string; run: Run; id: string }
-  | { kind: 'claim'; action: string; claim: Claim }
   | { kind: 'payroll'; action: string; payroll: Payroll };
 
 interface BusinessState {
@@ -327,12 +322,13 @@ interface BusinessState {
   /** The team's monthly budget, USD cents, once it's set up. */
   budget: number | null;
   poolId: string | null;
+  /** Who the owner has added to the team, in order. */
+  members: TeamMember[];
   /** Each team member's agent, by their acting-for id. */
   agents: Map<string, string>;
   /** Each team member's card, by their acting-for id. */
   cards: Map<string, string>;
   invoices: Invoice[];
-  claim: Claim | null;
   payroll: Payroll | null;
 }
 
@@ -342,7 +338,7 @@ export interface BusinessSnapshot {
   owner: string;
   /** The visitor named the company (or kept the default) as it was set up. */
   named: boolean;
-  team: { name: string; role: string; hasAgent: boolean; hasCard: boolean }[];
+  team: (TeamMember & { hasAgent: boolean; hasCard: boolean })[];
   budget: number | null;
   invoices: Invoice[];
 }
@@ -377,18 +373,18 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
   /** The agent's delegated key on the wallet, which every send and purchase card is signed with. */
   let keyed = false;
   let limits = { ...(business ? BUSINESS_LIMITS : DEFAULT_LIMITS) };
-  /** The business account's own: who it is, its team's agents and budget, the app's invoices, a contractor's payout and
-   *  a payroll run in flight. */
+  /** The business account's own: who it is, its team and their agents and budget, the app's invoices, and a payroll
+   *  run in flight. */
   const biz: BusinessState = {
     company: DEFAULT_BUSINESS.company,
     owner: DEFAULT_BUSINESS.owner,
     named: false,
     budget: null,
     poolId: null,
+    members: [],
     agents: new Map(),
     cards: new Map(),
     invoices: OPEN_INVOICES(),
-    claim: null,
     payroll: null,
   };
   let balance = OPENING_BALANCE_CENTS;
@@ -1011,7 +1007,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
     };
     return {
       reqBody: { customerId: CUSTOMER, currency: bank.currency, accountInfo },
-      resBody: { id, customerId: CUSTOMER, currency: bank.currency, status: 'ACTIVE', accountInfo: { ...accountInfo, paymentRails: [paymentRail(bank.country.rail)] } },
+      resBody: { id, customerId: CUSTOMER, currency: bank.currency, status: 'ACTIVE', accountInfo: { ...accountInfo, paymentRails: bank.country.code === 'us' ? ['ACH', 'RTP', 'FEDNOW'] : [paymentRail(bank.country.rail)] } },
     };
   };
 
@@ -1734,8 +1730,6 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
         return { type: 'USE_STORED_CARD', storedCardUse: storedCardUse(p.purchase) };
       case 'run':
         return { type: 'PAYOUT_RUN', payoutRun: actionRun(p.run, p.id, status) };
-      case 'claim':
-        return { type: 'CLAIMABLE_PAYOUT', claimablePayout: claimBody(p.claim, status === 'CANCELLED' ? 'CANCELLED' : 'PENDING_APPROVAL') };
       case 'payroll':
         return { type: 'PAYOUT_RUN', payoutRun: payrollAction(p.payroll, status) };
       default: {
@@ -1775,7 +1769,6 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
     if (!approve) {
       if (p.kind === 'quote') quote = null;
       if (p.kind === 'use') use = null;
-      if (p.kind === 'claim') biz.claim = null;
       return rejectSteps(p, 'Declined by the customer', 'The person said no in your app; your backend rejects the action. Nothing moves.');
     }
     const path = `/agents/${agent}/actions/${p.action}/approve`;
@@ -1820,19 +1813,6 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
               approveCall(approved, 'The person allowed it in your app; your backend approves. The run starts paying.'),
               approvedHook(approved, 'AGENT_ACTION.APPROVED: the payout run is paying its row.'),
               ...runPaid(p.run, p.id, p.action),
-            ],
-          },
-          pollStep(p.action, approved, { status: 'APPROVED' }),
-        ];
-      }
-      case 'claim': {
-        const approved = actionBody(p.action, 'APPROVED', { type: 'CLAIMABLE_PAYOUT', claimablePayout: claimBody(p.claim, 'AWAITING_CLAIM') });
-        return [
-          {
-            tool: null,
-            calls: [
-              approveCall(approved, `The person allowed it in your app; your backend approves. ${p.claim.name.split(' ')[0]} gets the link to claim it.`),
-              approvedHook(approved, 'AGENT_ACTION.APPROVED: the payout is AWAITING_CLAIM.'),
             ],
           },
           pollStep(p.action, approved, { status: 'APPROVED' }),
@@ -2136,7 +2116,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
             note: `${money(limit)} a month the team's agents share. It holds no money: they all spend from ${biz.company}'s one balance, and the budget caps them together.`,
             resBody: pool(limit),
           },
-          ...TEAM.map((m) => (biz.agents.has(m.actingFor) ? assign(m) : createMemberAgent(m))),
+          ...biz.members.map((m) => (biz.agents.has(m.actingFor) ? assign(m) : createMemberAgent(m))),
         ],
       },
     ];
@@ -2144,7 +2124,8 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
 
   /* A card in a team member's name, issued by their own agent: the business's card, with them as its authorized user. */
   const employeeCard = (name: string): CallStep[] => {
-    const m = teamMember(name) ?? TEAM[1];
+    const m = memberOf(biz.members, name) ?? biz.members[biz.members.length - 1];
+    if (!m) return [];
     const created = biz.agents.has(m.actingFor) ? [] : [createMemberAgent(m)];
     const agentId = biz.agents.get(m.actingFor)!;
     const cardId = biz.cards.get(m.actingFor) ?? nextId('Card');
@@ -2199,7 +2180,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
         accountNumber: COMPANY_BANK.accountNumber,
         routingNumber: COMPANY_BANK.routingNumber,
         bankName: COMPANY_BANK.bankName,
-        paymentRails: ['ACH', 'WIRE'],
+        paymentRails: ['ACH', 'RTP', 'FEDNOW', 'WIRE'],
         reference: `${slug(biz.company).slice(0, 12).toUpperCase()}${COMPANY_BANK.last4}`,
       },
       instructionsNotes: `The account number is ${biz.company}'s own, so a client can pay by ordinary ACH or wire with no reference.`,
@@ -2213,7 +2194,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
     if (!biz.invoices.some((i) => i.number === number)) biz.invoices.push({ number, client, amount, memo, due, status: 'OPEN' });
     return [
       {
-        tool: { name: 'get_bank_details', args: {}, result: { bank: COMPANY_BANK.bankName, account: `••••${COMPANY_BANK.last4}`, routing: COMPANY_BANK.routingNumber, rails: ['ACH', 'WIRE'] } },
+        tool: { name: 'get_bank_details', args: {}, result: { bank: COMPANY_BANK.bankName, account: `••••${COMPANY_BANK.last4}`, routing: COMPANY_BANK.routingNumber, rails: ['ACH', 'RTP', 'FEDNOW', 'WIRE'] } },
         calls: [
           {
             method: 'GET',
@@ -2288,86 +2269,6 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
     ];
   };
 
-  /* Paying someone with no account: Grid holds the money for them to claim from a link (their bank, their choice). */
-  const claimBody = (c: Claim, status: string, extra: Record<string, unknown> = {}) => ({
-    id: c.id,
-    agentId: agent,
-    customerId: CUSTOMER,
-    platformCustomerId: PLATFORM_CUSTOMER,
-    status,
-    sourceAccountId: WALLET,
-    amount: { amount: c.amount, currency: USD },
-    recipient: { name: c.name, email: c.email, country: c.country },
-    note: c.note,
-    ...(c.action && { agentActionId: c.action }),
-    ...extra,
-    expiresAt: c.expiresAt,
-    createdAt: c.createdAt,
-    updatedAt: nowIso(),
-  });
-
-  const contractorSend = (name: string, email: string, country: string, amount: number, note: string): CallStep[] => {
-    const held = needsApproval(amount);
-    const c: Claim = {
-      id: nextId('ClaimablePayout'),
-      action: held ? nextId('AgentAction') : '',
-      name,
-      email,
-      country,
-      amount,
-      note,
-      createdAt: nowIso(),
-      expiresAt: toIso(Date.now() + 7 * 86_400_000),
-    };
-    biz.claim = c;
-    const reqBody = { sourceAccountId: WALLET, amount, recipient: { name, email, country }, note };
-    const status = held ? 'PENDING_APPROVAL' : 'AWAITING_CLAIM';
-    if (held) pending = { kind: 'claim', action: c.action, claim: c };
-    const action = held ? actionBody(c.action, 'PENDING_APPROVAL', { type: 'CLAIMABLE_PAYOUT', claimablePayout: claimBody(c, 'PENDING_APPROVAL') }, 24 * 60 * 60_000) : null;
-    return [
-      {
-        tool: { name: 'send_claimable_payout', args: { to: name, email, amount_usd: dollars(amount) }, result: { status, claimable_payout_id: c.id, ...(held && { action_id: c.action }) } },
-        calls: [
-          {
-            method: 'POST',
-            path: '/agents/me/claimable-payouts',
-            auth: 'agent',
-            title: `Pay from a link · ${name}`,
-            headers: { 'Idempotency-Key': idempotencyKey() },
-            reqBody,
-            status: '201 Created',
-            note: held
-              ? `${money(amount)} is over the ${money(limits.approvalAbove)} approval threshold, so it waits as PENDING_APPROVAL. Once approved, ${name.split(' ')[0]} gets a link to claim it.`
-              : `Under the ${money(limits.approvalAbove)} approval threshold: ${name.split(' ')[0]} gets a link by email to claim it into their bank. It expires in 7 days.`,
-            resBody: claimBody(c, status),
-          },
-          ...(action ? [webhook('agent-action', 'AGENT_ACTION.PENDING_APPROVAL', action, 'Agent action pending', 'AGENT_ACTION.PENDING_APPROVAL: who it is for and how much, for your approval sheet.')] : []),
-        ],
-      },
-    ];
-  };
-
-  const contractorClaimed = (): CallStep[] => {
-    const c = biz.claim;
-    if (!c) return [];
-    biz.claim = null;
-    spend(c.amount);
-    const externalAccountId = nextId('ExternalAccount');
-    const transactionId = nextId('Transaction');
-    const claimed = claimBody(c, 'CLAIMED', { externalAccountId });
-    const paidBody = claimBody(c, 'PAID', { externalAccountId, transactionId, receivedAmount: { amount: c.amount, currency: USD }, paymentRail: 'ACH' });
-    record(c.name, `Claimed from a link · ${c.note}`, -c.amount);
-    return [
-      {
-        tool: null,
-        calls: [
-          webhook('claimable-payout', 'CLAIMABLE_PAYOUT.CLAIMED', claimed, 'Payout claimed', `CLAIMABLE_PAYOUT.CLAIMED: ${c.name.split(' ')[0]} opened the link and added their bank.`),
-          webhook('claimable-payout', 'CLAIMABLE_PAYOUT.PAID', paidBody, 'Payout paid', `CLAIMABLE_PAYOUT.PAID: ${money(c.amount)} landed in ${c.name.split(' ')[0]}'s bank by ACH.`),
-        ],
-      },
-    ];
-  };
-
   /* Payroll: one run with a row per person, to the account each is paid at. One approval covers every row. */
   const payrollRows = (p: Payroll) => p.rows.map((r) => ({ clientRowId: r.clientRowId, amount: r.member.pay, destination: { destinationType: 'EXTERNAL_ACCOUNT', externalAccountId: r.accountId }, description: `Payroll · ${r.member.name}` }));
   const payrollRun = (p: Payroll, status: string) => ({
@@ -2395,15 +2296,15 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
   const payrollAction = (p: Payroll, status: string) => ({ id: p.id, status, sourceAccountId: WALLET, total: { amount: p.total, currency: USDB }, rowCount: p.rows.length, rows: payrollRows(p) });
 
   const payrollPreview = (): CallStep[] => {
-    const rows = TEAM.map((m) => ({ member: m, accountId: payeeAccount(`payroll:${m.actingFor}`), clientRowId: `row-${m.first.toLowerCase()}` }));
-    const total = TEAM.reduce((sum, m) => sum + m.pay, 0);
+    const rows = biz.members.map((m) => ({ member: m, accountId: payeeAccount(m.name), clientRowId: `row-${m.first.toLowerCase()}` }));
+    const total = biz.members.reduce((sum, m) => sum + m.pay, 0);
     const fee = rows.length * 25;
     const p: Payroll = { id: nextId('PayoutRun'), action: nextId('AgentAction'), rows, total, fee };
     biz.payroll = p;
     const held = needsApproval(total);
     return [
       {
-        tool: { name: 'preview_payroll', args: { people: TEAM.map((m) => m.name) }, result: { total: money(total), fees: money(fee), needs_approval: held } },
+        tool: { name: 'preview_payroll', args: { people: biz.members.map((m) => m.name) }, result: { total: money(total), fees: money(fee), needs_approval: held } },
         calls: [
           {
             method: 'POST',
@@ -2529,7 +2430,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
           company: biz.company,
           owner: biz.owner,
           named: biz.named,
-          team: TEAM.map((m) => ({ name: m.name, role: m.role, hasAgent: biz.agents.has(m.actingFor), hasCard: biz.cards.has(m.actingFor) })),
+          team: biz.members.map((m) => ({ ...m, hasAgent: biz.agents.has(m.actingFor), hasCard: biz.cards.has(m.actingFor) })),
           budget: biz.budget,
           invoices: biz.invoices.map((i) => ({ ...i })),
         },
@@ -2594,6 +2495,9 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
           biz.owner = event.owner;
           biz.named = true;
           return [];
+        case 'team.member':
+          if (!memberOf(biz.members, event.member.name)) biz.members.push(event.member);
+          return [];
         case 'team.budget':
           return teamBudget(event.limit);
         case 'employee.card':
@@ -2604,10 +2508,6 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
           return invoicePaid(event.number);
         case 'invoices.check':
           return invoicesCheck();
-        case 'contractor.send':
-          return contractorSend(event.name, event.email, event.country, event.amount, event.note);
-        case 'contractor.claimed':
-          return contractorClaimed();
         case 'payroll.preview':
           return payrollPreview();
         case 'payroll.execute':

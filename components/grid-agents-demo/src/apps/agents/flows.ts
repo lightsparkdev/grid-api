@@ -13,6 +13,7 @@ import {
   BUSINESS_HELD,
   BUSINESS_TOPIC,
   businessSpend,
+  addTeammate,
   companySetup,
   employeeCard,
   noCompanyYet,
@@ -485,7 +486,11 @@ const fund = (ctx: FlowContext): Beat[] => {
     return [
       { react: '👍' },
       { say: 'fund.amount' },
-      { amount: true, options: [25, 50, 100], then: (usd) => fund({ ...ctx, params: { ...ctx.params, amount: usd } }).slice(1) },
+      {
+        amount: true,
+        options: ctx.mode === 'business' ? [1_000, 5_000, 10_000] : [25, 50, 100],
+        then: (usd) => fund({ ...ctx, params: { ...ctx.params, amount: usd } }).slice(1),
+      },
     ];
   }
   const deposit = (asset: CryptoAsset, network: DepositNetwork) => stableDeposit(ctx, asset, network, amount);
@@ -912,7 +917,7 @@ export function watched(
   const watch = (c: FlowContext): Beat[] => [
     { say: 'watch.set', params },
     { meta: 'watch.routine', params },
-    { divider: 'Two days later' },
+    { pause: 2600 },
     { say: 'watch.dropped', params: { ...shelfParams(dropped), was: shelf.pick.amount } },
     ...buyIt({ ...c, preApproved: true, ...(!fromBalance && { params: { ...c.params, method: 'card' } }) }, dropped),
   ];
@@ -1201,6 +1206,7 @@ export const FLOWS: Record<ActionId, (ctx: FlowContext) => Beat[]> = {
   balance,
   history,
   company: (ctx) => companySetup(ctx),
+  teammate: (ctx) => [{ react: '👍' }, ...addTeammate(ctx, ctx.params?.name ? { name: ctx.params.name } : {})],
   team: (ctx) => teamBudget(ctx),
   empcard: (ctx) => employeeCard(ctx),
   invoice: (ctx) => sendInvoice(ctx),
@@ -1246,7 +1252,7 @@ export function raisedFor(from: Limits, spend: number): Limits {
 /** Limits an agent created on the way should start with, when the task's one payment is over the defaults. */
 function coveringLimits(flow: ActionId, ctx: FlowContext): Limits | undefined {
   if (!OVER_LIMIT[flow]) return undefined;
-  const spend = flowSpend(flow, ctx.params, ctx.variant);
+  const spend = flowSpend(flow, ctx.params, ctx.variant, ctx.account());
   const from = ctx.account().limits;
   return spend > from.perTransaction ? raisedFor(from, spend) : undefined;
 }
@@ -1345,7 +1351,7 @@ const HELD: Partial<Record<ActionId, (p?: FlowParams) => string>> = {
 };
 
 /** The most a run spends (USD cents), so a jump to it can top the balance up first. */
-export function flowSpend(flow: ActionId, params?: FlowParams, variant = 0): number {
+export function flowSpend(flow: ActionId, params?: FlowParams, variant = 0, account?: AccountSnapshot): number {
   switch (flow) {
     case 'pay': {
       const p = params?.name ? params : STORY_PAY;
@@ -1363,8 +1369,9 @@ export function flowSpend(flow: ActionId, params?: FlowParams, variant = 0): num
     case 'bill':
     case 'contractor':
     case 'payroll':
-      return businessSpend(flow, params);
+      return businessSpend(flow, params, account?.business?.team);
     case 'company':
+    case 'teammate':
     case 'team':
     case 'empcard':
     case 'invoice':
@@ -1408,6 +1415,7 @@ const NEEDS_CONNECTION: Record<ActionId, boolean> = {
   balance: true,
   history: false,
   company: false,
+  teammate: true,
   team: true,
   empcard: true,
   invoice: true,

@@ -413,7 +413,7 @@ function MenuGlyph() {
 const LIGHT_GLASS = 'rgba(244, 244, 246, 0.6)';
 
 /** The system's web sheet: × and the domain over the page, Back and share-and-reload under it, all on glass. */
-function Browser({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+export function WebSheet({ domain, onClose, children }: { domain: string; onClose: () => void; children: ReactNode }) {
   return (
     <div className={styles.browser}>
       <div className={styles.top}>
@@ -422,7 +422,7 @@ function Browser({ onClose, children }: { onClose: () => void; children: ReactNo
             <Cross />
           </GlassPill>
         </PressButton>
-        <span className={styles.domain}>secure.plaid.com</span>
+        <span className={styles.domain}>{domain}</span>
         <NoopButton label="Menu" className={styles.disc}>
           <GlassPill radius={22} tint={LIGHT_GLASS} className={styles.glass}>
             <MenuGlyph />
@@ -507,7 +507,7 @@ export function usePlaidLink({
       <>
         <AnimatePresence>{run?.stage === 'alert' && <Alert key="alert" app={app} onCancel={close} onContinue={() => setRun({ ...run, stage: 'sheet' })} />}</AnimatePresence>
         <AppSheet open={run?.stage === 'sheet'} present={SHEET_IN} dim={0.25} className={styles.panel} onDismiss={close}>
-          <Browser onClose={close}>
+          <WebSheet domain="secure.plaid.com" onClose={close}>
             {run && (
               <PlaidFlow
                 key={run.id}
@@ -521,7 +521,7 @@ export function usePlaidLink({
                 }}
               />
             )}
-          </Browser>
+          </WebSheet>
         </AppSheet>
       </>
     ),

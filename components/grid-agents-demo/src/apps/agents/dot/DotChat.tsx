@@ -789,6 +789,7 @@ export function DotChat({ chat }: AgentChatProps) {
   return (
     <div className={styles.stage}>
       <ChatFrame
+        verify={{ app: 'dot', chat }}
         className={styles.screen}
         messages={chat.messages}
         render={render}

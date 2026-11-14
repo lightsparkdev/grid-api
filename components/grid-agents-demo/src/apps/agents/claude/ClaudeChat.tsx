@@ -434,6 +434,7 @@ export function ClaudeChat({ chat }: AgentChatProps) {
 
   return (
     <ChatFrame
+      verify={{ app: 'duet', chat }}
       className={styles.screen}
       messages={chat.messages}
       render={render}

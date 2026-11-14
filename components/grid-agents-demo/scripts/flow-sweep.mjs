@@ -37,10 +37,10 @@ const CONNECTORS = process.env.SWEEP_CONNECTORS
   : ALL_CONNECTORS;
 const business = process.env.SWEEP_MODE === 'business';
 const ALL_FLOWS = business
-  ? ['Get verified', 'Team budget', 'Team card', 'Add funds', 'Send invoice', 'Track invoices', 'Pay a bill', 'Pay a contractor', 'Run payroll', 'Balance', 'History']
+  ? ['Company', 'Add member', 'Team budget', 'Team card', 'Add funds', 'Send invoice', 'Track invoices', 'Pay a bill', 'Pay a contractor', 'Run payroll', 'Balance', 'History']
   : ['Connect', 'Add funds', 'Set limits', 'Pay someone', 'Buy online', 'Pay an agent', 'Get paid', 'Withdraw', 'Balance', 'History'];
 const FLOWS = process.env.SWEEP_FLOWS ? process.env.SWEEP_FLOWS.split(',') : ALL_FLOWS;
-const ALLOW = /^(\s*(Allow|Approve|Connect|Continue|Save|Save card|Save limits|Save to vault|Done|Get\sstarted|Link\s[^\n]+|Set\sup|Issue\scard|Turn on Dots balance|Pay \$[\d.,]+(\/mo)?))+\s*$/;
+const ALLOW = /^(\s*(Allow|Approve|Connect|Continue|Save|Save card|Save limits|Save to vault|Done|Get\sstarted|Link\s[^\n]+|Set\sup|Submit|Issue\scard|Turn on Dots balance|Pay \$[\d.,]+(\/mo)?|Pay\s≈\s\S+))+\s*$/;
 const DENY = /^(\s*(Deny|Decline|Not\s+now|Cancel))+\s*$/;
 
 const browser = await engine.launch();

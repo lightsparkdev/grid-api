@@ -18,7 +18,7 @@ const LINKED_MS = 650;
 export const BANK_ALL = [...BANK_COUNTRIES].sort((a, b) => a.name.localeCompare(b.name));
 export const BANK_POPULAR = FUNDING_POPULAR;
 /** Rails that settle in seconds, for the apps that filter by them. */
-export const BANK_INSTANT = BANK_ALL.filter((c) => !['ACH', 'Wire', 'Bank Transfer', 'SEPA'].includes(c.rail));
+export const BANK_INSTANT = BANK_ALL.filter((c) => !['Wire', 'Bank Transfer', 'SEPA'].includes(c.rail));
 
 /** "SPEI · MXN" */
 export const railLine = (c: BankCountry) => `${c.rail} · ${currencyFor(c)}`;
@@ -27,8 +27,6 @@ export const railLine = (c: BankCountry) => `${c.rail} · ${currencyFor(c)}`;
 export function railBlurb(c: BankCountry) {
   const cur = currencyFor(c);
   switch (c.rail) {
-    case 'ACH':
-      return `ACH in ${cur}`;
     case 'Bank Transfer':
       return `Bank transfer in ${cur}`;
     default:
@@ -63,7 +61,7 @@ type Payee = NonNullable<AgentAsk['recipient']>;
 
 /** "Payments to Maria arrive over SPEI in MXN, usually in seconds." */
 export function payeeBlurb(bank: LinkedBank, first: string) {
-  const timing = bank.country.rail === 'ACH' ? 'in 1–3 business days' : bank.country.rail === 'Bank Transfer' ? 'within a business day' : 'usually in seconds';
+  const timing = bank.country.rail === 'Bank Transfer' ? 'within a business day' : 'usually in seconds';
   return `Payments to ${first} arrive over ${bank.country.rail} in ${bank.currency}, ${timing}.`;
 }
 

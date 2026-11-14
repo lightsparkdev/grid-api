@@ -43,7 +43,7 @@ function prepare(session: AgentSession, id: ActionId, variant: number, mode: Mod
   if (mode === 'business' && !a.connected) return { connected: false, funded: 0 };
   const connected = needsSetup(id, a);
   if (connected) session.assumeConnected();
-  const need = flowSpend(id, undefined, variant);
+  const need = flowSpend(id, undefined, variant, session.snapshot());
   const have = session.snapshot().balanceCents;
   // A purchase goes on the card without a balance, or when the saved card covers a short one: nothing to top up.
   const onCard = id === 'buy' && (session.snapshot().cardVaulted || !session.snapshot().balanceOn);

@@ -5,8 +5,9 @@ import { BANK_REACH } from '@/data/bankCountries';
 import type { AgentEvent } from '@/data/agentEvents';
 import { BANK_COUNTRIES } from '@/data/bankCountries';
 import { ENDS_TURN, READS_RESULT, type Block, type Say, type ToolCall, type ToolResult, type Turn } from '@/lib/llm/tools';
-import type { Beat, Chip, PayTo, Said, StoredMessage } from '../conversation';
+import type { Beat, Chip, PayTo, Said, StoredMessage, Verification } from '../conversation';
 import { FLOWS, needsSetup, planFor, topicFor, type FlowContext } from '../flows';
+import { nextSteps } from '../nextSteps';
 import { accountNow, flowOf, newToolMemory, runTool, topicOf } from '../tools/run';
 
 /** A tile's jump: put this flow's line in the composer. */
@@ -94,6 +95,10 @@ const SPEAKS_FIRST = new Set([
   'team.already',
   'empcard.already',
   'empcard.notTeam',
+  'empcard.who',
+  'team.none',
+  'payroll.none',
+  'teammate.name',
 ]);
 
 /** A reply that approves an open ask; anything else declines it. */
@@ -185,6 +190,9 @@ export function useAgentBrain({
   const decideRef = useRef<((d: Decision) => void) | null>(null);
   const pickRef = useRef<((i: number) => void) | null>(null);
   const authRef = useRef<(() => void) | null>(null);
+  /** The business verification page, while an approval waits on it: true once submitted, false if it's closed. */
+  const verifyRef = useRef<((submitted: boolean) => void) | null>(null);
+  const [verifying, setVerifying] = useState<Verification | null>(null);
   /** The open choice's options, so a typed reply can pick one. */
   const openChips = useRef<Chip[] | null>(null);
   const pickedByText = useRef(false);
@@ -285,7 +293,9 @@ export function useAgentBrain({
     amountRef.current?.take(-1);
     nameRef.current?.('');
     authRef.current?.();
-    decideRef.current = pickRef.current = amountRef.current = authRef.current = nameRef.current = null;
+    verifyRef.current?.(false);
+    decideRef.current = pickRef.current = amountRef.current = authRef.current = nameRef.current = verifyRef.current = null;
+    setVerifying(null);
     setAwaitingAmount(false);
     setAwaitingName(false);
     setMessages((list) =>
@@ -359,8 +369,20 @@ export function useAgentBrain({
         } else if ('ask' in b) {
           const id = show({ kind: 'ask', key: b.ask, params: b.params, state: 'open' });
           setBusy(false);
-          const decision = await new Promise<Decision>((r) => (decideRef.current = r));
+          let decision = await new Promise<Decision>((r) => (decideRef.current = r));
           decideRef.current = null;
+          // Approved, it opens the verification page first; closed without submitting, the approval waits again.
+          while (decision === 'allow' && b.verify && !run.cancelled) {
+            patch(id, (m) => (m.kind === 'ask' ? { ...m, state: 'pressing' } : m));
+            setVerifying(b.verify);
+            const submitted = await new Promise<boolean>((r) => (verifyRef.current = r));
+            verifyRef.current = null;
+            setVerifying(null);
+            if (submitted) break;
+            patch(id, (m) => (m.kind === 'ask' ? { ...m, state: 'open' } : m));
+            decision = await new Promise<Decision>((r) => (decideRef.current = r));
+            decideRef.current = null;
+          }
           if (decision === 'cancel' || run.cancelled) return false;
           setBusy(true);
           // Paying another way: this checkout goes, and the agent comes back with one for the new way.
@@ -486,9 +508,21 @@ export function useAgentBrain({
       if (said) append('assistant', [{ type: 'text', text: said }]);
       const next = queued.current;
       queued.current = null;
-      if (next) void askRef.current?.(next, next, false);
+      if (next) return void askRef.current?.(next, next, false);
+      // Somewhere to go from here: a few flows that follow, unless something else has started meanwhile.
+      if (!finished || !flow) return;
+      const ctx = cb.current.context();
+      const chips = nextSteps(flow, ctx.mode ?? 'personal', ctx.account());
+      if (!chips.length) return;
+      await sleep(700);
+      if (runRef.current) return;
+      dropSuggestions();
+      push({ kind: 'them', said: { key: 'next.ask' }, typing: false });
+      await sleep(350);
+      if (runRef.current) return;
+      suggested.current = { id: push({ kind: 'chips', chips, picked: null }), chips };
     },
-    [play, clearWork, push],
+    [play, clearWork, push, dropSuggestions],
   );
 
   // A tile's jump, applied once: whatever was playing stops, and the tile's line goes out as the visitor's message.
@@ -832,6 +866,9 @@ export function useAgentBrain({
   );
   /** Face ID finished its scan and checkmark. */
   const authed = useCallback(() => authRef.current?.(), []);
+  /** The verification page submitted, or closed. */
+  const verified = useCallback(() => verifyRef.current?.(true), []);
+  const verifyClosed = useCallback(() => verifyRef.current?.(false), []);
   /** The account as it stands, for the balance page. */
   const account = useCallback(() => cb.current.context().account(), []);
 
@@ -851,6 +888,8 @@ export function useAgentBrain({
     awaitingAmount,
     /** A flow is waiting on a typed name (the company, the owner). */
     awaitingName,
+    /** The account this conversation is on. */
+    mode,
     busy,
     allow,
     deny,
@@ -858,6 +897,10 @@ export function useAgentBrain({
     pick,
     prompt,
     authed,
+    /** The business verification page to show, while an approval waits on it. */
+    verifying,
+    verified,
+    verifyClosed,
     authing,
     asking,
     activeFlow,
