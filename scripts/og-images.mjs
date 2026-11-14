@@ -160,7 +160,7 @@ function pageImage(section, title, look) {
   const tone = look.photo ? TONES.photo : TONES.dark;
   const tab = section !== title ? `<div style="color:${tone.secondary}">${escapeHtml(section)}</div>` : '';
   const right =
-    `<div class="t" style="right:60px;top:315px;transform:translateY(-50%);max-width:${560 * Math.max(1, s)}px;white-space:normal;text-align:right;` +
+    `<div class="t" style="right:60px;top:315px;transform:translateY(-50%);max-width:${560 * Math.max(1, s)}px;white-space:normal;text-wrap:balance;text-align:right;` +
     `font-size:${28 * s}px;line-height:${36 * s}px;letter-spacing:-0.05em">${tab}<div style="color:${tone.primary}">${escapeHtml(title)}</div></div>`;
   return frame(look, edgeLabels(tone) + brand(60, 299, tone, s) + right);
 }
