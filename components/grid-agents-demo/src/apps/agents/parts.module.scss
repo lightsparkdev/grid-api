@@ -116,6 +116,20 @@
   object-fit: contain;
 }
 
+.rowInitials {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--part-sunk, #ececee);
+  color: var(--part-text, #000);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 .rowDot {
   width: 6px;
   height: 6px;
@@ -253,6 +267,14 @@
   place-items: center;
   width: 22px;
   color: var(--part-muted, #8a8a8d);
+
+  &:has(.rowInitials) {
+    width: 32px;
+  }
+
+  .rowInitials {
+    background: var(--part-surface, #fff);
+  }
 }
 
 .askMethod {
@@ -832,4 +854,101 @@
       color: var(--part-accent-text, #fff);
     }
   }
+}
+
+/* The invoice document. */
+.invoice {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  padding: 16px;
+  border-radius: var(--part-radius, 20px);
+  background: var(--part-surface, #fff);
+  color: var(--part-text, #000);
+  filter: var(--part-shadow, none);
+}
+
+.invoiceHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.invoiceTitle {
+  font-family: var(--doc-serif, inherit);
+  font-size: 15px;
+  font-weight: 590;
+  line-height: 20px;
+}
+
+.invoiceStatus {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--part-sunk, #f2f2f2);
+  color: var(--part-muted, #8e8e93);
+  font-size: 12px;
+  font-weight: 590;
+  line-height: 16px;
+
+  &[data-paid] {
+    background: color-mix(in srgb, var(--part-success, #34c759) 14%, transparent);
+    color: var(--part-success, #34c759);
+  }
+}
+
+.invoiceAmount {
+  margin-top: 14px;
+  font-family: var(--doc-serif, inherit);
+  font-size: 32px;
+  font-weight: var(--doc-amount-weight, 600);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 38px;
+}
+
+.invoiceDue {
+  color: var(--part-muted, #8e8e93);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.invoiceRows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--part-rule, rgba(0, 0, 0, 0.1));
+  font-size: 14px;
+  line-height: 18px;
+
+  dt {
+    color: var(--part-muted, #8e8e93);
+  }
+
+  dd {
+    margin: 0;
+    text-align: right;
+  }
+}
+
+.invoicePay {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--part-rule, rgba(0, 0, 0, 0.1));
+
+  .invoiceRows {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+}
+
+.invoicePayLabel {
+  color: var(--part-text, #000);
+  font-size: 14px;
+  font-weight: 590;
 }

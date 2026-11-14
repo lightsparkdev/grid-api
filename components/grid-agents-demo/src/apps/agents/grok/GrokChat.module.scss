@@ -193,18 +193,19 @@
   }
 }
 
-// A 30pt box pinned to the pill's center (a grid would size its row to the glyph and center it low), drawn in
-// the emoji face's own metrics so the glyph sits in the middle of that box.
+// A box pinned to the pill's center (a grid would size its row to the glyph and center it low), with room around
+// the 30pt glyph: scaled down, the emoji is drawn as a layer cut to this box, and the glyph's ink rises past a
+// 30pt line.
 .reactEmoji {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 30px;
-  height: 30px;
-  margin: -15px 0 0 -15px;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
   font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   font-size: 30px;
-  line-height: 30px;
+  line-height: 40px;
   text-align: center;
 }
 
@@ -1111,3 +1112,4 @@
   --sub-radius: 20px;
   --sub-width: 325px;
 }
+/* An open invoice's bank details under its order card's line. */

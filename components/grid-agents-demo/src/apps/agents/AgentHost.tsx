@@ -25,6 +25,8 @@ type BrainOptions = Parameters<typeof useAgentBrain>[0];
 export interface AgentHostProps extends Omit<BrainOptions, 'reply' | 'describe' | 'readsFor' | 'typesFor'> {
   connector: ConnectorId;
   dark: boolean;
+  /** On a business account, its money's name ("Acme Studio balance") in place of the app's. */
+  wallet?: string;
   /** The model's next step for the conversation so far. */
   reply: (turns: Turn[]) => Promise<StepReply>;
 }
@@ -34,8 +36,8 @@ export interface AgentHostProps extends Omit<BrainOptions, 'reply' | 'describe' 
  * The brain lives here, above the skins, and stays mounted across switches,
  * so a flow halfway through carries on in the next app's look and voice.
  */
-export function AgentHost({ connector, dark, reply, ...options }: AgentHostProps) {
-  const voice = useMemo(() => voiceFor(connector), [connector]);
+export function AgentHost({ connector, dark, reply, wallet, ...options }: AgentHostProps) {
+  const voice = useMemo(() => voiceFor(connector, { wallet }), [connector, wallet]);
   const voiceRef = useRef(voice);
   voiceRef.current = voice;
   // What a scripted run said, in this app's words, for the model to read back.

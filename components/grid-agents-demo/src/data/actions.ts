@@ -2,6 +2,8 @@
    flow: it sets up what the flow needs and puts its opening line in the
    composer. The visitor sends it and makes every choice after that. */
 
+import type { Mode } from './mode';
+
 export type ActionId =
   | 'connect'
   | 'card'
@@ -15,7 +17,43 @@ export type ActionId =
   | 'getpaid'
   | 'cashout'
   | 'balance'
-  | 'history';
+  | 'history'
+  // The business account's own flows.
+  | 'company'
+  | 'team'
+  | 'empcard'
+  | 'invoice'
+  | 'invoices'
+  | 'bill'
+  | 'contractor'
+  | 'payroll';
+
+export const ACTION_IDS: ActionId[] = [
+  'connect',
+  'card',
+  'bank',
+  'fund',
+  'limits',
+  'pay',
+  'crypto',
+  'buy',
+  'agent',
+  'getpaid',
+  'cashout',
+  'balance',
+  'history',
+  'company',
+  'team',
+  'empcard',
+  'invoice',
+  'invoices',
+  'bill',
+  'contractor',
+  'payroll',
+];
+
+/** No tile run yet: each flow's next prompt is its first. */
+export const NO_RUNS = (): Record<ActionId, number> => Object.fromEntries(ACTION_IDS.map((id) => [id, 0])) as Record<ActionId, number>;
 
 /** The playground's mirror of the agent account, for gating and the flows' wording. */
 export interface WalletState {
@@ -31,24 +69,6 @@ const OPENING_BALANCE_CENTS = 0;
 export const initialWallet: WalletState = {
   connected: false,
   balanceCents: OPENING_BALANCE_CENTS,
-};
-
-export type CompletedFlows = Record<ActionId, boolean>;
-
-export const initialCompleted: CompletedFlows = {
-  connect: false,
-  card: false,
-  bank: false,
-  fund: false,
-  limits: false,
-  pay: false,
-  crypto: false,
-  buy: false,
-  agent: false,
-  getpaid: false,
-  cashout: false,
-  balance: false,
-  history: false,
 };
 
 export interface ActionDef {
@@ -140,15 +160,71 @@ export const ACTIONS: ActionDef[] = [
     desc: 'What the agent spent and received',
     prompts: ['What did you spend this week?'],
   },
+  {
+    id: 'company',
+    label: 'Get verified',
+    desc: 'A business account, with US bank details',
+    prompts: ['Set up an account for my business'],
+  },
+  {
+    id: 'team',
+    label: 'Team budget',
+    desc: 'An agent per teammate, on one shared budget',
+    prompts: ['Give Maya and Jordan agents with a $5,000 monthly team budget'],
+  },
+  {
+    id: 'empcard',
+    label: 'Team card',
+    desc: 'A card in a teammate’s name',
+    prompts: ['Get Jordan a card for travel'],
+  },
+  {
+    id: 'invoice',
+    label: 'Send invoice',
+    desc: 'Bill a client, paid by bank transfer',
+    prompts: ['Invoice Northwind Coffee $2,400 for the brand refresh'],
+  },
+  {
+    id: 'invoices',
+    label: 'Track invoices',
+    desc: 'What’s been paid and what’s still open',
+    prompts: ['Which invoices are still unpaid?'],
+  },
+  {
+    id: 'bill',
+    label: 'Pay a bill',
+    desc: 'Pay a vendor’s bank account',
+    prompts: ['Pay the Wavelink Fiber internet bill, $189'],
+  },
+  {
+    id: 'contractor',
+    label: 'Pay a contractor',
+    desc: 'They claim it from a link, no account needed',
+    prompts: ['Pay Priya Shah $800 for the illustrations'],
+  },
+  {
+    id: 'payroll',
+    label: 'Run payroll',
+    desc: 'Pay the team in one approved run',
+    prompts: ['Run payroll for Maya and Jordan'],
+  },
 ];
 
 export function actionLabel(id: ActionId): string {
   return ACTIONS.find((a) => a.id === id)!.label;
 }
 
-/** The picker's sections: the agent's account as a two-column grid read across,
- *  related flows sharing a row, then its payments as a list. */
-export const FLOW_GROUPS: { label: string; flows: ActionId[]; columns?: 1 | 2 }[] = [
-  { label: 'Explore account flows', flows: ['connect', 'limits', 'card', 'bank', 'fund', 'cashout', 'balance', 'history'] },
-  { label: 'Explore payment flows', flows: ['pay', 'getpaid', 'buy', 'agent'], columns: 1 },
-];
+export type FlowGroup = { label: string; flows: ActionId[]; columns?: 1 | 2 };
+
+/** The picker's sections for each account: its account flows as a two-column grid read across, related flows sharing
+ *  a row, then its payments as a list. */
+export const FLOW_GROUPS: Record<Mode, FlowGroup[]> = {
+  personal: [
+    { label: 'Explore account flows', flows: ['connect', 'limits', 'card', 'bank', 'fund', 'cashout', 'balance', 'history'] },
+    { label: 'Explore payment flows', flows: ['pay', 'getpaid', 'buy', 'agent'], columns: 1 },
+  ],
+  business: [
+    { label: 'Explore account flows', flows: ['company', 'team', 'empcard', 'fund', 'balance', 'history'] },
+    { label: 'Explore payment flows', flows: ['invoice', 'invoices', 'bill', 'contractor', 'payroll'], columns: 1 },
+  ],
+};

@@ -37,3 +37,21 @@
   display: flex;
   overflow: hidden;
 }
+
+/* One account's conversation. Laid out as if it weren't wrapped, so the app fills the phone as before; the account
+   not showing is kept at full size behind it, unseen and untouchable, so its glass still measures a real box. */
+.account {
+  display: contents;
+
+  // Opacity too: an open sheet forces itself visible.
+  &[data-hidden] {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    display: flex;
+    flex-direction: column;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+}

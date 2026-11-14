@@ -780,3 +780,21 @@
     --acct-button: #30302e;
   }
 }
+
+/* The invoice as Duet's artifacts: its card, the amount in its serif. */
+.invoiceSkin {
+  --part-surface: #fff;
+  --part-text: #141413;
+  --part-muted: #73726c;
+  --part-sunk: #f0eee6;
+  --part-radius: 22px;
+  --doc-serif: 'Anthropic Serif', 'Tiempos Headline', Georgia, 'Times New Roman', serif;
+  --doc-amount-weight: 400;
+
+  :global([data-theme='dark']) & {
+    --part-surface: var(--cl-card);
+    --part-text: #faf9f5;
+    --part-muted: #9c9a92;
+    --part-sunk: #30302e;
+  }
+}

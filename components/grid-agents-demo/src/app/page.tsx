@@ -81,7 +81,7 @@ export default function Page() {
 
   // Tapping a flow in Configure runs it and jumps to the Playground (mobile);
   // on desktop goPlayground no-ops.
-  const { handleAction } = logic;
+  const { handleAction } = logic.active;
   const onConfigureAction = useCallback(
     (id: ActionId) => {
       goPlayground();
@@ -133,26 +133,18 @@ export default function Page() {
         <ConfigurePanel
           connector={logic.connector}
           onConnectorSelect={logic.selectConnector}
-          activeFlow={logic.activeFlow}
-          dirty={logic.dirty}
+          mode={logic.mode}
+          onModeSelect={logic.selectMode}
+          activeFlow={logic.active.activeFlow}
+          dirty={logic.active.dirty}
           onAction={onConfigureAction}
-          onReset={logic.reset}
+          onReset={logic.active.reset}
         />
       </div>
       <div ref={stackColRef} className={styles.stackCol}>
         <div className={styles.appCol}>
           <ComposerDials>
-            <AppPanel
-              chatKey={logic.chatKey}
-              connector={logic.connector}
-              entry={logic.entry}
-              context={logic.context}
-              onEvent={logic.onEvent}
-              onActiveFlow={logic.setActiveFlow}
-              onRun={logic.onRun}
-              onCompleted={logic.onCompleted}
-              reply={logic.reply}
-            />
+            <AppPanel connector={logic.connector} mode={logic.mode} opened={logic.opened} accounts={logic.accounts} />
           </ComposerDials>
         </div>
         <ColumnResizeHandle onMouseDown={onResizeStart} />
@@ -165,7 +157,7 @@ export default function Page() {
           // param) styles the column so the first paint is already correct.
           style={{ width: apiWidth ?? undefined }}
         >
-          <ApiPanel entries={logic.entries} />
+          <ApiPanel key={logic.mode} entries={logic.active.entries} />
         </div>
       </div>
 

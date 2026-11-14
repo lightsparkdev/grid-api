@@ -5,7 +5,7 @@ import { playAppSwitch, WALLPAPER } from '@/apps/shared/appSwitch';
 import { SfSymbol } from '@/apps/shared/icons';
 import { ChatFrame, ComposerField, NATIVE_IN, Said, ScrollEdge, STILL, TypingDots, useOpenedIds, useOpenedMarks } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
-import { shortCode, useCopy } from '../parts';
+import { InvoiceCard, shortCode, useCopy } from '../parts';
 import type { AgentAsk, AgentBalance, AgentNote, Message, Product, SubAgent } from '../conversation';
 import { useKeptAsk, useKeptBalance } from '../openSheets';
 import type { AgentChatProps } from '../types';
@@ -360,7 +360,7 @@ function VaultLink({ m, onOpen }: { m: Ask; onOpen: () => void }) {
         <span className={styles.linkWord}>Instinct</span>
         {state !== 'open' && (
           <span className={styles.linkState} data-state={state}>
-            {state === 'done' ? (ask.recipient ? `Saved, Instinct can pay ${ask.recipient.first}` : 'Saved to your vault') : state === 'denied' ? 'Not now' : state === 'expired' ? 'Expired' : 'Saving…'}
+            {state === 'done' ? (ask.recipient ? 'Saved for next time' : 'Saved to your vault') : state === 'denied' ? 'Not now' : state === 'expired' ? 'Expired' : 'Saving…'}
           </span>
         )}
       </span>
@@ -527,6 +527,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         );
       case 'card': {
         const b = m.card.balance;
+        if (m.card.invoice) return <InvoiceCard invoice={m.card.invoice} className={styles.invoiceSkin} />;
         if (!b)
           return m.card.code ? (
             <>

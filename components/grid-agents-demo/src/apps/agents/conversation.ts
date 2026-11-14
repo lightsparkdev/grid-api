@@ -34,6 +34,8 @@ export interface AskRow {
   /** A glyph the skin knows how to draw, or an image path. */
   icon?: 'product' | 'truck' | 'car' | 'envelope' | 'meta' | 'wallet' | 'lock' | 'gauge' | 'checkmark' | 'card';
   image?: string;
+  /** A person, as the initials in their avatar ("MC"). */
+  initials?: string;
 }
 
 /** A form the person fills in and submits as their approval (Grok's consent and limits). */
@@ -127,6 +129,23 @@ export interface AgentNote {
   balance?: AgentBalance;
   /** The figures that matter, for apps that lay a receipt out as tiles (Duet's artifacts). */
   stats?: { label: string; value: string }[];
+  /** An invoice the app wrote, drawn as a document: what's owed by when, between whom, and how to pay it. */
+  invoice?: Invoice;
+  /** What the card is, for an app that names it (Duet's artifact footer); a settled one is otherwise a receipt. */
+  name?: string;
+}
+
+export interface Invoice {
+  number: string;
+  from: string;
+  to: string;
+  memo: string;
+  amount: string;
+  due: string;
+  status: 'open' | 'paid';
+  bank: string;
+  routing: string;
+  account: string;
 }
 
 /** A product the agent found: a card in a carousel, an image Instinct sends, a line in a list. */
@@ -234,6 +253,9 @@ export type Beat =
   /** Waits for a typed dollar amount ("everything" means `all`, in cents); anything else lapses it and goes to the model.
    *  `options` (dollars) show as chips, with an Other that leaves it to typing. */
   | { amount: true; all?: number; options?: number[]; then: (usd: number) => Beat[] }
+  /** Waits for a typed name (the company, the owner), with `suggestion` one tap away beside Type my own, which says
+   *  `other` and leaves it to typing. Whatever they type is the answer, cleaned and capped. */
+  | { name: true; suggestion: string; other: string; named: (value: string) => Beat[] }
   | { emit: AgentEvent }
   | { pause: number }
   | { when: () => Beat[] };

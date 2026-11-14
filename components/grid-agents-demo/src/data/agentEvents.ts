@@ -86,8 +86,9 @@ export type AgentEvent =
   | { type: 'getpaid.received'; from: string; amount: number }
   /** The platform changes the agent's policy. */
   | { type: 'limits.update'; limits: Limits }
-  /** The person adds someone's bank so the agent can pay them (the agent only ever sees its id). */
-  | { type: 'recipient.add'; name: string; bank: LinkedBank }
+  /** The person adds someone's bank so the agent can pay them (the agent only ever sees its id). `vendor`: a business,
+   *  paid as one. */
+  | { type: 'recipient.add'; name: string; bank: LinkedBank; vendor?: boolean }
   /** The agent quotes a payout, then executes it: on its own under the threshold, held above it. */
   | { type: 'pay.quote'; payee: Payee }
   | { type: 'pay.execute' }
@@ -113,4 +114,24 @@ export type AgentEvent =
   /** The agent reads the account: balances, what's left to spend, its policy. */
   | { type: 'account.overview' }
   /** The agent lists recent transactions. */
-  | { type: 'transactions.list' };
+  | { type: 'transactions.list' }
+  /* ── The business account ── */
+  /** The visitor named the company and themselves as it's set up. Nothing goes to Grid until the account is created. */
+  | { type: 'business.name'; company: string; owner: string }
+  /** A shared budget for the team, and an agent for each person on it, acting for them. */
+  | { type: 'team.budget'; limit: number }
+  /** A card in a team member's name, issued by their agent (created first if they don't have one). */
+  | { type: 'employee.card'; member: string }
+  /** The app sends an invoice; the agent reads the account's US bank details to put on it. */
+  | { type: 'invoice.send'; number: string; client: string; amount: number; memo: string; due: string }
+  /** The client paid an invoice by bank transfer. */
+  | { type: 'invoice.paid'; number: string }
+  /** The agent checks which payments have come in, to match them to open invoices. */
+  | { type: 'invoices.check' }
+  /** Someone with no account is paid from a link they claim; held for approval above the threshold. */
+  | { type: 'contractor.send'; name: string; email: string; country: string; amount: number; note: string }
+  /** They claimed it and the money landed in their bank. */
+  | { type: 'contractor.claimed' }
+  /** Payroll for the team: previewed, then created as one run with a row per person. */
+  | { type: 'payroll.preview' }
+  | { type: 'payroll.execute' };

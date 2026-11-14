@@ -1,5 +1,6 @@
 import { BANK_COUNTRIES, currencyFor, type BankCountry } from '@/data/bankCountries';
 import { accountLast4, sampleValuesFor } from '@/data/bankSamples';
+import { activeMode, DEFAULT_BUSINESS, type Mode } from '@/data/mode';
 import { PERSON } from './story';
 
 /** The bank the person linked: picked in the bank flow, then read by the agent's lines and the API panel. */
@@ -26,22 +27,32 @@ export function bankFor(country: BankCountry, holder = PERSON.full): LinkedBank 
   };
 }
 
-let linked = bankFor(BANK_COUNTRIES.find((c) => c.code === 'us')!);
-let linkedYet = false;
+const US = () => BANK_COUNTRIES.find((c) => c.code === 'us')!;
+/** Each account's bank: the business's is in the company's name. */
+const startingBank = (mode: Mode) => bankFor(US(), mode === 'business' ? DEFAULT_BUSINESS.company : PERSON.full);
 
-export const linkedBank = () => linked;
+const linked: Record<Mode, { bank: LinkedBank; yet: boolean }> = {
+  personal: { bank: startingBank('personal'), yet: false },
+  business: { bank: startingBank('business'), yet: false },
+};
+
+export const linkedBank = () => linked[activeMode()].bank;
 /** Whether the person has linked one this visit (the default above only stands in for the agent's lines). */
-export const hasLinkedBank = () => linkedYet;
+export const hasLinkedBank = () => linked[activeMode()].yet;
 
-/** Back to the default with nothing linked, as a Reset leaves the account. */
-export function resetLinkedBank() {
-  linked = bankFor(BANK_COUNTRIES.find((c) => c.code === 'us')!);
-  linkedYet = false;
+/** Back to the default with nothing linked, as a Reset of that account leaves it. */
+export function resetLinkedBank(mode: Mode) {
+  linked[mode] = { bank: startingBank(mode), yet: false };
 }
 
 export function linkBank(bank: LinkedBank) {
-  linked = bank;
-  linkedYet = true;
+  linked[activeMode()] = { bank, yet: true };
+}
+
+/** The business account's bank stands in under the company's name, as the visitor names it. */
+export function renameBusinessBank(company: string) {
+  const l = linked.business;
+  if (!l.yet) linked.business = { bank: bankFor(US(), company), yet: false };
 }
 
 /** A USD amount (in cents) in the bank's own currency, at the demo rate. */

@@ -13,7 +13,7 @@ import { FLOW_ICON_COLORS, FLOW_ICONS } from '@/data/flowIcons';
 import { ChatFrame, ComposerField, Said, ScrollEdge, TypingDots } from '../ChatFrame';
 import { GlassPill, NoopButton, useContinuousCorners } from '../glass';
 import type { AgentNote, Message } from '../conversation';
-import { AddressQr, askButtons, AskCard, BalanceCard, Divider, MetaLine, MORPH, NoteCard, ProductRow, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
+import { AddressQr, askButtons, AskCard, BalanceCard, Divider, MetaLine, MORPH, InvoiceCard, NoteCard, ProductRow, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import type { AgentChatProps } from '../types';
 import { ClaudeMascot } from './ClaudeMascot';
 import { useDuetBalance } from './DuetBalance';
@@ -257,7 +257,7 @@ function NoteArtifact({ note }: { note: AgentNote }) {
     );
   }
   const [first, ...rest] = note.lines;
-  return <Artifact label={first} headline={note.title} stats={note.stats} name={note.done ? 'Receipt' : (rest[0] ?? note.title)} />;
+  return <Artifact label={first} headline={note.title} stats={note.stats} name={note.name ?? (note.done ? 'Receipt' : (rest[0] ?? note.title))} />;
 }
 
 /** A finished task, closed out the way Duet closes one: a check, and where to find it. */
@@ -366,6 +366,8 @@ export function ClaudeChat({ chat }: AgentChatProps) {
           <Lift>
             {b ? (
               <BalanceCard balance={b} onOpen={() => balance.open(b.wallet)} className={styles.accountSkin} />
+            ) : m.card.invoice ? (
+              <InvoiceCard invoice={m.card.invoice} className={styles.invoiceSkin} />
             ) : m.card.code ? (
               <AddressArtifact note={m.card} />
             ) : m.card.stats || m.card.rows ? (

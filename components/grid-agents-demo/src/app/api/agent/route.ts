@@ -2,11 +2,12 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { isTailored, listedFor, listsBrand, type BuyRequest } from '@/apps/agents/products';
 import { BANK_COUNTRIES } from '@/data/bankCountries';
 import { CONNECTORS, type ConnectorId } from '@/data/connectors';
+import { cleanName, type Mode } from '@/data/mode';
 import { anthropicAdapter } from '@/lib/llm/anthropic';
 import { takeStep, takeTurn } from '@/lib/llm/limits';
 import { lookUpPrice } from '@/lib/llm/priceLookup';
 import { systemPrompt, type PromptState } from '@/lib/llm/prompt';
-import { CONNECTOR_IDS, TOOL_NAMES, type Block, type Say, type ToolCall, type Turn } from '@/lib/llm/tools';
+import { CONNECTOR_IDS, toolsIn, type Block, type Say, type ToolCall, type ToolName, type Turn } from '@/lib/llm/tools';
 import type { AgentResponse } from '@/lib/llm/types';
 import { ACCESS_HEADER, hasAccess } from '@/lib/access';
 import { VISITOR_HEADER, visitorOf } from '@/lib/visitor';
@@ -82,7 +83,7 @@ interface Body {
 }
 
 /** The conversation as the page kept it, checked: the person first, roles taking turns, known blocks, sizes capped. */
-function turnsOf(raw: unknown): Turn[] | null {
+function turnsOf(raw: unknown, mode: Mode): Turn[] | null {
   if (!Array.isArray(raw) || !raw.length || raw.length > MAX_TURNS) return null;
   const turns: Turn[] = [];
   for (const t of raw as Turn[]) {
@@ -91,7 +92,7 @@ function turnsOf(raw: unknown): Turn[] | null {
     const content: Block[] = [];
     for (const b of t.content) {
       if (b?.type === 'text' && typeof b.text === 'string' && b.text.trim()) content.push({ type: 'text', text: b.text.slice(0, MAX_BLOCK) });
-      else if (b?.type === 'tool_use' && t.role === 'assistant' && typeof b.id === 'string' && (TOOL_NAMES as readonly string[]).includes(b.name) && b.input && typeof b.input === 'object')
+      else if (b?.type === 'tool_use' && t.role === 'assistant' && typeof b.id === 'string' && toolsIn(mode).has(b.name as ToolName) && b.input && typeof b.input === 'object')
         content.push({ type: 'tool_use', id: b.id.slice(0, 64), name: b.name, input: b.input });
       else if (b?.type === 'tool_result' && t.role === 'user' && typeof b.tool_use_id === 'string' && typeof b.content === 'string')
         content.push({ type: 'tool_result', tool_use_id: b.tool_use_id.slice(0, 64), content: b.content.slice(0, MAX_BLOCK), ...(b.is_error && { is_error: true }) });
@@ -122,7 +123,8 @@ export async function POST(req: NextRequest) {
     return fallback('invalid', 400);
   }
   const connector = CONNECTORS.find((c) => c.id === body.connector)?.id as ConnectorId | undefined;
-  const turns = turnsOf(body.turns);
+  const mode: Mode = body.state?.mode === 'business' ? 'business' : 'personal';
+  const turns = turnsOf(body.turns, mode);
   if (!connector || !turns) return fallback('invalid', 400);
   const last = turns[turns.length - 1].content;
   const message = last.find((b): b is Extract<Block, { type: 'text' }> => b.type === 'text');
@@ -151,16 +153,38 @@ export async function POST(req: NextRequest) {
     cardSaved: Boolean(body.state?.cardSaved),
     bankLinked: Boolean(body.state?.bankLinked),
     recipients,
+    mode,
+    ...(mode === 'business' && businessOf(body.state)),
   };
 
   try {
-    const { calls } = await anthropicAdapter(key).step({ system: systemPrompt(connector, state), turns });
+    const { calls } = await anthropicAdapter(key).step({ system: systemPrompt(connector, state), turns, mode });
     const out = await Promise.all(calls.map((c) => tidy(key, c, connector)));
     return NextResponse.json({ calls: out } satisfies AgentResponse);
   } catch (e) {
     if (process.env.NODE_ENV === 'development') console.error('[agent]', e);
     return fallback('error');
   }
+}
+
+const lines = (v: unknown, most: number, max: number) =>
+  Array.isArray(v)
+    ? v
+        .filter((x): x is string => typeof x === 'string')
+        .slice(0, most)
+        .map((x) => x.replace(/[<>{}[\]\\`"]/g, '').replace(/\s+/g, ' ').trim().slice(0, max))
+    : undefined;
+
+/** The business account as the page described it: names cleaned and capped, lists short. */
+function businessOf(raw: Partial<PromptState> | undefined): Partial<PromptState> {
+  const name = (v: unknown) => (typeof v === 'string' && cleanName(v) ? cleanName(v) : undefined);
+  return {
+    company: name(raw?.company),
+    owner: name(raw?.owner),
+    team: lines(raw?.team, 6, 80),
+    budget: typeof raw?.budget === 'string' ? raw.budget.slice(0, 20) : undefined,
+    invoices: lines(raw?.invoices, 12, 100),
+  };
 }
 
 /** Apps that text in all lowercase, names too; the rest write in sentence case. */
