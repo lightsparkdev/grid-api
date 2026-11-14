@@ -21,6 +21,7 @@
 ## Frontmatter requirements for pages
 - title: Clear, descriptive page title
 - description: Concise summary for SEO/navigation
+- og:image: don't set it by hand. After adding or renaming a page, run `make og` from the repo root to generate its image and write this line.
 
 ## Writing standards
 - Second-person voice ("you")

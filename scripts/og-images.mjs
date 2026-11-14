@@ -3,18 +3,19 @@
 // its image. Run from the repo root with `make og`.
 //
 // - Homepage (index.mdx): the centered "lightspark API docs" lockup, with the
-//   tagline at the top and the URL at the bottom.
+//   tagline at the top and the URL at the bottom. docs.json also uses this
+//   image as the site-wide og:image, so API endpoint pages and any page added
+//   without rerunning this script still get a Lightspark image.
 // - Every page in a docs.json tab: the lockup on the left and the tab name
 //   (gray) over the page title on the right, on the tab's photo or the plain
 //   dark surface (og/config.json).
-// - images/og/api-reference.png: "API reference" alone. docs.json uses it as
-//   the site-wide og:image, so API endpoint pages and any page added without
-//   rerunning this script still get a Lightspark image.
+// - Pages outside the navigation: the look of the tab their folder belongs to
+//   (or `folders` in og/config.json), else the homepage image.
 //
-// Pages in `keep` and pages outside the navigation are left as they are.
+// Pages in `keep` are left as they are.
 // The designs come from the og-studio repo (github.com/patcapulong/og-studio).
 
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -26,7 +27,6 @@ const config = JSON.parse(readFileSync(join(OG, 'config.json'), 'utf8'));
 
 const PAGES_DIR = 'images/og/pages';
 const HOME_IMAGE = 'images/og/home.png';
-const SHARED_IMAGE = 'images/og/api-reference.png';
 
 // ---------------------------------------------------------------------------
 // Pages
@@ -46,6 +46,25 @@ function tabsByPage() {
   };
   for (const t of docs.navigation.tabs) walk(t.groups, t.tab);
   return tabOf;
+}
+
+/** Every page outside the navigation, with the tab its top-level folder mostly belongs to. */
+function pagesOutsideNav(tabOf) {
+  const counts = new Map();
+  for (const [page, tab] of tabOf) {
+    const folder = page.split('/')[0];
+    const byTab = counts.get(folder) ?? new Map();
+    byTab.set(tab, (byTab.get(tab) ?? 0) + 1);
+    counts.set(folder, byTab);
+  }
+  const folderTab = (folder) =>
+    config.folders?.[folder] ?? [...(counts.get(folder) ?? new Map())].sort((a, b) => b[1] - a[1])[0]?.[0];
+  return readdirSync(MINT, { recursive: true })
+    .filter((f) => f.endsWith('.mdx') && !f.startsWith('snippets/'))
+    .map((f) => f.replace(/\.mdx$/, ''))
+    .filter((page) => !tabOf.has(page))
+    .sort()
+    .map((page) => ({ page, tab: folderTab(page.split('/')[0]) }));
 }
 
 const FRONTMATTER = /^---\n([\s\S]*?)\n---/;
@@ -173,12 +192,16 @@ async function toWebp(page, png) {
 async function main() {
   const tabOf = tabsByPage();
   const keep = new Set(config.keep);
-  const jobs = [
-    { out: HOME_IMAGE, html: homeImage(), page: 'index' },
-    { out: SHARED_IMAGE, html: pageImage(config.sharedTitle, config.sharedTitle, {}) },
-  ];
-  for (const [page, tab] of tabOf) {
+  const pages = [...tabOf].map(([page, tab]) => ({ page, tab })).concat(pagesOutsideNav(tabOf));
+  const jobs = [{ out: HOME_IMAGE, html: homeImage(), page: 'index' }];
+  /** Pages that point at the homepage image instead of one of their own. */
+  const homeLinks = [];
+  for (const { page, tab } of pages) {
     if (page === 'index' || keep.has(page)) continue;
+    if (!tab) {
+      homeLinks.push(page);
+      continue;
+    }
     const look = config.tabs[tab];
     if (!look) throw new Error(`No look for tab "${tab}" in og/config.json`);
     const fm = readFileSync(join(MINT, `${page}.mdx`), 'utf8').match(FRONTMATTER)?.[1] ?? '';
@@ -214,7 +237,11 @@ async function main() {
     }
   }
   await browser.close();
-  console.log(`Wrote ${jobs.length} OG images (${jobs.filter((j) => j.page).length} pages updated).`);
+  for (const page of homeLinks) {
+    const mdx = join(MINT, `${page}.mdx`);
+    writeFileSync(mdx, withOgImage(readFileSync(mdx, 'utf8'), `/${HOME_IMAGE}`));
+  }
+  console.log(`Wrote ${jobs.length} OG images. ${jobs.length + homeLinks.length} pages updated (${homeLinks.length} use the homepage image).`);
 }
 
 await main();
