@@ -155,6 +155,21 @@ function homeImage() {
 // ---------------------------------------------------------------------------
 // Render
 
+/** Playwright screenshots only as PNG or JPEG, so the browser re-encodes photo pages as WebP. */
+async function toWebp(page, png) {
+  const webp = await page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    return canvas.toDataURL('image/webp', 0.85).split(',')[1];
+  }, png.toString('base64'));
+  return Buffer.from(webp, 'base64');
+}
+
 async function main() {
   const tabOf = tabsByPage();
   const keep = new Set(config.keep);
@@ -168,7 +183,7 @@ async function main() {
     if (!look) throw new Error(`No look for tab "${tab}" in og/config.json`);
     const fm = readFileSync(join(MINT, `${page}.mdx`), 'utf8').match(FRONTMATTER)?.[1] ?? '';
     const title = frontmatterField(fm, 'title') || frontmatterField(fm, 'sidebarTitle');
-    const ext = look.photo ? 'jpg' : 'png';
+    const ext = look.photo ? 'webp' : 'png';
     jobs.push({ out: `${PAGES_DIR}/${page}.${ext}`, html: pageImage(tab, title, look), page });
   }
 
@@ -189,10 +204,10 @@ async function main() {
       await document.fonts.ready;
       await Promise.all([...document.images].map((img) => img.decode().catch(() => {})));
     });
-    const jpg = job.out.endsWith('.jpg');
+    const png = await page.locator('.og').screenshot({ type: 'png' });
     const file = join(MINT, job.out);
     mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, await page.locator('.og').screenshot(jpg ? { type: 'jpeg', quality: 78 } : { type: 'png' }));
+    writeFileSync(file, job.out.endsWith('.webp') ? await toWebp(page, png) : png);
     if (job.page) {
       const mdx = join(MINT, `${job.page}.mdx`);
       writeFileSync(mdx, withOgImage(readFileSync(mdx, 'utf8'), `/${job.out}`));
