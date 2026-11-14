@@ -13,11 +13,13 @@ properties:
     example: DYNAMIC
   environmentId:
     type: string
+    format: uuid
     description: >-
       The Dynamic environment the wallet lives in. It must be configured for
       your platform.
     example: f0e1d2c3-4b5a-4c6d-8e7f-0a1b2c3d4e5f
   walletId:
     type: string
+    format: uuid
     description: Dynamic's identifier for the wallet.
     example: b6f2c0e4-9d2a-4c1e-8f3b-2a7d5e9c1f40
