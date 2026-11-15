@@ -6,7 +6,7 @@ Paste this into the webhooks section of every guide. It is a condensed form of t
 
 Every webhook carries an `X-Grid-Signature` header. Fetch your Grid public key from the dashboard under Developers, webhook settings, and verify before processing anything.
 
-1. Parse the header. It is JSON of the form `{"v": "1", "s": "<base64 signature>"}`. If parsing fails, treat the whole header as base64.
+1. Parse the header. It is JSON of the form `{"v": 1, "s": "<base64 signature>"}`. If parsing fails, treat the whole header as base64.
 2. Base64-decode the signature.
 3. Verify the signature over the raw request body using ECDSA with SHA-256 and the public key.
 4. Reject with `401` if verification fails.
