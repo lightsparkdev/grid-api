@@ -108,22 +108,26 @@ const WORDMARK_PATHS = [
 
 const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-// Suisse Intl VF at 28px in a 32px line box: the text baseline sits 26px below
-// the box top. The wordmark draws its 120x26 viewBox into a 119x26 box; the
-// flat bottom of its letters sits at 20.3154 in the viewBox.
-const TEXT_BASELINE = 26;
+// The wordmark draws its 120x26 viewBox into a 119x26 box; the flat bottom of
+// its letters sits at 20.3154 in the viewBox, this far above the box bottom.
 const WORDMARK_SCALE = 119 / 120;
-const WORDMARK_BASELINE = 20.3154 * WORDMARK_SCALE + (26 - 26 * WORDMARK_SCALE) / 2;
+const WORDMARK_DROP = 26 - (20.3154 * WORDMARK_SCALE + (26 - 26 * WORDMARK_SCALE) / 2);
 
-/** "lightspark API docs" lockup; (x, y) is the top-left of its 32px text box at scale 1. */
+/**
+ * "lightspark API docs" lockup; (x, y) is the top-left of its 32px line box at
+ * scale 1. The wordmark sits inline with "API docs", lowered by its drop, so its
+ * letters land on the text's own baseline (the browser rounds the baseline's
+ * place in the line box to a whole pixel). The line box starts on a device
+ * pixel row (renders are 2x), so that baseline does too.
+ */
 function brand(x, y, tone, s) {
-  const top = y + 16 - 16 * s;
-  const svgTop = top + (TEXT_BASELINE - WORDMARK_BASELINE) * s;
+  const top = Math.round((y + 16 - 16 * s) * 2) / 2;
   return (
-    `<svg viewBox="0 0 120 26" fill="${tone.primary}" style="position:absolute;left:${x}px;top:${svgTop}px;width:${119 * s}px;height:${26 * s}px">` +
+    `<div class="t" style="left:${x}px;top:${top}px;font-size:${28 * s}px;line-height:${32 * s}px">` +
+    `<svg viewBox="0 0 120 26" fill="${tone.primary}" style="width:${119 * s}px;height:${26 * s}px;vertical-align:${-WORDMARK_DROP * s}px;margin-right:${5 * s}px">` +
     WORDMARK_PATHS.map((d) => `<path fill-rule="evenodd" d="${d}"/>`).join('') +
     `</svg>` +
-    `<div class="t" style="left:${x + 124 * s}px;top:${top}px;font-size:${28 * s}px;line-height:${32 * s}px;letter-spacing:-0.06em;color:${tone.secondary}">API docs</div>`
+    `<span style="letter-spacing:-0.06em;color:${tone.secondary}">API docs</span></div>`
   );
 }
 
@@ -160,7 +164,7 @@ function pageImage(section, title, look) {
   const tone = look.photo ? TONES.photo : TONES.dark;
   const tab = section !== title ? `<div style="color:${tone.secondary}">${escapeHtml(section)}</div>` : '';
   const right =
-    `<div class="t" style="right:60px;top:315px;transform:translateY(-50%);max-width:${560 * Math.max(1, s)}px;white-space:normal;text-wrap:balance;text-align:right;` +
+    `<div class="t" style="right:60px;top:315px;transform:translateY(-50%);max-width:${config.titleMaxWidth}px;white-space:normal;text-wrap:balance;text-align:right;` +
     `font-size:${28 * s}px;line-height:${36 * s}px;letter-spacing:-0.05em">${tab}<div style="color:${tone.primary}">${escapeHtml(title)}</div></div>`;
   return frame(look, edgeLabels(tone) + brand(60, 299, tone, s) + right);
 }

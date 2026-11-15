@@ -1,6 +1,7 @@
 {
-  "textScale": 1.1,
-  "labelScale": 1,
+  "textScale": 1.32,
+  "labelScale": 1.2,
+  "titleMaxWidth": 380,
   "tagline": "headless-money",
   "url": "docs.lightspark.com",
   "keep": ["flow-builder", "global-accounts/demo", "cards/demo"],
