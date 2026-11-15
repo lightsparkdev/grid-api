@@ -14,9 +14,8 @@
   transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-/* The rows, measured for the card's height. Positioned so a slot leaving can lift out of the flow in place. */
+/* The rows, measured for the card's height. */
 .grid {
-  position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 

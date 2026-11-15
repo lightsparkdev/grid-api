@@ -54,7 +54,7 @@ export function FlowPicker({ flows, columns = 2, activeFlow, onAction, firstTile
   return (
     <motion.div className={styles.group} data-active-flow={playing} initial={false} animate={{ height: height ?? 'auto' }} transition={CARD_RESIZE}>
       <div ref={grid} className={styles.grid} data-columns={columns}>
-        <AnimatePresence mode="popLayout" initial={false}>
+        <AnimatePresence initial={false}>
           {actions.map((action, k) => {
             const Icon = FLOW_ICONS[action.id];
             return (

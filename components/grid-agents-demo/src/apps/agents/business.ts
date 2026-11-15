@@ -88,11 +88,14 @@ export const STORY_INVOICE = { client: 'Northwind Coffee', amount: 240_000, memo
 /** Invoices the app had already sent before this visit: one still open, so tracking has something to chase. */
 export const OPEN_INVOICES = (): Invoice[] => [{ number: 'INV-1038', client: 'Bluebird Bakery', amount: 85_000, memo: 'Menu design', due: inDays(3), status: 'OPEN' }];
 
-/** The bill the Pay a bill tile pays, to a vendor's US bank account. */
-export const STORY_BILL = { name: 'Wavelink Fiber', amount: 189, note: 'the internet bill' };
+/** The bill that came in, which the Pay a bill tile pays to the vendor's US bank account. Dollars. */
+export const STORY_BILL = { name: 'Wavelink Fiber', amount: 189, note: 'the internet bill', what: 'internet', number: 'WF-20418', dueIn: 5 };
 
-/** The contractor the Pay a contractor tile pays: abroad, paid to her own bank in her own currency. Dollars. */
+/** The contractor Pay a contractor suggests: abroad, paid to her own bank in her own currency. Dollars. */
 export const STORY_CONTRACTOR = { name: 'Priya Shah', country: 'in', amount: 800, note: 'the illustrations' };
+
+/** Where a contractor typed in might bank, as Pay a contractor offers them. */
+export const CONTRACTOR_COUNTRIES = ['in', 'mx', 'ph', 'gb', 'br', 'us'];
 
 /** What one payroll costs: everyone on the team, USD cents. */
 export const payrollTotal = (team: readonly TeamMember[]) => team.reduce((sum, m) => sum + m.pay, 0);

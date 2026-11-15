@@ -1,8 +1,10 @@
 import type { ActionId } from '@/data/actions';
+import { BANK_COUNTRIES } from '@/data/bankCountries';
 import { DEFAULT_BUSINESS } from '@/data/mode';
 import {
   COMPANY_ADDRESS,
   COMPANY_BANK,
+  CONTRACTOR_COUNTRIES,
   inDays,
   memberOf,
   newMember,
@@ -386,21 +388,58 @@ export function trackInvoices(ctx: FlowContext): Beat[] {
   ];
 }
 
-/** A bill is a payment to the vendor's US bank account, added once as a business: Pay someone's flow. */
+/** Pay someone's flow without its opening reaction, for a flow that has already reacted. */
+const payOn = (ctx: FlowContext, params: FlowParams) => FLOWS.pay({ ...ctx, params }).filter((b) => !('react' in b));
+
+/**
+ * A bill is a payment to the vendor's US bank account, added once as a business: Pay someone's flow. From the tile, the
+ * bill that came in is shown first, so the vendor isn't out of nowhere.
+ */
 export function payBill(ctx: FlowContext): Beat[] {
-  const p: FlowParams = ctx.params?.name
-    ? { ...ctx.params, vendor: true, country: ctx.params.country ?? 'us', currency: ctx.params.currency ?? 'USD' }
-    : { name: STORY_BILL.name, country: 'us', amount: STORY_BILL.amount, currency: 'USD', note: STORY_BILL.note, vendor: true };
-  return FLOWS.pay({ ...ctx, params: p });
+  if (ctx.params?.name)
+    return FLOWS.pay({ ...ctx, params: { ...ctx.params, vendor: true, country: ctx.params.country ?? 'us', currency: ctx.params.currency ?? 'USD' } });
+  const { name: vendor, what, number, dueIn } = STORY_BILL;
+  const bill = { ...names(ctx), vendor, amount: STORY_BILL.amount * 100, what, number, due: inDays(dueIn) };
+  return [
+    { react: '👍' },
+    { say: 'bill.found', params: bill },
+    { card: 'bill', params: bill },
+    ...payOn(ctx, { name: STORY_BILL.name, country: 'us', amount: STORY_BILL.amount, currency: 'USD', note: STORY_BILL.note, vendor: true }),
+  ];
 }
 
-/** A contractor is paid to their own bank, at home or abroad, in their currency: Pay someone's flow, in dollars. */
+/** Contract amounts the amount question offers, in dollars. */
+const CONTRACT_OPTIONS = [500, 1_000, 2_500];
+
+/**
+ * A contractor is paid to their own bank, at home or abroad, in their currency: Pay someone's flow, in dollars. From the
+ * tile it asks who first, Priya one tap away; someone typed in is asked where they bank and how much.
+ */
 export function payContractor(ctx: FlowContext): Beat[] {
-  const p = ctx.params?.name ? ctx.params : undefined;
-  const params: FlowParams = p
-    ? { ...p, country: p.country ?? 'us', currency: 'USD' }
-    : { name: STORY_CONTRACTOR.name, country: STORY_CONTRACTOR.country, amount: STORY_CONTRACTOR.amount, currency: 'USD', note: STORY_CONTRACTOR.note };
-  return FLOWS.pay({ ...ctx, params });
+  const given = ctx.params?.name ? ctx.params : undefined;
+  if (given) return FLOWS.pay({ ...ctx, params: { ...given, country: given.country ?? 'us', currency: 'USD' } });
+  const askAmount = (name: string, country: string): Beat[] => [
+    { say: 'contractor.amount', params: { first: name.split(' ')[0] } },
+    { amount: true, options: CONTRACT_OPTIONS, then: (usd) => payOn(ctx, { name, country, amount: usd, currency: 'USD' }) },
+  ];
+  const named = (name: string): Beat[] => {
+    if (name === STORY_CONTRACTOR.name) {
+      const { country, amount, note } = STORY_CONTRACTOR;
+      return payOn(ctx, { name, country, amount, currency: 'USD', note });
+    }
+    const known = recipientNamed(name);
+    if (known) return askAmount(known.name, known.bank.country.code);
+    const places = CONTRACTOR_COUNTRIES.map((code) => BANK_COUNTRIES.find((c) => c.code === code)!);
+    return [
+      { say: 'contractor.where', params: { first: name.split(' ')[0] } },
+      { chips: places.map((c) => ({ label: c.name, flag: c.code })), reply: true, then: (picked) => askAmount(name, places[picked].code) },
+    ];
+  };
+  return [
+    { react: '👍' },
+    { say: 'contractor.who', params: names(ctx) },
+    { name: true, suggestion: STORY_CONTRACTOR.name, other: 'contractor.who.other', named },
+  ];
 }
 
 /** Everyone on the team, in one run: previewed, then one approval for every row. */
@@ -446,7 +485,7 @@ export const BUSINESS_TOPIC: Partial<Record<ActionId, (ctx: FlowContext) => stri
   invoice: (ctx) => `${ctx.params?.name ?? STORY_INVOICE.client} invoice`,
   invoices: () => 'Invoices',
   bill: (ctx) => `${ctx.params?.name ?? STORY_BILL.name} bill`,
-  contractor: (ctx) => `Pay ${(ctx.params?.name ?? STORY_CONTRACTOR.name).split(' ')[0]}`,
+  contractor: (ctx) => (ctx.params?.name ? `Pay ${ctx.params.name.split(' ')[0]}` : 'Pay a contractor'),
   payroll: () => 'Payroll',
 };
 
@@ -458,7 +497,7 @@ export const BUSINESS_HELD: Partial<Record<ActionId, (p?: FlowParams) => string>
   invoice: () => 'the invoice',
   invoices: () => 'checking invoices',
   bill: (p) => `paying ${p?.name ?? STORY_BILL.name}`,
-  contractor: (p) => `paying ${(p?.name ?? STORY_CONTRACTOR.name).split(' ')[0]}`,
+  contractor: (p) => (p?.name ? `paying ${p.name.split(' ')[0]}` : 'paying your contractor'),
   payroll: () => 'payroll',
 };
 

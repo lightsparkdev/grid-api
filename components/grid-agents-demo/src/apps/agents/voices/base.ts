@@ -430,6 +430,13 @@ export const LINES = {
   'invoices.reminded': (p) => `Sent ${s(p, 'first')} a reminder about ${s(p, 'number')}, with the bank details again.`,
   'invoices.later': () => 'Okay, I’ll leave it for now.',
 
+  'bill.found': (p) => `${s(p, 'vendor')}’s bill came in: ${usd2(n(p, 'amount'))} for ${s(p, 'what')}, due ${s(p, 'due')}.`,
+
+  'contractor.who': () => 'Who are we paying?',
+  'contractor.who.other': () => 'Sure. What’s their full name?',
+  'contractor.where': (p) => `Where does ${s(p, 'first')} bank? I’ll pay them in their own currency.`,
+  'contractor.amount': (p) => `How much should I send ${s(p, 'first')}, in dollars?`,
+
 
   'payroll.intro': (p) =>
     `Payroll for ${s(p, 'people')} is ${usd2(n(p, 'total'))}${n(p, 'count') > 1 ? ', in one run, each to the bank they’re paid at' : ', to the bank they’re paid at'}.`,
@@ -820,6 +827,11 @@ export const NOTES = {
     done: true,
     invoice: invoiceOf(p, 'paid'),
     name: 'Invoice',
+  }),
+  bill: (p) => ({
+    title: `${s(p, 'vendor')} bill`,
+    lines: [`${usd2(n(p, 'amount'))} for ${s(p, 'what')}`, `Due ${s(p, 'due')}`, `Bill ${s(p, 'number')}`],
+    name: 'Bill',
   }),
   invoices: (p) => ({
     title: 'Invoices',
