@@ -102,6 +102,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 from flask import Flask, request, jsonify
 import base64
+import json
 
 app = Flask(__name__)
 
@@ -126,13 +127,11 @@ def handle_webhook():
         # Get the raw request body
         request_body = request.get_data()
 
-        # Create a SHA-256 hash of the request body
-        hash_obj = hashes.Hash(hashes.SHA256())
-        hash_obj.update(request_body)
-        digest = hash_obj.finalize()
-
-        # Decode the base64 signature
-        signature_bytes = base64.b64decode(signature)
+        # The header is JSON: {"v": 1, "s": "<base64 signature>"}
+        signature_obj = json.loads(signature)
+        if signature_obj.get('v') != 1:
+            return jsonify({'error': 'Unsupported signature version'}), 401
+        signature_bytes = base64.b64decode(signature_obj['s'])
 
         # Verify the signature
         try:
