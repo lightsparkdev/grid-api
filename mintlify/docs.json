@@ -435,11 +435,11 @@
   "contextual": {
     "options": ["copy", "view", "chatgpt", "claude"]
   },
-  "thumbnails": {
-    "background": "/images/og/og-api-reference-generic.png",
-    "appearance": "dark"
+  "seo": {
+    "metatags": {
+      "og:image": "/images/og/home.png"
+    }
   },
-  "seo": {},
   "integrations": {
     "amplitude": {
       "apiKey": "7f2e340589501177fa6f8a5cc7b6bc51"
