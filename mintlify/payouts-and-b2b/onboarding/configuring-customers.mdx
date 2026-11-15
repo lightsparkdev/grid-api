@@ -167,14 +167,37 @@ Common use cases for `platformAccountId`:
     PIX key types can be one of: `CPF`, `CNPJ`, `PHONE`, `EMAIL`, or `RANDOM`.
   </Accordion>
 
-  <Accordion title="India: UPI (Unified Payments Interface)">
+  <Accordion title="India: UPI and bank transfer (NEFT/RTGS)">
+    UPI:
+
     ```json
     {
-      "accountType": "UPI",
+      "accountType": "INR_ACCOUNT",
       "vpa": "somecustomer@okbank",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Priya Sharma"
+      },
       "platformAccountId": "upi_primary_1234"
     }
     ```
+
+    NEFT/RTGS bank transfer:
+
+    ```json
+    {
+      "accountType": "INR_ACCOUNT",
+      "accountNumber": "000111222333",
+      "ifsc": "HDFC0001234",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Priya Sharma"
+      },
+      "platformAccountId": "inr_bank_primary_1234"
+    }
+    ```
+
+    UPI requires `vpa`. NEFT and RTGS require `accountNumber` (9-18 digits) and `ifsc` (11-character branch code). Both shapes require a `beneficiary`.
   </Accordion>
 
   <Accordion title="Europe: EUR (IBAN)">
