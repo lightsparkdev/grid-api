@@ -435,4 +435,19 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: true,
   },
+  RON_ACCOUNT: {
+    accountType: 'RON_ACCOUNT',
+    fields: [
+      { name: 'iban', example: 'RO49AAAA1B31007593840000', description: 'Romanian IBAN (24 characters)' },
+    ],
+    beneficiaryRequired: true,
+  },
+  KRW_ACCOUNT: {
+    accountType: 'KRW_ACCOUNT',
+    fields: [
+      { name: 'accountNumber', example: '1002123456789' },
+      { name: 'bankName', example: 'Kookmin Bank', description: 'From GET /discoveries' },
+    ],
+    beneficiaryRequired: true,
+  },
 };
