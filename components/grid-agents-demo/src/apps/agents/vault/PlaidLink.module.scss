@@ -70,6 +70,11 @@ $foot: #f4f7fa;
   place-items: center;
   width: 100%;
   height: 100%;
+
+  // A glyph inline would sit on the text baseline, a couple of px above center.
+  svg {
+    display: block;
+  }
 }
 
 .glyphs {
