@@ -3,12 +3,15 @@ enum:
   - AT_CUSTOMER_CREATE
   - AT_FIRST_CREDENTIAL
 description: >-
-  When a customer's embedded wallet is created. Each customer keeps the mode
-  the platform had when the customer was created.
+  When a customer's embedded wallet is created. Grid reads the platform's
+  value once, when it opens the customer's first embedded-wallet account.
+  Changing it later doesn't move a customer whose account is already open.
 
-  - `AT_CUSTOMER_CREATE`: Once the customer is eligible, with the customer's
-  email as the wallet's first `EMAIL_OTP` credential. Creating a customer
-  requires an email.
+  - `AT_CUSTOMER_CREATE`: When the customer's first embedded-wallet account
+  opens, once the customer is eligible. The customer's email becomes the
+  wallet's first `EMAIL_OTP` credential. Creating a customer requires an
+  email. A customer with no email on file when the account opens gets the
+  `AT_FIRST_CREDENTIAL` behavior.
 
   - `AT_FIRST_CREDENTIAL`: When the first auth credential is added to the
   customer's embedded-wallet account. Once the customer is eligible, the

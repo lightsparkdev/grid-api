@@ -57,9 +57,9 @@ properties:
   walletProvisioning:
     $ref: ./WalletProvisioning.yaml
     description: |
-      When new customers' embedded wallets are created. Defaults to
-      `AT_CUSTOMER_CREATE`. A change applies to customers created after it;
-      existing customers keep their mode.
+      When this platform's customers' embedded wallets are created. Defaults
+      to `AT_CUSTOMER_CREATE`. A change applies to customers whose
+      embedded-wallet account isn't created yet.
   sessionLifetime:
     type: integer
     minimum: 60
