@@ -18,7 +18,7 @@ To use the sandbox environment:
 3. Use the normal production base URL: `https://api.lightspark.com/grid/2025-10-13`.
 4. Authenticate using your sandbox token with HTTP Basic Auth.
 
-In sandbox, customers are KYC-approved on creation, and a Global Account is provisioned automatically alongside any other internal accounts whenever the platform has `USDB` in its supported currencies.
+In sandbox, customers are KYC-approved on creation, and a Global Account is created alongside any other internal accounts whenever the platform has `USDB` in its supported currencies. When the platform's `walletProvisioning` is `AT_FIRST_CREDENTIAL`, the account stays `PENDING` with no wallet until its first credential is added: `EMAIL_OTP`, `OAUTH`, `PASSKEY` or `EVM_WALLET`, but not `SMS_OTP`.
 
 ## Funding a Global Account
 
