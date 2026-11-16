@@ -17,6 +17,11 @@ description: >-
 
   - `PASSKEY`: A WebAuthn passkey bound to the user's device.
 
-  - `EVM_WALLET`: An Ethereum or other EVM wallet the user already holds
-  outside Grid. It proves control by signing with its own key, using
-  `personal_sign` (EIP-191).
+  - `EVM_WALLET`: An EVM wallet the user already holds outside Grid and
+  controls with a single private key (an externally owned account). It proves
+  control by signing with that key, using `personal_sign` (EIP-191). The
+  signature names no chain, so the same key and `0x` address work on any EVM
+  chain, such as Ethereum, Base, Polygon or Arbitrum. Smart-contract wallets
+  that sign through ERC-1271, such as ERC-4337 accounts, are not supported.
+  They have no single key whose signature recovers to the address, so
+  registering one returns `401`.

@@ -35082,7 +35082,7 @@ components:
         - `EMAIL_OTP`: A one-time password delivered to the user's email address.
         - `SMS_OTP`: A one-time password delivered to the user's phone number.
         - `PASSKEY`: A WebAuthn passkey bound to the user's device.
-        - `EVM_WALLET`: An Ethereum or other EVM wallet the user already holds outside Grid. It proves control by signing with its own key, using `personal_sign` (EIP-191).
+        - `EVM_WALLET`: An EVM wallet the user already holds outside Grid and controls with a single private key (an externally owned account). It proves control by signing with that key, using `personal_sign` (EIP-191). The signature names no chain, so the same key and `0x` address work on any EVM chain, such as Ethereum, Base, Polygon or Arbitrum. Smart-contract wallets that sign through ERC-1271, such as ERC-4337 accounts, are not supported. They have no single key whose signature recovers to the address, so registering one returns `401`.
     AuthCredentialCreateRequest:
       type: object
       required:
@@ -35366,7 +35366,7 @@ components:
         address:
           type: string
           pattern: ^0x[0-9a-fA-F]{40}$
-          description: The wallet's `0x`-prefixed 20-byte address, in any letter case. Grid checks that the wallet's signature on the retry comes from this address, and shows it back as the credential's `nickname`.
+          description: The wallet's `0x`-prefixed 20-byte address, in any letter case. It must be the address of the wallet's own key, not a smart-contract account. Grid checks that the wallet's signature on the retry comes from this address, and shows it back as the credential's `nickname`.
           example: '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23'
     EvmWalletCredentialCreateRequest:
       title: EVM Wallet Credential Create Request
