@@ -12,5 +12,7 @@ description: >-
 
   - `AT_FIRST_CREDENTIAL`: When the first auth credential is added to the
   customer's embedded-wallet account. Once the customer is eligible, the
-  account is created and stays `PENDING` until then. Creating a customer
-  requires no email.
+  account is created and stays `PENDING` until then. The first credential
+  can be `EMAIL_OTP`, `OAUTH`, `PASSKEY` or `EVM_WALLET`, but not
+  `SMS_OTP`. See `POST /auth/credentials`. Creating a customer requires no
+  email.
