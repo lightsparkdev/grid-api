@@ -11,6 +11,46 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
+## Card velocity limits moved under `/cards`
+
+The card velocity limit endpoints moved to `/cards/velocity-limits` (create and list) and
+`/cards/velocity-limits/{id}` (get and delete). The former `/card-velocity-limits` paths
+are removed. Request and response bodies, operation IDs, and limit behavior are
+unchanged. See [Velocity limits](/cards/card-management/velocity-limits).
+
+<Warning>
+If you call `/card-velocity-limits` or `/card-velocity-limits/{id}`, switch to the new
+paths.
+</Warning>
+
+## Pay a bank account with `BANK_TRANSFER`
+
+`POST /quotes` accepts `paymentRail: BANK_TRANSFER` for COP, DKK, EUR, INR, and PHP bank
+accounts, whichever bank rail the account lists. Grid picks the bank rail for each payout.
+You can also omit `paymentRail` and Grid picks the rail from the account and the amount.
+
+The rail names `ACH_COLOMBIA`, `BRE_B`, `SEPA`, `SEPA_INSTANT`, `NEFT`, `RTGS`,
+`INSTAPAY`, and `PESONET` are deprecated for payouts. Requests that send them still work.
+EUR, DKK, and INR account `paymentRails` can now include `BANK_TRANSFER`, so accept it
+alongside the older names.
+
+## Passkeys must use ES256 or RS256
+
+Grid registers only passkeys whose key algorithm is ES256 (`-7`) or RS256 (`-257`). On
+`POST /auth/credentials` and `POST /auth/admin-credentials`, any other algorithm, such as
+EdDSA (`-8`), returns `400 INVALID_INPUT` on `attestation.attestationObject` before the
+challenge step. Sandbox refuses the same passkeys. Request both algorithms in
+`pubKeyCredParams`, with ES256 first. See
+[Passkey registration](/global-accounts/authentication#passkey-registration).
+
+## Payment document errors name the failing documents
+
+When `POST /quotes` fails with a `404`, `409`, `410`, or `424` `PAYMENT_DOCUMENT_*` error,
+`details.documentIds` lists the documents that caused it. In sandbox, upload a document
+named `sandbox-expired` to get `410 PAYMENT_DOCUMENT_EXPIRED`, or `sandbox-attach-failed`
+to get `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED`. See
+[sandbox testing](/payouts-and-b2b/platform-tools/sandbox-testing#payment-documents).
+
 ## Wire tracking numbers and returns on `railDetails`
 
 Wire legs now carry `railDetails` with `paymentRail: WIRE`. Alongside `imad`, a wire
@@ -37,7 +77,7 @@ sandbox, an external account whose account number ends in `015` simulates an out
 
 `POST /quotes`, `POST /transfer-in`, and `POST /transfer-out` take an optional
 `platformTransactionId`, unique per platform. Transactions return it, and
-`GET /transactions` filters by it.
+`GET /transactions` filters by it. The ID must be at least one character long.
 
 ## Issue a business's card to a named person
 
