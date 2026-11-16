@@ -2,7 +2,7 @@ import { useEffect, useId, useRef } from 'react';
 import styles from './GrokEyes.module.scss';
 
 /*
- * Grok Bot's face, measured from recording 10 at 60fps (in a 26-unit disc):
+ * Grok Bot's face, in a 26-unit disc:
  * - The status row's face rests with two tall capsules (5.2 × 10.7, centers
  *   4.3 either side), holds still for a second or two, then looks: the pair
  *   turns ~20° and drops a little while each eye tilts ~30°. Now and then it

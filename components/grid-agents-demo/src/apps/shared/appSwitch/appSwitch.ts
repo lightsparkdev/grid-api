@@ -1,9 +1,8 @@
 /**
- * iOS opening a link from one app in another (Messages into Safari), ported from the GoFundMe demo, which traced it
- * frame by frame from a recording at 60fps: both apps shrink to cards with the display's corners and slide sideways
- * together over the wallpaper, 24pt apart at full size (the gap shrinks with them). The cards bottom out at 0.847 a
- * sixth of a second in and spring back over the rest; the slide starts a frame after the shrink. SCALE and SLIDE are
- * the recording's own values, one per frame.
+ * iOS opening a link from one app in another (Messages into Safari), frame by frame at 60fps: both apps shrink to
+ * cards with the display's corners and slide sideways together over the wallpaper, 24pt apart at full size (the gap
+ * shrinks with them). The cards bottom out at 0.847 a sixth of a second in and spring back over the rest; the slide
+ * starts a frame after the shrink. SCALE and SLIDE are one value per frame.
  */
 const FRAME_MS = 1000 / 60;
 const GAP = 24;

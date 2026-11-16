@@ -59,7 +59,7 @@ export interface AgentForm {
 
 /**
  * What the agent needs the person to approve. One shape for every skin: Muse
- * draws it as Meta Pay's order sheet, Grok as a payout row, Claude as a spend
+ * draws it as Muse's order sheet, Grok as a payout row, Duet as a spend
  * card, and the rest as a plain approval card.
  */
 export interface AgentAsk {

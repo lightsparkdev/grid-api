@@ -16,7 +16,7 @@ import vault from './DotVault.module.scss';
 import styles from './DotBalance.module.scss';
 
 /*
- * Dots balance as Dots draws Customize (IMG_1895), a plugin's page (IMG_1896) and Scheduled (IMG_1894): the
+ * Dots balance as Dots draws Customize, a plugin's page, and Scheduled: the
  * plugin's outlined header card, outlined cards of rows with a colored glyph and a status at the right, the
  * Active / Paused / Completed tabs over the activity, and the black "New task" pill floating at the foot.
  */

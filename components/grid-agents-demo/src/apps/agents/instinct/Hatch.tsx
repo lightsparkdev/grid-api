@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 // Instinct's link previews engrave the product into the paper: wavy diagonal strokes whose weight follows how
-// dark the photo is, in a tan a step darker than the paper (measured from the recording's options link).
+// dark the photo is, in a tan a step darker than the paper.
 const INK = '#d0c7be';
 const SPACING = 4.6;
 const MAX_WEIGHT = 3.4;

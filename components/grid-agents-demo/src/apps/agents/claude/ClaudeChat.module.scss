@@ -1,7 +1,7 @@
-// Figma 91:163, Claude Duet · Supplies budget (virtual card). Dark follows Claude's own.
+// Duet chat: the supplies budget (virtual card). Dark follows Duet's own.
 @use '../../../styles/corners';
 .screen {
-  // The agent-to-agent card: Claude's white card and hairline ring.
+  // The agent-to-agent card: Duet's white card and hairline ring.
   --sub-bg: var(--cl-card);
   --sub-border: 0;
   --sub-shadow: none;
@@ -672,7 +672,7 @@
   pointer-events: none;
 }
 
-// The tab bar and, beside it, the computer disc (IMG_1967 at 3x).
+// The tab bar and, beside it, the computer disc.
 .tabs {
   position: absolute;
   bottom: 32px;
@@ -741,7 +741,7 @@
   mask: no-repeat center / contain;
 }
 
-// The mascot's clay blob and ink line (PhoneMock --d-clay, --d-ink).
+// The mascot's clay blob and ink line.
 .mascotArt {
   width: 76px;
   height: 76px;

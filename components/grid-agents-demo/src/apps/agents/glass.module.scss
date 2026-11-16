@@ -1,6 +1,6 @@
 @use '../../styles/glass-rim' as rim;
 
-// iOS's light glass (IMG_1951/1952): a faint shadow only below, about 1.5% at the edge and gone by 10pt.
+// iOS's light glass: a faint shadow only below, about 1.5% at the edge and gone by 10pt.
 $shadow:
   0 12px 16px -8px rgba(0, 0, 0, 0.03),
   0 4px 10px -6px rgba(0, 0, 0, 0.015);
@@ -37,7 +37,7 @@ $shadow:
   }
 }
 
-// Blue glass (IMG_1859's Done at 3x): a flat #3672eb fill, a darker blue hairline, a lighter blue band just
+// Blue glass: a flat #3672eb fill, a darker blue hairline, a lighter blue band just
 // inside the top and bottom, and a one-pixel pale cyan halo where the edge meets what's behind.
 .blue {
   --glass-rim-side: rgba(16, 46, 130, 0.3);

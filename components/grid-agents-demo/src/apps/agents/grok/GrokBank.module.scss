@@ -1,4 +1,4 @@
-// Grok Bot's bank sheet (GrokBank.tsx), measured at 3x from its Vault (IMG_1922, IMG_1923) and Add a card form.
+// Grok Bot's bank sheet (GrokBank.tsx): its Vault and Add a card form.
 
 .theme {
   --sp-bg: #f7f7f7;
@@ -170,7 +170,7 @@
   }
 }
 
-// Labels 13pt, 5pt over their 46pt fields, 33pt between fields (IMG_1859).
+// Labels 13pt, 5pt over their 46pt fields, 33pt between fields.
 .fields {
   display: flex;
   flex-direction: column;

@@ -1,4 +1,4 @@
-// Instinct's options page on files.instinct.com, measured at 3x from IMG_1941–1944: a beige masthead, a paper
+// Instinct's options page on files.instinct.com: a beige masthead, a paper
 // sheet over it with 28pt corners, serif headings, two columns of tiles. Colors are the site's (--in-*).
 $serif: 'New York', ui-serif, Georgia, serif;
 
@@ -102,7 +102,7 @@ $serif: 'New York', ui-serif, Georgia, serif;
   font-weight: 500;
 }
 
-// The sheet slides up from below as the wordmark settles (recording, 1.6s to 2.2s).
+// The sheet slides up from below as the wordmark settles (1.6s to 2.2s).
 .sheet {
   position: relative;
   margin-top: 302px;

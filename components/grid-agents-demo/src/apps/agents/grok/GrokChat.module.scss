@@ -1,4 +1,4 @@
-// Grok Bot, measured from recordings 10-13 (refs/grok/spec.md). Dark follows Grok's own dark theme.
+// Grok Bot's chat. Dark follows Grok's own dark theme.
 @use '../../../styles/glass-rim' as rim;
 @use '../../../styles/corners';
 
@@ -121,7 +121,7 @@
   flex-direction: column;
   align-items: flex-end;
 
-  // The reaction pill hangs 15pt under the bubble, and the next message keeps ~19pt below it (recording 10, 99.0s).
+  // The reaction pill hangs 15pt under the bubble, and the next message keeps ~19pt below it.
   &[data-reacted] {
     padding-bottom: 25px;
   }
@@ -166,7 +166,7 @@
   }
 }
 
-// The reaction on your bubble (recording 10 at 98.3s): a bare 23pt emoji inside its bottom-right corner, no pill.
+// The reaction on your bubble: a bare 23pt emoji inside its bottom-right corner, no pill.
 // At rest: a 32 x 23 gray pill ringed in the background color, its center 27pt in from the bubble's right edge and
 // 3.5pt below its bottom, holding a 15pt emoji (drawn at 30pt and scaled, so the big landing frame is sharp).
 .react {
@@ -582,7 +582,7 @@
   }
 }
 
-// The form sheet (IMG_1859): a floating card 8pt in from the screen's sides and foot, its top at 124pt
+// The form sheet: a floating card 8pt in from the screen's sides and foot, its top at 124pt
 // under the thread's header, 36pt top corners and bottom corners concentric with the screen's.
 .sheetPanel.sheetPanel {
   inset: 124px 8px 8px;
@@ -595,7 +595,7 @@
   border-radius: 36px 36px calc(var(--screen-corner-radius, 73px) - 8px) calc(var(--screen-corner-radius, 73px) - 8px);
   background: var(--grok-sheet);
   color: var(--grok-text);
-  // The sheet's own edge is darker than its buttons' (#5d5d5d sides, #9d9d9d top in IMG_1859). In dark it takes the
+  // The sheet's own edge is darker than its buttons' (#5d5d5d sides, #9d9d9d top). In dark it takes the
   // glass's lit caps, since a black edge vanishes into it.
   --sheet-rim-cap: rgba(0, 0, 0, 0.2);
   --sheet-rim-side: rgba(0, 0, 0, 0.36);
@@ -654,7 +654,7 @@
   }
 }
 
-// Labels 13pt, 5pt over their 46pt fields, 33pt between fields (IMG_1859).
+// Labels 13pt, 5pt over their 46pt fields, 33pt between fields.
 .fields {
   display: flex;
   flex-direction: column;

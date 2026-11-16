@@ -10,7 +10,7 @@ import styles from './glass.module.scss';
  * iOS 27 hairline rim on top. A displacement lens can only bend a static copy.
  */
 const TINT = 'var(--chat-glass-tint)';
-/** iOS's blue button glass, measured flat at its center in IMG_1859. */
+/** iOS's blue button glass, measured flat at its center. */
 const BLUE = '#3672eb';
 const BLUR = 3;
 /** iOS continuous corners, the chat bubbles' smoothing (styles/_corners.scss): a capsule's ends ease off its long edges. */
@@ -40,7 +40,7 @@ export function useContinuousCorners<T extends HTMLElement>(radius: number) {
 }
 
 /**
- * Light rim (IMG_1951/1952 at 3x): a crisp ring, grey on the caps and darker on the sides. One band, as two
+ * Light rim: a crisp ring, grey on the caps and darker on the sides. One band, as two
  * sub-pixel bands antialias into a smear twice as wide.
  */
 const LIGHT_RING = 0.5;
@@ -69,7 +69,7 @@ const LIGHT_LINE_CAPS = [
   [0.42, 0],
 ] as const;
 /**
- * Prominent (filled) glass's glow (IMG_1859's blue Done, IMG_1988's dark check): a bright line just inside the ring
+ * Prominent (filled) glass's glow (the blue Done, the dark check): a bright line just inside the ring
  * that follows the outline round the caps, dropping fast into a faint tail. Nested inset bands (depth, opacity) that
  * stack to ~0.9 within 0.8pt, ~0.4 by 1.3pt, ~0.1 by 2.4pt. No lift: on a dark fill the clear glass's white would wash it
  * grey.
@@ -85,7 +85,7 @@ const PROMINENT_CAPS = [
   [0.14, 0.55],
   [0.3, 0],
 ] as const;
-/** Dark rim (IMG_1949/1950 at 3x): ~29% white on the outer device pixel, falling to ~6% over the next two... */
+/** Dark rim: ~29% white on the outer device pixel, falling to ~6% over the next two... */
 const DARK_BANDS = [
   [0.33, 0.14],
   [0.67, 0.08],

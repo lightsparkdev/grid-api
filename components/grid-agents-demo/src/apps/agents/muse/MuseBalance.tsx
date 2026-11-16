@@ -14,7 +14,7 @@ import connect from './MuseConnect.module.scss';
 import styles from './MuseBalance.module.scss';
 
 /*
- * Muse balance as Muse draws its Settings (IMG_1907) and Wallet (IMG_1911): the Wallet page's tile, centered
+ * Muse balance as Muse draws its Settings and Wallet: the Wallet page's tile, centered
  * title and line; the plan card's usage bar with its blue link (here, today's spend and Add money); icon rows in
  * rounded cards; × at the top right.
  */

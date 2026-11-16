@@ -2,7 +2,7 @@
 @use 'sass:math';
 
 // SF Pro's tracking at each point size (Apple's HIG table), which iOS applies on its own. The web font has
-// no tracking table, so a size set without it runs ~5% wide (IMG_1951's Dots bubble at 17pt).
+// no tracking table, so a size set without it runs ~5% wide (Dots' bubble at 17pt).
 $tracking: (
   11: 0.06,
   12: 0,

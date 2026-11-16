@@ -48,13 +48,13 @@ const museSpend =
   (key: 'pay' | 'cashout' | 'crypto'): AskFn =>
   (p) => ({ ...ASKS[key](p), payWith: s(p, 'wallet') || 'Muse balance', method: `${usd2(n(p, 'balance'))} available` });
 
-/** Claude Duet's spend card: a clock on the request, Approve, then Paid. */
+/** Duet's spend card: a clock on the request, Approve, then Paid. */
 const duetSpend =
   (key: AskKey): AskFn =>
   (p) => ({ ...ASKS[key](p), expires: 'Expires in 10 min', allowed: 'Paid' });
 
 export const VOICES: Record<ConnectorId, VoiceOverrides> = {
-  /** Meta's agent: warm, brief, and it pays from its own Muse balance. */
+  /** Muse: warm, brief, and it pays from its own Muse balance. */
   muse: {
     name: 'Muse',
     wallet: 'Muse balance',
@@ -251,7 +251,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     },
   },
 
-  /** OpenAI's dot: casual, lowercase, upbeat. */
+  /** Dots: casual, lowercase, upbeat. */
   dot: {
     name: 'dot',
     casual: true,

@@ -22,12 +22,12 @@ import { DuetConnector, useDuetBank, useDuetCard } from './DuetVault';
 import type { MascotState } from './mascot';
 import styles from './ClaudeChat.module.scss';
 
-/** Figma 91:163, Claude Duet · Supplies budget (virtual card). */
+/** Duet chat: the supplies budget (virtual card). */
 const A = '/assets/agents/claude';
 
 const mask = (src: string, width: number, height: number) => ({ maskImage: `url(${src})`, width, height });
 
-/** Claude's spend card: the amount and its clock, what for, paid with, Approve. */
+/** Duet's spend card: the amount and its clock, what for, paid with, Approve. */
 function SpendCard({
   m,
   onAllow,

@@ -17,8 +17,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  // lightspark.com's favicons, the files themselves (the website repo's
-  // public/favicons), linked as its Meta component links them.
+  // Favicons in public/favicons: ico, 32 and 16 png, and the apple-touch icon.
   icons: {
     icon: [
       { url: '/favicons/favicon.ico', sizes: 'any' },

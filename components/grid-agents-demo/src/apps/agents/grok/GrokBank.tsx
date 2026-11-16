@@ -13,7 +13,7 @@ import { BANK_ALL, BANK_INSTANT, BANK_POPULAR, bankFields, payeeBlurb, railLine,
 import styles from './GrokBank.module.scss';
 
 /*
- * Grok Bot's bank sheet, in the style of its Vault (IMG_1922–1925): the title in the bar between glass discs,
+ * Grok Bot's bank sheet, in the style of its Vault: the title in the bar between glass discs,
  * pill tabs with counts, one white card of rows each ending in a chevron, gray help under it and search
  * floating at the foot. The account opens like its Add a card form (Cancel, the title, a blue Done, gray fields).
  */

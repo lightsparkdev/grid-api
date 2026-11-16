@@ -1,4 +1,4 @@
-// Muse, from recording 9 (refs/muse/spec.md) over Figma 87:259. Dark: Figma 124:3873.
+// Muse's chat, in light and dark.
 @use '../../../styles/corners';
 .screen {
   // The agent-to-agent card: Muse's bubble gray, its 22pt corners.
@@ -56,7 +56,7 @@
   }
 }
 
-// MockMuse's thread rhythm: 4 inside a sender's run (bubbles and whatever Muse
+// Muse's thread rhythm: 4 inside a sender's run (bubbles and whatever Muse
 // attaches to them, cards and requests alike), 12 between senders, 16 after a
 // timestamp.
 $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kind="ask"], [data-kind="products"], [data-kind="subagent"]';
@@ -88,7 +88,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   z-index: 3;
 }
 
-// Call and gift, one glass capsule (IMG_1862): 100 x 44, each glyph ~22pt, centered 24pt in from its end.
+// Call and gift, one glass capsule: 100 x 44, each glyph ~22pt, centered 24pt in from its end.
 .callGift {
   position: absolute;
   top: 61px;
@@ -175,7 +175,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   }
 }
 
-// Bubbles: plain round 22pt open corners (recording 9), 6.5pt where a run joins (the agent's left side).
+// Bubbles: plain round 22pt open corners, 6.5pt where a run joins (the agent's left side).
 .them,
 .me {
   max-width: 348px;
@@ -223,7 +223,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   color: var(--muse-dots);
 }
 
-// Recording 9 (38 to 42s): each dot fades nearly out and back, then bobs up 6pt; the three run 0.15s apart.
+// Each dot fades nearly out and back, then bobs up 6pt; the three run 0.15s apart.
 // Scoped under the screen so it outranks the shared dots' pulse.
 .screen .typing i {
   opacity: 1;
@@ -345,7 +345,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   }
 }
 
-// In the question's bubble (IMG_1938 at 3x): the bubble goes full width, the choices start 10 under its last
+// In the question's bubble: the bubble goes full width, the choices start 10 under its last
 // line, and sit 16 in from its sides and 18 from its foot.
 .them[data-choices] {
   width: 348px;
@@ -1034,7 +1034,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   }
 }
 
-// The iOS 26 tab bar under the composer (IMG_1862; Figma Tab Bar - iPhone, 5 tabs) with Muse's own icons.
+// The iOS 26 tab bar under the composer, 5 tabs, with Muse's own icons.
 .tabBar {
   position: absolute;
   right: 0;
@@ -1045,7 +1045,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   pointer-events: none;
 }
 
-// IMG_1952 at 3x: the bar runs 790 to 853pt, 9pt under the composer.
+// The bar runs 790 to 853pt, 9pt under the composer.
 .tabPill {
   position: absolute;
   top: 12px;
@@ -1061,10 +1061,10 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   width: 78px;
   height: 55px;
   border-radius: 27.5px;
-  // IMG_1952: #eae9ea in the bar.
+  // #eae9ea in the bar.
   background: rgba(0, 0, 0, 0.055);
 
-  // IMG_1950: darker than the bar in dark (#0e0e0e in #252525), not lighter.
+  // Darker than the bar in dark (#0e0e0e in #252525), not lighter.
   :global([data-theme='dark']) & {
     background: rgba(0, 0, 0, 0.6);
   }
@@ -1093,7 +1093,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   }
 }
 
-/* The document inside Meta Pay's frame, on the white of its detail blocks. */
+/* The document inside Muse's frame, on the white of its detail blocks. */
 .invoiceSkin {
   --part-surface: var(--muse-card);
   --part-radius: 16px;

@@ -10,8 +10,8 @@ import { AppSheet } from '../sheet';
 import styles from './PlaidLink.module.scss';
 
 /*
- * Plaid Link, rebuilt from Muse's recordings (ScreenRecording_11-05-2026 18-17-29 and 18-18-29, 1206x2622 at
- * 60fps): iOS asks to let the app use secure.plaid.com to sign in, then Plaid opens in the system's web sheet.
+ * Plaid Link (1206x2622 at 60fps): iOS asks to let the app use secure.plaid.com to sign in, then Plaid opens in
+ * the system's web sheet.
  * A returning Plaid user's path: their phone number, the texted code, the institutions they've saved with Plaid,
  * the account to share, then "Returning to {app}". Every field comes filled in; the visitor taps Continue.
  */
@@ -34,10 +34,10 @@ const INSTITUTIONS: Institution[] = [
   { name: 'Citibank', account: 'Regular Checking', last4: '0937' },
 ];
 
-/** Measured from the recordings: the spinners between steps, and the beat on "Returning to". */
+/** The spinners between steps, and the beat on "Returning to". */
 const MS = { load: 900, verify: 1000, connect: 1400, finish: 1100, returning: 1300, autofill: 1100 } as const;
 const SHEET_IN = { duration: 0.45, ease: [0.3, 0.7, 0.2, 1] } as const;
-/** The sheet drops before the app hears back, as the recording returns to Muse. */
+/** The sheet drops before the app hears back, as Plaid returns to Muse. */
 const DROP_MS = 380;
 
 type Step = 'loading' | 'phone' | 'verify' | 'institutions' | 'connecting' | 'accounts' | 'finishing' | 'returning';

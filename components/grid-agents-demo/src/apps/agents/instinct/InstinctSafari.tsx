@@ -37,7 +37,7 @@ export function Safari({ host = INSTINCT_HOST, onBack, children }: { host?: stri
 }
 
 /**
- * Instinct's vault on app.instinct.com, in Safari (IMG_1926–1929, recording 6): Instinct lives in iMessage, so
+ * Instinct's vault on app.instinct.com, in Safari: Instinct lives in iMessage, so
  * anything sensitive opens here instead. A card or a setting is an "Add login" form (the serif title, labeled
  * beige fields, Save); a bank picks its country first. Once saved, "Saved to your vault" and the way back.
  */
@@ -156,8 +156,8 @@ function BalanceRow({ icon, title, sub, amount, incoming }: { icon?: ReactNode; 
 const SEGMENTS = 10;
 
 /**
- * The balance on app.instinct.com, opened from the link under its text, laid out as the site's account pages
- * (IMG_1926, IMG_1929): serif sections over a dark rule, the light serif counter with its segmented track
+ * The balance on app.instinct.com, opened from the link under its text, laid out as the site's account pages:
+ * serif sections over a dark rule, the light serif counter with its segmented track
  * ("0/10 invites used"), a black button and an outlined one, then rows of a glyph and two lines.
  */
 export function InstinctBalancePage({ account, onAction, onBack }: { account: AccountSnapshot; onAction: (flow: BalanceAction) => void; onBack: () => void }) {

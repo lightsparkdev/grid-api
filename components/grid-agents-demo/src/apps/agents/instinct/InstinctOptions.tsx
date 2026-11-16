@@ -8,12 +8,12 @@ import { Safari } from './InstinctSafari';
 import styles from './InstinctOptions.module.scss';
 
 /*
- * What Instinct found, as a page it made on files.instinct.com (IMG_1941–1944 and the 2026-11-07 recording): a
+ * What Instinct found, as a page it made on files.instinct.com: a
  * beige masthead, then a paper sheet with the title, a short take, the options as numbered tiles with Let's buy
  * this, and what's good to know. A tile's button is the choice: it turns to Sent to Instinct, and Safari hands
  * back to Messages.
  *
- * It loads as the recording does: the wordmark over "Loading" mid-screen, then it rises to the masthead as the
+ * It loads: the wordmark over "Loading" mid-screen, then it rises to the masthead as the
  * sheet slides up. Scrolled, the masthead shrinks into a 124pt bar: the wordmark and its line scale down and rise,
  * and Share moves from under them to the bar's right.
  */

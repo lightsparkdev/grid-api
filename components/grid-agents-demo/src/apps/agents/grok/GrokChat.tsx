@@ -25,7 +25,7 @@ import type { AgentChatProps } from '../types';
 import { GrokEyes } from './GrokEyes';
 import styles from './GrokChat.module.scss';
 
-/** Grok Bot, rebuilt from recordings 10-13 and IMG_1849-1857 (refs/grok/spec.md). */
+/** Grok Bot's chat. */
 const A = '/assets/agents/grok';
 const mask = (src: string) => ({ maskImage: `url(${src})` });
 
@@ -38,7 +38,7 @@ const SHEET_IN: Transition = { duration: 0.45, ease: [0.3, 0.7, 0.2, 1] };
 /** Your bubble lands in place at once; its fill darkens from gray (see .me). */
 const SENT: RowMotion = { initial: { opacity: 1 }, animate: { opacity: 1 }, transition: { duration: 0 } };
 /**
- * Grok's reaction (recording 10, 97.85 to 98.55s): the emoji lands big (~30pt) in your bubble's bottom-right corner,
+ * Grok's reaction: the emoji lands big (~30pt) in your bubble's bottom-right corner,
  * holds ~350ms, then shrinks to 15pt as it drops ~35pt onto the bubble's bottom edge, where a gray pill pops in
  * around it.
  */

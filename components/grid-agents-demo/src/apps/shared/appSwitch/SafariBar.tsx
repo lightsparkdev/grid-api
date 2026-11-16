@@ -50,11 +50,10 @@ function Piece({
 }
 
 /*
- * Scrolling collapses the toolbar into the domain alone, ported from the GoFundMe demo (safari-scroll-collapse.mp4,
- * Pat's iPhone at 60fps): a 124 x 30.7pt capsule centred 843.3pt down, the domain at 0.724 of its size, Back and Tabs
- * drifting 48pt inward at 0.7 of their size as they fade, the page menu and reload gone in the first frames. Every
- * part follows one progress value over 333ms, eased by a cubic-bezier fitted to the recording's frames (within 2%;
- * the raw frames jitter), which differ collapsing and expanding.
+ * Scrolling collapses the toolbar into the domain alone: a 124 x 30.7pt capsule centred 843.3pt down, the domain at
+ * 0.724 of its size, Back and Tabs drifting 48pt inward at 0.7 of their size as they fade, the page menu and reload
+ * gone in the first frames. Every part follows one progress value over 333ms, eased by a cubic-bezier fitted to the
+ * frames (within 2%; the raw frames jitter), which differ collapsing and expanding.
  */
 const BAR_TOP = 792;
 const H = 48;
@@ -87,7 +86,7 @@ function ease([x1, y1, x2, y2]: readonly [number, number, number, number], x: nu
 }
 
 /**
- * iOS 26 Safari's bottom toolbar, ported from the GoFundMe demo (measured from Pat's iPhone): three glass pieces 48pt
+ * iOS 26 Safari's bottom toolbar: three glass pieces 48pt
  * tall, 792pt down (Back, the address pill with the page menu, domain and reload, Tabs), 33pt from the edges with 8pt
  * between, over a progressive blur of the page. Any scroller in the page collapses it; reaching either end of the
  * page, scrolling back up, or tapping the capsule brings it back.

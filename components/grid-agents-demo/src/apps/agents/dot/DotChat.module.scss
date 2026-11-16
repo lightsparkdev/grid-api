@@ -1,4 +1,4 @@
-// Dots, measured from recordings 3, 5, 7 and 8 (refs/dots/spec.md).
+// Dots' chat, in light and dark.
 @use '../../../styles/corners';
 @use '../../../styles/sf';
 .stage {
@@ -95,7 +95,7 @@
   pointer-events: none;
 }
 
-// He breathes: ~0.4pt up and down over ~5s (recording 3, 30 to 36s).
+// He breathes: ~0.4pt up and down over ~5s.
 .avatarBody {
   position: absolute;
   inset: 0;
@@ -116,7 +116,7 @@
 }
 
 // The bulb sits off his top right (cut from the same render), growing from its base. It warms from pale to orange
-// over ~1.5s, holds, cools over ~3s and rests pale, a ~7.5s cycle (recording 3, 46 to 62s).
+// over ~1.5s, holds, cools over ~3s and rests pale, a ~7.5s cycle.
 .bulb {
   position: absolute;
   top: 4.55px;
@@ -238,7 +238,7 @@
   color: #fff;
 }
 
-// Recording 23-05-49: a 57×33 capsule, 8pt dots on 12pt centers darkening left to right once a second,
+// A 57×33 capsule, 8pt dots on 12pt centers darkening left to right once a second,
 // and a trail of two circles (11.7pt, 6pt) off its lower left.
 .thought {
   position: relative;
@@ -307,7 +307,7 @@
   @include sf.size(12px);
 }
 
-// Delivered and Seen share one line, aligned to the bubble's text rather than its edge (IMG_1861), and crossfade.
+// Delivered and Seen share one line, aligned to the bubble's text rather than its edge, and crossfade.
 .seen {
   display: grid;
   justify-items: end;
@@ -323,7 +323,7 @@
   margin: 0 0 4px 4px;
 }
 
-// Screenshot 2026-11-07 11.08.32 (Todd): 13pt gray, the arrow under the bubble's text, ~8pt over the bubble and clear of the row above.
+// Reply quote: 13pt gray, the arrow under the bubble's text, ~8pt over the bubble and clear of the row above.
 .replyTo {
   display: flex;
   align-items: center;
@@ -341,7 +341,7 @@
   gap: 5px;
 }
 
-// Choices and action pills share Dots' pill (IMG_1891 at 3x): 48pt, light blue, a 20pt glyph 14pt in, the label
+// Choices and action pills share Dots' pill: 48pt, light blue, a 20pt glyph 14pt in, the label
 // 19pt after it at 17pt medium, a 5 x 9pt chevron 22pt after the label and 22pt from the end.
 .chip,
 .pill,
@@ -451,13 +451,13 @@
   }
 }
 
-// Done: the check sits 34pt after the label and 18pt from the end (IMG_1906, "Shop").
+// Done: the check sits 34pt after the label and 18pt from the end.
 .pillCheck {
   flex: none;
   margin: 0 -4px 0 15px;
 }
 
-// What dot set up, in its gray pill (IMG_1890): dark glyph and label, 16pt in. A long one wraps inside the chat.
+// What dot set up, in its gray pill: dark glyph and label, 16pt in. A long one wraps inside the chat.
 .metaPill {
   height: auto;
   min-height: 48px;
@@ -881,7 +881,7 @@
 }
 
 // ── Composer ───────────────────────────────────────────────────────────
-// IMG_1946 at 3x: 328pt wide, 37pt in from each side, its foot 37.5pt above the screen's.
+// Composer: 328pt wide, 37pt in from each side, its foot 37.5pt above the screen's.
 .composerBox {
   width: 328px;
   margin: 0 auto;
@@ -932,7 +932,7 @@
   height: 45px;
 }
 
-// IMG_1946: the + centered 25pt in, the text from 50pt.
+// The + centered 25pt in, the text from 50pt.
 .plusSlot {
   width: 50px;
 }
@@ -948,7 +948,7 @@
   place-items: center;
   width: 32px;
   height: 32px;
-  // IMG_1946: the mic's center 49pt from the send button's.
+  // The mic's center 49pt from the send button's.
   margin: 0 2px 0 11px;
   border-radius: 50%;
   background: var(--dot-blue);

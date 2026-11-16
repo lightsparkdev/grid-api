@@ -1,4 +1,4 @@
-// Duet's bank and card (DuetVault.tsx), measured at 3x from the Claude app's settings (IMG_1930–1937).
+// Duet's bank and card (DuetVault.tsx): the connector card, the bank list, and the account form.
 
 .theme {
   --sp-bg: #fafaf8;
@@ -45,7 +45,7 @@
   background: var(--dv-tile, #fff);
 }
 
-// Claude's black capsule: 30pt, 17pt medium.
+// Duet's black capsule: 30pt, 17pt medium.
 .connect {
   flex: none;
   height: 30px;
@@ -70,7 +70,7 @@
   }
 }
 
-// ── The connector in the thread: a one-row connections card (IMG_1968) ──
+// ── The connector in the thread: a one-row connections card ──
 .connector {
   display: flex;
   align-items: center;
@@ -286,7 +286,7 @@
   height: 44px;
 }
 
-// Duet's dark check (IMG_1988 at 3x): a #252524 fill, a dark hairline (faint on the caps, strong on the sides) and a
+// Duet's dark check: a #252524 fill, a dark hairline (faint on the caps, strong on the sides) and a
 // ~1pt band of ~23% white just inside the caps, gone ~2pt in.
 .saveDisc .saveGlass {
   --glass-rim-inset: rgba(255, 255, 255, 0.27);

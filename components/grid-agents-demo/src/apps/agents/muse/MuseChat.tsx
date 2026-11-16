@@ -18,7 +18,7 @@ import { ConnectorCard, useMuseBank, useMuseCard, useMusePayWith } from './MuseC
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
 
-/** Muse, from recording 9 (refs/muse/spec.md) over Figma 87:259 and its dark 124:3873. */
+/** Muse's chat, in light and dark. */
 const A = '/assets/agents/muse';
 
 /** What the agent does in a browser: these show as the Browser card while they run. */
@@ -85,7 +85,7 @@ function EntityLinks({ products, pos }: { products: Product[]; pos?: string }) {
 type AvatarMode = 'idle' | 'working' | 'still';
 
 /**
- * muse.ai's own avatar loops: idle, working, and the full-body still while it
+ * Muse's avatar loops: idle, working, and the full-body still while it
  * needs approval, crossfaded on change. The hidden loop pauses so only one plays.
  */
 function MuseAvatar({ mode }: { mode: AvatarMode }) {
@@ -118,7 +118,7 @@ function MuseAvatar({ mode }: { mode: AvatarMode }) {
 /** Everything the agent sends joins into one run: bubbles, cards, choices, asks, products. 6.5pt corners where they meet. */
 const GROUPS = new Set<Message['kind']>(['them', 'card', 'chips', 'ask', 'products', 'work']);
 
-/** Choices right under a question ride inside its bubble (IMG_1938), so they aren't a row of their own. */
+/** Choices right under a question ride inside its bubble, so they aren't a row of their own. */
 const inBubble = (i: number, all: Message[]) => {
   const above = all[i - 1];
   return all[i]?.kind === 'chips' && above?.kind === 'them' && !above.typing;
@@ -258,7 +258,7 @@ function Choices({
   );
 }
 
-/** An invoice in Meta Pay's frame, as its approvals are: the business and where it went, over the document. */
+/** An invoice in Muse's frame, as its approvals are: the business and where it went, over the document. */
 function MuseInvoice({ invoice, pos }: { invoice: Invoice; pos?: string }) {
   return (
     <div className={styles.card} data-ready data-pos={pos}>
@@ -277,8 +277,8 @@ function MuseInvoice({ invoice, pos }: { invoice: Invoice; pos?: string }) {
 }
 
 /**
- * Meta Pay's approval sheet: what the agent wants, the details, the total, Deny
- * or Allow. Payment and Total settle in after a beat, as Meta Pay loads them.
+ * Muse's approval sheet: what the agent wants, the details, the total, Deny
+ * or Allow. Payment and Total settle in after a beat, as the sheet loads them.
  */
 function ApprovalCard({
   m,
@@ -429,7 +429,7 @@ function ApprovalCard({
   );
 }
 
-/** Your bubble as Muse sends it (recording 9, 30.08s): the fill lands pale and its text fades in over ~70ms. */
+/** Your bubble as Muse sends it: the fill lands pale and its text fades in over ~70ms. */
 function SentBubble({ fresh, children }: { fresh: boolean; children: ReactNode }) {
   const ref = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
@@ -456,7 +456,7 @@ function SentBubble({ fresh, children }: { fresh: boolean; children: ReactNode }
   );
 }
 
-/** Muse streams its replies (recording 9, 62.8s): a short first chunk replaces the dots, then a line or two every ~100ms. */
+/** Muse streams its replies: a short first chunk replaces the dots, then a line or two every ~100ms. */
 const STREAM = { first: 22, chunk: 60, everyMs: 100 } as const;
 
 /** The end of the chunk that starts at `from`, on a word boundary. */
@@ -477,14 +477,14 @@ function Streamed({ text, fresh }: { text: string; fresh: boolean }) {
 }
 
 /**
- * Muse's arrivals. Recording 9 jumps the thread and pops each row in; here a new row (a reply, a card, the typing
+ * Muse's arrivals. Rather than jumping the thread and popping each row in, a new row (a reply, a card, the typing
  * bubble) fades up into place and the thread glides to it, while each streamed chunk still lands at once.
  */
 const MUSE_EASE: [number, number, number, number] = [0.25, 0.8, 0.25, 1];
 const MUSE_IN: RowMotion = { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3, ease: MUSE_EASE } };
 const museScroll = (cause: ScrollCause): ScrollCurve => (cause === 'grow' ? 'snap' : { ms: 300, ease: MUSE_EASE });
 
-/** Muse's tab bar (IMG_1862, Figma Tab Bar - iPhone): icon, left and top in pt, width, height. */
+/** Muse's tab bar: icon, left and top in pt, width, height. */
 const TABS = [
   ['tab-chat', 52, 811, 25.3, 22.7],
   ['tab-feed', 122, 810, 22.7, 22.7],

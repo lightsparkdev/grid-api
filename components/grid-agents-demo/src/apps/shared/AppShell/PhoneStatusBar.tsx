@@ -10,10 +10,10 @@ interface PhoneStatusBarProps {
   tone?: StatusBarTone;
 }
 
-/** Cellular bar heights, shortest first (Figma 265:13016:2705). */
+/** Cellular bar heights, shortest first. */
 const BARS = [6.333, 8.67, 11, 13.667];
 
-/** iOS 27 status bar (Figma website-q4-2026 265:53338, Status Bar - iPhone 18 Pro). */
+/** iOS 27 status bar: the time and the signal levels. */
 export const PhoneStatusBar = forwardRef<HTMLElement, PhoneStatusBarProps>(function PhoneStatusBar(
   { tone = 'default' },
   ref,

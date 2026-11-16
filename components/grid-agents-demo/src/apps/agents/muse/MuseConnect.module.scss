@@ -1,4 +1,4 @@
-// Muse's connectors (MuseConnect.tsx), measured at 3x from its Plaid recording and IMG_1907–1912.
+// Muse's connectors (MuseConnect.tsx): the permission sheet, the list, and the Wallet page.
 
 $muse-font: 'Optimistic AI', var(--font-family-sf-pro);
 
@@ -9,7 +9,7 @@ $muse-font: 'Optimistic AI', var(--font-family-sf-pro);
   --sp-muted: #7f8083;
   --sp-fill: #fcfcfc;
   --sp-title-weight: 600;
-  // IMG_1909: a 43pt pill 20pt in from the sides.
+  // A 43pt pill 20pt in from the sides.
   --sp-search-h: 43px;
   --sp-search-r: 999px;
   --sp-search-inset: 20px;
@@ -258,7 +258,7 @@ $muse-font: 'Optimistic AI', var(--font-family-sf-pro);
   cursor: pointer;
 }
 
-// The checkout's Pay with: Meta Pay's method list, in the permission sheet's frame.
+// The checkout's Pay with: the method list, in the permission sheet's frame.
 .payTitle {
   margin-top: 16px;
   font-size: 20px;
@@ -382,7 +382,7 @@ $muse-font: 'Optimistic AI', var(--font-family-sf-pro);
   }
 }
 
-// ── The list (IMG_1909 at 3x): 20pt-inset cards, 57pt rows, 32pt tiles, blue actions ──
+// ── The list: 20pt-inset cards, 57pt rows, 32pt tiles, blue actions ──
 .tabs {
   display: flex;
   margin: 2px 20px 0;
@@ -554,7 +554,7 @@ $muse-font: 'Optimistic AI', var(--font-family-sf-pro);
   text-align: center;
 }
 
-// ── Wallet page (IMG_1911): a 56pt tile, the title centered, a line, the details grouped ──
+// ── Wallet page: a 56pt tile, the title centered, a line, the details grouped ──
 .hero {
   display: flex;
   flex-direction: column;

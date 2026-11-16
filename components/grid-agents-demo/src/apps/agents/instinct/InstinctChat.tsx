@@ -15,7 +15,7 @@ import { INSTINCT_HOST, InstinctBalancePage, InstinctSafari, InstinctThreadPage 
 import styles from './InstinctChat.module.scss';
 
 /**
- * Instinct over iMessage (recordings 1, 2, 4, 6): text only. Besides bubbles
+ * Instinct over iMessage: text only. Besides bubbles
  * there is only what iMessage itself draws: tapbacks, rich links, and the
  * images Instinct generates (receipts, product cards). Payments are approved
  * by replying, and anything sensitive goes through a vault link in Safari.
@@ -49,7 +49,7 @@ function at(t: number, keys: Keys) {
 }
 
 /**
- * iMessage's send, frame by frame from recording 2 (24.68s on, ms from the tap).
+ * iMessage's send, frame by frame (ms from the tap).
  * The field's text lifts off as a pale, blurred copy of the field; the bubble
  * condenses out of it at 0.81 size, rises to its place, then swells to full
  * size from its tail corner.
@@ -205,7 +205,7 @@ function OptionsPage({ messages, id, onPick, onBack }: { messages: Message[]; id
   );
 }
 
-/** How long Sent to Instinct shows before Safari hands back to Messages (the recording's beat). */
+/** How long Sent to Instinct shows before Safari hands back to Messages. */
 const PICKED_MS = 700;
 
 /** A choice, as a numbered text to answer by typing. */
@@ -264,7 +264,7 @@ function balanceText(b: AgentBalance) {
   return `${b.amount} in your ${b.wallet}`;
 }
 
-/** When the receipt under your bubble changes, in ms from the send (recording 2). */
+/** When the receipt under your bubble changes, in ms from the send. */
 const RECEIPT = { delivered: 1390, out: 2260, read: 2570 } as const;
 type ReceiptStage = 'sent' | keyof typeof RECEIPT;
 
@@ -327,7 +327,7 @@ function PagesGlyph() {
 }
 
 /**
- * One product, as the image Instinct makes for it (recording 4, 11:04): the photo large on light gray, the brand over
+ * One product, as the image Instinct makes for it: the photo large on light gray, the brand over
  * the name with the price in green, a rule, then the date and Instinct's wordmark.
  */
 function ProductShot({ product: p }: { product: Product }) {
@@ -592,7 +592,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         // A reply to an ask or a choice shows what it answers, as iMessage's inline reply does.
         const answers =
           prev?.kind === 'ask' && !linksOut(prev.ask) ? prev : prev?.kind === 'chips' && !prev.expired ? prev : null;
-        // Instinct only ever thumbs-ups what you send (recording 2).
+        // Instinct only ever thumbs-ups what you send.
         const tapback = m.react || (answers?.kind === 'ask' && answers.state === 'done') ? '👍' : undefined;
         const fresh = !opened.has(m.id);
         const tappedStill = !!tapback && tappedAtOpen(`tapback-${m.id}`);
@@ -620,7 +620,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
               from={takeSentFrom}
               mark={
                 tapback && (
-                  // The cloud grows out of its tail, and the emoji pops in a beat later (recording 2, 29.53s).
+                  // The cloud grows out of its tail, and the emoji pops in a beat later.
                   <motion.span className={styles.tapback} initial={tappedStill ? false : { scale: 0 }} animate={{ scale: 1 }} transition={TAPBACK}>
                     <motion.span initial={tappedStill ? false : { scale: 0 }} animate={{ scale: 1 }} transition={{ ...TAPBACK, delay: 0.05 }}>
                       {tapback}

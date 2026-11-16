@@ -24,7 +24,7 @@ import { cardFields, useCardEntry } from '../vault/useCardEntry';
 import styles from './DotVault.module.scss';
 
 /*
- * Dots' bank and card sheets, from its own settings (IMG_1892–1903): the "Set up texting" card to start, the
+ * Dots' bank and card sheets, from its own settings: the "Set up texting" card to start, the
  * Plugins list (an inline title over glass, "Popular ›" sections of 48pt tiles, search floating at the foot) and
  * the Add phone number form (white boxes, the label inside above the value, a black capsule).
  */
@@ -38,7 +38,7 @@ const GLYPHS: Record<ChipGlyph, typeof IconBank> = {
   wallet: IconWallet1,
 };
 
-/** Dots' line glyphs, in the pill's blue (IMG_1891: 20pt). */
+/** Dots' line glyphs, in the pill's blue (20pt). */
 export function DotGlyph({ glyph, size = 20 }: { glyph: ChipGlyph; size?: number }) {
   const Glyph = GLYPHS[glyph];
   return <Glyph size={size} className={styles.glyph} />;
@@ -182,7 +182,7 @@ function BankFlow({ payee, home, onLinked, onClose }: { payee?: AgentAsk['recipi
   return <BankPages picker={picker} onClose={onClose} />;
 }
 
-/** The Set up texting card (IMG_1892): the tile, the title, a line, the black button and Not now. */
+/** The Set up texting card: the tile, the title, a line, the black button and Not now. */
 function Intro({ onStart, onNotNow }: { onStart: () => void; onNotNow: () => void }) {
   return (
     <div className={styles.intro}>

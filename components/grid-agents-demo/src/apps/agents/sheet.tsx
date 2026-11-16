@@ -73,7 +73,7 @@ function useFootFit() {
 /**
  * A sheet over the chat: the screen dims and the panel rises from below.
  * Each app brings its own panel (Grok's large sheet, Dots' floating card) and
- * its own present curve, fitted from its recording.
+ * its own present curve.
  */
 export function AppSheet({
   open,

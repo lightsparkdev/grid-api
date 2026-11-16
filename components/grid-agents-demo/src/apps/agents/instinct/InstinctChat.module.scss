@@ -1,4 +1,4 @@
-// Figma 89:297 (iMessage), as the 1:1 thread with Instinct. Dark is iMessage's dark.
+// Instinct's 1:1 thread over iMessage. Dark is iMessage's dark.
 @use '../../../styles/corners';
 
 // Messages and Safari, two full-screen cards; an app switch slides them over the wallpaper.
@@ -212,7 +212,7 @@
 .me {
   position: relative;
   padding: 10px 14px 10px 13px;
-  // iMessage's blue runs lighter at the top (recording 6: #37A6F9 to #2B99FA).
+  // iMessage's blue runs lighter at the top (#37A6F9 to #2B99FA).
   background: linear-gradient(180deg, #37a6f9 0%, #2b99fa 100%);
   color: #fff;
 }
@@ -323,7 +323,7 @@
   font-size: 17px;
   letter-spacing: -0.43px;
 
-  // Sent, the field holds its height while the text lifts off under its glass, then drops to one line (recording 2: 83–133ms).
+  // Sent, the field holds its height while the text lifts off under its glass, then drops to one line (83–133ms).
   textarea[data-empty] {
     transition: height 0.05s ease-in 0.085s;
   }
@@ -429,7 +429,7 @@
   letter-spacing: -0.4px;
 }
 
-// The options page's link (recording, 00:24): a shorter preview, the title in the system sans over the pick
+// The options page's link: a shorter preview, the title in the system sans over the pick
 // engraved into the paper, a pages mark bottom left.
 .linkHeroOptions {
   height: 140px;
@@ -489,7 +489,7 @@
   }
 }
 
-// Instinct's tapback on your message (recording 2 at 30s): a 34pt cloud over the bubble's
+// Instinct's tapback on your message: a 34pt cloud over the bubble's
 // top-left corner, ringed in the background, its tail trailing down and out to the left.
 // It grows out of the smallest dot.
 .tapback {
@@ -538,12 +538,12 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   margin-top: 10px;
 }
 
-// Instinct's bubble to yours: 9.7pt apart (recording 2 at 29.3s).
+// Instinct's bubble to yours: 9.7pt apart.
 .screen :is(#{$theirs}) + [data-kind='me'] {
   margin-top: 6.7px;
 }
 
-// ── Text-only additions (recordings 1, 2, 4, 6) ────────────────────────
+// ── Text-only additions ──────────────────────────────────────────────
 .detected {
   text-decoration: underline;
   text-decoration-thickness: 1px;
@@ -571,7 +571,7 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  // A tapback lands: the row opens 28pt above for it (9.7pt to 37.7pt in recording 2, 29.3s to 30.2s),
+  // A tapback lands: the row opens 28pt above for it (9.7pt to 37.7pt),
   // so the bubble dips and the thread rises back, and the cloud clears the bubble above.
   transition: margin-top 0.1s ease-out;
 
@@ -779,7 +779,7 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   font-weight: 600;
 }
 
-// One product as Instinct's image (recording 4): 214pt in the thread, so its type is the image's, small. The
+// One product as Instinct's image: 214pt in the thread, so its type is the image's, small. The
 // image is light gray throughout (#f5f5f5, measured in the thread); white product photos multiply into it.
 .shot {
   display: flex;

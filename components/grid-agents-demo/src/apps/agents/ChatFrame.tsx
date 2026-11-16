@@ -13,7 +13,7 @@ import styles from './ChatFrame.module.scss';
 
 const ROW_IN = motionTransition(easeOutSnappy, 0.5);
 
-/** How the thread moves up when something lands at its foot (fitted to the Grok and Dots captures, 233–300ms). */
+/** How the thread moves up when something lands at its foot (233–300ms). */
 export const THREAD_SCROLL: Transition = { duration: 0.28, ease: [0.28, 0.05, 0.65, 1] };
 
 /** cubic-bezier(x1, y1, x2, y2) as a function of time, for the thread's own scroll animation. */
@@ -302,7 +302,7 @@ const SOFT_IN: RowMotion = {
 };
 
 /**
- * The native apps' arrival (Dots, Muse, Grok in the captures): a row mounts in
+ * The native apps' arrival (Dots, Muse, Grok): a row mounts in
  * its final place, pale, and fills in over ~150ms while the thread rises.
  */
 export const NATIVE_IN: RowMotion = {
@@ -311,7 +311,7 @@ export const NATIVE_IN: RowMotion = {
   transition: { duration: 0.15, ease: [0, 0, 0.2, 1] },
 };
 /**
- * The thread passing under the header, as the apps draw it (recordings 2, 8, 9, 10): a progressive blur,
+ * The thread passing under the header, as the apps draw it: a progressive blur,
  * heaviest behind the status bar and sharp again ~140pt down, over a wash of the app's background. Stacked
  * backdrop blurs, each masked to a band, build the gradient; the skin's className sets the height and wash.
  */

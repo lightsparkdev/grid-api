@@ -10,7 +10,7 @@ import { BANK_ALL, BANK_POPULAR, bankFields, payeeBlurb, railLine, useBankPicker
 import styles from './InstinctSafari.module.scss';
 
 /*
- * app.instinct.com's own chrome (IMG_1926–1929): a 52pt bar under the status bar with the light serif wordmark,
+ * app.instinct.com's own chrome: a 52pt bar under the status bar with the light serif wordmark,
  * × or ≡ on the left and an outlined Save on the right; bold serif headings over a black rule; hairline rows;
  * forms as "Add login" draws them, a 15pt label over each beige field.
  */

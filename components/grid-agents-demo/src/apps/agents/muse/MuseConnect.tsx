@@ -27,7 +27,7 @@ import { cardFields, cardLabel, useCardEntry } from '../vault/useCardEntry';
 import styles from './MuseConnect.module.scss';
 
 /*
- * Muse's connectors, from its Plaid recording (Nov 5, 18:17 and 18:18) and Settings (IMG_1907–1918):
+ * Muse's connectors, from Plaid and Settings:
  * - In the thread, a connector card: the tile, its name over "Connector", and Connect, which reads Connected once done.
  * - Connect opens the permission sheet (three plain promises, a blue Connect and Cancel), then the list in a page
  *   sheet: the large title, search pinned at the top, Available and Connected, Featured, then grouped lists.
@@ -38,7 +38,7 @@ const SHEET_IN = { duration: 0.45, ease: [0.3, 0.7, 0.2, 1] } as const;
 /** Muse's blue, the middle of its button's gradient, as the glass's tint. */
 const BLUE = '#2a62e3';
 
-/** The connector card in the thread (recording 18:17, 9s at 3x): ~238pt in the bubble gray, a 35pt dark tile. */
+/** The connector card in the thread: ~238pt in the bubble gray, a 35pt dark tile. */
 export function ConnectorCard({ ask, state, pos, onOpen }: { ask: AgentAsk; state: AskState; pos?: string; onOpen: () => void }) {
   const done = state === 'done';
   const payee = ask.recipient;
@@ -93,7 +93,7 @@ export function ConnectorCard({ ask, state, pos, onOpen }: { ask: AgentAsk; stat
   );
 }
 
-/** The permission sheet (recording 18:17, 15s): a grabber, the tile, three promises, the fine print, Connect. */
+/** The permission sheet: a grabber, the tile, three promises, the fine print, Connect. */
 function Permission({ onConnect, onCancel }: { onConnect: () => void; onCancel: () => void }) {
   return (
     <div className={styles.perm}>
@@ -241,7 +241,7 @@ function ListPage({ picker, onClose }: { picker: BankPicker; onClose: () => void
   );
 }
 
-/** The Wallet page's header (IMG_1911): a tile, the centered title, a line. */
+/** The Wallet page's header: a tile, the centered title, a line. */
 /** `bare` art (a bank's own icon) is its own tile. */
 function Hero({ art, title, sub, bare }: { art: ReactNode; title: string; sub: string; bare?: boolean }) {
   return (
@@ -358,7 +358,7 @@ function BankFlow({ payee, home, onLinked, onClose }: { payee?: AgentAsk['recipi
 }
 
 /**
- * Muse's bank flow: the permission sheet, then Plaid for your own bank (recording 18:17), or the list for someone
+ * Muse's bank flow: the permission sheet, then Plaid for your own bank, or the list for someone
  * else's or a bank Plaid doesn't have. Cancel or a swipe leaves the card waiting. The permission sheet stays up
  * under iOS's alert and Plaid, as an app's own sheet does under a sign-in, and leaves once the bank is linked.
  */
@@ -467,7 +467,7 @@ export function useMuseCard({ messages, onAllow }: { messages: Message[]; onAllo
   };
 }
 
-/** Meta Pay's Pay with: the saved card and the Muse balance (short of the total, it offers Add money), then Cancel. */
+/** Pay with: the saved card and the Muse balance (short of the total, it offers Add money), then Cancel. */
 function PayWith({ pay, onPick, onClose }: { pay: NonNullable<AgentAsk['pay']>; onPick: (to: PayTo) => void; onClose: () => void }) {
   return (
     <div className={styles.perm}>

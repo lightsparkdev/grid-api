@@ -19,7 +19,7 @@ const SLIDE = {
 };
 
 /**
- * The page sheet the apps open their settings in (IMG_1907, IMG_1922, IMG_1930): 62pt from the screen's top,
+ * The page sheet the apps open their settings in: 62pt from the screen's top,
  * 38pt top corners, the screen's own curve at the foot. `className` themes it (the --sp-* variables).
  */
 export function PageSheet({
@@ -95,7 +95,7 @@ function SearchField({ search, className }: { search: SheetSearch; className: st
 
 /**
  * A page inside an app's sheet, with iOS's navigation bar: glass discs at either end and the title between.
- * - `large` (Muse's Settings, recording 21-06): a 34pt title opens the page and scrolls with it; once it has
+ * - `large` (Muse's Settings): a 34pt title opens the page and scrolls with it; once it has
  *   passed under the bar, the 17pt title fades in at the bar's center.
  * - Otherwise the title sits in the bar from the start (Dots, Grok, Claude).
  * Content scrolls under the bar into a wash of the page's color, which fades in over the first `EDGE_FADE` points

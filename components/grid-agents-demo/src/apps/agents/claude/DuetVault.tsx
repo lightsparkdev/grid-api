@@ -22,7 +22,7 @@ import { cardFields, cardLabel, useCardEntry } from '../vault/useCardEntry';
 import styles from './DuetVault.module.scss';
 
 /*
- * Duet's bank and card, as the Claude app draws its settings (IMG_1930–1937): a connector card in the thread like
+ * Duet's bank and card: a connector card in the thread like
  * "Connector discovery"; the bank list as its Connectors browse (one card per country, its rank, a black Connect,
  * a line about it, search floating at the foot); the account as its Profile page (label, then value, in a white
  * group) saved with the check disc.
@@ -152,7 +152,7 @@ function Rows({ rows }: { rows: { key: string; label: string; value: string; fla
   );
 }
 
-/** The check disc that saves, dark once there's something to save (IMG_1931). */
+/** The check disc that saves, dark once there's something to save. */
 function SaveDisc({ stage, onClick }: { stage: 'form' | 'busy' | 'done'; onClick: () => void }) {
   return (
     <PressButton label="Save" className={styles.saveDisc} onClick={stage === 'form' ? onClick : undefined}>

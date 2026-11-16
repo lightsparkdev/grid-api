@@ -37,17 +37,17 @@ import { ADDRESS, PERSON } from '../story';
 import type { AgentChatProps } from '../types';
 import styles from './DotChat.module.scss';
 
-/** Dots, rebuilt from recordings 3, 5, 7 and 8 (refs/dots/spec.md). */
+/** Dots' chat. */
 const A = '/assets/agents/dot';
 const mask = (src: string, width: number, height: number) => ({ maskImage: `url(${src})`, width, height });
 
 type Ask = Extract<Message, { kind: 'ask' }>;
 
-/** The sheet rising: fast start, long ease, no overshoot (fitted from recording 7, ~500ms). */
+/** The sheet rising: fast start, long ease, no overshoot (~500ms). */
 const SHEET_IN: Transition = { duration: 0.5, ease: [0.12, 1, 0.6, 1] };
-/** The composer turning into a card (~120ms in recording 3). */
+/** The composer turning into a card (~120ms). */
 const CARD: Transition = { duration: 0.12, ease: [0.25, 0.1, 0.25, 1] };
-/** The send grows in where the mic was while the mic steps left, in three frames (recording 23-04-09). */
+/** The send grows in where the mic was while the mic steps left, in three frames. */
 const SEND_IN: Transition = { duration: 0.05, ease: 'easeOut' };
 /** How long the pay sheet shows "Preparing your checkout…". */
 const PREPARING_MS = 900;
@@ -98,7 +98,7 @@ function DotsMark({ size }: { size: number }) {
 }
 
 /**
- * Dots' action pill (IMG_1891, IMG_1906): light blue, 48pt, a 20pt blue glyph, the blue label and a chevron.
+ * Dots' action pill: light blue, 48pt, a 20pt blue glyph, the blue label and a chevron.
  * Once done the glyph gives way to what it set up (the bank's flag, Dots' mark) and a check takes the chevron's place.
  */
 function Pill({ m, lead, label, done, onOpen }: { m: Ask; lead: ReactNode; label: string; done: ReactNode; onOpen: () => void }) {
@@ -418,7 +418,7 @@ function PayPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
   return <Pill m={m} lead={<IconReceiptBill size={20} />} done={<DotsMark size={20} />} label={label} onOpen={onOpen} />;
 }
 
-/** What dot set up or saved, as the gray pill it leaves in the thread (IMG_1890, "Created task"). */
+/** What dot set up or saved, as the gray pill it leaves in the thread. */
 function MetaPill({ meta }: { meta: AgentMeta }) {
   const Glyph = meta.icon === 'routine' ? IconRepeat : IconCheckCircle2;
   return (
@@ -430,13 +430,13 @@ function MetaPill({ meta }: { meta: AgentMeta }) {
   );
 }
 
-/** The send's glide, fitted frame by frame (recording 23-05-49 at 60fps): a quarter of the way in one frame, done by ~200ms. */
+/** The send's glide, fitted frame by frame at 60fps: a quarter of the way in one frame, done by ~200ms. */
 const SEND_GLIDE = 'linear(0, 0.27 8.3%, 0.47 16.7%, 0.63 25%, 0.75 33.3%, 0.83 41.7%, 0.89 50%, 0.93 58.3%, 0.96 66.7%, 0.98 75%, 0.99 83.3%, 1)';
 /** Its rise over the same ~200ms: still for a frame, then steady, easing in at the end. */
 const SEND_LIFT = 'linear(0, 0 8.3%, 0.085 16.7%, 0.23 25%, 0.36 33.3%, 0.49 41.7%, 0.62 50%, 0.7 58.3%, 0.79 66.7%, 0.85 75%, 0.91 83.3%, 0.94 91.7%, 1)';
 
 /**
- * Your bubble as Dots sends it (recording 23-05-49): the text leaves from where it sat in the field and glides right
+ * Your bubble as Dots sends it: the text leaves from where it sat in the field and glides right
  * across the screen as the thread lifts it, bare for ~40ms, then the blue fills in behind it by ~83ms as it turns white.
  */
 function SentBubble({ fresh, children }: { fresh: boolean; children: ReactNode }) {
@@ -499,14 +499,14 @@ function SentBubble({ fresh, children }: { fresh: boolean; children: ReactNode }
   );
 }
 
-/** When the receipt under your bubble changes, in ms from the send (recording 8, 33.74s on). */
+/** When the receipt under your bubble changes, in ms from the send. */
 const RECEIPT = { delivered: 1100, seen: 1580 } as const;
 /** Dots starts typing once it has seen you. */
 export const DOTS_READS_FOR = 2200;
-/** Then thinks for about two seconds before the reply (recording 23-05-49, 5.07s to 7.15s). */
+/** Then thinks for about two seconds before the reply. */
 export const DOTS_TYPES_FOR = 2000;
 
-/** One blink (recording 8, 27.33s): half shut for a frame, shut for two, half again, open. */
+/** One blink: half shut for a frame, shut for two, half again, open. */
 const BLINK: { lid: 'half' | 'shut' | null; ms: number }[] = [
   { lid: 'half', ms: 33 },
   { lid: 'shut', ms: 67 },
@@ -515,7 +515,7 @@ const BLINK: { lid: 'half' | 'shut' | null; ms: number }[] = [
 ];
 
 /**
- * Your dot (recordings 3 and 8): he bobs about 0.4pt over ~5s and blinks every 11 to 16s. While he works a
+ * Your dot: he bobs about 0.4pt over ~5s and blinks every 11 to 16s. While he works a
  * lightbulb grows in at his top right (~260ms) and slowly warms and cools, then shrinks away when he's done.
  */
 function DotAvatar({ thinking }: { thinking: boolean }) {
@@ -570,7 +570,7 @@ function ReplyTo({ request }: { request: string }) {
   );
 }
 
-/** Dots thinks in a thought bubble rather than a typing bubble (recording 23-05-49). */
+/** Dots thinks in a thought bubble rather than a typing bubble. */
 function Thought() {
   return (
     <span className={styles.thought} data-bubble aria-label="Typing">
@@ -624,7 +624,7 @@ function Receipt({ fresh }: { fresh: boolean }) {
   );
 }
 
-/** How Dots' thread follows each kind of growth (recording 8, fitted per event). */
+/** How Dots' thread follows each kind of growth, fitted per event. */
 function dotsScroll(cause: ScrollCause): ScrollCurve {
   switch (cause) {
     case 'me':

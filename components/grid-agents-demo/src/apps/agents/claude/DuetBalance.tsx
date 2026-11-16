@@ -17,7 +17,7 @@ import vault from './DuetVault.module.scss';
 import styles from './DuetBalance.module.scss';
 
 /*
- * Duet balance as the Claude app draws Settings (IMG_1930): the account card (a gray disc, the name over a
+ * Duet balance: the account card (a gray disc, the name over a
  * muted line, then a blue "+ Add account" row), a blue one-line card ("Give the gift of Claude"), and muted
  * section labels over white groups of line-icon rows with a value and a chevron. × at the left, ⋮ at the right.
  */

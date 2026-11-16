@@ -50,7 +50,7 @@ interface AppShellProps {
 }
 
 /**
- * Shared phone bezel — Figma phone-gga (2121:17475).
+ * Shared phone bezel: the glass shell and opaque screen.
  * Glass shell over the dot grid; opaque screen stacked on top.
  */
 export function AppShell({

@@ -10,7 +10,7 @@ playground) and shares its chrome, design system, and embed contract:
 - `motion` for transitions
 - Config panel, glass phone stage, and API panel laid out identically to the cards demo
 
-A visitor picks an agent app (Muse, Grok Bot, Dots, Instinct, Claude Duet, or a plain "Your agent")
+A visitor picks an agent app (Muse, Grok Bot, Dots, Instinct, Duet, or a plain "Your agent")
 and a flow: Connect, Add funds, Set limits, Pay someone, Buy online, Pay an agent, Get paid, Withdraw,
 Balance, or History. The flow's tile sends its first line as the visitor's message; the visitor
 then makes every choice in the chat (Approve or Decline, quick replies, Face ID). Anything they
@@ -83,21 +83,19 @@ doesn't settle in 60 seconds, and saves end-state screenshots to `.tmp-sweep/`.
   neutral voice; `apps.ts` holds each app's overrides.
 - `src/apps/agents/AgentHost.tsx`: holds the brain above the skins and crossfades skins when the
   app changes.
-- `src/apps/agents/<app>/`: the skins. Each one only renders: `muse/` (recording 9 over the MockMuse
-  port), `grok/` (with the animated eyes in `GrokEyes.tsx`), `dot/`, `instinct/` (text-only
-  iMessage, with its vault on app.instinct.com in Safari), `claude/` (with the procedural mascot
-  from Claude Duet's product page), and `yourapp/`. Every skin has light and dark.
+- `src/apps/agents/<app>/`: the skins. Each one only renders: `muse/`, `grok/` (with the animated
+  eyes in `GrokEyes.tsx`), `dot/`, `instinct/` (a text-only thread, with its vault on a web page in
+  Safari), `claude/` (Duet, with its procedural mascot), and `yourapp/`. Every skin has light and
+  dark.
 - `src/apps/agents/ChatFrame.tsx`, `parts.tsx`, `glass.tsx`, `sheet.tsx`: the frame every chat
   shares (with each app's row motion), the parts a skin draws when it has no design of its own (the
   balance card, the sub-agent row and sheet), the frosted glass chrome, and the sheet each app
   styles.
 - `src/styles/_glass-rim.scss`: the iOS 27 glass rim every in-phone glass surface uses.
-- `src/apps/shared/appSwitch/`: the iOS app switch and Safari toolbar, ported from the GoFundMe
-  demo.
+- `src/apps/shared/appSwitch/`: the iOS app switch and Safari toolbar.
 - `src/data/agentEvents.ts`: what a conversation asks Grid to do, in its own terms.
 - `src/data/agentApiCalls.ts`: every agent tool call, path, request, response, and webhook the panel
-  shows, built from those events. Provisional: rewrite it when the Agent Accounts docs land;
-  nothing else names an endpoint.
+  shows, built from those events. Nothing else names an endpoint.
 - `src/lib/llm/`: the model adapter, prompt, and limits.
 - `src/hooks/useAgentsDemoLogic.ts`: playground state: the app, the active flow, the agent's session
   and ledger, the API log, reset.

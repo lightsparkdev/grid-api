@@ -1,5 +1,5 @@
 /**
- * Claude Duet's mascot, ported from the product page's PhoneMock (claude.com/product/claude-duet): a clay blob and
+ * Duet's mascot: a clay blob and
  * an ink brush line, both functions of time. Each state returns the blob's outline (72 points) and, optionally, a
  * line; switching states morphs the outline over ~0.83s, squeezing it in the middle, while the line draws off and
  * the next one draws on. The drawing updates 12 times a second, which gives it its stop-motion look.
