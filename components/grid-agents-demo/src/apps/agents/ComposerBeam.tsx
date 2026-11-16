@@ -1,95 +1,16 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, type ReactNode, type RefObject } from 'react';
-import { BorderBeam, type BorderBeamColorVariant, type BorderBeamSize, type BorderBeamTheme } from 'border-beam';
-import { DialRoot, useDialKit, type DialConfig } from 'dialkit';
-import 'dialkit/styles.css';
+import { useEffect, useState, type RefObject } from 'react';
+import { BorderBeam } from 'border-beam';
 
-const SIZES: BorderBeamSize[] = ['md', 'sm', 'line', 'pulse-inner', 'pulse-outside'];
-const COLORS: BorderBeamColorVariant[] = [
-  'global',
-  'ocean',
-  'colorful',
-  'mono',
-  'sunset',
-  'forest',
-  'candy',
-  'ice',
-  'gold',
-];
-
-const DIALS = {
-  beam: {
-    type: 'select',
-    options: [...SIZES, 'off'],
-    default: 'md',
-  },
-  colors: { type: 'select', options: COLORS, default: 'global' },
-  theme: { type: 'select', options: ['dark', 'light'], default: 'dark' },
-  untilFirstMessage: true,
-  shimmer: true,
-  look: {
-    strength: [1, 0, 1, 0.05],
-    brightness: [3, 0, 3, 0.05],
-    saturation: [3, 0, 3, 0.05],
-    glowSize: [0.2, 0.2, 3, 0.05],
-    hueRange: [180, 0, 180, 1],
-    staticColors: true,
-  },
-  timing: {
-    duration: [3, 0.5, 10, 0.05],
-    on: [0.5, 0.5, 15, 0.5],
-    off: [0, 0, 30, 0.5],
-  },
-} satisfies DialConfig;
-
-type Dials = {
-  beam: BorderBeamSize | 'off';
-  colors: BorderBeamColorVariant;
-  theme: Exclude<BorderBeamTheme, 'auto'>;
-  untilFirstMessage: boolean;
-  shimmer: boolean;
-  look: {
-    strength: number;
-    brightness: number;
-    saturation: number;
-    glowSize: number;
-    hueRange: number;
-    staticColors: boolean;
-  };
-  timing: { duration: number; on: number; off: number };
-};
-
-const DEFAULTS: Dials = {
-  beam: 'md',
+/** The beam's look and rhythm: lit 0.5s at a time, one 3s pass, only until the first message is sent. */
+const BEAM = {
+  size: 'md',
   colors: 'global',
   theme: 'dark',
-  untilFirstMessage: true,
-  shimmer: true,
   look: { strength: 1, brightness: 3, saturation: 3, glowSize: 0.2, hueRange: 180, staticColors: true },
   timing: { duration: 3, on: 0.5, off: 0 },
-};
-
-const DialsContext = createContext<Dials>(DEFAULTS);
-
-/** The composer's live tuning panel (DialKit; hidden in production builds) and the values every phone reads. */
-export function ComposerDials({ children }: { children: ReactNode }) {
-  const values = useDialKit('Composer', DIALS, { id: 'composer-beam-v3', persist: true });
-  const dials: Dials = {
-    ...values,
-    beam: values.beam as Dials['beam'],
-    colors: values.colors as Dials['colors'],
-    theme: values.theme as Dials['theme'],
-  };
-  return (
-    <DialsContext.Provider value={dials}>
-      {children}
-      <DialRoot position="bottom-right" />
-    </DialsContext.Provider>
-  );
-}
-
-export const useComposerDials = () => useContext(DialsContext);
+} as const;
 
 type Box = { left: number; top: number; width: number; height: number; radius: number };
 
@@ -170,27 +91,25 @@ function useCycle(on: number, off: number, active: boolean) {
  * box rather than wrapping it, so no skin changes; the pointer passes through to the field.
  */
 export function ComposerBeam({ host, fresh }: { host: RefObject<HTMLDivElement>; fresh: boolean }) {
-  const dials = useComposerDials();
   const box = usePillOutline(host);
-  const active = dials.beam !== 'off' && (!dials.untilFirstMessage || fresh);
-  const lit = useCycle(dials.timing.on, dials.timing.off, active);
-  if (!box || dials.beam === 'off') return null;
+  const lit = useCycle(BEAM.timing.on, BEAM.timing.off, fresh);
+  if (!box) return null;
   const radius = Math.min(box.radius, box.height / 2, box.width / 2);
   return (
     <BorderBeam
       aria-hidden
-      size={dials.beam}
-      colorVariant={dials.colors}
-      theme={dials.theme}
+      size={BEAM.size}
+      colorVariant={BEAM.colors}
+      theme={BEAM.theme}
       active={lit}
       borderRadius={radius}
-      duration={dials.timing.duration}
-      strength={dials.look.strength}
-      brightness={dials.look.brightness}
-      saturation={dials.look.saturation}
-      glowSize={dials.look.glowSize}
-      hueRange={dials.look.hueRange}
-      staticColors={dials.look.staticColors}
+      duration={BEAM.timing.duration}
+      strength={BEAM.look.strength}
+      brightness={BEAM.look.brightness}
+      saturation={BEAM.look.saturation}
+      glowSize={BEAM.look.glowSize}
+      hueRange={BEAM.look.hueRange}
+      staticColors={BEAM.look.staticColors}
       style={{
         position: 'absolute',
         left: box.left,

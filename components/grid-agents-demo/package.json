@@ -24,7 +24,6 @@
     "@upstash/redis": "^1.41.0",
     "border-beam": "^1.4.1",
     "clsx": "^2.1.1",
-    "dialkit": "^2.2.0",
     "geist": "^1.7.2",
     "motion": "^12.33.0",
     "next": "^14.2.35",

@@ -14,6 +14,8 @@ import styles from './ApiPanel.module.scss';
 
 interface ApiPanelProps {
   entries: Entry[];
+  /** Opened by switching accounts: what's in it blurs in, as the phone's app does. */
+  fadeIn?: boolean;
 }
 
 // Graceful skeleton ⇄ live-calls swap — blur-fade so the first call doesn't pop.
@@ -33,7 +35,7 @@ const PILL_IN = { type: 'spring' as const, stiffness: 400, damping: 13, mass: 0.
 const PILL_PULSE = { duration: 0.4, ease: easeOutSnappy };
 const PILL_MORPH_MS = 280;
 
-export function ApiPanel({ entries }: ApiPanelProps) {
+export function ApiPanel({ entries, fadeIn = false }: ApiPanelProps) {
   const isEmpty = entries.length === 0;
   // New-call signifiers (stacked layout only): a count pill on the header + a dot
   // per unseen call. "Seen" = the calls have scrolled into view — an
@@ -148,11 +150,12 @@ export function ApiPanel({ entries }: ApiPanelProps) {
         }
       />
       <div ref={bodyRef} className={clsx(styles.body, isEmpty && styles.bodyEmpty)}>
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="wait" initial={fadeIn}>
           {isEmpty ? (
             <motion.div
               key="empty"
               className={styles.swapLayer}
+              initial={SWAP_HIDDEN}
               animate={SWAP_REST}
               exit={{ ...SWAP_HIDDEN, transition: SWAP_OUT }}
               transition={SWAP_IN}

@@ -5,7 +5,7 @@ import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { easeOutSnappy, motionTransition } from '@/lib/easing';
 import { smoothShapeClip, type CapsuleQuarter } from '@/lib/squircle/path';
-import { ComposerBeam, useComposerDials } from './ComposerBeam';
+import { ComposerBeam } from './ComposerBeam';
 import type { Message } from './conversation';
 import type { ChatView } from './types';
 import { BusinessVerify, type VerifyApp } from './vault/BusinessVerify';
@@ -585,7 +585,6 @@ export function ComposerField({
     return () => ro.disconnect();
   }, [chat.composer]);
 
-  const { shimmer } = useComposerDials();
   const hint = hintFor(chat, placeholder, waiting);
   return (
     <span ref={wrap} className={`${styles.fieldWrap} ${className ?? ''}`} data-multiline={multiline || undefined}>
@@ -593,7 +592,7 @@ export function ComposerField({
       {!chat.composer && (
         <span className={styles.hint} aria-hidden>
           <span className={styles.hintText}>{hint}</span>
-          {shimmer && <span className={styles.hintGlint}>{hint}</span>}
+          <span className={styles.hintGlint}>{hint}</span>
         </span>
       )}
       <textarea

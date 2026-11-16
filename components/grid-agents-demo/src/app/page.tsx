@@ -9,7 +9,6 @@ import { AppPanel } from '@/components/AppPanel/AppPanel';
 import { ApiPanel } from '@/components/ApiPanel/ApiPanel';
 import { ColumnResizeHandle } from '@/components/ColumnResizeHandle/ColumnResizeHandle';
 import { ThemeSync } from '@/components/ThemeSync';
-import { ComposerDials } from '@/apps/agents/ComposerBeam';
 import { useColumnResize } from '@/hooks/useColumnResize';
 import { useAgentsDemoLogic } from '@/hooks/useAgentsDemoLogic';
 import { isTight, layoutFor } from '@/lib/layout';
@@ -143,9 +142,7 @@ export default function Page() {
       </div>
       <div ref={stackColRef} className={styles.stackCol}>
         <div className={styles.appCol}>
-          <ComposerDials>
-            <AppPanel connector={logic.connector} mode={logic.mode} opened={logic.opened} accounts={logic.accounts} />
-          </ComposerDials>
+          <AppPanel connector={logic.connector} mode={logic.mode} opened={logic.opened} accounts={logic.accounts} />
         </div>
         <ColumnResizeHandle onMouseDown={onResizeStart} />
         <div
@@ -157,7 +154,7 @@ export default function Page() {
           // param) styles the column so the first paint is already correct.
           style={{ width: apiWidth ?? undefined }}
         >
-          <ApiPanel key={logic.mode} entries={logic.active.entries} />
+          <ApiPanel key={logic.mode} entries={logic.active.entries} fadeIn={logic.switched} />
         </div>
       </div>
 

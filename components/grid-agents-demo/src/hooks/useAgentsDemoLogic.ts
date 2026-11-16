@@ -286,11 +286,14 @@ export function useAgentsDemoLogic() {
 
   /** Another agent app on the same account: only the face changes. */
   const selectConnector = useCallback((id: ConnectorId) => setConnector(id), []);
+  /** The visitor has switched accounts at least once (a link opening on one doesn't count). */
+  const [switched, setSwitched] = useState(false);
   const selectMode = useCallback((next: Mode) => {
     setActiveMode(next);
     setMode(next);
+    setSwitched(true);
     setOpened((all) => (all.includes(next) ? all : [...all, next]));
   }, []);
 
-  return { connector, selectConnector, mode, selectMode, opened, accounts, active: accounts[mode] };
+  return { connector, selectConnector, mode, selectMode, switched, opened, accounts, active: accounts[mode] };
 }
