@@ -4,7 +4,7 @@
   "titleMaxWidth": 380,
   "tagline": "headless-money",
   "url": "docs.lightspark.com",
-  "keep": ["flow-builder", "global-accounts/demo", "cards/demo"],
+  "keep": ["flow-builder", "global-accounts/demo", "cards/demo", "agent-accounts/demo"],
   "folders": { "rewards": "Rewards" },
   "tabs": {
     "Get started": { "photo": "snowfield.jpg", "scrim": 0.14, "posY": 69 },
