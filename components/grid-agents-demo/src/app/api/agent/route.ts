@@ -9,7 +9,6 @@ import { lookUpPrice } from '@/lib/llm/priceLookup';
 import { systemPrompt, type PromptState } from '@/lib/llm/prompt';
 import { CONNECTOR_IDS, toolsIn, type Block, type Say, type ToolCall, type ToolName, type Turn } from '@/lib/llm/tools';
 import type { AgentResponse } from '@/lib/llm/types';
-import { ACCESS_HEADER, hasAccess } from '@/lib/access';
 import { VISITOR_HEADER, visitorOf } from '@/lib/visitor';
 
 export const runtime = 'nodejs';
@@ -26,7 +25,7 @@ const MAX_NAME = 40;
 const COUNTRY_CODES = BANK_COUNTRIES.map((c) => c.code);
 
 /** Why the composer falls back to a scripted line instead of the model. */
-type Fallback = 'off' | 'origin' | 'locked' | 'invalid' | 'visitor' | 'daily' | 'error';
+type Fallback = 'off' | 'origin' | 'invalid' | 'visitor' | 'daily' | 'error';
 
 const fallback = (reason: Fallback, status = 200) => NextResponse.json({ fallback: reason }, { status });
 
@@ -112,8 +111,6 @@ export async function POST(req: NextRequest) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (process.env.AGENT_MODEL_ENABLED !== 'true' || !key) return fallback('off');
   if (!sameOrigin(req)) return fallback('origin', 403);
-  if (!(await hasAccess(req.headers.get(ACCESS_HEADER)))) return fallback('locked', 401);
-
   let body: Body;
   try {
     const raw = await req.text();

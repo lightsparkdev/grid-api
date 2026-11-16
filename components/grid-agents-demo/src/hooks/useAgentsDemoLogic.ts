@@ -12,7 +12,6 @@ import { createAgentSession, FAST_FORWARD_FUND_CENTS, type AccountSnapshot, type
 import type { AgentEvent } from '@/data/agentEvents';
 import type { ConnectorId } from '@/data/connectors';
 import { MODES, modeFor, setActiveMode, type Mode } from '@/data/mode';
-import { accessHeaders } from '@/lib/access';
 import { appFor } from '@/lib/forApp';
 import type { PromptState } from '@/lib/llm/prompt';
 import type { Turn } from '@/lib/llm/tools';
@@ -189,7 +188,7 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
       try {
         const res = await fetch('/api/agent', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', ...accessHeaders(), ...visitorHeaders() },
+          headers: { 'content-type': 'application/json', ...visitorHeaders() },
           body: JSON.stringify({ connector: connectorRef.current, turns, state }),
         });
         const data = (await res.json()) as AgentResponse;
