@@ -15,7 +15,8 @@ properties:
       The rule in plain words, such as `Up to $20 a purchase at coffee shops,
       and nothing else`. Not blank, and no control or invisible formatting
       characters other than line breaks and tabs. Grid reads it as data,
-      never as instructions.
+      never as instructions. Amounts in it are read in the agent's account
+      currency, the currency its cards are charged in.
     example: Up to $20 a purchase at coffee shops, and nothing else.
   timeZone:
     type: string

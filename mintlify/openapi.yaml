@@ -10557,6 +10557,15 @@ paths:
         a `REFUSED` draft whose `refusal` says why, in fixed sentences that quote
         the person's own words.
 
+        **Currency:** amounts in `text` are read in the agent's account
+        currency: the currency the agent's cards are charged in, which becomes
+        the rule's `currency`. The request carries no currency. A sentence that
+        names an amount in another currency is refused with code `OTHER`.
+
+        **Timing:** a proposal from text is one call that can take up to about
+        90 seconds. It is safe to retry with the same `Idempotency-Key`, which
+        returns the draft the first request stored rather than proposing again.
+
         **As structured data:** send `rule`, `text` as what it was written from,
         and `statement` if the rule has one. Grid checks the rule as it would one
         it wrote. A question or statement that reads as instructions to the model
@@ -10932,7 +10941,7 @@ paths:
           type: string
     get:
       summary: List the owner's answers about merchants
-      description: The answers the agent's owner gave about whether the agent may buy from a merchant, kept for the agent's rule, most recently changed first. An answer is given by approving or rejecting a `SPENDING_RULE_QUESTION` agent action. Merchant fields are untrusted text the merchant controls; escape them before display.
+      description: The answers the agent's owner gave about whether the agent may buy from a merchant, kept for the agent's rule, most recently changed first. An answer is given by approving or rejecting a `SPENDING_RULE_QUESTION` agent action, or recorded with `POST` on this path. Merchant fields are untrusted text the merchant controls; escape them before display.
       operationId: listAgentSpendingRuleMerchantAnswers
       x-hidden: true
       tags:
@@ -10988,6 +10997,99 @@ paths:
                 $ref: '#/components/schemas/Error403'
         '404':
           description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    post:
+      summary: Record the owner's answer about a merchant
+      description: |
+        Record the owner's yes or no about whether the agent may buy from a
+        merchant, for one bucket of the agent's rule in force or for purchases
+        that match no bucket, as approving or rejecting a `SPENDING_RULE_QUESTION`
+        agent action would. By calling, the platform confirms that the agent's
+        owner gave this answer. Grid records the platform's API credentials as
+        who decided.
+
+        The answer decides only a purchase that needs the owner's approval
+        because of that bucket, its `question` or the rule's `statement`: a no
+        declines it, and a yes approves it only if every other part of the rule
+        allows it. It applies to the same merchant as `SpendingRuleMerchantAnswer`
+        describes.
+
+        Recording again for the same merchant and bucket replaces the earlier
+        answer in place, keeping its `id`, and answers `200`. Nothing moves money:
+        a purchase that was declined must be made again.
+
+        `merchantDescriptor` comes back as given, and is untrusted text the
+        merchant controls: escape it before display.
+      operationId: createAgentSpendingRuleMerchantAnswer
+      x-hidden: true
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpendingRuleMerchantAnswerCreateRequest'
+            examples:
+              yesUpToAnAmount:
+                summary: Allow a merchant in a bucket the amount helps choose
+                value:
+                  merchantDescriptor: JOES PIZZA 1234
+                  merchantCategoryCode: '5814'
+                  bucketKey: pizza
+                  approved: true
+                  upToAmount: 2500
+              'no':
+                summary: Refuse a merchant for purchases matching no bucket
+                value:
+                  merchantDescriptor: LUCKY SLOTS ONLINE
+                  merchantCategoryCode: '7995'
+                  bucketKey: (unmatched)
+                  approved: false
+      responses:
+        '200':
+          description: An earlier answer for this merchant and bucket was replaced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRuleMerchantAnswer'
+        '201':
+          description: Answer recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRuleMerchantAnswer'
+        '400':
+          description: 'Bad request - Nothing is recorded, and `reason` says which of these it was: the body is invalid; `merchantDescriptor` is too long, holds control or invisible formatting characters, or names no merchant; `merchantCategoryCode` is not a category code; `bucketKey` is not a bucket of the rule in force, or is one that never asks the owner; `upToAmount` is sent with a no, is over the bound, or is sent on a rule with no `currency`; a yes leaves out `upToAmount` where the purchase''s amount can decide the bucket; or the rule in force cannot be checked at a purchase'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, or spending rules are not (`SPENDING_RULES_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent not found, or the agent has no rule in force (`SPENDING_RULE_NOT_FOUND`)
           content:
             application/json:
               schema:
@@ -13050,7 +13152,10 @@ paths:
         Propose a spending rule for every card the authenticated agent issued,
         from a sentence or as structured data, as
         `POST /agents/{agentId}/spending-rule/drafts` does. The draft's `origin`
-        is `AGENT`.
+        is `AGENT`. Amounts in `text` are read in the agent's account currency,
+        and a sentence naming another currency is refused with code `OTHER`. A
+        proposal from text can take up to about 90 seconds and is safe to retry
+        with the same `Idempotency-Key`.
 
         A rule the agent proposes never takes effect on its own: only its owner
         can put it in force. Show the owner the draft's `restatement`, then ask
@@ -39462,7 +39567,7 @@ components:
           type: string
           minLength: 1
           maxLength: 2000
-          description: The rule in plain words, such as `Up to $20 a purchase at coffee shops, and nothing else`. Not blank, and no control or invisible formatting characters other than line breaks and tabs. Grid reads it as data, never as instructions.
+          description: The rule in plain words, such as `Up to $20 a purchase at coffee shops, and nothing else`. Not blank, and no control or invisible formatting characters other than line breaks and tabs. Grid reads it as data, never as instructions. Amounts in it are read in the agent's account currency, the currency its cards are charged in.
           example: Up to $20 a purchase at coffee shops, and nothing else.
         timeZone:
           type: string
@@ -39848,6 +39953,41 @@ components:
         nextCursor:
           type: string
           description: Cursor to retrieve the next page of results (only present if hasMore is true).
+    SpendingRuleMerchantAnswerCreateRequest:
+      type: object
+      description: The owner's yes or no about whether the agent may buy from a merchant, for one bucket of the agent's rule in force or for purchases that match no bucket.
+      required:
+        - merchantDescriptor
+        - bucketKey
+        - approved
+      properties:
+        merchantDescriptor:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'The merchant''s name as the card network reports it, such as a `merchantDescriptor` from a decision. It must name a merchant: at least three letters or digits once case, punctuation, a payment processor''s prefix and trailing words with no letter are set aside, and not a placeholder such as `UNKNOWN`. No control or invisible formatting characters. Grid keeps it as given.'
+          example: JOES PIZZA 1234
+        merchantCategoryCode:
+          type: string
+          pattern: ^[0-9]{1,4}$
+          description: The merchant category code (ISO 18245) the answer is for, as reported with the merchant. A shorter code is read with leading zeros. Leave it out to answer for purchases reported with no category code.
+          example: '5814'
+        bucketKey:
+          type: string
+          pattern: ^([a-z0-9_]{1,32}|\(unmatched\))$
+          description: 'The `key` of a bucket of the rule in force, or `(unmatched)` for purchases that match no bucket. It must be one that can ask the owner: its action is `ASK`, it has a `question`, or it approves and the rule has a `statement`.'
+          example: pizza
+        approved:
+          type: boolean
+          description: '`true` for yes, `false` for no. For a bucket whose action is `DECLINE`, yes means the merchant is not in that bucket.'
+          example: true
+        upToAmount:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 1000000000000000
+          description: 'The most a purchase may be for a yes to apply, in the smallest unit of the rule''s `currency`. Required for a yes when a purchase''s amount can decide whether it falls in the bucket: when the bucket or a bucket before it sets `amountBelow` or `amountAbove`, or, for `(unmatched)`, when any bucket does. Optional for any other yes. Refused with a no, and on a rule with no `currency`.'
+          example: 2500
     AgentDeviceCodeRequest:
       type: object
       required:

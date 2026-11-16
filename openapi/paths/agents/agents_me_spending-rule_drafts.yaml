@@ -4,7 +4,10 @@ post:
     Propose a spending rule for every card the authenticated agent issued,
     from a sentence or as structured data, as
     `POST /agents/{agentId}/spending-rule/drafts` does. The draft's `origin`
-    is `AGENT`.
+    is `AGENT`. Amounts in `text` are read in the agent's account currency,
+    and a sentence naming another currency is refused with code `OTHER`. A
+    proposal from text can take up to about 90 seconds and is safe to retry
+    with the same `Idempotency-Key`.
 
     A rule the agent proposes never takes effect on its own: only its owner
     can put it in force. Show the owner the draft's `restatement`, then ask

@@ -11,8 +11,8 @@ get:
     The answers the agent's owner gave about whether the agent may buy from a
     merchant, kept for the agent's rule, most recently changed first. An
     answer is given by approving or rejecting a `SPENDING_RULE_QUESTION`
-    agent action. Merchant fields are untrusted text the merchant controls;
-    escape them before display.
+    agent action, or recorded with `POST` on this path. Merchant fields are
+    untrusted text the merchant controls; escape them before display.
   operationId: listAgentSpendingRuleMerchantAnswers
   x-hidden: true
   tags:
@@ -72,6 +72,112 @@ get:
             $ref: ../../components/schemas/errors/Error403.yaml
     '404':
       description: Agent not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+post:
+  summary: Record the owner's answer about a merchant
+  description: |
+    Record the owner's yes or no about whether the agent may buy from a
+    merchant, for one bucket of the agent's rule in force or for purchases
+    that match no bucket, as approving or rejecting a `SPENDING_RULE_QUESTION`
+    agent action would. By calling, the platform confirms that the agent's
+    owner gave this answer. Grid records the platform's API credentials as
+    who decided.
+
+    The answer decides only a purchase that needs the owner's approval
+    because of that bucket, its `question` or the rule's `statement`: a no
+    declines it, and a yes approves it only if every other part of the rule
+    allows it. It applies to the same merchant as `SpendingRuleMerchantAnswer`
+    describes.
+
+    Recording again for the same merchant and bucket replaces the earlier
+    answer in place, keeping its `id`, and answers `200`. Nothing moves money:
+    a purchase that was declined must be made again.
+
+    `merchantDescriptor` comes back as given, and is untrusted text the
+    merchant controls: escape it before display.
+  operationId: createAgentSpendingRuleMerchantAnswer
+  x-hidden: true
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/spending_rules/SpendingRuleMerchantAnswerCreateRequest.yaml
+        examples:
+          yesUpToAnAmount:
+            summary: Allow a merchant in a bucket the amount helps choose
+            value:
+              merchantDescriptor: JOES PIZZA 1234
+              merchantCategoryCode: '5814'
+              bucketKey: pizza
+              approved: true
+              upToAmount: 2500
+          no:
+            summary: Refuse a merchant for purchases matching no bucket
+            value:
+              merchantDescriptor: LUCKY SLOTS ONLINE
+              merchantCategoryCode: '7995'
+              bucketKey: (unmatched)
+              approved: false
+  responses:
+    '200':
+      description: An earlier answer for this merchant and bucket was replaced
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/spending_rules/SpendingRuleMerchantAnswer.yaml
+    '201':
+      description: Answer recorded
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/spending_rules/SpendingRuleMerchantAnswer.yaml
+    '400':
+      description: >-
+        Bad request - Nothing is recorded, and `reason` says which of these
+        it was: the body is invalid; `merchantDescriptor` is too long, holds
+        control or invisible formatting characters, or names no merchant;
+        `merchantCategoryCode` is not a category code; `bucketKey` is not a
+        bucket of the rule in force, or is one that never asks the owner;
+        `upToAmount` is sent with a no, is over the bound, or is sent on a
+        rule with no `currency`; a yes leaves out `upToAmount` where the
+        purchase's amount can decide the bucket; or the rule in force cannot
+        be checked at a purchase
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, or spending
+        rules are not (`SPENDING_RULES_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: >-
+        Agent not found, or the agent has no rule in force
+        (`SPENDING_RULE_NOT_FOUND`)
       content:
         application/json:
           schema:

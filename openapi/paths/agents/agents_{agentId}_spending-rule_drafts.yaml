@@ -22,6 +22,15 @@ post:
     a `REFUSED` draft whose `refusal` says why, in fixed sentences that quote
     the person's own words.
 
+    **Currency:** amounts in `text` are read in the agent's account
+    currency: the currency the agent's cards are charged in, which becomes
+    the rule's `currency`. The request carries no currency. A sentence that
+    names an amount in another currency is refused with code `OTHER`.
+
+    **Timing:** a proposal from text is one call that can take up to about
+    90 seconds. It is safe to retry with the same `Idempotency-Key`, which
+    returns the draft the first request stored rather than proposing again.
+
     **As structured data:** send `rule`, `text` as what it was written from,
     and `statement` if the rule has one. Grid checks the rule as it would one
     it wrote. A question or statement that reads as instructions to the model
