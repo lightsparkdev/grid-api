@@ -1,0 +1,60 @@
+type: object
+description: >-
+  One running total or purchase count of the rule in force, in the window
+  that holds the time of the request. Exactly one of `maxAmount` and
+  `maxCount` is set.
+required:
+  - type
+  - period
+  - usedAmount
+  - usedCount
+properties:
+  type:
+    $ref: ./SpendingRuleRunningLimitType.yaml
+  bucketKey:
+    type: string
+    description: >-
+      The `key` of the bucket whose limit this is, or `(unmatched)` for
+      `unmatched.limits`. Absent for a rule-wide limit.
+    example: coffee
+  period:
+    $ref: ./SpendingRulePeriod.yaml
+  windowStart:
+    type: string
+    format: date
+    description: >-
+      The first day of the current window, in the rule's `timeZone`. Absent
+      for a `LIFETIME` limit.
+    example: '2026-11-16'
+  windowEnd:
+    type: string
+    format: date
+    description: >-
+      The first day of the next window, when the total or count starts again
+      from zero, in the rule's `timeZone`. Absent for a `LIFETIME` limit.
+    example: '2026-11-17'
+  maxAmount:
+    type: integer
+    format: int64
+    description: >-
+      The limit, in the smallest unit of the rule's `currency`. Present for a
+      total.
+    example: 50000
+  maxCount:
+    type: integer
+    format: int64
+    description: The most purchases allowed. Present for a count or single use.
+    example: 3
+  usedAmount:
+    type: integer
+    format: int64
+    description: >-
+      What purchases in the window have used, held and settled, in the
+      smallest unit of the rule's `currency`. It may exceed `maxAmount` when a
+      purchase settled for more than was approved.
+    example: 1850
+  usedCount:
+    type: integer
+    format: int64
+    description: Purchases in the window that count toward the limit.
+    example: 1

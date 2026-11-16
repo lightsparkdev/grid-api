@@ -32,6 +32,9 @@ properties:
       | STABLECOIN_OPERATION_NOT_FOUND | Stablecoin operation not found |
       | VERIFICATION_NOT_FOUND | Verification not found |
       | PAYMENT_DOCUMENT_NOT_FOUND | Payment document not found. On `POST /quotes`, `details.documentIds` lists each ID in `documentIds` that matches no document of the sender |
+      | SPENDING_RULE_NOT_FOUND | The agent has no spending rule in force |
+      | SPENDING_RULE_DRAFT_NOT_FOUND | Spending rule draft not found for this agent |
+      | SPENDING_RULE_MERCHANT_ANSWER_NOT_FOUND | The owner's answer about a merchant was not found for this agent |
     enum:
       - TRANSACTION_NOT_FOUND
       - INVITATION_NOT_FOUND
@@ -57,6 +60,9 @@ properties:
       - STABLECOIN_OPERATION_NOT_FOUND
       - VERIFICATION_NOT_FOUND
       - PAYMENT_DOCUMENT_NOT_FOUND
+      - SPENDING_RULE_NOT_FOUND
+      - SPENDING_RULE_DRAFT_NOT_FOUND
+      - SPENDING_RULE_MERCHANT_ANSWER_NOT_FOUND
   reason:
     type: string
     description: Error message

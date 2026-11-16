@@ -1,0 +1,13 @@
+type: string
+enum:
+  - APPROVE
+  - DECLINE
+  - ASK
+description: |
+  What becomes of a purchase that falls in a bucket, or that matches no bucket.
+
+  | Action | Description |
+  |--------|-------------|
+  | `APPROVE` | Approve it, if every other part of the rule allows it |
+  | `DECLINE` | Decline it |
+  | `ASK` | It needs the owner's approval. The owner is not asked during a purchase, so the purchase is declined unless the owner has already answered about that merchant for this bucket |

@@ -1,0 +1,74 @@
+type: object
+description: >-
+  A purchase on one of the agent's cards that the agent's spending rule
+  declined because it needs the owner's approval for the merchant. The
+  question is whether the agent may buy from this merchant in the bucket
+  `bucketKey`. The answer is remembered for later purchases there; it does not
+  approve the declined purchase, which the agent must make again.
+required:
+  - merchantAnswerId
+  - merchantDescriptor
+  - bucketKey
+  - amount
+  - currency
+  - reason
+properties:
+  merchantAnswerId:
+    type: string
+    description: >-
+      The answer the decision will be kept as, listed by
+      `GET /agents/{agentId}/spending-rule/merchants`.
+    example: SpendingRuleMerchantAnswer:019542f5-b3e7-1d02-0000-000000000501
+  cardId:
+    type: string
+    description: The card the purchase was made on.
+    example: Card:019542f5-b3e7-1d02-0000-000000000011
+  merchantDescriptor:
+    type: string
+    description: >-
+      The merchant's name as the card network reported it. Untrusted text
+      that the merchant controls: escape it before display.
+    example: JOES PIZZA 1234
+  merchantCategoryCode:
+    type: string
+    description: The merchant category code as the card network reported it, when it did.
+    example: '5814'
+  merchantCity:
+    type: string
+    description: >-
+      The merchant's city as the card network reported it, when it did.
+      Untrusted text: escape it before display.
+    example: Brooklyn
+  merchantCountry:
+    type: string
+    description: The merchant's country as the card network reported it, when it did.
+    example: USA
+  bucketKey:
+    type: string
+    description: >-
+      The `key` of the bucket of the rule the purchase fell in, or
+      `(unmatched)` when it matched no bucket.
+    example: pizza
+  amount:
+    type: integer
+    format: int64
+    description: The purchase's amount, in the smallest unit of `currency`.
+    example: 2500
+  currency:
+    type: string
+    description: ISO 4217 code of the card's currency.
+    example: USD
+  upToAmount:
+    type: integer
+    format: int64
+    description: >-
+      Present when the purchase's amount helped place it in the bucket.
+      Approving then allows purchases at this merchant up to this amount, the
+      amount asked about, in the smallest unit of `currency`.
+    example: 2500
+  reason:
+    type: string
+    description: >-
+      Why the rule needed the owner's approval, in a plain sentence. Escape it
+      before display.
+    example: Needs the owner's approval because the spending rule's judgement was unsure

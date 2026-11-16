@@ -1,0 +1,46 @@
+type: string
+enum:
+  - PER_PURCHASE_CAP
+  - BLOCKED_CATEGORIES
+  - ALLOWED_CATEGORIES
+  - BLOCKED_COUNTRIES
+  - ALLOWED_COUNTRIES
+  - ALLOWED_HOURS
+  - VALIDITY
+  - BUCKET
+  - BUCKET_LIMIT
+  - JUDGEMENT
+  - QUESTION_CAP
+  - BUCKET_TOTAL
+  - BUCKET_COUNT
+  - RULE_TOTAL
+  - RULE_COUNT
+  - SINGLE_USE
+  - RUNNING_LIMITS
+  - OWNER_ANSWER
+  - SAME_MERCHANT
+description: |
+  A part of the rule that decided, or helped decide, a purchase. Grid may add
+  parts, so accept a value not yet listed here.
+
+  | Check | Description |
+  |-------|-------------|
+  | `PER_PURCHASE_CAP` | The rule-wide `perPurchaseCap` |
+  | `BLOCKED_CATEGORIES` | The rule-wide `blockedCategories` |
+  | `ALLOWED_CATEGORIES` | The rule-wide `allowedCategories` |
+  | `BLOCKED_COUNTRIES` | The rule-wide `blockedCountries` |
+  | `ALLOWED_COUNTRIES` | The rule-wide `allowedCountries` |
+  | `ALLOWED_HOURS` | The rule-wide `allowedHours` |
+  | `VALIDITY` | `validFrom` and `validUntil` |
+  | `BUCKET` | The action of the bucket the purchase fell in, or of `unmatched` |
+  | `BUCKET_LIMIT` | The bucket's `limits.perPurchase` |
+  | `JUDGEMENT` | A bucket's `question` or the rule's `statement`, as the model judged the merchant |
+  | `QUESTION_CAP` | The card's rules needed more questions than one check carries |
+  | `BUCKET_TOTAL` | The bucket's `limits.total` |
+  | `BUCKET_COUNT` | The bucket's `limits.count` |
+  | `RULE_TOTAL` | The rule-wide `total` |
+  | `RULE_COUNT` | The rule-wide `count` |
+  | `SINGLE_USE` | `singleUse` |
+  | `RUNNING_LIMITS` | The rule's totals, counts or single use could not be checked |
+  | `OWNER_ANSWER` | The owner's remembered answer about the merchant |
+  | `SAME_MERCHANT` | The owner's remembered yes about another name the model judged to be the same merchant |

@@ -1,0 +1,159 @@
+type: object
+description: |
+  A spending rule as structured data: the checks every card the agent issued
+  makes at each purchase, after the card's own controls. A rule can only
+  narrow what the card already allows.
+
+  A purchase is checked in this order:
+
+  1. Outside `validFrom` and `validUntil`, `afterValidity` decides it.
+  2. Every rule-wide part that is set must hold: `perPurchaseCap`,
+     `allowedCategories`, `blockedCategories`, `allowedCountries`,
+     `blockedCountries`, `allowedHours`, `total`, `count` and `singleUse`.
+  3. The first bucket in `buckets` whose `match` holds decides it with its
+     `action` and `limits`. A purchase that matches no bucket is decided by
+     `unmatched`.
+
+  Every part is optional. Absent means not set, never an empty list. A rule
+  whose amounts are set needs `currency`, and one with hours, a validity
+  window, or a total or count over a `DAY`, `WEEK` or `MONTH` needs
+  `timeZone`. A rule asks at most four distinct questions about a merchant,
+  counting each bucket's `question` and the draft's `statement`.
+
+  Grid compares and stores rules field by field, so a rule read back may list
+  sets in another order than it was written, and carries the defaults it was
+  given.
+required:
+  - schemaVersion
+properties:
+  schemaVersion:
+    type: integer
+    enum:
+      - 2
+    description: >-
+      The version of this shape. Grid writes version 2 only. A later version
+      would be a new value here, and a rule stored in it would be read back in
+      it.
+    example: 2
+  currency:
+    type: string
+    pattern: '^[A-Z]{3}$'
+    description: >-
+      ISO 4217 code of every amount in the rule, which are in its smallest
+      unit. Required when any amount is set. A purchase in another currency
+      needs the owner's approval, so it is declined.
+    example: USD
+  timeZone:
+    type: string
+    description: >-
+      IANA time zone the rule's hours, validity window, days, weeks and
+      months are read in, such as `America/New_York`. Required for hours, a
+      validity window, or a total or count over a `DAY`, `WEEK` or `MONTH`.
+    example: America/New_York
+  validFrom:
+    type: string
+    format: date-time
+    description: >-
+      When the rule starts to apply, with a UTC offset, in the years 2000 to
+      2099. Before it, `afterValidity` decides a purchase.
+    example: '2026-12-01T00:00:00-05:00'
+  validUntil:
+    type: string
+    format: date-time
+    description: >-
+      When the rule stops applying, with a UTC offset, in the years 2000 to
+      2099, after `validFrom`. From it on, `afterValidity` decides a purchase.
+      A rule whose `validUntil` has passed can be neither proposed nor
+      confirmed.
+    example: '2026-12-31T00:00:00-05:00'
+  afterValidity:
+    $ref: ./SpendingRuleAfterValidity.yaml
+    description: Defaults to `DECLINE`.
+  perPurchaseCap:
+    type: integer
+    format: int64
+    minimum: 0
+    maximum: 1000000000000000
+    description: >-
+      The most any one purchase may be, in the smallest unit of `currency`. An
+      amount that settles over it after approval is still charged, since a
+      settlement cannot be refused.
+    example: 10000
+  total:
+    $ref: ./SpendingRuleTotalLimit.yaml
+    description: The most spent across all purchases over each period.
+  count:
+    $ref: ./SpendingRuleCountLimit.yaml
+    description: >-
+      The most purchases across the rule over each period. Not allowed with
+      `singleUse`.
+  singleUse:
+    type: boolean
+    description: >-
+      `true` allows one purchase for the life of the rule. Send `true` or
+      leave it out; `false` is refused.
+    example: true
+  allowedCategories:
+    type: array
+    minItems: 1
+    description: >-
+      Merchant category codes (ISO 18245) a purchase's merchant must have one
+      of. A code listed twice counts once. Grid returns the codes sorted.
+    items:
+      type: string
+      pattern: '^[0-9]{4}$'
+    example:
+      - '5812'
+      - '5814'
+  blockedCategories:
+    type: array
+    minItems: 1
+    description: >-
+      Merchant category codes (ISO 18245) the rule declines. Grid returns the
+      codes sorted.
+    items:
+      type: string
+      pattern: '^[0-9]{4}$'
+    example:
+      - '7995'
+  allowedCountries:
+    type: array
+    minItems: 1
+    description: >-
+      Countries a purchase's merchant must be in, as ISO 3166-1 alpha-2 or
+      alpha-3 codes. Grid stores and returns them as alpha-3 codes, sorted.
+    items:
+      type: string
+      pattern: '^[A-Z]{2,3}$'
+    example:
+      - USA
+  blockedCountries:
+    type: array
+    minItems: 1
+    description: >-
+      Countries the rule declines, as ISO 3166-1 alpha-2 or alpha-3 codes.
+      Grid stores and returns them as alpha-3 codes, sorted.
+    items:
+      type: string
+      pattern: '^[A-Z]{2,3}$'
+    example:
+      - PRK
+  allowedHours:
+    $ref: ./SpendingRuleHours.yaml
+    description: When in the week any purchase may be made.
+  buckets:
+    type: array
+    minItems: 1
+    maxItems: 16
+    description: >-
+      Groups of purchases, in order. A purchase falls in the first whose
+      `match` holds. Keys are unique, and only the last bucket may match
+      every purchase.
+    items:
+      $ref: ./SpendingRuleBucket.yaml
+  unmatched:
+    $ref: ./SpendingRuleUnmatched.yaml
+    description: >-
+      What becomes of a purchase that matches no bucket, including every
+      purchase when the rule has no buckets. Defaults to `DECLINE` with no
+      limits.

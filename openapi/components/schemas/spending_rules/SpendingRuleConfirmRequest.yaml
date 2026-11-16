@@ -1,0 +1,19 @@
+type: object
+description: >-
+  The draft to put in force, with the `ruleHash` of the rule the person
+  confirming was shown.
+required:
+  - draftId
+  - ruleHash
+properties:
+  draftId:
+    type: string
+    description: The proposed draft to confirm.
+    example: SpendingRuleDraft:019542f5-b3e7-1d02-0000-000000000201
+  ruleHash:
+    type: string
+    pattern: '^[0-9a-f]{64}$'
+    description: >-
+      The draft's `ruleHash`, as read with the restatement shown to the
+      person. A rule that hashes otherwise is not put in force.
+    example: 3f5a1c0e9b7d2a4c6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d

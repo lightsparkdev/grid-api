@@ -1,0 +1,18 @@
+type: object
+description: At most `amount` spent over each `period`.
+required:
+  - amount
+  - period
+properties:
+  amount:
+    type: integer
+    format: int64
+    minimum: 0
+    maximum: 1000000000000000
+    description: >-
+      The most that may be spent in one window, in the smallest unit of the
+      rule's `currency`. What is held for a pending purchase and what settles
+      both count; a refund after a purchase settles gives nothing back.
+    example: 50000
+  period:
+    $ref: ./SpendingRulePeriod.yaml

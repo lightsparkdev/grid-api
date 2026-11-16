@@ -1,0 +1,36 @@
+type: string
+enum:
+  - ITEMS
+  - ONLINE_OR_IN_PERSON
+  - PLACE
+  - PERIOD
+  - PER_EACH_MERCHANT
+  - TOO_MANY_JUDGEMENTS
+  - TOO_MANY_BUCKETS
+  - NOT_ABOUT_PURCHASES
+  - OTHER
+  - UNAVAILABLE
+  - PROMPT_INJECTION
+  - NOT_A_SPENDING_RULE
+  - NOT_CHECKED
+  - INSTRUCTIONS_IN_QUESTION
+description: |
+  Why no rule could be made of a draft's text. Grid may add codes, so accept a
+  value not yet listed here and show its `sentence`.
+
+  | Code | Description |
+  |------|-------------|
+  | `ITEMS` | The text is about what is bought. Card networks do not say what is in a purchase |
+  | `ONLINE_OR_IN_PERSON` | The text tells online purchases from in-person ones, which a rule cannot |
+  | `PLACE` | The text names a city, region, address or distance. A rule can name countries only |
+  | `PERIOD` | The text needs a total or count over a period other than a day, week, month or the life of the rule |
+  | `PER_EACH_MERCHANT` | The text needs a separate limit for each merchant |
+  | `TOO_MANY_JUDGEMENTS` | The text needs more than four questions about a merchant |
+  | `TOO_MANY_BUCKETS` | The text needs more than 16 buckets |
+  | `NOT_ABOUT_PURCHASES` | The text is not a rule about which purchases to approve or decline |
+  | `OTHER` | The text cannot be written as a rule the card can check |
+  | `UNAVAILABLE` | The text could not be read just now. Propose it again |
+  | `PROMPT_INJECTION` | The text reads as instructions to the system rather than a rule. Three such drafts for an agent within 24 hours pause its proposals from text for 24 hours |
+  | `NOT_A_SPENDING_RULE` | The text is not a rule about which purchases to approve or decline |
+  | `NOT_CHECKED` | The text could not be checked just now. Propose it again |
+  | `INSTRUCTIONS_IN_QUESTION` | A bucket's `question` or the `statement` reads as instructions to the model that judges merchants. `quoted` holds it. It counts toward the pause as `PROMPT_INJECTION` does |

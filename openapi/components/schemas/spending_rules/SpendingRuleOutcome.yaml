@@ -1,0 +1,19 @@
+type: string
+enum:
+  - APPROVE
+  - DECLINE
+  - ASK
+  - UNANSWERED
+  - NOT_REACHED
+  - NOT_APPLIED
+description: |
+  What the agent's rule said about one card authorization.
+
+  | Outcome | Description |
+  |---------|-------------|
+  | `APPROVE` | The rule allowed the purchase. The card's other controls may still have declined it |
+  | `DECLINE` | The rule declined the purchase |
+  | `ASK` | The purchase needed the owner's approval, so it was declined |
+  | `UNANSWERED` | A check the rule needed gave no answer before the card's deadline, so the purchase was declined |
+  | `NOT_REACHED` | The card's other controls ruled on the purchase before the rule's check answered |
+  | `NOT_APPLIED` | The purchase fell outside the rule's validity window and the rule's `afterValidity` is `STOP_APPLYING` |

@@ -1,0 +1,107 @@
+type: object
+description: |
+  The owner's answer about whether the agent may buy from a merchant, kept for
+  one bucket of the agent's rule, or for purchases that match no bucket. It
+  decides only a purchase that needs the owner's approval because of that
+  bucket, its `question` or the rule's `statement`: a no declines it, and a
+  yes approves it only if every other part of the rule allows it. For a
+  bucket that declines, a yes means the merchant is not in that bucket.
+
+  The same merchant means the same merchant category and the same name, with
+  case, apostrophes, punctuation, a payment processor's prefix and trailing
+  words with no letter, such as a store number, ignored. An answer stops
+  applying when its bucket's match, question or action, the rule's time zone
+  or currency, or the statement changes. It is kept when the rule is removed
+  and put in force again with the same bucket.
+required:
+  - id
+  - status
+  - merchantDescriptor
+  - bucketKey
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique identifier of the answer.
+    example: SpendingRuleMerchantAnswer:019542f5-b3e7-1d02-0000-000000000501
+  status:
+    $ref: ./SpendingRuleMerchantAnswerStatus.yaml
+  merchantDescriptor:
+    type: string
+    description: >-
+      The merchant's name as the card network reported it when the owner was
+      asked. Untrusted text that the merchant controls: escape it before
+      display.
+    example: JOES PIZZA 1234
+  merchantCategoryCode:
+    type: string
+    description: >-
+      The merchant category code the answer is for. Absent when the merchant
+      reported none, in which case the answer covers only purchases with no
+      category code.
+    example: '5814'
+  merchantCity:
+    type: string
+    description: >-
+      The merchant's city as the card network reported it when the owner was
+      asked, when it did. Untrusted text: escape it before display.
+    example: Brooklyn
+  merchantCountry:
+    type: string
+    description: >-
+      The merchant's country as the card network reported it when the owner
+      was asked, when it did.
+    example: USA
+  bucketKey:
+    type: string
+    description: >-
+      The `key` of the bucket the answer is for, or `(unmatched)` for
+      purchases that match no bucket.
+    example: pizza
+  upToAmount:
+    type: integer
+    format: int64
+    description: >-
+      For an `APPROVED` answer about a bucket the amount helps choose, the
+      most a purchase may be for the yes to apply, in the smallest unit of
+      `currency`. Absent when the yes covers any amount.
+    example: 2500
+  currency:
+    type: string
+    description: ISO 4217 code of `upToAmount` and `askedAmount`.
+    example: USD
+  askedAmount:
+    type: integer
+    format: int64
+    description: >-
+      The amount of the purchase the owner was asked about, in the smallest
+      unit of `currency`. Absent when the answer was not given in reply to a
+      purchase.
+    example: 2500
+  agentActionId:
+    type: string
+    description: >-
+      The `SPENDING_RULE_QUESTION` agent action that asked the owner, when
+      the answer came from one.
+    example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+  askedAt:
+    type: string
+    format: date-time
+    description: When the owner was asked. Absent when the answer was not asked for.
+    example: '2026-11-16T15:10:00Z'
+  decidedAt:
+    type: string
+    format: date-time
+    description: When the owner answered. Absent while `PENDING`.
+    example: '2026-11-16T15:20:00Z'
+  createdAt:
+    type: string
+    format: date-time
+    description: When the answer was first kept.
+    example: '2026-11-16T15:10:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the answer last changed.
+    example: '2026-11-16T15:20:00Z'

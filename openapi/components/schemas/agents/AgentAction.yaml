@@ -101,6 +101,25 @@ properties:
       run; rejecting it, or letting it expire, cancels the run and skips
       every row. The approval covers each row's own approval, so no row
       waits for another.
+  spendingRuleDraft:
+    $ref: ../spending_rules/SpendingRuleDraft.yaml
+    description: >-
+      The spending rule the agent proposed for its own cards, so an approval
+      decision can show its restatement. Present for `SET_SPENDING_RULE`.
+      Show the owner every sentence of its `restatement`. Approving the action
+      puts the rule in force exactly as its `ruleHash` binds it, replacing the
+      agent's rule; rejecting it, or letting it expire, leaves the agent's
+      rule as it is. A draft that can no longer be confirmed fails the action
+      with `DRAFT_STALE`.
+  spendingRuleQuestion:
+    $ref: ./AgentActionSpendingRuleQuestion.yaml
+    description: >-
+      The merchant the agent's spending rule asks the owner about, and the
+      purchase that asked. Present for `SPENDING_RULE_QUESTION`. Approving the
+      action remembers a yes for purchases at this merchant in the bucket, up
+      to `upToAmount` when it is set; rejecting it remembers a no. Letting it
+      expire remembers nothing, and the next purchase there asks again. No
+      money moves on approval: the agent makes the purchase again.
   cardId:
     type: string
     description: >-
@@ -138,10 +157,12 @@ properties:
       quote's own expiry; a pending action that reaches it fails with
       `QUOTE_EXPIRED`, and approval never creates a replacement quote. For
       `ISSUE_PURCHASE_CARD`, `USE_STORED_CARD`, `CREATE_SETTLEMENT_RULE`,
-      `UPDATE_SETTLEMENT_RULE` and `PAYOUT_RUN`, this is the end of the
-      approval window, after which a pending action fails with
-      `APPROVAL_EXPIRED`; a settlement rule's window is seven days, and a
-      payout run's 24 hours.
+      `UPDATE_SETTLEMENT_RULE`, `PAYOUT_RUN`, `SET_SPENDING_RULE` and
+      `SPENDING_RULE_QUESTION`, this is the end of the approval window, after
+      which a pending action fails with `APPROVAL_EXPIRED`; a settlement
+      rule's window is seven days, a payout run's and a spending rule
+      question's 24 hours, and a spending rule's the draft's own
+      `expiresAt`.
     example: '2025-10-03T15:05:00Z'
   createdAt:
     type: string

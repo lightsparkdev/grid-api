@@ -1,0 +1,111 @@
+type: object
+description: |
+  A spending rule proposed for an agent, which is not in force until it is
+  confirmed. A proposed draft carries the rule as structured data, its
+  restatement in plain sentences, and the `ruleHash` that confirms exactly
+  that rule. A refused draft carries why no rule could be made instead.
+
+  ```mermaid
+  stateDiagram-v2
+    [*] --> PROPOSED: a rule was made
+    [*] --> REFUSED: no rule could be made
+    PROPOSED --> CONFIRMED: confirmed with its ruleHash
+    PROPOSED --> WITHDRAWN: another draft confirmed, or the rule removed
+  ```
+
+  A draft expires 24 hours after it was proposed. At most ten proposed,
+  unexpired drafts can await confirmation for an agent at once.
+required:
+  - id
+  - agentId
+  - status
+  - origin
+  - writtenText
+  - restatement
+  - refusal
+  - expiresAt
+  - createdAt
+properties:
+  id:
+    type: string
+    description: System-generated unique identifier of the draft.
+    example: SpendingRuleDraft:019542f5-b3e7-1d02-0000-000000000201
+  agentId:
+    type: string
+    description: The agent whose cards the rule is for.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000042
+  status:
+    $ref: ./SpendingRuleDraftStatus.yaml
+  origin:
+    $ref: ./SpendingRuleDraftOrigin.yaml
+  writtenText:
+    type: string
+    description: >-
+      The text the rule was written from, exactly as submitted. Untrusted
+      text: escape it before display.
+    example: Up to $20 a purchase at coffee shops, and nothing else.
+  rule:
+    $ref: ./SpendingRuleSpec.yaml
+    description: >-
+      The rule as structured data. Absent when `status` is `REFUSED`.
+  statement:
+    type: string
+    maxLength: 500
+    description: >-
+      A plain statement every merchant must also satisfy for a purchase to be
+      approved, judged by a model as a bucket `question` is. Absent when the
+      rule has none. Untrusted text: escape it before display.
+    example: The merchant is a coffee shop
+  restatement:
+    type: array
+    description: >-
+      What the rule does, in plain sentences, in the order a purchase is
+      checked, followed by fixed sentences on how rules work. Grid writes them
+      from the rule and `statement` alone, so `ruleHash` binds them too. Show
+      every sentence to the person confirming. Merchant names, questions and
+      the statement appear inside quotation marks and are untrusted text:
+      escape every sentence before display. Empty when `status` is
+      `REFUSED`.
+    items:
+      type: string
+    example:
+      - >-
+        Amounts are in USD. A purchase in another currency that must be
+        checked against an amount needs the owner's approval.
+      - 'Then the first of these buckets a purchase matches decides it:'
+      - >-
+        Bucket "coffee": a purchase where the model agrees that "The merchant
+        is a coffee shop" is approved, at most 20.00 USD for one purchase.
+      - Anything else is declined.
+  ruleHash:
+    type: string
+    pattern: '^[0-9a-f]{64}$'
+    description: >-
+      SHA-256 of the rule and `statement`, in lowercase hex. Confirming the
+      draft takes it back, so a rule is put in force only as it was shown.
+      Absent when `status` is `REFUSED`.
+    example: 3f5a1c0e9b7d2a4c6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d
+  refusal:
+    type: array
+    description: >-
+      Why no rule could be made, one part per reason. Empty unless `status`
+      is `REFUSED`.
+    items:
+      $ref: ./SpendingRuleRefusalPart.yaml
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      When the draft can no longer be confirmed: 24 hours after it was
+      proposed.
+    example: '2026-11-17T15:00:00Z'
+  confirmedAt:
+    type: string
+    format: date-time
+    description: When the draft was confirmed. Present only when `status` is `CONFIRMED`.
+    example: '2026-11-16T15:04:00Z'
+  createdAt:
+    type: string
+    format: date-time
+    description: When the draft was proposed.
+    example: '2026-11-16T15:00:00Z'

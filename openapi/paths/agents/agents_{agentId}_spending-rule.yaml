@@ -1,0 +1,188 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get an agent's spending rule
+  description: >-
+    The spending rule in force for every card the agent issued, with its
+    restatement in plain sentences.
+  operationId: getAgentSpendingRule
+  x-hidden: true
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/spending_rules/SpendingRule.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, or spending
+        rules are not (`SPENDING_RULES_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: >-
+        Agent not found, or the agent has no rule in force
+        (`SPENDING_RULE_NOT_FOUND`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+put:
+  summary: Confirm an agent's spending rule
+  description: |
+    Put a proposed draft in force for every card the agent issued, replacing
+    the agent's rule. Send the draft's `ruleHash` as you read it with the
+    restatement you showed. By calling, the platform confirms that the person
+    the rule is for has seen every sentence of that restatement and agreed to
+    it. A draft the agent proposed is confirmed by its owner through a
+    `SET_SPENDING_RULE` agent action instead.
+
+    The draft must be the agent's, `PROPOSED`, unexpired, proposed while the
+    agent's current rule was in force (or while it had none), and hash to
+    `ruleHash`, and its rule's `validUntil` must not have passed. Confirming
+    withdraws the agent's other proposed drafts. Running totals and the
+    owner's answers about merchants are kept by bucket `key`, so they carry
+    on into the new rule for buckets of the same name.
+  operationId: confirmAgentSpendingRule
+  x-hidden: true
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/spending_rules/SpendingRuleConfirmRequest.yaml
+        examples:
+          confirm:
+            summary: Confirm a proposed draft
+            value:
+              draftId: SpendingRuleDraft:019542f5-b3e7-1d02-0000-000000000201
+              ruleHash: 3f5a1c0e9b7d2a4c6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d
+  responses:
+    '200':
+      description: The rule now in force
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/spending_rules/SpendingRule.yaml
+    '400':
+      description: >-
+        Bad request - The body is invalid, or the rule no longer passes Grid's
+        checks. Nothing changes
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, or spending
+        rules are not (`SPENDING_RULES_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: >-
+        Agent not found, or the draft is not one of the agent's
+        (`SPENDING_RULE_DRAFT_NOT_FOUND`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict - The draft can no longer be confirmed
+        (`SPENDING_RULE_DRAFT_STALE`, with `details.staleReason`). Nothing
+        changes. Propose the rule again and show the new restatement
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+          example:
+            code: SPENDING_RULE_DRAFT_STALE
+            reason: The spending rule draft cannot be confirmed because it has expired.
+            details:
+              staleReason: EXPIRED
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Remove an agent's spending rule
+  description: >-
+    Take the agent's spending rule out of force, so its cards check purchases
+    as if it had none, and withdraw its proposed drafts. Running totals and
+    the owner's answers about merchants are kept, and carry on if a rule is
+    put in force again.
+  operationId: deleteAgentSpendingRule
+  x-hidden: true
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: Rule removed
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, or spending
+        rules are not (`SPENDING_RULES_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: >-
+        Agent not found, or the agent has no rule in force
+        (`SPENDING_RULE_NOT_FOUND`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

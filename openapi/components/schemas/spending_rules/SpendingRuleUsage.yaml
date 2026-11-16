@@ -1,0 +1,33 @@
+type: object
+description: >-
+  How much of each running total and purchase count of the agent's rule in
+  force has been used. Totals and counts are kept by bucket `key`, so a
+  limit a new version of the rule keeps for the same bucket and period
+  carries on from what the earlier version used.
+required:
+  - agentId
+  - limits
+  - asOf
+properties:
+  agentId:
+    type: string
+    description: The agent whose rule this is.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000042
+  currency:
+    type: string
+    description: >-
+      ISO 4217 code of every amount, the rule's `currency`. Absent when the
+      rule has none.
+    example: USD
+  limits:
+    type: array
+    description: >-
+      Every total, count and single use of the rule, bucket limits in bucket
+      order and then the rule-wide ones. Empty when the rule has none.
+    items:
+      $ref: ./SpendingRuleRunningLimitUsage.yaml
+  asOf:
+    type: string
+    format: date-time
+    description: The time the windows were chosen for.
+    example: '2026-11-16T15:12:00Z'
