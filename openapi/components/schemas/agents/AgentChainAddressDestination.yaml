@@ -20,7 +20,7 @@ properties:
     $ref: ./AgentSendCurrency.yaml
     description: >-
       Asset the recipient receives: `USDC` or `USDT`. `TRON` supports `USDT`
-      only, and `BASE` supports `USDC` only.
+      only, and `BASE`, `OPTIMISM` and `AVALANCHE` support `USDC` only.
     example: USDC
   address:
     type: string

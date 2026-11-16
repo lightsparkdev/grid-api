@@ -2,7 +2,7 @@
 title: "Sandbox Testing"
 description: "Test your payouts integration in the Grid sandbox environment"
 icon: "/images/icons/hammer.svg"
-"og:image": "/images/og/og-payouts-b2b.png"
+"og:image": "/images/og/pages/payouts-and-b2b/platform-tools/sandbox-testing.webp"
 ---
 
 import SandboxBeneficiaryVerification from '/snippets/sandbox-beneficiary-verification.mdx';
@@ -10,6 +10,7 @@ import SandboxExternalAccounts from '/snippets/sandbox-external-accounts.mdx';
 import SandboxTransferPatterns from '/snippets/sandbox-transfer-patterns.mdx';
 import SandboxQuotePatterns from '/snippets/sandbox-quote-patterns.mdx';
 import SandboxGlobalAccountMagic from '/snippets/sandbox-global-account-magic.mdx';
+import SandboxEuCustomers from '/snippets/sandbox-eu-customers.mdx';
 
 ## Overview
 
@@ -139,6 +140,19 @@ POST /quotes
 
 The IBAN ending in `003` triggers the slow payment test pattern.
 
+### Payment documents
+
+A payment document uploaded with one of these file names fails when a quote uses it. Grid
+ignores the extension and letter case.
+
+| File name | Behavior |
+|-----------|----------|
+| `sandbox-expired` | Uploaded already expired. The quote fails with `410 PAYMENT_DOCUMENT_EXPIRED` |
+| `sandbox-attach-failed` | The quote fails with `424 PAYMENT_DOCUMENT_ATTACHMENT_FAILED`, including a retry with the same `Idempotency-Key` |
+
+To test the payout partner rejecting the documents after you execute the quote, use an
+account number ending in `010`.
+
 ### Executing Quotes in Sandbox
 
 For quotes from an external account source, execute as in production via `/quotes/{quoteId}/execute`. The sandbox will:
@@ -250,6 +264,10 @@ GET /transactions/{transactionId}
 
 Use suffixes `010` to `013` to test each specific `failureReason`. The table in
 [Testing Cross-Currency Quotes](#testing-cross-currency-quotes) lists them.
+
+## EU customers
+
+<SandboxEuCustomers />
 
 ## Global Account magic values
 

@@ -9,7 +9,7 @@ parameters:
 post:
   summary: Resend a quote's SCA challenge code
   description: |
-    Re-send the one-time code for a realtime-funding quote in
+    Re-send the one-time code for a quote in
     `PENDING_AUTHORIZATION` status whose `scaChallenge.factor` is `SMS_OTP`. The
     existing challenge is reused — no new challenge is issued, and its
     `scaChallenge.expiresAt` is **not** extended; once the challenge is past

@@ -3,22 +3,24 @@ type: object
 required:
   - id
   - accountId
-  - publicKey
   - nickname
   - status
   - createdAt
   - updatedAt
 description: >-
-  A delegated signing key for either a card funding source or an agent, backed
-  by an Embedded Wallet internal account. Card keys include `cardId` and
-  `fundingSourceId`; agent keys include `agentId`. Returned from
-  `POST /auth/delegated-keys` (on activation),
+  A delegated signing key for either a card funding source or an agent. Card
+  keys include `cardId` and `fundingSourceId`; agent keys include `agentId`.
+  Returned from `POST /auth/delegated-keys` (on activation),
   `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`.
-  The keypair is generated and custodied by Grid; the private key is never
-  returned. While `ACTIVE`, Grid may use the key to authorize Spark
-  token-transaction signing for the selected card funding source or agent in
-  place of a session keypair. `publicKey` is informational metadata identifying
-  the credential.
+  `accountId` says where the signing material comes from. For a key on an
+  Embedded Wallet internal account, Grid generates and custodies the keypair
+  and never returns the private key; `publicKey` identifies it. While `ACTIVE`,
+  Grid may use it to authorize Spark token-transaction signing for the selected
+  card funding source or agent in place of a session keypair. A key on a crypto
+  external account that carries `providerWallet` is a provider wallet key. Grid
+  creates it when the cardholder has delegated the wallet at the provider and
+  the card is funded by that wallet, and while `ACTIVE` uses the delegated share
+  to sign the card's transfers.
 properties:
   id:
     type: string
@@ -39,12 +41,17 @@ properties:
   accountId:
     type: string
     description: >-
-      The Embedded Wallet internal account this key is delegated for,
-      derived from the card funding source or the agent's customer.
+      The account this key is delegated for, derived from the card funding
+      source or the agent's customer. An Embedded Wallet internal account for a
+      key Grid generated, or a crypto external account that carries
+      `providerWallet` for a provider wallet key.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   publicKey:
     type: string
-    description: Compressed P-256 public key (hex) of the delegated API keypair.
+    description: >-
+      Compressed P-256 public key (hex) of the delegated API keypair. It equals
+      the key in the payload the wallet owner stamped on the first leg. Present
+      only on keys for an Embedded Wallet internal account.
     example: 02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
   nickname:
     type: string

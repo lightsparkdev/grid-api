@@ -14,7 +14,8 @@ properties:
   options:
     type: array
     description: >-
-      Empty when Grid cannot pay out in `country`. A row with `isAvailable`
-      false is paused and cannot be claimed to now.
+      Empty when Grid cannot pay out in `country`. A row whose
+      `rate.corridorStatus` is not `OPEN` is paused and cannot be claimed to
+      now.
     items:
       $ref: ./ClaimablePayoutOption.yaml

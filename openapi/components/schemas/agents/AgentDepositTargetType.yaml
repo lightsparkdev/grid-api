@@ -2,4 +2,7 @@ type: string
 enum:
   - LIGHTNING_INVOICE
   - CHAIN_ADDRESS
-description: Format of the payment target returned for an agent deposit.
+  - EXTERNAL_ACCOUNT
+description: >-
+  Format of the payment target returned for an agent deposit.
+  `EXTERNAL_ACCOUNT` means `target` is the external account ID for `ACH_PULL`.

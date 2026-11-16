@@ -2,7 +2,7 @@
 title: "ACH Pull"
 description: "Debit a customer's US bank account to fund their Lightspark account"
 icon: "/images/icons/arrow-inbox.svg"
-"og:image": "/images/og/og-payouts-b2b.png"
+"og:image": "/images/og/pages/payouts-and-b2b/depositing-funds/ach-pull.webp"
 ---
 
 An ACH pull debits a customer's bank account in the United States and credits their Lightspark internal account. You supply the account and routing number. Lightspark originates the debit through its partner bank as an ACH WEB entry, the NACHA code for a consumer debit authorized online. Funds are typically available two business days after initiation.
@@ -10,6 +10,10 @@ An ACH pull debits a customer's bank account in the United States and credits th
 A pull differs from a push deposit in one way: the customer's bank can return a debit after it settles. Most returns arrive within two banking days. A consumer who says the debit was unauthorized has 60 calendar days. Because of this, Lightspark validates the account before the first debit, holds pulled funds through the common return window, and reverses the credit when a return arrives. You capture the customer's authorization and keep the record.
 
 This page covers what Lightspark checks before the first debit, how long each step takes, when the funds become spendable, and what a return does.
+
+<Note>
+This page covers platform ACH pulls. Agents `ACH_PULL` deposits (`POST /agents/me/deposits`) credit the destination USDB account when the debit is submitted. A bank return does not take back that credit.
+</Note>
 
 ## Prerequisites
 

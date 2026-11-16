@@ -3,12 +3,41 @@ title: "Changelog"
 description: "New features, improvements, and updates to the Grid API."
 icon: "/images/icons/IconNewspaper2.svg"
 mode: "wide"
+"og:image": "/images/og/pages/changelog.webp"
 ---
 
 Follow along with the latest additions and improvements to the Grid API. For upcoming
 changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
+
+## Wire tracking numbers and returns on `railDetails`
+
+Wire legs now carry `railDetails` with `paymentRail: WIRE`. Alongside `imad`, a wire
+reports its `omad` once delivered, and a `returns` list with one item per wire the
+recipient's bank sent back, each with its own `amount`, `returnCode`, `imad` and
+`returnedAt`. `WireRailStatus` gains `RETURNED`, for a wire the bank sent back (even
+when bank fees reduced the amount).
+
+## Exchange rates report why a corridor is paused
+
+Each rate from `GET /exchange-rates` now has `corridorStatus`: `OPEN`, `OUTAGE`, or
+`MAINTENANCE`. It replaces `isAvailable`, which is removed. Read `corridorStatus ==
+OPEN` where you read `isAvailable` before.
+
+## Tell a corridor outage from maintenance
+
+A paused corridor now tells you why. The account lookup and `POST /quotes` fail with
+`403 CORRIDOR_UNDER_OUTAGE` when an outage pauses the corridor, and with `403
+CORRIDOR_UNDER_MAINTENANCE` for scheduled maintenance. Retry later in both cases. In
+sandbox, an external account whose account number ends in `015` simulates an outage. See
+[sandbox testing](/payouts-and-b2b/platform-tools/sandbox-testing#testing-cross-currency-quotes).
+
+## Tag transactions with your own ID
+
+`POST /quotes`, `POST /transfer-in`, and `POST /transfer-out` take an optional
+`platformTransactionId`, unique per platform. Transactions return it, and
+`GET /transactions` filters by it.
 
 ## Issue a business's card to a named person
 

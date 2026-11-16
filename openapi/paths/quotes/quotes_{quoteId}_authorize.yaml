@@ -12,10 +12,9 @@ post:
     Satisfy the Strong Customer Authentication challenge carried by a quote in
     `PENDING_AUTHORIZATION` status by submitting an `ScaAuthorization` proof.
 
-    This is used for realtime-funding quotes: the quote is returned with an
-    `scaChallenge` and **without** `paymentInstructions`; once authorized, the
-    quote advances and its `paymentInstructions` are populated so the customer
-    can fund the transfer.
+    Use it for a quote that `POST /quotes/{quoteId}/execute`, or `POST /quotes`
+    with `immediatelyExecute`, returned in `PENDING_AUTHORIZATION`. A customer
+    who needs SCA can't fund a quote in realtime.
 
     As with all SCA, a quote may require more than one authorization: after
     authorizing, if the quote is still `PENDING_AUTHORIZATION` it carries the

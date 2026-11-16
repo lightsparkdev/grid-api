@@ -12,7 +12,7 @@ properties:
       | COUNTERPARTY_PUBKEY_FETCH_ERROR | Error fetching counterparty public key |
       | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
       | LNURLP_REQUEST_FAILED | LNURLP request failed |
-      | PAYMENT_DOCUMENT_ATTACHMENT_FAILED | Grid could not attach a supporting document to the payment, so it created no quote. Retry the same request with the same `Idempotency-Key` |
+      | PAYMENT_DOCUMENT_ATTACHMENT_FAILED | Grid could not attach a supporting document to the payment, so it created no quote. Retry the same request with the same `Idempotency-Key`. `details.documentIds` names the document that failed. It is absent when the failure was not caused by one document |
     enum:
       - PAYREQ_REQUEST_FAILED
       - COUNTERPARTY_PUBKEY_FETCH_ERROR
