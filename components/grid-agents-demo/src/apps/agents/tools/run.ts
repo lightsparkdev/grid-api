@@ -663,6 +663,10 @@ function sendStablecoins(env: ToolEnv, call: ToolCall): Outcome {
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const DAY = 86_400_000;
 
+/** A real calendar date as YYYY-MM-DD: Date.parse would roll 2026-02-31 over to March 3. */
+const isDate = (value: unknown): value is string =>
+  typeof value === 'string' && ISO_DATE.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+
 function bookStay(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
   const missing = needsBalance(env);
@@ -670,15 +674,17 @@ function bookStay(env: ToolEnv, call: ToolCall): Outcome {
   const city = text(call.input.city, 40);
   const { check_in: checkIn, check_out: checkOut } = call.input;
   if (!city) return fail('need_city');
-  if (typeof checkIn !== 'string' || typeof checkOut !== 'string' || !ISO_DATE.test(checkIn) || !ISO_DATE.test(checkOut)) return fail('need_dates', { format: 'YYYY-MM-DD' });
+  if (!isDate(checkIn) || !isDate(checkOut)) return fail('need_dates', { format: 'YYYY-MM-DD' });
   const from = Date.parse(`${checkIn}T00:00:00Z`);
   const nights = Math.round((Date.parse(`${checkOut}T00:00:00Z`) - from) / DAY);
-  const today = Date.parse(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`);
-  if (!(nights >= 1 && nights <= 14) || from < today - DAY || from > today + 366 * DAY) return fail('bad_dates', { fix: 'check-in from today to a year out, 1 to 14 nights' });
+  // The visitor's own today, not UTC's, which is already tomorrow for an evening in the Americas.
+  const today = Date.parse(`${new Date().toLocaleDateString('en-CA')}T00:00:00Z`);
+  if (!(nights >= 1 && nights <= 14) || from < today || from > today + 366 * DAY) return fail('bad_dates', { fix: 'check-in from today to a year out, 1 to 14 nights' });
   const guests = positive(call.input.guests, 8);
   const stay = stayFor({ city, checkIn, checkOut, ...(guests && { guests: Math.round(guests) }) });
   // The same stay asked for again is the same booking: its quote isn't shown twice.
-  const id = Array.from(env.memory.stays.entries()).find(([, s]) => s.hotel === stay.hotel && s.amount === stay.amount)?.[0] ?? `h-${++env.memory.seq}`;
+  const same = (s: Stay) => s.hotel === stay.hotel && s.dates === stay.dates && s.guests === stay.guests && s.amount === stay.amount;
+  const id = Array.from(env.memory.stays.entries()).find(([, s]) => same(s))?.[0] ?? `h-${++env.memory.seq}`;
   env.memory.stays.set(id, stay);
   const facts = { stay_id: id, hotel: stay.hotel, total_usd: usd(stay.amount) };
   const result: ToolResult = {};

@@ -36,7 +36,8 @@ const starting = (mode: Mode): Recipient[] => (mode === 'personal' ? [SOFIA] : [
 
 const saved: Record<Mode, Recipient[]> = { personal: starting('personal'), business: starting('business') };
 
-export const savedRecipients = () => saved[activeMode()];
+/** Who's saved on an account: the one on screen unless a conversation names its own. */
+export const savedRecipients = (mode: Mode = activeMode()) => saved[mode];
 
 /** Someone saved this visit, by first or full name. */
 export function recipientNamed(name: string): Recipient | undefined {

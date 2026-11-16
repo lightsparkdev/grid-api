@@ -511,7 +511,7 @@ const fund = (ctx: FlowContext): Beat[] => {
   };
   const crypto = (): Beat[] => {
     const asked = CRYPTO.find((o) => o.asset === ctx.params?.asset)?.asset;
-    const said = asked ?? assetOn(ctx.params?.network);
+    const said = asked ?? CRYPTO.find((o) => o.asset === assetOn(ctx.params?.network))?.asset;
     if (said) return onNetwork(said);
     return [
       { say: 'fund.asset' },
@@ -907,8 +907,10 @@ export function watched(
 ): Beat[] {
   const params = { ...shelfParams(shelf), below };
   if (shelf.pick.amount <= below) return [...found, { say: 'watch.already', params }, ...buyIt(ctx, shelf)];
-  // A believable sale price: a few percent under what they set, ending in 9.
-  const drop = Math.floor((below * 0.96) / 1000) * 1000 - 100;
+  // A believable sale price: a few percent under what they set, ending in 9. Under about $10 that rounds below zero,
+  // so a small threshold drops 10% instead.
+  const sale = Math.floor((below * 0.96) / 1000) * 1000 - 100;
+  const drop = sale > 0 ? sale : Math.max(1, Math.floor(below * 0.9));
   const dropped: Shelf = { ...shelf, pick: { ...shelf.pick, amount: drop } };
   // It buys without asking when it drops, so how it pays is settled now: the balance if it covers the sale price, else
   // the card (saved first if it isn't yet).
@@ -1041,10 +1043,11 @@ export function split(ctx: FlowContext, people: string[], total: number): Beat[]
   return [
     { react: '👍' },
     { say: 'split.intro', params: { total, share, list, count: people.length + 1 } },
-    { emit: { type: 'getpaid.address', network: 'BASE', currency: 'USDC' } },
     { work: 'watching', ms: 2000 },
     ...people.flatMap((payer, i): Beat[] => [
       ...(i ? [{ pause: 1400 } as const] : []),
+      // Each person's request has its own address, as each deposit quote matches one payment.
+      { emit: { type: 'getpaid.address', network: 'BASE', currency: 'USDC' } },
       { emit: { type: 'getpaid.received', from: payer, amount: share } },
       { card: 'receipt.getpaid', params: { payer, amount: share, invoice: 'Split request' } },
     ]),

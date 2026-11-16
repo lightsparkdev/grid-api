@@ -176,7 +176,7 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
         daily: money(a.limits.daily),
         cardSaved: a.cardVaulted,
         bankLinked: a.bankLinked,
-        recipients: savedRecipients().map((r) => ({ name: r.name, country: r.bank.country.code })),
+        recipients: savedRecipients(mode).map((r) => ({ name: r.name, country: r.bank.country.code })),
         ...(a.business && {
           // Until they've named it, the model doesn't know the company: the default isn't theirs.
           ...(a.business.named && { company: a.business.company, owner: a.business.owner }),

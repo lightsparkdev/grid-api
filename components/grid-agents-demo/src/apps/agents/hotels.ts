@@ -114,7 +114,9 @@ export function stayFor(p?: { city?: string; checkIn?: string; checkOut?: string
 
 /** The other side of the payment, as Grid sees it, and how History and the "already booked" check name it. */
 export function merchantFor(s: Stay): MerchantAgent {
-  return { name: s.hotel, amount: s.amount, description: `${s.nights === 1 ? '1 night' : `${s.nights} nights`} in ${s.city}, ${s.dates}` };
+  const nights = s.nights === 1 ? '1 night' : `${s.nights} nights`;
+  const guests = s.guests === 1 ? '1 guest' : `${s.guests} guests`;
+  return { name: s.hotel, amount: s.amount, description: `${nights} in ${s.city}, ${s.dates}, ${guests}` };
 }
 
 /** What the lines, the approval and the receipt say the stay with. */

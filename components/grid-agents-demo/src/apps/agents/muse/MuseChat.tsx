@@ -93,6 +93,7 @@ function MuseAvatar({ mode }: { mode: AvatarMode }) {
   const working = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const live = mode === 'idle' ? idle.current : mode === 'working' ? working.current : null;
+    const pauses: number[] = [];
     for (const v of [idle.current, working.current]) {
       if (!v) continue;
       if (v === live) {
@@ -100,9 +101,10 @@ function MuseAvatar({ mode }: { mode: AvatarMode }) {
         v.play().catch(() => {});
       } else {
         const el = v;
-        window.setTimeout(() => el.pause(), 300);
+        pauses.push(window.setTimeout(() => el.pause(), 300));
       }
     }
+    return () => pauses.forEach((t) => window.clearTimeout(t));
   }, [mode]);
   return (
     <div className={styles.avatar} aria-hidden>

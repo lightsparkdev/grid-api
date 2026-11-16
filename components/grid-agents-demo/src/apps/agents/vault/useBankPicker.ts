@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
 import { BANK_COUNTRIES, currencyFor, type BankCountry } from '@/data/bankCountries';
 import { FUNDING_POPULAR, fieldLabel } from '@/data/bankSamples';
@@ -88,14 +88,22 @@ export function useBankPicker(onLinked: (bank: LinkedBank) => void, payee?: Paye
   const [back, setBack] = useState(false);
   const [query, setQuery] = useState('');
   const [stage, setStage] = useState<BankStage>('form');
+  const payeeRef = useRef(payee);
+  payeeRef.current = payee;
   useEffect(() => {
     if (stage !== 'linking' || !bank) return;
     const t = window.setTimeout(() => setStage('linked'), LINK_MS);
     return () => window.clearTimeout(t);
   }, [stage, bank]);
+  // Saved as it hands back, so a sheet dismissed mid-link leaves nothing saved that the account never approved.
   useEffect(() => {
     if (stage !== 'linked' || !bank) return;
-    const t = window.setTimeout(() => onLinked(bank), LINKED_MS);
+    const t = window.setTimeout(() => {
+      const them = payeeRef.current;
+      if (them) saveRecipient({ name: bank.holder, first: them.first, bank });
+      else linkBank(bank);
+      onLinked(bank);
+    }, LINKED_MS);
     return () => window.clearTimeout(t);
   }, [stage, bank, onLinked]);
 
@@ -122,8 +130,6 @@ export function useBankPicker(onLinked: (bank: LinkedBank) => void, payee?: Paye
     },
     link: () => {
       if (!bank || stage !== 'form') return;
-      if (payee) saveRecipient({ name: bank.holder, first: payee.first, bank });
-      else linkBank(bank);
       setStage('linking');
     },
     /** Whose bank this is when it isn't the person's own. */
