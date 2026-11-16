@@ -1,7 +1,7 @@
 # Lightspark Agent Accounts Playground
 
 Interactive demo of Agent Accounts, embedded in the Grid docs at
-`docs.lightspark.com/demo`. Forked from `components/grid-cards-demo` (the Cards
+`docs.lightspark.com/agent-accounts/demo`. Forked from `components/grid-cards-demo` (the Cards
 playground) and shares its chrome, design system, and embed contract:
 
 - Next.js 14 + React 18 + TypeScript, SCSS modules
@@ -24,6 +24,7 @@ thread, in the new app's voice and with its own approval UI.
 
 ```bash
 npm install --ignore-scripts
+npx patch-package    # applies patches/, as the Vercel build does
 npm run dev          # fixed port: http://localhost:4003
 # embed/theme preview:
 #   http://localhost:4003/?embed=true&theme=light&nav=48
@@ -100,7 +101,7 @@ doesn't settle in 60 seconds, and saves end-state screenshots to `.tmp-sweep/`.
 - `src/lib/llm/`: the model adapter, prompt, and limits.
 - `src/hooks/useAgentsDemoLogic.ts`: playground state: the app, the active flow, the agent's session
   and ledger, the API log, reset.
-- Docs embed: `mintlify/demo.mdx`,
+- Docs embed: `mintlify/agent-accounts/demo.mdx`,
   `mintlify/snippets/agent-accounts/agents-demo-embed.mdx`.
 
 ## Deploy

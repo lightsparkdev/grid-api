@@ -4,6 +4,17 @@ import { useState, useCallback, useEffect } from 'react';
 
 export type Theme = 'light' | 'dark';
 
+const STORAGE_KEY = 'grid-agents-theme';
+
+/** The theme picked last time. Storage can be blocked in a cross-site iframe, which leaves the URL or the system's. */
+function readStored(): Theme | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY) as Theme | null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Theme state for the demo.
  *
@@ -27,7 +38,7 @@ export function useTheme() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const paramTheme = params.get('theme');
-    const stored = localStorage.getItem('grid-agents-theme') as Theme | null;
+    const stored = readStored();
     const resolved: Theme =
       paramTheme === 'dark' || paramTheme === 'light'
         ? paramTheme
@@ -57,7 +68,9 @@ export function useTheme() {
   const setTheme = useCallback(
     (t: Theme) => {
       apply(t);
-      localStorage.setItem('grid-agents-theme', t);
+      try {
+        localStorage.setItem(STORAGE_KEY, t);
+      } catch {}
       // Tell the parent so the docs page stays in sync when toggled from inside.
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'theme-sync', theme: t }, '*');

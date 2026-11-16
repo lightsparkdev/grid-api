@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ACTIONS, type ActionId } from '@/data/actions';
-import { cleanName, type Mode } from '@/data/mode';
+import { activeMode, cleanName, setActiveMode, type Mode } from '@/data/mode';
 import { BANK_REACH } from '@/data/bankCountries';
 import type { AgentEvent } from '@/data/agentEvents';
 import { BANK_COUNTRIES } from '@/data/bankCountries';
@@ -312,6 +312,21 @@ export function useAgentBrain({
     setBusy(false);
   }, []);
 
+  /** Builds what comes next against this conversation's own account. The stores a flow reads (saved recipients, the
+   *  linked bank) follow the account on screen, and this conversation may have been switched away from mid-run. */
+  const own = useCallback(
+    <T,>(build: () => T): T => {
+      const shown = activeMode();
+      setActiveMode(mode);
+      try {
+        return build();
+      } finally {
+        setActiveMode(shown);
+      }
+    },
+    [mode],
+  );
+
   const play = useCallback(
     async (beats: Beat[], run: Run): Promise<boolean> => {
       for (let i = 0; i < beats.length; i++) {
@@ -365,7 +380,7 @@ export function useAgentBrain({
         } else if ('pause' in b) {
           await sleep(b.pause);
         } else if ('when' in b) {
-          if (!(await play(b.when(), run))) return false;
+          if (!(await play(own(b.when), run))) return false;
         } else if ('ask' in b) {
           const id = show({ kind: 'ask', key: b.ask, params: b.params, state: 'open' });
           setBusy(false);
@@ -388,7 +403,8 @@ export function useAgentBrain({
           // Paying another way: this checkout goes, and the agent comes back with one for the new way.
           if (typeof decision === 'object') {
             setMessages((list) => list.filter((m) => m.id !== id));
-            if (b.swap && !(await play(b.swap(decision.swap), run))) return false;
+            const swap = decision.swap;
+            if (b.swap && !(await play(own(() => b.swap!(swap)), run))) return false;
             continue;
           }
           if (decision === 'deny') {
@@ -424,7 +440,7 @@ export function useAgentBrain({
           pickedByText.current = false;
           pickedOnPage.current = false;
           await sleep(600);
-          if (!(await play([...(onPage && b.onPage ? b.onPage(picked) : []), ...b.then(picked)], run))) return false;
+          if (!(await play(own(() => [...(onPage && b.onPage ? b.onPage(picked) : []), ...b.then(picked)]), run))) return false;
         } else if ('amount' in b) {
           setBusy(false);
           setAwaitingAmount(true);
@@ -450,7 +466,7 @@ export function useAgentBrain({
           if (chipsId !== null) patch(chipsId, (m) => (m.kind === 'chips' && m.picked === null ? { ...m, expired: true } : m));
           if (usd <= 0 || run.cancelled) return false;
           setBusy(true);
-          if (!(await play(b.then(usd), run))) return false;
+          if (!(await play(own(() => b.then(usd)), run))) return false;
         } else if ('name' in b) {
           setBusy(false);
           setAwaitingName(true);
@@ -478,12 +494,12 @@ export function useAgentBrain({
           patch(chipsId, (m) => (m.kind === 'chips' && m.picked === null ? { ...m, expired: true } : m));
           if (!value || run.cancelled) return false;
           setBusy(true);
-          if (!(await play(b.named(value), run))) return false;
+          if (!(await play(own(() => b.named(value)), run))) return false;
         }
       }
       return !run.cancelled;
     },
-    [push, patch, show],
+    [push, patch, show, own],
   );
 
   const start = useCallback(
@@ -655,7 +671,7 @@ export function useAgentBrain({
           // again to ask something. Decided before the tool is built, so the tool keeps the lines the model won't say.
           if (call.input.say && !ENDS_TURN.has(call.name) && spoke) delete call.input.say;
           // Checked before anything shows: a call that can't run says nothing, and the model's next step does.
-          const out = runTool({ ctx, memory: memory.current, next: calls[i + 1] }, call);
+          const out = own(() => runTool({ ctx, memory: memory.current, next: calls[i + 1] }, call));
           if ('error' in out) {
             done.set(call.id, resultBlock(call.id, out.error, true));
             failed = stopped = true;
@@ -742,7 +758,7 @@ export function useAgentBrain({
       queued.current = null;
       if (next && !run.cancelled) void askRef.current?.(next, next, false);
     },
-    [push, patch, show, play, clearWork],
+    [push, patch, show, play, clearWork, own],
   );
 
   askRef.current = ask;
