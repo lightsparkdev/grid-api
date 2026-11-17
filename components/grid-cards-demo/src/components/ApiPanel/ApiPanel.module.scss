@@ -79,8 +79,12 @@
 :global(html:not([data-layout='stacked'])) .panel {
   overflow-y: auto;
   overscroll-behavior: contain;
-  /* The calls column wears the docs-chrome gray. surface-secondary flips
-     with the theme, and this selector outweighs the base dark override. */
+}
+
+/* The calls column wears the docs-chrome gray, except tight (the stacked
+   colors). surface-secondary flips with the theme, and this selector
+   outweighs the base dark override. */
+:global(html:not([data-layout='stacked']):not([data-tight])) .panel {
   background: var(--surface-secondary);
 }
 
