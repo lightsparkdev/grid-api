@@ -7556,11 +7556,13 @@ paths:
     post:
       summary: Add an administrator credential
       description: |
-        Add a credential for an additional administrator of a `BUSINESS` customer's Embedded Wallet. The new administrator gets their own `EMAIL_OTP` or `PASSKEY` credential, tagged with `adminReference`, and signs for the wallet with it as the owner does. The wallet stays non-custodial: Grid never adds an administrator on its own, and every step is authorised by a signature from an existing verified credential on the account (the owner's, or another administrator's).
+        Add a credential for an additional administrator of a `BUSINESS` customer's Embedded Wallet. The new administrator gets their own `EMAIL_OTP`, `PASSKEY` or `EVM_WALLET` credential, tagged with `adminReference`, and signs for the wallet with it as the owner does. Each administrator credential is a wallet user of its own, apart from the owner's, so removing one administrator leaves every other credential standing. The wallet stays non-custodial: Grid never adds an administrator on its own, and every step is authorised by a signature from an existing verified credential on the account (the owner's, or another administrator's).
+
+        An `EVM_WALLET` administrator is added with their wallet's `publicKey`, on that approval alone. The new administrator takes no part: Grid issues no ownership challenge, and the wallet signs nothing until it signs in. A key already on the account, as the owner's credential or another administrator's, is refused.
 
         This is the only way an administrator adds a credential. An administrator's session cannot sign `POST /auth/credentials`, which Grid refuses with `403 FORBIDDEN`, so every credential belonging to an administrator carries their `adminReference` and removing them revokes it. An administrator added with another administrator's signature has their own `adminReference` and is removed separately.
 
-        It takes two signed steps. The first call returns `202` with a `payloadToSign` that creates the administrator's wallet user; the signed retry returns another `202` whose payload grants that user the authority to sign for the wallet; the second signed retry returns `201` with the new `AuthMethod`. The administrator then signs in with `POST /auth/credentials/{id}/challenge` and `POST /auth/credentials/{id}/verify`.
+        It takes two signed steps. The first call returns `202` with a `payloadToSign` that creates the administrator's wallet user; the signed retry returns another `202` whose payload grants that user the authority to sign for the wallet; the second signed retry returns `201` with the new `AuthMethod`. The administrator then signs in with `POST /auth/credentials/{id}/challenge` and `POST /auth/credentials/{id}/verify`, as the owner signs in with a credential of the same type. An `EVM_WALLET` administrator's wallet signs the challenge's `payloadToSign` and sends it to verify as `signature`.
       operationId: createAdminCredential
       tags:
         - Embedded Wallet Auth
@@ -7601,7 +7603,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthSignedRequestChallenge'
         '400':
-          description: Bad request, including a customer that is not a business, an email already on the account, or a passkey key algorithm other than ES256 (-7) or RS256 (-257)
+          description: Bad request, including a customer that is not a business, an email already on the account, a passkey key algorithm other than ES256 (-7) or RS256 (-257), a `publicKey` that is not a point on secp256k1 (`INVALID_INPUT`, with a `details.errors[]` entry whose `field` is `publicKey`), or an EVM wallet already on the account (`WALLET_CREDENTIAL_ALREADY_EXISTS`)
           content:
             application/json:
               schema:
@@ -36212,15 +36214,37 @@ components:
         - $ref: '#/components/schemas/AuthCredentialCreateRequest'
         - $ref: '#/components/schemas/AdminCredentialCreateRequestFields'
         - $ref: '#/components/schemas/PasskeyCredentialCreateRequestFields'
+    EvmWalletAdminCredentialCreateRequest:
+      title: EVM Wallet Admin Credential Create Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialCreateRequest'
+        - $ref: '#/components/schemas/AdminCredentialCreateRequestFields'
+        - type: object
+          required:
+            - type
+            - publicKey
+          properties:
+            type:
+              type: string
+              enum:
+                - EVM_WALLET
+              description: Discriminator value identifying this as an EVM wallet credential.
+            publicKey:
+              type: string
+              pattern: ^0x(0[23][0-9a-fA-F]{64}|04[0-9a-fA-F]{128})$
+              description: 'The secp256k1 public key of the administrator''s wallet, `0x`-prefixed hex in any letter case: compressed (33 bytes, starting `02` or `03`) or uncompressed (65 bytes, starting `04`). It must be the key of a wallet with a single private key, not a smart-contract account. Grid derives the wallet''s address from it and shows the address back as the credential''s `nickname`. The wallet signs nothing to be added.'
+              example: '0x024e3b81af9c2234cad09d679ce6035ed1392347ce64ce405f5dcd36228a25de6e'
     AdminCredentialCreateRequestOneOf:
       oneOf:
         - $ref: '#/components/schemas/EmailOtpAdminCredentialCreateRequest'
         - $ref: '#/components/schemas/PasskeyAdminCredentialCreateRequest'
+        - $ref: '#/components/schemas/EvmWalletAdminCredentialCreateRequest'
       discriminator:
         propertyName: type
         mapping:
           EMAIL_OTP: '#/components/schemas/EmailOtpAdminCredentialCreateRequest'
           PASSKEY: '#/components/schemas/PasskeyAdminCredentialCreateRequest'
+          EVM_WALLET: '#/components/schemas/EvmWalletAdminCredentialCreateRequest'
     AuthMethod:
       type: object
       required:
