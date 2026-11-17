@@ -20723,6 +20723,7 @@ components:
         | `INVOICE_SUB_SAT_AMOUNT` | 400 | The Lightning invoice's amount is not a whole number of satoshis |
         | `INVOICE_FUNDS_DEPOSIT` | 400 | The Lightning invoice was issued by Lightspark to fund a deposit and cannot be paid with a send |
         | `INVOICE_FUNDS_OWN_DEPOSIT` | 400 | The Lightning invoice funds a deposit of the sender's own. Quote a transfer between the customer's accounts instead |
+        | `REFUND_DESTINATION_MISMATCH` | 400 | The refund destination's `accountType` is not the network the quote is funded on. A refund returns the deposited asset on the network it was sent on |
       example: AGENT_POLICY_DENIED
     Error400:
       type: object
@@ -33868,6 +33869,31 @@ components:
               description: The customer on whose behalf the transaction is being initiated. Required when funding from a `BULK_SETTLEMENT` account. The customer is never the account owner, because the platform owns the account. When funding from an FBO account, this field is optional. If you omit it, the transaction is initiated on behalf of the platform. For any other account, it defaults to the account owner's customerId.
               example: Customer:019542f5-b3e7-1d02-0000-000000000001
           description: Source account details
+    RefundDestinationOneOf:
+      title: Refund Destination
+      description: On-chain wallet a stablecoin-funded quote's deposit is returned to if the quote cannot complete. `accountType` must be the network the deposit is sent on. The full deposit is returned in the deposited currency. Do not use the address the deposit was sent from. That address may belong to an exchange or custodian that cannot credit a refund back to the customer.
+      oneOf:
+        - $ref: '#/components/schemas/EthereumWalletInfo'
+        - $ref: '#/components/schemas/BaseWalletInfo'
+        - $ref: '#/components/schemas/PolygonWalletInfo'
+        - $ref: '#/components/schemas/ArbitrumWalletInfo'
+        - $ref: '#/components/schemas/OptimismWalletInfo'
+        - $ref: '#/components/schemas/AvalancheWalletInfo'
+        - $ref: '#/components/schemas/PlasmaWalletInfo'
+        - $ref: '#/components/schemas/SolanaWalletInfo'
+        - $ref: '#/components/schemas/TronWalletInfo'
+      discriminator:
+        propertyName: accountType
+        mapping:
+          ETHEREUM_WALLET: '#/components/schemas/EthereumWalletInfo'
+          BASE_WALLET: '#/components/schemas/BaseWalletInfo'
+          POLYGON_WALLET: '#/components/schemas/PolygonWalletInfo'
+          ARBITRUM_WALLET: '#/components/schemas/ArbitrumWalletInfo'
+          OPTIMISM_WALLET: '#/components/schemas/OptimismWalletInfo'
+          AVALANCHE_WALLET: '#/components/schemas/AvalancheWalletInfo'
+          PLASMA_WALLET: '#/components/schemas/PlasmaWalletInfo'
+          SOLANA_WALLET: '#/components/schemas/SolanaWalletInfo'
+          TRON_WALLET: '#/components/schemas/TronWalletInfo'
     RealtimeFundingQuoteSource:
       title: Real-time Funding
       allOf:
@@ -33893,6 +33919,9 @@ components:
               type: string
               description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `ARBITRUM`, `OPTIMISM`, `AVALANCHE`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
               example: SOLANA
+            refundDestination:
+              $ref: '#/components/schemas/RefundDestinationOneOf'
+              description: Optional. Where to return the deposit on-chain if the quote cannot complete. Applies only when `currency` is a stablecoin, and its `accountType` must match `cryptoNetwork`. When omitted, a failed quote returns the deposit to the customer's internal account for that currency.
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSourceOneOf:
       oneOf:

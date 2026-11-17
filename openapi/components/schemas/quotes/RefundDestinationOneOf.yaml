@@ -1,0 +1,28 @@
+title: Refund Destination
+description: >-
+  On-chain wallet a stablecoin-funded quote's deposit is returned to if the quote cannot complete.
+  `accountType` must be the network the deposit is sent on. The full deposit is returned in the
+  deposited currency. Do not use the address the deposit was sent from. That address may belong to
+  an exchange or custodian that cannot credit a refund back to the customer.
+oneOf:
+  - $ref: ../common/EthereumWalletInfo.yaml
+  - $ref: ../common/BaseWalletInfo.yaml
+  - $ref: ../common/PolygonWalletInfo.yaml
+  - $ref: ../common/ArbitrumWalletInfo.yaml
+  - $ref: ../common/OptimismWalletInfo.yaml
+  - $ref: ../common/AvalancheWalletInfo.yaml
+  - $ref: ../common/PlasmaWalletInfo.yaml
+  - $ref: ../common/SolanaWalletInfo.yaml
+  - $ref: ../common/TronWalletInfo.yaml
+discriminator:
+  propertyName: accountType
+  mapping:
+    ETHEREUM_WALLET: ../common/EthereumWalletInfo.yaml
+    BASE_WALLET: ../common/BaseWalletInfo.yaml
+    POLYGON_WALLET: ../common/PolygonWalletInfo.yaml
+    ARBITRUM_WALLET: ../common/ArbitrumWalletInfo.yaml
+    OPTIMISM_WALLET: ../common/OptimismWalletInfo.yaml
+    AVALANCHE_WALLET: ../common/AvalancheWalletInfo.yaml
+    PLASMA_WALLET: ../common/PlasmaWalletInfo.yaml
+    SOLANA_WALLET: ../common/SolanaWalletInfo.yaml
+    TRON_WALLET: ../common/TronWalletInfo.yaml

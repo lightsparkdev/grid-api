@@ -32,6 +32,12 @@ allOf:
           `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `ARBITRUM`, `OPTIMISM`, `AVALANCHE`, `SPARK`,
           `LIGHTNING`, `BITCOIN`.
         example: SOLANA
+      refundDestination:
+        $ref: ./RefundDestinationOneOf.yaml
+        description: >-
+          Optional. Where to return the deposit on-chain if the quote cannot complete. Applies only when
+          `currency` is a stablecoin, and its `accountType` must match `cryptoNetwork`. When omitted, a
+          failed quote returns the deposit to the customer's internal account for that currency.
     description: >-
       Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.).
       This will require manual just-in-time funding using `paymentInstructions` in the response.

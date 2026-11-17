@@ -32,4 +32,5 @@ description: |
   | `INVOICE_SUB_SAT_AMOUNT` | 400 | The Lightning invoice's amount is not a whole number of satoshis |
   | `INVOICE_FUNDS_DEPOSIT` | 400 | The Lightning invoice was issued by Lightspark to fund a deposit and cannot be paid with a send |
   | `INVOICE_FUNDS_OWN_DEPOSIT` | 400 | The Lightning invoice funds a deposit of the sender's own. Quote a transfer between the customer's accounts instead |
+  | `REFUND_DESTINATION_MISMATCH` | 400 | The refund destination's `accountType` is not the network the quote is funded on. A refund returns the deposited asset on the network it was sent on |
 example: AGENT_POLICY_DENIED
