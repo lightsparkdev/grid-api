@@ -32,6 +32,19 @@ allOf:
           `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `ARBITRUM`, `OPTIMISM`, `AVALANCHE`, `SPARK`,
           `LIGHTNING`, `BITCOIN`.
         example: SOLANA
+      refundAddress:
+        type: string
+        maxLength: 128
+        description: >-
+          Optional. On-chain address the deposit is returned to if the quote cannot complete. Applies
+          only when `currency` is a stablecoin. The full deposit is returned in the deposited currency on
+          `cryptoNetwork`, so the address must be able to receive that currency on that network, and
+          should be one the customer controls. Grid rejects an address that is not valid for
+          `cryptoNetwork`, but cannot tell which EVM network an EVM address is meant for. The address the
+          deposit was sent from is safe only when it is the customer's own wallet. An exchange or
+          custodian withdrawal address often cannot credit a refund back to the customer. When omitted, a
+          failed quote returns the deposit to the customer's internal account for that currency.
+        example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
     description: >-
       Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.).
       This will require manual just-in-time funding using `paymentInstructions` in the response.

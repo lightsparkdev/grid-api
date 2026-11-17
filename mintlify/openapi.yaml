@@ -25169,6 +25169,40 @@ components:
           amount: 50
           currency: USD
         platformVariableFeeBps: 30
+    CryptoNetwork:
+      type: string
+      enum:
+        - BITCOIN
+        - ETHEREUM
+        - SOLANA
+        - BASE
+        - POLYGON
+        - TRON
+        - PLASMA
+        - ARBITRUM
+        - OPTIMISM
+        - AVALANCHE
+        - SPARK
+      description: The blockchain network an on-chain transaction settled on. Whether this is the mainnet or a test network (e.g. Solana devnet) is determined by your platform's environment — sandbox platforms operate on test networks, production platforms on mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
+      example: SOLANA
+    SweepRuleRefundAddress:
+      title: Sweep Rule Refund Address
+      type: object
+      description: Where a deposit that arrived on `cryptoNetwork` is returned when its sweep cannot complete.
+      required:
+        - cryptoNetwork
+        - address
+      properties:
+        cryptoNetwork:
+          allOf:
+            - $ref: '#/components/schemas/CryptoNetwork'
+          description: The network this address receives refunds on. Must be one the account takes deposits on.
+          example: BASE
+        address:
+          type: string
+          maxLength: 128
+          description: On-chain address on `cryptoNetwork`. A deposit is returned here in full, in the currency it arrived in. It should be an address the customer controls. An exchange or custodian withdrawal address often cannot credit a refund back to the customer.
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
     SweepRuleRequest:
       title: Sweep Rule Request
       type: object
@@ -25199,6 +25233,12 @@ components:
           allOf:
             - $ref: '#/components/schemas/PlatformFeeOverride'
           description: Fee terms applied to every sweep this rule drives. Omit it to use the platform's configured fees.
+        refundAddresses:
+          type: array
+          maxItems: 16
+          items:
+            $ref: '#/components/schemas/SweepRuleRefundAddress'
+          description: Optional, for `USDC` and `USDT` accounts only. Where a deposit is returned when its sweep cannot complete, one address per network. A deposit is returned in full, in the currency it arrived in, to the address for the network it arrived on. A deposit on a network with no address here, or any deposit when this is omitted, is returned to the customer's internal account for that currency. Grid rejects a network the account does not take deposits on, a network listed twice, or an address that is not valid on its network. To use one EVM address on several EVM networks, list it once for each.
     InternalAccountCreateRequest:
       title: Internal Account Create Request
       type: object
@@ -26088,6 +26128,11 @@ components:
           allOf:
             - $ref: '#/components/schemas/PlatformFeeOverride'
           description: Fee terms applied to every sweep this rule drives. Null when the platform's configured fees apply.
+        refundAddresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/SweepRuleRefundAddress'
+          description: Where a deposit is returned when its sweep cannot complete, one address per network. A deposit on a network with no address here is returned to the customer's internal account. Empty when none are set.
     CardCapabilities:
       type: object
       description: Actions supported by the card program associated with this resource.
@@ -34716,22 +34761,6 @@ components:
           type: string
           description: Currency code for the destination
           example: EUR
-    CryptoNetwork:
-      type: string
-      enum:
-        - BITCOIN
-        - ETHEREUM
-        - SOLANA
-        - BASE
-        - POLYGON
-        - TRON
-        - PLASMA
-        - ARBITRUM
-        - OPTIMISM
-        - AVALANCHE
-        - SPARK
-      description: The blockchain network an on-chain transaction settled on. Whether this is the mainnet or a test network (e.g. Solana devnet) is determined by your platform's environment — sandbox platforms operate on test networks, production platforms on mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
-      example: SOLANA
     OnChainRailDetails:
       title: On-Chain Transfer
       type: object
@@ -36465,6 +36494,11 @@ components:
               type: string
               description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `ARBITRUM`, `OPTIMISM`, `AVALANCHE`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
               example: SOLANA
+            refundAddress:
+              type: string
+              maxLength: 128
+              description: Optional. On-chain address the deposit is returned to if the quote cannot complete. Applies only when `currency` is a stablecoin. The full deposit is returned in the deposited currency on `cryptoNetwork`, so the address must be able to receive that currency on that network, and should be one the customer controls. Grid rejects an address that is not valid for `cryptoNetwork`, but cannot tell which EVM network an EVM address is meant for. The address the deposit was sent from is safe only when it is the customer's own wallet. An exchange or custodian withdrawal address often cannot credit a refund back to the customer. When omitted, a failed quote returns the deposit to the customer's internal account for that currency.
+              example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSourceOneOf:
       oneOf:
