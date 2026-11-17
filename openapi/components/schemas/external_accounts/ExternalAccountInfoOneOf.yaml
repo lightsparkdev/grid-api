@@ -41,6 +41,7 @@ oneOf:
 - $ref: ./LightningExternalAccountInfo.yaml
 - $ref: ./PolygonWalletExternalAccountInfo.yaml
 - $ref: ./PlasmaWalletExternalAccountInfo.yaml
+- $ref: ./StellarWalletExternalAccountInfo.yaml
 - $ref: ./ArbitrumWalletExternalAccountInfo.yaml
 - $ref: ./OptimismWalletExternalAccountInfo.yaml
 - $ref: ./AvalancheWalletExternalAccountInfo.yaml
@@ -99,6 +100,7 @@ discriminator:
     LIGHTNING_ACCOUNT: ./LightningExternalAccountInfo.yaml
     POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml
     PLASMA_WALLET: ./PlasmaWalletExternalAccountInfo.yaml
+    STELLAR_WALLET: ./StellarWalletExternalAccountInfo.yaml
     ARBITRUM_WALLET: ./ArbitrumWalletExternalAccountInfo.yaml
     OPTIMISM_WALLET: ./OptimismWalletExternalAccountInfo.yaml
     AVALANCHE_WALLET: ./AvalancheWalletExternalAccountInfo.yaml

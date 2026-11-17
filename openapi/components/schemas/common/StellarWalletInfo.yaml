@@ -1,0 +1,13 @@
+type: object
+required:
+  - address
+  - accountType
+properties:
+  accountType:
+    type: string
+    enum:
+      - STELLAR_WALLET
+  address:
+    type: string
+    description: Stellar account address (a `G…` public key). Muxed `M…` addresses are not supported.
+    example: GAHK7EEG2WWHVKDNT4CEQFZGKF2LGDSW2IVM4S5DP42RBW3K6BTODB4A

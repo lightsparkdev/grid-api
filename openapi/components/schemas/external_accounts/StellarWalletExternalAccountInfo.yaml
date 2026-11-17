@@ -1,0 +1,19 @@
+title: Stellar Wallet
+allOf:
+  - $ref: ./BaseExternalAccountInfo.yaml
+  - $ref: ../common/StellarWalletInfo.yaml
+  - $ref: ./WalletBeneficiaryFields.yaml
+  - $ref: ./WalletCustodyFields.yaml
+  - type: object
+    properties:
+      memo:
+        type: string
+        description: >-
+          Memo to send with every payment to this address. Exchanges and other
+          custodial wallets share one address across their customers and need
+          the customer's memo to credit them. Sent as a Stellar text memo,
+          which holds at most 28 bytes of UTF-8. Non-ASCII characters take
+          more than one byte each.
+        minLength: 1
+        maxLength: 28
+        example: '1234567890'

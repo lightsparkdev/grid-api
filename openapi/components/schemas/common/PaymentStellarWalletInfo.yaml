@@ -1,0 +1,22 @@
+title: Stellar Wallet
+allOf:
+  - $ref: ./BasePaymentAccountInfo.yaml
+  - $ref: ./StellarWalletInfo.yaml
+  - type: object
+    required:
+      - memo
+    properties:
+      assetType:
+        type: string
+        description: Type of asset
+        enum: [USDC]
+      memo:
+        type: string
+        description: >-
+          Memo to include with the payment. The address is shared, so Grid
+          credits a payment to this account or quote by its memo. Send it as a
+          Stellar ID memo or as a text memo containing these digits. A payment
+          without this memo, or with a different one, is not credited
+          automatically.
+        pattern: '^[0-9]{1,20}$'
+        example: '4294967296'

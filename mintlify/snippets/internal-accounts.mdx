@@ -264,6 +264,24 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
     ```
   </Accordion>
 
+  <Accordion title="Stellar Stablecoin Funding">
+    Stellar accounts share one deposit address. Grid credits a deposit to this
+    account by its `memo`, so the payer must send the memo with every payment.
+    A Stellar ID memo or a text memo with the same digits both work. A payment
+    without the memo is not credited automatically.
+
+    ```json
+    {
+      "accountOrWalletInfo": {
+        "accountType": "STELLAR_WALLET",
+        "assetType": "USDC",
+        "address": "GAHK7EEG2WWHVKDNT4CEQFZGKF2LGDSW2IVM4S5DP42RBW3K6BTODB4A",
+        "memo": "4294967296"
+      }
+    }
+    ```
+  </Accordion>
+
   <Accordion title="Polygon Stablecoin Funding">
     For Polygon wallet accounts, using a Polygon wallet as the funding source:
 
