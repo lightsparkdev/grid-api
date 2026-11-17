@@ -190,6 +190,8 @@ If a payout is refused after the conversion (for example, by the destination ban
 
 In sandbox, account numbers and addresses are generated locally. Call `POST /sandbox/internal-accounts/{accountId}/fund` on a rule-based account to simulate a settled deposit. It triggers the sweep exactly as a real deposit would. Fund a very small amount to test the `SWEEP_AMOUNT_OUT_OF_RANGE` path.
 
+In sandbox, Grid simulates sweeps to USDT wallets on Tron or Plasma. The transaction completes and Grid empties the rule-based account, but Grid sends no testnet transfer to the wallet.
+
 ## Next steps
 
 <FeatureCardGrid cols={2}>
