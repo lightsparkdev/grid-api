@@ -1,0 +1,21 @@
+type: string
+enum:
+  - PENDING
+  - APPROVED
+  - DECLINED
+  - EXPIRED
+  - REMOVED
+description: |
+  The owner's answer about a merchant in one bucket of the agent's rule. Only
+  `APPROVED` and `DECLINED` decide a purchase.
+
+  | Status | Description | Terminal |
+  |--------|-------------|----------|
+  | `PENDING` | The owner was asked and has not answered | No |
+  | `APPROVED` | The owner said yes. A yes with `upToAmount` covers purchases up to that amount | No |
+  | `DECLINED` | The owner said no | No |
+  | `EXPIRED` | The owner did not answer in time. The next purchase there asks again | No |
+  | `REMOVED` | The answer was removed. The next purchase there asks again | No |
+
+  An answer is replaced in place when the owner is asked again about the same
+  merchant in the same bucket, so no status is terminal.

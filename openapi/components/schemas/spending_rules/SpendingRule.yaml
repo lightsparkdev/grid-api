@@ -1,0 +1,73 @@
+type: object
+description: >-
+  The spending rule in force for an agent. Every card the agent issued checks
+  each purchase against it.
+required:
+  - id
+  - agentId
+  - writtenText
+  - restatement
+  - ruleHash
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: >-
+      System-generated unique identifier of the agent's rule. It stays the
+      same when the rule is replaced, and when it is removed and a rule is
+      later put in force again, so totals and the owner's answers carry on.
+    example: SpendingRule:019542f5-b3e7-1d02-0000-000000000301
+  agentId:
+    type: string
+    description: The agent whose cards the rule applies to.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000042
+  writtenText:
+    type: string
+    description: >-
+      The text the rule was written from. Untrusted text: escape it before
+      display.
+    example: Up to $20 a purchase at coffee shops, and nothing else.
+  rule:
+    $ref: ./SpendingRuleSpec.yaml
+    description: >-
+      The rule as structured data. Absent only for a rule Lightspark put in
+      force in an earlier shape, which `restatement` still describes. Its
+      bounds were checked when it was written.
+  statement:
+    type: string
+    maxLength: 500
+    description: >-
+      A plain statement every merchant must also satisfy, judged by a model.
+      Absent when the rule has none. Untrusted text: escape it before display.
+    example: The merchant is a coffee shop
+  restatement:
+    type: array
+    description: >-
+      What the rule does, in plain sentences, as `SpendingRuleDraft`
+      describes. Escape every sentence before display.
+    items:
+      type: string
+    example:
+      - >-
+        Amounts are in USD. A purchase in another currency that must be
+        checked against an amount needs the owner's approval.
+      - Anything else is declined.
+  ruleHash:
+    type: string
+    pattern: '^[0-9a-f]{64}$'
+    description: >-
+      SHA-256 of the rule and `statement`, in lowercase hex. For a rule put in
+      force from a draft it is that draft's `ruleHash`. A rule Lightspark put
+      in force, or carried over from another agent with a card, has one too.
+    example: 3f5a1c0e9b7d2a4c6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d
+  createdAt:
+    type: string
+    format: date-time
+    description: When the agent was first given a rule.
+    example: '2026-11-01T12:00:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When this version of the rule was put in force.
+    example: '2026-11-16T15:04:00Z'

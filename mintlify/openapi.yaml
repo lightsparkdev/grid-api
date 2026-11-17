@@ -10049,6 +10049,8 @@ paths:
         An `EXECUTE_QUOTE` action with `priceTolerance` whose quote is still live executes that quote, as shown. Once its quote has expired, approval quotes the send again and runs every check against the new quote and its amount. When the new price is no worse for the customer than `priceTolerance` allows, Grid executes the new quote and the action transitions to `APPROVED` with it as `quote`. When it is worse by more, nothing is sent: the response is `200` with status still `PENDING_APPROVAL`, the new `quote`, and `previousQuote` set to the quote the customer was shown, so they can be asked again; approving again repeats the check against the new quote. A send Grid can no longer quote fails with the matching `failureReason`, and one past its `expiresAt` with `APPROVAL_EXPIRED`.
         For `ISSUE_PURCHASE_CARD` actions, approval issues the purchase card and the action carries its `cardId`. When `purchaseCard.increaseCardId` is set, approval instead raises that existing card to the new amount and limit. The card's limit is checked against the agent's policy again first; an action past its `expiresAt` fails with `APPROVAL_EXPIRED`, one the policy now denies with `POLICY_DENIED`, a paused or deleted agent with `AGENT_INACTIVE`, and one the card issuer refuses with `EXECUTION_FAILED`.
         For `USE_STORED_CARD` actions, approval lets the agent collect one single-use link to the card's details. A use with `storedCardUse.needsCvc` needs `storedCardCvc`, the security code encrypted by Evervault's Card component; without it the request is refused with `400`. `autoApproveMerchant` also lets the agent use the card at the same merchant again, up to the same amount, without asking. Grid cannot verify the customer here: confirm the decision with them (for example with a passkey or an emailed code) before calling. An action past its `expiresAt` fails with `APPROVAL_EXPIRED`, and one whose card was removed, or whose agent lost access or is paused or deleted, with `AGENT_INACTIVE`.
+        For `SET_SPENDING_RULE` actions, approval puts the spending rule the agent proposed in force for every card the agent issued, exactly as `spendingRuleDraft.ruleHash` binds it, replacing the agent's rule. Show the customer every sentence of `spendingRuleDraft.restatement` and confirm the decision with them before calling. A draft that can no longer be confirmed fails the action with `DRAFT_STALE`, and an action past its `expiresAt` with `APPROVAL_EXPIRED`.
+        For `SPENDING_RULE_QUESTION` actions, approval remembers the customer's yes about the merchant in `spendingRuleQuestion`, for the bucket it names and up to `spendingRuleQuestion.upToAmount` when that is set. No money moves: the agent makes the purchase again. Rejecting remembers a no.
         This endpoint is called by the platform's backend using platform credentials, not by the agent itself.
       operationId: approveAgentAction
       tags:
@@ -10356,6 +10358,798 @@ paths:
                 $ref: '#/components/schemas/Error403'
         '404':
           description: Agent or external account not found for this platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/spending-rule:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get an agent's spending rule
+      description: The spending rule in force for every card the agent issued, with its restatement in plain sentences.
+      operationId: getAgentSpendingRule
+      x-hidden: true
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRule'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, or spending rules are not (`SPENDING_RULES_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent not found, or the agent has no rule in force (`SPENDING_RULE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    put:
+      summary: Confirm an agent's spending rule
+      description: |
+        Put a proposed draft in force for every card the agent issued, replacing
+        the agent's rule. Send the draft's `ruleHash` as you read it with the
+        restatement you showed. By calling, the platform confirms that the person
+        the rule is for has seen every sentence of that restatement and agreed to
+        it. A draft the agent proposed is confirmed by its owner through a
+        `SET_SPENDING_RULE` agent action instead.
+
+        The draft must be the agent's, `PROPOSED`, unexpired, proposed while the
+        agent's current rule was in force (or while it had none), and hash to
+        `ruleHash`, and its rule's `validUntil` must not have passed. Confirming
+        withdraws the agent's other proposed drafts. Running totals and the
+        owner's answers about merchants are kept by bucket `key`, so they carry
+        on into the new rule for buckets of the same name.
+      operationId: confirmAgentSpendingRule
+      x-hidden: true
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpendingRuleConfirmRequest'
+            examples:
+              confirm:
+                summary: Confirm a proposed draft
+                value:
+                  draftId: SpendingRuleDraft:019542f5-b3e7-1d02-0000-000000000201
+                  ruleHash: 3f5a1c0e9b7d2a4c6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d
+      responses:
+        '200':
+          description: The rule now in force
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRule'
+        '400':
+          description: Bad request - The body is invalid, or the rule no longer passes Grid's checks. Nothing changes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, or spending rules are not (`SPENDING_RULES_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent not found, or the draft is not one of the agent's (`SPENDING_RULE_DRAFT_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The draft can no longer be confirmed (`SPENDING_RULE_DRAFT_STALE`, with `details.staleReason`). Nothing changes. Propose the rule again and show the new restatement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+              example:
+                code: SPENDING_RULE_DRAFT_STALE
+                reason: The spending rule draft cannot be confirmed because it has expired.
+                details:
+                  staleReason: EXPIRED
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Remove an agent's spending rule
+      description: Take the agent's spending rule out of force, so its cards check purchases as if it had none, and withdraw its proposed drafts. Running totals and the owner's answers about merchants are kept, and carry on if a rule is put in force again.
+      operationId: deleteAgentSpendingRule
+      x-hidden: true
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Rule removed
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, or spending rules are not (`SPENDING_RULES_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent not found, or the agent has no rule in force (`SPENDING_RULE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/spending-rule/drafts:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Propose a spending rule for an agent
+      description: |
+        Propose a spending rule for every card the agent issued, written as a
+        sentence or as structured data. Nothing is put in force: the draft
+        returned carries the rule, its restatement in plain sentences and the
+        `ruleHash` to confirm it with `PUT /agents/{agentId}/spending-rule`, once
+        the person the rule is for has read the restatement.
+
+        **From text:** send `text` alone, and `timeZone` when the text speaks of
+        days, weeks, months or hours. Grid first checks that the text is a rule
+        about purchases and holds no instructions to the system, then writes the
+        rule, then checks the questions the rule asks about merchants. This can
+        take up to 90 seconds. Text that cannot be made into a rule is stored as
+        a `REFUSED` draft whose `refusal` says why, in fixed sentences that quote
+        the person's own words.
+
+        **Currency:** amounts in `text` are read in the agent's account
+        currency: the currency the agent's cards are charged in, which becomes
+        the rule's `currency`. The request carries no currency. A sentence that
+        names an amount in another currency is refused with code `OTHER`.
+
+        **Timing:** a proposal from text is one call that can take up to about
+        90 seconds. It is safe to retry with the same `Idempotency-Key`, which
+        returns the draft the first request stored rather than proposing again.
+
+        **As structured data:** send `rule`, `text` as what it was written from,
+        and `statement` if the rule has one. Grid checks the rule as it would one
+        it wrote. A question or statement that reads as instructions to the model
+        that judges merchants is stored as a `REFUSED` draft with code
+        `INSTRUCTIONS_IN_QUESTION`.
+
+        **Limits:** at most ten drafts that could still be confirmed (proposed,
+        unexpired, and proposed while the agent's current rule was in force) can
+        await confirmation for an agent at once. Three drafts within 24 hours whose text or questions read
+        as instructions to the system pause the agent's proposals until 24 hours
+        after the last of them. One proposal for an agent is read at a time.
+
+        The draft's `origin` is `PLATFORM`.
+      operationId: createAgentSpendingRuleDraft
+      x-hidden: true
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: A unique identifier for the draft, scoped to the agent. A retry with the same key and body returns the draft the first request stored rather than proposing the rule again; the same key with a different body is rejected with `400`.
+          schema:
+            type: string
+            maxLength: 255
+            example: <uuid>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpendingRuleDraftCreateRequest'
+            examples:
+              fromText:
+                summary: Propose a rule from a sentence
+                value:
+                  text: Up to $20 a purchase at coffee shops, and nothing else.
+                  timeZone: America/New_York
+              structured:
+                summary: Propose a structured rule
+                value:
+                  text: Pizza up to $500 ever, gambling up to $100 ever, coffee at most $20 a purchase, nothing else.
+                  rule:
+                    schemaVersion: 2
+                    currency: USD
+                    buckets:
+                      - key: pizza
+                        match:
+                          question: The merchant sells pizza
+                        limits:
+                          total:
+                            amount: 50000
+                            period: LIFETIME
+                      - key: gambling
+                        match:
+                          categories:
+                            - '7995'
+                        limits:
+                          total:
+                            amount: 10000
+                            period: LIFETIME
+                      - key: coffee
+                        match:
+                          question: The merchant is a coffee shop
+                        limits:
+                          perPurchase: 2000
+                    unmatched:
+                      action: DECLINE
+      responses:
+        '201':
+          description: Draft stored, `PROPOSED` with a rule to confirm or `REFUSED` with why no rule could be made
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRuleDraft'
+        '400':
+          description: Bad request - The body is invalid; `text` is blank, too long or holds control or invisible characters; `timeZone` is not one Grid accepts, or is sent with `rule`; `statement` is sent without `rule`; or the rule fails a check, such as a missing `currency` or `timeZone`, an amount over the bound, more than four questions, or a `validUntil` that has passed; the agent's card currency is not one a rule may hold; or the Idempotency-Key was used for a different body. `reason` says which, in a sentence for the person who wrote the rule. Nothing is stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, spending rules are not (`details.refusalReason` is `SPENDING_RULES_DISABLED`), or the agent's proposals are paused (`SPENDING_RULE_PROPOSALS_PAUSED`). Nothing is stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - Ten drafts that could still be confirmed already await confirmation for the agent (`SPENDING_RULE_PROPOSAL_LIMIT_REACHED`). Nothing is stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests - Another proposal for the agent is still being read (`RATE_LIMITED`). Retry after it returns
+          headers:
+            Retry-After:
+              description: Number of seconds to wait before retrying the request.
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '503':
+          description: Service unavailable - The rule's questions could not be checked just now (`SERVICE_UNAVAILABLE`). Nothing is stored. Propose it again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
+    get:
+      summary: List an agent's spending rule drafts
+      description: 'The agent''s spending rule drafts, most recently proposed first: proposals awaiting confirmation, refusals and the drafts that were confirmed or withdrawn. A `PROPOSED` draft past its `expiresAt` can no longer be confirmed.'
+      operationId: listAgentSpendingRuleDrafts
+      x-hidden: true
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Only drafts in this status
+          required: false
+          schema:
+            $ref: '#/components/schemas/SpendingRuleDraftStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRuleDraftListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, or spending rules are not (`SPENDING_RULES_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/spending-rule/drafts/{draftId}:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+      - name: draftId
+        in: path
+        description: System-generated unique spending rule draft identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get an agent's spending rule draft
+      description: One of the agent's spending rule drafts, as it was proposed.
+      operationId: getAgentSpendingRuleDraft
+      x-hidden: true
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRuleDraft'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, or spending rules are not (`SPENDING_RULES_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent not found, or the draft is not one of the agent's (`SPENDING_RULE_DRAFT_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/spending-rule/decisions:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: List an agent's spending rule decisions
+      description: 'What the agent''s spending rule said about recent authorizations on its cards, most recent first: the outcome, the parts of the rule that decided it, the reason in a plain sentence and the merchant as the card network reported it. Use it to explain a decline. The list is a best-effort log: under heavy load a decision may not be recorded. Merchant fields are untrusted text the merchant controls; escape them before display.'
+      operationId: listAgentSpendingRuleDecisions
+      x-hidden: true
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRuleDecisionListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, or spending rules are not (`SPENDING_RULES_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/spending-rule/usage:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get an agent's spending rule usage
+      description: How much of each running total, purchase count and single use of the agent's rule in force has been used, in the window that holds the time of the request. What is held for a pending purchase and what settles both count; a refund after a purchase settles gives nothing back.
+      operationId: getAgentSpendingRuleUsage
+      x-hidden: true
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRuleUsage'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, or spending rules are not (`SPENDING_RULES_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent not found, or the agent has no rule in force (`SPENDING_RULE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/spending-rule/merchants:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: List the owner's answers about merchants
+      description: The answers the agent's owner gave about whether the agent may buy from a merchant, kept for the agent's rule, most recently changed first. An answer is given by approving or rejecting a `SPENDING_RULE_QUESTION` agent action, or recorded with `POST` on this path. Merchant fields are untrusted text the merchant controls; escape them before display.
+      operationId: listAgentSpendingRuleMerchantAnswers
+      x-hidden: true
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Only answers in this status. Without it, every answer that is not `REMOVED`.
+          required: false
+          schema:
+            $ref: '#/components/schemas/SpendingRuleMerchantAnswerStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRuleMerchantAnswerListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, or spending rules are not (`SPENDING_RULES_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    post:
+      summary: Record the owner's answer about a merchant
+      description: |
+        Record the owner's yes or no about whether the agent may buy from a
+        merchant, for one bucket of the agent's rule in force or for purchases
+        that match no bucket, as approving or rejecting a `SPENDING_RULE_QUESTION`
+        agent action would. By calling, the platform confirms that the agent's
+        owner gave this answer. Grid records the platform's API credentials as
+        who decided.
+
+        The answer decides only a purchase that needs the owner's approval
+        because of that bucket, its `question` or the rule's `statement`: a no
+        declines it, and a yes approves it only if every other part of the rule
+        allows it. It applies to the same merchant as `SpendingRuleMerchantAnswer`
+        describes.
+
+        An agent's rule keeps one answer per merchant and bucket. Recording for a
+        merchant and bucket that already has an answer, in any status including
+        `PENDING` and `REMOVED`, replaces it in place, keeping its `id`, and
+        answers `200`. Only the first answer for a merchant and bucket answers
+        `201`. Nothing moves money: a purchase that was declined must be made
+        again.
+
+        `merchantDescriptor` comes back as given, and is untrusted text the
+        merchant controls: escape it before display.
+      operationId: createAgentSpendingRuleMerchantAnswer
+      x-hidden: true
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpendingRuleMerchantAnswerCreateRequest'
+            examples:
+              yesUpToAnAmount:
+                summary: Allow a merchant in a bucket the amount helps choose
+                value:
+                  merchantDescriptor: JOES PIZZA 1234
+                  merchantCategoryCode: '5814'
+                  bucketKey: pizza
+                  approved: true
+                  upToAmount: 2500
+              'no':
+                summary: Refuse a merchant for purchases matching no bucket
+                value:
+                  merchantDescriptor: LUCKY SLOTS ONLINE
+                  merchantCategoryCode: '7995'
+                  bucketKey: (unmatched)
+                  approved: false
+      responses:
+        '200':
+          description: The answer this merchant and bucket already had, in any status, was replaced in place and keeps its `id`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRuleMerchantAnswer'
+        '201':
+          description: The first answer for this merchant and bucket was recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRuleMerchantAnswer'
+        '400':
+          description: 'Bad request - Nothing is recorded, and `reason` says which of these it was: the body is invalid; `merchantDescriptor` is too long, holds control or invisible formatting characters, or names no merchant; `merchantCategoryCode` is not a category code; `bucketKey` is not a bucket of the rule in force, or is one that never asks the owner; `upToAmount` is sent with a no, is over the bound, or is sent on a rule with no `currency`; a yes leaves out `upToAmount` where the purchase''s amount can decide the bucket; or the rule in force cannot be checked at a purchase'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, or spending rules are not (`SPENDING_RULES_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent not found, or the agent has no rule in force (`SPENDING_RULE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/{agentId}/spending-rule/merchants/{merchantAnswerId}:
+    parameters:
+      - name: agentId
+        in: path
+        description: System-generated unique agent identifier
+        required: true
+        schema:
+          type: string
+      - name: merchantAnswerId
+        in: path
+        description: System-generated unique identifier of the owner's answer about a merchant
+        required: true
+        schema:
+          type: string
+    delete:
+      summary: Remove the owner's answer about a merchant
+      description: Forget the owner's answer about a merchant, so its status becomes `REMOVED` and the next purchase there that needs the owner's approval is declined and asks again. Removing an answer that is already `REMOVED` succeeds and changes nothing.
+      operationId: deleteAgentSpendingRuleMerchantAnswer
+      x-hidden: true
+      tags:
+        - Agent Management
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Answer removed
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, or spending rules are not (`SPENDING_RULES_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Agent not found, or the answer is not one kept for the agent (`SPENDING_RULE_MERCHANT_ANSWER_NOT_FOUND`)
           content:
             application/json:
               schema:
@@ -12310,6 +13104,222 @@ paths:
                 $ref: '#/components/schemas/Error404'
         '409':
           description: Conflict - The execution is not held
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/spending-rule:
+    get:
+      summary: Get the agent's own spending rule
+      description: The spending rule in force for every card the authenticated agent issued, with its restatement in plain sentences. Read it to know which purchases its cards will decline before making them.
+      operationId: agentGetSpendingRule
+      x-hidden: true
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRule'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, or spending rules are not (`SPENDING_RULES_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: The agent has no rule in force (`SPENDING_RULE_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /agents/me/spending-rule/drafts:
+    post:
+      summary: Propose a spending rule for the agent's own cards
+      description: |
+        Propose a spending rule for every card the authenticated agent issued,
+        from a sentence or as structured data, as
+        `POST /agents/{agentId}/spending-rule/drafts` does. The draft's `origin`
+        is `AGENT`. Amounts in `text` are read in the agent's account currency,
+        and a sentence naming another currency is refused with code `OTHER`. A
+        proposal from text can take up to about 90 seconds and is safe to retry
+        with the same `Idempotency-Key`.
+
+        A rule the agent proposes never takes effect on its own: only its owner
+        can put it in force. Show the owner the draft's `restatement`, then ask
+        for their approval with
+        `POST /agents/me/spending-rule/drafts/{draftId}/submit`. The agent has no
+        way to confirm or remove a rule itself.
+      operationId: agentCreateSpendingRuleDraft
+      x-hidden: true
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: A unique identifier for the draft, scoped to the agent. A retry with the same key and body returns the draft the first request stored rather than proposing the rule again; the same key with a different body is rejected with `400`.
+          schema:
+            type: string
+            maxLength: 255
+            example: <uuid>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpendingRuleDraftCreateRequest'
+            examples:
+              fromText:
+                summary: Propose a rule from the owner's words
+                value:
+                  text: Only buy groceries, at most $150 a week.
+                  timeZone: America/Chicago
+      responses:
+        '201':
+          description: Draft stored, `PROPOSED` with a rule to submit to the owner or `REFUSED` with why no rule could be made
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingRuleDraft'
+        '400':
+          description: Bad request - As for `POST /agents/{agentId}/spending-rule/drafts`, including an Idempotency-Key used for a different body. Nothing is stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, spending rules are not (`SPENDING_RULES_DISABLED`), or the agent's proposals are paused (`SPENDING_RULE_PROPOSALS_PAUSED`). Nothing is stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: The agent was deleted while the proposal was being read. Nothing is stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - Ten drafts that could still be confirmed already await confirmation for the agent (`SPENDING_RULE_PROPOSAL_LIMIT_REACHED`). Nothing is stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests - Another proposal for the agent is still being read (`RATE_LIMITED`). Retry after it returns
+          headers:
+            Retry-After:
+              description: Number of seconds to wait before retrying the request.
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '503':
+          description: Service unavailable - The rule's questions could not be checked just now (`SERVICE_UNAVAILABLE`). Nothing is stored. Propose it again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
+  /agents/me/spending-rule/drafts/{draftId}/submit:
+    parameters:
+      - name: draftId
+        in: path
+        description: System-generated unique spending rule draft identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Ask the owner to confirm a proposed spending rule
+      description: |
+        Ask the agent's owner to put a draft the agent proposed in force. Grid
+        creates a `SET_SPENDING_RULE` agent action, `PENDING_APPROVAL`, carrying
+        the draft and its restatement, and the `AGENT_ACTION.PENDING_APPROVAL`
+        webhook fires. Approving the action puts the rule in force exactly as the
+        draft's `ruleHash` binds it; rejecting it, or letting it expire with the
+        draft, leaves the agent's rule as it is. Poll the action with
+        `GET /agents/me/actions/{actionId}`.
+
+        The draft must be one this agent proposed, `PROPOSED`, unexpired and
+        proposed while the agent's current rule was in force. Submitting a draft
+        that already awaits its owner returns that pending action.
+      operationId: agentSubmitSpendingRuleDraft
+      x-hidden: true
+      tags:
+        - Agent Operations
+      security:
+        - AgentAuth: []
+      responses:
+        '200':
+          description: The draft already awaits its owner; its pending action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
+        '201':
+          description: Action created, `PENDING_APPROVAL`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAction'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - Agents API is not enabled for the platform, or spending rules are not (`SPENDING_RULES_DISABLED`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: The draft is not one this agent proposed (`SPENDING_RULE_DRAFT_NOT_FOUND`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The draft can no longer be confirmed (`SPENDING_RULE_DRAFT_STALE`, with `details.staleReason`). Propose the rule again
           content:
             application/json:
               schema:
@@ -20723,6 +21733,8 @@ components:
         | `INVOICE_SUB_SAT_AMOUNT` | 400 | The Lightning invoice's amount is not a whole number of satoshis |
         | `INVOICE_FUNDS_DEPOSIT` | 400 | The Lightning invoice was issued by Lightspark to fund a deposit and cannot be paid with a send |
         | `INVOICE_FUNDS_OWN_DEPOSIT` | 400 | The Lightning invoice funds a deposit of the sender's own. Quote a transfer between the customer's accounts instead |
+        | `SPENDING_RULES_DISABLED` | 403 | Spending rules for agents are not enabled for the platform |
+        | `SPENDING_RULE_PROPOSALS_PAUSED` | 403 | The agent's spending rule proposals are paused for a time. Try again later |
       example: AGENT_POLICY_DENIED
     Error400:
       type: object
@@ -22249,6 +23261,8 @@ components:
             | PAYMENT_DOCUMENT_ALREADY_USED | The payment document is already attached to a quote. A document can be used on one quote only, so upload the file again to use it on another quote. `details.documentIds` lists each such document |
             | INVOICE_ALREADY_USED | Another quote for the Lightning invoice can still be executed or funded, or was executed. An invoice has one live quote at a time; ask the recipient for a new one, or retry once Grid has closed the earlier quote as expired |
             | DEPOSIT_NOT_PENDING | The deposit is not waiting for authorization (already authorized, expired or failed) |
+            | SPENDING_RULE_DRAFT_STALE | The spending rule draft can no longer be confirmed or submitted. `details.staleReason`, a string, says why, as one of these upper-case values: `NOT_PROPOSED` (it was refused, confirmed or withdrawn), `EXPIRED`, `RULE_CHANGED` (the `ruleHash` sent is not the draft's, or the draft's stored rule no longer hashes to it), `IN_FORCE_CHANGED` (the agent's rule was replaced or removed since the draft was proposed) or `VALIDITY_ENDED` (the rule's `validUntil` has passed). Propose the rule again, and show the new restatement |
+            | SPENDING_RULE_PROPOSAL_LIMIT_REACHED | Ten spending rule drafts that could still be confirmed already await confirmation for the agent: proposed, unexpired, and proposed while its current rule was in force. Confirm one, or wait for some to expire, then propose again |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
             - TRANSACTION_NOT_CANCELLABLE
@@ -22281,6 +23295,8 @@ components:
             - PAYMENT_DOCUMENT_ALREADY_USED
             - INVOICE_ALREADY_USED
             - DEPOSIT_NOT_PENDING
+            - SPENDING_RULE_DRAFT_STALE
+            - SPENDING_RULE_PROPOSAL_LIMIT_REACHED
         reason:
           type: string
           description: Error message
@@ -22323,6 +23339,9 @@ components:
             | STABLECOIN_OPERATION_NOT_FOUND | Stablecoin operation not found |
             | VERIFICATION_NOT_FOUND | Verification not found |
             | PAYMENT_DOCUMENT_NOT_FOUND | Payment document not found. On `POST /quotes`, `details.documentIds` lists each ID in `documentIds` that matches no document of the sender |
+            | SPENDING_RULE_NOT_FOUND | The agent has no spending rule in force |
+            | SPENDING_RULE_DRAFT_NOT_FOUND | Spending rule draft not found for this agent |
+            | SPENDING_RULE_MERCHANT_ANSWER_NOT_FOUND | The owner's answer about a merchant was not found for this agent |
           enum:
             - TRANSACTION_NOT_FOUND
             - INVITATION_NOT_FOUND
@@ -22348,6 +23367,9 @@ components:
             - STABLECOIN_OPERATION_NOT_FOUND
             - VERIFICATION_NOT_FOUND
             - PAYMENT_DOCUMENT_NOT_FOUND
+            - SPENDING_RULE_NOT_FOUND
+            - SPENDING_RULE_DRAFT_NOT_FOUND
+            - SPENDING_RULE_MERCHANT_ANSWER_NOT_FOUND
         reason:
           type: string
           description: Error message
@@ -35969,6 +36991,8 @@ components:
         - CREATE_SETTLEMENT_RULE
         - UPDATE_SETTLEMENT_RULE
         - PAYOUT_RUN
+        - SET_SPENDING_RULE
+        - SPENDING_RULE_QUESTION
       description: |
         The type of action the agent is requesting.
 
@@ -35981,6 +37005,8 @@ components:
         | `CREATE_SETTLEMENT_RULE` | Make a settlement rule the agent proposed `ACTIVE`. See `settlementRule` |
         | `UPDATE_SETTLEMENT_RULE` | Change the match, shares or limits of a settlement rule the agent created. See `settlementRule` |
         | `PAYOUT_RUN` | Start a payout run the agent created. See `payoutRun` |
+        | `SET_SPENDING_RULE` | Put in force a spending rule the agent proposed for its own cards. See `spendingRuleDraft` |
+        | `SPENDING_RULE_QUESTION` | Answer whether the agent may buy from a merchant, which its spending rule asks the owner. See `spendingRuleQuestion` |
     AgentSendNetwork:
       type: string
       enum:
@@ -36730,6 +37756,102 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AgentActionPayoutRunRow'
+    AgentActionSpendingRuleDraft:
+      type: object
+      description: A spending rule the agent proposed for its own cards, as the owner is asked to confirm it.
+      required:
+        - draftId
+        - writtenText
+        - restatement
+        - ruleHash
+      properties:
+        draftId:
+          type: string
+          description: The proposed draft the action would put in force.
+          example: SpendingRuleDraft:019542f5-b3e7-1d02-0000-000000000201
+        writtenText:
+          type: string
+          description: 'The text the rule was written from, exactly as the agent submitted it. Untrusted text: escape it before display.'
+          example: Only buy groceries, at most $150 a week.
+        statement:
+          type: string
+          maxLength: 500
+          description: 'A plain statement every merchant must also satisfy, judged by a model. Absent when the rule has none. Untrusted text: escape it before display.'
+          example: The merchant is a grocery store
+        restatement:
+          type: array
+          description: 'What the rule does, in plain sentences. Show the owner every sentence. Merchant names, questions and the statement appear inside quotation marks and are untrusted text: escape every sentence before display.'
+          items:
+            type: string
+          example:
+            - Amounts are in USD. A purchase in another currency that must be checked against an amount needs the owner's approval.
+            - Anything else is declined.
+        ruleHash:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+          description: SHA-256 of the rule and `statement`, in lowercase hex. Approving puts in force only the rule that hashes to it.
+          example: 3f5a1c0e9b7d2a4c6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d
+    AgentActionSpendingRuleQuestion:
+      type: object
+      description: A purchase on one of the agent's cards that the agent's spending rule declined because it needs the owner's approval for the merchant. The question is whether the agent may buy from this merchant in the bucket `bucketKey`. The answer is remembered for later purchases there; it does not approve the declined purchase, which the agent must make again.
+      required:
+        - merchantAnswerId
+        - merchantDescriptor
+        - bucketKey
+        - amount
+        - currency
+        - reason
+      properties:
+        merchantAnswerId:
+          type: string
+          description: The id the owner's answer is kept under.
+          example: SpendingRuleMerchantAnswer:019542f5-b3e7-1d02-0000-000000000501
+        cardId:
+          type: string
+          description: The card the purchase was made on.
+          example: Card:019542f5-b3e7-1d02-0000-000000000011
+        merchantDescriptor:
+          type: string
+          description: 'The merchant''s name as the card network reported it. Untrusted text that the merchant controls: escape it before display.'
+          example: JOES PIZZA 1234
+        merchantCategoryCode:
+          type: string
+          description: The merchant category code as the card network reported it, when it did.
+          example: '5814'
+        merchantCity:
+          type: string
+          description: 'The merchant''s city as the card network reported it, when it did. Untrusted text: escape it before display.'
+          example: Brooklyn
+        merchantCountry:
+          type: string
+          description: The merchant's country as the card network reported it, when it did.
+          example: USA
+        bucketKey:
+          type: string
+          description: The `key` of the bucket of the rule the purchase fell in, or `(unmatched)` when it matched no bucket.
+          example: pizza
+        amount:
+          type: integer
+          format: int64
+          description: The purchase's amount, in the smallest unit of `currency`, the purchase's own currency.
+          example: 2500
+        currency:
+          type: string
+          description: ISO 4217 code of `amount`, the currency the card was charged in.
+          example: USD
+        upToAmount:
+          type: integer
+          format: int64
+          description: Present when the purchase's amount helped place it in the bucket. Approving then allows purchases at this merchant up to this amount, in the smallest unit of `upToCurrency`, the rule's currency.
+          example: 2500
+        upToCurrency:
+          type: string
+          description: 'ISO 4217 code of `upToAmount`: the rule''s currency. Present with `upToAmount`. Grid asks with an amount only about a purchase in the rule''s currency, so it is the same as `currency`.'
+          example: USD
+        reason:
+          type: string
+          description: Why the rule needed the owner's approval, in a plain sentence. Escape it before display.
+          example: Needs the owner's approval because the spending rule's judgement was unsure
     AgentActionFailureReason:
       type: string
       enum:
@@ -36742,6 +37864,7 @@ components:
         - APPROVAL_EXPIRED
         - DELETED_BY_AGENT
         - AGENT_CANCELLED
+        - DRAFT_STALE
       description: |
         Why an agent action has status `FAILED`.
 
@@ -36753,9 +37876,10 @@ components:
         | `EXECUTION_FAILED` | Grid could not execute the approved action. For `ISSUE_PURCHASE_CARD`, the card issuer did not issue the card |
         | `PRICE_MOVED` | Reserved and legacy. Quotes to a `CHAIN_ADDRESS` pay out at a locked rate and no longer fail with this reason |
         | `ADDRESS_REFUSED` | Grid refused the send's destination before it signed the send: the destination is no longer one the agent may send to (for example, a Spark address or bank account removed from the customer's saved accounts), or one of the customer's records of the address was refused or is held for review. A `CHAIN_ADDRESS` that screening refuses fails with `EXECUTION_FAILED` |
-        | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD`, `CREATE_SETTLEMENT_RULE`, `UPDATE_SETTLEMENT_RULE` or `PAYOUT_RUN` action, or an `EXECUTE_QUOTE` action with `priceTolerance`, was not approved before its `expiresAt` |
+        | `APPROVAL_EXPIRED` | An `ISSUE_PURCHASE_CARD`, `CREATE_SETTLEMENT_RULE`, `UPDATE_SETTLEMENT_RULE`, `PAYOUT_RUN`, `SET_SPENDING_RULE` or `SPENDING_RULE_QUESTION` action, or an `EXECUTE_QUOTE` action with `priceTolerance`, was not approved before its `expiresAt` |
         | `DELETED_BY_AGENT` | The agent deleted the settlement rule a `CREATE_SETTLEMENT_RULE` or `UPDATE_SETTLEMENT_RULE` action would make or change before the action was decided |
         | `AGENT_CANCELLED` | The agent cancelled the payout run a `PAYOUT_RUN` action would start before the action was decided |
+        | `DRAFT_STALE` | The spending rule draft a `SET_SPENDING_RULE` action would put in force could no longer be confirmed: the agent's rule was replaced or removed, or the rule's `validUntil` passed, after the agent proposed it |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -36816,6 +37940,12 @@ components:
         payoutRun:
           $ref: '#/components/schemas/AgentActionPayoutRun'
           description: The payout run the agent created, so an approval decision can show every row. Present for `PAYOUT_RUN`. Approving the action starts the run; rejecting it, or letting it expire, cancels the run and skips every row. The approval covers each row's own approval, so no row waits for another.
+        spendingRuleDraft:
+          $ref: '#/components/schemas/AgentActionSpendingRuleDraft'
+          description: The spending rule the agent proposed for its own cards, so an approval decision can show its restatement. Present for `SET_SPENDING_RULE`. Show the owner every sentence of its `restatement`. Approving the action puts the rule in force exactly as its `ruleHash` binds it, replacing the agent's rule; rejecting it, or letting it expire, leaves the agent's rule as it is. A draft that can no longer be confirmed fails the action with `DRAFT_STALE`.
+        spendingRuleQuestion:
+          $ref: '#/components/schemas/AgentActionSpendingRuleQuestion'
+          description: 'The merchant the agent''s spending rule asks the owner about, and the purchase that asked. Present for `SPENDING_RULE_QUESTION`. Approving the action remembers a yes for purchases at this merchant in the bucket, up to `upToAmount` when it is set; rejecting it remembers a no. Letting it expire remembers nothing, and the next purchase there asks again. No money moves on approval: the agent makes the purchase again.'
         cardId:
           type: string
           description: The purchase card the action issued, or for an increase the card whose amount it raised. Present for an `ISSUE_PURCHASE_CARD` action once it is `APPROVED` and the card is issued or increased; read it with `GET /agents/me/cards/{cardId}`.
@@ -36834,7 +37964,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: 'When the action expires. For an `EXECUTE_QUOTE` action with `priceTolerance`, this is the end of the platform''s approval window, independent of the quote''s own expiry: approval executes a live quote and quotes the send again once it has expired, and a pending action that reaches this time fails with `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the quote''s own expiry; a pending action that reaches it fails with `QUOTE_EXPIRED`, and approval never creates a replacement quote. For `ISSUE_PURCHASE_CARD`, `USE_STORED_CARD`, `CREATE_SETTLEMENT_RULE`, `UPDATE_SETTLEMENT_RULE` and `PAYOUT_RUN`, this is the end of the approval window, after which a pending action fails with `APPROVAL_EXPIRED`; a settlement rule''s window is seven days, and a payout run''s 24 hours.'
+          description: 'When the action expires. For an `EXECUTE_QUOTE` action with `priceTolerance`, this is the end of the platform''s approval window, independent of the quote''s own expiry: approval executes a live quote and quotes the send again once it has expired, and a pending action that reaches this time fails with `APPROVAL_EXPIRED`. For any other `EXECUTE_QUOTE` action, this is the quote''s own expiry; a pending action that reaches it fails with `QUOTE_EXPIRED`, and approval never creates a replacement quote. For `ISSUE_PURCHASE_CARD`, `USE_STORED_CARD`, `CREATE_SETTLEMENT_RULE`, `UPDATE_SETTLEMENT_RULE`, `PAYOUT_RUN`, `SET_SPENDING_RULE` and `SPENDING_RULE_QUESTION`, this is the end of the approval window, after which a pending action fails with `APPROVAL_EXPIRED`; a settlement rule''s window is seven days, a payout run''s and a spending rule question''s 24 hours, and a spending rule''s the draft''s own `expiresAt`.'
           example: '2025-10-03T15:05:00Z'
         createdAt:
           type: string
@@ -37854,6 +38984,1076 @@ components:
           format: date-time
           description: When the platform validated the account and matched its owner.
           example: '2026-10-09T17:55:00Z'
+    SpendingRuleAfterValidity:
+      type: string
+      enum:
+        - DECLINE
+        - STOP_APPLYING
+      description: |
+        What the rule does with a purchase before `validFrom` or from `validUntil` on.
+
+        | Value | Description |
+        |-------|-------------|
+        | `DECLINE` | Decline it |
+        | `STOP_APPLYING` | Leave it to the card's other controls, as if the agent had no rule |
+    SpendingRulePeriod:
+      type: string
+      enum:
+        - LIFETIME
+        - DAY
+        - WEEK
+        - MONTH
+      description: |
+        The window a running total or purchase count adds up over. Days, weeks and
+        months are calendar ones in the rule's `timeZone`, and a week starts on
+        Monday.
+
+        | Period | Description |
+        |--------|-------------|
+        | `LIFETIME` | For as long as the rule is in force, and across later versions of it |
+        | `DAY` | Each calendar day |
+        | `WEEK` | Each calendar week, Monday to Sunday |
+        | `MONTH` | Each calendar month |
+    SpendingRuleTotalLimit:
+      type: object
+      description: At most `amount` spent over each `period`.
+      required:
+        - amount
+        - period
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 1000000000000000
+          description: The most that may be spent in one window, in the smallest unit of the rule's `currency`. What is held for a pending purchase and what settles both count; a refund after a purchase settles gives nothing back.
+          example: 50000
+        period:
+          $ref: '#/components/schemas/SpendingRulePeriod'
+    SpendingRuleCountLimit:
+      type: object
+      description: At most `max` purchases over each `period`.
+      required:
+        - max
+        - period
+      properties:
+        max:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The most purchases that may be made in one window. A purchase released with nothing settled no longer counts.
+          example: 3
+        period:
+          $ref: '#/components/schemas/SpendingRulePeriod'
+    SpendingRuleWeekday:
+      type: string
+      enum:
+        - MON
+        - TUE
+        - WED
+        - THU
+        - FRI
+        - SAT
+        - SUN
+      description: A day of the week, in the rule's `timeZone`.
+    SpendingRuleHours:
+      type: object
+      description: When in the week purchases may be made, in the rule's `timeZone`. Either a window of the day on some days, with `start` and `end`, or whole days, with `days` alone. An `end` before `start` runs past midnight into the next day. Whole days must leave out at least one day of the week, since all seven would allow every time.
+      properties:
+        start:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\.[0-9]{1,6})?)?$
+          description: Local time the window opens, as `HH:MM` or `HH:MM:SS`, with no UTC offset. Set together with `end`, and different from it, or leave both out for whole days. Grid returns it as `HH:MM:SS`, with any fractional seconds it was given.
+          example: '09:00:00'
+        end:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\.[0-9]{1,6})?)?$
+          description: Local time the window closes, as `HH:MM` or `HH:MM:SS`, with no UTC offset. Set together with `start`.
+          example: '17:00:00'
+        days:
+          type: array
+          minItems: 1
+          maxItems: 7
+          description: The days the window applies on, or the whole days purchases may be made on when `start` and `end` are left out. Defaults to every day. A day listed twice counts once. Grid returns the days sorted.
+          items:
+            $ref: '#/components/schemas/SpendingRuleWeekday'
+          example:
+            - MON
+            - TUE
+            - WED
+            - THU
+            - FRI
+    SpendingRuleMerchantMode:
+      type: string
+      enum:
+        - EXACT
+        - PREFIX
+      description: |
+        How a merchant name in a bucket is compared with the name the card network
+        reports. Both compare with case ignored, apostrophes dropped, every other
+        character that is not a letter or digit read as a space, and one leading
+        payment processor prefix such as `SQ *` removed.
+
+        | Mode | Description |
+        |------|-------------|
+        | `EXACT` | The reported name is the whole name, so a store number or city after it makes a different name |
+        | `PREFIX` | The reported name starts with the words of the name, and more words may follow |
+    SpendingRuleMerchantMatch:
+      type: object
+      description: A merchant a bucket matches by the name the card network reports.
+      required:
+        - name
+        - mode
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 'The merchant''s name. It must hold a letter or digit, no control or invisible formatting characters, and no payment processor''s prefix such as `SQ *`, since that prefix is ignored when names are compared. A name that is only a processor''s is refused: name the merchant instead. Text a person or agent wrote: escape it before display.'
+          example: Blue Bottle Coffee
+        mode:
+          $ref: '#/components/schemas/SpendingRuleMerchantMode'
+    SpendingRuleBucketMatch:
+      type: object
+      description: What a purchase must be to fall in a bucket. Every part that is set must hold. Only the last bucket may leave every part out and so match every purchase the buckets before it did not.
+      properties:
+        categories:
+          type: array
+          minItems: 1
+          description: Merchant category codes (ISO 18245) the purchase's merchant must have one of. A code listed twice counts once. Grid returns the codes sorted.
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '5814'
+        categoryRanges:
+          type: array
+          minItems: 1
+          maxItems: 10
+          description: Ranges of merchant category codes, each written as its first and last code, inclusive. The merchant's code must fall in one of them. A range must not start after it ends, and may not be listed twice. When `categories` is also set, at least one of its codes must fall in a range. Grid returns the ranges sorted.
+          items:
+            type: array
+            minItems: 2
+            maxItems: 2
+            items:
+              type: string
+              pattern: ^[0-9]{4}$
+          example:
+            - - '5812'
+              - '5814'
+        merchants:
+          type: array
+          minItems: 1
+          maxItems: 50
+          description: Merchants the purchase must be at one of, by name. Grid returns them sorted.
+          items:
+            $ref: '#/components/schemas/SpendingRuleMerchantMatch'
+        amountBelow:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 1000000000000000
+          description: The purchase must be less than this, in the smallest unit of the rule's `currency`. When `amountAbove` is also set, this must be at least 2 more, so a whole amount lies between them.
+          example: 10000
+        amountAbove:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 1000000000000000
+          description: The purchase must be more than this, in the smallest unit of the rule's `currency`.
+          example: 500
+        hours:
+          $ref: '#/components/schemas/SpendingRuleHours'
+        question:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: 'A plain statement about the merchant that a model judges from the merchant''s name, city, country and category as the card network reports them, such as `The merchant sells pizza`. It holds when the model agrees. When the model is unsure, the purchase needs the owner''s approval. The model cannot see the amount, the time or what is bought. Not blank, and no control or invisible formatting characters. Each distinct question counts toward the rule''s limit of four, with `statement`. Text a person or model wrote: escape it before display.'
+          example: The merchant sells pizza
+    SpendingRuleAction:
+      type: string
+      enum:
+        - APPROVE
+        - DECLINE
+        - ASK
+      description: |
+        What becomes of a purchase that falls in a bucket, or that matches no bucket.
+
+        | Action | Description |
+        |--------|-------------|
+        | `APPROVE` | Approve it, if every other part of the rule allows it |
+        | `DECLINE` | Decline it |
+        | `ASK` | It needs the owner's approval. The owner is not asked during a purchase, so the purchase is declined unless the owner has already answered about that merchant for this bucket |
+    SpendingRuleLimits:
+      type: object
+      description: Limits on the purchases that fall in a bucket, or that match no bucket. At least one limit is set. They apply whatever the bucket's action, and whatever the owner answered about a merchant.
+      minProperties: 1
+      properties:
+        perPurchase:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 1000000000000000
+          description: The most one purchase may be, in the smallest unit of the rule's `currency`.
+          example: 2000
+        total:
+          $ref: '#/components/schemas/SpendingRuleTotalLimit'
+        count:
+          $ref: '#/components/schemas/SpendingRuleCountLimit'
+    SpendingRuleBucket:
+      type: object
+      description: A group of purchases with its own action and limits. A purchase falls in the first bucket, in order, whose `match` holds.
+      required:
+        - key
+        - match
+      properties:
+        key:
+          type: string
+          pattern: ^[a-z0-9_]{1,32}$
+          description: 'The bucket''s name, unique within the rule: 1 to 32 lowercase letters, digits and underscores. Running totals and the owner''s answers about merchants are kept by it, so a later version of the rule with a bucket of the same name carries them on.'
+          example: coffee
+        match:
+          $ref: '#/components/schemas/SpendingRuleBucketMatch'
+        action:
+          $ref: '#/components/schemas/SpendingRuleAction'
+          description: What becomes of a purchase in this bucket. Defaults to `APPROVE`.
+        limits:
+          $ref: '#/components/schemas/SpendingRuleLimits'
+    SpendingRuleUnmatched:
+      type: object
+      description: What becomes of a purchase that matches no bucket.
+      properties:
+        action:
+          $ref: '#/components/schemas/SpendingRuleAction'
+          description: Defaults to `DECLINE`.
+        limits:
+          $ref: '#/components/schemas/SpendingRuleLimits'
+    SpendingRuleSpec:
+      type: object
+      description: |
+        A spending rule as structured data: the checks every card the agent issued
+        makes at each purchase, after the card's own controls. A rule can only
+        narrow what the card already allows.
+
+        A purchase is checked in this order:
+
+        1. Outside `validFrom` and `validUntil`, `afterValidity` decides it.
+        2. Every rule-wide part that is set must hold: `perPurchaseCap`,
+           `allowedCategories`, `blockedCategories`, `allowedCountries`,
+           `blockedCountries`, `allowedHours`, `total`, `count` and `singleUse`.
+        3. The first bucket in `buckets` whose `match` holds decides it with its
+           `action` and `limits`. A purchase that matches no bucket is decided by
+           `unmatched`.
+
+        Every part is optional. Absent means not set, never an empty list. A rule
+        whose amounts are set needs `currency`, and one with hours, a validity
+        window, or a total or count over a `DAY`, `WEEK` or `MONTH` needs
+        `timeZone`. A rule asks at most four distinct questions about a merchant,
+        counting each bucket's `question` and the draft's `statement`.
+
+        Grid compares and stores rules field by field, so a rule read back may list
+        sets in another order than it was written, and carries the defaults it was
+        given.
+
+        The bounds stated here, such as the most an amount may be, how many
+        merchants or category ranges a bucket may list, and the years a validity
+        window may fall in, are checked when a rule is written. A rule read back
+        was checked against them when it was written.
+      required:
+        - schemaVersion
+      properties:
+        schemaVersion:
+          type: integer
+          enum:
+            - 2
+          description: The version of this shape. Grid writes version 2 only. A later version would be a new value here, and a rule stored in it would be read back in it.
+          example: 2
+        currency:
+          type: string
+          pattern: ^[A-Z]{3}$
+          description: ISO 4217 code of every amount in the rule, which are in its smallest unit, and one Grid supports for amounts; another code is refused with `400`. Required when any amount is set. A purchase in another currency that must be checked against one of the rule's amounts needs the owner's approval, so it is declined. Setting a currency alone does not restrict the purchase's currency.
+          example: USD
+        timeZone:
+          type: string
+          description: IANA time zone the rule's hours, validity window, days, weeks and months are read in, such as `America/New_York`. Required for hours, a validity window, or a total or count over a `DAY`, `WEEK` or `MONTH`.
+          example: America/New_York
+        validFrom:
+          type: string
+          format: date-time
+          description: When the rule starts to apply, with a UTC offset. As an instant it must be at or after `2000-01-01T00:00:00Z` and before `2100-01-01T00:00:00Z`. Before it, `afterValidity` decides a purchase.
+          example: '2026-12-01T00:00:00-05:00'
+        validUntil:
+          type: string
+          format: date-time
+          description: When the rule stops applying, with a UTC offset, after `validFrom`. As an instant it must be at or after `2000-01-01T00:00:00Z` and before `2100-01-01T00:00:00Z`. From it on, `afterValidity` decides a purchase. A rule whose `validUntil` has passed can be neither proposed nor confirmed.
+          example: '2026-12-31T00:00:00-05:00'
+        afterValidity:
+          $ref: '#/components/schemas/SpendingRuleAfterValidity'
+          description: Defaults to `DECLINE`.
+        perPurchaseCap:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 1000000000000000
+          description: The most any one purchase may be, in the smallest unit of `currency`. An amount that settles over it after approval is still charged, since a settlement cannot be refused.
+          example: 10000
+        total:
+          $ref: '#/components/schemas/SpendingRuleTotalLimit'
+          description: The most spent across all purchases over each period.
+        count:
+          $ref: '#/components/schemas/SpendingRuleCountLimit'
+          description: The most purchases across the rule over each period. Not allowed with `singleUse`.
+        singleUse:
+          type: boolean
+          description: '`true` allows one purchase for the life of the rule. Send `true` or leave it out; `false` is refused.'
+          example: true
+        allowedCategories:
+          type: array
+          minItems: 1
+          description: Merchant category codes (ISO 18245) a purchase's merchant must have one of. A code listed twice counts once. Grid returns the codes sorted.
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '5812'
+            - '5814'
+        blockedCategories:
+          type: array
+          minItems: 1
+          description: Merchant category codes (ISO 18245) the rule declines. Grid returns the codes sorted.
+          items:
+            type: string
+            pattern: ^[0-9]{4}$
+          example:
+            - '7995'
+        allowedCountries:
+          type: array
+          minItems: 1
+          description: Countries a purchase's merchant must be in, as ISO 3166-1 alpha-2 or alpha-3 codes. Grid stores and returns them as alpha-3 codes, sorted.
+          items:
+            type: string
+            pattern: ^[A-Z]{2,3}$
+          example:
+            - USA
+        blockedCountries:
+          type: array
+          minItems: 1
+          description: Countries the rule declines, as ISO 3166-1 alpha-2 or alpha-3 codes. Grid stores and returns them as alpha-3 codes, sorted.
+          items:
+            type: string
+            pattern: ^[A-Z]{2,3}$
+          example:
+            - PRK
+        allowedHours:
+          $ref: '#/components/schemas/SpendingRuleHours'
+          description: When in the week any purchase may be made.
+        buckets:
+          type: array
+          minItems: 1
+          maxItems: 16
+          description: Groups of purchases, in order. A purchase falls in the first whose `match` holds. Keys are unique, and only the last bucket may match every purchase.
+          items:
+            $ref: '#/components/schemas/SpendingRuleBucket'
+        unmatched:
+          $ref: '#/components/schemas/SpendingRuleUnmatched'
+          description: What becomes of a purchase that matches no bucket, including every purchase when the rule has no buckets. Defaults to `DECLINE` with no limits.
+    SpendingRule:
+      type: object
+      description: The spending rule in force for an agent. Every card the agent issued checks each purchase against it.
+      required:
+        - id
+        - agentId
+        - writtenText
+        - restatement
+        - ruleHash
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier of the agent's rule. It stays the same when the rule is replaced, and when it is removed and a rule is later put in force again, so totals and the owner's answers carry on.
+          example: SpendingRule:019542f5-b3e7-1d02-0000-000000000301
+        agentId:
+          type: string
+          description: The agent whose cards the rule applies to.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        writtenText:
+          type: string
+          description: 'The text the rule was written from. Untrusted text: escape it before display.'
+          example: Up to $20 a purchase at coffee shops, and nothing else.
+        rule:
+          $ref: '#/components/schemas/SpendingRuleSpec'
+          description: The rule as structured data. Absent only for a rule Lightspark put in force in an earlier shape, which `restatement` still describes. Its bounds were checked when it was written.
+        statement:
+          type: string
+          maxLength: 500
+          description: 'A plain statement every merchant must also satisfy, judged by a model. Absent when the rule has none. Untrusted text: escape it before display.'
+          example: The merchant is a coffee shop
+        restatement:
+          type: array
+          description: What the rule does, in plain sentences, as `SpendingRuleDraft` describes. Escape every sentence before display.
+          items:
+            type: string
+          example:
+            - Amounts are in USD. A purchase in another currency that must be checked against an amount needs the owner's approval.
+            - Anything else is declined.
+        ruleHash:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+          description: SHA-256 of the rule and `statement`, in lowercase hex. For a rule put in force from a draft it is that draft's `ruleHash`. A rule Lightspark put in force, or carried over from another agent with a card, has one too.
+          example: 3f5a1c0e9b7d2a4c6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d
+        createdAt:
+          type: string
+          format: date-time
+          description: When the agent was first given a rule.
+          example: '2026-11-01T12:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When this version of the rule was put in force.
+          example: '2026-11-16T15:04:00Z'
+    SpendingRuleConfirmRequest:
+      type: object
+      description: The draft to put in force, with the `ruleHash` of the rule the person confirming was shown.
+      required:
+        - draftId
+        - ruleHash
+      properties:
+        draftId:
+          type: string
+          description: The proposed draft to confirm.
+          example: SpendingRuleDraft:019542f5-b3e7-1d02-0000-000000000201
+        ruleHash:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+          description: The draft's `ruleHash`, as read with the restatement shown to the person. A rule that hashes otherwise is not put in force.
+          example: 3f5a1c0e9b7d2a4c6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d
+    SpendingRuleDraftStatus:
+      type: string
+      enum:
+        - PROPOSED
+        - REFUSED
+        - CONFIRMED
+        - WITHDRAWN
+      description: |
+        Where a spending rule draft stands. A draft keeps its status when it
+        expires: a `PROPOSED` draft past its `expiresAt` can no longer be confirmed.
+
+        | Status | Description | Terminal |
+        |--------|-------------|----------|
+        | `PROPOSED` | A rule was made and awaits confirmation by its `ruleHash` | No |
+        | `REFUSED` | No rule could be made; `refusal` says why | Yes |
+        | `CONFIRMED` | The rule was put in force | Yes |
+        | `WITHDRAWN` | Another draft was confirmed, or the rule was removed, first | Yes |
+    SpendingRuleDraftOrigin:
+      type: string
+      enum:
+        - PERSON
+        - AGENT
+        - PLATFORM
+        - STAFF
+      description: |
+        Who wrote a draft's text, as Grid derives it from the credentials of the
+        call that proposed it. It is never read from a request body.
+
+        | Origin | Description |
+        |--------|-------------|
+        | `PERSON` | The agent's owner, through Lightspark's own agents app |
+        | `AGENT` | The agent, with its own credentials |
+        | `PLATFORM` | The platform, with its API credentials |
+        | `STAFF` | Lightspark staff |
+    SpendingRuleRefusalCode:
+      type: string
+      enum:
+        - ITEMS
+        - ONLINE_OR_IN_PERSON
+        - PLACE
+        - PERIOD
+        - PER_EACH_MERCHANT
+        - TOO_MANY_JUDGEMENTS
+        - TOO_MANY_BUCKETS
+        - NOT_ABOUT_PURCHASES
+        - OTHER
+        - UNAVAILABLE
+        - PROMPT_INJECTION
+        - NOT_A_SPENDING_RULE
+        - NOT_CHECKED
+        - INSTRUCTIONS_IN_QUESTION
+      description: |
+        Why no rule could be made of a draft's text. Grid may add codes, so accept a
+        value not yet listed here and show its `sentence`.
+
+        | Code | Description |
+        |------|-------------|
+        | `ITEMS` | The text is about what is bought. Card networks do not say what is in a purchase |
+        | `ONLINE_OR_IN_PERSON` | The text tells online purchases from in-person ones, which a rule cannot |
+        | `PLACE` | The text names a city, region, address or distance. A rule can name countries only |
+        | `PERIOD` | The text needs a total or count over a period other than a day, week, month or the life of the rule |
+        | `PER_EACH_MERCHANT` | The text needs a separate limit for each merchant |
+        | `TOO_MANY_JUDGEMENTS` | The text needs more than four questions about a merchant |
+        | `TOO_MANY_BUCKETS` | The text needs more than 16 buckets |
+        | `NOT_ABOUT_PURCHASES` | The text is not a rule about which purchases to approve or decline |
+        | `OTHER` | The text cannot be written as a rule the card can check |
+        | `UNAVAILABLE` | The text could not be read just now. Propose it again |
+        | `PROMPT_INJECTION` | The text reads as instructions to the system rather than a rule. Three such drafts for an agent within 24 hours pause all its proposals, from text or structured, until 24 hours after the last |
+        | `NOT_A_SPENDING_RULE` | The text is not a rule about which purchases to approve or decline |
+        | `NOT_CHECKED` | The text could not be checked just now. Propose it again |
+        | `INSTRUCTIONS_IN_QUESTION` | A bucket's `question` or the `statement` reads as instructions to the model that judges merchants. `quoted` holds it. It counts toward the pause as `PROMPT_INJECTION` does |
+    SpendingRuleRefusalPart:
+      type: object
+      description: One reason no rule could be made of a draft's text.
+      required:
+        - code
+        - sentence
+      properties:
+        code:
+          $ref: '#/components/schemas/SpendingRuleRefusalCode'
+        sentence:
+          type: string
+          description: 'The reason in a plain sentence for the person who wrote the text, ending with `quoted` in quotation marks when it is set. Fixed wording apart from that quote, which is untrusted text: escape the sentence before display.'
+          example: A rule can name countries, but not a city, region, address or distance. You wrote "only in Brooklyn".
+        quoted:
+          type: string
+          maxLength: 200
+          description: 'The words the reason is about. For `INSTRUCTIONS_IN_QUESTION` it is the question or statement that was refused, which a model may have written; otherwise it is a part of the draft''s `writtenText`, exactly as written. Cut to 200 characters. Untrusted text: escape it before display.'
+          example: only in Brooklyn
+    SpendingRuleDraft:
+      type: object
+      description: |
+        A spending rule proposed for an agent, which is not in force until it is
+        confirmed. A proposed draft carries the rule as structured data, its
+        restatement in plain sentences, and the `ruleHash` that confirms exactly
+        that rule. A refused draft carries why no rule could be made instead.
+
+        ```mermaid
+        stateDiagram-v2
+          [*] --> PROPOSED: a rule was made
+          [*] --> REFUSED: no rule could be made
+          PROPOSED --> CONFIRMED: confirmed with its ruleHash
+          PROPOSED --> WITHDRAWN: another draft confirmed, or the rule removed
+        ```
+
+        A draft expires 24 hours after it was proposed. At most ten drafts that
+        could still be confirmed can await confirmation for an agent at once:
+        proposed, unexpired, and proposed while the agent's current rule was in
+        force (or while it had none).
+      required:
+        - id
+        - agentId
+        - status
+        - origin
+        - writtenText
+        - restatement
+        - refusal
+        - expiresAt
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier of the draft.
+          example: SpendingRuleDraft:019542f5-b3e7-1d02-0000-000000000201
+        agentId:
+          type: string
+          description: The agent whose cards the rule is for.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        status:
+          $ref: '#/components/schemas/SpendingRuleDraftStatus'
+        origin:
+          $ref: '#/components/schemas/SpendingRuleDraftOrigin'
+        writtenText:
+          type: string
+          description: 'The text the rule was written from, exactly as submitted. Untrusted text: escape it before display.'
+          example: Up to $20 a purchase at coffee shops, and nothing else.
+        rule:
+          $ref: '#/components/schemas/SpendingRuleSpec'
+          description: The rule as structured data. Absent when `status` is `REFUSED`.
+        statement:
+          type: string
+          maxLength: 500
+          description: 'A plain statement every merchant must also satisfy for a purchase to be approved, judged by a model as a bucket `question` is. Absent when the rule has none. Untrusted text: escape it before display.'
+          example: The merchant is a coffee shop
+        restatement:
+          type: array
+          description: 'What the rule does, in plain sentences, in the order a purchase is checked, followed by fixed sentences on how rules work. Grid writes them from the rule and `statement` alone, so `ruleHash` binds them too. Show every sentence to the person confirming. Merchant names, questions and the statement appear inside quotation marks and are untrusted text: escape every sentence before display. Empty when `status` is `REFUSED`.'
+          items:
+            type: string
+          example:
+            - Amounts are in USD. A purchase in another currency that must be checked against an amount needs the owner's approval.
+            - 'Then the first of these buckets a purchase matches decides it:'
+            - 'Bucket "coffee": a purchase where the model agrees that "The merchant is a coffee shop" is approved, at most 20.00 USD for one purchase.'
+            - Anything else is declined.
+        ruleHash:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+          description: SHA-256 of the rule and `statement`, in lowercase hex. Confirming the draft takes it back, so a rule is put in force only as it was shown. Absent when `status` is `REFUSED`.
+          example: 3f5a1c0e9b7d2a4c6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d
+        refusal:
+          type: array
+          description: Why no rule could be made, one part per reason. Empty unless `status` is `REFUSED`.
+          items:
+            $ref: '#/components/schemas/SpendingRuleRefusalPart'
+        expiresAt:
+          type: string
+          format: date-time
+          description: 'When the draft can no longer be confirmed: 24 hours after it was proposed.'
+          example: '2026-11-17T15:00:00Z'
+        confirmedAt:
+          type: string
+          format: date-time
+          description: When the draft was confirmed. Present only when `status` is `CONFIRMED`.
+          example: '2026-11-16T15:04:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: When the draft was proposed.
+          example: '2026-11-16T15:00:00Z'
+    SpendingRuleDraftListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: The agent's drafts, most recently proposed first.
+          items:
+            $ref: '#/components/schemas/SpendingRuleDraft'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+    SpendingRuleDraftCreateRequest:
+      type: object
+      description: A spending rule to propose, written as a sentence or as structured data. With `text` alone, Grid reads the text and writes the rule. With `rule`, Grid takes the rule as given and keeps `text` beside it as what it was written from.
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: The rule in plain words, such as `Up to $20 a purchase at coffee shops, and nothing else`. Not blank, and no control or invisible formatting characters other than line breaks and tabs. Grid reads it as data, never as instructions. Amounts in it are read in the agent's account currency, the currency its cards are charged in.
+          example: Up to $20 a purchase at coffee shops, and nothing else.
+        timeZone:
+          type: string
+          description: The owner's IANA time zone, such as `America/New_York`, in which Grid reads days, weeks, months and hours in `text`. `UTC` or a zone named for a place. Without it, days run midnight to midnight UTC. Only with `text` alone; refused with `rule`, which carries its own `timeZone`.
+          example: America/New_York
+        rule:
+          $ref: '#/components/schemas/SpendingRuleSpec'
+          description: The rule as structured data. Grid proposes it as given, after the same checks a rule written from text gets.
+        statement:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: A plain statement every merchant must also satisfy for a purchase to be approved, judged by a model as a bucket `question` is. Only with `rule`. Not blank, and no control or invisible formatting characters.
+          example: The merchant is a coffee shop
+    SpendingRuleOutcome:
+      type: string
+      enum:
+        - APPROVE
+        - DECLINE
+        - ASK
+        - UNANSWERED
+        - NOT_REACHED
+        - NOT_APPLIED
+      description: |
+        What the agent's rule said about one card authorization.
+
+        | Outcome | Description |
+        |---------|-------------|
+        | `APPROVE` | The rule allowed the purchase. The card's other controls may still have declined it |
+        | `DECLINE` | The rule declined the purchase |
+        | `ASK` | The purchase needed the owner's approval, so it was declined |
+        | `UNANSWERED` | A check the rule needed gave no answer before the card's deadline, so the purchase was declined |
+        | `NOT_REACHED` | The card's other controls ruled on the purchase before the rule's check answered |
+        | `NOT_APPLIED` | The purchase fell outside the rule's validity window and the rule's `afterValidity` is `STOP_APPLYING` |
+    SpendingRuleCheck:
+      type: string
+      enum:
+        - PER_PURCHASE_CAP
+        - BLOCKED_CATEGORIES
+        - ALLOWED_CATEGORIES
+        - BLOCKED_COUNTRIES
+        - ALLOWED_COUNTRIES
+        - ALLOWED_HOURS
+        - VALIDITY
+        - BUCKET
+        - BUCKET_LIMIT
+        - JUDGEMENT
+        - QUESTION_CAP
+        - BUCKET_TOTAL
+        - BUCKET_COUNT
+        - RULE_TOTAL
+        - RULE_COUNT
+        - SINGLE_USE
+        - RUNNING_LIMITS
+        - OWNER_ANSWER
+        - SAME_MERCHANT
+      description: |
+        A part of the rule that decided, or helped decide, a purchase. Grid may add
+        parts, so accept a value not yet listed here.
+
+        | Check | Description |
+        |-------|-------------|
+        | `PER_PURCHASE_CAP` | The rule-wide `perPurchaseCap` |
+        | `BLOCKED_CATEGORIES` | The rule-wide `blockedCategories` |
+        | `ALLOWED_CATEGORIES` | The rule-wide `allowedCategories` |
+        | `BLOCKED_COUNTRIES` | The rule-wide `blockedCountries` |
+        | `ALLOWED_COUNTRIES` | The rule-wide `allowedCountries` |
+        | `ALLOWED_HOURS` | The rule-wide `allowedHours` |
+        | `VALIDITY` | `validFrom` and `validUntil` |
+        | `BUCKET` | The action of the bucket the purchase fell in, or of `unmatched` |
+        | `BUCKET_LIMIT` | The bucket's `limits.perPurchase` |
+        | `JUDGEMENT` | A bucket's `question` or the rule's `statement`, as the model judged the merchant |
+        | `QUESTION_CAP` | The card's rules needed more questions than one check carries |
+        | `BUCKET_TOTAL` | The bucket's `limits.total` |
+        | `BUCKET_COUNT` | The bucket's `limits.count` |
+        | `RULE_TOTAL` | The rule-wide `total` |
+        | `RULE_COUNT` | The rule-wide `count` |
+        | `SINGLE_USE` | `singleUse` |
+        | `RUNNING_LIMITS` | The rule's totals, counts or single use could not be checked |
+        | `OWNER_ANSWER` | The owner's remembered answer about the merchant |
+        | `SAME_MERCHANT` | The owner's remembered yes about another name the model judged to be the same merchant |
+    SpendingRuleDecision:
+      type: object
+      description: 'What the agent''s rule said about one authorization on one of the agent''s cards. Grid records decisions after the authorization is answered, on a best-effort basis: under heavy load a decision may not be recorded, so the list can miss authorizations. Use card transactions for a complete record of what was approved.'
+      required:
+        - id
+        - outcome
+        - reason
+        - checks
+        - amount
+        - currency
+        - merchantDescriptor
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier of the decision.
+          example: SpendingRuleDecision:019542f5-b3e7-1d02-0000-000000000401
+        cardTransactionId:
+          type: string
+          description: The card transaction the authorization belongs to.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+        outcome:
+          $ref: '#/components/schemas/SpendingRuleOutcome'
+        reason:
+          type: string
+          description: Why, in a plain sentence. Grid may reword it, so branch on `outcome` and `checks` rather than on this text. Escape it before display.
+          example: 'Approved: the owner allowed purchases at this merchant'
+        bucketKey:
+          type: string
+          description: The `key` of the bucket the purchase fell in, or `(unmatched)` when it matched no bucket. Absent when the rule decided before choosing a bucket.
+          example: coffee
+        checks:
+          type: array
+          description: The parts of the rule that decided the purchase. Empty when none did.
+          items:
+            $ref: '#/components/schemas/SpendingRuleCheck'
+          example:
+            - BUCKET
+            - OWNER_ANSWER
+        amount:
+          type: integer
+          format: int64
+          description: The amount the merchant requested, in the smallest unit of `currency`, the card's currency. When the authorization also set a lower ceiling on what the card may be charged, the rule compared its amounts against that ceiling instead.
+          example: 1850
+        currency:
+          type: string
+          description: ISO 4217 code of the card's currency.
+          example: USD
+        merchantDescriptor:
+          type: string
+          description: 'The merchant''s name as the card network reported it. Untrusted text that the merchant controls: escape it before display.'
+          example: BLUE BOTTLE COFFEE SF
+        merchantCategoryCode:
+          type: string
+          description: The merchant category code as the card network reported it, when it did.
+          example: '5814'
+        merchantCity:
+          type: string
+          description: 'The merchant''s city as the card network reported it, when it did. Untrusted text: escape it before display.'
+          example: San Francisco
+        merchantCountry:
+          type: string
+          description: The merchant's country as the card network reported it, when it did.
+          example: USA
+        createdAt:
+          type: string
+          format: date-time
+          description: When the rule decided.
+          example: '2026-11-16T15:10:00Z'
+    SpendingRuleDecisionListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: The decisions, most recent first.
+          items:
+            $ref: '#/components/schemas/SpendingRuleDecision'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+    SpendingRuleRunningLimitType:
+      type: string
+      enum:
+        - BUCKET_TOTAL
+        - BUCKET_COUNT
+        - RULE_TOTAL
+        - RULE_COUNT
+        - SINGLE_USE
+      description: |
+        Which limit of the rule a running total or count is held against.
+
+        | Type | Description |
+        |------|-------------|
+        | `BUCKET_TOTAL` | A bucket's `limits.total`, or `unmatched.limits.total` |
+        | `BUCKET_COUNT` | A bucket's `limits.count`, or `unmatched.limits.count` |
+        | `RULE_TOTAL` | The rule-wide `total` |
+        | `RULE_COUNT` | The rule-wide `count` |
+        | `SINGLE_USE` | `singleUse`: one purchase for the life of the rule |
+    SpendingRuleRunningLimitUsage:
+      type: object
+      description: One running total or purchase count of the rule in force, in the window that holds the time of the request. Exactly one of `maxAmount` and `maxCount` is set.
+      required:
+        - type
+        - period
+        - usedAmount
+        - usedCount
+      properties:
+        type:
+          $ref: '#/components/schemas/SpendingRuleRunningLimitType'
+        bucketKey:
+          type: string
+          description: The `key` of the bucket whose limit this is, or `(unmatched)` for `unmatched.limits`. Absent for a rule-wide limit.
+          example: coffee
+        period:
+          $ref: '#/components/schemas/SpendingRulePeriod'
+        windowStart:
+          type: string
+          format: date
+          description: The first day of the current window, in the rule's `timeZone`. Absent for a `LIFETIME` limit.
+          example: '2026-11-16'
+        windowEnd:
+          type: string
+          format: date
+          description: The first day of the next window, when the total or count starts again from zero, in the rule's `timeZone`. Absent for a `LIFETIME` limit.
+          example: '2026-11-17'
+        maxAmount:
+          type: integer
+          format: int64
+          description: The limit, in the smallest unit of the rule's `currency`. Present for a total.
+          example: 50000
+        maxCount:
+          type: integer
+          format: int64
+          description: The most purchases allowed. Present for a count or single use.
+          example: 3
+        usedAmount:
+          type: integer
+          format: int64
+          description: What purchases in the window have used, held and settled, in the smallest unit of the rule's `currency`. It may exceed `maxAmount` when a purchase settled for more than was approved.
+          example: 1850
+        usedCount:
+          type: integer
+          format: int64
+          description: Purchases in the window that count toward the limit.
+          example: 1
+    SpendingRuleUsage:
+      type: object
+      description: How much of each running total and purchase count of the agent's rule in force has been used. Totals and counts are kept by bucket `key`, so a limit a new version of the rule keeps for the same bucket and period carries on from what the earlier version used.
+      required:
+        - agentId
+        - limits
+        - asOf
+      properties:
+        agentId:
+          type: string
+          description: The agent whose rule this is.
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+        currency:
+          type: string
+          description: ISO 4217 code of every amount, the rule's `currency`. Absent when the rule has none.
+          example: USD
+        limits:
+          type: array
+          description: Every total, count and single use of the rule, bucket limits in bucket order and then the rule-wide ones. Empty when the rule has none.
+          items:
+            $ref: '#/components/schemas/SpendingRuleRunningLimitUsage'
+        asOf:
+          type: string
+          format: date-time
+          description: The time the windows were chosen for.
+          example: '2026-11-16T15:12:00Z'
+    SpendingRuleMerchantAnswerStatus:
+      type: string
+      enum:
+        - PENDING
+        - APPROVED
+        - DECLINED
+        - EXPIRED
+        - REMOVED
+      description: |
+        The owner's answer about a merchant in one bucket of the agent's rule. Only
+        `APPROVED` and `DECLINED` decide a purchase.
+
+        | Status | Description | Terminal |
+        |--------|-------------|----------|
+        | `PENDING` | The owner was asked and has not answered | No |
+        | `APPROVED` | The owner said yes. A yes with `upToAmount` covers purchases up to that amount | No |
+        | `DECLINED` | The owner said no | No |
+        | `EXPIRED` | The owner did not answer in time. The next purchase there asks again | No |
+        | `REMOVED` | The answer was removed. The next purchase there asks again | No |
+
+        An answer is replaced in place when the owner is asked again about the same
+        merchant in the same bucket, so no status is terminal.
+    SpendingRuleMerchantAnswer:
+      type: object
+      description: |
+        The owner's answer about whether the agent may buy from a merchant, kept for
+        one bucket of the agent's rule, or for purchases that match no bucket. It
+        decides only a purchase that needs the owner's approval because of that
+        bucket, its `question` or the rule's `statement`: a no declines it, and a
+        yes approves it only if every other part of the rule allows it. For a
+        bucket that declines, a yes means the merchant is not in that bucket.
+
+        The same merchant means the same merchant category and the same name, with
+        case, apostrophes, punctuation, a payment processor's prefix and trailing
+        words with no letter, such as a store number, ignored, and names compared
+        on their first 155 characters. A yes can also apply to another name of the
+        same category and the same first word that the model judges to be the same
+        business (check `SAME_MERCHANT`); a no kept for such a name stops that. A
+        no applies only to the name it was given for. An answer stops
+        applying when its bucket's match, question or action, the rule's time zone
+        or currency, or the statement changes. It is kept when the rule is removed
+        and put in force again with the same bucket.
+      required:
+        - id
+        - status
+        - merchantDescriptor
+        - bucketKey
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier of the answer.
+          example: SpendingRuleMerchantAnswer:019542f5-b3e7-1d02-0000-000000000501
+        status:
+          $ref: '#/components/schemas/SpendingRuleMerchantAnswerStatus'
+        merchantDescriptor:
+          type: string
+          description: 'The merchant''s name as the card network reported it when the owner was asked. Untrusted text that the merchant controls: escape it before display.'
+          example: JOES PIZZA 1234
+        merchantCategoryCode:
+          type: string
+          description: The merchant category code the answer is for. Absent when the merchant reported none, in which case the answer covers only purchases with no category code.
+          example: '5814'
+        merchantCity:
+          type: string
+          description: 'The merchant''s city as the card network reported it when the owner was asked, when it did. Untrusted text: escape it before display.'
+          example: Brooklyn
+        merchantCountry:
+          type: string
+          description: The merchant's country as the card network reported it when the owner was asked, when it did.
+          example: USA
+        bucketKey:
+          type: string
+          description: The `key` of the bucket the answer is for, or `(unmatched)` for purchases that match no bucket.
+          example: pizza
+        upToAmount:
+          type: integer
+          format: int64
+          description: For an `APPROVED` answer, the most a purchase may be for the yes to apply, in the smallest unit of the rule's currency, given as `currency`. A purchase in another currency is not covered. Absent when the yes covers any amount.
+          example: 2500
+        currency:
+          type: string
+          description: 'ISO 4217 code of `upToAmount`: the rule''s `currency`. Present with `upToAmount`.'
+          example: USD
+        agentActionId:
+          type: string
+          description: The `SPENDING_RULE_QUESTION` agent action that asked the owner, when the answer came from one.
+          example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+        askedAt:
+          type: string
+          format: date-time
+          description: When the owner was asked. Absent when the answer was not asked for.
+          example: '2026-11-16T15:10:00Z'
+        decidedAt:
+          type: string
+          format: date-time
+          description: When the owner answered. Absent while `PENDING`.
+          example: '2026-11-16T15:20:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: When the answer was first kept.
+          example: '2026-11-16T15:10:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the answer last changed.
+          example: '2026-11-16T15:20:00Z'
+    SpendingRuleMerchantAnswerListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: The owner's answers about merchants, most recently changed first.
+          items:
+            $ref: '#/components/schemas/SpendingRuleMerchantAnswer'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true).
+    SpendingRuleMerchantAnswerCreateRequest:
+      type: object
+      description: The owner's yes or no about whether the agent may buy from a merchant, for one bucket of the agent's rule in force or for purchases that match no bucket.
+      required:
+        - merchantDescriptor
+        - bucketKey
+        - approved
+      properties:
+        merchantDescriptor:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 'The merchant''s name as the card network reports it, such as a `merchantDescriptor` from a decision. It must name a merchant: at least three letters or digits once case, punctuation, a payment processor''s prefix and trailing words with no letter are set aside, and not a placeholder such as `UNKNOWN`. No control or invisible formatting characters. Grid keeps it as given.'
+          example: JOES PIZZA 1234
+        merchantCategoryCode:
+          type: string
+          pattern: ^[0-9]{1,4}$
+          description: The merchant category code (ISO 18245) the answer is for, as reported with the merchant. A shorter code is read with leading zeros. Leave it out to answer for purchases reported with no category code.
+          example: '5814'
+        bucketKey:
+          type: string
+          pattern: ^([a-z0-9_]{1,32}|\(unmatched\))$
+          description: 'The `key` of a bucket of the rule in force, or `(unmatched)` for purchases that match no bucket. It must be one that can ask the owner: its action is `ASK`, it has a `question`, or it approves and the rule has a `statement`.'
+          example: pizza
+        approved:
+          type: boolean
+          description: '`true` for yes, `false` for no. For a bucket whose action is `DECLINE`, yes means the merchant is not in that bucket.'
+          example: true
+        upToAmount:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 1000000000000000
+          description: 'The most a purchase may be for a yes to apply, in the smallest unit of the rule''s `currency`. Required for a yes when a purchase''s amount can decide whether it falls in the bucket: when the bucket or a bucket before it sets `amountBelow` or `amountAbove`, or, for `(unmatched)`, when any bucket does. Optional for any other yes. Refused with a no, and on a rule with no `currency`.'
+          example: 2500
     AgentDeviceCodeRequest:
       type: object
       required:

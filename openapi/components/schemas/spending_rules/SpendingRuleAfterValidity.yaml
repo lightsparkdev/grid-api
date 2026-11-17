@@ -1,0 +1,11 @@
+type: string
+enum:
+  - DECLINE
+  - STOP_APPLYING
+description: |
+  What the rule does with a purchase before `validFrom` or from `validUntil` on.
+
+  | Value | Description |
+  |-------|-------------|
+  | `DECLINE` | Decline it |
+  | `STOP_APPLYING` | Leave it to the card's other controls, as if the agent had no rule |

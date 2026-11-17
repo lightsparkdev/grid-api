@@ -1,0 +1,55 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get an agent's spending rule usage
+  description: >-
+    How much of each running total, purchase count and single use of the
+    agent's rule in force has been used, in the window that holds the time of
+    the request. What is held for a pending purchase and what settles both
+    count; a refund after a purchase settles gives nothing back.
+  operationId: getAgentSpendingRuleUsage
+  x-hidden: true
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/spending_rules/SpendingRuleUsage.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, or spending
+        rules are not (`SPENDING_RULES_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: >-
+        Agent not found, or the agent has no rule in force
+        (`SPENDING_RULE_NOT_FOUND`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

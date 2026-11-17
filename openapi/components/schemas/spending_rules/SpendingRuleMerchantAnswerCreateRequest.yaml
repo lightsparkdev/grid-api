@@ -1,0 +1,57 @@
+type: object
+description: >-
+  The owner's yes or no about whether the agent may buy from a merchant, for
+  one bucket of the agent's rule in force or for purchases that match no
+  bucket.
+required:
+  - merchantDescriptor
+  - bucketKey
+  - approved
+properties:
+  merchantDescriptor:
+    type: string
+    minLength: 1
+    maxLength: 255
+    description: >-
+      The merchant's name as the card network reports it, such as a
+      `merchantDescriptor` from a decision. It must name a merchant: at least
+      three letters or digits once case, punctuation, a payment processor's
+      prefix and trailing words with no letter are set aside, and not a
+      placeholder such as `UNKNOWN`. No control or invisible formatting
+      characters. Grid keeps it as given.
+    example: JOES PIZZA 1234
+  merchantCategoryCode:
+    type: string
+    pattern: '^[0-9]{1,4}$'
+    description: >-
+      The merchant category code (ISO 18245) the answer is for, as reported
+      with the merchant. A shorter code is read with leading zeros. Leave it
+      out to answer for purchases reported with no category code.
+    example: '5814'
+  bucketKey:
+    type: string
+    pattern: '^([a-z0-9_]{1,32}|\(unmatched\))$'
+    description: >-
+      The `key` of a bucket of the rule in force, or `(unmatched)` for
+      purchases that match no bucket. It must be one that can ask the owner:
+      its action is `ASK`, it has a `question`, or it approves and the rule
+      has a `statement`.
+    example: pizza
+  approved:
+    type: boolean
+    description: >-
+      `true` for yes, `false` for no. For a bucket whose action is `DECLINE`,
+      yes means the merchant is not in that bucket.
+    example: true
+  upToAmount:
+    type: integer
+    format: int64
+    minimum: 0
+    maximum: 1000000000000000
+    description: >-
+      The most a purchase may be for a yes to apply, in the smallest unit of
+      the rule's `currency`. Required for a yes when a purchase's amount can
+      decide whether it falls in the bucket: when the bucket or a bucket
+      before it sets `amountBelow` or `amountAbove`, or, for `(unmatched)`,
+      when any bucket does. Optional for any other yes. Refused with a no, and on a rule with no `currency`.
+    example: 2500

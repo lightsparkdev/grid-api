@@ -508,6 +508,20 @@ paths:
     $ref: paths/agents/agents_{agentId}_deposits_{depositId}_authorize-debit.yaml
   /agents/{agentId}/external-accounts/{externalAccountId}/ach-validations:
     $ref: paths/agents/agents_{agentId}_external-accounts_{externalAccountId}_ach-validations.yaml
+  /agents/{agentId}/spending-rule:
+    $ref: paths/agents/agents_{agentId}_spending-rule.yaml
+  /agents/{agentId}/spending-rule/drafts:
+    $ref: paths/agents/agents_{agentId}_spending-rule_drafts.yaml
+  /agents/{agentId}/spending-rule/drafts/{draftId}:
+    $ref: paths/agents/agents_{agentId}_spending-rule_drafts_{draftId}.yaml
+  /agents/{agentId}/spending-rule/decisions:
+    $ref: paths/agents/agents_{agentId}_spending-rule_decisions.yaml
+  /agents/{agentId}/spending-rule/usage:
+    $ref: paths/agents/agents_{agentId}_spending-rule_usage.yaml
+  /agents/{agentId}/spending-rule/merchants:
+    $ref: paths/agents/agents_{agentId}_spending-rule_merchants.yaml
+  /agents/{agentId}/spending-rule/merchants/{merchantAnswerId}:
+    $ref: paths/agents/agents_{agentId}_spending-rule_merchants_{merchantAnswerId}.yaml
   /agents/device-codes/status:
     $ref: paths/agents/agents_device-codes_status.yaml
   /agents/device-codes/redeem:
@@ -559,6 +573,12 @@ paths:
     $ref: paths/agents/agents_me_settlement-rules_{settlementRuleId}_executions.yaml
   /agents/me/settlement-rules/{settlementRuleId}/executions/{executionId}/cancel:
     $ref: paths/agents/agents_me_settlement-rules_{settlementRuleId}_executions_{executionId}_cancel.yaml
+  /agents/me/spending-rule:
+    $ref: paths/agents/agents_me_spending-rule.yaml
+  /agents/me/spending-rule/drafts:
+    $ref: paths/agents/agents_me_spending-rule_drafts.yaml
+  /agents/me/spending-rule/drafts/{draftId}/submit:
+    $ref: paths/agents/agents_me_spending-rule_drafts_{draftId}_submit.yaml
   /claimable-payouts/{claimablePayoutId}/claim-token:
     $ref: paths/claimable-payouts/claimable-payouts_{claimablePayoutId}_claim-token.yaml
   /claimable-payouts/claim/lookup:

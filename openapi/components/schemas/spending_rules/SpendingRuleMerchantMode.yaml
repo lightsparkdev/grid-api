@@ -1,0 +1,14 @@
+type: string
+enum:
+  - EXACT
+  - PREFIX
+description: |
+  How a merchant name in a bucket is compared with the name the card network
+  reports. Both compare with case ignored, apostrophes dropped, every other
+  character that is not a letter or digit read as a space, and one leading
+  payment processor prefix such as `SQ *` removed.
+
+  | Mode | Description |
+  |------|-------------|
+  | `EXACT` | The reported name is the whole name, so a store number or city after it makes a different name |
+  | `PREFIX` | The reported name starts with the words of the name, and more words may follow |

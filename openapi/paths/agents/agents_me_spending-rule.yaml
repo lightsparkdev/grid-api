@@ -1,0 +1,45 @@
+get:
+  summary: Get the agent's own spending rule
+  description: >-
+    The spending rule in force for every card the authenticated agent issued,
+    with its restatement in plain sentences. Read it to know which purchases
+    its cards will decline before making them.
+  operationId: agentGetSpendingRule
+  x-hidden: true
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/spending_rules/SpendingRule.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, or spending
+        rules are not (`SPENDING_RULES_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: The agent has no rule in force (`SPENDING_RULE_NOT_FOUND`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

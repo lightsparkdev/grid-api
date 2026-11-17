@@ -1,0 +1,10 @@
+type: string
+enum:
+  - MON
+  - TUE
+  - WED
+  - THU
+  - FRI
+  - SAT
+  - SUN
+description: A day of the week, in the rule's `timeZone`.

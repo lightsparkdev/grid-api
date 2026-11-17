@@ -51,6 +51,19 @@ post:
     was removed, or whose agent lost access or is paused or deleted, with
     `AGENT_INACTIVE`.
 
+    For `SET_SPENDING_RULE` actions, approval puts the spending rule the agent
+    proposed in force for every card the agent issued, exactly as
+    `spendingRuleDraft.ruleHash` binds it, replacing the agent's rule. Show the
+    customer every sentence of `spendingRuleDraft.restatement` and confirm the
+    decision with them before calling. A draft that can no longer be confirmed
+    fails the action with `DRAFT_STALE`, and an action past its `expiresAt`
+    with `APPROVAL_EXPIRED`.
+
+    For `SPENDING_RULE_QUESTION` actions, approval remembers the customer's yes
+    about the merchant in `spendingRuleQuestion`, for the bucket it names and
+    up to `spendingRuleQuestion.upToAmount` when that is set. No money moves:
+    the agent makes the purchase again. Rejecting remembers a no.
+
     This endpoint is called by the platform's backend using platform credentials,
     not by the agent itself.
   operationId: approveAgentAction

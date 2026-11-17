@@ -1,0 +1,16 @@
+type: string
+enum:
+  - PERSON
+  - AGENT
+  - PLATFORM
+  - STAFF
+description: |
+  Who wrote a draft's text, as Grid derives it from the credentials of the
+  call that proposed it. It is never read from a request body.
+
+  | Origin | Description |
+  |--------|-------------|
+  | `PERSON` | The agent's owner, through Lightspark's own agents app |
+  | `AGENT` | The agent, with its own credentials |
+  | `PLATFORM` | The platform, with its API credentials |
+  | `STAFF` | Lightspark staff |

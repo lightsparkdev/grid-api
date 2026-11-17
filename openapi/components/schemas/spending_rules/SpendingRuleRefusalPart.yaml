@@ -1,0 +1,27 @@
+type: object
+description: One reason no rule could be made of a draft's text.
+required:
+  - code
+  - sentence
+properties:
+  code:
+    $ref: ./SpendingRuleRefusalCode.yaml
+  sentence:
+    type: string
+    description: >-
+      The reason in a plain sentence for the person who wrote the text, ending
+      with `quoted` in quotation marks when it is set. Fixed wording apart
+      from that quote, which is untrusted text: escape the sentence before
+      display.
+    example: >-
+      A rule can name countries, but not a city, region, address or distance.
+      You wrote "only in Brooklyn".
+  quoted:
+    type: string
+    maxLength: 200
+    description: >-
+      The words the reason is about. For `INSTRUCTIONS_IN_QUESTION` it is the
+      question or statement that was refused, which a model may have written;
+      otherwise it is a part of the draft's `writtenText`, exactly as written.
+      Cut to 200 characters. Untrusted text: escape it before display.
+    example: only in Brooklyn

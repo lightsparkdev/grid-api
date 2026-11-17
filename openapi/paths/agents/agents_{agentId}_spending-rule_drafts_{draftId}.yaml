@@ -1,0 +1,57 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+  - name: draftId
+    in: path
+    description: System-generated unique spending rule draft identifier
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get an agent's spending rule draft
+  description: One of the agent's spending rule drafts, as it was proposed.
+  operationId: getAgentSpendingRuleDraft
+  x-hidden: true
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/spending_rules/SpendingRuleDraft.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, or spending
+        rules are not (`SPENDING_RULES_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: >-
+        Agent not found, or the draft is not one of the agent's
+        (`SPENDING_RULE_DRAFT_NOT_FOUND`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

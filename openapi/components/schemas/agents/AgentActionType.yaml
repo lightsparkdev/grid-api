@@ -7,6 +7,8 @@ enum:
   - CREATE_SETTLEMENT_RULE
   - UPDATE_SETTLEMENT_RULE
   - PAYOUT_RUN
+  - SET_SPENDING_RULE
+  - SPENDING_RULE_QUESTION
 description: |
   The type of action the agent is requesting.
 
@@ -19,3 +21,5 @@ description: |
   | `CREATE_SETTLEMENT_RULE` | Make a settlement rule the agent proposed `ACTIVE`. See `settlementRule` |
   | `UPDATE_SETTLEMENT_RULE` | Change the match, shares or limits of a settlement rule the agent created. See `settlementRule` |
   | `PAYOUT_RUN` | Start a payout run the agent created. See `payoutRun` |
+  | `SET_SPENDING_RULE` | Put in force a spending rule the agent proposed for its own cards. See `spendingRuleDraft` |
+  | `SPENDING_RULE_QUESTION` | Answer whether the agent may buy from a merchant, which its spending rule asks the owner. See `spendingRuleQuestion` |

@@ -1,0 +1,19 @@
+type: object
+description: A merchant a bucket matches by the name the card network reports.
+required:
+  - name
+  - mode
+properties:
+  name:
+    type: string
+    minLength: 1
+    maxLength: 100
+    description: >-
+      The merchant's name. It must hold a letter or digit, no control or
+      invisible formatting characters, and no payment processor's prefix
+      such as `SQ *`, since that prefix is ignored when names are compared.
+      A name that is only a processor's is refused: name the merchant
+      instead. Text a person or agent wrote: escape it before display.
+    example: Blue Bottle Coffee
+  mode:
+    $ref: ./SpendingRuleMerchantMode.yaml

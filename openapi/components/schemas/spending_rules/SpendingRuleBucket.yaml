@@ -1,0 +1,24 @@
+type: object
+description: >-
+  A group of purchases with its own action and limits. A purchase falls in the
+  first bucket, in order, whose `match` holds.
+required:
+  - key
+  - match
+properties:
+  key:
+    type: string
+    pattern: '^[a-z0-9_]{1,32}$'
+    description: >-
+      The bucket's name, unique within the rule: 1 to 32 lowercase letters,
+      digits and underscores. Running totals and the owner's answers about
+      merchants are kept by it, so a later version of the rule with a bucket
+      of the same name carries them on.
+    example: coffee
+  match:
+    $ref: ./SpendingRuleBucketMatch.yaml
+  action:
+    $ref: ./SpendingRuleAction.yaml
+    description: What becomes of a purchase in this bucket. Defaults to `APPROVE`.
+  limits:
+    $ref: ./SpendingRuleLimits.yaml

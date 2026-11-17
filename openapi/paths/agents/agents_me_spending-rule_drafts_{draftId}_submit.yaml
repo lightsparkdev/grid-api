@@ -1,0 +1,77 @@
+parameters:
+  - name: draftId
+    in: path
+    description: System-generated unique spending rule draft identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Ask the owner to confirm a proposed spending rule
+  description: |
+    Ask the agent's owner to put a draft the agent proposed in force. Grid
+    creates a `SET_SPENDING_RULE` agent action, `PENDING_APPROVAL`, carrying
+    the draft and its restatement, and the `AGENT_ACTION.PENDING_APPROVAL`
+    webhook fires. Approving the action puts the rule in force exactly as the
+    draft's `ruleHash` binds it; rejecting it, or letting it expire with the
+    draft, leaves the agent's rule as it is. Poll the action with
+    `GET /agents/me/actions/{actionId}`.
+
+    The draft must be one this agent proposed, `PROPOSED`, unexpired and
+    proposed while the agent's current rule was in force. Submitting a draft
+    that already awaits its owner returns that pending action.
+  operationId: agentSubmitSpendingRuleDraft
+  x-hidden: true
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: The draft already awaits its owner; its pending action
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentAction.yaml
+    '201':
+      description: Action created, `PENDING_APPROVAL`
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentAction.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, or spending
+        rules are not (`SPENDING_RULES_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: >-
+        The draft is not one this agent proposed
+        (`SPENDING_RULE_DRAFT_NOT_FOUND`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict - The draft can no longer be confirmed
+        (`SPENDING_RULE_DRAFT_STALE`, with `details.staleReason`). Propose the
+        rule again
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,17 @@
+type: string
+enum:
+  - LIFETIME
+  - DAY
+  - WEEK
+  - MONTH
+description: |
+  The window a running total or purchase count adds up over. Days, weeks and
+  months are calendar ones in the rule's `timeZone`, and a week starts on
+  Monday.
+
+  | Period | Description |
+  |--------|-------------|
+  | `LIFETIME` | For as long as the rule is in force, and across later versions of it |
+  | `DAY` | Each calendar day |
+  | `WEEK` | Each calendar week, Monday to Sunday |
+  | `MONTH` | Each calendar month |

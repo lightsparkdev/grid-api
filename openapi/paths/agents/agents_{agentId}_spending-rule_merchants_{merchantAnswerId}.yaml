@@ -1,0 +1,57 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+  - name: merchantAnswerId
+    in: path
+    description: System-generated unique identifier of the owner's answer about a merchant
+    required: true
+    schema:
+      type: string
+delete:
+  summary: Remove the owner's answer about a merchant
+  description: >-
+    Forget the owner's answer about a merchant, so its status becomes
+    `REMOVED` and the next purchase there that needs the owner's approval is
+    declined and asks again. Removing an answer that is already `REMOVED`
+    succeeds and changes nothing.
+  operationId: deleteAgentSpendingRuleMerchantAnswer
+  x-hidden: true
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: Answer removed
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, or spending
+        rules are not (`SPENDING_RULES_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: >-
+        Agent not found, or the answer is not one kept for the agent
+        (`SPENDING_RULE_MERCHANT_ANSWER_NOT_FOUND`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

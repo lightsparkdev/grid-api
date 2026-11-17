@@ -1,0 +1,124 @@
+post:
+  summary: Propose a spending rule for the agent's own cards
+  description: |
+    Propose a spending rule for every card the authenticated agent issued,
+    from a sentence or as structured data, as
+    `POST /agents/{agentId}/spending-rule/drafts` does. The draft's `origin`
+    is `AGENT`. Amounts in `text` are read in the agent's account currency,
+    and a sentence naming another currency is refused with code `OTHER`. A
+    proposal from text can take up to about 90 seconds and is safe to retry
+    with the same `Idempotency-Key`.
+
+    A rule the agent proposes never takes effect on its own: only its owner
+    can put it in force. Show the owner the draft's `restatement`, then ask
+    for their approval with
+    `POST /agents/me/spending-rule/drafts/{draftId}/submit`. The agent has no
+    way to confirm or remove a rule itself.
+  operationId: agentCreateSpendingRuleDraft
+  x-hidden: true
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: true
+      description: >-
+        A unique identifier for the draft, scoped to the agent. A retry with
+        the same key and body returns the draft the first request stored
+        rather than proposing the rule again; the same key with a different
+        body is rejected with `400`.
+      schema:
+        type: string
+        maxLength: 255
+        example: <uuid>
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/spending_rules/SpendingRuleDraftCreateRequest.yaml
+        examples:
+          fromText:
+            summary: Propose a rule from the owner's words
+            value:
+              text: Only buy groceries, at most $150 a week.
+              timeZone: America/Chicago
+  responses:
+    '201':
+      description: >-
+        Draft stored, `PROPOSED` with a rule to submit to the owner or
+        `REFUSED` with why no rule could be made
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/spending_rules/SpendingRuleDraft.yaml
+    '400':
+      description: >-
+        Bad request - As for `POST /agents/{agentId}/spending-rule/drafts`,
+        including an Idempotency-Key used for a different body. Nothing is
+        stored
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, spending rules
+        are not (`SPENDING_RULES_DISABLED`), or the agent's proposals are
+        paused (`SPENDING_RULE_PROPOSALS_PAUSED`). Nothing is stored
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: >-
+        The agent was deleted while the proposal was being read. Nothing is
+        stored
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict - Ten drafts that could still be confirmed already await
+        confirmation for the agent (`SPENDING_RULE_PROPOSAL_LIMIT_REACHED`).
+        Nothing is stored
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '429':
+      description: >-
+        Too many requests - Another proposal for the agent is still being read
+        (`RATE_LIMITED`). Retry after it returns
+      headers:
+        Retry-After:
+          description: Number of seconds to wait before retrying the request.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '503':
+      description: >-
+        Service unavailable - The rule's questions could not be checked just
+        now (`SERVICE_UNAVAILABLE`). Nothing is stored. Propose it again
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error503.yaml

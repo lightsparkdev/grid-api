@@ -1,0 +1,88 @@
+type: object
+description: >-
+  What the agent's rule said about one authorization on one of the agent's
+  cards. Grid records decisions after the authorization is answered, on a
+  best-effort basis: under heavy load a decision may not be recorded, so the
+  list can miss authorizations. Use card transactions for a complete record
+  of what was approved.
+required:
+  - id
+  - outcome
+  - reason
+  - checks
+  - amount
+  - currency
+  - merchantDescriptor
+  - createdAt
+properties:
+  id:
+    type: string
+    description: System-generated unique identifier of the decision.
+    example: SpendingRuleDecision:019542f5-b3e7-1d02-0000-000000000401
+  cardTransactionId:
+    type: string
+    description: The card transaction the authorization belongs to.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+  outcome:
+    $ref: ./SpendingRuleOutcome.yaml
+  reason:
+    type: string
+    description: >-
+      Why, in a plain sentence. Grid may reword it, so branch on `outcome`
+      and `checks` rather than on this text. Escape it before display.
+    example: 'Approved: the owner allowed purchases at this merchant'
+  bucketKey:
+    type: string
+    description: >-
+      The `key` of the bucket the purchase fell in, or `(unmatched)` when it
+      matched no bucket. Absent when the rule decided before choosing a
+      bucket.
+    example: coffee
+  checks:
+    type: array
+    description: The parts of the rule that decided the purchase. Empty when none did.
+    items:
+      $ref: ./SpendingRuleCheck.yaml
+    example:
+      - BUCKET
+      - OWNER_ANSWER
+  amount:
+    type: integer
+    format: int64
+    description: >-
+      The amount the merchant requested, in the smallest unit of `currency`,
+      the card's currency. When the authorization also set a lower ceiling on
+      what the card may be charged, the rule compared its amounts against
+      that ceiling instead.
+    example: 1850
+  currency:
+    type: string
+    description: ISO 4217 code of the card's currency.
+    example: USD
+  merchantDescriptor:
+    type: string
+    description: >-
+      The merchant's name as the card network reported it. Untrusted text
+      that the merchant controls: escape it before display.
+    example: BLUE BOTTLE COFFEE SF
+  merchantCategoryCode:
+    type: string
+    description: >-
+      The merchant category code as the card network reported it, when it did.
+    example: '5814'
+  merchantCity:
+    type: string
+    description: >-
+      The merchant's city as the card network reported it, when it did.
+      Untrusted text: escape it before display.
+    example: San Francisco
+  merchantCountry:
+    type: string
+    description: >-
+      The merchant's country as the card network reported it, when it did.
+    example: USA
+  createdAt:
+    type: string
+    format: date-time
+    description: When the rule decided.
+    example: '2026-11-16T15:10:00Z'
