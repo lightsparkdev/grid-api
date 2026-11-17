@@ -1,0 +1,54 @@
+/** Figma drop shadow — X 0, Y 8, blur 40, spread 0, #000 12%. */
+$glass-button-drop-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+
+/** Outward bloom on press — same +4px/side idea as AppShell hover. */
+$glass-button-bloom: 4px;
+/** Gentler bloom on hover — half the press, so hover always reads smaller than click. */
+$glass-button-hover-bloom: 2px;
+$glass-button-press-ease: cubic-bezier(0.22, 1, 0.36, 1);
+$glass-button-press-duration: 0.28s;
+$glass-button-press-brightness: 1.12;
+
+@mixin glass-button-shadow {
+  box-shadow: $glass-button-drop-shadow;
+}
+
+@mixin glass-button-press-base {
+  transform: scale(1);
+  transform-origin: center center;
+  will-change: transform;
+  backface-visibility: hidden;
+  filter: brightness(1);
+  transition:
+    transform $glass-button-press-duration $glass-button-press-ease,
+    filter $glass-button-press-duration $glass-button-press-ease;
+
+  &:active:not(:disabled) {
+    filter: brightness($glass-button-press-brightness);
+  }
+}
+
+@mixin glass-button-press($size) {
+  @include glass-button-press-base;
+
+  &:hover:not(:disabled) {
+    transform: scale(($size + $glass-button-hover-bloom * 2) / $size);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(($size + $glass-button-bloom * 2) / $size);
+  }
+}
+
+@mixin glass-button-press-scale($scale) {
+  @include glass-button-press-base;
+
+  &:hover:not(:disabled) {
+    /* Halfway between rest and the press scale. */
+    transform: scale(1 + ($scale - 1) * 0.5);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale($scale);
+  }
+}
