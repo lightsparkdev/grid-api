@@ -21,6 +21,12 @@ corridor:
 | **014** | Corridor paused for maintenance — the account lookup and the quote fail with `403 CORRIDOR_UNDER_MAINTENANCE`. Other accounts in the same currency work as normal |
 | **015** | Corridor paused because of an outage — the account lookup and the quote fail with `403 CORRIDOR_UNDER_OUTAGE`. Other accounts in the same currency work as normal |
 
+A corridor can also pause after a quote is created. A payment funded while its
+destination corridor is paused fails with `failureReason: CORRIDOR_UNDER_MAINTENANCE`
+or `CORRIDOR_UNDER_OUTAGE`, and any funds are refunded. To test this in Sandbox,
+create the quote first, then ask Lightspark to pause the corridor for your
+platform, and fund the quote while the pause is on.
+
 One suffix applies to the quote's **source** instead of its destination. Use it
 on the external account a quote pulls funds from:
 
