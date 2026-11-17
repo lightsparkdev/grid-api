@@ -24813,7 +24813,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -24824,7 +24824,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     AedBusinessBeneficiary:
@@ -24861,7 +24861,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     AedExternalAccountInfo:
@@ -24970,7 +24970,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -24981,7 +24981,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     BusinessBeneficiary:
@@ -25110,7 +25110,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -25121,7 +25121,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     BrlBusinessBeneficiary:
@@ -25157,7 +25157,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     BrlExternalAccountInfo:
@@ -25240,7 +25240,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -25251,7 +25251,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     BwpBusinessBeneficiary:
@@ -25289,7 +25289,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     BwpExternalAccountInfo:
@@ -25494,7 +25494,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -25505,7 +25505,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
         documentType:
@@ -25557,7 +25557,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     CopExternalAccountInfo:
@@ -25643,7 +25643,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -25654,7 +25654,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     DkkBusinessBeneficiary:
@@ -25690,7 +25690,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     DkkExternalAccountInfo:
@@ -25786,7 +25786,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -25797,7 +25797,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     EgpBusinessBeneficiary:
@@ -25834,7 +25834,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     EgpExternalAccountInfo:
@@ -25878,7 +25878,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -25889,7 +25889,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     EurBusinessBeneficiary:
@@ -25928,7 +25928,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     EurExternalAccountInfo:
@@ -26013,7 +26013,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -26024,7 +26024,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     GbpBusinessBeneficiary:
@@ -26060,7 +26060,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     GbpExternalAccountInfo:
@@ -26154,7 +26154,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -26165,7 +26165,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     GhsExternalAccountInfo:
@@ -26257,7 +26257,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -26268,7 +26268,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     GtqExternalAccountInfo:
@@ -26359,7 +26359,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -26370,7 +26370,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     HkdBusinessBeneficiary:
@@ -26406,7 +26406,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     HkdExternalAccountInfo:
@@ -26482,7 +26482,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -26493,7 +26493,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     HtgExternalAccountInfo:
@@ -26594,7 +26594,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -26605,7 +26605,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     IdrBusinessBeneficiary:
@@ -26641,7 +26641,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     IdrExternalAccountInfo:
@@ -26740,7 +26740,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -26751,7 +26751,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     InrBusinessBeneficiary:
@@ -26787,7 +26787,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     InrExternalAccountInfo:
@@ -26887,7 +26887,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -26898,7 +26898,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     JmdExternalAccountInfo:
@@ -26981,7 +26981,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -26992,7 +26992,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     KesBusinessBeneficiary:
@@ -27030,7 +27030,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     KesExternalAccountInfo:
@@ -27113,7 +27113,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -27124,7 +27124,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     MwkBusinessBeneficiary:
@@ -27162,7 +27162,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     MwkExternalAccountInfo:
@@ -27205,7 +27205,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -27216,7 +27216,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     MxnBusinessBeneficiary:
@@ -27252,7 +27252,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     MxnExternalAccountInfo:
@@ -27344,7 +27344,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -27355,7 +27355,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     MyrBusinessBeneficiary:
@@ -27391,7 +27391,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     MyrExternalAccountInfo:
@@ -27475,7 +27475,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -27486,7 +27486,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     NgnBusinessBeneficiary:
@@ -27524,7 +27524,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     NgnExternalAccountInfo:
@@ -27608,7 +27608,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -27619,7 +27619,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     PhpBusinessBeneficiary:
@@ -27655,7 +27655,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     PhpExternalAccountInfo:
@@ -27757,7 +27757,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -27768,7 +27768,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     PkrExternalAccountInfo:
@@ -27851,7 +27851,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -27862,7 +27862,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     RwfBusinessBeneficiary:
@@ -27900,7 +27900,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     RwfExternalAccountInfo:
@@ -27993,7 +27993,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -28004,7 +28004,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     SgdBusinessBeneficiary:
@@ -28040,7 +28040,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     SgdExternalAccountInfo:
@@ -28241,7 +28241,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -28252,7 +28252,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     ThbBusinessBeneficiary:
@@ -28288,7 +28288,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     ThbExternalAccountInfo:
@@ -28371,7 +28371,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -28382,7 +28382,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     TzsBusinessBeneficiary:
@@ -28420,7 +28420,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     TzsExternalAccountInfo:
@@ -28503,7 +28503,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -28514,7 +28514,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     UgxBusinessBeneficiary:
@@ -28552,7 +28552,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     UgxExternalAccountInfo:
@@ -28596,7 +28596,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -28607,7 +28607,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     UsdBusinessBeneficiary:
@@ -28644,7 +28644,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     UsdExternalAccountInfo:
@@ -28736,7 +28736,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -28747,7 +28747,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     VndBusinessBeneficiary:
@@ -28783,7 +28783,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     VndExternalAccountInfo:
@@ -28877,7 +28877,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -28888,7 +28888,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     XafBusinessBeneficiary:
@@ -28926,7 +28926,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     XafExternalAccountInfo:
@@ -29022,7 +29022,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -29033,7 +29033,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     XofBusinessBeneficiary:
@@ -29071,7 +29071,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     XofExternalAccountInfo:
@@ -29155,7 +29155,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -29166,7 +29166,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     ZarBusinessBeneficiary:
@@ -29204,7 +29204,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     ZarExternalAccountInfo:
@@ -29287,7 +29287,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -29298,7 +29298,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     ZmwBusinessBeneficiary:
@@ -29336,7 +29336,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     ZmwExternalAccountInfo:
@@ -29663,7 +29663,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -29674,7 +29674,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     CnyBusinessBeneficiary:
@@ -29711,7 +29711,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     CnyExternalAccountInfo:
@@ -29796,7 +29796,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -29807,7 +29807,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     IlsBusinessBeneficiary:
@@ -29844,7 +29844,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     IlsExternalAccountInfo:
@@ -29929,7 +29929,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -29940,7 +29940,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     TryBusinessBeneficiary:
@@ -29977,7 +29977,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     TryExternalAccountInfo:
@@ -30053,7 +30053,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -30064,7 +30064,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     ChfBusinessBeneficiary:
@@ -30100,7 +30100,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     ChfExternalAccountInfo:
@@ -30176,7 +30176,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -30187,7 +30187,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     RonBusinessBeneficiary:
@@ -30223,7 +30223,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     RonExternalAccountInfo:
@@ -30306,7 +30306,7 @@ components:
           description: The birth date of the beneficiary
         nationality:
           type: string
-          description: The nationality of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         email:
           type: string
           maxLength: 320
@@ -30317,7 +30317,7 @@ components:
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     KrwBusinessBeneficiary:
@@ -30353,7 +30353,7 @@ components:
           description: The tax identification number of the business
         countryOfResidence:
           type: string
-          description: The country of residence of the beneficiary
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
         address:
           $ref: '#/components/schemas/Address'
     KrwExternalAccountInfo:
