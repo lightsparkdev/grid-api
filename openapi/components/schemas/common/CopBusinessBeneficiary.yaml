@@ -31,6 +31,6 @@ properties:
     description: The tax identification number of the business
   countryOfResidence:
     type: string
-    description: The country of residence of the beneficiary
+    description: ISO 3166-1 alpha-2 country code, such as GB for the UK
   address:
     $ref: ./Address.yaml
