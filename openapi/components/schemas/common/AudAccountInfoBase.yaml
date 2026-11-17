@@ -1,0 +1,28 @@
+type: object
+required:
+- accountType
+- accountNumber
+- bsbNumber
+properties:
+  accountType:
+    type: string
+    enum:
+    - AUD_ACCOUNT
+  accountNumber:
+    type: string
+    description: Australian bank account number (5 to 10 digits)
+    minLength: 5
+    maxLength: 10
+    example: '12345678'
+    pattern: ^[0-9]{5,10}$
+  bsbNumber:
+    type: string
+    description: Australian BSB number (6 digits)
+    example: '062000'
+    minLength: 6
+    maxLength: 6
+    pattern: ^[0-9]{6}$
+example:
+  accountType: AUD_ACCOUNT
+  accountNumber: '12345678'
+  bsbNumber: '062000'

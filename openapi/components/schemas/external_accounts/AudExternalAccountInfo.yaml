@@ -1,0 +1,19 @@
+title: AUD Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/AudAccountInfo.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/AudBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/AudBusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/AudBeneficiary.yaml
+          BUSINESS: ../common/AudBusinessBeneficiary.yaml
