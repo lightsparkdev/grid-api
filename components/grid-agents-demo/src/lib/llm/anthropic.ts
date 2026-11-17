@@ -1,4 +1,5 @@
 import { MODES, type Mode } from '@/data/mode';
+import { checkedReading, READ_SYSTEM, READ_TOOL, readPrompt, type ReadRequest, type Reading } from './read';
 import { TOOL_DEFS, toolsIn, type ToolCall, type ToolName, type Turn } from './tools';
 import type { ModelAdapter, StepRequest, StepAnswer } from './types';
 
@@ -8,6 +9,8 @@ const MODEL: string = MODELS.haiku;
 
 const MAX_TOKENS = 1500;
 const TIMEOUT_MS = 15_000;
+/** Reading a reply holds up the conversation, so it gets the fast model and a short leash. */
+const READ_TIMEOUT_MS = 6_000;
 
 /** The last block of the conversation marked for caching, so the next step only pays full price for what's new. */
 function cachedTurns(turns: Turn[]) {
@@ -65,4 +68,27 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
       return { calls, usage };
     },
   };
+}
+
+/** A typed reply to an open question, read by Claude; null when its answer doesn't hold up. */
+export async function readReply(apiKey: string, req: ReadRequest, model = process.env.AGENT_READ_MODEL || MODELS.haiku): Promise<Reading | null> {
+  const started = Date.now();
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    signal: AbortSignal.timeout(READ_TIMEOUT_MS),
+    body: JSON.stringify({
+      model,
+      max_tokens: 200,
+      system: READ_SYSTEM,
+      messages: [{ role: 'user', content: readPrompt(req) }],
+      tools: [READ_TOOL],
+      tool_choice: /sonnet|opus/.test(model) ? { type: 'auto' } : { type: 'tool', name: READ_TOOL.name },
+    }),
+  });
+  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const data = (await res.json()) as { content?: { type: string; name?: string; input?: unknown }[] };
+  const call = data.content?.find((c) => c.type === 'tool_use' && c.name === READ_TOOL.name);
+  if (process.env.NODE_ENV === 'development') console.info(`[read] ${req.kind} "${req.reply}" → ${JSON.stringify(call?.input)} · ${Date.now() - started}ms`);
+  return call?.input && typeof call.input === 'object' ? checkedReading(call.input as Record<string, unknown>, req) : null;
 }
