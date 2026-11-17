@@ -55,6 +55,9 @@ export const memberOf = (team: readonly TeamMember[], name?: string): TeamMember
 /** The first suggestion that isn't on the team yet. */
 export const nextSuggestion = (team: readonly TeamMember[]) => SUGGESTED_TEAM.find((m) => !memberOf(team, m.name)) ?? SUGGESTED_TEAM[0];
 
+/** The last four digits of a team member's card, from their name, so the chat and the API panel show the same card. */
+export const cardLast4 = (name: string) => String(1000 + (name.split('').reduce((h, ch) => h * 31 + ch.charCodeAt(0), 7) % 9000));
+
 /** The team's shared budget the Team budget tile sets up, USD cents a month. */
 export const TEAM_BUDGET = 500_000;
 

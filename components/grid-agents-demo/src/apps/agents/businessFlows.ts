@@ -4,6 +4,7 @@ import { DEFAULT_BUSINESS } from '@/data/mode';
 import {
   COMPANY_ADDRESS,
   COMPANY_BANK,
+  cardLast4,
   CONTRACTOR_COUNTRIES,
   inDays,
   memberOf,
@@ -204,7 +205,8 @@ export function companySetup(ctx: FlowContext, given: { company?: string; owner?
   if (given.company) return [{ react: '❤️' }, ...askOwner(given.company)];
   return [
     { react: '❤️' },
-    { say: 'company.name' },
+    // On the way to something else, it says what's waiting on the account.
+    ctx.held ? { say: 'company.name.first', params: { what: ctx.held } } : { say: 'company.name' },
     { name: true, suggestion: DEFAULT_BUSINESS.company, other: 'company.name.other', named: askOwner },
   ];
 }
@@ -283,7 +285,7 @@ export function employeeCard(ctx: FlowContext): Beat[] {
     first: m.first,
     role: m.role,
     purpose: ctx.params?.note || 'travel',
-    last4: String(1000 + (m.name.split('').reduce((h, ch) => h * 31 + ch.charCodeAt(0), 7) % 9000)),
+    last4: cardLast4(m.name),
     budget: b.budget ?? 0,
   };
   if (team.find((t) => t.name === m.name)?.hasCard) return [{ react: '👍' }, { say: 'empcard.already', params: p }];
@@ -466,6 +468,7 @@ export function runPayroll(ctx: FlowContext): Beat[] {
       ],
       'payroll.denied',
       params,
+      'approval.over',
     ),
   ];
   const short = total - ctx.account().balanceCents;

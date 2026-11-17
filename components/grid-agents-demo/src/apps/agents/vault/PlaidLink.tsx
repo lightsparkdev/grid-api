@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { BANK_COUNTRIES } from '@/data/bankCountries';
 import { BankMark } from '../BankMark';
 import type { AgentAsk, Message } from '../conversation';
-import { bankFor, linkBank, type LinkedBank } from '../linkedBank';
+import { bankFor, linkBank, withUsNumbers, type LinkedBank } from '../linkedBank';
 import { useKeptAsk } from '../openSheets';
 import { GlassPill, NoopButton, PressButton } from '../glass';
 import { AppSheet } from '../sheet';
@@ -192,7 +192,7 @@ export function PlaidFlow({
   useEffect(() => {
     if (step !== 'returning' || !picked) return;
     const t = window.setTimeout(() => {
-      const bank: LinkedBank = { ...bankFor(US), bankName: picked.name, last4: picked.last4 };
+      const bank: LinkedBank = withUsNumbers({ ...bankFor(US), bankName: picked.name, last4: picked.last4 });
       linkBank(bank);
       linked.current(bank);
     }, MS.returning);

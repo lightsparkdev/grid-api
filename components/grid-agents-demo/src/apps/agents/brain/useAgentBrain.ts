@@ -70,6 +70,35 @@ function typedAmount(text: string, all?: number) {
   return usd > 0 ? usd : undefined;
 }
 
+/** How a request or a question opens in lowercase, which a name typed as a name doesn't. */
+const REQUEST_OPENER =
+  /^(pay|paying|send|sending|add|adding|give|run|running|invoice|buy|book|show|tell|what|whats|how|hows|why|when|where|wheres|who|can|could|would|will|set|create|make|help|check|cancel|stop|transfer|move|withdraw|top|fund|issue|hire|track|remind|please|hey|hi|hello|yes|yeah|ok|okay|sure|thanks|thank|let'?s|lets|actually|skip|i want|i need|i'?d like|id like|i wanna|i would|we|not|maybe|later)\b/i;
+/** A request even when typed in capitals ("Pay Bob"): no company or person's name opens this way. */
+const PAYMENT_VERB = /^(pay|send|transfer|withdraw|invoice|give|run|move)\b/i;
+/** What people put before a name they're giving: "I'm Pat", "it's called Acme". */
+const NAME_LEAD = /^(i'?m|i am|my name is|my name'?s|it'?s called|it'?s|call it|we'?re|we are|the company is|company is)\s+/i;
+/** Leads that only ever come before a name, so what follows is one even when it opens like a request ("It's called Pay It Forward"). */
+const NAMING_LEAD = /^(my name is|my name'?s|it'?s called|call it|the company is|company is)\s+/i;
+/** Small words a capitalized name can hold in lowercase: "Payne & Co", "House of Pies", "Buy Me a Coffee". */
+const NAME_JOINERS = /^(&|and|of|the|a|an|de|la|le|van|von|y|for|me)$/i;
+
+/**
+ * The name in a reply to "what's it called?" or "what's your name?", or null when the reply is something else (a
+ * request, a question, a no), which lapses the question. A name typed with capitals is taken as written.
+ */
+function nameIn(text: string): string | null {
+  const t = text.trim().replace(NAME_LEAD, '');
+  if (!t || t.length > 60 || t.split(/\s+/).length > 6 || /[?$]/.test(t) || NO.test(t)) return null;
+  if (NAMING_LEAD.test(text.trim())) return t;
+  const words = t.split(/\s+/);
+  const capitalized = words.every((w, i) => /^[A-ZÀ-ÖØ-Þ0-9]/.test(w) || (i > 0 && NAME_JOINERS.test(w)));
+  if (capitalized) return words.length > 1 && PAYMENT_VERB.test(t) ? null : t;
+  return REQUEST_OPENER.test(t) ? null : t;
+}
+
+/** Asks that set something up for later (a balance, a saved card, a linked bank): a no to one stops the shortcuts. */
+const SETUP_ASKS = new Set<string>(['connect', 'vault', 'bank']);
+
 /** Lines a tool opens with that answer the request themselves: a setup first, a no, or "already done". The model's own
  *  line is dropped for them, so the two don't talk over each other. */
 const SPEAKS_FIRST = new Set([
@@ -89,6 +118,7 @@ const SPEAKS_FIRST = new Set([
   'agent.already',
   'getpaid.already',
   'company.name',
+  'company.name.first',
   'company.intro',
   'company.already',
   'company.none',
@@ -147,6 +177,7 @@ export function useAgentBrain({
   onActiveFlow,
   onRun,
   onCompleted,
+  onDeclined,
   reply,
   describe,
   readsFor = 0,
@@ -161,6 +192,8 @@ export function useAgentBrain({
   /** A flow starts playing: its Grid calls group under it from here. */
   onRun?: (flow: ActionId) => void;
   onCompleted?: (flow: ActionId) => void;
+  /** They said no to setting something up (a balance, a card, a bank). */
+  onDeclined?: () => void;
   /** The model's next step for the conversation so far (behind /api/agent). */
   reply: (turns: Turn[]) => Promise<StepReply>;
   /** What the agent said in these messages, in the app's words, for the model to read back. */
@@ -219,8 +252,8 @@ export function useAgentBrain({
   /** Suggested replies under the agent's last answer: a tap sends one as if typed. */
   const suggested = useRef<{ id: number; chips: Chip[] } | null>({ id: 2, chips: STARTERS[mode] });
 
-  const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, reply, describe, readsFor, typesFor });
-  cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, reply, describe, readsFor, typesFor };
+  const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, onDeclined, reply, describe, readsFor, typesFor });
+  cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, onDeclined, reply, describe, readsFor, typesFor };
   messagesRef.current = messages;
 
   const append = (role: Turn['role'], content: Block[]) => {
@@ -398,6 +431,8 @@ export function useAgentBrain({
             decision = await new Promise<Decision>((r) => (decideRef.current = r));
             decideRef.current = null;
           }
+          // Only a real no: a tile tapped over the sheet, a reset, or another request typed over it isn't one.
+          if (decision === 'deny' && !queued.current && SETUP_ASKS.has(b.ask)) cb.current.onDeclined?.();
           if (decision === 'cancel' || run.cancelled) return false;
           setBusy(true);
           // Paying another way: this checkout goes, and the agent comes back with one for the new way.
@@ -502,6 +537,23 @@ export function useAgentBrain({
     [push, patch, show, own],
   );
 
+  /** Somewhere to go once a flow finishes, however it started: a few flows that follow, unless something else has begun. */
+  const offerNext = useCallback(
+    async (flow: ActionId) => {
+      const ctx = cb.current.context();
+      const chips = nextSteps(flow, ctx.mode ?? 'personal', ctx.account());
+      if (!chips.length) return;
+      await sleep(700);
+      if (runRef.current) return;
+      dropSuggestions();
+      push({ kind: 'them', said: { key: 'next.ask' }, typing: false });
+      await sleep(350);
+      if (runRef.current) return;
+      suggested.current = { id: push({ kind: 'chips', chips, picked: null }), chips };
+    },
+    [push, dropSuggestions],
+  );
+
   const start = useCallback(
     async (flow: ActionId | null, beats: Beat[], after = 0, topic?: string, request?: string) => {
       const run: Run = { flow, cancelled: false, request };
@@ -525,20 +577,9 @@ export function useAgentBrain({
       const next = queued.current;
       queued.current = null;
       if (next) return void askRef.current?.(next, next, false);
-      // Somewhere to go from here: a few flows that follow, unless something else has started meanwhile.
-      if (!finished || !flow) return;
-      const ctx = cb.current.context();
-      const chips = nextSteps(flow, ctx.mode ?? 'personal', ctx.account());
-      if (!chips.length) return;
-      await sleep(700);
-      if (runRef.current) return;
-      dropSuggestions();
-      push({ kind: 'them', said: { key: 'next.ask' }, typing: false });
-      await sleep(350);
-      if (runRef.current) return;
-      suggested.current = { id: push({ kind: 'chips', chips, picked: null }), chips };
+      if (finished && flow) await offerNext(flow);
     },
-    [play, clearWork, push, dropSuggestions],
+    [play, clearWork, push, offerNext],
   );
 
   // A tile's jump, applied once: whatever was playing stops, and the tile's line goes out as the visitor's message.
@@ -628,6 +669,8 @@ export function useAgentBrain({
       let flow: ActionId | null = null;
       let reacted = false;
       let spoke = false;
+      /** The last flow it carried out to the end this turn, for what's next: none after a no, a failure or a fallback. */
+      let completedFlow: ActionId | null = null;
       const finish = () => {
         if (runRef.current !== run) return;
         dropTyping();
@@ -645,6 +688,7 @@ export function useAgentBrain({
           if (typing !== null) patch(typing, (m) => (m.kind === 'them' ? { ...m, said, typing: false } : m));
           else show({ kind: 'them', said, typing: false });
           typing = null;
+          completedFlow = null;
           break;
         }
         const { calls } = answer;
@@ -728,8 +772,11 @@ export function useAgentBrain({
           }
           done.set(call.id, resultBlock(call.id, { status: 'done', ...out.result, account: accountNow(cb.current.context().account()) }));
           if (callFlow) cb.current.onCompleted?.(callFlow);
+          // A read (a quote, a search) only sets up the next step; the flow isn't done yet.
+          if (callFlow && !READS_RESULT.has(call.name)) completedFlow = callFlow;
         }
         if (run.cancelled) return;
+        if (ended || failed) completedFlow = null;
         const last = calls[calls.length - 1];
         // A limit raised for a payment goes on to that payment.
         const goOn = !ended && (failed || READS_RESULT.has(last.name) || last.input.more === true || (last.name === 'raise_limit' && typeof last.input.for === 'string'));
@@ -756,9 +803,11 @@ export function useAgentBrain({
       // Something said over an approval that wasn't a yes or a no: answered now the turn is over.
       const next = queued.current;
       queued.current = null;
-      if (next && !run.cancelled) void askRef.current?.(next, next, false);
+      if (next && !run.cancelled) return void askRef.current?.(next, next, false);
+      // A flow it carried out to the end offers what's next, as one started from a tile does; its own choices come first.
+      if (completedFlow && !chips.length && !run.cancelled) await offerNext(completedFlow);
     },
-    [push, patch, show, play, clearWork, own],
+    [push, patch, show, play, clearWork, own, offerNext],
   );
 
   askRef.current = ask;
@@ -806,7 +855,15 @@ export function useAgentBrain({
         afterReading(() => pickName(i));
         return;
       }
-      const value = cleanName(text);
+      // A request, a question or a no isn't a name: the question lapses and the agent answers what they said.
+      const given = nameIn(text);
+      if (given === null) {
+        setComposer('');
+        cancelRun();
+        await ask(text);
+        return;
+      }
+      const value = cleanName(given);
       setComposer('');
       if (!value) return;
       nameRef.current = null;

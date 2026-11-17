@@ -1,4 +1,4 @@
-import type { DepositNetwork, Limits, Purchase, SendNetwork } from '@/data/agentEvents';
+import type { DepositNetwork, Purchase, SendNetwork } from '@/data/agentEvents';
 
 /* The one story every app tells: the same person, the same people they pay,
    the same purchases. Only the voice and the look change between apps. */
@@ -43,8 +43,8 @@ export const NETWORK_NAME: Record<SendNetwork, string> = {
 };
 
 
-/** What Set limits asks for: act alone under $100, $500 a payment, $1,000 a day. */
-export const NEW_LIMITS: Limits = { perTransaction: 50_000, daily: 100_000, approvalAbove: 10_000 };
+/** What the Set limits tile asks for, in USD cents: act alone under $100. The other limits stay as they are. */
+export const NEW_APPROVAL_LIMIT = 10_000;
 
 export const RING_LIGHT: Purchase & { item: string; image: string } = {
   merchant: 'NEEWER',

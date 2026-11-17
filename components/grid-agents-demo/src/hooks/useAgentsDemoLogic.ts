@@ -30,16 +30,20 @@ const CALL_STAGGER_MS = 650;
 /**
  * Fast-forward, as the Global Accounts playground does: whatever a flow needs
  * (an installed agent, money to spend) is set up silently, so any tile works
- * from any starting point. State only; nothing is logged for it. A business
- * account is never set up silently: naming the company and approving its account
- * is the point of the flow that does it.
+ * from any starting point. The installed agent isn't logged; the money is, as the
+ * transfer landing under the flow. A business account is never set up silently:
+ * naming the company and approving its account is the point of the flow that does
+ * it, and once they've turned a setup step down, nothing is set up for them.
  */
-function prepare(session: AgentSession, id: ActionId, variant: number, mode: Mode): NonNullable<FlowEntry['setup']> {
+function prepare(session: AgentSession, id: ActionId, variant: number, mode: Mode, declined: boolean): Prepared {
   const a = session.snapshot();
+  const none = { connected: false, funded: 0, steps: [] };
   // A card-only account passed on a balance once: the flow asks for one, as it does when typed, rather than
   // turning it on behind their back. Checking the balance or history, or withdrawing, answers as it stands.
-  if ((a.connected && !a.balanceOn && needsSetup(id, a)) || AS_IT_STANDS.has(id)) return { connected: false, funded: 0 };
-  if (mode === 'business' && !a.connected) return { connected: false, funded: 0 };
+  if ((a.connected && !a.balanceOn && needsSetup(id, a)) || AS_IT_STANDS.has(id)) return none;
+  if (mode === 'business' && !a.connected) return none;
+  // Once they've said no to setting something up, nothing is set up for them: each flow asks, as typed.
+  if (declined) return none;
   const connected = needsSetup(id, a);
   if (connected) session.assumeConnected();
   const need = flowSpend(id, undefined, variant, session.snapshot());
@@ -47,9 +51,11 @@ function prepare(session: AgentSession, id: ActionId, variant: number, mode: Mod
   // A purchase goes on the card without a balance, or when the saved card covers a short one: nothing to top up.
   const onCard = id === 'buy' && (session.snapshot().cardVaulted || !session.snapshot().balanceOn);
   const funded = need && have < need && !onCard ? Math.max(FAST_FORWARD_FUND_CENTS, Math.ceil((need - have) / 10_000) * 10_000) : 0;
-  if (funded) session.assumeFunded(funded);
-  return { connected, funded };
+  const steps = funded ? session.assumeFunded(funded) : [];
+  return { connected, funded, steps };
 }
+
+type Prepared = NonNullable<FlowEntry['setup']> & { steps: CallStep[] };
 
 let groupSeq = 0;
 function newGroupId() {
@@ -152,10 +158,25 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
     [mode, connectorRef],
   );
 
-  const onRun = useCallback((flow: ActionId) => {
-    groupRef.current = { id: newGroupId(), label: actionLabel(flow) };
-    nextAt.current = 0;
+  /** They turned down a setup step on this account: tiles stop setting things up for them. */
+  const declined = useRef(false);
+  const onDeclined = useCallback(() => {
+    declined.current = true;
   }, []);
+  /** What a tile set up on its own, shown once its flow starts. */
+  const prepared = useRef<CallStep[]>([]);
+
+  const onRun = useCallback(
+    (flow: ActionId) => {
+      groupRef.current = { id: newGroupId(), label: actionLabel(flow) };
+      nextAt.current = 0;
+      // A tile's own top-up lands first under its flow, so the balance in the panel adds up.
+      const ahead = prepared.current;
+      prepared.current = [];
+      if (ahead.length) pushSteps(ahead);
+    },
+    [pushSteps],
+  );
 
   const onCompleted = useCallback((flow: ActionId) => {
     setRuns((r) => ({ ...r, [flow]: r[flow] + 1 }));
@@ -205,7 +226,8 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
   const handleAction = useCallback(
     (id: ActionId) => {
       const s = sessionRef.current!;
-      const setup = prepare(s, id, runs[id], mode);
+      const { steps, ...setup } = prepare(s, id, runs[id], mode, declined.current);
+      prepared.current = steps;
       setAccount(s.snapshot());
       setEntry({ nonce: Date.now(), flow: id, variant: runs[id], setup });
     },
@@ -224,6 +246,8 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
     setEntry(undefined);
     setActiveFlow(null);
     setRuns(NO_RUNS());
+    declined.current = false;
+    prepared.current = [];
     setChatKey((k) => k + 1);
   }, [clearTimers, mode, connectorRef]);
 
@@ -239,6 +263,7 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
     onEvent,
     onRun,
     onCompleted,
+    onDeclined,
     context,
     reply,
     reset,

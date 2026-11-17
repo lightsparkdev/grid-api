@@ -282,6 +282,7 @@ export const LINES = {
   'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank yet. Add it here once and I’ll send it.`,
   'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so I’ll send it over ${s(p, 'rail')}.${converted(p)}`,
   'pay.auto': (p) => `It’s under your ${usd(n(p, 'limit'))} limit, so I’m sending it now.`,
+  'approval.over': (p) => `That’s over your ${usd(n(p, 'limit'))} limit, so I need your OK.`,
   'pay.done': (p) => `Sent. ${s(p, 'first')} has it, with a note that it’s from you.`,
   'pay.scheduled': (p) => `Sent the first one. I’ll send ${s(p, 'first')} ${s(p, 'local')} on the ${s(p, 'day')} of every month, starting ${s(p, 'next')}, and check with you if anything changes.`,
   'split.intro': (p) => `That’s ${usd2(n(p, 'share'))} each, split ${n(p, 'count')} ways. I sent ${s(p, 'list')} a request.`,
@@ -311,7 +312,7 @@ export const LINES = {
   'buy.picked': (p) => `Got your pick: the ${s(p, 'item')}. I’ll check the total and get ${byErrand(p, { order: 'checkout', ride: 'the ride', tickets: 'the tickets', table: 'the booking' })} ready. Nothing is charged without your approval.`,
   'buy.payWith': (p) => `Want me to pay from ${yours(p)} or your ${CARD}?`,
   'buy.shortCard': (p) => `${Yours(p)} won’t cover it. Should I put it on your ${CARD}, or do you want to add ${usd(n(p, 'amount'))} first?`,
-  'buy.short': (p) => `You have ${usd2(n(p, 'balance'))} in ${yours(p)}. I can put this on your card instead, or you can add ${usd(n(p, 'amount'))} first.`,
+  'buy.short': (p) => `You have ${usd2(n(p, 'balance'))} in ${yours(p)}. I can put this on a card instead, or you can add ${usd(n(p, 'amount'))} first.`,
   'buy.card': (p) =>
     n(p, 'card')
       ? `${short(p)}I’ll check out with your ${CARD} once you approve it.`
@@ -375,6 +376,7 @@ export const LINES = {
     'Hi! I can run your business’s money: send invoices, pay bills and contractors, run payroll, and give your team cards. Set up your company to start, or ask me anything.',
 
   'company.name': () => 'Let’s set up your company’s account. What’s the company called?',
+  'company.name.first': (p) => `Before ${s(p, 'what')}, I need an account for your company. What’s it called?`,
   'company.name.other': () => 'Sure. What’s it called?',
   'company.owner.other': () => 'Sure. What’s your full name?',
   'company.owner': (p) => `Got it. And what’s your name? You’ll own ${s(p, 'company')}’s account and approve what I can’t do alone.`,
@@ -475,6 +477,8 @@ export const ASKS = {
     ],
     allow: 'Connect',
     allowed: 'Connected',
+    deny: 'Not now',
+    denied: 'Not now',
   }),
   limits: (p) => ({
     title: `Update ${s(p, 'agent').replace(/^Your /, 'your ')}’s limits`,
@@ -586,6 +590,8 @@ export const ASKS = {
     ],
     allow: 'Set up',
     allowed: 'Verified',
+    deny: 'Not now',
+    denied: 'Not now',
   }),
   team: (p) => ({
     heading: { title: s(p, 'company') },

@@ -54,6 +54,7 @@ export function AppPanel({ connector, mode, opened, accounts }: AppPanelProps) {
                       onActiveFlow={a.setActiveFlow}
                       onRun={a.onRun}
                       onCompleted={a.onCompleted}
+                      onDeclined={a.onDeclined}
                       reply={a.reply}
                     />
                   </div>

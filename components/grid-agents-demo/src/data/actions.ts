@@ -208,7 +208,7 @@ export const ACTIONS: ActionDef[] = [
     id: 'contractor',
     label: 'Pay a contractor',
     desc: 'Paid to their bank, anywhere, in their currency',
-    prompts: ['Pay Priya Shah $800 for the illustrations'],
+    prompts: ['Pay a contractor'],
   },
   {
     id: 'payroll',

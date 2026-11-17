@@ -184,10 +184,14 @@ function businessOf(raw: Partial<PromptState> | undefined): Partial<PromptState>
   };
 }
 
-/** Apps that text in all lowercase, names too; the rest write in sentence case. */
+/** Apps that text in lowercase, names kept as written; the rest write in sentence case. */
 const LOWERCASE = new Set<ConnectorId>(['dot', 'instinct']);
 
-/** Every app's line cleaned. One the model left out is filled from a sentence-case app's (lowercased for the apps that
+/** A sentence-case line in a lowercase voice: each sentence opens lowercase, and so does "I". Names inside a sentence keep
+ *  their capitals; acronyms (USDC, RTP) keep theirs everywhere. */
+const casualize = (text: string) => text.replace(/(^|[.!?]\s+)([A-Z][a-z’']*)\b/g, (_m, pre: string, word: string) => pre + word.toLowerCase()).replace(/\bI\b/g, 'i');
+
+/** Every app's line cleaned. One the model left out is filled from a sentence-case app's (made casual for the apps that
  *  text that way), so no app shows another's casing. */
 function saidBy(raw: unknown, connector: ConnectorId): Say | undefined {
   if (!raw || typeof raw !== 'object') return undefined;
@@ -195,7 +199,7 @@ function saidBy(raw: unknown, connector: ConnectorId): Say | undefined {
   const given = Object.fromEntries(CONNECTOR_IDS.map((id) => [id, typeof lines[id] === 'string' ? clean(lines[id] as string) : ''])) as Record<ConnectorId, string>;
   const plain = (['yourapp', 'claude', 'muse', 'grok'] as ConnectorId[]).map((id) => given[id]).find(Boolean) ?? given[connector] ?? CONNECTOR_IDS.map((id) => given[id]).find(Boolean);
   if (!plain) return undefined;
-  return Object.fromEntries(CONNECTOR_IDS.map((id) => [id, LOWERCASE.has(id) ? (given[id] || plain).toLowerCase() : given[id] || plain])) as Say;
+  return Object.fromEntries(CONNECTOR_IDS.map((id) => [id, LOWERCASE.has(id) ? given[id] || casualize(plain) : given[id] || plain])) as Say;
 }
 
 /** A line that starts something doesn't ask anything (the tools do): a trailing question goes, if there's more to it. */

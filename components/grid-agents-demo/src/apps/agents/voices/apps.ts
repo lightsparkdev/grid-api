@@ -40,6 +40,8 @@ export interface VoiceOverrides {
 const n = (p: Params | undefined, k: string) => Number(p?.[k] ?? 0);
 const s = (p: Params | undefined, k: string) => String(p?.[k] ?? '');
 const lower = (p: Params | undefined, k: string) => s(p, k).toLowerCase();
+/** Grok's sign-off for a purchase on a one-time card; one on their own saved card has nothing to self-destruct. */
+const oneTime = (p: Params | undefined) => (n(p, 'card') ? '' : ' The card already self-destructed.');
 /** Instinct's " (was $10)" after a limit that changes. */
 const wasText = (p: Params | undefined, key: string, from: string) => was(p, key, from, (v) => ` (was ${v})`) ?? '';
 
@@ -131,9 +133,9 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'fund.offerFrom': (p) => `Balance is empty. Top up from your ${n(p, 'bank') ? 'bank' : 'card'}?`,
       'pay.newRecipient': (p) => `No bank on file for ${s(p, 'first')}. Add it once and I’ll send it.`,
       'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'from')} is about ${s(p, 'to')}.` : ''}`,
-      'pay.done': (p) => `Sent. ${s(p, 'first')}’s got it. Receipt’s in your inbox.`,
-      'buy.done': (p) => (n(p, 'now') ? 'Ordered. There in about 30 minutes. The card already self-destructed.' : 'Ordered. Arrives Thursday. The card already self-destructed.'),
-      'buy.sent': () => 'Sent. It’s in your inbox. The card already self-destructed.',
+      'pay.done': (p) => `Sent. ${s(p, 'first')}’s got it.`,
+      'buy.done': (p) => `${n(p, 'now') ? 'Ordered. There in about 30 minutes.' : 'Ordered. Arrives Thursday.'}${oneTime(p)}`,
+      'buy.sent': (p) => `Sent. It’s in your inbox.${oneTime(p)}`,
       'agent.intro': (p) => `${s(p, 'hotel')}’s agent wanted ${usd(n(p, 'listed'))}. Paying directly knocks off 10%: ${usd2(n(p, 'amount'))}.`,
       'getpaid.done': (p) => `${s(p, 'first')} paid. ${usd2(n(p, 'amount'))} in, ${usd2(n(p, 'balance'))} total.`,
       'balance.answer': (p) => `${usd2(n(p, 'balance'))}. Here’s the breakdown.`,
@@ -262,8 +264,8 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'fund.needed': (p) => `i’ll need ${usd(n(p, 'amount'))} in your **Dots balance** to cover that. how do you want to add it?`,
       'connect.already': () => 'already on! here’s your **Dots balance**:',
       'limits.same': (p) => `those are already my limits! i handle anything up to ${usd(n(p, 'approve'))}, ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day.`,
-      'agent.already': (p) => `you’re already booked at ${lower(p, 'hotel')} for ${lower(p, 'dates')}! the confirmation’s in your inbox.`,
-      'getpaid.already': (p) => `${lower(p, 'first')} already paid that invoice! nothing else is outstanding.`,
+      'agent.already': (p) => `you’re already booked at ${s(p, 'hotel')} for ${lower(p, 'dates')}! the confirmation’s in your inbox.`,
+      'getpaid.already': (p) => `${s(p, 'first')} already paid that invoice! nothing else is outstanding.`,
       'connect.intro': () => 'first i’ll need a **Dots balance** for that, with limits you pick. here’s what i’m asking for:',
       'connect.self': () => 'ooh yes. here’s the **Dots balance** i’d set up, with limits you pick:',
       'connect.done': () => 'done! your **Dots balance** is on, and i’ll stay inside your limits.',
@@ -275,10 +277,11 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'amount.other': () => 'sure! type any amount',
       'fund.ask': () => 'pick what’s easiest:',
       'fund.done': (p) => `${usd(n(p, 'amount'))} landed! you’ve got ${usd2(n(p, 'balance'))} now.`,
-      'pay.newRecipient': (p) => `i don’t have ${lower(p, 'first')}’s bank yet! add it here once and i’ll send it.`,
-      'pay.done': (p) => `sent! ${lower(p, 'first')} has it.`,
-      'getpaid.ask': (p) => `how does ${lower(p, 'first')} want to pay?`,
-      'getpaid.done': (p) => `${lower(p, 'first')} paid! ${usd2(n(p, 'amount'))} is in your account. i sent a receipt and marked the invoice paid.`,
+      'pay.newRecipient': (p) => `i don’t have ${s(p, 'first')}’s bank yet! add it here once and i’ll send it.`,
+      'approval.over': (p) => `that’s over your ${usd(n(p, 'limit'))} limit, so i need your ok!`,
+      'pay.done': (p) => `sent! ${s(p, 'first')} has it.`,
+      'getpaid.ask': (p) => `how does ${s(p, 'first')} want to pay?`,
+      'getpaid.done': (p) => `${s(p, 'first')} paid! ${usd2(n(p, 'amount'))} is in your account. i sent a receipt and marked the invoice paid.`,
       'cashout.amount': () => 'sure! how much should i move to your bank?',
       'cashout.bank': () => 'i’ll need your bank first! link it once and i can send money there any time. where is it?',
       'buy.which': (p) => `i’d go with the **${s(p, 'merchant')} ${s(p, 'model')}**! want that one, or one of the others?`,
@@ -287,7 +290,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
           ? `${n(p, 'short') ? 'your **Dots balance** won’t cover it, so ' : ''}i’ll check out with your **${CARD}** once you approve it.${n(p, 'needs') ? ' opening it for you' : ''}`
           : `i’ll pay from your **Dots balance** with a one-time card for exactly this ${orderNoun(p)}.${n(p, 'needs') ? ' opening it for you' : ''}`,
       'buy.payWith': () => `want me to pay from your **Dots balance** or your **${CARD}**?`,
-      'buy.short': (p) => `you’ve got ${usd2(n(p, 'balance'))} in your **Dots balance**. i can put this on your card instead, or you can add ${usd(n(p, 'amount'))} first!`,
+      'buy.short': (p) => `you’ve got ${usd2(n(p, 'balance'))} in your **Dots balance**. i can put this on a card instead, or you can add ${usd(n(p, 'amount'))} first!`,
       'card.forBuy': () => 'add your card once and i’ll take it from there!',
       'card.done': (p) => (n(p, 'topUp') ? `saved! i can pay with your **${CARD}** now, or top up from it.` : `saved! i can pay with your **${CARD}** now.`),
       'balance.offer': () => 'want a **Dots balance** too? i can pay from it without your card, and you can get paid into it and send money abroad.',
@@ -295,7 +298,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'bank.kept': () => 'i’ll keep this account connected for next time, for adding money and withdrawing.',
       'buy.done': (p) => (n(p, 'now') ? 'ordered! it’ll be there in **about 30 minutes**.' : 'ordered! it arrives **thursday**.'),
       'buy.sent': () => 'sent! it’s in your **inbox**.',
-      'pay.intro': (p) => `${lower(p, 'first')} banks with **${s(p, 'bank')}**, so i’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'from')} is about **${s(p, 'to')}** right now.` : ''}`,
+      'pay.intro': (p) => `${s(p, 'first')} banks with **${s(p, 'bank')}**, so i’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'from')} is about **${s(p, 'to')}** right now.` : ''}`,
       fallback: () => 'i can only help with money here! paying people, shopping, getting paid.',
     },
     asks: {
@@ -355,16 +358,17 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
           : s(p, 'what') === 'daily'
             ? `done. up to ${usd(n(p, 'daily'))} a day now`
             : `done. i’ll ask you for anything over ${usd(n(p, 'approve'))}`,
-      'pay.newRecipient': (p) => `need ${lower(p, 'first')}’s bank first. add it here and i’ll send it`,
-      'pay.intro': (p) => `${lower(p, 'first')} banks with ${s(p, 'bank')}, so ${s(p, 'rail')}${n(p, 'converted') ? `. ${s(p, 'from')} ≈ ${s(p, 'to')}` : ''}`,
-      'pay.done': (p) => `sent, ${lower(p, 'first')} has it`,
+      'pay.newRecipient': (p) => `need ${s(p, 'first')}’s bank first. add it here and i’ll send it`,
+      'approval.over': (p) => `that’s over your ${usd(n(p, 'limit'))} limit, so i need your ok`,
+      'pay.intro': (p) => `${s(p, 'first')} banks with ${s(p, 'bank')}, so ${s(p, 'rail')}${n(p, 'converted') ? `. ${s(p, 'from')} ≈ ${s(p, 'to')}` : ''}`,
+      'pay.done': (p) => `sent, ${s(p, 'first')} has it`,
       'pay.denied': () => 'ok, not sending',
       'buy.card': (p) =>
         n(p, 'card')
           ? `${n(p, 'short') ? 'your Instinct balance won’t cover it, so ' : ''}i’ll check out with your ${CARD} once you ok it`
           : `i’ll pay from your Instinct balance with a one-time card for exactly this ${orderNoun(p)}`,
       'buy.payWith': () => `your Instinct balance or your ${CARD}?`,
-      'buy.short': (p) => `you’ve got ${usd2(n(p, 'balance'))} in your Instinct balance. i can put this on your card, or you can add ${usd(n(p, 'amount'))} first`,
+      'buy.short': (p) => `you’ve got ${usd2(n(p, 'balance'))} in your Instinct balance. i can put this on a card, or you can add ${usd(n(p, 'amount'))} first`,
       'card.forBuy': () => 'add your card once and i’ve got it',
       'balance.offer': () => 'want an Instinct balance too? i can pay from it without your card, and you can get paid into it, send money abroad',
       'balance.later': () => 'ok, just ask when you want one',

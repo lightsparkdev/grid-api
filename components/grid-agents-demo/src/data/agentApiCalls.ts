@@ -35,6 +35,7 @@ import {
   COMPANY_ADDRESS,
   COMPANY_BANK,
   OPEN_INVOICES,
+  cardLast4,
   memberOf,
   OWNER_ACTING_FOR,
   type Invoice,
@@ -199,6 +200,11 @@ function fiat(code: string) {
   return { code, name, symbol: parts.find((p) => p.type === 'currency')?.value ?? '', decimals: 2 };
 }
 const dollars = (cents: number) => Number((cents / 100).toFixed(2));
+/** Sending currency units per receiving currency unit, as the spec defines exchangeRate: fees come off the sending amount
+ *  first, so the rate covers the conversion only. Amounts in minor units. */
+function exchangeRate(sent: number, fees: number, sending: { decimals: number }, received: number, receiving: { decimals: number }) {
+  return Number(((sent - fees) / 10 ** sending.decimals / (received / 10 ** receiving.decimals)).toPrecision(6));
+}
 /** A rail the playground names in words ("SEPA Instant", "international wire"), as the spec names it. */
 function paymentRail(label: string) {
   if (/wire/i.test(label)) return 'SWIFT';
@@ -271,7 +277,7 @@ function intoWallet(args: {
     receivingCurrency: USDB,
     totalSendingAmount: args.sendingAmount,
     totalReceivingAmount: args.amount,
-    exchangeRate: Number((args.amount / args.sendingAmount).toFixed(6)),
+    exchangeRate: exchangeRate(args.sendingAmount, 0, args.sending, args.amount, USDB),
     feesIncluded: 0,
     ...(args.paymentInstructions && { paymentInstructions: args.paymentInstructions }),
     transactionId: args.transactionId,
@@ -350,8 +356,8 @@ export interface AgentSession {
   needsApproval(usdCents: number): boolean;
   /** Install the agent without logging anything: a flow that needs it, started first. */
   assumeConnected(): void;
-  /** Top up without logging anything: a payment jumped to before any money was added. */
-  assumeFunded(cents: number): void;
+  /** Top up a payment jumped to before any money was added: the transfer landing, for the panel to show. */
+  assumeFunded(cents: number): CallStep[];
   snapshot(): AccountSnapshot;
 }
 
@@ -560,7 +566,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
       receivingCurrency: receiving.currency,
       totalSendingAmount: usd + fee,
       totalReceivingAmount: receiving.amount,
-      exchangeRate: Number((receiving.amount / usd).toFixed(4)),
+      exchangeRate: exchangeRate(usd + fee, fee, USDB, receiving.amount, receiving.currency),
       feesIncluded: fee,
       platformFeesIncluded: 0,
       transactionId: nextId('Transaction'),
@@ -702,11 +708,20 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
 
   /* ── Events ── */
 
-  /** The agent's delegated key on the wallet: the wallet owner signs twice in your app, and Grid custodies the key. */
+  /** The agent's delegated key on the wallet: three legs of the same request, the wallet owner signing the last two, and
+   *  Grid custodies the key. */
   const delegatedKeySteps = (): CallStep[] => {
     keyed = true;
-    const requestId = nextId('Request');
+    const organizationId = `org_${hex(10)}`;
+    const firstRequest = nextId('Request');
+    const secondRequest = nextId('Request');
     const reqBody = { agentId: agent, internalAccountId: WALLET, nickname: `${nameOf()} spending key` };
+    const challenge = (requestId: string, activity: string, parameters: string) => ({
+      payloadToSign: `{"organizationId":"${organizationId}","parameters":{"${parameters}":[…]},"timestampMs":"${Date.now()}","type":"${activity}"}`,
+      requestId,
+      expiresAt: toIso(Date.now() + 5 * 60_000),
+    });
+    const stamp = () => `eyJwdWJsaWNLZXkiOiIwMm${base64url(24)}…`;
     return [
       {
         tool: null,
@@ -717,21 +732,27 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
             title: 'Create delegated key',
             reqBody,
             status: '202 Accepted',
-            note: 'So the agent can spend from the wallet without holding its keys: Grid generates a key it custodies, and the wallet owner authorizes it.',
-            resBody: {
-              payloadToSign: `{"organizationId":"org_${hex(10)}","parameters":{"apiKeys":[…]},"timestampMs":"${Date.now()}","type":"ACTIVITY_TYPE_CREATE_API_KEYS_V2"}`,
-              requestId,
-              expiresAt: toIso(Date.now() + 5 * 60_000),
-            },
+            note: 'So the agent can spend from the wallet without holding its keys: Grid generates a key it custodies, and the wallet owner authorizes it. The first leg returns a challenge to sign.',
+            resBody: challenge(firstRequest, 'ACTIVITY_TYPE_CREATE_API_KEYS_V2', 'apiKeys'),
           },
           {
             method: 'POST',
             path: '/auth/delegated-keys',
-            title: 'Authorize delegated key',
-            headers: { 'Grid-Wallet-Signature': `eyJwdWJsaWNLZXkiOiIwMm${base64url(24)}…`, 'Request-Id': requestId },
+            title: 'Authorize delegated key · 1 of 2',
+            headers: { 'Grid-Wallet-Signature': stamp(), 'Request-Id': firstRequest },
+            reqBody,
+            status: '202 Accepted',
+            note: 'The person confirms with Face ID: their session key stamps the challenge, and the same body goes back with it and the Request-Id. Grid creates the signer identity and answers with a second challenge, for the policies that let it sign.',
+            resBody: challenge(secondRequest, 'ACTIVITY_TYPE_CREATE_POLICIES', 'policies'),
+          },
+          {
+            method: 'POST',
+            path: '/auth/delegated-keys',
+            title: 'Authorize delegated key · 2 of 2',
+            headers: { 'Grid-Wallet-Signature': stamp(), 'Request-Id': secondRequest },
             reqBody,
             status: '201 Created',
-            note: 'The person confirms with Face ID: their session key stamps the challenge, once here and once on a second retry. The key is ACTIVE, and Grid signs the agent’s approved sends with it.',
+            note: 'The same session key stamps the second challenge, with its new Request-Id. The key is ACTIVE, and Grid signs the agent’s approved sends with it. A flow left after the second leg leaves the key PENDING, which blocks another for this agent.',
             resBody: {
               id: nextId('DelegatedKey'),
               agentId: agent,
@@ -997,7 +1018,8 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
 
   /** An external account as Grid returns it: everything sent, with the rails it can be paid over. */
   const externalAccount = (id: string, name: string, bank: LinkedBank, vendor = false) => {
-    const { region, ...fields } = bank.values;
+    // The wire-only intermediary fields are the spec's sample text; a US account here is paid over ACH, RTP or FEDNOW.
+    const { region, intermediaryBankName: _i, intermediaryRoutingNumber: _r, fiToFiInformation: _f, ...fields } = bank.values;
     const accountInfo = {
       accountType: bank.country.accountType,
       ...fields,
@@ -1057,7 +1079,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
         railDetails: {
           paymentRail: 'ACH',
           status: 'SETTLED',
-          bankAccount: { accountHolderName: bank.holder, routingNumber: '021000021', accountNumber: `****${bank.last4}` },
+          bankAccount: { accountHolderName: bank.holder, routingNumber: bank.values.routingNumber, accountNumber: `****${bank.last4}` },
           traceNumber: `0210000${hex(8).replace(/\D/g, '1')}`,
           settledAt: nowIso(),
         },
@@ -1237,13 +1259,15 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
   };
 
   /* Paying a saved bank account: a one-row payout run from the wallet. The preview says what leaves the wallet, the fee,
-     and what should arrive; fees come out of what lands, so the amount received is an estimate. */
+     and what should arrive: an estimate when the currency changes (the fee comes out of what lands), exact in dollars. */
   const runRow = (r: Run) => ({ clientRowId: 'row-1', amount: r.payee.usd, destination: { destinationType: 'EXTERNAL_ACCOUNT', externalAccountId: r.accountId } });
 
   const payoutPreview = (p: Payee, previewTool: string, sendTool: string, title: string, accountId: string): CallStep[] => {
+    // Dollars to a US bank convert nothing, so nothing comes off: the bill or the pay arrives in full.
+    const fee = p.currency === 'USD' ? 0 : Math.max(12, Math.round(p.usd * 0.003));
     const local = money(p.amount, fiat(p.currency).symbol);
-    const fee = Math.max(12, Math.round(p.usd * 0.003));
-    const r: Run = { payee: p, accountId, fee, title, detail: `${p.bank} · ${p.rail.replace('_', ' ')}`, done: `About ${local} landed at ${p.bank}.`, previewTool, sendTool };
+    const exact = p.currency === 'USD';
+    const r: Run = { payee: p, accountId, fee, title, detail: `${p.bank} · ${p.rail.replace('_', ' ')}`, done: `${exact ? local : `About ${local}`} landed at ${p.bank}.`, previewTool, sendTool };
     run = r;
     const held = needsApproval(p.usd);
     return [
@@ -1257,7 +1281,9 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
             title: 'Preview payout',
             reqBody: { sourceAccountId: WALLET, rows: [runRow(r)] },
             status: '200 OK',
-            note: `${money(p.usd)} leaves the wallet; about ${local} reaches ${p.name} at ${p.bank}, after the fee. Nothing is created yet.`,
+            note: exact
+              ? `${money(p.usd)} leaves the wallet and reaches ${p.name} at ${p.bank} in full. Nothing is created yet.`
+              : `${money(p.usd)} leaves the wallet; about ${local} reaches ${p.name} at ${p.bank}, after the fee. Nothing is created yet.`,
             resBody: {
               sourceAccountId: WALLET,
               total: { amount: p.usd, currency: USDB },
@@ -1294,7 +1320,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
     paymentRail: paymentRail(r.payee.rail),
     sentAmount: { amount: r.payee.usd, currency: USDB },
     receivedAmount: { amount: r.payee.amount, currency: fiat(r.payee.currency) },
-    exchangeRate: Number((r.payee.amount / (r.payee.usd - r.fee)).toFixed(4)),
+    exchangeRate: exchangeRate(r.payee.usd, r.fee, USDB, r.payee.amount, fiat(r.payee.currency)),
     fees: r.fee,
     createdAt: nowIso(),
     updatedAt: nowIso(),
@@ -1389,7 +1415,6 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
     const id = nextId('Quote');
     const currency = SEND_CURRENCY[p.asset];
     const receiving = p.asset === 'BTC' ? p.usd * SATS_PER_CENT : p.asset === 'USDB' ? p.usd : p.usd * 10_000;
-    const units = receiving / 10 ** currency.decimals;
     const account = nextId('ExternalAccount');
     const spark = p.network === 'SPARK';
     const chain = { destinationType: 'CHAIN_ADDRESS', network: p.network, currency: p.asset, address: p.address };
@@ -1408,7 +1433,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
       receivingCurrency: currency,
       totalSendingAmount: total,
       totalReceivingAmount: receiving,
-      exchangeRate: Number((units / (p.usd / 100)).toPrecision(6)),
+      exchangeRate: exchangeRate(total, p.fee, USDB, receiving, currency),
       feesIncluded: p.fee,
       platformFeesIncluded: 0,
       minimumReceivingAmount: p.network === 'LIGHTNING' || spark ? null : receiving,
@@ -2137,7 +2162,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
       status,
       brand: 'VISA',
       form: 'VIRTUAL',
-      last4: m.first === 'Maya' ? '3381' : '7729',
+      last4: cardLast4(m.name),
       expMonth: 11,
       expYear: 2029,
       fundingSource: WALLET,
@@ -2298,7 +2323,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
   const payrollPreview = (): CallStep[] => {
     const rows = biz.members.map((m) => ({ member: m, accountId: payeeAccount(m.name), clientRowId: `row-${m.first.toLowerCase()}` }));
     const total = biz.members.reduce((sum, m) => sum + m.pay, 0);
-    const fee = rows.length * 25;
+    const fee = 0;
     const p: Payroll = { id: nextId('PayoutRun'), action: nextId('AgentAction'), rows, total, fee };
     biz.payroll = p;
     const held = needsApproval(total);
@@ -2322,8 +2347,8 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
               rows: rows.map((r) => ({
                 clientRowId: r.clientRowId,
                 amount: { amount: r.member.pay, currency: USDB },
-                estimatedFee: { amount: 25, currency: USDB },
-                estimatedReceiveAmount: { amount: r.member.pay - 25, currency: USD },
+                estimatedFee: { amount: fee, currency: USDB },
+                estimatedReceiveAmount: { amount: r.member.pay, currency: USD },
                 feeSetAtClaim: false,
               })),
               approval: { required: held, reasons: held ? ['LIMIT'] : [] },
@@ -2347,11 +2372,11 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
         agentId: agent,
         source: { sourceType: 'ACCOUNT', accountId: WALLET, currency: 'USDB' },
         destination: { destinationType: 'ACCOUNT', accountId: r.accountId, currency: 'USD' },
-        paymentRail: 'ACH',
+        paymentRail: 'RTP',
         sentAmount: { amount: r.member.pay, currency: USDB },
-        receivedAmount: { amount: r.member.pay - 25, currency: USD },
+        receivedAmount: { amount: r.member.pay, currency: USD },
         exchangeRate: 1,
-        fees: 25,
+        fees: 0,
         createdAt: nowIso(),
         updatedAt: nowIso(),
         settledAt: nowIso(),
@@ -2415,6 +2440,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
       balance += cents;
       const txn = incomingTxn({ amount: cents, source: { sourceType: 'REALTIME_FUNDING', currency: 'USD', paymentRail: 'ACH' }, description: 'Bank transfer' });
       record('Added funds', 'Bank transfer', cents, txn);
+      return [{ tool: null, calls: [incomingWebhook(txn, 'Funds added', `INCOMING_PAYMENT.COMPLETED: ${money(cents)} added to the balance.`)] }];
     },
     snapshot: () => ({
       connected,
