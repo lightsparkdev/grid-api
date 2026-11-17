@@ -1,5 +1,22 @@
 Every call to `POST /auth/credentials/{id}/verify` creates a new **session** — an authenticated signing context with a 15-minute lifetime by default. Sessions accumulate: a customer signed in on a laptop and a phone has two active sessions, each with its own session signing key held on that device. Use the session endpoints to show active sign-ins, refresh an active session before it expires, and sign out of a specific device.
 
+## Session lifetime
+
+Set how long your customers' sessions last with `embeddedWalletConfig.sessionLifetime`, in seconds, using [`PATCH /config`](/api-reference/platform-configuration/update-platform-configuration). It defaults to `900` (15 minutes) and must be at least `60`. The maximum is one year, and a larger value is rejected with `400 INVALID_INPUT`.
+
+The lifetime applies to every sign-in and every session refresh by your platform's customers. A change applies to sessions created after it; existing sessions keep their `expiresAt`.
+
+```bash
+curl -X PATCH "$GRID_BASE_URL/config" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "embeddedWalletConfig": {
+      "sessionLifetime": 3600
+    }
+  }'
+```
+
 ## List active sessions
 
 ```bash
