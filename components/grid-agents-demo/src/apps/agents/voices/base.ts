@@ -477,6 +477,8 @@ export const ASKS = {
     ],
     allow: 'Connect',
     allowed: 'Connected',
+    deny: 'Not now',
+    denied: 'Not now',
   }),
   limits: (p) => ({
     title: `Update ${s(p, 'agent').replace(/^Your /, 'your ')}’s limits`,
@@ -588,6 +590,8 @@ export const ASKS = {
     ],
     allow: 'Set up',
     allowed: 'Verified',
+    deny: 'Not now',
+    denied: 'Not now',
   }),
   team: (p) => ({
     heading: { title: s(p, 'company') },
