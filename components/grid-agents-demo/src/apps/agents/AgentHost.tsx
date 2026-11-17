@@ -22,7 +22,7 @@ const SKIN_EXIT = { ...SKIN_HIDDEN, pointerEvents: 'none' as const };
 
 type BrainOptions = Parameters<typeof useAgentBrain>[0];
 
-export interface AgentHostProps extends Omit<BrainOptions, 'reply' | 'describe' | 'readsFor' | 'typesFor'> {
+export interface AgentHostProps extends Omit<BrainOptions, 'reply' | 'describe' | 'asked' | 'readsFor' | 'typesFor'> {
   connector: ConnectorId;
   dark: boolean;
   /** On a business account, its money's name ("Acme Studio balance") in place of the app's. */
@@ -49,7 +49,24 @@ export function AgentHost({ connector, dark, reply, wallet, ...options }: AgentH
         .slice(0, 600),
     [],
   );
-  const brain = useAgentBrain({ ...options, reply, describe, readsFor: SKINS[connector].readsFor, typesFor: SKINS[connector].typesFor });
+  // What an open question asked: the agent's latest line, and the approval card after it if one is up. Earlier lines
+  // would read as the question too ("what's your name?" over the account it then shows).
+  const asked = useCallback((list: StoredMessage[]) => {
+    const shown = renderThread(list, voiceRef.current);
+    let from = shown.length - 1;
+    const said = (m: (typeof shown)[number]) => m.kind === 'them' && !m.typing;
+    while (from > 0 && !said(shown[from])) from -= 1;
+    return shown
+      .slice(from)
+      .flatMap((m) => {
+        if (m.kind === 'them' && !m.typing && m.text) return [m.text];
+        if (m.kind === 'ask') return [[m.ask.title, m.ask.amount, m.ask.who && `to ${m.ask.who.name}`, m.ask.total && `total ${m.ask.total}`].filter(Boolean).join(', ')];
+        return [];
+      })
+      .join(' ')
+      .slice(-600);
+  }, []);
+  const brain = useAgentBrain({ ...options, reply, describe, asked, readsFor: SKINS[connector].readsFor, typesFor: SKINS[connector].typesFor });
   const messages = useMemo(() => renderThread(brain.messages, voice), [brain.messages, voice]);
   const chat: ChatView = { ...brain, messages };
   const { Chat } = SKINS[connector];

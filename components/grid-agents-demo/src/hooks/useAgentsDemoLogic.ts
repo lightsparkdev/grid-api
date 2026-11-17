@@ -14,6 +14,7 @@ import type { ConnectorId } from '@/data/connectors';
 import { MODES, modeFor, setActiveMode, type Mode } from '@/data/mode';
 import { appFor } from '@/lib/forApp';
 import type { PromptState } from '@/lib/llm/prompt';
+import type { ReadRequest, ReadResponse, Reading } from '@/lib/llm/read';
 import type { Turn } from '@/lib/llm/tools';
 import type { AgentResponse } from '@/lib/llm/types';
 import { visitorHeaders } from '@/lib/visitor';
@@ -222,6 +223,20 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
     [mode, connectorRef],
   );
 
+  /** A typed reply to the agent's open question, read by the model (/api/agent/read); null when it can't say. */
+  const read = useCallback(async (req: ReadRequest): Promise<Reading | null> => {
+    try {
+      const res = await fetch('/api/agent/read', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...visitorHeaders() },
+        body: JSON.stringify(req),
+      });
+      return ((await res.json()) as ReadResponse).reading ?? null;
+    } catch {
+      return null;
+    }
+  }, []);
+
   /** A tile: set up what the flow needs (silently), then put its line in the composer. */
   const handleAction = useCallback(
     (id: ActionId) => {
@@ -266,6 +281,7 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
     onDeclined,
     context,
     reply,
+    read,
     reset,
     dirty: entries.length > 0 || account.connected,
   };

@@ -5,6 +5,7 @@ import { CONNECTORS, type ConnectorId } from '@/data/connectors';
 import { cleanName, type Mode } from '@/data/mode';
 import { anthropicAdapter } from '@/lib/llm/anthropic';
 import { takeStep, takeTurn } from '@/lib/llm/limits';
+import { sameOrigin } from '@/lib/llm/origin';
 import { lookUpPrice } from '@/lib/llm/priceLookup';
 import { systemPrompt, type PromptState } from '@/lib/llm/prompt';
 import { CONNECTOR_IDS, toolsIn, type Block, type Say, type ToolCall, type ToolName, type Turn } from '@/lib/llm/tools';
@@ -28,17 +29,6 @@ const COUNTRY_CODES = BANK_COUNTRIES.map((c) => c.code);
 type Fallback = 'off' | 'origin' | 'invalid' | 'visitor' | 'daily' | 'error';
 
 const fallback = (reason: Fallback, status = 200) => NextResponse.json({ fallback: reason }, { status });
-
-/** Only the playground's own page may spend the key: the request comes from its own origin. */
-function sameOrigin(req: NextRequest): boolean {
-  const origin = req.headers.get('origin');
-  if (!origin) return false;
-  try {
-    return new URL(origin).host === req.headers.get('host');
-  } catch {
-    return false;
-  }
-}
 
 /** A promise to do something later that no tool does: remind, warn, flag, keep watch. */
 const PROMISE =

@@ -4,6 +4,7 @@ import { activeMode, cleanName, setActiveMode, type Mode } from '@/data/mode';
 import { BANK_REACH } from '@/data/bankCountries';
 import type { AgentEvent } from '@/data/agentEvents';
 import { BANK_COUNTRIES } from '@/data/bankCountries';
+import type { ReadRequest, Reading } from '@/lib/llm/read';
 import { ENDS_TURN, READS_RESULT, type Block, type Say, type ToolCall, type ToolResult, type Turn } from '@/lib/llm/tools';
 import type { Beat, Chip, PayTo, Said, StoredMessage, Verification } from '../conversation';
 import { FLOWS, needsSetup, planFor, topicFor, type FlowContext } from '../flows';
@@ -47,7 +48,7 @@ const STARTERS: Record<Mode, Chip[]> = {
   ],
 };
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-/** Which option a typed reply picks: its number, or its label; -1 for neither. */
+/** Without the model: which option a typed reply picks, its number or its label; -1 for neither. */
 function typedChoice(text: string, chips: Chip[]) {
   const n = Number.parseInt(text, 10);
   const lower = text.toLowerCase();
@@ -83,8 +84,8 @@ const NAMING_LEAD = /^(my name is|my name'?s|it'?s called|call it|the company is
 const NAME_JOINERS = /^(&|and|of|the|a|an|de|la|le|van|von|y|for|me)$/i;
 
 /**
- * The name in a reply to "what's it called?" or "what's your name?", or null when the reply is something else (a
- * request, a question, a no), which lapses the question. A name typed with capitals is taken as written.
+ * Without the model: the name in a reply to "what's it called?" or "what's your name?", or null when the reply is
+ * something else (a request, a question, a no), which lapses the question. A name typed with capitals is taken as written.
  */
 function nameIn(text: string): string | null {
   const t = text.trim().replace(NAME_LEAD, '');
@@ -131,7 +132,20 @@ const SPEAKS_FIRST = new Set([
   'teammate.name',
 ]);
 
-/** A reply that approves an open ask; anything else declines it. */
+/** Replies that are exactly what a tap would say: answered at once, without the model reading them. */
+const BARE_YES = /^\s*(y|yes|yeah|yep|yup|k|kk|ok|okay|sure|approve|approved)\s*[.!]*\s*$/i;
+const BARE_NO = /^\s*(n|no|nope|nah)\s*[.!]*\s*$/i;
+const BARE_AMOUNT = /^\s*\$?\s*\d[\d,]*(?:\.\d{1,2})?\s*$/;
+
+/** Which option a reply is exactly: its label, or its number; -1 for neither. */
+function exactOption(text: string, labels: string[]) {
+  const t = text.trim().toLowerCase();
+  const n = Number.parseInt(t, 10);
+  if (String(n) === t && n >= 1 && n <= labels.length) return n - 1;
+  return labels.findIndex((l) => l.toLowerCase() === t);
+}
+
+/** Without the model: a reply that approves an open ask; anything else declines it. */
 const YES = /^\s*(y|yes|yeah|yep|yup|ok|okay|sure|approve|approved|do it|go ahead|send it)\b/i;
 /** A reply that only declines it; anything that's neither is a new request, answered once the ask is declined. */
 const NO =
@@ -179,7 +193,9 @@ export function useAgentBrain({
   onCompleted,
   onDeclined,
   reply,
+  read,
   describe,
+  asked,
   readsFor = 0,
   typesFor = 0,
   mode = 'personal',
@@ -196,8 +212,12 @@ export function useAgentBrain({
   onDeclined?: () => void;
   /** The model's next step for the conversation so far (behind /api/agent). */
   reply: (turns: Turn[]) => Promise<StepReply>;
+  /** A typed reply to the open question, read by the model (behind /api/agent/read); null when it can't say. */
+  read?: (req: ReadRequest) => Promise<Reading | null>;
   /** What the agent said in these messages, in the app's words, for the model to read back. */
   describe: (messages: StoredMessage[]) => string;
+  /** What the agent said and showed in these messages (an approval card too): what an open question asked. */
+  asked?: (messages: StoredMessage[]) => string;
   /** How long the agent takes to read each of your messages before it reacts, types or carries on (ms). */
   readsFor?: number;
   /** The least time its typing bubble shows before a reply, however fast the model answers (ms). */
@@ -231,7 +251,7 @@ export function useAgentBrain({
   const pickedByText = useRef(false);
   const pickedOnPage = useRef(false);
   /** An open question for an amount, waiting on what they type. */
-  const amountRef = useRef<{ take: (usd: number) => void; all?: number } | null>(null);
+  const amountRef = useRef<{ take: (usd: number) => void; all?: number; offered: number[] } | null>(null);
   const [awaitingAmount, setAwaitingAmount] = useState(false);
   /** An open question for a name, waiting on what they type (an empty answer lapses it). */
   const nameRef = useRef<((value: string) => void) | null>(null);
@@ -252,8 +272,8 @@ export function useAgentBrain({
   /** Suggested replies under the agent's last answer: a tap sends one as if typed. */
   const suggested = useRef<{ id: number; chips: Chip[] } | null>({ id: 2, chips: STARTERS[mode] });
 
-  const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, onDeclined, reply, describe, readsFor, typesFor });
-  cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, onDeclined, reply, describe, readsFor, typesFor };
+  const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, onDeclined, reply, read, describe, asked, readsFor, typesFor });
+  cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, onDeclined, reply, read, describe, asked, readsFor, typesFor };
   messagesRef.current = messages;
 
   const append = (role: Turn['role'], content: Block[]) => {
@@ -483,7 +503,7 @@ export function useAgentBrain({
           const labels = [...offered.map((usd) => `$${usd.toLocaleString('en-US')}`), 'Other'];
           const chipsId = offered.length ? show({ kind: 'chips', chips: labels.map((label) => ({ label })), picked: null }) : null;
           const usd = await new Promise<number>((r) => {
-            amountRef.current = { take: r, all: b.all };
+            amountRef.current = { take: r, all: b.all, offered };
             if (chipsId === null) return;
             pickRef.current = (i) => {
               if (i < 0) return r(i);
@@ -825,86 +845,114 @@ export function useAgentBrain({
     [ask, push, start],
   );
 
+  /** The model is reading a reply to the open question: nothing else is sent until it has. */
+  const reading = useRef(false);
+  /**
+   * A typed reply read by the model against the question it answers, the typing bubble up while it reads. Null when it
+   * can't say (off, limited, unsure), and the reply is read the plain way; 'closed' when the question closed meanwhile
+   * (a tap, a reset, a tile), and the reply stands as said.
+   */
+  const readOpen = useCallback(
+    async (q: Omit<ReadRequest, 'asked' | 'reply'>, reply: string, stillOpen: () => boolean): Promise<Reading | null | 'closed'> => {
+      const read = cb.current.read;
+      if (!read) return null;
+      const asked = cb.current.asked?.(messagesRef.current.slice(-5)) ?? '';
+      reading.current = true;
+      // Thinking isn't something said: Dots still quotes the request it's answering.
+      const run = runRef.current;
+      const answered = run?.answered;
+      const typing = push({ kind: 'them', said: { text: '' }, typing: true });
+      if (run) run.answered = answered;
+      try {
+        const answer = await read({ ...q, asked, reply }).catch(() => null);
+        return stillOpen() ? answer : 'closed';
+      } finally {
+        reading.current = false;
+        setMessages((list) => list.filter((m) => m.id !== typing));
+      }
+    },
+    [push],
+  );
+
+  /** Something said over an open question that doesn't answer it: the question lapses and the agent answers that. */
+  const lapse = useCallback(
+    async (text: string) => {
+      cancelRun();
+      await ask(text, text, false);
+    },
+    [cancelRun, ask],
+  );
+
   const send = useCallback(async () => {
     const text = composer.trim();
-    if (!text) return;
-    // An open ask takes a text reply as its answer.
+    if (!text || reading.current) return;
+    // An open question's answer: a reply that's exactly a tap lands at once; the model reads anything else.
     const decide = decideRef.current;
     if (decide) {
-      decideRef.current = null;
       setComposer('');
       push({ kind: 'me', text });
-      const yes = YES.test(text);
-      if (!yes && !NO.test(text)) queued.current = text;
-      afterReading(() => decide(yes ? 'allow' : 'deny'));
-      return;
+      const bare = BARE_YES.test(text) ? 'yes' : BARE_NO.test(text) ? 'no' : null;
+      const read = bare ? null : await readOpen({ kind: 'approval' }, text, () => decideRef.current === decide);
+      if (read === 'closed') return;
+      const plain = YES.test(text) ? 'yes' : NO.test(text) ? 'no' : null;
+      const decision = bare ?? (read ? ('decision' in read ? read.decision : null) : plain);
+      decideRef.current = null;
+      // Neither a yes nor a no: the ask is declined, and what they said is answered once the run ends.
+      if (!decision) queued.current = text;
+      const go = () => decide(decision === 'yes' ? 'allow' : 'deny');
+      return void (read ? go() : afterReading(go));
     }
-    // An open question for a name takes whatever they type as the name.
     const naming = nameRef.current;
     if (naming) {
-      // Its options' numbers or labels (Instinct lists them as text) pick that option instead.
-      const choices = nameChoices.current;
+      const choices = nameChoices.current ?? [];
       const pickName = pickRef.current;
-      const n = Number.parseInt(text, 10);
-      const byNumber = String(n) === text && n >= 1 && choices && n <= choices.length ? n - 1 : -1;
-      const i = byNumber >= 0 ? byNumber : (choices?.findIndex((c) => c.toLowerCase() === text.toLowerCase()) ?? -1);
-      if (pickName && i >= 0) {
-        setComposer('');
-        push({ kind: 'me', text });
-        pickedByText.current = true;
-        afterReading(() => pickName(i));
-        return;
-      }
-      // A request, a question or a no isn't a name: the question lapses and the agent answers what they said.
-      const given = nameIn(text);
-      if (given === null) {
-        setComposer('');
-        cancelRun();
-        await ask(text);
-        return;
-      }
-      const value = cleanName(given);
       setComposer('');
-      if (!value) return;
+      push({ kind: 'me', text });
+      const pickByText = (i: number) => {
+        pickedByText.current = true;
+        pickName?.(i);
+      };
+      const exact = exactOption(text, choices);
+      if (pickName && exact >= 0) return void afterReading(() => pickByText(exact));
+      const read = await readOpen({ kind: 'name', options: choices.slice(0, 1) }, text, () => nameRef.current === naming);
+      if (read === 'closed') return;
+      if (read && 'option' in read) return pickByText(read.option);
+      // Without the model, a reply that isn't a request, a question or a no is the name.
+      const value = read ? ('name' in read ? read.name : '') : cleanName(nameIn(text) ?? '');
+      if (!value) return lapse(text);
       nameRef.current = null;
       pickRef.current = null;
-      push({ kind: 'me', text: value });
-      afterReading(() => naming(value));
-      return;
+      return void (read ? naming(value) : afterReading(() => naming(value)));
     }
-    // An open question for an amount takes one; anything else lapses it and the agent answers what they said.
     const open = amountRef.current;
     if (open) {
-      const usd = typedAmount(text, open.all);
       setComposer('');
-      if (usd === undefined) {
-        cancelRun();
-        await ask(text);
-        return;
-      }
-      amountRef.current = null;
       push({ kind: 'me', text });
-      afterReading(() => open.take(usd));
-      return;
+      const exact = BARE_AMOUNT.test(text) ? typedAmount(text, open.all) : undefined;
+      const read =
+        exact === undefined
+          ? await readOpen({ kind: 'amount', options: open.offered.map((usd) => `$${usd.toLocaleString('en-US')}`), all: open.all ? open.all / 100 : undefined }, text, () => amountRef.current === open)
+          : null;
+      if (read === 'closed') return;
+      const usd = exact ?? (read ? ('amount' in read ? read.amount : 'option' in read ? open.offered[read.option] : undefined) : typedAmount(text, open.all));
+      if (usd === undefined) return lapse(text);
+      amountRef.current = null;
+      return void (read ? open.take(usd) : afterReading(() => open.take(usd)));
     }
-    // An open choice takes a typed option: its number, or its label.
     const chips = openChips.current;
     const pick = pickRef.current;
     if (chips && pick) {
-      const i = typedChoice(text, chips);
-      // Something else entirely: the choice lapses and the agent answers what they said.
-      if (i < 0) {
-        cancelRun();
-        setComposer('');
-        await ask(text);
-        return;
-      }
-      pickRef.current = null;
       setComposer('');
       push({ kind: 'me', text });
+      const labels = chips.map((c) => c.label);
+      const exact = exactOption(text, labels);
+      const read = exact < 0 ? await readOpen({ kind: 'choice', options: labels }, text, () => pickRef.current === pick) : null;
+      if (read === 'closed') return;
+      const i = exact >= 0 ? exact : read ? ('option' in read ? read.option : -1) : typedChoice(text, chips);
+      if (i < 0) return lapse(text);
+      pickRef.current = null;
       pickedByText.current = true;
-      afterReading(() => pick(i));
-      return;
+      return void (read ? pick(i) : afterReading(() => pick(i)));
     }
     if (runRef.current || busy) return;
     setComposer('');
@@ -915,7 +963,7 @@ export function useAgentBrain({
     dropSuggestions(i >= 0 ? i : undefined);
     if (i >= 0) await suggest(s!.chips[i], text);
     else await ask(text);
-  }, [composer, busy, push, ask, suggest, dropSuggestions, cancelRun]);
+  }, [composer, busy, push, ask, suggest, dropSuggestions, readOpen, lapse]);
 
   /** The visitor's tap on the open ask's primary button. */
   const allow = useCallback(() => decideRef.current?.('allow'), []);
