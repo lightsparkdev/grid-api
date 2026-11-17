@@ -9,7 +9,11 @@ description: |
 
   The same merchant means the same merchant category and the same name, with
   case, apostrophes, punctuation, a payment processor's prefix and trailing
-  words with no letter, such as a store number, ignored. An answer stops
+  words with no letter, such as a store number, ignored, and names compared
+  on their first 155 characters. A yes can also apply to another name of the
+  same category and the same first word that the model judges to be the same
+  business (check `SAME_MERCHANT`); a no kept for such a name stops that. A
+  no applies only to the name it was given for. An answer stops
   applying when its bucket's match, question or action, the rule's time zone
   or currency, or the statement changes. It is kept when the rule is removed
   and put in force again with the same bucket.
@@ -63,22 +67,17 @@ properties:
     type: integer
     format: int64
     description: >-
-      For an `APPROVED` answer about a bucket the amount helps choose, the
-      most a purchase may be for the yes to apply, in the smallest unit of
-      `currency`. Absent when the yes covers any amount.
+      For an `APPROVED` answer, the most a purchase may be for the yes to
+      apply, in the smallest unit of the rule's currency, given as
+      `currency`. A purchase in another currency is not covered. Absent when
+      the yes covers any amount.
     example: 2500
   currency:
     type: string
-    description: ISO 4217 code of `upToAmount` and `askedAmount`.
-    example: USD
-  askedAmount:
-    type: integer
-    format: int64
     description: >-
-      The amount of the purchase the owner was asked about, in the smallest
-      unit of `currency`. Absent when the answer was not given in reply to a
-      purchase.
-    example: 2500
+      ISO 4217 code of `upToAmount`: the rule's `currency`. Present with
+      `upToAmount`.
+    example: USD
   agentActionId:
     type: string
     description: >-

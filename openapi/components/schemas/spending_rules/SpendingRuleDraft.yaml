@@ -13,8 +13,10 @@ description: |
     PROPOSED --> WITHDRAWN: another draft confirmed, or the rule removed
   ```
 
-  A draft expires 24 hours after it was proposed. At most ten proposed,
-  unexpired drafts can await confirmation for an agent at once.
+  A draft expires 24 hours after it was proposed. At most ten drafts that
+  could still be confirmed can await confirmation for an agent at once:
+  proposed, unexpired, and proposed while the agent's current rule was in
+  force (or while it had none).
 required:
   - id
   - agentId

@@ -26,8 +26,9 @@ post:
       required: true
       description: >-
         A unique identifier for the draft, scoped to the agent. A retry with
-        the same key and body returns the draft the first request created; the
-        same key with a different body is rejected.
+        the same key and body returns the draft the first request stored
+        rather than proposing the rule again; the same key with a different
+        body is rejected with `400`.
       schema:
         type: string
         maxLength: 255
@@ -55,8 +56,9 @@ post:
             $ref: ../../components/schemas/spending_rules/SpendingRuleDraft.yaml
     '400':
       description: >-
-        Bad request - As for `POST /agents/{agentId}/spending-rule/drafts`, or
-        the Idempotency-Key was used for a different body. Nothing is stored
+        Bad request - As for `POST /agents/{agentId}/spending-rule/drafts`,
+        including an Idempotency-Key used for a different body. Nothing is
+        stored
       content:
         application/json:
           schema:
@@ -76,10 +78,19 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: >-
+        The agent was deleted while the proposal was being read. Nothing is
+        stored
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
     '409':
       description: >-
-        Conflict - Ten proposed drafts already await confirmation for the agent
-        (`SPENDING_RULE_PROPOSAL_LIMIT_REACHED`). Nothing is stored
+        Conflict - Ten drafts that could still be confirmed already await
+        confirmation for the agent (`SPENDING_RULE_PROPOSAL_LIMIT_REACHED`).
+        Nothing is stored
       content:
         application/json:
           schema:
@@ -88,6 +99,11 @@ post:
       description: >-
         Too many requests - Another proposal for the agent is still being read
         (`RATE_LIMITED`). Retry after it returns
+      headers:
+        Retry-After:
+          description: Number of seconds to wait before retrying the request.
+          schema:
+            type: integer
       content:
         application/json:
           schema:

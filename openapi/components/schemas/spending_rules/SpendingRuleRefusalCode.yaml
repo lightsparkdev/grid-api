@@ -30,7 +30,7 @@ description: |
   | `NOT_ABOUT_PURCHASES` | The text is not a rule about which purchases to approve or decline |
   | `OTHER` | The text cannot be written as a rule the card can check |
   | `UNAVAILABLE` | The text could not be read just now. Propose it again |
-  | `PROMPT_INJECTION` | The text reads as instructions to the system rather than a rule. Three such drafts for an agent within 24 hours pause its proposals from text for 24 hours |
+  | `PROMPT_INJECTION` | The text reads as instructions to the system rather than a rule. Three such drafts for an agent within 24 hours pause all its proposals, from text or structured, until 24 hours after the last |
   | `NOT_A_SPENDING_RULE` | The text is not a rule about which purchases to approve or decline |
   | `NOT_CHECKED` | The text could not be checked just now. Propose it again |
   | `INSTRUCTIONS_IN_QUESTION` | A bucket's `question` or the `statement` reads as instructions to the model that judges merchants. `quoted` holds it. It counts toward the pause as `PROMPT_INJECTION` does |

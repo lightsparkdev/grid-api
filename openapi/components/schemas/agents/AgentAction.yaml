@@ -102,7 +102,7 @@ properties:
       every row. The approval covers each row's own approval, so no row
       waits for another.
   spendingRuleDraft:
-    $ref: ../spending_rules/SpendingRuleDraft.yaml
+    $ref: ./AgentActionSpendingRuleDraft.yaml
     description: >-
       The spending rule the agent proposed for its own cards, so an approval
       decision can show its restatement. Present for `SET_SPENDING_RULE`.

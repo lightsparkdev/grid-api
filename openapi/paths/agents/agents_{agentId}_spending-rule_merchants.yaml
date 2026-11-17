@@ -98,9 +98,12 @@ post:
     allows it. It applies to the same merchant as `SpendingRuleMerchantAnswer`
     describes.
 
-    Recording again for the same merchant and bucket replaces the earlier
-    answer in place, keeping its `id`, and answers `200`. Nothing moves money:
-    a purchase that was declined must be made again.
+    An agent's rule keeps one answer per merchant and bucket. Recording for a
+    merchant and bucket that already has an answer, in any status including
+    `PENDING` and `REMOVED`, replaces it in place, keeping its `id`, and
+    answers `200`. Only the first answer for a merchant and bucket answers
+    `201`. Nothing moves money: a purchase that was declined must be made
+    again.
 
     `merchantDescriptor` comes back as given, and is untrusted text the
     merchant controls: escape it before display.
@@ -134,13 +137,15 @@ post:
               approved: false
   responses:
     '200':
-      description: An earlier answer for this merchant and bucket was replaced
+      description: >-
+        The answer this merchant and bucket already had, in any status, was
+        replaced in place and keeps its `id`
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/spending_rules/SpendingRuleMerchantAnswer.yaml
     '201':
-      description: Answer recorded
+      description: The first answer for this merchant and bucket was recorded
       content:
         application/json:
           schema:

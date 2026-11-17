@@ -50,8 +50,10 @@ properties:
     type: integer
     format: int64
     description: >-
-      The amount authorized, in the smallest unit of `currency`, the card's
-      currency.
+      The amount the merchant requested, in the smallest unit of `currency`,
+      the card's currency. When the authorization also set a lower ceiling on
+      what the card may be charged, the rule compared its amounts against
+      that ceiling instead.
     example: 1850
   currency:
     type: string

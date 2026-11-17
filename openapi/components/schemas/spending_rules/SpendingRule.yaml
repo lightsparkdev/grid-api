@@ -32,7 +32,8 @@ properties:
     $ref: ./SpendingRuleSpec.yaml
     description: >-
       The rule as structured data. Absent only for a rule Lightspark put in
-      force in an earlier shape, which `restatement` still describes.
+      force in an earlier shape, which `restatement` still describes. Its
+      bounds were checked when it was written.
   statement:
     type: string
     maxLength: 500
@@ -55,7 +56,10 @@ properties:
   ruleHash:
     type: string
     pattern: '^[0-9a-f]{64}$'
-    description: The `ruleHash` of the draft that was confirmed.
+    description: >-
+      SHA-256 of the rule and `statement`, in lowercase hex. For a rule put in
+      force from a draft it is that draft's `ruleHash`. A rule Lightspark put
+      in force, or carried over from another agent with a card, has one too.
     example: 3f5a1c0e9b7d2a4c6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d
   createdAt:
     type: string

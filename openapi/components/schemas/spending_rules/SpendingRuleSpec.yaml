@@ -23,6 +23,11 @@ description: |
   Grid compares and stores rules field by field, so a rule read back may list
   sets in another order than it was written, and carries the defaults it was
   given.
+
+  The bounds stated here, such as the most an amount may be, how many
+  merchants or category ranges a bucket may list, and the years a validity
+  window may fall in, are checked when a rule is written. A rule read back
+  was checked against them when it was written.
 required:
   - schemaVersion
 properties:
@@ -40,8 +45,11 @@ properties:
     pattern: '^[A-Z]{3}$'
     description: >-
       ISO 4217 code of every amount in the rule, which are in its smallest
-      unit. Required when any amount is set. A purchase in another currency
-      needs the owner's approval, so it is declined.
+      unit, and one Grid supports for amounts; another code is refused with
+      `400`. Required when any amount is set. A purchase in another currency
+      that must be checked against one of the rule's amounts needs the
+      owner's approval, so it is declined. Setting a currency alone does not
+      restrict the purchase's currency.
     example: USD
   timeZone:
     type: string
@@ -54,15 +62,17 @@ properties:
     type: string
     format: date-time
     description: >-
-      When the rule starts to apply, with a UTC offset, in the years 2000 to
-      2099. Before it, `afterValidity` decides a purchase.
+      When the rule starts to apply, with a UTC offset. As an instant it must
+      be at or after `2000-01-01T00:00:00Z` and before
+      `2100-01-01T00:00:00Z`. Before it, `afterValidity` decides a purchase.
     example: '2026-12-01T00:00:00-05:00'
   validUntil:
     type: string
     format: date-time
     description: >-
-      When the rule stops applying, with a UTC offset, in the years 2000 to
-      2099, after `validFrom`. From it on, `afterValidity` decides a purchase.
+      When the rule stops applying, with a UTC offset, after `validFrom`. As
+      an instant it must be at or after `2000-01-01T00:00:00Z` and before
+      `2100-01-01T00:00:00Z`. From it on, `afterValidity` decides a purchase.
       A rule whose `validUntil` has passed can be neither proposed nor
       confirmed.
     example: '2026-12-31T00:00:00-05:00'

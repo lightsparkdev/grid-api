@@ -12,7 +12,8 @@ properties:
     description: >-
       Local time the window opens, as `HH:MM` or `HH:MM:SS`, with no UTC
       offset. Set together with `end`, and different from it, or leave both
-      out for whole days. Grid returns it as `HH:MM:SS`.
+      out for whole days. Grid returns it as `HH:MM:SS`, with any fractional
+      seconds it was given.
     example: '09:00:00'
   end:
     type: string

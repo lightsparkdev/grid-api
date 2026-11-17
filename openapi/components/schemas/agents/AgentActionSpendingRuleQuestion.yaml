@@ -15,9 +15,7 @@ required:
 properties:
   merchantAnswerId:
     type: string
-    description: >-
-      The answer the decision will be kept as, listed by
-      `GET /agents/{agentId}/spending-rule/merchants`.
+    description: The id the owner's answer is kept under.
     example: SpendingRuleMerchantAnswer:019542f5-b3e7-1d02-0000-000000000501
   cardId:
     type: string
@@ -52,20 +50,29 @@ properties:
   amount:
     type: integer
     format: int64
-    description: The purchase's amount, in the smallest unit of `currency`.
+    description: >-
+      The purchase's amount, in the smallest unit of `currency`, the
+      purchase's own currency.
     example: 2500
   currency:
     type: string
-    description: ISO 4217 code of the card's currency.
+    description: ISO 4217 code of `amount`, the currency the card was charged in.
     example: USD
   upToAmount:
     type: integer
     format: int64
     description: >-
       Present when the purchase's amount helped place it in the bucket.
-      Approving then allows purchases at this merchant up to this amount, the
-      amount asked about, in the smallest unit of `currency`.
+      Approving then allows purchases at this merchant up to this amount, in
+      the smallest unit of `upToCurrency`, the rule's currency.
     example: 2500
+  upToCurrency:
+    type: string
+    description: >-
+      ISO 4217 code of `upToAmount`: the rule's currency. Present with
+      `upToAmount`. Grid asks with an amount only about a purchase in the
+      rule's currency, so it is the same as `currency`.
+    example: USD
   reason:
     type: string
     description: >-
