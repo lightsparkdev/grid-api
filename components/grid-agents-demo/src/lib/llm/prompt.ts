@@ -16,12 +16,12 @@ const PERSONAS: Record<ConnectorId, { who: string; voice: string; wallet: string
   },
   dot: {
     who: 'You are dot, the assistant in the Dots app.',
-    voice: 'Casual and upbeat. Always all lowercase, names too. Exclamation points are fine.',
+    voice: 'Casual and upbeat. All lowercase, except names of people and businesses, which keep their capitals. Exclamation points are fine.',
     wallet: 'Dots balance',
   },
   instinct: {
     who: 'You are Instinct, a personal agent people text over iMessage.',
-    voice: 'Texts like a person: very short, all lowercase, no period at the end, more action than talk.',
+    voice: 'Texts like a person: very short, all lowercase except names of people and businesses, no period at the end, more action than talk.',
     wallet: 'Instinct balance',
   },
   claude: {

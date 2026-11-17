@@ -7,7 +7,7 @@ import { depositDetails, formatMoney, linkedBank, pullsFrom } from './linkedBank
 import { draftRecipient, payeeFor, recipientNamed, type Recipient } from './recipients';
 import { hash, merchantFor, stayFor, stayParams, type Stay } from './hotels';
 import { purchaseFor, requestParams, shelfFor, shelfParams, shelfWith, type BuyKind, type Shelf } from './products';
-import { CASHOUT_AMOUNT, CRYPTO, FUND, FUND_DETAIL, LUCIA, NETWORK_NAME, NEW_LIMITS, SUBSCRIPTION, usd2, type CryptoAsset } from './story';
+import { CASHOUT_AMOUNT, CRYPTO, FUND, FUND_DETAIL, LUCIA, NETWORK_NAME, NEW_APPROVAL_LIMIT, SUBSCRIPTION, usd2, type CryptoAsset } from './story';
 import type { Mode } from '@/data/mode';
 import {
   BUSINESS_HELD,
@@ -153,10 +153,13 @@ export function approvalOr(
   after: Beat[],
   denied: string,
   lineParams?: Params,
+  /** Said before the approval when the amount is over the limit, as `autoLine` is when it's under. */
+  heldLine?: string,
 ): Beat[] {
   if (ctx.preApproved) return [{ emit: { type: 'action.approve' } }, ...after];
   if (!needs) return [{ say: autoLine, params: { ...lineParams, ...limitParams(ctx) } }, ...after];
   return [
+    ...(heldLine ? [{ say: heldLine, params: { ...lineParams, ...limitParams(ctx) } } as const] : []),
     {
       ask: ask.key,
       swap: ask.swap,
@@ -567,7 +570,8 @@ const fund = (ctx: FlowContext): Beat[] => {
 /** The limits someone asked for: what they named, the rest raised only as far as it has to be to stay in order. */
 export function limitsFor(ctx: FlowContext, from: Limits): Limits {
   const p = ctx.params;
-  if (!p || !(p.approve || p.daily || p.perTx)) return NEW_LIMITS;
+  // The tile's "anything under $100 without asking" changes that one limit, as typing it would.
+  if (!p || !(p.approve || p.daily || p.perTx)) return limitsFor({ ...ctx, params: { approve: NEW_APPROVAL_LIMIT / 100 } }, from);
   const approvalAbove = cents(p.approve) ?? from.approvalAbove;
   const perTransaction = cents(p.perTx) ?? Math.max(from.perTransaction, approvalAbove);
   const daily = cents(p.daily) ?? Math.max(from.daily, perTransaction);
@@ -675,6 +679,8 @@ export function paySend(c: FlowContext, quote: ReturnType<typeof payQuote>, p: F
           : [{ say: 'pay.done', params: sent } as const]),
       ],
       'pay.denied',
+      undefined,
+      'approval.over',
     ),
   ];
 }
@@ -751,6 +757,8 @@ export function stableSend(c: FlowContext, quote: ReturnType<typeof stableQuote>
       'pay.auto',
       [{ work: 'sending', ms: 1000 }, { card: 'receipt.crypto', params: sent }, { say: 'crypto.done', params: sent }],
       'pay.denied',
+      undefined,
+      'approval.over',
     ),
   ];
 }

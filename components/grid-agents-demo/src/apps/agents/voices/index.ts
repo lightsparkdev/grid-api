@@ -36,14 +36,14 @@ export interface Voice {
 const PROPER =
   /^(Visa|Muse|Dots|Bot|Grok|Duet|Claude|Instinct|Plaid|Chase|Hotel|PIX|SPEI|ACH|SEPA|UPI|USDC|Bitcoin|Lightning|Spark|Base|Solana|Ethereum|Polygon|Arbitrum|Tron|Duolingo|Netflix|Spotify|[A-Z]{2,})/;
 
-/** The names a business line says (its params always carry the company), kept as written: "acme Studio" reads wrong. */
-const NAMED = ['company', 'owner', 'client', 'name', 'first', 'people'];
-const namesIn = (p?: Params) => (p?.company ? NAMED.flatMap((k) => String(p[k] ?? '').split(/\s+/)).filter(Boolean) : []);
+/** The people and businesses a line names, kept as written in a lowercase voice: "maya is on the team" reads wrong. */
+const NAMED = ['company', 'owner', 'client', 'name', 'first', 'people', 'payer', 'vendor', 'merchant', 'hotel', 'to', 'bank', 'list'];
+const namesIn = (p?: Params) => NAMED.flatMap((k) => String(p?.[k] ?? '').split(/[\s,]+/)).filter((w) => /^[A-ZÀ-ÖØ-Þ]/.test(w) && !/^(The|A|An)$/.test(w));
 
 /** A neutral line in a lowercase voice (Dots, Instinct): each sentence opens lowercase, and so does "I". */
 export function casual(text: string, keep: string[] = []): string {
   return text
-    .replace(/(^|[.!?]\s+)([A-Z][\w’']*)/g, (m, pre: string, word: string) =>
+    .replace(/(^|[.!?]\s+)([A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿĀ-ž\d’'-]*)/g, (m, pre: string, word: string) =>
       PROPER.test(word) || keep.includes(word.replace(/[’']s$/, '')) ? m : pre + word[0].toLowerCase() + word.slice(1),
     )
     .replace(/\bI(?=[’'\s,.!?]|$)/g, 'i');
