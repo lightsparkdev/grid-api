@@ -857,6 +857,8 @@ export function useAgentBrain({
       const read = cb.current.read;
       if (!read) return null;
       const asked = cb.current.asked?.(messagesRef.current.slice(-5)) ?? '';
+      // A tap on its options settles the question after a beat, but lets go of the tap handler at once.
+      const tap = pickRef.current;
       reading.current = true;
       // Thinking isn't something said: Dots still quotes the request it's answering.
       const run = runRef.current;
@@ -865,7 +867,7 @@ export function useAgentBrain({
       if (run) run.answered = answered;
       try {
         const answer = await read({ ...q, asked, reply }).catch(() => null);
-        return stillOpen() ? answer : 'closed';
+        return stillOpen() && pickRef.current === tap ? answer : 'closed';
       } finally {
         reading.current = false;
         setMessages((list) => list.filter((m) => m.id !== typing));
