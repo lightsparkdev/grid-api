@@ -1,0 +1,38 @@
+.face {
+  position: relative;
+  display: inline-block;
+  flex: none;
+}
+
+.disc {
+  fill: #000;
+
+  :global([data-theme='dark']) & {
+    fill: #fff;
+  }
+}
+
+.eyes {
+  fill: #fff;
+
+  :global([data-theme='dark']) & {
+    fill: #000;
+  }
+}
+
+// Working: a green dot with a ring the color of the pill behind it.
+.live {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  border: 1.5px solid var(--grok-card, #fff);
+  border-radius: 50%;
+  background: #34c759;
+  animation: live-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes live-in {
+  from {
+    scale: 0;
+  }
+}

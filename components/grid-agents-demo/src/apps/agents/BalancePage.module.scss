@@ -1,0 +1,214 @@
+/* Themed by the host sheet: --sp-text and --sp-muted, then
+   --bp-card (a group), --bp-line (its dividers), --bp-ink and --bp-ink-text (the primary button),
+   --bp-radius and --bp-button-radius (corners), --bp-incoming (money in). */
+
+// For an app without a sheet theme of its own: iOS's grouped page.
+.neutral {
+  --sp-bg: #f2f2f7;
+  --sp-text: #000;
+  --sp-muted: #8a8a8e;
+  --sp-title-weight: 600;
+  --bp-card: #fff;
+  --bp-line: rgba(60, 60, 67, 0.14);
+  --bp-ink: #000;
+  --bp-ink-text: #fff;
+  font-family: var(--font-family-sf-pro);
+
+  :global([data-theme='dark']) & {
+    --sp-bg: #000;
+    --sp-text: #fff;
+    --sp-muted: #8e8e93;
+    --bp-card: #1c1c1e;
+    --bp-line: rgba(84, 84, 88, 0.6);
+    --bp-ink: #fff;
+    --bp-ink-text: #000;
+  }
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 8px 16px 40px;
+  color: var(--sp-text);
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 0 4px;
+  text-align: center;
+}
+
+.amount {
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  font-size: 15px;
+  color: var(--sp-muted);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  margin-top: 18px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 48px;
+    border: 0;
+    border-radius: var(--bp-button-radius, 999px);
+    font: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--sp-text);
+    background: var(--bp-card, #fff);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+
+    &:active {
+      transform: scale(0.97);
+    }
+
+    &[data-primary] {
+      color: var(--bp-ink-text, #fff);
+      background: var(--bp-ink, #000);
+    }
+  }
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.head {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sp-muted);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--bp-radius, 14px);
+  background: var(--bp-card, #fff);
+  overflow: hidden;
+
+  > * + * {
+    border-top: 0.5px solid var(--bp-line, rgba(0, 0, 0, 0.08));
+  }
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  font-size: 15px;
+}
+
+.value {
+  color: var(--sp-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  font-size: 15px;
+  color: var(--sp-muted);
+
+  b {
+    font-weight: 600;
+    color: var(--sp-text);
+  }
+}
+
+.bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bp-line, rgba(0, 0, 0, 0.08));
+  overflow: hidden;
+
+  i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--bp-ink, #000);
+  }
+}
+
+.linked,
+.activity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.glyph {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 22.37%;
+  color: var(--sp-muted);
+  background: var(--bp-line, rgba(0, 0, 0, 0.06));
+}
+
+.linkedText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  strong {
+    font-size: 15px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    font-size: 13px;
+    color: var(--sp-muted);
+  }
+}
+
+.amountCell {
+  flex-shrink: 0;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+
+  &[data-incoming] {
+    color: var(--bp-incoming, #1a9e4b);
+  }
+}
+
+.empty {
+  margin: 0;
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--sp-muted);
+}

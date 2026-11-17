@@ -1,0 +1,10 @@
+// Tucked under the intro line, in its inset, in the section labels' color.
+.line {
+  margin: calc(-1 * var(--spacing-xs)) 0 0;
+  padding: 0 var(--spacing-xs);
+  font-family: var(--font-family-sans);
+  font-size: 10px;
+  line-height: 14px;
+  color: var(--text-tertiary);
+  text-wrap: pretty;
+}
