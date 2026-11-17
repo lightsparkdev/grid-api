@@ -12,9 +12,6 @@ export const LAYOUT_WIDE_PX = 1600;
 /** Configure column width. Twin: $layout-laptop-config-width. */
 export const CONFIGURE_COL_PX = 400;
 
-/** The app column with the phone at full size and its inset (434 + 16 each side). */
-export const APP_COL_FULL_PX = 466;
-
 /** Docs sidebar widths at or below this read as "collapsed to the rail".
  *  The embed reports the live width (?nav on boot, nav-sync after): 48px
  *  for the collapsed rail (--ls-nav-rail-w in mintlify/style.css), 280–420px
@@ -40,6 +37,12 @@ export const LAYOUT_TIGHT_PX = CONFIGURE_COL_PX * 2 + APP_COL_TIGHT_PX;
 const fullAt = (sidebar: number) => LAYOUT_WIDE_PX - DOCS_SIDEBAR_EXPANDED_PX + sidebar;
 
 /**
+ * Whether a frame this wide holds the API column at its default (sidebar + configure). The tight layout and the API
+ * column's default width (useColumnResize) both key off this, so the pre-paint width and the live one agree.
+ */
+export const fitsFull = (width: number, sidebar = DOCS_SIDEBAR_EXPANDED_PX) => width >= fullAt(sidebar);
+
+/**
  * Where stacked flips to 3 columns (Configure 400 | App | API) beside a docs sidebar this wide: room for the phone at
  * full size next to the API column. Collapsed to the rail, that's the API column at its default: 1368, so a MacBook
  * Pro 14" (a 1464px embed) gets 3 columns. Beside an expanded sidebar the API column may go tight, down to the
@@ -56,7 +59,7 @@ export const layoutFor = (width: number, sidebar?: number) => (width < wideAt(si
  * Whether the 3 columns are the tight ones (html[data-tight]): the API column at the configure column's width, and
  * the panels in the stacked layout's colors rather than the docs-chrome gray.
  */
-export const isTight = (width: number, sidebar = DOCS_SIDEBAR_EXPANDED_PX) => width >= wideAt(sidebar) && width < fullAt(sidebar);
+export const isTight = (width: number, sidebar = DOCS_SIDEBAR_EXPANDED_PX) => width >= wideAt(sidebar) && !fitsFull(width, sidebar);
 
 /** The html[data-nav] value for a reported docs sidebar width. Set by the
  *  pre-paint boot script (layout.tsx) and kept live by the nav-sync listener
