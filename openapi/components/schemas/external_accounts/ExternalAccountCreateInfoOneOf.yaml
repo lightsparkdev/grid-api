@@ -53,6 +53,7 @@ oneOf:
 - $ref: ./ChfExternalAccountCreateInfo.yaml
 - $ref: ./RonExternalAccountCreateInfo.yaml
 - $ref: ./KrwExternalAccountCreateInfo.yaml
+- $ref: ./AudExternalAccountCreateInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -110,3 +111,4 @@ discriminator:
     CHF_ACCOUNT: ./ChfExternalAccountCreateInfo.yaml
     RON_ACCOUNT: ./RonExternalAccountCreateInfo.yaml
     KRW_ACCOUNT: ./KrwExternalAccountCreateInfo.yaml
+    AUD_ACCOUNT: ./AudExternalAccountCreateInfo.yaml
