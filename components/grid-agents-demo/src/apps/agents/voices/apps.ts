@@ -368,7 +368,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
           ? `${n(p, 'short') ? 'your Instinct balance won’t cover it, so ' : ''}i’ll check out with your ${CARD} once you ok it`
           : `i’ll pay from your Instinct balance with a one-time card for exactly this ${orderNoun(p)}`,
       'buy.payWith': () => `your Instinct balance or your ${CARD}?`,
-      'buy.short': (p) => `you’ve got ${usd2(n(p, 'balance'))} in your Instinct balance. i can put this on your card, or you can add ${usd(n(p, 'amount'))} first`,
+      'buy.short': (p) => `you’ve got ${usd2(n(p, 'balance'))} in your Instinct balance. i can put this on a card, or you can add ${usd(n(p, 'amount'))} first`,
       'card.forBuy': () => 'add your card once and i’ve got it',
       'balance.offer': () => 'want an Instinct balance too? i can pay from it without your card, and you can get paid into it, send money abroad',
       'balance.later': () => 'ok, just ask when you want one',

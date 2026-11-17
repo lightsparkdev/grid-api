@@ -205,13 +205,6 @@ const dollars = (cents: number) => Number((cents / 100).toFixed(2));
 function exchangeRate(sent: number, fees: number, sending: { decimals: number }, received: number, receiving: { decimals: number }) {
   return Number(((sent - fees) / 10 ** sending.decimals / (received / 10 ** receiving.decimals)).toPrecision(6));
 }
-/** ABA routing numbers of the banks the playground links, so the account created and the rail details that pay it agree. */
-const US_ROUTING: Record<string, string> = { Chase: '021000021', 'Bank of America': '026009593', 'Wells Fargo': '121000248', Citibank: '021000089' };
-/** A US bank's own numbers: its routing number, and an account number ending in the last4 the app shows for it. */
-const usBankNumbers = (bank: LinkedBank) => ({
-  accountNumber: `${bank.values.accountNumber.slice(0, -4)}${bank.last4}`,
-  routingNumber: US_ROUTING[bank.bankName] ?? bank.values.routingNumber,
-});
 /** A rail the playground names in words ("SEPA Instant", "international wire"), as the spec names it. */
 function paymentRail(label: string) {
   if (/wire/i.test(label)) return 'SWIFT';
@@ -1027,7 +1020,6 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
   const externalAccount = (id: string, name: string, bank: LinkedBank, vendor = false) => {
     // The wire-only intermediary fields are the spec's sample text; a US account here is paid over ACH, RTP or FEDNOW.
     const { region, intermediaryBankName: _i, intermediaryRoutingNumber: _r, fiToFiInformation: _f, ...fields } = bank.values;
-    if (bank.country.code === 'us') Object.assign(fields, usBankNumbers(bank));
     const accountInfo = {
       accountType: bank.country.accountType,
       ...fields,
@@ -1087,7 +1079,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
         railDetails: {
           paymentRail: 'ACH',
           status: 'SETTLED',
-          bankAccount: { accountHolderName: bank.holder, routingNumber: usBankNumbers(bank).routingNumber, accountNumber: `****${bank.last4}` },
+          bankAccount: { accountHolderName: bank.holder, routingNumber: bank.values.routingNumber, accountNumber: `****${bank.last4}` },
           traceNumber: `0210000${hex(8).replace(/\D/g, '1')}`,
           settledAt: nowIso(),
         },

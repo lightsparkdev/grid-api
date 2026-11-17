@@ -13,18 +13,30 @@ export interface LinkedBank {
   currency: string;
 }
 
+/** ABA routing numbers of the US banks the playground links, so the form, the account created and the rails agree. */
+const US_ROUTING: Record<string, string> = { Chase: '021000021', 'Bank of America': '026009593', 'Wells Fargo': '121000248', Citibank: '021000089' };
+
+/** A US bank's own numbers in its fields: its routing number, and an account number ending in the last4 shown for it. */
+export function withUsNumbers(bank: LinkedBank): LinkedBank {
+  if (bank.country.code !== 'us') return bank;
+  const values = { ...bank.values };
+  if (US_ROUTING[bank.bankName] && 'routingNumber' in values) values.routingNumber = US_ROUTING[bank.bankName];
+  if (values.accountNumber) values.accountNumber = `${values.accountNumber.slice(0, -4)}${bank.last4}`;
+  return { ...bank, values };
+}
+
 /** As the Global Accounts playground fills it in (useMoneySheet): the spec's sample fields, the country's own bank name. */
 export function bankFor(country: BankCountry, holder = PERSON.full): LinkedBank {
   const values = sampleValuesFor(country);
   if ('bankName' in values) values.bankName = country.bankName;
-  return {
+  return withUsNumbers({
     country,
     bankName: country.bankName,
     holder,
     values,
     last4: accountLast4(values),
     currency: currencyFor(country),
-  };
+  });
 }
 
 const US = () => BANK_COUNTRIES.find((c) => c.code === 'us')!;
