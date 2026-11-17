@@ -72,11 +72,13 @@ function typedAmount(text: string, all?: number) {
 
 /** How a request or a question opens in lowercase, which a name typed as a name doesn't. */
 const REQUEST_OPENER =
-  /^(pay|send|add|give|run|invoice|buy|book|show|tell|what|whats|how|hows|why|when|where|wheres|who|can|could|would|will|set|create|make|help|check|cancel|stop|transfer|move|withdraw|top|fund|issue|hire|track|remind|please|hey|hi|hello|yes|yeah|ok|okay|sure|thanks|thank|let'?s|lets|actually|skip|i want|i need|i'?d like|id like|i wanna|i would|we|not|maybe|later)\b/i;
+  /^(pay|paying|send|sending|add|adding|give|run|running|invoice|buy|book|show|tell|what|whats|how|hows|why|when|where|wheres|who|can|could|would|will|set|create|make|help|check|cancel|stop|transfer|move|withdraw|top|fund|issue|hire|track|remind|please|hey|hi|hello|yes|yeah|ok|okay|sure|thanks|thank|let'?s|lets|actually|skip|i want|i need|i'?d like|id like|i wanna|i would|we|not|maybe|later)\b/i;
 /** A request even when typed in capitals ("Pay Bob"): no company or person's name opens this way. */
 const PAYMENT_VERB = /^(pay|send|transfer|withdraw|invoice|give|run|move)\b/i;
 /** What people put before a name they're giving: "I'm Pat", "it's called Acme". */
 const NAME_LEAD = /^(i'?m|i am|my name is|my name'?s|it'?s called|it'?s|call it|we'?re|we are|the company is|company is)\s+/i;
+/** Leads that only ever come before a name, so what follows is one even when it opens like a request ("It's called Pay It Forward"). */
+const NAMING_LEAD = /^(my name is|my name'?s|it'?s called|call it|the company is|company is)\s+/i;
 /** Small words a capitalized name can hold in lowercase: "Payne & Co", "House of Pies", "Buy Me a Coffee". */
 const NAME_JOINERS = /^(&|and|of|the|a|an|de|la|le|van|von|y|for|me)$/i;
 
@@ -87,6 +89,7 @@ const NAME_JOINERS = /^(&|and|of|the|a|an|de|la|le|van|von|y|for|me)$/i;
 function nameIn(text: string): string | null {
   const t = text.trim().replace(NAME_LEAD, '');
   if (!t || t.length > 60 || t.split(/\s+/).length > 6 || /[?$]/.test(t) || NO.test(t)) return null;
+  if (NAMING_LEAD.test(text.trim())) return t;
   const words = t.split(/\s+/);
   const capitalized = words.every((w, i) => /^[A-ZÀ-ÖØ-Þ0-9]/.test(w) || (i > 0 && NAME_JOINERS.test(w)));
   if (capitalized) return words.length > 1 && PAYMENT_VERB.test(t) ? null : t;

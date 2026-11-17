@@ -1,5 +1,5 @@
 import { MODES, type Mode } from '@/data/mode';
-import { CONNECTOR_IDS, TOOL_DEFS, toolsIn, type ToolCall, type ToolName, type Turn } from './tools';
+import { TOOL_DEFS, toolsIn, type ToolCall, type ToolName, type Turn } from './tools';
 import type { ModelAdapter, StepRequest, StepAnswer } from './types';
 
 export const MODELS = { haiku: 'claude-haiku-5-5', sonnet: 'claude-sonnet-5-5' } as const;
@@ -60,7 +60,7 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
         .filter((c) => c.type === 'tool_use' && typeof c.id === 'string' && toolsIn(mode).has(c.name as ToolName))
         .map((c) => ({ id: c.id!, name: c.name as ToolName, input: (c.input ?? {}) as ToolCall['input'] }));
       const text = (data.content ?? []).flatMap((c) => (c.type === 'text' && c.text?.trim() ? [c.text.trim()] : [])).join(' ');
-      if (!calls.length && text) calls.push({ id: `toolu_text_${started}`, name: 'reply', input: { say: Object.fromEntries(CONNECTOR_IDS.map((c) => [c, text])) } });
+      if (!calls.length && text) calls.push({ id: `toolu_text_${started}`, name: 'reply', input: { say: { yourapp: text } } });
       if (!calls.length) throw new Error('No tool call');
       return { calls, usage };
     },
