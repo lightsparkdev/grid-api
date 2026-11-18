@@ -1,0 +1,15 @@
+type: object
+description: A Plaid Link token for linking one of the customer's bank accounts.
+required:
+  - linkToken
+  - expiresAt
+properties:
+  linkToken:
+    type: string
+    description: The token to open Plaid Link with.
+    example: link-production-840204-193734
+  expiresAt:
+    type: string
+    format: date-time
+    description: Time at which the link token expires.
+    example: '2027-01-15T14:32:00Z'

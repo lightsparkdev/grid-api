@@ -1,0 +1,73 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The Grid customer ID the bank account was linked for.
+    required: true
+    schema:
+      type: string
+post:
+  summary: Complete a bank link
+  description: |
+    Finish linking a bank account through Plaid Link. Grid exchanges the `publicToken`, reads the account and routing numbers from Plaid, and checks that the bank lists the customer as the account's owner: the customer's full name for an `INDIVIDUAL`, or the business legal name for a `BUSINESS`.
+
+    On success Grid returns the customer's external account for that bank account, creating it if the customer does not already have one with the same account and routing numbers, and records the account as validated for ACH. If the owner name does not match, Grid stores nothing and returns `BANK_ACCOUNT_OWNER_MISMATCH`.
+
+    Safe to retry with the same `publicToken`: a retry after success returns the same external account.
+  operationId: createCustomerBankLink
+  tags:
+    - External Accounts
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/external_accounts/BankLinkCreateRequest.yaml
+  responses:
+    '200':
+      description: The bank account was already linked with this `publicToken`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/external_accounts/ExternalAccount.yaml
+    '201':
+      description: Bank account linked
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/external_accounts/ExternalAccount.yaml
+    '400':
+      description: >-
+        Bad request. `BANK_ACCOUNT_OWNER_MISMATCH` when the bank does not list
+        the customer as the account's owner. `INVALID_BANK_ACCOUNT` when the
+        account is not a US checking or savings account with account and
+        routing numbers, Plaid cannot read it, or it cannot be validated.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: Bank linking is not enabled for this platform.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml

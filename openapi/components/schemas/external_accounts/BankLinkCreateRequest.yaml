@@ -1,0 +1,17 @@
+type: object
+required:
+  - publicToken
+  - accountId
+properties:
+  publicToken:
+    type: string
+    minLength: 1
+    maxLength: 4096
+    description: The `public_token` Plaid Link returned when the customer finished.
+    example: public-production-0a1b2c3d-4e5f-6789-abcd-ef0123456789
+  accountId:
+    type: string
+    minLength: 1
+    maxLength: 256
+    description: The Plaid account ID of the bank account the customer selected in Plaid Link.
+    example: vzeNDwK7KQIm4yEog683uElbp9GRLEFXGK98D
