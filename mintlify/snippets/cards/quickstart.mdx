@@ -104,7 +104,13 @@ curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-00000000
   }'
 ```
 
-The response is the resulting `CardTransaction` in `status: "AUTHORIZED"` with a single pull on the funding source.
+The response is `202 Accepted` with an `issuerTransactionToken`. Wait for
+the resulting transaction webhook, or poll `GET /transactions` with the
+card's `cardId` and match `issuerTransactionToken` in the response. Once the
+transaction is `AUTHORIZED`, use its Grid `id` as `cardTransactionId` in the
+clearing request below. The issuer token is not a Grid transaction ID.
+See [Sandbox testing](/cards/platform-tools/sandbox-testing#authorization-simulate)
+for the response and lookup examples.
 
 ## Simulate the clearing
 
@@ -122,12 +128,14 @@ curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-00000000
   }'
 ```
 
-A transaction webhook fires with the updated parent: the transaction
+The clearing response is also `202 Accepted` with an `issuerTransactionToken`.
+A transaction webhook then carries the updated parent: the transaction
 moves to `SETTLED` and `settledAmount` is `1500`.
 
 The webhook payload carries the full `CardTransaction` with
 clearings rolled up into `settledAmount`; a merchant refund posts as its
-own dated `CREDIT` row linked via `originalTransactionId` — see
+own dated `CREDIT` row. `originalTransactionId` is present when Grid can
+match the refund to its purchase and absent otherwise. See
 [Reconciliation](/cards/transactions/reconciliation) for the full
 event model.
 

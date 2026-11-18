@@ -12,10 +12,11 @@ For each card authorization, Grid produces:
 2. **Pulls** — debits against the funding source that fund approved
    auths and any post-hoc settlements.
 3. **Clearings** — the network's confirmation that funds have moved.
-4. **Refunds** — merchant-initiated `RETURN` events. A return against a
-   known purchase opens its own dated `CardTransaction` row
-   (`direction: CREDIT`) linked to the purchase via
-   `originalTransactionId`, so statements can list it as its own line.
+4. **Refunds** — merchant-initiated `RETURN` events. A return opens its own
+   dated `CardTransaction` row (`direction: CREDIT`), so statements can
+   list it as its own line. When Grid can match the return to a purchase,
+   `originalTransactionId` identifies that purchase. The field is absent
+   on refunds with no matching purchase; handle those credits independently.
 
 Clearings are reconciled against the purchase and rolled up into its
 `settledAmount` total; the returned value lives on the refund row.

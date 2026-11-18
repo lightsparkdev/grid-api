@@ -9,6 +9,10 @@ POST /sandbox/cards/{id}/simulate/clearing
 POST /sandbox/cards/{id}/simulate/return
 ```
 
+Each helper returns `202 Accepted` with an `issuerTransactionToken`.
+The resulting `CardTransaction` is processed asynchronously and delivered
+through transaction webhooks. It is also available through `GET /transactions`.
+
 Authorization outcomes are deterministic and driven by magic-value suffixes
 on `merchant.descriptor`. Other Sandbox helpers use the identifier suffixes
 described in their sections, including `/sandbox/internal-accounts/{id}/fund`.
@@ -56,7 +60,26 @@ Outcomes are controlled by the last three characters of
 network's acceptor-name field. A longer one is rejected with `400`
 `INVALID_INPUT`.
 
-The response is the resulting `CardTransaction`.
+The response is `202 Accepted`:
+
+```json
+{
+  "issuerTransactionToken": "f3a1c2d4-5b6e-7890-abcd-ef0123456789"
+}
+```
+
+Wait for a transaction webhook with the same `data.issuerTransactionToken`,
+or poll the card's transactions and match `issuerTransactionToken`:
+
+```bash
+curl --get "$GRID_BASE_URL/transactions" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  --data-urlencode "cardId=Card:019542f5-b3e7-1d02-0000-000000000010"
+```
+
+The transaction may not be visible immediately. Once it is `AUTHORIZED`,
+use its Grid `id` (`Transaction:...`) as `cardTransactionId` for clearing.
+Do not pass the issuer token as `cardTransactionId`.
 
 ## Clearing simulate
 
@@ -93,9 +116,10 @@ curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-00000000
   }'
 ```
 
-A refund posts as its own dated `CREDIT` `CardTransaction` linked to the
-purchase via `originalTransactionId`; the purchase keeps its `SETTLED`
-status, whether the refund is full or partial.
+A refund posts as its own dated `CREDIT` `CardTransaction`. When Grid can
+match it to a purchase, `originalTransactionId` identifies that purchase;
+otherwise the field is absent. The purchase keeps its `SETTLED` status,
+whether the refund is full or partial.
 
 ## End-to-end happy path
 
@@ -119,19 +143,19 @@ curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:.../simulate/authorization" \
   -H "Content-Type: application/json" \
   -d '{ "amount": 1250, "currency": {"code":"USD"}, "merchant": {"descriptor":"BLUE BOTTLE COFFEE SF"} }'
 
-# 3. Clear the auth
+# 3. Wait for AUTHORIZED, then clear using the resulting Grid transaction id
 curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:.../simulate/clearing" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{ "cardTransactionId": "Transaction:...", "amount": 1500 }'
 
-# 4. Refund the cleared transaction
+# 4. Wait for SETTLED, then refund the cleared Grid transaction
 curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:.../simulate/return" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{ "cardTransactionId": "Transaction:...", "amount": 1500 }'
 ```
 
-At each step you'll see `CARD.STATUS_CHANGE` webhooks plus transaction
-webhooks for the simulated authorization, clearing, and return — wire those into
-your local webhook handler to validate end-to-end.
+Use transaction webhooks to observe the simulated authorization, clearing,
+and return. Each simulate response only acknowledges acceptance; wait for
+the transaction's resulting state before sending the next step.
