@@ -66,6 +66,8 @@ interface Run {
   offer?: string;
   /** What was open when it started, which it took the place of. */
   replaced?: string;
+  /** The model's call that started it, as made: the same call again while it waits is no new request. */
+  made?: string;
   /** A look-up made while something else is open: it shows what it finds and leaves that open. */
   side?: boolean;
   /** What the tool fills in as it goes: its status and facts. */
@@ -97,7 +99,7 @@ interface Started {
 interface Heard {
   /** What the thread shows, when it isn't what was meant (a typed "2" for the second suggestion). */
   shown?: string;
-  /** The tile or suggestion this came from: the model is told which flow it starts, and without the model it plays. */
+  /** The tile or suggestion this came from: the flow it starts. */
   flow?: ActionId;
   variant?: number;
   setup?: FlowEntry['setup'];
@@ -179,7 +181,7 @@ function tapFor(text: string, wait: Wait, voiced: boolean): Given {
 function waitText(wait: Wait): string {
   switch (wait.kind) {
     case 'approval':
-      return `an approval to tap, ${wait.what}`;
+      return `an approval, ${wait.what}`;
     case 'choice':
       return `options to pick from: ${wait.options.map((o, i) => `${i + 1}. ${o}`).join('  ')}`;
     case 'amount':
@@ -289,6 +291,8 @@ export function useAgentBrain({
   const unsaid = useRef<Line[]>([]);
   /** Why the model last couldn't answer, for what a script says to something typed. */
   const without = useRef<'fallback' | 'limited'>('fallback');
+  /** The model couldn't answer last time it was asked: tiles play as scripts until it answers again. */
+  const down = useRef(false);
   /** What the person last asked for, and whether they've answered something since (Dots quotes the request then). */
   const request = useRef<{ text: string; answered: boolean }>({ text: '', answered: false });
   /** The flow the panel's calls are grouped under since the person last spoke. */
@@ -396,7 +400,7 @@ export function useAgentBrain({
   /* ── The model's side: a turn, a step at a time ───────────────────── */
 
   /** Something the model hasn't answered is in the record: it takes a turn, after any turn already under way. */
-  const takeTurn = (opts: { tile?: Heard; read?: boolean } = {}) => {
+  const takeTurn = (opts: { read?: boolean } = {}) => {
     owed.current = true;
     turns.current = turns.current.then(() => turn(opts)).catch(() => undefined);
   };
@@ -792,10 +796,18 @@ export function useAgentBrain({
     setMessages((list) => (at !== null ? list.flatMap((m) => (m.id === at ? [eyebrow, m] : [m])) : [...list, eyebrow]));
   };
 
-  /** A tile's flow as a script, with its own lines: what plays when the model can't. */
-  const playScript = (heard: Heard) => {
+  /**
+   * A tile (or a suggestion that starts a flow) is a control: its flow starts at once, as it always has, and the model
+   * takes it from what the flow reports: the line that leads into what it needs, or how it went. With the model down
+   * it plays as a script, with the flow's own lines.
+   */
+  const startFlow = (heard: Heard) => {
     const flow = heard.flow!;
-    const ctx: FlowContext = { ...cb.current.context(), variant: heard.variant ?? 0 };
+    dismiss();
+    const run = newRun(flow, !down.current);
+    run.leads = true;
+    run.did = `tapped “${actionLabel(flow)}”, which started this flow of the app’s`;
+    const ctx: FlowContext = { ...cb.current.context(), variant: heard.variant ?? 0, naming: memory.current.naming, ...(run.voiced && { offer: (what: string) => void (run.offer = what) }) };
     // Still missing what it needs (a card-only account and a flow that holds money): it asks, as the chat would.
     const beats = own(() => (needsSetup(flow, ctx.account()) ? planFor(flow, ctx) : FLOWS[flow](ctx)));
     // A shortcut that set things up on its own says so, right after it reacts.
@@ -805,15 +817,16 @@ export function useAgentBrain({
       beats.splice(beats[0] && 'react' in beats[0] ? 1 : 0, 0, note);
     }
     group(flow, () => own(() => topicFor(flow, ctx)));
-    launch(newRun(flow, false), beats);
+    launch(run, beats);
   };
 
   /**
    * The model can't answer (off, over its cap, failing). What a flow kept back for it, the flow says itself and
-   * carries on as a script; a tile plays its flow; anything else gets the app's stock line.
+   * carries on as a script; anything else gets the app's stock line.
    */
-  const carryOnWithout = async (why: 'fallback' | 'limited', tile?: Heard) => {
+  const carryOnWithout = async (why: 'fallback' | 'limited') => {
     without.current = why;
+    down.current = true;
     const lines = unsaid.current;
     unsaid.current = [];
     const run = runRef.current;
@@ -824,8 +837,6 @@ export function useAgentBrain({
       patch(id, (m) => (m.kind === 'them' ? { ...m, typing: false } : m));
       await sleep(400);
       fromApp(log.current, { note: 'you were unavailable, so the app said this itself', said: lines.map((l) => cb.current.plain(l.key, l.params)) });
-    } else if (tile?.flow) {
-      return playScript(tile);
     } else {
       const key = why === 'fallback' && mode === 'business' ? 'fallback.business' : why;
       show({ kind: 'them', said: { key }, typing: false });
@@ -839,13 +850,15 @@ export function useAgentBrain({
   const openText = () => {
     const open = openRef.current;
     if (!open) return undefined;
-    return open.shown ? `open and waiting on them: ${waitText(open.wait)}` : `about to appear once your line is out (they can’t see it yet, so there’s nothing to answer): ${waitText(open.wait)}`;
+    return open.shown
+      ? `open and waiting on them: ${waitText(open.wait)}. If what they just typed answers it in any words (a yes or a no, which one, how much, the name), call answer for them: don’t tell them to tap, and don’t call the tool that opened it again.`
+      : `about to appear once your line is out (they can’t see it yet): ${waitText(open.wait)}. Lead into it with reply; only if they’ve already said exactly what it asks for, call answer with that instead.`;
   };
 
   /** The model answers what's open from what the person typed: it settles as a tap would, and the flow reports on. */
   const answerOpen = (call: ToolCall): { error: ToolResult } | Started => {
     const open = openRef.current;
-    if (!open?.shown || !open.settle) return { error: { error: 'nothing_open', fix: 'nothing is waiting on screen: do what they asked with another tool, or reply' } };
+    if (!open) return { error: { error: 'nothing_open', fix: 'nothing is waiting on screen: do what they asked with another tool, or reply' } };
     const i = call.input;
     const option = typeof i.option === 'number' && Number.isInteger(i.option) ? i.option - 1 : -1;
     let answer: Given = null;
@@ -875,9 +888,14 @@ export function useAgentBrain({
     const run = open.run;
     return {
       spoke: () => false,
-      start: () => {
+      start: async () => {
+        // Held back for a line that isn't coming (they'd already said what it asks): it goes up, and is answered.
+        if (!open.shown) {
+          open.reveal();
+          for (let k = 0; k < 100 && !open.settle && openRef.current === open; k++) await sleep(20);
+        }
         // Closed meanwhile (a tap got there first): nothing left to answer.
-        if (openRef.current !== open || !open.settle) return Promise.resolve({ status: 'already_settled', note: 'they tapped it themselves just now' });
+        if (openRef.current !== open || !open.settle) return { status: 'already_settled', note: 'they tapped it themselves just now' };
         inWords.current = true;
         // A script doesn't report: it carries on with its own lines.
         if (!run.voiced) {
@@ -896,7 +914,16 @@ export function useAgentBrain({
    * open gives way, and the step plays until it needs the person or ends, which is its result.
    */
   const prepare = (call: ToolCall, next?: ToolCall): { error: ToolResult } | Started => {
+    const { say: _line, ...asked } = call.input;
+    const made = `${call.name} ${JSON.stringify(asked)}`;
+    // The very call that put up what's open: making it again would only put the same thing up afresh, and lose
+    // where they'd got to.
+    const open = openRef.current;
+    if (open?.shown && open.run.made === made) {
+      return { error: { error: 'already_open', open: waitText(open.wait), fix: 'this is already on screen from that same call, waiting on them: if what they typed answers it (a yes, a no, which one, how much, the name), call answer; otherwise reply' } };
+    }
     const run = newRun(flowOf(call), true);
+    run.made = made;
     run.leads = !LOOKUPS.has(call.name);
     const ctx: FlowContext = { ...cb.current.context(), variant: 0, offer: (what) => (run.offer = what) };
     const out = own(() => runTool({ ctx, memory: memory.current, next }, call));
@@ -934,7 +961,7 @@ export function useAgentBrain({
    * ends the turn (a reply, or nothing more to say) or the app has to wait on the person. An answer that lands after
    * something overtook the turn (a tap, a tile) is dropped: the record has moved on, and the next turn reads it.
    */
-  const turn = async ({ tile, read }: { tile?: Heard; read?: boolean }) => {
+  const turn = async ({ read }: { read?: boolean }) => {
     if (!alive.current || !owed.current) return;
     const seq = turnSeq.current;
     const overtaken = () => seq !== turnSeq.current || !alive.current;
@@ -951,8 +978,9 @@ export function useAgentBrain({
       if (overtaken()) return;
       if ('fallback' in answer) {
         stopTyping();
-        return carryOnWithout(answer.fallback, tile);
+        return carryOnWithout(answer.fallback);
       }
+      down.current = false;
       const { calls } = answer;
       called(log.current, calls);
       /** Why the calls after one that stopped the step didn't run. */
@@ -973,7 +1001,15 @@ export function useAgentBrain({
           stopped = 'the turn ended before this';
           continue;
         }
-        const started = call.name === 'answer' ? answerOpen(call) : prepare(call, calls[i + 1]);
+        // What the app is holding back comes next, and they haven't seen it yet: until the model's line is out,
+        // there's nothing else to start. (Once it's open, something they type can take its place.)
+        const held = openRef.current && !openRef.current.shown ? openRef.current : null;
+        const started: { error: ToolResult } | Started =
+          held && call.name !== 'answer'
+            ? { error: { error: 'waiting_on_them', waiting: waitText(held.wait), fix: 'the app shows this the moment your line is out, and the flow carries on by itself once they act: lead into it with reply, in one sentence, and call nothing else' } }
+            : call.name === 'answer'
+              ? answerOpen(call)
+              : prepare(call, calls[i + 1]);
         if ('error' in started) {
           settled(log.current, call.id, started.error, true);
           stopped = 'an earlier call in this step failed';
@@ -1007,27 +1043,19 @@ export function useAgentBrain({
 
   /* ── The person's side ────────────────────────────────────────────── */
 
-  /** What the app tells the model about a tile or a suggestion that starts a flow. */
-  const tileNote = (heard: Heard): Record<string, unknown> => {
-    const flow = heard.flow!;
-    const setup = heard.setup;
-    const did = setup && [setup.connected && 'set up their account', setup.funded > 0 && `added ${usd(setup.funded / 100)} to it`].filter(Boolean).join(' and ');
-    return {
-      they: `tapped “${actionLabel(flow)}”, which starts a flow of the app’s`,
-      start_with: `start_flow ${JSON.stringify({ flow, ...(heard.variant ? { variant: heard.variant } : {}) })}`,
-      ...(did && { skipped_ahead: `so the flow can play, the app ${did} on its own just now: tell them so in a few words as you start` }),
-    };
-  };
-
-  /** Something the person said: into the thread and the record, and the model takes a turn. */
+  /**
+   * Something the person said: into the thread and the record. Typed, the model takes a turn; from a tile or a
+   * suggestion that starts a flow, the flow starts.
+   */
   const hear = (meant: string, heard: Heard = {}) => {
     const text = heard.shown ?? meant;
     push({ kind: 'me', text, ...(meant !== text ? { meant } : {}) });
     request.current = { text, answered: false };
     grouped.current = null;
     typed(log.current, meant);
-    if (heard.flow) fromApp(log.current, tileNote(heard));
-    takeTurn({ tile: heard.flow ? heard : undefined, read: true });
+    if (!heard.flow) return takeTurn({ read: true });
+    setBusy(true);
+    afterReading(() => alive.current && startFlow(heard));
   };
 
   /** A tap (or its exact words) settles what's open, ahead of any turn in flight. */

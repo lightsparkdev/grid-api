@@ -39,12 +39,12 @@ const saved: Record<Mode, Recipient[]> = { personal: starting('personal'), busin
 /** Who's saved on an account: the one on screen unless a conversation names its own. */
 export const savedRecipients = (mode: Mode = activeMode()) => saved[mode];
 
-/** Someone saved this visit, by first or full name. */
+/** Someone saved this visit, by full name, or by first name alone. A different last name is a different person. */
 export function recipientNamed(name: string): Recipient | undefined {
   const q = name.trim().toLowerCase();
   if (!q) return undefined;
   const list = saved[activeMode()];
-  return list.find((r) => r.name.toLowerCase() === q) ?? list.find((r) => r.first.toLowerCase() === q.split(' ')[0]);
+  return list.find((r) => r.name.toLowerCase() === q) ?? (q.includes(' ') ? undefined : list.find((r) => r.first.toLowerCase() === q));
 }
 
 /** A new person in a country, with that country's account fields filled in, not saved yet. */

@@ -1,4 +1,3 @@
-import { ACTION_IDS } from '@/data/actions';
 import { BANK_COUNTRIES } from '@/data/bankCountries';
 import type { Mode } from '@/data/mode';
 
@@ -11,7 +10,6 @@ export const TOOL_NAMES = [
   'offer_choices',
   'wait',
   'answer',
-  'start_flow',
   'setup_balance',
   'add_card',
   'link_bank',
@@ -51,7 +49,7 @@ export const toolsIn = (mode: Mode) => TOOLS_IN[mode];
 /** Tools that end the turn: the person acts next. */
 export const ENDS_TURN = new Set<ToolName>(['reply', 'offer_choices', 'wait']);
 /** Tools with no line of their own: what they lead to is what there is to say, once their result is in. */
-export const SAYS_NOTHING = new Set<ToolName>(['wait', 'answer', 'start_flow']);
+export const SAYS_NOTHING = new Set<ToolName>(['wait', 'answer']);
 
 /** One tool call as the model made it. `say` is its line to the person, in the voice of the app on screen. */
 export interface ToolCall {
@@ -129,16 +127,6 @@ export const TOOL_DEFS: ToolDef[] = [
       name: str('A name: just the name, written as a name ("pat capulong" is "Pat Capulong"); several people as they listed them.'),
     },
     [],
-    { say: 'none' },
-  ),
-  tool(
-    'start_flow',
-    'Start one of the app’s own flows from its tile. Only when an <app> line says they tapped that tile or a suggestion that starts it, with exactly what that line gives.',
-    {
-      flow: str('The flow, as the <app> line names it.', { enum: ACTION_IDS }),
-      variant: { type: 'integer', description: 'Which of the tile’s requests, when the <app> line gives one.' },
-    },
-    ['flow'],
     { say: 'none' },
   ),
   tool('setup_balance', 'Turn on their balance (and your account with it, at the default limits): the app shows its own consent sheet. Needed before adding money, getting paid, paying someone, withdrawing or sending stablecoins.', {}),

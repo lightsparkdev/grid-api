@@ -37,23 +37,47 @@ const fallback = (reason: Fallback, status = 200) => NextResponse.json({ fallbac
 const PROMISE =
   /\b(i['’]ll|i will|i['’]m going to|i can)\s+(also\s+)?(remind|warn|flag|alert|notify|ping|nudge|follow up|check (in |back )?with you|keep an eye|keep watch|watch (your|the) balance|let you know (if|when|before))/i;
 
-/** A line never promises what no tool does: a sentence that does goes. */
+/** The promise itself, with the "and" that leads into it, up to the end of its clause. */
+const PROMISED = new RegExp(`(?:[,;]?\\s*\\b(?:and|but|so|then|plus)\\s+)?${PROMISE.source}[^,.;!?]*`, 'gi');
+
+/** A line never promises what no tool does: the clause that does goes, and the rest of what it said stays. */
 function noPromises(reply: string): string {
   if (!PROMISE.test(reply)) return reply;
-  return (reply.match(/[^.!?]+[.!?]*/g) ?? [reply]).filter((s) => !PROMISE.test(s)).join('').trim();
+  const kept = reply
+    .replace(PROMISED, '')
+    .replace(/\s+([,.;!?])/g, '$1')
+    // What followed the promise picks up as its own sentence ("Done!, and your balance…" reads "Done! Your balance…").
+    .replace(/([.!?])[,;]\s*(?:(?:and|but|so|then|plus)\s+)?/gi, '$1 ')
+    .replace(/[,;]\s*([.!?])/g, '$1')
+    .replace(/([.!?])(?:\s*[.!?,;])+/g, '$1')
+    .replace(/^[,.;!?\s]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return reply === reply.toLowerCase() ? kept : kept.replace(/([.!?]\s+)([a-z])/g, (_m, gap: string, letter: string) => gap + letter.toUpperCase());
+}
+
+/** A line no longer than a text should be, ending on a whole sentence. */
+function capped(reply: string): string {
+  if (reply.length <= MAX_REPLY) return reply;
+  const whole = reply.slice(0, MAX_REPLY).match(/^[\s\S]*[.!?…](?=\s|$)/)?.[0];
+  return whole && whole.length > MAX_REPLY / 3 ? whole.trim() : `${reply.slice(0, MAX_REPLY - 1).trim()}…`;
 }
 
 /** Plain text only, a few sentences: no code, no markdown. Never "crypto": it's stablecoins. */
 function clean(reply: string): string {
-  return stablecoinsOnly(noPromises(
-    reply
-      .replace(/\bcrypto(?:currenc(?:y|ies))?\b/gi, (m) => (m[0] === 'C' ? 'Stablecoins' : 'stablecoins'))
-      .replace(/```[\s\S]*?```/g, '')
-      .replace(/`([^`]*)`/g, '$1')
-      .replace(/[*_#>]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim(),
-  )).slice(0, MAX_REPLY);
+  return capped(
+    stablecoinsOnly(
+      noPromises(
+        reply
+          .replace(/\bcrypto(?:currenc(?:y|ies))?\b/gi, (m) => (m[0] === 'C' ? 'Stablecoins' : 'stablecoins'))
+          .replace(/```[\s\S]*?```/g, '')
+          .replace(/`([^`]*)`/g, '$1')
+          .replace(/[*_#>]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim(),
+      ),
+    ),
+  );
 }
 
 const BITCOIN = /bitcoin|\bbtc\b|lightning/i;
@@ -156,7 +180,8 @@ export async function POST(req: NextRequest) {
   try {
     const { calls } = await anthropicAdapter(key).step({ system: systemPrompt(connector, state), turns, mode });
     const names = namesIn(state, turns, calls);
-    const voiced = LOWERCASE.has(connector) ? (line: string) => lowercased(line, names) : (line: string) => line;
+    const keep = new Set([...names.people, ...names.businesses].flatMap(capitalized));
+    const voiced = LOWERCASE.has(connector) ? (line: string) => withNames(lowercased(line, keep), names) : (line: string) => line;
     const out = await Promise.all(calls.map((c) => tidy(key, c, voiced)));
     return NextResponse.json({ calls: out } satisfies AgentResponse);
   } catch (e) {
@@ -209,17 +234,37 @@ function lowercased(text: string, names: Set<string>): string {
   return text.replace(/(^|[.!?…]\s+|[\uD83C-\uD83E][\uDC00-\uDFFF]\s+|\n)([A-ZÀ-Þ][A-Za-zÀ-ÿ’'-]*)/g, (m, pre: string, word: string) => (named(word) ? m : pre + word[0].toLowerCase() + word.slice(1))).replace(/\bI(?=[’'\s,.!?]|$)/g, 'i');
 }
 
-/** The names a conversation has in it: who's saved, the company and its people, and whoever the model's calls have named. */
-function namesIn(state: PromptState, turns: Turn[], calls: ToolCall[]): Set<string> {
+/** Where the model's calls name a person, and where they name a business. */
+const PERSON_KEYS = ['name', 'owner', 'from'];
+const BUSINESS_KEYS = ['company', 'client', 'vendor', 'merchant'];
+/** First names that are also everyday words: lowercase, they're left as the model wrote them. */
+const EVERYDAY = /^(will|bill|mark|may|rose|grace|hope|art|june|april|august|summer|faith|joy|dawn|eve|iris|ivy|lily|jack|bob|pat|rob|sue|don|dot|penny|rich|frank|miles|chase|cash|drew|guy|herb|jay|lane|max|ray|rod|skip|van|wade|ward|sunny|olive|pearl|ruby|amber|holly|daisy|dean|earl|gene|glen|grant|heath|lance|norm|reed|rusty|sandy|skye|sky|stone|major|king|prince|love|star)$/i;
+
+/**
+ * The names a conversation has in it, as they're written: people (who's saved, the owner, the team, whoever the
+ * model's calls have named) and businesses (the company, clients, vendors).
+ */
+function namesIn(state: PromptState, turns: Turn[], calls: ToolCall[]): { people: string[]; businesses: string[] } {
   const inputs = [...turns.flatMap((t) => t.content.flatMap((b) => (b.type === 'tool_use' ? [b.input] : []))), ...calls.map((c) => c.input)];
-  const from = [
-    ...state.recipients.map((r) => r.name),
-    state.company ?? '',
-    state.owner ?? '',
-    ...(state.team ?? []),
-    ...inputs.flatMap((input) => Object.entries(input).flatMap(([k, v]) => (k !== 'say' && typeof v === 'string' ? [v] : []))),
-  ];
-  return new Set(from.flatMap(capitalized));
+  const said = (keys: string[]) => inputs.flatMap((input) => keys.flatMap((k) => (typeof input[k] === 'string' ? [input[k] as string] : [])));
+  const split = inputs.flatMap((input) => (Array.isArray(input.split_with) ? input.split_with.filter((p): p is string => typeof p === 'string') : []));
+  const named = (list: string[]) => list.map((n) => n.trim()).filter((n, i, all) => /^[A-ZÀ-Þ]/.test(n) && n.length <= MAX_NAME && all.indexOf(n) === i);
+  return {
+    people: named([...state.recipients.map((r) => r.name), state.owner ?? '', ...(state.team ?? []).map((m) => m.replace(/\s*\(.*$/, '')), ...said(PERSON_KEYS), ...split]),
+    businesses: named([state.company ?? '', ...said(BUSINESS_KEYS)]),
+  };
+}
+
+const escaped = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * A lowercase app still writes names as names. A full name the model wrote in lowercase gets its capitals back, and
+ * so does a person's first name on its own (unless it's also an everyday word, which could be either).
+ */
+function withNames(text: string, names: { people: string[]; businesses: string[] }): string {
+  const firsts = names.people.map((n) => n.split(' ')[0]).filter((n) => n.length > 2 && !EVERYDAY.test(n));
+  const all = [...names.people, ...names.businesses].filter((n) => n.includes(' ')).concat(firsts).sort((a, b) => b.length - a.length);
+  return all.reduce((line, name) => line.replace(new RegExp(`(?<![A-Za-zÀ-ÿ])${escaped(name.toLowerCase())}(?![A-Za-zÀ-ÿ])`, 'g'), name), text);
 }
 
 /** A call made ready for the phone: its line cleaned and in the app's casing, taps checked, and a product we don't list priced from the web. */

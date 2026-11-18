@@ -1,4 +1,4 @@
-import { ACTION_IDS, type ActionId } from '@/data/actions';
+import type { ActionId } from '@/data/actions';
 import type { AccountSnapshot } from '@/data/agentApiCalls';
 import { purchaseSpendLimit, type DepositNetwork, type SendNetwork } from '@/data/agentEvents';
 import { BANK_COUNTRIES, currencyFor } from '@/data/bankCountries';
@@ -16,7 +16,6 @@ import {
   FLOWS,
   limitsFor,
   linkOwnBank,
-  needsSetup,
   noBalanceToMove,
   offerBalance,
   offerFunds,
@@ -30,7 +29,6 @@ import {
   placeOrder,
   payWith,
   placeSubscription,
-  planFor,
   raisedFor,
   recipientParams,
   split,
@@ -452,7 +450,12 @@ function quoted(env: ToolEnv, input: ToolCall['input']): { id: string; rec: PayR
   if (!name || RELATION.test(name)) return fail('need_name', { fix: name ? `ask their ${name.replace(/^my\s+/i, '')}'s name` : 'ask who' });
   if (!amount) return fail('need_amount', { fix: 'ask how much' });
   const known = recipientNamed(name);
-  const code = known?.bank.country.code ?? (typeof input.country === 'string' ? input.country.toLowerCase() : undefined);
+  const said = typeof input.country === 'string' ? input.country.toLowerCase() : undefined;
+  // Someone saved under that first name banks somewhere else: the same person, or someone new? Theirs to say.
+  if (known && said && COUNTRY_CODES.has(said) && said !== known.bank.country.code) {
+    return fail('saved_elsewhere', { saved: `${known.name} is saved, and banks in ${known.bank.country.name}`, fix: `ask whether they mean ${known.name}, or someone else: then pass that person’s full name` });
+  }
+  const code = known?.bank.country.code ?? said;
   if (!code) return fail('need_country', { fix: `ask where ${first(name)} banks` });
   if (!COUNTRY_CODES.has(code)) return fail('country_not_supported', { country: code });
   const recipient = known ?? draftRecipient(name, code)!;
@@ -831,8 +834,6 @@ export function topicOf(call: ToolCall, ctx: FlowContext): string {
   const flow = flowOf(call);
   if (!flow) return '';
   const i = call.input;
-  // A tile tells its own story.
-  if (call.name === 'start_flow') return topicFor(flow, { ...ctx, params: undefined, variant: typeof i.variant === 'number' ? i.variant : 0 });
   const s = (v: unknown) => (typeof v === 'string' ? v : undefined);
   const params: FlowParams = {
     name: s(i.name) ?? s(i.from) ?? s(i.client) ?? s(i.vendor),
@@ -898,8 +899,6 @@ export function flowOf(call: ToolCall): ActionId | null {
       return 'contractor';
     case 'run_payroll':
       return 'payroll';
-    case 'start_flow':
-      return flowNamed(call.input.flow) ?? null;
     case 'reply':
     case 'offer_choices':
     case 'wait':
@@ -910,17 +909,6 @@ export function flowOf(call: ToolCall): ActionId | null {
       return exhaustive;
     }
   }
-}
-
-const flowNamed = (v: unknown): ActionId | undefined => ACTION_IDS.find((id) => id === v);
-
-/** A tile's own flow, as the tile starts it: the account set up first if the flow needs one, then the flow. */
-function startFlow(env: ToolEnv, call: ToolCall): Outcome {
-  const flow = flowNamed(call.input.flow);
-  if (!flow) return fail('unknown_flow', { fix: 'use the flow the <app> line named' });
-  const variant = typeof call.input.variant === 'number' && call.input.variant > 0 ? Math.round(call.input.variant) : 0;
-  const ctx: FlowContext = { ...env.ctx, variant, naming: env.memory.naming };
-  return { result: {}, beats: needsSetup(flow, ctx.account()) ? planFor(flow, ctx) : FLOWS[flow](ctx) };
 }
 
 /** Carry out one call: an error to send back, or the beats to play and the result they fill in. */
@@ -974,8 +962,6 @@ export function runTool(env: ToolEnv, call: ToolCall): Outcome {
       return payContractorTool(env, call);
     case 'run_payroll':
       return runPayrollTool(env);
-    case 'start_flow':
-      return startFlow(env, call);
     // What the conversation itself carries out (a line, a pause, an answer to what's open): nothing to run here.
     case 'reply':
     case 'offer_choices':
