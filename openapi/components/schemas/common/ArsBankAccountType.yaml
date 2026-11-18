@@ -1,0 +1,6 @@
+type: string
+description: 'The account type: CHECKING for a cuenta corriente, SAVINGS for a caja
+  de ahorro'
+enum:
+- CHECKING
+- SAVINGS

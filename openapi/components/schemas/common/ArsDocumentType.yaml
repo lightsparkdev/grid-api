@@ -1,0 +1,6 @@
+type: string
+maxLength: 32
+description: 'Identity number type (Argentina): the person''s CUIL or CUIT'
+enum:
+- CUIL
+- CUIT

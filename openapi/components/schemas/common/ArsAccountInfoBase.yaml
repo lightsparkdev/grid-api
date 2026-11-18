@@ -1,0 +1,23 @@
+type: object
+required:
+- accountType
+- cbu
+- bankAccountType
+properties:
+  accountType:
+    type: string
+    enum:
+    - ARS_ACCOUNT
+  cbu:
+    type: string
+    description: The 22-digit CBU or CVU of the Argentinian account
+    example: '2850590940090418135201'
+    minLength: 22
+    maxLength: 22
+    pattern: ^[0-9]{22}$
+  bankAccountType:
+    $ref: ./ArsBankAccountType.yaml
+example:
+  accountType: ARS_ACCOUNT
+  cbu: '2850590940090418135201'
+  bankAccountType: CHECKING

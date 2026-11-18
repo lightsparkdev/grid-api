@@ -1,0 +1,19 @@
+title: ARS Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/ArsAccountInfoBase.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/ArsBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/ArsBusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/ArsBeneficiary.yaml
+          BUSINESS: ../common/ArsBusinessBeneficiary.yaml
