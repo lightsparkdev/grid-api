@@ -46,6 +46,15 @@
     cursor: default;
     opacity: 0.6;
   }
+
+  /* An informational row: no hover or press feedback. */
+  &:disabled {
+    cursor: default;
+
+    &::after {
+      display: none;
+    }
+  }
 }
 
 /* The activity-row graphic treatment: 44px tertiary-fill square, 24px glyph. */

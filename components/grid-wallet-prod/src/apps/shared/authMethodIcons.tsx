@@ -3,6 +3,7 @@ import { IconUserKey } from '@central-icons-react/round-outlined-radius-3-stroke
 import { IconApple } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconApple';
 import { IconPhone } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPhone';
 import { IconEmail1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEmail1';
+import { IconCryptoWallet } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCryptoWallet';
 import type { AuthMethod } from '@/data/flow';
 
 export type AuthMethodIcon = typeof IconGoogle;
@@ -13,13 +14,15 @@ export const AUTH_METHOD_ICONS: Record<AuthMethod, AuthMethodIcon> = {
   apple: IconApple,
   email_otp: IconEmail1,
   sms: IconPhone,
+  evm_wallet: IconCryptoWallet,
 };
 
-/** On-phone auth CTA order: email, phone, Google, Apple, passkey. */
+/** On-phone auth CTA order: email, phone, Google, Apple, passkey, EVM wallet. */
 export const AUTH_METHOD_ORDER: AuthMethod[] = [
   'email_otp',
   'sms',
   'oauth',
   'apple',
   'passkey',
+  'evm_wallet',
 ];

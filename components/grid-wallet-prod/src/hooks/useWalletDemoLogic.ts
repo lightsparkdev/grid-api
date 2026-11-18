@@ -20,13 +20,22 @@ import type {
 import { oauthNonce } from '@/lib/auth';
 import {
   signIn as gridSignIn,
+  signInWithEvmWallet,
   addPasskey as gridAddPasskey,
+  addEvmWallet as gridAddEvmWallet,
+  addEvmAdministrator,
   hasPasskey,
   deviceHasPasskey,
   ensureSession,
   clearSession,
   getAccount,
+  getSession,
+  type AuthCallbacks,
+  type Session as GridSession,
 } from '@/lib/gridSession';
+import { adminReferenceFor, OWNER_KEY_MESSAGE, recoverCompressedPublicKey } from '@/lib/evmWallet';
+import { useEvmWallet } from '@/components/EvmWalletProvider/EvmWalletProvider';
+import type { WalletAccountActions } from '@/apps/types';
 import { envelopeToApiCall } from '@/lib/gridEntry';
 import {
   fetchBalance,
@@ -111,6 +120,16 @@ const SIGN_IN_GROUP = '';
 const FIRST_RUN_METHODS: AuthMethod[] = ['email_otp'];
 const RETURNING_METHODS: AuthMethod[] = ['passkey'];
 
+/** "Continue with EVM wallet" sits beside the account's own credential whenever an EVM wallet provider is configured. */
+function signInMethods(base: AuthMethod[], evmAvailable: boolean): AuthMethod[] {
+  return evmAvailable ? [...base, 'evm_wallet'] : base;
+}
+
+/** The owner already holds an EVM wallet credential (an administrator's doesn't count). */
+function ownerHasEvmWallet(): boolean {
+  return Boolean(getAccount()?.credentials.some((c) => c.type === 'EVM_WALLET' && !c.adminReference));
+}
+
 /**
  * Demo interaction logic — preserved for phase 2 UI wiring.
  * Returns the full surface area Phone / ApiPanel expect.
@@ -120,10 +139,13 @@ export function useWalletDemoLogic() {
   // Starts on the first-run label and flips after mount: `deviceHasPasskey`
   // reads localStorage, which the server render can't see, so deciding during
   // render would mismatch on hydration.
-  const [methods, setMethods] = useState<AuthMethod[]>(FIRST_RUN_METHODS);
+  const evm = useEvmWallet();
+  const [methods, setMethods] = useState<AuthMethod[]>(() =>
+    signInMethods(FIRST_RUN_METHODS, Boolean(evm)),
+  );
   useEffect(() => {
-    if (deviceHasPasskey()) setMethods(RETURNING_METHODS);
-  }, []);
+    if (deviceHasPasskey()) setMethods(signInMethods(RETURNING_METHODS, Boolean(evm)));
+  }, [evm]);
   const method = useMemo(() => primaryAuthMethod(methods), [methods]);
   const [wallet, setWallet] = useState<WalletState>(initialWallet);
   // Sticky sidebar checkmarks — "have you ever run this flow". Separate from
@@ -147,6 +169,11 @@ export function useWalletDemoLogic() {
   // No PASSKEY credential on the account yet — the wallet shows the "add a
   // passkey" nudge until one exists.
   const [passkeyAdded, setPasskeyAdded] = useState(false);
+  // The live Grid session, as the wallet shows it (its real expiresAt and, for
+  // an administrator, their adminReference).
+  const [gridSession, setGridSession] = useState<GridSession | null>(null);
+  const [evmWalletOnAccount, setEvmWalletOnAccount] = useState(false);
+  const [accountBusy, setAccountBusy] = useState(false);
   // Toast the wallet should show, bumped by an arrival webhook (the brain owns
   // the toast surface, so it rides a nonce down like the other one-shots).
   const [walletToast, setWalletToast] = useState<{ nonce: number; text: string } | null>(null);
@@ -526,6 +553,11 @@ export function useWalletDemoLogic() {
     session.current.expiresAt = Date.now() + SESSION_MS;
   }, []);
 
+  const connectEvmWallet = useCallback(() => {
+    if (!evm) throw new Error('EVM wallet sign-in needs NEXT_PUBLIC_PRIVY_APP_ID');
+    return evm.connect();
+  }, [evm]);
+
   const authenticate = useCallback(
     /**
      * `popup` is a REAL provider popup already opened by the CTA's tap
@@ -536,17 +568,17 @@ export function useWalletDemoLogic() {
      */
     async (firstTime: boolean, popup?: Promise<string>) => {
       const m = session.current.method ?? method;
-      if (m === 'email_otp' || m === 'passkey') {
+      if (m === 'email_otp' || m === 'passkey' || m === 'evm_wallet') {
         // A sign-in is already live (e.g. a second tap landed before `running`
         // re-rendered) — never start a second WebAuthn ceremony on top of it.
         if (signInInFlight.current) return;
         signInInFlight.current = true;
         try {
           const gid = newGroupId();
-          // Real Grid sign-in on whatever credential the account has: EMAIL_OTP
-          // until a passkey has been added, the passkey challenge/verify after.
-          // Every call is logged truthfully.
-          const s = await gridSignIn({
+          // Real Grid sign-in: the EVM wallet when that's the button tapped,
+          // otherwise whatever credential the account has (EMAIL_OTP until a
+          // passkey has been added, the passkey after). Every call is logged.
+          const cb = {
             log: logEnvelope(SIGN_IN_GROUP, gid),
             // The aurora sheet's entry step, prefilled with the email on file.
             promptEmail,
@@ -554,8 +586,14 @@ export function useWalletDemoLogic() {
             promptOtp,
             // Play the iOS Face ID animation around the WebAuthn assertion.
             onFaceId: () => playFaceId(),
-          });
+          };
+          const s =
+            m === 'evm_wallet'
+              ? await signInWithEvmWallet(await connectEvmWallet(), cb)
+              : await gridSignIn(cb);
           setPasskeyAdded(s.via === 'passkey' || hasPasskey());
+          setGridSession(s);
+          setEvmWalletOnAccount(ownerHasEvmWallet());
           // Load the real book balance, history, and the fiat account's deposit
           // details (what Add money → Bank transfer shows) into the same group.
           const [walletBalance, activity, deposit, externalAccounts] = await Promise.all([
@@ -612,6 +650,7 @@ export function useWalletDemoLogic() {
       startSession,
       logEnvelope,
       gridSignIn,
+      connectEvmWallet,
     ],
   );
 
@@ -925,6 +964,7 @@ export function useWalletDemoLogic() {
               promptOtp,
               onFaceId: () => playFaceId(),
             });
+            setGridSession(getSession());
             const execEnv = await executeQuote(
               pq.quoteId,
               pq.payloadToSign!,
@@ -1020,9 +1060,70 @@ export function useWalletDemoLogic() {
         if ((e as Error)?.message !== 'cancelled') console.error('[grid-demo] add passkey', e);
       } finally {
         addPasskeyInFlight.current = false;
+        setGridSession(getSession());
       }
     })();
   }, [logEnvelope, promptOtp, playFaceId]);
+
+  // One account action at a time: each can open a Privy modal or an OTP sheet.
+  const accountActionInFlight = useRef(false);
+  const runAccountAction = useCallback(
+    (label: string, action: (cb: AuthCallbacks) => Promise<string>) => {
+      if (accountActionInFlight.current) return;
+      accountActionInFlight.current = true;
+      setAccountBusy(true);
+      const gid = newGroupId();
+      void (async () => {
+        try {
+          // A lapsed session re-auths with no entry step in front of the code.
+          otpHasEntryStep.current = false;
+          const done = await action({
+            log: logEnvelope(label, gid),
+            promptOtp,
+            onFaceId: () => playFaceId(),
+          });
+          setWalletToast((t) => ({ nonce: (t?.nonce ?? 0) + 1, text: done }));
+        } catch (e) {
+          if ((e as Error)?.message !== 'cancelled') console.error(`[grid-demo] ${label}`, e);
+        } finally {
+          accountActionInFlight.current = false;
+          setAccountBusy(false);
+          setGridSession(getSession());
+        }
+      })();
+    },
+    [logEnvelope, promptOtp, playFaceId],
+  );
+
+  /** The wallet proves control of the EVM address, then the live session approves the add. */
+  const onAddEvmWallet = useCallback(() => {
+    if (!evm) return;
+    runAccountAction('Add an EVM wallet', async (cb) => {
+      await gridAddEvmWallet(await evm.connect(), cb);
+      setEvmWalletOnAccount(true);
+      return 'EVM wallet added';
+    });
+  }, [evm, runAccountAction]);
+
+  /**
+   * A second owner, by public key: their Privy login signs a fixed message, the
+   * key is recovered from that signature, and the live session's P-256 key
+   * approves both legs of the add.
+   */
+  const onAddOwner = useCallback(() => {
+    if (!evm) return;
+    runAccountAction('Add another owner', async (cb) => {
+      // Refresh the owner's session BEFORE Privy switches users: an EVM
+      // session re-authenticates with the owner's own wallet.
+      await ensureSession(cb);
+      const newOwner = await evm.switchUser();
+      const signature = await newOwner.signMessage(OWNER_KEY_MESSAGE);
+      const publicKey = await recoverCompressedPublicKey(OWNER_KEY_MESSAGE, signature, newOwner.address);
+      const adminReference = adminReferenceFor(newOwner.address);
+      await addEvmAdministrator(publicKey, adminReference, cb);
+      return `Owner ${adminReference} added. Sign out to sign in as them.`;
+    });
+  }, [evm, runAccountAction]);
 
   /** Card issuance is on-phone only (no /cards call is made) — nothing to log. */
   const onCardIssued = useCallback(() => {
@@ -1061,7 +1162,8 @@ export function useWalletDemoLogic() {
   // the session wallet to fresh, but KEEPS the API log and the sidebar
   // checkmarks (completed flows) — only "Reset" wipes those.
   const returnToSignIn = useCallback(() => {
-    setMethods(deviceHasPasskey() ? RETURNING_METHODS : FIRST_RUN_METHODS);
+    setMethods(signInMethods(deviceHasPasskey() ? RETURNING_METHODS : FIRST_RUN_METHODS, Boolean(evm)));
+    setGridSession(null);
     for (const p of [passkeyPrompt, otpPrompt, emailPrompt, phonePrompt, googlePrompt, applePrompt]) {
       p.current?.reject(new Error('cancelled'));
       p.current = null;
@@ -1091,7 +1193,27 @@ export function useWalletDemoLogic() {
     setWalletEntry(undefined);
     setSkipIntro(false);
     setRunning(false);
-  }, []);
+  }, [evm]);
+
+  /** Signing out also logs Privy out, so the next EVM sign-in asks whose wallet it is. */
+  const onSignOut = useCallback(() => {
+    evm?.logout().catch((e) => console.error('[grid-demo] privy logout', e));
+    returnToSignIn();
+  }, [evm, returnToSignIn]);
+
+  const accountActions = useMemo<WalletAccountActions>(
+    () => ({
+      session: gridSession,
+      busy: accountBusy,
+      onSignOut,
+      onAddEvmWallet:
+        evm && gridSession && gridSession.via !== 'evm_wallet' && !gridSession.adminReference && !evmWalletOnAccount
+          ? onAddEvmWallet
+          : undefined,
+      onAddOwner: evm && gridSession ? onAddOwner : undefined,
+    }),
+    [evm, gridSession, accountBusy, evmWalletOnAccount, onSignOut, onAddEvmWallet, onAddOwner],
+  );
 
   const handleAction = useCallback(
     (id: ActionId) => {
@@ -1147,6 +1269,7 @@ export function useWalletDemoLogic() {
     }
     session.current = {};
     clearSession();
+    setGridSession(null);
     transferGroup.current = null;
     transferFundingCurrency.current = null;
     settleTimers.current.forEach((t) => clearTimeout(t));
@@ -1207,6 +1330,7 @@ export function useWalletDemoLogic() {
     cancelEmail,
     passkeyAdded,
     onAddPasskey,
+    accountActions,
     depositInstructions,
     totalCents,
     walletToast,

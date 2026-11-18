@@ -4,6 +4,7 @@ import { IconApple } from '@central-icons-react/round-outlined-radius-2-stroke-2
 import { IconEmail1 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconEmail1';
 import { IconCall } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconCall';
 import { IconPasskeys } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconPasskeys';
+import { IconCryptoWallet } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconCryptoWallet';
 import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconArrowLeft';
 import { IconChevronLeftMedium } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconChevronLeftMedium';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconCrossMedium';
@@ -66,4 +67,5 @@ export const SOCIAL_AUTH_METHOD_ICONS: Record<AuthMethod, SocialIcon> = {
   email_otp: IconEmail1,
   sms: IconCall,
   passkey: IconPasskeys,
+  evm_wallet: IconCryptoWallet,
 };

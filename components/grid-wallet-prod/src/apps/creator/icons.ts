@@ -19,6 +19,7 @@ import { IconSettingsGear2 } from '@central-icons-react/round-outlined-radius-0-
 import { IconUserKey } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconUserKey';
 import { IconVideoClip } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconVideoClip';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconWallet1';
+import { IconCryptoWallet } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCryptoWallet';
 import { IconWallet1 as IconWallet1Filled } from '@central-icons-react/round-filled-radius-0-stroke-2/IconWallet1';
 import type { AuthMethod } from '@/data/flow';
 
@@ -54,4 +55,5 @@ export const CREATOR_AUTH_METHOD_ICONS: Record<AuthMethod, CreatorIcon> = {
   apple: IconApple,
   email_otp: IconEmail1,
   sms: IconPhone,
+  evm_wallet: IconCryptoWallet,
 };

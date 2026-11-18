@@ -58,6 +58,7 @@ export default function Page() {
             cancelEmail={logic.cancelEmail}
             passkeyAdded={logic.passkeyAdded}
             onAddPasskey={logic.onAddPasskey}
+            accountActions={logic.accountActions}
             depositInstructions={logic.depositInstructions}
             totalCents={logic.totalCents}
             walletToast={logic.walletToast}

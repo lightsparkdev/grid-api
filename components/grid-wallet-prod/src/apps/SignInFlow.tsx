@@ -15,7 +15,7 @@ import type {
   WalletListItemData,
   SavedBank,
 } from '@/apps/shared/wallet';
-import type { SkinAuthFlow, SkinAuthScreen, SkinWalletScreen } from './types';
+import type { SkinAuthFlow, SkinAuthScreen, SkinWalletScreen, WalletAccountActions } from './types';
 import styles from './SignInFlow.module.scss';
 
 /** Per-skin wallet-brain options (mirrors AppSkin.walletOptions). */
@@ -110,6 +110,7 @@ interface SignInFlowProps {
   onReceivePayment?: (info: ReceivePaymentInfo) => void;
   /** Credential state + the add-a-passkey action (the wallet's security nudge). */
   addPasskey?: { added: boolean; onAdd: () => void };
+  accountActions?: WalletAccountActions;
   /** Auth-side overlays (passkey / email sheets) — rendered with the auth screen. */
   children?: ReactNode;
   /** The same overlays for the WALLET screen: a signed action whose session has
@@ -141,6 +142,7 @@ interface WalletHostProps {
   onTapToPay?: (cents: number, merchant: string) => void;
   onReceivePayment?: (info: ReceivePaymentInfo) => void;
   addPasskey?: { added: boolean; onAdd: () => void };
+  accountActions?: WalletAccountActions;
 }
 
 /**
@@ -173,6 +175,7 @@ function WalletHost({
   onTapToPay,
   onReceivePayment,
   addPasskey,
+  accountActions,
 }: WalletHostProps) {
   const home = useWalletHome({
     balance,
@@ -289,6 +292,7 @@ function WalletHost({
           money={money}
           onCardIssued={onCardIssued}
           addPasskey={addPasskey}
+          accountActions={accountActions}
         />
       </motion.div>
     </AnimatePresence>
@@ -332,6 +336,7 @@ export function SignInFlow({
   onTapToPay,
   onReceivePayment,
   addPasskey,
+  accountActions,
   children,
   walletOverlays,
 }: SignInFlowProps) {
@@ -457,6 +462,7 @@ export function SignInFlow({
               onTapToPay={onTapToPay}
               onReceivePayment={onReceivePayment}
               addPasskey={addPasskey}
+              accountActions={accountActions}
             />
             {walletOverlays}
           </motion.div>

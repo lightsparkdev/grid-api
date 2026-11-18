@@ -135,6 +135,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
       onTapToPay={props.onTapToPay}
       onReceivePayment={props.onReceivePayment}
       addPasskey={props.addPasskey}
+      accountActions={props.accountActions}
       walletOverlays={walletShown ? authSheet : null}
     >
       {passkeySheet}

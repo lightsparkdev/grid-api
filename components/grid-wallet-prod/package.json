@@ -28,11 +28,12 @@
     "@lightsparkdev/origin": "^0.13.4",
     "@noble/curves": "^2.2.0",
     "@noble/hashes": "^2.2.0",
-    "@turnkey/api-key-stamper": "^0.6.5",
-    "@turnkey/crypto": "^2.8.14",
+    "@privy-io/react-auth": "3.51.2",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "@scure/base": "^2.2.0",
+    "@turnkey/api-key-stamper": "^0.6.5",
+    "@turnkey/crypto": "^2.8.14",
     "clsx": "^2.1.1",
     "geist": "^1.7.2",
     "motion": "^12.33.0",
@@ -41,7 +42,8 @@
     "react-dom": "^18.3.1",
     "sass": "^1.97.3",
     "three": "^0.169.0",
-    "torph": "^0.0.9"
+    "torph": "^0.0.9",
+    "viem": "2.57.8"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

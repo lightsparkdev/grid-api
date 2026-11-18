@@ -7,6 +7,7 @@ export const GRID_ALLOWLIST: { method: string; pattern: RegExp }[] = [
   { method: 'POST', pattern: new RegExp('^/auth/credentials$') },
   { method: 'POST', pattern: new RegExp(`^/auth/credentials/${ID}/challenge$`) },
   { method: 'POST', pattern: new RegExp(`^/auth/credentials/${ID}/verify$`) },
+  { method: 'POST', pattern: new RegExp('^/auth/admin-credentials$') },
   { method: 'GET', pattern: new RegExp('^/customers/internal-accounts$') },
   { method: 'GET', pattern: new RegExp('^/platform/internal-accounts$') },
   { method: 'GET', pattern: new RegExp('^/customers/external-accounts$') },

@@ -12,7 +12,12 @@ const BASE = process.env.GRID_API_BASE_URL ?? 'https://api.lightspark.com/grid/2
 const CUSTOMER_ID = process.env.GRID_CUSTOMER_ID ?? '';
 
 // Client-supplied headers that must reach Grid verbatim.
-const PASS_THROUGH = ['grid-wallet-signature', 'request-id', 'idempotency-key'];
+const PASS_THROUGH = [
+  'grid-wallet-signature',
+  'grid-wallet-ownership-signature',
+  'request-id',
+  'idempotency-key',
+];
 // Grid response headers worth surfacing to the client/panel.
 const ECHO_RESPONSE = ['retry-after', 'content-type'];
 

@@ -6,6 +6,12 @@ import {
   base64urlToBytes, bytesToBase64url,
 } from './gridCrypto';
 import { amountToCents, USDB_DECIMALS } from './gridUnits';
+import {
+  EvmWalletNotOnAccountError,
+  planEvmSignIn,
+  type CredentialRow,
+  type EvmSigner,
+} from './evmWallet';
 
 export type LogFn = (env: GridEnvelope) => void;
 
@@ -29,7 +35,10 @@ export interface AuthCallbacks {
 export interface WalletAccount {
   customerId: string;
   accountId: string;
-  emailOtpCredentialId: string;
+  /** `PENDING` until the first credential creates the wallet (`AT_FIRST_CREDENTIAL`). */
+  status: string;
+  credentials: CredentialRow[];
+  emailOtpCredentialId: string | null;
   /** Address the EMAIL_OTP credential is tied to (its `nickname`). */
   email: string | null;
   passkeyCredentialId: string | null;
@@ -40,21 +49,91 @@ export interface Session {
   privHex: string;
   accountId: string;
   expiresAt: number;
-  via: 'passkey' | 'email_otp';
+  via: 'passkey' | 'email_otp' | 'evm_wallet';
+  /** The signing-in credential's nickname: an email, a passkey name or an EVM address. */
+  nickname: string | null;
+  /** Set when an administrator's credential opened the session. */
+  adminReference: string | null;
 }
 
 const CUSTOMER_PLACEHOLDER = '{customerId}';
 const SESSION_SKEW_MS = 30_000; // treat as expired 30s early
 const PASSKEY_LS_PREFIX = 'grid.passkey.'; // + accountId -> credentialId
+const SETTLE_FIRST_DELAY_MS = 500;
+const SETTLE_MAX_DELAY_MS = 8_000;
+const SETTLE_DEADLINE_MS = 120_000;
 
 let session: Session | null = null;
 let account: WalletAccount | null = null;
+// A lapsed session re-authenticates on the credential that opened it, so an EVM
+// session never falls back to an email code the user didn't sign in with.
+let sessionEvmSigner: EvmSigner | null = null;
 
 export function getSession(): Session | null {
   return session && session.expiresAt - SESSION_SKEW_MS > Date.now() ? session : null;
 }
 export function clearSession(): void {
   session = null;
+  sessionEvmSigner = null;
+}
+
+function sessionFrom(
+  env: GridEnvelope,
+  privHex: string,
+  accountId: string,
+  via: Session['via'],
+): Session {
+  const body = env.response.body as { expiresAt: string; nickname?: string; adminReference?: string };
+  return {
+    privHex,
+    accountId,
+    expiresAt: Date.parse(body.expiresAt),
+    via,
+    nickname: body.nickname ?? null,
+    adminReference: body.adminReference ?? null,
+  };
+}
+
+function isProcessing(env: GridEnvelope): boolean {
+  return (
+    env.response.status === 200 &&
+    (env.response.body as { status?: string } | null)?.status === 'PROCESSING'
+  );
+}
+
+/**
+ * Re-sends the identical signed request while Grid answers `200 PROCESSING`,
+ * with backoff. Grid correlates the re-send with the same operation, so a fresh
+ * stamp would start a second one.
+ */
+async function sendUntilSettled(
+  path: string,
+  opts: { body: unknown; headers: Record<string, string> },
+  log: LogFn,
+  where: string,
+): Promise<GridEnvelope> {
+  const deadline = Date.now() + SETTLE_DEADLINE_MS;
+  for (let delayMs = SETTLE_FIRST_DELAY_MS; ; delayMs = Math.min(delayMs * 2, SETTLE_MAX_DELAY_MS)) {
+    const env = await gridFetch('POST', path, opts);
+    log(env);
+    if (!isProcessing(env)) return env;
+    if (Date.now() + delayMs > deadline) throw new Error(`${where}: still PROCESSING after ${SETTLE_DEADLINE_MS / 1000}s`);
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+}
+
+interface SignedChallenge {
+  payloadToSign: string;
+  requestId: string;
+}
+
+async function stampedRetryHeaders(
+  sessionPrivHex: string,
+  challenge: GridEnvelope,
+): Promise<Record<string, string>> {
+  const { payloadToSign, requestId } = challenge.response.body as SignedChallenge;
+  const { stamp } = await import('./gridCrypto');
+  return { 'Grid-Wallet-Signature': await stamp(sessionPrivHex, payloadToSign), 'Request-Id': requestId };
 }
 
 /** Pure: choose the EMAIL_OTP + first PASSKEY credential from the list. The
@@ -88,21 +167,26 @@ export async function loadWalletAccount(log: LogFn): Promise<WalletAccount> {
   log(acctEnv);
   assertOk(acctEnv, [200], 'load internal accounts');
   const acctBody = acctEnv.response.body as {
-    data: { id: string; customerId?: string; balance: { amount: number; currency: { decimals: number } } }[];
+    data: {
+      id: string;
+      customerId?: string;
+      status: string;
+      // A PENDING account has no wallet, so it may carry no balance yet.
+      balance?: { amount: number; currency: { decimals: number } };
+    }[];
   };
   const wallet = acctBody.data[0];
   if (!wallet) throw new Error('No EMBEDDED_WALLET internal account for customer');
   const accountId = wallet.id;
-  const balanceCents = amountToCents(wallet.balance.amount, wallet.balance.currency.decimals);
+  const balanceCents = wallet.balance
+    ? amountToCents(wallet.balance.amount, wallet.balance.currency.decimals)
+    : 0;
 
   const credEnv = await gridFetch('GET', `/auth/credentials?accountId=${accountId}`);
   log(credEnv);
   assertOk(credEnv, [200], 'list credentials');
-  const credBody = credEnv.response.body as {
-    data: { id: string; type: string; nickname?: string; credentialId?: string }[];
-  };
+  const credBody = credEnv.response.body as { data: CredentialRow[] };
   const { emailOtpId, emailOtpNickname } = pickCredentials(credBody.data);
-  if (!emailOtpId) throw new Error('No EMAIL_OTP credential on the wallet');
 
   const stored = typeof window !== 'undefined'
     ? window.localStorage.getItem(PASSKEY_LS_PREFIX + accountId)
@@ -111,6 +195,8 @@ export async function loadWalletAccount(log: LogFn): Promise<WalletAccount> {
   account = {
     customerId: wallet.customerId ?? '',
     accountId,
+    status: wallet.status,
+    credentials: credBody.data,
     emailOtpCredentialId: emailOtpId,
     email: emailOtpNickname,
     passkeyCredentialId: thisDevicePasskey(stored, credBody.data),
@@ -144,9 +230,9 @@ export function thisDevicePasskey(
  */
 async function collectOtp(
   acct: WalletAccount,
+  id: string,
   cb: AuthCallbacks,
 ): Promise<{ bundle: string; code: string }> {
-  const id = acct.emailOtpCredentialId;
   for (;;) {
     // The code only goes out once the user commits to the address (prefilled
     // with the one the credential is actually tied to).
@@ -168,7 +254,8 @@ async function collectOtp(
 /** EMAIL_OTP two-leg verify -> session (TEK priv IS the session key). */
 async function emailOtpAuth(acct: WalletAccount, cb: AuthCallbacks): Promise<Session> {
   const id = acct.emailOtpCredentialId;
-  const { bundle, code } = await collectOtp(acct, cb);
+  if (!id) throw new Error('No EMAIL_OTP credential on the wallet');
+  const { bundle, code } = await collectOtp(acct, id, cb);
   const tek = genTek();
   const encryptedOtpBundle = encryptOtpBundle(bundle, tek.pubHex, code);
   const verifyBody = { type: 'EMAIL_OTP', encryptedOtpBundle };
@@ -188,8 +275,7 @@ async function emailOtpAuth(acct: WalletAccount, cb: AuthCallbacks): Promise<Ses
   });
   cb.log(leg2);
   assertOk(leg2, [200], 'email otp verify (leg 2)');
-  const sess = leg2.response.body as { expiresAt: string };
-  return { privHex: tek.privHex, accountId: acct.accountId, expiresAt: Date.parse(sess.expiresAt), via: 'email_otp' };
+  return sessionFrom(leg2, tek.privHex, acct.accountId, 'email_otp');
 }
 
 interface NewCredential {
@@ -320,9 +406,9 @@ async function passkeyAuth(acct: WalletAccount, credentialAuthMethodId: string, 
   });
   cb.log(verify);
   assertOk(verify, [200], 'passkey verify');
-  const sess = verify.response.body as { encryptedSessionSigningKey: string; expiresAt: string };
+  const sess = verify.response.body as { encryptedSessionSigningKey: string };
   const privHex = await decryptSessionKey(sess.encryptedSessionSigningKey, tek.privHex);
-  return { privHex, accountId: acct.accountId, expiresAt: Date.parse(sess.expiresAt), via: 'passkey' };
+  return sessionFrom(verify, privHex, acct.accountId, 'passkey');
 }
 
 /** Resolve the AuthMethod id of the account's passkey (needed for challenge/verify). */
@@ -348,13 +434,149 @@ async function findPasskeyAuthMethodId(acct: WalletAccount, cb: AuthCallbacks): 
  */
 export async function signIn(cb: AuthCallbacks): Promise<Session> {
   const acct = await loadWalletAccount(cb.log);
-  if (acct.passkeyCredentialId) {
-    session = await passkeyAuth(acct, await findPasskeyAuthMethodId(acct, cb), cb);
-    return session;
-  }
-  session = await emailOtpAuth(acct, cb);
+  session = acct.passkeyCredentialId
+    ? await passkeyAuth(acct, await findPasskeyAuthMethodId(acct, cb), cb)
+    : await emailOtpAuth(acct, cb);
+  sessionEvmSigner = null;
   return session;
 }
+
+/**
+ * Sign in with an EVM wallet. On a `PENDING` account with no wallet, the
+ * wallet's ownership proof creates the wallet first. On an account whose
+ * wallet exists, the EVM wallet must already be one of its credentials.
+ */
+export async function signInWithEvmWallet(signer: EvmSigner, cb: AuthCallbacks): Promise<Session> {
+  const acct = await loadWalletAccount(cb.log);
+  const plan = planEvmSignIn(acct.status, acct.credentials, signer.address);
+  if (plan.kind === 'not-on-account') throw new EvmWalletNotOnAccountError(signer.address);
+  const credentialId =
+    plan.kind === 'sign-in' ? plan.credentialId : await createWalletWithEvmWallet(acct, signer, cb);
+  session = await evmWalletAuth(acct.accountId, credentialId, signer, cb);
+  sessionEvmSigner = signer;
+  return session;
+}
+
+/** Re-authenticate on the credential that opened the lapsed session. */
+function reauthenticate(cb: AuthCallbacks): Promise<Session> {
+  return sessionEvmSigner ? signInWithEvmWallet(sessionEvmSigner, cb) : signIn(cb);
+}
+
+/** The ownership challenge and the wallet's signed proof, the first two calls of every EVM add. */
+async function proveEvmOwnership(
+  acct: WalletAccount,
+  signer: EvmSigner,
+  cb: AuthCallbacks,
+): Promise<{ body: Record<string, string>; proof: GridEnvelope }> {
+  const body = { type: 'EVM_WALLET', accountId: acct.accountId, address: signer.address };
+  const challenge = await gridFetch('POST', '/auth/credentials', { body });
+  cb.log(challenge);
+  assertOk(challenge, [202], 'evm wallet ownership challenge');
+  const { payloadToSign, requestId } = challenge.response.body as SignedChallenge;
+  const ownershipSignature = await signer.signMessage(payloadToSign);
+  const proof = await gridFetch('POST', '/auth/credentials', {
+    body,
+    headers: { 'Grid-Wallet-Ownership-Signature': ownershipSignature, 'Request-Id': requestId },
+  });
+  cb.log(proof);
+  return { body, proof };
+}
+
+/** The first credential on a wallet-less account: the ownership proof creates the wallet. */
+async function createWalletWithEvmWallet(
+  acct: WalletAccount,
+  signer: EvmSigner,
+  cb: AuthCallbacks,
+): Promise<string> {
+  const { proof } = await proveEvmOwnership(acct, signer, cb);
+  assertOk(proof, [201], 'evm wallet first credential');
+  const created = proof.response.body as CredentialRow;
+  acct.credentials.push(created);
+  return created.id;
+}
+
+/** EVM wallet `/challenge` → `personal_sign` → `/verify`. The client key is the session key. */
+async function evmWalletAuth(
+  accountId: string,
+  credentialId: string,
+  signer: EvmSigner,
+  cb: AuthCallbacks,
+): Promise<Session> {
+  const client = genTek();
+  const chal = await gridFetch('POST', `/auth/credentials/${credentialId}/challenge`, {
+    body: { clientPublicKey: compressedPubHex(client.privHex) },
+  });
+  cb.log(chal);
+  assertOk(chal, [200], 'evm wallet challenge');
+  const { payloadToSign, requestId } = chal.response.body as SignedChallenge;
+  const signature = await signer.signMessage(payloadToSign);
+  const verify = await sendUntilSettled(
+    `/auth/credentials/${credentialId}/verify`,
+    { body: { type: 'EVM_WALLET', signature }, headers: { 'Request-Id': requestId } },
+    cb.log,
+    'evm wallet verify',
+  );
+  assertOk(verify, [200], 'evm wallet verify');
+  return sessionFrom(verify, client.privHex, accountId, 'evm_wallet');
+}
+
+/**
+ * Add an EVM wallet to an account that already has a wallet: the wallet
+ * proves control, then the live session approves the add. Returns the new
+ * credential's AuthMethod id.
+ */
+export async function addEvmWallet(signer: EvmSigner, cb: AuthCallbacks): Promise<string> {
+  const privHex = await ensureSession(cb);
+  const acct = account ?? (await loadWalletAccount(cb.log));
+  const { body, proof } = await proveEvmOwnership(acct, signer, cb);
+  assertOk(proof, [202], 'evm wallet ownership proof');
+  const approval = await sendUntilSettled(
+    '/auth/credentials',
+    { body, headers: await stampedRetryHeaders(privHex, proof) },
+    cb.log,
+    'evm wallet approval',
+  );
+  assertOk(approval, [201], 'evm wallet approval');
+  const added = approval.response.body as CredentialRow;
+  acct.credentials.push(added);
+  return added.id;
+}
+
+/**
+ * Add an administrator by their wallet's secp256k1 public key. Both approvals
+ * are stamped with the live session's P-256 key: the first creates the
+ * administrator's wallet user, the second grants it signing authority.
+ */
+export async function addEvmAdministrator(
+  publicKey: string,
+  adminReference: string,
+  cb: AuthCallbacks,
+): Promise<CredentialRow> {
+  const privHex = await ensureSession(cb);
+  const acct = account ?? (await loadWalletAccount(cb.log));
+  const body = { type: 'EVM_WALLET', accountId: acct.accountId, adminReference, publicKey };
+  const createUser = await gridFetch('POST', '/auth/admin-credentials', { body });
+  cb.log(createUser);
+  assertOk(createUser, [202], 'admin credential (create user)');
+  const grant = await sendUntilSettled(
+    '/auth/admin-credentials',
+    { body, headers: await stampedRetryHeaders(privHex, createUser) },
+    cb.log,
+    'admin credential (grant authority)',
+  );
+  assertOk(grant, [202], 'admin credential (grant authority)');
+  const added = await sendUntilSettled(
+    '/auth/admin-credentials',
+    { body, headers: await stampedRetryHeaders(privHex, grant) },
+    cb.log,
+    'admin credential (add)',
+  );
+  assertOk(added, [201], 'admin credential (add)');
+  const credential = added.response.body as CredentialRow;
+  acct.credentials.push(credential);
+  return credential;
+}
+
 
 /**
  * Add a passkey to the account, later, as its own action — the docs' bootstrap
@@ -372,8 +594,7 @@ export async function addPasskey(cb: AuthCallbacks): Promise<string> {
   // still live — a re-auth round-trip in front of it would invalidate it.
   const created = await createPasskeyCredential();
   // A live session is the authorization; only re-auth when it has lapsed.
-  const live = getSession();
-  const privHex = live ? live.privHex : (await signIn(cb)).privHex;
+  const privHex = await ensureSession(cb);
   const acct = account ?? (await loadWalletAccount(cb.log));
   return registerPasskey(acct, created, privHex, cb);
 }
@@ -404,13 +625,9 @@ export function deviceHasPasskey(): boolean {
   return false;
 }
 
+/** The live session's signing key, re-authenticating first when it has lapsed. */
 export async function ensureSession(cb: AuthCallbacks): Promise<string> {
-  const live = getSession();
-  if (live) return live.privHex;
-  // Silent single re-auth on whatever credential the account has (passkey once
-  // one has been added; the email OTP prompt before that).
-  const s = await signIn(cb);
-  return s.privHex;
+  return (getSession() ?? (await reauthenticate(cb))).privHex;
 }
 
 export function getAccount(): WalletAccount | null {

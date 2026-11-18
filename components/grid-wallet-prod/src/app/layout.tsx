@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { GeistSans } from 'geist/font/sans';
+import { EvmWalletProvider } from '@/components/EvmWalletProvider/EvmWalletProvider';
 import { easingVarsStylesheet } from '@/lib/easing';
 import { CONFIGURE_COL_PX, LAYOUT_WIDE_PX } from '@/lib/layout';
 import './globals.scss';
@@ -75,7 +76,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <style dangerouslySetInnerHTML={{ __html: easingVarsStylesheet() }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <EvmWalletProvider>{children}</EvmWalletProvider>
+      </body>
     </html>
   );
 }

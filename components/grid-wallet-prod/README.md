@@ -25,9 +25,49 @@ sign-ins.
 Passkeys are device-bound: one listed on the account but registered on another device is ignored
 here, because `navigator.credentials.get` in this browser could never satisfy it.
 
-A session lasts 15 minutes. Inside it, no re-authentication — each signed action (a cash-out)
-stamps the quote's `payloadToSign` with the session key. Past it, the next signed action
-re-authenticates in place.
+A session lasts until its `expiresAt`, which follows the platform's `sessionLifetime`; the wallet
+shows it. Inside it, no re-authentication — each signed action (a cash-out) stamps the quote's
+`payloadToSign` with the session key. Past it, the next signed action re-authenticates in place, on
+the credential that opened the session.
+
+## EVM wallet (Privy)
+
+"Continue with EVM wallet" signs in with a [Privy](https://privy.io) embedded wallet as an
+`EVM_WALLET` credential. Every EVM signature is the wallet's `personal_sign` over Grid's
+`payloadToSign`, exactly as returned. After sign-in the session key is the app's own P-256 key, so
+cash-out and every other signed action work unchanged.
+
+Setup:
+
+- In the Privy dashboard, create an app, add `http://localhost:4001` as an allowed origin, enable
+  **email** login and **embedded wallets** (Ethereum). Put the app id in `NEXT_PUBLIC_PRIVY_APP_ID`.
+  Without it the EVM option doesn't show.
+- Point the app at a **production-type** platform (real wallet provider, real auth) in
+  `GRID_API_BASE_URL` / `GRID_CLIENT_ID` / `GRID_CLIENT_SECRET`.
+- For the first-credential path, the platform's `embeddedWalletConfig.walletProvisioning` must be
+  `AT_FIRST_CREDENTIAL` before the customer's Global Account opens, so the account starts `PENDING`
+  with no wallet. "Add another owner" needs a `BUSINESS` customer.
+
+What the button does depends on the account (it reads the account and its credentials first):
+
+- **No wallet yet** (`PENDING`, no credentials): `POST /auth/credentials {type: EVM_WALLET,
+  accountId, address}` → `202` → the wallet signs → the same POST with
+  `Grid-Wallet-Ownership-Signature` + `Request-Id` → `201`. That creates the wallet; sign-in follows.
+- **The account lists this wallet**: sign in. `POST /auth/credentials/{id}/challenge
+  {clientPublicKey}` → the wallet signs `payloadToSign` → `POST /auth/credentials/{id}/verify
+  {type: EVM_WALLET, signature}` with `Request-Id` → the session.
+- **The wallet exists without it**: sign-in is refused. Sign in with the account's own credential,
+  then tap **Add EVM wallet** in the wallet: ownership challenge → ownership proof (a second `202`) →
+  approval stamped with the live session key, re-sent while Grid answers `200 PROCESSING` → `201`.
+
+**Add another owner** adds a second owner by public key with `POST /auth/admin-credentials
+{type: EVM_WALLET, accountId, adminReference, publicKey}`: two `202` legs, each stamped with the
+current owner's P-256 session key, then `201`. Privy exposes an address, not a key, so the app logs
+the current Privy user out, the second owner logs in to Privy, their wallet signs a fixed message,
+and the app recovers and compresses their secp256k1 key from that signature. The owner's Grid session
+stays live in memory throughout. `adminReference` is `member_` plus the start of their address.
+Then **Sign out** (it logs Privy out too) and continue with EVM wallet as the second owner: the
+wallet shows their `adminReference` beside the session.
 
 ## Money in
 

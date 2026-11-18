@@ -58,6 +58,10 @@ const nextConfig = {
         __dirname,
         'node_modules/@lightsparkdev/origin/src/components/Badge/index.ts',
       ),
+      // Optional Privy peers for Solana and Farcaster flows this app never runs.
+      // Privy's bundle still imports them, so stub them out instead of installing them.
+      '@solana-program/system': false,
+      '@farcaster/mini-app-solana': false,
     };
 
     return config;

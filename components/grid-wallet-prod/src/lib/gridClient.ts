@@ -16,7 +16,7 @@ export interface GridEnvelope {
 
 export interface GridFetchOpts {
   body?: unknown;
-  /** Extra headers forwarded verbatim (Grid-Wallet-Signature, Request-Id, Idempotency-Key). */
+  /** Extra headers forwarded verbatim (Grid-Wallet-Signature, Grid-Wallet-Ownership-Signature, Request-Id, Idempotency-Key). */
   headers?: Record<string, string>;
 }
 

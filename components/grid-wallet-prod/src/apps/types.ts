@@ -61,6 +61,20 @@ export interface SkinWalletScreenProps {
   /** Credential state + the action that registers a passkey. Absent (or
    *  `added: true`) means the wallet shows no passkey nudge. */
   addPasskey?: { added: boolean; onAdd: () => void };
+  /** The live session and the account actions the wallet offers. */
+  accountActions?: WalletAccountActions;
+}
+
+/** The live Grid session, shown in the wallet, and what can be done from it. */
+export interface WalletAccountActions {
+  session: { nickname: string | null; adminReference: string | null; expiresAt: number } | null;
+  /** An account action is in flight; its row stays put but can't be re-tapped. */
+  busy: boolean;
+  onSignOut: () => void;
+  /** Present when this session can add an EVM wallet to the account. */
+  onAddEvmWallet?: () => void;
+  /** Present when an EVM wallet provider is configured. */
+  onAddOwner?: () => void;
 }
 
 export type SkinAuthScreen = ComponentType<SkinAuthScreenProps>;

@@ -11,6 +11,7 @@ import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
 import type { SavedBank } from '@/apps/shared/wallet';
 import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/data/apiCalls';
 import type { DepositInstructions } from '@/lib/gridReads';
+import type { WalletAccountActions } from '@/apps/types';
 import styles from './AppPanel.module.scss';
 
 export interface DemoLogicPhoneSlice {
@@ -38,6 +39,7 @@ export interface DemoLogicPhoneSlice {
   cancelEmail: () => void;
   passkeyAdded: boolean;
   onAddPasskey: () => void;
+  accountActions: WalletAccountActions;
   depositInstructions: DepositInstructions | null;
   totalCents: number;
   walletToast: { nonce: number; text: string } | null;
@@ -100,6 +102,7 @@ function toPhoneProps(p: DemoLogicPhoneSlice): PhoneProps {
       added: p.passkeyAdded,
       onAdd: p.onAddPasskey,
     },
+    accountActions: p.accountActions,
     depositInstructions: p.depositInstructions,
     totalCents: p.totalCents,
     walletToast: p.walletToast,

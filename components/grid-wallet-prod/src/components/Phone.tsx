@@ -4,6 +4,7 @@ import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
 import type { SavedBank } from '@/apps/shared/wallet';
 import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/data/apiCalls';
 import type { DepositInstructions } from '@/lib/gridReads';
+import type { WalletAccountActions } from '@/apps/types';
 
 /**
  * The demo phone's prop contract (AppPanel → DemoPhone). The live UI is the
@@ -41,6 +42,8 @@ export interface PhoneProps {
   };
   /** The account has no passkey yet + the action that adds one (wallet nudge). */
   addPasskey?: { added: boolean; onAdd: () => void };
+  /** The live session + account actions (EVM wallet, another owner, sign out). */
+  accountActions?: WalletAccountActions;
   /** Real deposit details for the customer's fiat account (Add money). */
   depositInstructions?: DepositInstructions | null;
   /** The wallet account's total balance in cents (USDB `totalBalance`). */

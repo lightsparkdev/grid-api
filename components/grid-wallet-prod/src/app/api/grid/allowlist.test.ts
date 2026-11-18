@@ -23,6 +23,12 @@ describe('proxy allow-list', () => {
     expect(isAllowed('GET', '/quotes')).toBe(false); // POST only
     expect(isAllowed('POST', '/customers')).toBe(false);
   });
+  it('allows adding an administrator credential, and nothing else under it', () => {
+    expect(isAllowed('POST', '/auth/admin-credentials')).toBe(true);
+    expect(isAllowed('GET', '/auth/admin-credentials')).toBe(false);
+    expect(isAllowed('POST', '/auth/admin-credentials/member_1')).toBe(false);
+    expect(isAllowed('DELETE', '/auth/admin-credentials/member_1')).toBe(false);
+  });
   it('redacts Authorization only', () => {
     const r = redactHeaders({ Authorization: 'Basic secret', 'Request-Id': 'Request:1' });
     expect(r.Authorization).toBe('Basic ***');
