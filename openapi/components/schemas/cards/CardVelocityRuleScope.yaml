@@ -1,0 +1,6 @@
+type: string
+description: The scope the velocity rule applied at.
+enum:
+  - GLOBAL
+  - PLATFORM
+  - CARD

@@ -1,0 +1,5 @@
+type: string
+description: Who configured the velocity rule.
+enum:
+  - LIGHTSPARK
+  - PLATFORM
