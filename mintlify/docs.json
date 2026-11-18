@@ -98,6 +98,7 @@
             "group": "Account security",
             "pages": [
               "global-accounts/authentication",
+              "global-accounts/admin-credentials",
               "global-accounts/client-keys",
               "global-accounts/managing-sessions",
               "global-accounts/exporting-wallet"
@@ -206,6 +207,7 @@
               "payouts-and-b2b/global-accounts/overview",
               "payouts-and-b2b/global-accounts/client-keys",
               "payouts-and-b2b/global-accounts/authentication",
+              "payouts-and-b2b/global-accounts/admin-credentials",
               "payouts-and-b2b/global-accounts/managing-sessions",
               "payouts-and-b2b/global-accounts/exporting-wallet"
             ]
@@ -266,6 +268,7 @@
               "ramps/global-accounts/overview",
               "ramps/global-accounts/client-keys",
               "ramps/global-accounts/authentication",
+              "ramps/global-accounts/admin-credentials",
               "ramps/global-accounts/managing-sessions",
               "ramps/global-accounts/exporting-wallet"
             ]
@@ -323,6 +326,7 @@
               "global-p2p/global-accounts/overview",
               "global-p2p/global-accounts/client-keys",
               "global-p2p/global-accounts/authentication",
+              "global-p2p/global-accounts/admin-credentials",
               "global-p2p/global-accounts/managing-sessions",
               "global-p2p/global-accounts/exporting-wallet"
             ]
