@@ -25246,6 +25246,7 @@ components:
                 type: string
                 enum:
                   - SPEI
+                  - BANK_TRANSFER
     PaymentMxnAccountInfo:
       title: MXN Account
       allOf:
@@ -27275,6 +27276,7 @@ components:
                 type: string
                 enum:
                   - FASTER_PAYMENTS
+                  - BANK_TRANSFER
     GbpBeneficiary:
       title: Individual Beneficiary
       type: object
