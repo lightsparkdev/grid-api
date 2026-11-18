@@ -54,6 +54,7 @@ oneOf:
 - $ref: ./RonExternalAccountCreateInfo.yaml
 - $ref: ./KrwExternalAccountCreateInfo.yaml
 - $ref: ./AudExternalAccountCreateInfo.yaml
+- $ref: ./ArsExternalAccountCreateInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -112,3 +113,4 @@ discriminator:
     RON_ACCOUNT: ./RonExternalAccountCreateInfo.yaml
     KRW_ACCOUNT: ./KrwExternalAccountCreateInfo.yaml
     AUD_ACCOUNT: ./AudExternalAccountCreateInfo.yaml
+    ARS_ACCOUNT: ./ArsExternalAccountCreateInfo.yaml
