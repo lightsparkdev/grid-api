@@ -1,0 +1,19 @@
+title: SEK Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/SekAccountInfo.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/SekBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/SekBusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/SekBeneficiary.yaml
+          BUSINESS: ../common/SekBusinessBeneficiary.yaml

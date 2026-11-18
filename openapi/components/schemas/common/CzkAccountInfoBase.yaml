@@ -1,0 +1,19 @@
+type: object
+required:
+- accountType
+- iban
+properties:
+  accountType:
+    type: string
+    enum:
+    - CZK_ACCOUNT
+  iban:
+    type: string
+    description: Czech IBAN (24 characters, starting with CZ)
+    example: CZ6508000000192000145399
+    minLength: 24
+    maxLength: 24
+    pattern: ^CZ[0-9]{22}$
+example:
+  accountType: CZK_ACCOUNT
+  iban: CZ6508000000192000145399

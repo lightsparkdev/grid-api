@@ -1,0 +1,19 @@
+title: PLN Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/PlnAccountInfoBase.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/PlnBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/PlnBusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/PlnBeneficiary.yaml
+          BUSINESS: ../common/PlnBusinessBeneficiary.yaml

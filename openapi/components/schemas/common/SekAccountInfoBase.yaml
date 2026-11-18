@@ -1,0 +1,19 @@
+type: object
+required:
+- accountType
+- iban
+properties:
+  accountType:
+    type: string
+    enum:
+    - SEK_ACCOUNT
+  iban:
+    type: string
+    description: Swedish IBAN (24 characters, starting with SE)
+    example: SE4550000000058398257466
+    minLength: 24
+    maxLength: 24
+    pattern: ^SE[0-9]{22}$
+example:
+  accountType: SEK_ACCOUNT
+  iban: SE4550000000058398257466
