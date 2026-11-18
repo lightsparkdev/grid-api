@@ -7831,6 +7831,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. Returned with `WALLET_NOT_PROVISIONED` when the account has no wallet yet or its `status` is still `PENDING`. Retry once it is `ACTIVE`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
