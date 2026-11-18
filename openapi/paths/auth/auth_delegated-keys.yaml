@@ -1,9 +1,16 @@
 post:
   summary: Create a delegated signing key
-  description: >
+  description: >-
     Only keys for an Embedded Wallet internal account are created through this
     endpoint. Grid creates provider wallet keys itself, when the cardholder has
     delegated the wallet at the provider and a card is funded by that wallet.
+
+
+    On every platform that issues USDB-funded cards, a Turnkey wallet owner
+    authorizes Grid once to fund current and future eligible cards. A wallet that has ever
+    used a card-specific signer continues to authorize each card individually,
+    including after revocation. Send the same cardId, internalAccountId and nickname
+    in both cases. Agent grants retain their existing scope.
 
 
     Delegate Spark token-transaction signing authority for a card funding
@@ -17,8 +24,9 @@ post:
     signed-retry flow:
 
 
-    1. Call `POST /auth/delegated-keys` with no signature headers. Grid
-    generates the delegated keypair and the response is `202` with a
+    1. Call `POST /auth/delegated-keys` with no signature headers. If an active
+    wallet signer already covers this card, Grid returns `201` with the active
+    delegated key and the flow is complete. Otherwise, Grid returns `202` with a
     `payloadToSign`, `requestId`, and `expiresAt`.
 
 
@@ -30,8 +38,10 @@ post:
     `payloadToSign`, `requestId`, and `expiresAt`.
 
 
-    3. Stamp the new `payloadToSign` with the same session keypair and retry
-    once more with the new `Request-Id`. The signed retry returns `201`
+    3. Show the wallet owner the permissions in the policy challenge. After
+    approval, stamp the exact `payloadToSign` string from the second `202`
+    response with the same session keypair. Retry with that stamp and the
+    same response's `requestId` as `Request-Id`. The signed retry returns `201`
     with the created `DelegatedKey` in `ACTIVE` status. For card keys, a
     provisioned `PENDING_AUTH` card using this funding source becomes `ACTIVE`
     automatically. Cards still provisioning remain `PROCESSING`; frozen and
@@ -41,7 +51,8 @@ post:
     The same request body must be sent on all three legs. A flow abandoned
     after the second leg leaves the key in `PENDING` status: the signer
     identity exists but holds no policies, so it cannot sign or revoke itself.
-    Abandoned `PENDING` card keys do not block creating another delegated key.
+    Resume a pending wallet-wide approval on the initiating card. For a
+    historical card-specific signer, an abandoned pending key allows a new attempt.
     For an agent, a `PENDING` key blocks a new one until it is revoked with
     `DELETE /auth/delegated-keys/{id}`; revoking a `PENDING` key only discards
     Grid's key material.
@@ -99,7 +110,9 @@ post:
   responses:
     '201':
       description: >-
-        Delegated key created and policy granted. The key is `ACTIVE` and
+        Delegated key activated or an existing wallet signer linked to this card.
+        An active wallet signer returns 201 on the first request, without a challenge.
+        The key is `ACTIVE` and
         Grid may use it to stamp card-payment quote executions or
         policy-approved actions for the selected agent.
       content:
@@ -153,10 +166,12 @@ post:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
       description: >-
-        An `ACTIVE` delegated key already exists for this card funding source,
-        or an `ACTIVE` or `PENDING` key already exists for this agent and
-        Embedded Wallet pair. Revoke it with `DELETE /auth/delegated-keys/{id}`
-        before creating a new one.
+        If another card has a wallet approval in progress, complete it on its
+        initiating card, then retry for this card. If the funding source already
+        has an `ACTIVE` card-specific key, use that key. To replace it, revoke it
+        with `DELETE /auth/delegated-keys/{id}` before retrying. For an agent
+        and Embedded Wallet pair, revoke its existing `PENDING` or `ACTIVE` key
+        before requesting a replacement.
       content:
         application/json:
           schema:
