@@ -43971,6 +43971,7 @@ components:
         - ACH_CREDIT
         - SAME_DAY_ACH_CREDIT
         - RTP_CREDIT
+        - FEDNOW_CREDIT
       description: Fiat payout rail, present for burn (fiat redemption) destinations.
     StablecoinOperationDestination:
       type: object
@@ -44173,6 +44174,7 @@ components:
         - ACH_CREDIT
         - SAME_DAY_ACH_CREDIT
         - RTP_CREDIT
+        - FEDNOW_CREDIT
       description: Fiat payout rail for the burn destination.
     StablecoinBurnDestinationBase:
       type: object
