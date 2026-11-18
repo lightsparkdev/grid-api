@@ -25841,6 +25841,7 @@ components:
         - RON_ACCOUNT
         - KRW_ACCOUNT
         - AUD_ACCOUNT
+        - ARS_ACCOUNT
       description: Type of external account or wallet
       example: AED_ACCOUNT
     BaseExternalAccountInfo:
@@ -31609,6 +31610,161 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/AudBeneficiary'
                   BUSINESS: '#/components/schemas/AudBusinessBeneficiary'
+    ArsBankAccountType:
+      type: string
+      description: 'The account type: CHECKING for a cuenta corriente, SAVINGS for a caja de ahorro'
+      enum:
+        - CHECKING
+        - SAVINGS
+    ArsAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - cbu
+        - bankAccountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - ARS_ACCOUNT
+        cbu:
+          type: string
+          description: The 22-digit CBU or CVU of the Argentinian account
+          example: '2850590940090418135201'
+          minLength: 22
+          maxLength: 22
+          pattern: ^[0-9]{22}$
+        bankAccountType:
+          $ref: '#/components/schemas/ArsBankAccountType'
+      example:
+        accountType: ARS_ACCOUNT
+        cbu: '2850590940090418135201'
+        bankAccountType: CHECKING
+    ArsAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/ArsAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+    ArsDocumentType:
+      type: string
+      maxLength: 32
+      description: 'Identity number type (Argentina): the person''s CUIL or CUIT'
+      enum:
+        - CUIL
+        - CUIT
+    ArsBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - address
+        - documentNumber
+        - documentType
+        - fullName
+        - phoneNumber
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          maxLength: 250
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+        address:
+          $ref: '#/components/schemas/Address'
+        documentType:
+          $ref: '#/components/schemas/ArsDocumentType'
+        documentNumber:
+          type: string
+          maxLength: 50
+          description: The person's CUIL or CUIT, written XY-12345678-Z or as 11 digits
+          example: 20-30123456-3
+          pattern: ^[0-9]{2}-?[0-9]{8}-?[0-9]$
+    ArsBusinessBeneficiary:
+      title: Business Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - legalName
+        - taxId
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+        legalName:
+          type: string
+          maxLength: 250
+          description: The legal name of the business
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          maxLength: 100
+          description: The company registration number of the business
+        taxId:
+          type: string
+          maxLength: 100
+          description: The business's CUIT, written XY-12345678-Z or as 11 digits
+          example: 30-50001091-2
+          pattern: ^[0-9]{2}-?[0-9]{8}-?[0-9]$
+        countryOfResidence:
+          type: string
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+        address:
+          $ref: '#/components/schemas/Address'
+    ArsExternalAccountInfo:
+      title: ARS Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ArsAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ArsBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/ArsBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/ArsBeneficiary'
+                  BUSINESS: '#/components/schemas/ArsBusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountInfo'
@@ -31666,6 +31822,7 @@ components:
         - $ref: '#/components/schemas/RonExternalAccountInfo'
         - $ref: '#/components/schemas/KrwExternalAccountInfo'
         - $ref: '#/components/schemas/AudExternalAccountInfo'
+        - $ref: '#/components/schemas/ArsExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -31725,6 +31882,7 @@ components:
           RON_ACCOUNT: '#/components/schemas/RonExternalAccountInfo'
           KRW_ACCOUNT: '#/components/schemas/KrwExternalAccountInfo'
           AUD_ACCOUNT: '#/components/schemas/AudExternalAccountInfo'
+          ARS_ACCOUNT: '#/components/schemas/ArsExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
@@ -32677,6 +32835,26 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/AudBeneficiary'
                   BUSINESS: '#/components/schemas/AudBusinessBeneficiary'
+    ArsExternalAccountCreateInfo:
+      title: ARS Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ArsAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/ArsBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/ArsBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/ArsBeneficiary'
+                  BUSINESS: '#/components/schemas/ArsBusinessBeneficiary'
     ExternalAccountCreateInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountCreateInfo'
@@ -32734,6 +32912,7 @@ components:
         - $ref: '#/components/schemas/RonExternalAccountCreateInfo'
         - $ref: '#/components/schemas/KrwExternalAccountCreateInfo'
         - $ref: '#/components/schemas/AudExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/ArsExternalAccountCreateInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -32792,6 +32971,7 @@ components:
           RON_ACCOUNT: '#/components/schemas/RonExternalAccountCreateInfo'
           KRW_ACCOUNT: '#/components/schemas/KrwExternalAccountCreateInfo'
           AUD_ACCOUNT: '#/components/schemas/AudExternalAccountCreateInfo'
+          ARS_ACCOUNT: '#/components/schemas/ArsExternalAccountCreateInfo'
     CustomerExternalAccountCreateRequest:
       type: object
       required:
