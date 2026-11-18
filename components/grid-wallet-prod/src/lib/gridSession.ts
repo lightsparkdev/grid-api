@@ -2,7 +2,7 @@
 
 import { gridFetch, type GridEnvelope } from './gridClient';
 import {
-  genTek, compressedPubHex, encryptOtpBundle, decryptSessionKey,
+  genTek, compressedPubHex, encryptOtpBundle,
   base64urlToBytes, bytesToBase64url,
 } from './gridCrypto';
 import { amountToCents, USDB_DECIMALS } from './gridUnits';
@@ -170,7 +170,7 @@ async function emailOtpAuth(acct: WalletAccount, cb: AuthCallbacks): Promise<Ses
   const id = acct.emailOtpCredentialId;
   const { bundle, code } = await collectOtp(acct, cb);
   const tek = genTek();
-  const encryptedOtpBundle = encryptOtpBundle(bundle, tek.pubHex, code);
+  const encryptedOtpBundle = encryptOtpBundle(bundle, compressedPubHex(tek.privHex), code);
   const verifyBody = { type: 'EMAIL_OTP', encryptedOtpBundle };
 
   // Leg 1: 202 payloadToSign + requestId.
@@ -284,9 +284,11 @@ async function registerPasskey(
 
 /** Passkey authenticate: /challenge (clientPublicKey) -> get() -> /verify -> session. */
 async function passkeyAuth(acct: WalletAccount, credentialAuthMethodId: string, cb: AuthCallbacks): Promise<Session> {
-  const tek = genTek(); // ephemeral client key sealed into the session
+  // The client keeps this private key as the session signing key.
+  // Grid only ever sees its public half.
+  const tek = genTek();
   const chal = await gridFetch('POST', `/auth/credentials/${credentialAuthMethodId}/challenge`, {
-    body: { clientPublicKey: tek.pubHex },
+    body: { clientPublicKey: compressedPubHex(tek.privHex) },
   });
   cb.log(chal);
   assertOk(chal, [200], 'passkey challenge');
@@ -320,9 +322,8 @@ async function passkeyAuth(acct: WalletAccount, credentialAuthMethodId: string, 
   });
   cb.log(verify);
   assertOk(verify, [200], 'passkey verify');
-  const sess = verify.response.body as { encryptedSessionSigningKey: string; expiresAt: string };
-  const privHex = await decryptSessionKey(sess.encryptedSessionSigningKey, tek.privHex);
-  return { privHex, accountId: acct.accountId, expiresAt: Date.parse(sess.expiresAt), via: 'passkey' };
+  const sess = verify.response.body as { expiresAt: string };
+  return { privHex: tek.privHex, accountId: acct.accountId, expiresAt: Date.parse(sess.expiresAt), via: 'passkey' };
 }
 
 /** Resolve the AuthMethod id of the account's passkey (needed for challenge/verify). */
