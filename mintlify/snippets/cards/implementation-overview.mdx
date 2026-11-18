@@ -61,8 +61,8 @@ Issuance is a single `POST /cards` call. New cards start in
 - `PATCH /cards/{id}` to freeze, unfreeze, or close permanently
   (`status: "CLOSED"`).
 
-Both freeze and close use Grid's `202 → signed-retry` pattern (the same
-pattern as Embedded Wallet credential revocation). See
+Status changes require `substatus` and a non-empty `reason`. They use a
+single authenticated request and return `200 OK`. See
 [Freezing and closing cards](/cards/card-management/freezing-and-closing).
 
 Cardholders can add a card to Apple Pay, Google Pay, or Samsung Pay by
@@ -80,8 +80,9 @@ The lifecycle status moves
 refused before approval, `VOIDED` for approved auths fully reversed or
 expired before clearing, and `EXCEPTION` as the failure path for stuck
 post-hoc pulls. A merchant return is its own dated `CREDIT`
-`CardTransaction` row linked to the purchase via
-`originalTransactionId`; the purchase keeps its `SETTLED` status.
+`CardTransaction` row. When Grid can match it to a purchase,
+`originalTransactionId` identifies that purchase; otherwise the field is
+absent. The purchase keeps its `SETTLED` status.
 
 The full event model is covered in
 [Reconciliation](/cards/transactions/reconciliation).

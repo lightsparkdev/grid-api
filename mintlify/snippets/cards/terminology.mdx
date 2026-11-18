@@ -47,11 +47,11 @@ still held, normally 0, and `settledAmount` is absent.
 
 ## Refund
 
-A merchant-initiated `RETURN` against a settled transaction. Refunds
-flow back to the funding source. A refund against a known purchase is its
-own dated `CardTransaction` row (`direction: CREDIT`) linked to the
-purchase via `originalTransactionId`; the purchase keeps its `SETTLED`
-status.
+A merchant-initiated `RETURN`. Refunds flow back to the funding source and
+appear as their own dated `CardTransaction` rows (`direction: CREDIT`).
+When Grid can match a refund to a purchase, `originalTransactionId`
+identifies it; otherwise the field is absent. The purchase keeps its
+`SETTLED` status.
 
 ## Exception
 
