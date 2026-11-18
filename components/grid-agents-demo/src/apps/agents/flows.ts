@@ -104,9 +104,21 @@ export interface FlowContext {
   limits?: Limits;
   /** The person approved the task's payment when they raised the limit for it: it goes through without asking twice. */
   preApproved?: boolean;
+  /** Whoever runs the conversation decides what to offer next: a follow-up offer (add money, a balance) is handed here
+   *  instead of asked. Unset, the flow asks it itself, with its own line and taps. */
+  offer?: (what: string) => void;
+  /** Setting up the company: the names they've given so far, kept across a setup that starts over part-way. */
+  naming?: { company?: string; owner?: string };
 }
 
 const cents = (usd: number | undefined) => (usd && usd > 0 ? Math.round(usd * 100) : undefined);
+
+/** A follow-up offer once a step is done: the flow's own line and taps (`asks`), or handed to whoever runs the conversation. */
+export function offered(ctx: FlowContext, what: string, asks: Beat[]): Beat[] {
+  if (!ctx.offer) return asks;
+  ctx.offer(what);
+  return [];
+}
 
 /** A no to a setup step on the way to a task: the task waits, and the agent says so. */
 export const holdOr = (ctx: FlowContext, otherwise: Beat): Beat => (ctx.held ? { say: 'task.held', params: { what: ctx.held } } : otherwise);
@@ -221,29 +233,33 @@ const fundChips = (ctx: FlowContext, method?: FundMethod): Beat => ({
   then: (picked) => (picked === 0 ? fund({ ...ctx, params: method && { method } }).slice(1) : [{ say: 'fund.later' }]),
 });
 
+const ADD_MONEY = 'adding money to the empty balance (fund)';
+
 /** An empty balance: the agent offers to fill it (`line` asks; `fund.offerShort` when the balance was just shown). */
-export const offerFunds = (ctx: FlowContext, line = 'fund.offer'): Beat[] => [{ say: line }, fundChips(ctx)];
+export const offerFunds = (ctx: FlowContext, line = 'fund.offer'): Beat[] => offered(ctx, ADD_MONEY, [{ say: line }, fundChips(ctx)]);
 
 /** A card or bank just went in and the balance is empty: add money from it. */
 export const offerFundsFrom = (ctx: FlowContext, method: 'card' | 'bank'): Beat[] => {
   const a = ctx.account();
   if (!a.balanceOn || a.balanceCents > 0) return [];
-  return [{ say: 'fund.offerFrom', params: { bank: method === 'bank' ? 1 : 0 } }, fundChips(ctx, method)];
+  return offered(ctx, `adding money from the ${method} that just went in (fund, method "${method}")`, [{ say: 'fund.offerFrom', params: { bank: method === 'bank' ? 1 : 0 } }, fundChips(ctx, method)]);
 };
 
 /** No balance to withdraw from: set one up (it then offers to fill it), or later. */
 export const noBalanceToMove = (ctx: FlowContext): Beat[] => ctx.mode === 'business' ? noCompanyYet(ctx) : [
   { react: '👍' },
   { say: 'cashout.noBalance' },
-  {
-    chips: [{ label: 'Set up a balance', glyph: 'wallet' }, { label: 'Not now' }],
-    reply: true,
-    then: (picked) => (picked === 0 ? connect({ ...ctx, then: undefined }).filter((b) => !('react' in b)) : [{ say: 'balance.later' }]),
-  },
+  ...offered(ctx, 'setting up a balance (setup_balance)', [
+    {
+      chips: [{ label: 'Set up a balance', glyph: 'wallet' }, { label: 'Not now' }],
+      reply: true,
+      then: (picked) => (picked === 0 ? connect({ ...ctx, then: undefined }).filter((b) => !('react' in b)) : [{ say: 'balance.later' }]),
+    },
+  ]),
 ];
 
 /** An empty balance to withdraw from: add money, or later. */
-export const nothingToMove = (ctx: FlowContext): Beat[] => [{ react: '👍' }, { say: 'cashout.empty' }, fundChips(ctx)];
+export const nothingToMove = (ctx: FlowContext): Beat[] => [{ react: '👍' }, { say: 'cashout.empty' }, ...offered(ctx, ADD_MONEY, [fundChips(ctx)])];
 
 /** The top-up landed: say so, then carry on with whatever it was for. */
 const landed = (ctx: FlowContext, amount: number): Beat => ({
@@ -350,18 +366,19 @@ const vaultThen = (ctx: FlowContext, intro: string, after: () => Beat[]): Beat[]
 ];
 
 /** After a card goes in with no balance yet: the card already works, and a balance is there if they want one. */
-export const offerBalance = (ctx: FlowContext): Beat[] => [
-  { say: 'balance.offer' },
-  {
-    chips: [
-      { label: 'Set up a balance', glyph: 'wallet' },
-      { label: 'Not now', glyph: 'card' },
-    ],
-    reply: true,
-    then: (picked) =>
-      picked === 0 ? connect(ctx).filter((b) => !('react' in b)) : [{ say: 'balance.later' }],
-  },
-];
+export const offerBalance = (ctx: FlowContext): Beat[] =>
+  offered(ctx, 'a balance too: they could pay from it without the card, get paid into it and send money abroad (setup_balance)', [
+    { say: 'balance.offer' },
+    {
+      chips: [
+        { label: 'Set up a balance', glyph: 'wallet' },
+        { label: 'Not now', glyph: 'card' },
+      ],
+      reply: true,
+      then: (picked) =>
+        picked === 0 ? connect(ctx).filter((b) => !('react' in b)) : [{ say: 'balance.later' }],
+    },
+  ]);
 
 /** What the balance is short of a price (USD cents). */
 const shortOf = (ctx: FlowContext, price: number) => price - ctx.account().balanceCents;
@@ -1153,15 +1170,17 @@ const balance = (ctx: FlowContext): Beat[] => {
   return [
     { react: '👍' },
     { say: 'balance.none', params: { card: 0 } },
-    {
-      chips: [
-        { label: 'Set up a balance', glyph: 'wallet' },
-        { label: 'Add a card', glyph: 'card' },
-      ],
-      reply: true,
-      then: (picked) =>
-        (picked === 0 ? connect(ctx) : card(ctx)).filter((b) => !('react' in b) && !('say' in b && b.say === 'connect.intro')),
-    },
+    ...offered(ctx, 'setting up a balance (setup_balance) or saving a card (add_card)', [
+      {
+        chips: [
+          { label: 'Set up a balance', glyph: 'wallet' },
+          { label: 'Add a card', glyph: 'card' },
+        ],
+        reply: true,
+        then: (picked) =>
+          (picked === 0 ? connect(ctx) : card(ctx)).filter((b) => !('react' in b) && !('say' in b && b.say === 'connect.intro')),
+      },
+    ]),
   ];
 };
 

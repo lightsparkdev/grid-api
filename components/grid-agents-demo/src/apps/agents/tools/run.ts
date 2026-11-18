@@ -1,4 +1,4 @@
-import type { ActionId } from '@/data/actions';
+import { ACTION_IDS, type ActionId } from '@/data/actions';
 import type { AccountSnapshot } from '@/data/agentApiCalls';
 import { purchaseSpendLimit, type DepositNetwork, type SendNetwork } from '@/data/agentEvents';
 import { BANK_COUNTRIES, currencyFor } from '@/data/bankCountries';
@@ -16,8 +16,8 @@ import {
   FLOWS,
   limitsFor,
   linkOwnBank,
+  needsSetup,
   noBalanceToMove,
-  nothingToMove,
   offerBalance,
   offerFunds,
   offerFundsFrom,
@@ -30,6 +30,7 @@ import {
   placeOrder,
   payWith,
   placeSubscription,
+  planFor,
   raisedFor,
   recipientParams,
   split,
@@ -48,7 +49,9 @@ import { draftRecipient, recipientNamed, type Recipient } from '../recipients';
 import { NETWORK_NAME } from '../story';
 
 /* Each tool, carried out in the phone: its inputs checked against the account as it is, then the same cards, sheets,
-   approvals and Grid calls the flows use. A tool that can't run says why, in terms the model can act on. */
+   approvals and Grid calls the flows use. A tool that can't run says why, in terms the model can act on. The model
+   writes what's said: a flow's own lines reach it as plain notes, and each point the flow waits on the person is
+   reported as it's reached (brain/useAgentBrain). */
 
 interface PayRecord {
   recipient: Recipient;
@@ -68,9 +71,11 @@ export interface ToolMemory {
   approved: Set<string>;
   /** Quotes already on screen: sending one again doesn't show it twice. */
   shown: Set<string>;
+  /** The company's name and the owner's, as far as they've given them. */
+  naming: { company?: string; owner?: string };
 }
 
-export const newToolMemory = (): ToolMemory => ({ seq: 0, options: new Map(), quotes: new Map(), stays: new Map(), approved: new Set(), shown: new Set() });
+export const newToolMemory = (): ToolMemory => ({ seq: 0, options: new Map(), quotes: new Map(), stays: new Map(), approved: new Set(), shown: new Set(), naming: {} });
 
 export type Outcome = { error: ToolResult } | { beats: Beat[]; result: ToolResult };
 
@@ -113,8 +118,8 @@ export function accountNow(a: AccountSnapshot): ToolResult {
   };
 }
 
-/** A step on the way to something else in the same turn: the follow-up offers a step makes on its own are left out. */
-const onTheWay = (env: ToolEnv, call: ToolCall) => call.input.more === true || (!!env.next && !ENDS_TURN.has(env.next.name));
+/** A step on the way to something else in the same step: what's worth offering once it's done is left out. */
+const onTheWay = (env: ToolEnv) => !!env.next && !ENDS_TURN.has(env.next.name);
 
 /** What a no to a setup step puts on hold, from the task that was to follow it. */
 function heldFor(next?: ToolCall): string | undefined {
@@ -165,26 +170,18 @@ const needsBalance = (env: ToolEnv) =>
   env.ctx.account().balanceOn
     ? undefined
     : env.ctx.mode === 'business'
-      ? fail('no_company', { fix: 'call setup_company (with more) first, then this again' })
-      : fail('no_balance', { fix: 'call setup_balance (with more) first, then this again' });
+      ? fail('no_company', { fix: 'call setup_company first, then this again once it’s set up' })
+      : fail('no_balance', { fix: 'call setup_balance first, then this again once it’s on' });
+
+/** What's worth offering once a step is done, read from the account as it is then (the flows hand it to `ctx.offer`). */
+const offering = (make: () => Beat[]): Beat => ({ when: make });
 
 /**
- * A follow-up offer from today's flows, added once the step is done, and noted in the result (`offered`) so the model
- * doesn't offer it again or contradict it. `make` decides from the account as it is then; nothing to offer, no note.
+ * The payments that settled since `before`. A step can end without doing its job (a no to a top-up on the way), so
+ * what its result reports is what the account shows happened, not how far the step got.
  */
-function offering(result: ToolResult, make: () => { what: string; beats: Beat[] } | undefined): Beat {
-  return {
-    when: () => {
-      const offer = make();
-      if (!offer?.beats.length) return [];
-      Object.assign(result, { offered: offer.what });
-      return offer.beats;
-    },
-  };
-}
-const ADD_MONEY = 'adding money to the empty balance (taps: Add money, Not now)';
-const A_BALANCE = 'a balance (taps: Set up a balance, Not now)';
-const A_COMPANY = 'setting up the company (taps: Set up my company, Not now)';
+const settledSince = (env: ToolEnv, before: AccountSnapshot) =>
+  env.ctx.account().ledger.filter((l) => l.status === 'COMPLETED' && !before.ledger.some((b) => b.id === l.id && b.status === 'COMPLETED'));
 
 /** Over the per-payment limit, today's ask to raise it (the product or quote on screen), or else straight on. */
 const withinLimit = (ctx: FlowContext, spend: number, go: 'buy' | 'send' | 'book', then: (c: FlowContext) => Beat[]): Beat[] => overLimit(ctx, spend, go, then) ?? then(ctx);
@@ -207,16 +204,15 @@ function approvedFor(env: ToolEnv, id: string): FlowContext {
 function setupBalance(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
   const result: ToolResult = {};
-  const onWay = onTheWay(env, call);
+  const onWay = onTheWay(env);
   // Already on and on the way to something else: nothing to say, the task just carries on.
   if (a.balanceOn && onWay) return { beats: [], result: { status: 'already_on' } };
-  // Already on: says so, and shows it; empty, it offers to fill it.
+  // Already on: says so, and shows it; empty, adding money is worth offering.
   if (a.balanceOn) {
-    const done: ToolResult = { status: 'already_on' };
-    const shown: Beat[] = onWay
-      ? []
-      : [{ when: () => [{ card: 'balance', params: balanceParams(env.ctx) }] }, offering(done, () => (env.ctx.account().balanceCents > 0 ? undefined : { what: ADD_MONEY, beats: offerFunds(env.ctx) }))];
-    return { beats: [{ say: 'connect.already' }, ...shown], result: done };
+    return {
+      beats: [{ say: 'connect.already' }, { when: () => [{ card: 'balance', params: balanceParams(env.ctx) }] }, offering(() => (env.ctx.account().balanceCents > 0 ? [] : offerFunds(env.ctx)))],
+      result: { status: 'already_on' },
+    };
   }
   const hasAgent = a.connected ? 1 : 0;
   const l = a.limits;
@@ -234,12 +230,12 @@ function setupBalance(env: ToolEnv, call: ToolCall): Outcome {
           { emit: { type: 'connect' } },
           record(result, () => ({ status: 'on' })),
           { say: 'connect.done', params: { hasAgent } },
-          // Asked for itself, it starts empty, so the agent offers to fill it; on the way to something else that's next.
+          // Asked for itself, it starts empty, so filling it is worth offering; on the way to something else that's next.
           ...(onWay
             ? []
             : [
                 { when: (): Beat[] => [{ card: 'account.ready', params: balanceParams(env.ctx) }] },
-                offering(result, () => (env.ctx.account().balanceCents > 0 ? undefined : { what: ADD_MONEY, beats: offerFunds(env.ctx) })),
+                offering(() => (env.ctx.account().balanceCents > 0 ? [] : offerFunds(env.ctx))),
               ]),
         ],
         deny: [heldOr(env, { say: 'connect.denied', params: { hasAgent } })],
@@ -248,7 +244,7 @@ function setupBalance(env: ToolEnv, call: ToolCall): Outcome {
   };
 }
 
-function addCard(env: ToolEnv, call: ToolCall): Outcome {
+function addCard(env: ToolEnv): Outcome {
   const a = env.ctx.account();
   const topUp = a.balanceOn ? 1 : 0;
   if (a.cardVaulted) return { beats: [{ say: 'card.already', params: { topUp } }], result: { status: 'already_saved' } };
@@ -265,16 +261,8 @@ function addCard(env: ToolEnv, call: ToolCall): Outcome {
           { meta: 'card.saved' },
           record(result, () => ({ status: 'saved' })),
           { say: 'card.done', params: { topUp } },
-          // With a balance it offers to fill it from the card; without, it offers the balance.
-          ...(onTheWay(env, call)
-            ? []
-            : [
-                offering(result, () =>
-                  env.ctx.account().balanceOn
-                    ? { what: 'adding money from the card (taps: Add money, Not now)', beats: offerFundsFrom(env.ctx, 'card') }
-                    : { what: A_BALANCE, beats: offerBalance(env.ctx) },
-                ),
-              ]),
+          // With a balance, filling it from the card is worth offering; without, the balance is.
+          ...(onTheWay(env) ? [] : [offering(() => (env.ctx.account().balanceOn ? offerFundsFrom(env.ctx, 'card') : offerBalance(env.ctx)))]),
         ],
         deny: [heldOr(env, { say: 'card.denied' })],
       },
@@ -286,7 +274,7 @@ function linkBank(env: ToolEnv, call: ToolCall): Outcome {
   if (env.ctx.account().bankLinked) return { beats: [{ say: 'bank.already' }], result: { status: 'already_linked' } };
   const result: ToolResult = {};
   const home = typeof call.input.home === 'string' ? call.input.home : undefined;
-  const offer: Beat[] = onTheWay(env, call) ? [] : [offering(result, () => ({ what: 'adding money from the bank (taps: Add money, Not now)', beats: offerFundsFrom(env.ctx, 'bank') }))];
+  const offer: Beat[] = onTheWay(env) ? [] : [offering(() => offerFundsFrom(env.ctx, 'bank'))];
   return { result, beats: linkOwnBank('bank.intro', [record(result, () => ({ status: 'linked' })), { say: 'bank.done' }, ...offer], [heldOr(env, { say: 'bank.denied' })], home) };
 }
 
@@ -325,9 +313,13 @@ function fund(env: ToolEnv, call: ToolCall): Outcome {
     ...((asset === 'USDC' || asset === 'USDT') && { asset }),
     ...(typeof network === 'string' && network !== 'SPARK' && { network: network as DepositNetwork }),
   };
-  // Today's Add funds: what's missing is asked with its own taps (how much, then where from), then the top-up.
-  const result: ToolResult = { ...(!amount && { asked: 'how much (taps: $25, $50, $100, Other)' }), ...(amount && !method && { asked: 'where from (taps: card, bank, stablecoins)' }) };
-  return { result, beats: [...FLOWS.fund({ ...env.ctx, params }).filter((b) => !('react' in b)), record(result, () => ({ status: 'added' }))] };
+  // What's missing is waited on in turn (how much, then where from), then the top-up.
+  const result: ToolResult = {};
+  const added = record(result, () => {
+    const more = env.ctx.account().balanceCents - a.balanceCents;
+    return more > 0 ? { status: 'added', added_usd: usd(more) } : {};
+  });
+  return { result, beats: [...FLOWS.fund({ ...env.ctx, params }), added] };
 }
 
 function search(env: ToolEnv, call: ToolCall): Outcome {
@@ -424,10 +416,9 @@ function checkout(env: ToolEnv, call: ToolCall): Outcome {
     };
     return { result, beats: watched(ctx, shelf, cents(below), buyIt, []) };
   }
-  // A card saved for this order: once it's through, the agent offers a balance, as when a card goes in on its own.
+  // A card saved for this order: once it's through, a balance is worth offering, as when a card goes in on its own.
   const newCard = !a.cardVaulted;
-  const offer = (onCard: boolean): Beat[] =>
-    onCard && newCard && !onTheWay(env, call) ? [offering(result, () => (env.ctx.account().balanceOn ? undefined : { what: A_BALANCE, beats: offerBalance(env.ctx) }))] : [];
+  const offer = (onCard: boolean): Beat[] => (onCard && newCard && !onTheWay(env) ? [offering(() => (env.ctx.account().balanceOn ? [] : offerBalance(env.ctx)))] : []);
   const buy = (c: FlowContext) => payWith(c, purchase.amount, (onCard, short) => [...placeOrder(c, shelf, onCard, short), bought(onCard), ...offer(onCard)]);
   return { result, beats: withinLimit(ctx, spend, 'buy', buy) };
 }
@@ -486,11 +477,14 @@ function quoted(env: ToolEnv, input: ToolCall['input']): { id: string; rec: PayR
 function quoteFacts(env: ToolEnv, id: string, rec: PayRecord): ToolResult {
   const a = env.ctx.account();
   const { payee } = rec.quote;
+  const to = recipientParams(rec.recipient);
   return {
     quote_id: id,
     to: rec.recipient.first,
     they_receive: payee.local,
     you_pay_usd: usd(payee.usd),
+    their_bank: to.bank,
+    sent_over: to.rail,
     needs_their_approval: env.ctx.needsApproval(payee.usd),
     ...(a.connected && payee.usd > a.limits.perTransaction && { over_per_payment_limit: true, raise_to_usd: usd(raisedFor(a.limits, payee.usd).perTransaction) }),
     ...(payee.usd > a.balanceCents && { short_usd: usd(payee.usd - a.balanceCents) }),
@@ -502,6 +496,8 @@ function quotePayment(env: ToolEnv, call: ToolCall): Outcome {
   const q = quoted(env, call.input);
   if ('error' in q) return q;
   if ('beats' in q) return q;
+  // Priced here, it isn't priced again when it's sent.
+  env.memory.shown.add(q.id);
   return { result: quoteFacts(env, q.id, q.rec), beats: [{ work: 'quoting', ms: 1200 }, { emit: { type: 'pay.quote', payee: q.rec.quote.payee } }] };
 }
 
@@ -619,19 +615,12 @@ function raiseLimit(env: ToolEnv, call: ToolCall): Outcome {
 
 function withdraw(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
-  if (!a.balanceOn) return { result: { status: 'no_balance', offered: env.ctx.mode === 'business' ? A_COMPANY : A_BALANCE }, beats: noBalanceToMove(env.ctx).filter((b) => !('react' in b)) };
+  if (!a.balanceOn) return { result: { status: 'no_balance' }, beats: noBalanceToMove(env.ctx) };
   const amount = call.input.everything === true ? a.balanceCents : positive(call.input.amount_usd, 10_000) ? cents(call.input.amount_usd as number) : undefined;
-  // Today's Withdraw: nothing in it offers to add money, no amount asks, more than there is offers the whole balance;
-  // then the bank (linked first if it isn't), the limit, and the move.
-  const result: ToolResult =
-    a.balanceCents <= 0
-      ? { status: 'empty_balance', offered: ADD_MONEY }
-      : !amount
-        ? { asked: 'how much (they type it)' }
-        : amount > a.balanceCents
-          ? { status: 'more_than_balance', offered: `moving the whole ${usd(a.balanceCents)} instead (taps: Move, Not now)` }
-          : {};
-  return { result, beats: FLOWS.cashout({ ...env.ctx, params: amount ? { amount: amount / 100 } : {} }).filter((b) => !('react' in b)) };
+  // Nothing in it, there's nothing to move; no amount, it waits on one; more than there is, it waits on moving the
+  // whole balance instead; then the bank (linked first if it isn't), the limit, and the move.
+  const result: ToolResult = a.balanceCents <= 0 ? { status: 'empty_balance' } : amount && amount > a.balanceCents ? { status: 'more_than_balance', balance_usd: usd(a.balanceCents) } : {};
+  return { result, beats: FLOWS.cashout({ ...env.ctx, params: amount ? { amount: amount / 100 } : {} }) };
 }
 
 function sendStablecoins(env: ToolEnv, call: ToolCall): Outcome {
@@ -700,11 +689,8 @@ function showAccount(env: ToolEnv, call: ToolCall): Outcome {
     if (!a.ledger.length) return { result: { status: 'nothing_yet' }, beats: [{ say: 'history.none' }] };
     return { result: { status: 'shown', recent: a.ledger.slice(0, 6).map((l) => ({ what: l.title, usd: usd(l.cents) })) }, beats: historyShown(env.ctx) };
   }
-  if (!a.balanceOn) {
-    const offered = env.ctx.mode === 'business' ? A_COMPANY : a.cardVaulted ? A_BALANCE : 'a balance or a card (taps: Set up a balance, Add a card)';
-    return { result: { status: 'no_balance', offered }, beats: FLOWS.balance(env.ctx).filter((b) => !('react' in b)) };
-  }
-  return { result: { status: 'shown', ...(a.balanceCents <= 0 && { offered: ADD_MONEY }) }, beats: balanceShown(env.ctx) };
+  if (!a.balanceOn) return { result: { status: 'no_balance' }, beats: FLOWS.balance(env.ctx) };
+  return { result: { status: 'shown' }, beats: balanceShown(env.ctx) };
 }
 
 /* ── The business's tools ─────────────────────────────────────────── */
@@ -714,21 +700,15 @@ const ownName = (v: unknown) => (typeof v === 'string' && cleanName(v)) || undef
 
 function setupCompany(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
-  const onWay = onTheWay(env, call);
+  const onWay = onTheWay(env);
   if (a.balanceOn) return { beats: onWay ? [] : noReact(companySetup(env.ctx)), result: { status: 'already_set_up' } };
   const company = ownName(call.input.company);
   const owner = ownName(call.input.owner);
-  const result: ToolResult =
-    a.business?.named || (company && owner)
-      ? {}
-      : { asked: company ? 'the owner’s name (they type it or tap the suggestion)' : 'the company’s name, then the owner’s (they type them or tap the suggestions)' };
+  const result: ToolResult = {};
   const held = heldFor(env.next);
-  // On the way to something else, that's next once it's set up; asked for itself, it shows the account and offers to fill it.
-  const ctx: FlowContext = { ...env.ctx, ...(held && { held }), ...(onWay && { then: () => [] }) };
-  const done = record(result, () => {
-    const now = env.ctx.account();
-    return { status: 'set_up', company: now.business?.company, ...(!onWay && now.balanceCents <= 0 && { offered: ADD_MONEY }) };
-  });
+  // On the way to something else, that's next once it's set up; asked for itself, it shows the account.
+  const ctx: FlowContext = { ...env.ctx, naming: env.memory.naming, ...(held && { held }), ...(onWay && { then: () => [] }) };
+  const done = record(result, () => ({ status: 'set_up', company: env.ctx.account().business?.company }));
   return { result, beats: noReact(companySetup(ctx, { company, owner }, [done])) };
 }
 
@@ -739,8 +719,11 @@ function addTeammateTool(env: ToolEnv, call: ToolCall): Outcome {
   if (name && RELATION.test(name)) return fail('need_name', { fix: 'ask their name' });
   const team = env.ctx.account().business?.team ?? [];
   if (name && memberOf(team, name)) return { result: { status: 'already_on_team', team: team.map((m) => m.name) }, beats: [] };
-  const result: ToolResult = { asked: name ? 'their role, pay and bank (they tap or type them)' : 'their name, role, pay and bank (they tap or type them)' };
-  const added = record(result, () => ({ status: 'added', team: (env.ctx.account().business?.team ?? []).map((m) => `${m.name} (${m.role})`) }));
+  const result: ToolResult = {};
+  const added = record(result, () => {
+    const now = env.ctx.account().business?.team ?? [];
+    return now.length > team.length ? { status: 'added', team: now.map((m) => `${m.name} (${m.role})`) } : {};
+  });
   return { result, beats: [...addTeammate(env.ctx, name ? { name } : {}), added] };
 }
 
@@ -750,7 +733,10 @@ function setTeamBudget(env: ToolEnv, call: ToolCall): Outcome {
   const monthly = positive(call.input.monthly_usd, 50_000);
   const already = env.ctx.account().business?.budget;
   const result: ToolResult = {};
-  const set = record(result, () => ({ status: already ? 'already_set_up' : 'set_up', monthly_usd: usd(env.ctx.account().business?.budget ?? 0), team: (env.ctx.account().business?.team ?? []).map((m) => m.name) }));
+  const set = record(result, () => {
+    const now = env.ctx.account().business;
+    return now?.budget ? { status: already ? 'already_set_up' : 'set_up', monthly_usd: usd(now.budget), team: now.team.map((m) => m.name) } : {};
+  });
   return { result, beats: [...noReact(teamBudget({ ...env.ctx, params: monthly ? { amount: monthly } : {} })), set] };
 }
 
@@ -761,11 +747,13 @@ function issueEmployeeCard(env: ToolEnv, call: ToolCall): Outcome {
   if (!name) return fail('need_name', { fix: 'ask which teammate' });
   const team = env.ctx.account().business?.team ?? [];
   const member = memberOf(team, name);
-  if (!member) return { result: { status: 'not_on_team', offered: `adding ${name} to the team first, then the card` }, beats: noReact(employeeCard({ ...env.ctx, params: { name } })) };
+  // Someone not on the team is added first (their role, pay and bank are waited on), then the card.
+  if (!member) return { result: { status: 'not_on_team' }, beats: noReact(employeeCard({ ...env.ctx, params: { name } })) };
   const purpose = text(call.input.purpose, 30)?.toLowerCase();
   const had = env.ctx.account().business?.team.find((m) => m.name === member.name)?.hasCard;
   const result: ToolResult = {};
-  const issued = record(result, () => ({ status: had ? 'already_has_card' : 'issued', to: member.name }));
+  const hasCard = () => env.ctx.account().business?.team.find((m) => m.name === member.name)?.hasCard;
+  const issued = record(result, () => (had ? { status: 'already_has_card', to: member.name } : hasCard() ? { status: 'issued', to: member.name } : {}));
   return { result, beats: [...noReact(employeeCard({ ...env.ctx, params: { name: member.name, ...(purpose && { note: purpose }) } })), issued] };
 }
 
@@ -789,10 +777,8 @@ function listInvoices(env: ToolEnv): Outcome {
   const missing = needsBalance(env);
   if (missing) return missing;
   const invoices = env.ctx.account().business?.invoices ?? [];
-  const open = invoices.filter((i) => i.status === 'OPEN');
   const result: ToolResult = {
     invoices: invoices.map((i) => ({ number: i.number, client: i.client, amount_usd: usd(i.amount), status: i.status === 'PAID' ? 'paid' : `open, due ${i.due}` })),
-    ...(open.length && { offered: `a reminder for the open one (taps: Remind ${open[0].client}, Not now)` }),
   };
   return { result, beats: noReact(trackInvoices(env.ctx)) };
 }
@@ -809,7 +795,9 @@ function payBillTool(env: ToolEnv, call: ToolCall): Outcome {
   const note = text(call.input.note, 40);
   const result: ToolResult = {};
   const params: FlowParams = { name: vendor, country: asked, amount, currency: 'USD', ...(note && { note }) };
-  return { result, beats: [...noReact(payBill({ ...env.ctx, params })), record(result, () => ({ status: 'paid', to: vendor, amount_usd: amount }))] };
+  const before = env.ctx.account();
+  const paid = record(result, () => (settledSince(env, before).length ? { status: 'paid', to: vendor, amount_usd: amount } : {}));
+  return { result, beats: [...noReact(payBill({ ...env.ctx, params })), paid] };
 }
 
 function payContractorTool(env: ToolEnv, call: ToolCall): Outcome {
@@ -823,7 +811,8 @@ function payContractorTool(env: ToolEnv, call: ToolCall): Outcome {
   if (!COUNTRY_CODES.has(country)) return fail('country_not_supported', { country });
   const note = text(call.input.note, 40);
   const result: ToolResult = {};
-  const paid = record(result, () => ({ status: 'paid', to: name, amount_usd: amount, how: 'to their own bank, in their currency' }));
+  const before = env.ctx.account();
+  const paid = record(result, () => (settledSince(env, before).length ? { status: 'paid', to: name, amount_usd: amount, how: 'to their own bank, in their currency' } : {}));
   return { result, beats: [...noReact(payContractor({ ...env.ctx, params: { name, country, amount, ...(note && { note }) } })), paid] };
 }
 
@@ -832,7 +821,8 @@ function runPayrollTool(env: ToolEnv): Outcome {
   if (missing) return missing;
   const result: ToolResult = {};
   const team = () => env.ctx.account().business?.team ?? [];
-  const paidOut = record(result, () => ({ status: 'paid', people: team().map((m) => m.name), total_usd: usd(payrollTotal(team())) }));
+  const before = env.ctx.account();
+  const paidOut = record(result, () => (settledSince(env, before).length ? { status: 'paid', people: team().map((m) => m.name), total_usd: usd(payrollTotal(team())) } : {}));
   return { result, beats: [...noReact(runPayroll(env.ctx)), paidOut] };
 }
 
@@ -841,6 +831,8 @@ export function topicOf(call: ToolCall, ctx: FlowContext): string {
   const flow = flowOf(call);
   if (!flow) return '';
   const i = call.input;
+  // A tile tells its own story.
+  if (call.name === 'start_flow') return topicFor(flow, { ...ctx, params: undefined, variant: typeof i.variant === 'number' ? i.variant : 0 });
   const s = (v: unknown) => (typeof v === 'string' ? v : undefined);
   const params: FlowParams = {
     name: s(i.name) ?? s(i.from) ?? s(i.client) ?? s(i.vendor),
@@ -906,8 +898,12 @@ export function flowOf(call: ToolCall): ActionId | null {
       return 'contractor';
     case 'run_payroll':
       return 'payroll';
+    case 'start_flow':
+      return flowNamed(call.input.flow) ?? null;
     case 'reply':
     case 'offer_choices':
+    case 'wait':
+    case 'answer':
       return null;
     default: {
       const exhaustive: never = call.name;
@@ -916,13 +912,24 @@ export function flowOf(call: ToolCall): ActionId | null {
   }
 }
 
+const flowNamed = (v: unknown): ActionId | undefined => ACTION_IDS.find((id) => id === v);
+
+/** A tile's own flow, as the tile starts it: the account set up first if the flow needs one, then the flow. */
+function startFlow(env: ToolEnv, call: ToolCall): Outcome {
+  const flow = flowNamed(call.input.flow);
+  if (!flow) return fail('unknown_flow', { fix: 'use the flow the <app> line named' });
+  const variant = typeof call.input.variant === 'number' && call.input.variant > 0 ? Math.round(call.input.variant) : 0;
+  const ctx: FlowContext = { ...env.ctx, variant, naming: env.memory.naming };
+  return { result: {}, beats: needsSetup(flow, ctx.account()) ? planFor(flow, ctx) : FLOWS[flow](ctx) };
+}
+
 /** Carry out one call: an error to send back, or the beats to play and the result they fill in. */
 export function runTool(env: ToolEnv, call: ToolCall): Outcome {
   switch (call.name) {
     case 'setup_balance':
       return setupBalance(env, call);
     case 'add_card':
-      return addCard(env, call);
+      return addCard(env);
     case 'link_bank':
       return linkBank(env, call);
     case 'fund':
@@ -967,8 +974,13 @@ export function runTool(env: ToolEnv, call: ToolCall): Outcome {
       return payContractorTool(env, call);
     case 'run_payroll':
       return runPayrollTool(env);
+    case 'start_flow':
+      return startFlow(env, call);
+    // What the conversation itself carries out (a line, a pause, an answer to what's open): nothing to run here.
     case 'reply':
     case 'offer_choices':
+    case 'wait':
+    case 'answer':
       return { result: { status: 'shown' }, beats: [] };
     default: {
       const exhaustive: never = call.name;

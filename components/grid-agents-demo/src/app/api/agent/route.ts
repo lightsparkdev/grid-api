@@ -8,7 +8,7 @@ import { takeStep, takeTurn } from '@/lib/llm/limits';
 import { sameOrigin } from '@/lib/llm/origin';
 import { lookUpPrice } from '@/lib/llm/priceLookup';
 import { systemPrompt, type PromptState } from '@/lib/llm/prompt';
-import { CONNECTOR_IDS, toolsIn, type Block, type Say, type ToolCall, type ToolName, type Turn } from '@/lib/llm/tools';
+import { ENDS_TURN, SAYS_NOTHING, toolsIn, type Block, type ToolCall, type ToolName, type Turn } from '@/lib/llm/tools';
 import type { AgentResponse } from '@/lib/llm/types';
 import { VISITOR_HEADER, visitorOf } from '@/lib/visitor';
 
@@ -18,11 +18,14 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 const MAX_TEXT = 300;
-const MAX_TURNS = 40;
-const MAX_BLOCK = 2_400;
-const MAX_BODY = 80_000;
-const MAX_REPLY = 360;
+const MAX_TURNS = 80;
+const MAX_BLOCK = 4_000;
+const MAX_BODY = 240_000;
+const MAX_REPLY = 420;
 const MAX_NAME = 40;
+const MAX_OPEN = 800;
+/** A line from the app (what they tapped, what happened then), as the page marks it; anything else is what they typed. */
+const FROM_APP = /^<app>[\s\S]*<\/app>$/;
 const COUNTRY_CODES = BANK_COUNTRIES.map((c) => c.code);
 
 /** Why the composer falls back to a scripted line instead of the model. */
@@ -80,8 +83,13 @@ function turnsOf(raw: unknown, mode: Mode): Turn[] | null {
     if (turns.length ? turns[turns.length - 1].role === t.role : t.role !== 'user') return null;
     const content: Block[] = [];
     for (const b of t.content) {
-      if (b?.type === 'text' && typeof b.text === 'string' && b.text.trim()) content.push({ type: 'text', text: b.text.slice(0, MAX_BLOCK) });
-      else if (b?.type === 'tool_use' && t.role === 'assistant' && typeof b.id === 'string' && toolsIn(mode).has(b.name as ToolName) && b.input && typeof b.input === 'object')
+      if (b?.type === 'text' && typeof b.text === 'string' && b.text.trim()) {
+        const text = b.text.trim();
+        // What they typed is short, and can't pass for a line from the app.
+        if (FROM_APP.test(text)) content.push({ type: 'text', text: text.slice(0, MAX_BLOCK) });
+        else if (text.length > MAX_TEXT) return null;
+        else content.push({ type: 'text', text: text.replace(/<\/?app>/gi, '') || '…' });
+      } else if (b?.type === 'tool_use' && t.role === 'assistant' && typeof b.id === 'string' && toolsIn(mode).has(b.name as ToolName) && b.input && typeof b.input === 'object')
         content.push({ type: 'tool_use', id: b.id.slice(0, 64), name: b.name, input: b.input });
       else if (b?.type === 'tool_result' && t.role === 'user' && typeof b.tool_use_id === 'string' && typeof b.content === 'string')
         content.push({ type: 'tool_result', tool_use_id: b.tool_use_id.slice(0, 64), content: b.content.slice(0, MAX_BLOCK), ...(b.is_error && { is_error: true }) });
@@ -93,9 +101,9 @@ function turnsOf(raw: unknown, mode: Mode): Turn[] | null {
 }
 
 /**
- * The model behind the composer, one step at a time. The page sends the conversation (the person's messages and
- * the tool calls so far with what they did); the model answers with its next calls, which the phone carries out
- * and checks. The model can't approve anything.
+ * The model that runs the conversation, one step at a time. The page sends the conversation so far (what the person
+ * typed, what they tapped and what the app did then, the model's calls and their results) and what's open on screen;
+ * the model answers with its next calls, which the phone carries out and checks.
  */
 export async function POST(req: NextRequest) {
   const key = process.env.ANTHROPIC_API_KEY;
@@ -114,10 +122,10 @@ export async function POST(req: NextRequest) {
   const turns = turnsOf(body.turns, mode);
   if (!connector || !turns) return fallback('invalid', 400);
   const last = turns[turns.length - 1].content;
-  const message = last.find((b): b is Extract<Block, { type: 'text' }> => b.type === 'text');
-  if (message && message.text.length > MAX_TEXT) return fallback('invalid', 400);
+  const message = last.some((b) => b.type === 'text' && !FROM_APP.test(b.text));
 
-  // A new message counts against the person's message limit; the steps that carry it out, against their step limit.
+  // A new message counts against the person's message limit; the steps that carry it out (and the ones a tap sets
+  // off), against their step limit.
   const visitor = {
     browser: visitorOf(req.headers.get(VISITOR_HEADER)),
     network: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.ip || 'local',
@@ -142,11 +150,14 @@ export async function POST(req: NextRequest) {
     recipients,
     mode,
     ...(mode === 'business' && businessOf(body.state)),
+    ...(typeof body.state?.open === 'string' && body.state.open.trim() && { open: body.state.open.replace(/\s+/g, ' ').trim().slice(0, MAX_OPEN) }),
   };
 
   try {
     const { calls } = await anthropicAdapter(key).step({ system: systemPrompt(connector, state), turns, mode });
-    const out = await Promise.all(calls.map((c) => tidy(key, c, connector)));
+    const names = namesIn(state, turns, calls);
+    const voiced = LOWERCASE.has(connector) ? (line: string) => lowercased(line, names) : (line: string) => line;
+    const out = await Promise.all(calls.map((c) => tidy(key, c, voiced)));
     return NextResponse.json({ calls: out } satisfies AgentResponse);
   } catch (e) {
     if (process.env.NODE_ENV === 'development') console.error('[agent]', e);
@@ -174,36 +185,47 @@ function businessOf(raw: Partial<PromptState> | undefined): Partial<PromptState>
   };
 }
 
-/** Apps that text in lowercase, names kept as written; the rest write in sentence case. */
-const LOWERCASE = new Set<ConnectorId>(['dot', 'instinct']);
-
-/** A sentence-case line in a lowercase voice: each sentence opens lowercase, and so does "I". Names inside a sentence keep
- *  their capitals; acronyms (USDC, RTP) keep theirs everywhere. */
-const casualize = (text: string) => text.replace(/(^|[.!?]\s+)([A-Z][a-z’']*)\b/g, (_m, pre: string, word: string) => pre + word.toLowerCase()).replace(/\bI\b/g, 'i');
-
-/** Every app's line cleaned. One the model left out is filled from a sentence-case app's (made casual for the apps that
- *  text that way), so no app shows another's casing. */
-function saidBy(raw: unknown, connector: ConnectorId): Say | undefined {
-  if (!raw || typeof raw !== 'object') return undefined;
-  const lines = raw as Record<string, unknown>;
-  const given = Object.fromEntries(CONNECTOR_IDS.map((id) => [id, typeof lines[id] === 'string' ? clean(lines[id] as string) : ''])) as Record<ConnectorId, string>;
-  const plain = (['yourapp', 'claude', 'muse', 'grok'] as ConnectorId[]).map((id) => given[id]).find(Boolean) ?? given[connector] ?? CONNECTOR_IDS.map((id) => given[id]).find(Boolean);
-  if (!plain) return undefined;
-  return Object.fromEntries(CONNECTOR_IDS.map((id) => [id, LOWERCASE.has(id) ? given[id] || casualize(plain) : given[id] || plain])) as Say;
-}
-
-/** A line that starts something doesn't ask anything (the tools do): a trailing question goes, if there's more to it. */
+/** A line that starts something doesn't ask anything: a trailing question goes, if there's more to it. */
 function statement(line: string): string {
   if (!line.endsWith('?')) return line;
   const sentences = line.match(/[^.!?]+[.!?]+/g) ?? [line];
   return sentences.length > 1 ? sentences.slice(0, -1).join('').trim() : line;
 }
 
-/** A call made ready for the phone: its lines cleaned, taps checked, and a product we don't list priced from the web. */
-async function tidy(key: string, call: ToolCall, connector: ConnectorId): Promise<ToolCall> {
-  const said = saidBy(call.input.say, connector);
-  const asks = call.name === 'reply' || call.name === 'offer_choices';
-  const input: ToolCall['input'] = { ...call.input, say: said && !asks ? (Object.fromEntries(Object.entries(said).map(([id, l]) => [id, statement(l ?? '')])) as Say) : said };
+/** Apps that text in lowercase: a sentence never opens with a capital there, unless a name does. */
+const LOWERCASE = new Set<ConnectorId>(['dot', 'instinct']);
+/** Brands, coins, rails and acronyms keep their capitals wherever they fall. */
+const PROPER = /^(Visa|Mastercard|Muse|Dots|Grok|Duet|Claude|Instinct|Plaid|Chase|PIX|SPEI|ACH|SEPA|UPI|USDC|USDT|Base|Solana|Ethereum|Polygon|Arbitrum|Tron|Spark|Face|[A-Z]{2,}|[A-Z]+\$)/;
+const capitalized = (text: string) => text.match(/[A-ZÀ-Þ][A-Za-zÀ-ÿ’'-]+/g) ?? [];
+
+/**
+ * A line as a lowercase app texts it. The model is told to write that way; this holds it to it: each sentence opens
+ * lowercase, and so does "I". A name keeps its capital: one the conversation knows (`names`), or any word the line
+ * itself capitalizes mid-sentence.
+ */
+function lowercased(text: string, names: Set<string>): string {
+  const inside = new Set(text.match(/(?<=[a-zà-ÿ0-9,;:)]\s)[A-ZÀ-Þ][A-Za-zÀ-ÿ’'-]+/g) ?? []);
+  const named = (word: string) => PROPER.test(word) || names.has(word.replace(/[’']s$/, '')) || inside.has(word);
+  return text.replace(/(^|[.!?…]\s+|[\uD83C-\uD83E][\uDC00-\uDFFF]\s+|\n)([A-ZÀ-Þ][A-Za-zÀ-ÿ’'-]*)/g, (m, pre: string, word: string) => (named(word) ? m : pre + word[0].toLowerCase() + word.slice(1))).replace(/\bI(?=[’'\s,.!?]|$)/g, 'i');
+}
+
+/** The names a conversation has in it: who's saved, the company and its people, and whoever the model's calls have named. */
+function namesIn(state: PromptState, turns: Turn[], calls: ToolCall[]): Set<string> {
+  const inputs = [...turns.flatMap((t) => t.content.flatMap((b) => (b.type === 'tool_use' ? [b.input] : []))), ...calls.map((c) => c.input)];
+  const from = [
+    ...state.recipients.map((r) => r.name),
+    state.company ?? '',
+    state.owner ?? '',
+    ...(state.team ?? []),
+    ...inputs.flatMap((input) => Object.entries(input).flatMap(([k, v]) => (k !== 'say' && typeof v === 'string' ? [v] : []))),
+  ];
+  return new Set(from.flatMap(capitalized));
+}
+
+/** A call made ready for the phone: its line cleaned and in the app's casing, taps checked, and a product we don't list priced from the web. */
+async function tidy(key: string, call: ToolCall, voiced: (line: string) => string): Promise<ToolCall> {
+  const said = typeof call.input.say === 'string' && !SAYS_NOTHING.has(call.name) ? voiced(clean(call.input.say)) : '';
+  const input: ToolCall['input'] = { ...call.input, say: ENDS_TURN.has(call.name) ? said : statement(said) };
   if (!input.say) delete input.say;
   if (call.name === 'reply') input.suggestions = suggestionsOf(input.suggestions, false);
   if (call.name === 'offer_choices') input.options = suggestionsOf(input.options, true);

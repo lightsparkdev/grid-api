@@ -56,7 +56,6 @@ export function AppPanel({ connector, mode, opened, accounts }: AppPanelProps) {
                       onCompleted={a.onCompleted}
                       onDeclined={a.onDeclined}
                       reply={a.reply}
-                      read={a.read}
                     />
                   </div>
                 );
