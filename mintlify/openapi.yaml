@@ -26021,6 +26021,9 @@ components:
         - KRW_ACCOUNT
         - AUD_ACCOUNT
         - ARS_ACCOUNT
+        - CZK_ACCOUNT
+        - PLN_ACCOUNT
+        - SEK_ACCOUNT
       description: Type of external account or wallet
       example: AED_ACCOUNT
     BaseExternalAccountInfo:
@@ -31946,6 +31949,375 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/ArsBeneficiary'
                   BUSINESS: '#/components/schemas/ArsBusinessBeneficiary'
+    CzkAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - iban
+      properties:
+        accountType:
+          type: string
+          enum:
+            - CZK_ACCOUNT
+        iban:
+          type: string
+          description: Czech IBAN (24 characters, starting with CZ)
+          example: CZ6508000000192000145399
+          minLength: 24
+          maxLength: 24
+          pattern: ^CZ[0-9]{22}$
+      example:
+        accountType: CZK_ACCOUNT
+        iban: CZ6508000000192000145399
+    CzkAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/CzkAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+    CzkBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          maxLength: 250
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+        address:
+          $ref: '#/components/schemas/Address'
+    CzkBusinessBeneficiary:
+      title: Business Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - legalName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+        legalName:
+          type: string
+          maxLength: 250
+          description: The legal name of the business
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          maxLength: 100
+          description: The company registration number of the business
+        taxId:
+          type: string
+          maxLength: 100
+          description: The tax identification number of the business
+        countryOfResidence:
+          type: string
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+        address:
+          $ref: '#/components/schemas/Address'
+    CzkExternalAccountInfo:
+      title: CZK Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/CzkAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/CzkBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/CzkBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/CzkBeneficiary'
+                  BUSINESS: '#/components/schemas/CzkBusinessBeneficiary'
+    PlnAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - iban
+      properties:
+        accountType:
+          type: string
+          enum:
+            - PLN_ACCOUNT
+        iban:
+          type: string
+          description: Polish IBAN (28 characters, starting with PL)
+          example: PL61109010140000071219812874
+          minLength: 28
+          maxLength: 28
+          pattern: ^PL[0-9]{26}$
+      example:
+        accountType: PLN_ACCOUNT
+        iban: PL61109010140000071219812874
+    PlnAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/PlnAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+    PlnBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          maxLength: 250
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+        address:
+          $ref: '#/components/schemas/Address'
+    PlnBusinessBeneficiary:
+      title: Business Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - legalName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+        legalName:
+          type: string
+          maxLength: 250
+          description: The legal name of the business
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          maxLength: 100
+          description: The company registration number of the business
+        taxId:
+          type: string
+          maxLength: 100
+          description: The tax identification number of the business
+        countryOfResidence:
+          type: string
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+        address:
+          $ref: '#/components/schemas/Address'
+    PlnExternalAccountInfo:
+      title: PLN Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PlnAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/PlnBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/PlnBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/PlnBeneficiary'
+                  BUSINESS: '#/components/schemas/PlnBusinessBeneficiary'
+    SekAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - iban
+      properties:
+        accountType:
+          type: string
+          enum:
+            - SEK_ACCOUNT
+        iban:
+          type: string
+          description: Swedish IBAN (24 characters, starting with SE)
+          example: SE4550000000058398257466
+          minLength: 24
+          maxLength: 24
+          pattern: ^SE[0-9]{22}$
+      example:
+        accountType: SEK_ACCOUNT
+        iban: SE4550000000058398257466
+    SekAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/SekAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+    SekBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          maxLength: 250
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+        address:
+          $ref: '#/components/schemas/Address'
+    SekBusinessBeneficiary:
+      title: Business Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - legalName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+        legalName:
+          type: string
+          maxLength: 250
+          description: The legal name of the business
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          maxLength: 100
+          description: The company registration number of the business
+        taxId:
+          type: string
+          maxLength: 100
+          description: The tax identification number of the business
+        countryOfResidence:
+          type: string
+          description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+        address:
+          $ref: '#/components/schemas/Address'
+    SekExternalAccountInfo:
+      title: SEK Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/SekAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/SekBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/SekBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/SekBeneficiary'
+                  BUSINESS: '#/components/schemas/SekBusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountInfo'
@@ -32004,6 +32376,9 @@ components:
         - $ref: '#/components/schemas/KrwExternalAccountInfo'
         - $ref: '#/components/schemas/AudExternalAccountInfo'
         - $ref: '#/components/schemas/ArsExternalAccountInfo'
+        - $ref: '#/components/schemas/CzkExternalAccountInfo'
+        - $ref: '#/components/schemas/PlnExternalAccountInfo'
+        - $ref: '#/components/schemas/SekExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -32064,6 +32439,9 @@ components:
           KRW_ACCOUNT: '#/components/schemas/KrwExternalAccountInfo'
           AUD_ACCOUNT: '#/components/schemas/AudExternalAccountInfo'
           ARS_ACCOUNT: '#/components/schemas/ArsExternalAccountInfo'
+          CZK_ACCOUNT: '#/components/schemas/CzkExternalAccountInfo'
+          PLN_ACCOUNT: '#/components/schemas/PlnExternalAccountInfo'
+          SEK_ACCOUNT: '#/components/schemas/SekExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
@@ -33036,6 +33414,66 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/ArsBeneficiary'
                   BUSINESS: '#/components/schemas/ArsBusinessBeneficiary'
+    CzkExternalAccountCreateInfo:
+      title: CZK Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/CzkAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/CzkBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/CzkBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/CzkBeneficiary'
+                  BUSINESS: '#/components/schemas/CzkBusinessBeneficiary'
+    PlnExternalAccountCreateInfo:
+      title: PLN Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PlnAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/PlnBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/PlnBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/PlnBeneficiary'
+                  BUSINESS: '#/components/schemas/PlnBusinessBeneficiary'
+    SekExternalAccountCreateInfo:
+      title: SEK Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/SekAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/SekBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/SekBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/SekBeneficiary'
+                  BUSINESS: '#/components/schemas/SekBusinessBeneficiary'
     ExternalAccountCreateInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountCreateInfo'
@@ -33094,6 +33532,9 @@ components:
         - $ref: '#/components/schemas/KrwExternalAccountCreateInfo'
         - $ref: '#/components/schemas/AudExternalAccountCreateInfo'
         - $ref: '#/components/schemas/ArsExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/CzkExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/PlnExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/SekExternalAccountCreateInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -33153,6 +33594,9 @@ components:
           KRW_ACCOUNT: '#/components/schemas/KrwExternalAccountCreateInfo'
           AUD_ACCOUNT: '#/components/schemas/AudExternalAccountCreateInfo'
           ARS_ACCOUNT: '#/components/schemas/ArsExternalAccountCreateInfo'
+          CZK_ACCOUNT: '#/components/schemas/CzkExternalAccountCreateInfo'
+          PLN_ACCOUNT: '#/components/schemas/PlnExternalAccountCreateInfo'
+          SEK_ACCOUNT: '#/components/schemas/SekExternalAccountCreateInfo'
     CustomerExternalAccountCreateRequest:
       type: object
       required:

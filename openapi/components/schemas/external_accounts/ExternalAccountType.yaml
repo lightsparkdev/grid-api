@@ -56,5 +56,8 @@ enum:
 - KRW_ACCOUNT
 - AUD_ACCOUNT
 - ARS_ACCOUNT
+- CZK_ACCOUNT
+- PLN_ACCOUNT
+- SEK_ACCOUNT
 description: Type of external account or wallet
 example: AED_ACCOUNT

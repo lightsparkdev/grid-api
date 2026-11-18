@@ -1,0 +1,19 @@
+type: object
+required:
+- accountType
+- iban
+properties:
+  accountType:
+    type: string
+    enum:
+    - PLN_ACCOUNT
+  iban:
+    type: string
+    description: Polish IBAN (28 characters, starting with PL)
+    example: PL61109010140000071219812874
+    minLength: 28
+    maxLength: 28
+    pattern: ^PL[0-9]{26}$
+example:
+  accountType: PLN_ACCOUNT
+  iban: PL61109010140000071219812874

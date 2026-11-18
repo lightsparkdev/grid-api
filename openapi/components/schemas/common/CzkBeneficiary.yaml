@@ -1,0 +1,33 @@
+title: Individual Beneficiary
+type: object
+required:
+- beneficiaryType
+- fullName
+properties:
+  beneficiaryType:
+    type: string
+    enum:
+    - INDIVIDUAL
+  fullName:
+    type: string
+    maxLength: 250
+    description: The full name of the beneficiary
+  birthDate:
+    type: string
+    description: The birth date of the beneficiary
+  nationality:
+    type: string
+    description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+  email:
+    type: string
+    maxLength: 320
+    description: The email of the beneficiary
+  phoneNumber:
+    type: string
+    maxLength: 50
+    description: The phone number of the beneficiary
+  countryOfResidence:
+    type: string
+    description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+  address:
+    $ref: ./Address.yaml

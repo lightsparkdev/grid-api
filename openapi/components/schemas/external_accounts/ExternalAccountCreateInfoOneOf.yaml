@@ -55,6 +55,9 @@ oneOf:
 - $ref: ./KrwExternalAccountCreateInfo.yaml
 - $ref: ./AudExternalAccountCreateInfo.yaml
 - $ref: ./ArsExternalAccountCreateInfo.yaml
+- $ref: ./CzkExternalAccountCreateInfo.yaml
+- $ref: ./PlnExternalAccountCreateInfo.yaml
+- $ref: ./SekExternalAccountCreateInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -114,3 +117,6 @@ discriminator:
     KRW_ACCOUNT: ./KrwExternalAccountCreateInfo.yaml
     AUD_ACCOUNT: ./AudExternalAccountCreateInfo.yaml
     ARS_ACCOUNT: ./ArsExternalAccountCreateInfo.yaml
+    CZK_ACCOUNT: ./CzkExternalAccountCreateInfo.yaml
+    PLN_ACCOUNT: ./PlnExternalAccountCreateInfo.yaml
+    SEK_ACCOUNT: ./SekExternalAccountCreateInfo.yaml
