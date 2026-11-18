@@ -1,4 +1,4 @@
-Every Global Account action beyond receiving funds must be authorized by a session signing key. Sessions are issued by verifying one of four **credential types** on the account:
+Every Global Account action beyond receiving funds must be authorized by a session signing key. Sessions are issued by verifying one of five **credential types** on the account:
 
 | Type | When to use it |
 |---|---|
@@ -6,8 +6,9 @@ Every Global Account action beyond receiving funds must be authorized by a sessi
 | **`OAUTH`** | Your platform already authenticates the user via OIDC (Google, Apple, your own IdP) and you want Grid to trust the same identity. |
 | **`EMAIL_OTP`** | Lowest-friction option. Works on any device with email access — no biometric hardware, identity provider, or client SDK required beyond the code entry field. |
 | **`SMS_OTP`** | Same flow as `EMAIL_OTP`, but delivered to the user's phone number instead of email. Useful when phone is the primary contact channel. |
+| **`EVM_WALLET`** | The user already holds an Ethereum or other EVM wallet and you want it to sign them in. The wallet signs Grid's messages with `personal_sign` (EIP-191). |
 
-A single internal account can hold one `EMAIL_OTP` credential, one `SMS_OTP` credential, and multiple distinct `PASSKEY` credentials concurrently. `OAUTH` credentials can be added for each supported provider identity.
+A single internal account can hold one `EMAIL_OTP` credential, one `SMS_OTP` credential, and multiple distinct `PASSKEY` and `EVM_WALLET` credentials concurrently. `OAUTH` credentials can be added for each supported provider identity.
 
 ## Registration vs. verification
 
@@ -18,10 +19,11 @@ To produce a session:
 - **`EMAIL_OTP`** — if you need a fresh OTP or encryption target, first call **`POST /auth/credentials/{id}/challenge`**. Generate a P-256 client key pair, HPKE-encrypt the OTP value plus the public key into `encryptedOtpBundle`, then call **`POST /auth/credentials/{id}/verify`**. Grid returns a `202` signed-retry challenge; stamp its `payloadToSign` with the same private key and retry with `Grid-Wallet-Signature` plus `Request-Id`. The signed retry returns the session; the private key you generated is the session signing key.
 - **`OAUTH`** — call **`POST /auth/credentials/{id}/verify`** with a fresh OIDC token plus `clientPublicKey`. The response is the session; the private key matching `clientPublicKey` is the session signing key.
 - **`PASSKEY`** — call **`POST /auth/credentials/{id}/challenge`** with your `clientPublicKey` to receive a Grid-issued `challenge` and `requestId`, UTF-8 encode the challenge string for `navigator.credentials.get()`, then call **`POST /auth/credentials/{id}/verify`** with the resulting assertion and the `Request-Id` header. Grid bakes the `clientPublicKey` from the `/challenge` call into the session-creation payload, so it does **not** appear on the `/verify` body.
+- **`EVM_WALLET`** — call **`POST /auth/credentials/{id}/challenge`** with your `clientPublicKey` to receive a `payloadToSign` and `requestId`. Have the wallet sign `payloadToSign` with `personal_sign`, then call **`POST /auth/credentials/{id}/verify`** with the `signature` and the `Request-Id` header. The response is the session; the private key matching `clientPublicKey` is the session signing key.
 
 To add another credential, call **`POST /auth/credentials`** with the new credential details. Because the account already has an `EMAIL_OTP` credential, Grid returns a `202` signed-retry challenge. Stamp that `payloadToSign` with an active session signing key, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`. The signed retry returns the new `AuthMethod`.
 
-Re-authentication after a session expires skips the original `POST /auth/credentials` create call but otherwise follows the same per-type pattern. `EMAIL_OTP` re-auth needs a fresh OTP email, so call `POST /auth/credentials/{id}/challenge` first; `PASSKEY` re-auth uses the same `/challenge` (with `clientPublicKey`) → `/verify` two-step as the first authentication; `OAUTH` is the exception — since proof of control is a fresh OIDC token, there's nothing to pre-issue, so `/verify` alone suffices.
+Re-authentication after a session expires skips the original `POST /auth/credentials` create call but otherwise follows the same per-type pattern. `EMAIL_OTP` re-auth needs a fresh OTP email, so call `POST /auth/credentials/{id}/challenge` first; `PASSKEY` and `EVM_WALLET` re-auth use the same `/challenge` (with `clientPublicKey`) → `/verify` two-step as the first authentication; `OAUTH` is the exception — since proof of control is a fresh OIDC token, there's nothing to pre-issue, so `/verify` alone suffices.
 
 ## Passkey
 
@@ -652,6 +654,258 @@ The `EMAIL_OTP` address is the customer email on file, and the `SMS_OTP` number 
 
 A `PATCH` that changes the sign-in address without a verified replacement returns `400 AUTH_CREDENTIAL_VERIFICATION_REQUIRED`. The change must be sent on its own, so a request that also changes other customer fields returns `400 INVALID_INPUT`. Customers without an `EMAIL_OTP` or `SMS_OTP` credential of that type change `email` or `phoneNumber` with a plain update.
 
+## EVM wallet
+
+Use an `EVM_WALLET` credential when the user already holds an Ethereum or other EVM wallet and you want that wallet to sign them in. The wallet proves control by signing Grid's messages with `personal_sign` (EIP-191). The signature names no chain, so the same key and `0x` address work on any EVM chain, such as Ethereum, Base, Polygon, or Arbitrum. The credential's `nickname` is the wallet's address.
+
+The wallet must be an externally owned account: a wallet with a single private key. Smart-contract wallets that sign through ERC-1271, such as ERC-4337 accounts, are not supported. They have no single key whose signature recovers to their address, so registering one returns `401`. If your users hold a smart-contract account, register the externally owned account that owns it.
+
+The wallet signs only to prove control and to open sessions. After sign-in, the client signs account actions with its session signing key, as with every other credential type.
+
+### EVM wallet registration
+
+Every `EVM_WALLET` registration starts with an ownership challenge. Call `POST /auth/credentials` with the wallet's `address`. Grid answers `202` with a `payloadToSign` message it writes and a `requestId`:
+
+```bash
+curl -X POST "$GRID_BASE_URL/auth/credentials" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "EVM_WALLET",
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+    "address": "0x2c7536E3605D9C16a7a3D7b1898e529396a65c23"
+  }'
+```
+
+**Response (202):**
+
+```json
+{
+  "type": "EVM_WALLET",
+  "payloadToSign": "Example Wallet wants to link this wallet to your account.\n\nAddress: 0x2c7536E3605D9C16a7a3D7b1898e529396a65c23\nAccount: InternalAccount:019542f5-b3e7-1d02-0000-000000000002\nNonce: 7c4a8d09ca374e3e9e0d8c2b3e9a1f21\nIssued at: 2026-04-08T15:30:00+00:00\nExpires at: 2026-04-08T15:35:00+00:00",
+  "requestId": "Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21",
+  "expiresAt": "2026-04-08T15:35:00Z"
+}
+```
+
+The message is plain text. It opens with your platform's embedded-wallet `appName` and names the address, the account, a random nonce, and when it was issued and expires. The challenge expires 5 minutes after it is issued. The client constructs nothing: the wallet signs the message exactly as returned. Retry the same request with the signature as the `Grid-Wallet-Ownership-Signature` header and the `requestId` as `Request-Id`.
+
+```bash
+curl -X POST "$GRID_BASE_URL/auth/credentials" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Grid-Wallet-Ownership-Signature: 0x87f6856afaa7684bc6ecccef96246c155da984e7889dbdda1ae59940bdab8e676cd3055bd38ac073cd5710e3040f1ed08073ca026266caeb097213d52665c4c01b" \
+  -H "Request-Id: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+  -d '{
+    "type": "EVM_WALLET",
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+    "address": "0x2c7536E3605D9C16a7a3D7b1898e529396a65c23"
+  }'
+```
+
+What the retry returns depends on whether the account already has a wallet.
+
+#### As the account's first credential
+
+If the account has no wallet yet, the ownership retry creates it, with this EVM wallet as its only credential, and returns `201` with the `AuthMethod`. No session signature is needed, because there is no existing credential to sign with.
+
+```json
+{
+  "id": "AuthMethod:019542f5-b3e7-1d02-0000-000000000001",
+  "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+  "type": "EVM_WALLET",
+  "nickname": "0x2c7536E3605D9C16a7a3D7b1898e529396a65c23",
+  "createdAt": "2026-04-08T15:30:01Z",
+  "updatedAt": "2026-04-08T15:30:01Z"
+}
+```
+
+#### On an account that already has a wallet
+
+Adding an EVM wallet to an existing wallet takes three calls. The wallet proves control, then an active session on an existing credential approves the add.
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant W as EVM wallet
+  participant IB as Integrator backend
+  participant G as Grid
+
+  C->>IB: POST /my-backend/evm-wallet/register { address }
+  IB->>G: POST /auth/credentials { type: EVM_WALLET, accountId, address }
+  G-->>IB: 202 { payloadToSign, requestId, expiresAt }
+  IB-->>C: { payloadToSign, requestId }
+  C->>W: personal_sign(payloadToSign)
+  W-->>C: ownershipSignature
+  C->>IB: { ownershipSignature, requestId }
+  IB->>G: Same POST<br/>Grid-Wallet-Ownership-Signature: ownershipSignature<br/>Request-Id: requestId
+  G-->>IB: 202 { payloadToSign, requestId, expiresAt }
+  IB-->>C: { payloadToSign, requestId }
+  C->>C: stamp(payloadToSign, existingSessionPrivateKey)
+  C->>IB: { stamp, requestId }
+  IB->>G: Same POST<br/>Grid-Wallet-Signature: stamp<br/>Request-Id: requestId
+  G-->>IB: 201 AuthMethod { id, type: EVM_WALLET, nickname: address, … }
+  IB-->>C: { credentialId }
+```
+
+1. **Ownership challenge.** `POST /auth/credentials` returns the first `202`, as shown above.
+2. **Ownership proof.** The retry with `Grid-Wallet-Ownership-Signature` returns a second `202` with a new `payloadToSign` and `requestId`.
+3. **Approval.** Stamp the second `payloadToSign` with the session signing key of an active session on an existing credential, then retry the same request with `Grid-Wallet-Signature` and the second `requestId` as `Request-Id`. Grid returns `201` with the `AuthMethod`. This retry can return a <a href="#handling-a-still-processing-response">still-processing `200`</a>; re-send it until you get the `201`.
+
+Each `202` expires 5 minutes after it is issued. An administrator's session cannot approve the add (`403 FORBIDDEN`). The same EVM wallet can be a credential on more than one internal account.
+
+### EVM wallet sign-in
+
+Signing in follows the same `/challenge` → `/verify` shape as a passkey, with the wallet's signature in place of the WebAuthn assertion. Use it for the first session after registration and to reauthenticate after a session expires.
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant W as EVM wallet
+  participant IB as Integrator backend
+  participant G as Grid
+
+  C->>C: generateClientKeyPair()
+  C->>IB: POST /my-backend/evm-wallet/challenge (clientPublicKey)
+  IB->>G: POST /auth/credentials/{id}/challenge<br/>{ clientPublicKey }
+  G-->>IB: 200 EvmWalletAuthChallenge { payloadToSign, requestId, expiresAt }
+  IB-->>C: { payloadToSign, requestId }
+  C->>W: personal_sign(payloadToSign)
+  W-->>C: signature
+  C->>IB: POST /my-backend/evm-wallet/verify (signature, requestId)
+  IB->>G: POST /auth/credentials/{id}/verify<br/>Request-Id: requestId<br/>{ type: EVM_WALLET, signature }
+  G-->>IB: 200 AuthSession { id, expiresAt }
+  IB-->>C: { sessionId, expiresAt }
+  C->>C: hold the client private key as the session signing key
+```
+
+```bash
+curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000001/challenge" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientPublicKey": "02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"
+  }'
+```
+
+**Response (200):** an `EvmWalletAuthChallenge`, which is the credential's fields plus `payloadToSign`, `requestId`, and `expiresAt`. Here `payloadToSign` is the session request that registers your `clientPublicKey` as the session key. The wallet signs it as given, without parsing, re-serializing, or trimming it.
+
+```bash
+curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000001/verify" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Request-Id: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
+  -d '{
+    "type": "EVM_WALLET",
+    "signature": "0x87f6856afaa7684bc6ecccef96246c155da984e7889dbdda1ae59940bdab8e676cd3055bd38ac073cd5710e3040f1ed08073ca026266caeb097213d52665c4c01b"
+  }'
+```
+
+**Response (200):** the `AuthSession`. The private key matching `clientPublicKey` is now the session signing key. `signature` is the `0x`-prefixed 65-byte `personal_sign` result (r, s and v), as wallets return it.
+
+#### Client sample code
+
+The client talks to your integrator backend, never to Grid. This sample uses [viem](https://viem.sh) with a browser wallet. `generateClientKeyPair()` and `buildGridWalletSignature()` are the helpers from <a href="client-keys">Client keys</a>. The approval and `/verify` calls can return `200 { status: "PROCESSING" }`. `sendUntilSettled()` re-sends the identical request with backoff until Grid returns the result. See <a href="#handling-a-still-processing-response">Handling a still-processing response</a>.
+
+```typescript Web (TypeScript)
+import { createWalletClient, custom } from "viem";
+
+const walletClient = createWalletClient({ transport: custom(window.ethereum!) });
+const [address] = await walletClient.requestAddresses();
+
+// Re-sends the identical request while Grid reports it is still processing.
+async function sendUntilSettled(url: string, body: unknown) {
+  for (let delayMs = 500; ; delayMs = Math.min(delayMs * 2, 8_000)) {
+    const res = await fetch(url, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    if (json.status !== "PROCESSING") return json;
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+}
+
+// 1. Register the wallet. Your backend calls POST /auth/credentials.
+const registerRes = await fetch("/my-backend/evm-wallet/register", {
+  method: "POST",
+  credentials: "include",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ address }),
+});
+const ownership = await registerRes.json();
+
+// 2. The wallet signs Grid's ownership message exactly as returned.
+//    signMessage with a string message is personal_sign (EIP-191).
+const ownershipSignature = await walletClient.signMessage({
+  account: address,
+  message: ownership.payloadToSign,
+});
+
+// 3. Your backend retries with Grid-Wallet-Ownership-Signature and Request-Id.
+//    On an account that already has a wallet, Grid answers a second 202.
+const proofRes = await fetch("/my-backend/evm-wallet/register/proof", {
+  method: "POST",
+  credentials: "include",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ address, requestId: ownership.requestId, ownershipSignature }),
+});
+let registered = await proofRes.json();
+
+if (registered.payloadToSign) {
+  // 4. An existing session approves the add.
+  const gridWalletSignature = await buildGridWalletSignature(
+    existingSessionPrivateKeyBytes,
+    registered.payloadToSign,
+  );
+  registered = await sendUntilSettled("/my-backend/evm-wallet/register/complete", {
+    address,
+    requestId: registered.requestId,
+    gridWalletSignature,
+  });
+}
+const { credentialId } = registered;
+
+// 5. Sign in: ask for a challenge bound to a fresh client key pair.
+const { privateKey, publicKeyHex } = generateClientKeyPair();
+const challengeRes = await fetch("/my-backend/evm-wallet/challenge", {
+  method: "POST",
+  credentials: "include",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ credentialId, clientPublicKey: publicKeyHex }),
+});
+const { payloadToSign, requestId } = await challengeRes.json();
+
+// 6. The wallet signs the session request; your backend relays it to /verify.
+const signature = await walletClient.signMessage({ account: address, message: payloadToSign });
+const { sessionId, expiresAt } = await sendUntilSettled("/my-backend/evm-wallet/verify", {
+  credentialId,
+  requestId,
+  signature,
+});
+// privateKey is now the session signing key until expiresAt.
+```
+
+<Note>
+  In sandbox, `EVM_WALLET` has no magic signature. The sandbox verifies the `personal_sign` signature as production does, so sign with any test key. See [Sandbox testing](/global-accounts/platform-tools/sandbox-testing).
+</Note>
+
+### Revoke an EVM wallet credential
+
+Revoke an `EVM_WALLET` credential with `DELETE /auth/credentials/{id}`, like any other credential. Sessions the wallet already opened stay valid until they expire. See <a href="#revoke-a-credential">Revoke a credential</a>.
+
+### EVM wallet errors
+
+| Status | Code | When |
+|---|---|---|
+| `400` | `WALLET_CREDENTIAL_ALREADY_EXISTS` | The wallet is already a credential on this account. |
+| `400` | `INVALID_INPUT` | `address` is not a `0x`-prefixed 20-byte address, or `clientPublicKey` is missing or not a compressed P-256 key in lowercase hex. |
+| `401` | `UNAUTHORIZED` | `Grid-Wallet-Ownership-Signature` or `signature` is missing, malformed, or not made by the wallet over the challenge. Also returned when `Request-Id` does not match an unexpired challenge, and for a smart-contract wallet. |
+| `403` | `FORBIDDEN` | An administrator's session signed the approval. |
+| `409` | `WALLET_NOT_PROVISIONED` | Grid is still creating the account's wallet. Retry once the account's `status` is `ACTIVE`. |
+
 ## Managing credentials
 
 Every Global Account starts with a single `EMAIL_OTP` credential — the one used in the <a href="overview#quickstart">quickstart</a>. In production, encourage customers to register a backup credential, such as a passkey or OAuth credential, so the account is recoverable if their primary device is lost. Adding, revoking, and rotating credentials after the first all go through the same **two-step signed-retry** pattern.
@@ -760,7 +1014,7 @@ To handle it:
 
 ### Add an additional credential
 
-Requires an active session on an *existing* credential on the same account. The first call uses the normal credential-create body; Grid detects the pre-existing credential and responds `202` instead of `201`. `OAUTH` and `PASSKEY` are the typical additional credential types. `EMAIL_OTP` can be added back only after the existing email OTP credential has been removed, because each account supports one.
+Requires an active session on an *existing* credential on the same account. The first call uses the normal credential-create body; Grid detects the pre-existing credential and responds `202` instead of `201`. `OAUTH`, `PASSKEY`, and `EVM_WALLET` are the typical additional credential types. An `EVM_WALLET` credential first proves control of the wallet with an ownership challenge, so it takes one more call than the steps below. See <a href="#on-an-account-that-already-has-a-wallet">EVM wallet registration</a>. `EMAIL_OTP` can be added back only after the existing email OTP credential has been removed, because each account supports one.
 
 <Steps>
   <Step title="First call — receive the challenge">
@@ -808,12 +1062,12 @@ Requires an active session on an *existing* credential on the same account. The 
     **Response (201):** a plain `AuthMethod`. If the underlying wallet-provider activity is still settling, this returns `200 { status: "PROCESSING" }` instead — see <a href="#handling-a-still-processing-response">handling a still-processing response</a>; re-send the identical signed request until you get the `201`.
   </Step>
   <Step title="Activate the new credential">
-    Activate the new credential the same way you would activate the first credential of that type — `OAUTH` goes straight to `POST /auth/credentials/{id}/verify` with a fresh `clientPublicKey`; `EMAIL_OTP` uses the `otpEncryptionTargetBundle` from the signed-retry registration response when present, or first calls `POST /auth/credentials/{id}/challenge` if the bundle is absent; `PASSKEY` first calls `POST /auth/credentials/{id}/challenge` with the `clientPublicKey` to get a Grid-issued WebAuthn challenge, then `POST /auth/credentials/{id}/verify` with the assertion and the `Request-Id` header.
+    Activate the new credential the same way you would activate the first credential of that type — `OAUTH` goes straight to `POST /auth/credentials/{id}/verify` with a fresh `clientPublicKey`; `EMAIL_OTP` uses the `otpEncryptionTargetBundle` from the signed-retry registration response when present, or first calls `POST /auth/credentials/{id}/challenge` if the bundle is absent; `PASSKEY` first calls `POST /auth/credentials/{id}/challenge` with the `clientPublicKey` to get a Grid-issued WebAuthn challenge, then `POST /auth/credentials/{id}/verify` with the assertion and the `Request-Id` header; `EVM_WALLET` calls the same `/challenge` with the `clientPublicKey`, then `/verify` with the wallet's `signature` and the `Request-Id` header.
   </Step>
 </Steps>
 
 <Note>
-  The account holder may have one `EMAIL_OTP` credential per internal account; an administrator's credentials, added with `POST /auth/admin-credentials`, are not counted. An administrator's session cannot add credentials with `POST /auth/credentials` (`403 FORBIDDEN`); administrators add their own with `POST /auth/admin-credentials`. Multiple distinct `PASSKEY` credentials are allowed; registering the same WebAuthn credentialId twice returns `400 PASSKEY_CREDENTIAL_ALREADY_EXISTS`.
+  The account holder may have one `EMAIL_OTP` credential per internal account; an administrator's credentials, added with `POST /auth/admin-credentials`, are not counted. An administrator's session cannot add credentials with `POST /auth/credentials` (`403 FORBIDDEN`); administrators add their own with `POST /auth/admin-credentials`. Multiple distinct `PASSKEY` credentials are allowed; registering the same WebAuthn credentialId twice returns `400 PASSKEY_CREDENTIAL_ALREADY_EXISTS`. Multiple distinct `EVM_WALLET` credentials are allowed too; registering a wallet already on the account returns `400 WALLET_CREDENTIAL_ALREADY_EXISTS`.
 </Note>
 
 ### Revoke a credential
@@ -849,6 +1103,6 @@ A credential is revoked by signing with a session from **a different credential 
       -H "Request-Id: Request:9f7a2c10-5e88-4fb1-bd0e-1c3a8e7b2d45"
     ```
 
-    **Response:** `204 No Content`. All active sessions issued by the revoked credential are also revoked. If the revocation is still settling at the wallet provider, this returns `200 { status: "PROCESSING" }` instead — <a href="#handling-a-still-processing-response">re-send the identical `DELETE`</a> until you get the `204`, and show the credential as "removing…" in your UI in the meantime rather than assuming success or failure.
+    **Response:** `204 No Content`. Sessions the revoked credential already opened stay valid until they expire. To end one now, revoke it with `DELETE /auth/sessions/{id}`. See <a href="managing-sessions#revoke-a-session">Revoke a session</a>. If the revocation is still settling at the wallet provider, this returns `200 { status: "PROCESSING" }` instead — <a href="#handling-a-still-processing-response">re-send the identical `DELETE`</a> until you get the `204`, and show the credential as "removing…" in your UI in the meantime rather than assuming success or failure.
   </Step>
 </Steps>
