@@ -10,9 +10,18 @@ Every Global Account action beyond receiving funds must be authorized by a sessi
 
 A single internal account can hold one `EMAIL_OTP` credential, one `SMS_OTP` credential, and multiple distinct `PASSKEY` and `EVM_WALLET` credentials concurrently. `OAUTH` credentials can be added for each supported provider identity.
 
+## When the wallet is created
+
+When a Global Account's wallet is created depends on your platform's `embeddedWalletConfig.walletProvisioning`, set with [`PATCH /config`](/api-reference/platform-configuration/update-platform-configuration). Grid reads it once, when the customer's first Global Account opens.
+
+- **`AT_CUSTOMER_CREATE`** (default): Grid creates the wallet when the customer's Global Account opens, with an `EMAIL_OTP` credential tied to the customer email on file. Use that credential to mint the first session. See <a href="#default-email-otp-credential">Default Email OTP credential</a>. A customer with no email on file when the account opens gets the `AT_FIRST_CREDENTIAL` behavior.
+- **`AT_FIRST_CREDENTIAL`**: the Global Account is created as `PENDING`, with no wallet and no credentials. The first credential you add with `POST /auth/credentials` creates the wallet, with that credential as its only one. It needs no signature and returns `201`. It can be `EMAIL_OTP`, `OAUTH`, `PASSKEY`, or `EVM_WALLET`. An `EMAIL_OTP` first credential uses the customer email on file. `SMS_OTP` cannot be first and returns `409 WALLET_NOT_PROVISIONED`.
+
+While Grid is still creating a wallet, `POST /auth/credentials` returns `409 WALLET_NOT_PROVISIONED`. Retry once the account's `status` is `ACTIVE`. Activate the first credential the same way you would any new credential of its type, as described below. An `EVM_WALLET` first credential also proves control of the wallet first. See <a href="#as-the-accounts-first-credential">EVM wallet registration</a>.
+
 ## Registration vs. verification
 
-Global Accounts are initialized with an `EMAIL_OTP` credential tied to the customer email on the internal account. Use that credential to mint the first session, or use an already-registered `OAUTH` or `PASSKEY` credential after you add one.
+Use the account's first credential to mint the first session, or use an `OAUTH`, `PASSKEY`, or `EVM_WALLET` credential after you add one.
 
 To produce a session:
 
@@ -21,7 +30,7 @@ To produce a session:
 - **`PASSKEY`** — call **`POST /auth/credentials/{id}/challenge`** with your `clientPublicKey` to receive a Grid-issued `challenge` and `requestId`, UTF-8 encode the challenge string for `navigator.credentials.get()`, then call **`POST /auth/credentials/{id}/verify`** with the resulting assertion and the `Request-Id` header. Grid bakes the `clientPublicKey` from the `/challenge` call into the session-creation payload, so it does **not** appear on the `/verify` body.
 - **`EVM_WALLET`** — call **`POST /auth/credentials/{id}/challenge`** with your `clientPublicKey` to receive a `payloadToSign` and `requestId`. Have the wallet sign `payloadToSign` with `personal_sign`, then call **`POST /auth/credentials/{id}/verify`** with the `signature` and the `Request-Id` header. The response is the session; the private key matching `clientPublicKey` is the session signing key.
 
-To add another credential, call **`POST /auth/credentials`** with the new credential details. Because the account already has an `EMAIL_OTP` credential, Grid returns a `202` signed-retry challenge. Stamp that `payloadToSign` with an active session signing key, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`. The signed retry returns the new `AuthMethod`.
+To add another credential, call **`POST /auth/credentials`** with the new credential details. Because the account already has a credential, Grid returns a `202` signed-retry challenge. Stamp that `payloadToSign` with an active session signing key, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`. The signed retry returns the new `AuthMethod`.
 
 Re-authentication after a session expires skips the original `POST /auth/credentials` create call but otherwise follows the same per-type pattern. `EMAIL_OTP` re-auth needs a fresh OTP email, so call `POST /auth/credentials/{id}/challenge` first; `PASSKEY` and `EVM_WALLET` re-auth use the same `/challenge` (with `clientPublicKey`) → `/verify` two-step as the first authentication; `OAUTH` is the exception — since proof of control is a fresh OIDC token, there's nothing to pre-issue, so `/verify` alone suffices.
 
@@ -481,11 +490,11 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
 
 ## Email OTP
 
-The lowest-friction credential type — works on any device with email access and requires no biometric hardware, identity provider, or client-side setup beyond an input field for the code. Global Accounts are initialized with an `EMAIL_OTP` credential; call `POST /auth/credentials` for `EMAIL_OTP` only if the credential was removed and you need to add it back.
+The lowest-friction credential type — works on any device with email access and requires no biometric hardware, identity provider, or client-side setup beyond an input field for the code. Under the default `AT_CUSTOMER_CREATE` wallet provisioning, Grid creates the account's `EMAIL_OTP` credential with the wallet. Call `POST /auth/credentials` for `EMAIL_OTP` when it is the first credential under `AT_FIRST_CREDENTIAL`, or to add it back after it was removed.
 
 ### Default Email OTP credential
 
-Grid creates the first `EMAIL_OTP` credential when the Global Account is provisioned. The credential uses the customer email on file for the internal account. To authenticate with it, send an OTP challenge, then verify using the secure encrypted OTP flow.
+Under `AT_CUSTOMER_CREATE` (the default), Grid creates the first `EMAIL_OTP` credential when it creates the wallet. Under `AT_FIRST_CREDENTIAL`, there is no default credential: the first credential you add creates the wallet. See <a href="#when-the-wallet-is-created">When the wallet is created</a>. The credential uses the customer email on file for the internal account. To authenticate with it, send an OTP challenge, then verify using the secure encrypted OTP flow.
 
 The client never sends the plaintext OTP code. Instead, it HPKE-encrypts the code (together with a fresh public key) to an enclave bundle returned from the challenge. The server is a pass-through and never sees the plaintext.
 
@@ -707,7 +716,7 @@ What the retry returns depends on whether the account already has a wallet.
 
 #### As the account's first credential
 
-If the account has no wallet yet, the ownership retry creates it, with this EVM wallet as its only credential, and returns `201` with the `AuthMethod`. No session signature is needed, because there is no existing credential to sign with.
+If the account has no wallet yet, as under `AT_FIRST_CREDENTIAL` (see <a href="#when-the-wallet-is-created">When the wallet is created</a>), the ownership retry creates it, with this EVM wallet as its only credential, and returns `201` with the `AuthMethod`. No session signature is needed, because there is no existing credential to sign with.
 
 ```json
 {
@@ -908,7 +917,7 @@ Revoke an `EVM_WALLET` credential with `DELETE /auth/credentials/{id}`, like any
 
 ## Managing credentials
 
-Every Global Account starts with a single `EMAIL_OTP` credential — the one used in the <a href="overview#quickstart">quickstart</a>. In production, encourage customers to register a backup credential, such as a passkey or OAuth credential, so the account is recoverable if their primary device is lost. Adding, revoking, and rotating credentials after the first all go through the same **two-step signed-retry** pattern.
+Under the default `AT_CUSTOMER_CREATE` wallet provisioning, every Global Account starts with a single `EMAIL_OTP` credential — the one used in the <a href="overview#quickstart">quickstart</a>. Under `AT_FIRST_CREDENTIAL`, it starts with the first credential you add. In production, encourage customers to register a backup credential, such as a passkey or OAuth credential, so the account is recoverable if their primary device is lost. Adding, revoking, and rotating credentials after the first all go through the same **two-step signed-retry** pattern.
 
 ### List credentials
 

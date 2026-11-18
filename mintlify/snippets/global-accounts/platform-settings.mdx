@@ -1,0 +1,33 @@
+## Global Account settings
+
+Global Account settings live under `embeddedWalletConfig` in the platform configuration. You can set them once your platform supports Global Accounts, with `USDB` in its supported currencies. Fields you leave out of an update keep their current values.
+
+| Field | Default | What it sets |
+|---|---|---|
+| `walletProvisioning` | `AT_CUSTOMER_CREATE` | When each new customer's wallet is created. |
+| `sessionLifetime` | `900` (15 minutes) | How long each new session lasts, in seconds. |
+
+```bash
+curl -sS -X PATCH "https://api.lightspark.com/grid/2025-10-13/config" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "embeddedWalletConfig": {
+      "walletProvisioning": "AT_FIRST_CREDENTIAL",
+      "sessionLifetime": 3600
+    }
+  }'
+```
+
+### Wallet provisioning
+
+`walletProvisioning` sets when a customer's wallet is created:
+
+- **`AT_CUSTOMER_CREATE`** (default): the wallet is created when the customer's first Global Account opens, once the customer is eligible. The customer's email becomes the wallet's first `EMAIL_OTP` credential, so creating a customer requires an email. A customer with no email on file when the account opens gets the `AT_FIRST_CREDENTIAL` behavior.
+- **`AT_FIRST_CREDENTIAL`**: the Global Account is created once the customer is eligible and stays `PENDING` with no wallet. The first credential you add creates the wallet. It can be `EMAIL_OTP`, `OAUTH`, `PASSKEY`, or `EVM_WALLET`, but not `SMS_OTP`. Creating a customer requires no email.
+
+Grid reads this value once, when the customer's first Global Account opens. Changing it applies to customers whose Global Account hasn't opened yet. See <a href="../global-accounts/authentication#when-the-wallet-is-created">When the wallet is created</a>.
+
+### Session lifetime
+
+`sessionLifetime` is how long each new session lasts, in seconds, for every sign-in and every session refresh by your customers. It must be at least `60`. The maximum is one year, and a larger value is rejected with `400 INVALID_INPUT`. A change applies to sessions created after it; existing sessions keep their expiry. See <a href="../global-accounts/managing-sessions">Sessions</a>.
