@@ -28,12 +28,14 @@ properties:
   nickname:
     type: string
     description: >-
-      Human-readable identifier for this credential. For EMAIL_OTP credentials
-      this is the email address; for SMS_OTP credentials this is the E.164
-      phone number; for OAUTH credentials it is typically the email claim from
-      the OIDC token; for PASSKEY credentials it is the validated nickname
-      provided at registration time; for EVM_WALLET credentials it is the
-      wallet's address.
+      Human-readable label for this credential. It is the `nickname` given
+      when the credential was created, or the latest one set with
+      `PATCH /auth/credentials/{id}`. Without one, it defaults by type: for
+      EMAIL_OTP credentials the email address; for SMS_OTP credentials the
+      E.164 phone number; for OAUTH credentials the customer's email on the
+      account, or their name when it has no email; for EVM_WALLET credentials
+      the wallet's address. A PASSKEY credential's is the nickname required at
+      registration.
     example: example@lightspark.com
   adminReference:
     type: string
