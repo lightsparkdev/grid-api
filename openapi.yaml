@@ -35363,6 +35363,42 @@ components:
         Short text that labels this payment on the counterparty's bank statement, such as `PAYROLL` or `INVOICE`. Used only when the quote moves money over ACH, for both an ACH credit to an external bank account and an ACH debit pulling from one, where it is sent as the NACHA Company Entry Description. Sending it on a quote that moves no ACH entry returns `400 INVALID_INPUT`. Free-text payment details belong in `remittanceInformation`, which ACH carries in the addenda record.
         Printable ASCII, up to 10 characters. Grid uses its default when omitted. Blank values, all zeros, `MISC`, and the values NACHA reserves for system entries (`REVERSAL`, `RETURN FEE`, `AUTOENROLL`, `NONSETTLED`, `RECLAIM`) are rejected with `400 INVALID_INPUT`, in any letter case and ignoring surrounding spaces.
       example: PAYROLL
+    PullDebitAuthorization:
+      type: object
+      description: Your record of the customer authorizing a pull from their external bank account. Send it when the quote's source is an external account. Grid stores it with the pull so it can be produced if the customer's bank asks for proof of authorization. It does not change how the pull is processed.
+      required:
+        - authorizedAt
+        - textVersion
+        - ipAddress
+        - userAgent
+      properties:
+        authorizedAt:
+          type: string
+          format: date-time
+          description: When the customer authorized the debit. Must not be more than five minutes in the future.
+          example: '2026-11-18T18:01:00Z'
+        textVersion:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Your identifier or version for the authorization text you showed the customer.
+          example: bank-pull-terms-v3
+        textSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+          description: Lowercase hex SHA-256 of the UTF-8 authorization text you showed.
+          example: 2d494b47886a8499234de8b6990a843d38006488697234aad1a00c053407993c
+        ipAddress:
+          type: string
+          maxLength: 45
+          description: IPv4 or IPv6 address of the customer's request.
+          example: 203.0.113.42
+        userAgent:
+          type: string
+          minLength: 1
+          maxLength: 1024
+          description: User agent of the customer's request.
+          example: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36
     QuoteRequest:
       type: object
       required:
@@ -35422,6 +35458,10 @@ components:
           example: '12345'
         statementDescriptor:
           $ref: '#/components/schemas/StatementDescriptor'
+        debitAuthorization:
+          allOf:
+            - $ref: '#/components/schemas/PullDebitAuthorization'
+          description: The customer's authorization of this pull, when the source is an external account. Optional. Any other source rejects it with `400 INVALID_INPUT`.
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
         documentIds:

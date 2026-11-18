@@ -82,6 +82,13 @@ properties:
     example: '12345'
   statementDescriptor:
     $ref: ./StatementDescriptor.yaml
+  debitAuthorization:
+    allOf:
+      - $ref: ./PullDebitAuthorization.yaml
+    description: >-
+      The customer's authorization of this pull, when the source is an
+      external account. Optional. Any other source rejects it with
+      `400 INVALID_INPUT`.
   purposeOfPayment:
     $ref: ./PurposeOfPayment.yaml
   documentIds:
