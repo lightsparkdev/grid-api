@@ -48,6 +48,7 @@ description: >-
 
 
   These rail names are deprecated for payouts: `ACH_COLOMBIA`, `BRE_B`, `SEPA`,
-  `SEPA_INSTANT`, `NEFT`, `RTGS`, `INSTAPAY` and `PESONET`. Requests that send them still
-  work. Payout responses will show `BANK_TRANSFER` in their place.
+  `SEPA_INSTANT`, `NEFT`, `RTGS`, `INSTAPAY`, `PESONET`, `FASTER_PAYMENTS` and `SPEI`.
+  Requests that send them still work. Payout responses will show `BANK_TRANSFER` in
+  their place.
 example: ACH
