@@ -114,8 +114,8 @@ Reuse the `lookupId` on `POST /quotes` to price against the same lookup. It is r
 UMA destinations.
 
 <Note>
-  Clearing these bounds doesn't guarantee the quote succeeds. Cumulative limits are enforced
-  at quote time and surface separately as `DAILY_VOLUME_LIMIT_EXCEEDED` (HTTP 429), and a
-  per-transaction ceiling can surface as `TRANSACTION_SIZE_LIMIT_EXCEEDED`. Handle both
-  alongside `AMOUNT_OUT_OF_RANGE`.
+  Clearing these bounds doesn't guarantee the quote succeeds. The daily volume limit is checked
+  when the quote is executed, not when it is created, so executing a quote can return
+  `DAILY_VOLUME_LIMIT_EXCEEDED` (HTTP 429), and a per-transaction ceiling can surface as
+  `TRANSACTION_SIZE_LIMIT_EXCEEDED`. Handle both alongside `AMOUNT_OUT_OF_RANGE`.
 </Note>
