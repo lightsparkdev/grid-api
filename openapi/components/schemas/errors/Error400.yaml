@@ -54,6 +54,7 @@ properties:
       | CARDHOLDER_AGREEMENT_NOT_ACCEPTED | The customer has not accepted the cardholder agreement the platform requires before a card is issued |
       | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
       | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
+      | BANK_ACCOUNT_OWNER_MISMATCH | The bank does not list the customer as the bank account's owner |
       | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
       | QUOTE_EXPIRED | The quote has expired; request a new quote |
       | QUOTE_RATE_UNAVAILABLE | No exchange rate is available for this corridor right now |
@@ -123,6 +124,7 @@ properties:
       - CARDHOLDER_AGREEMENT_NOT_ACCEPTED
       - TRANSACTION_SIZE_LIMIT_EXCEEDED
       - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
+      - BANK_ACCOUNT_OWNER_MISMATCH
       - INSUFFICIENT_FUNDS
       - QUOTE_EXPIRED
       - QUOTE_RATE_UNAVAILABLE

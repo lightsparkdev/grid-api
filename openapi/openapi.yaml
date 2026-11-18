@@ -344,6 +344,10 @@ paths:
     $ref: paths/customers/customers_internal_accounts.yaml
   /platform/internal-accounts:
     $ref: paths/platform/platform_internal_accounts.yaml
+  /customers/{customerId}/bank-link-token:
+    $ref: paths/customers/customers_{customerId}_bank-link-token.yaml
+  /customers/{customerId}/bank-links:
+    $ref: paths/customers/customers_{customerId}_bank-links.yaml
   /customers/external-accounts:
     $ref: paths/customers/customers_external_accounts.yaml
   /customers/external-accounts/{externalAccountId}:

@@ -3030,6 +3030,140 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/bank-link-token:
+    parameters:
+      - name: customerId
+        in: path
+        description: The Grid customer ID to link a bank account for.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Create a bank link token
+      description: |
+        Create a Plaid Link token for one of your customers. Open Plaid Link with it in your application; when the customer finishes, send the `public_token` and selected account ID from Plaid Link to `POST /customers/{customerId}/bank-links`.
+
+        Plaid Link shows `clientName` as the name of the application the customer is connecting to. Grid uses your platform's name when you do not send one.
+
+        Available to `INDIVIDUAL` and `BUSINESS` customers. The customer must have a full name (`INDIVIDUAL`) or a business legal name (`BUSINESS`) on file, because the bank account's owner name is matched against it.
+      operationId: createCustomerBankLinkToken
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankLinkTokenCreateRequest'
+      responses:
+        '201':
+          description: Link token created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankLinkToken'
+        '400':
+          description: Bad request. `MISSING_MANDATORY_USER_INFO` when the customer has no name on file to match the bank account's owner against.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Bank linking is not enabled for this platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
+  /customers/{customerId}/bank-links:
+    parameters:
+      - name: customerId
+        in: path
+        description: The Grid customer ID the bank account was linked for.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Complete a bank link
+      description: |
+        Finish linking a bank account through Plaid Link. Grid exchanges the `publicToken`, reads the account and routing numbers from Plaid, and checks that the bank lists the customer as the account's owner: the customer's full name for an `INDIVIDUAL`, or the business legal name for a `BUSINESS`.
+
+        On success Grid returns the customer's external account for that bank account, creating it if the customer does not already have one with the same account and routing numbers, and records the account as validated for ACH. If the owner name does not match, Grid stores nothing and returns `BANK_ACCOUNT_OWNER_MISMATCH`.
+
+        Safe to retry with the same `publicToken`: a retry after success returns the same external account.
+      operationId: createCustomerBankLink
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankLinkCreateRequest'
+      responses:
+        '200':
+          description: The bank account was already linked with this `publicToken`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccount'
+        '201':
+          description: Bank account linked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccount'
+        '400':
+          description: Bad request. `BANK_ACCOUNT_OWNER_MISMATCH` when the bank does not list the customer as the account's owner. `INVALID_BANK_ACCOUNT` when the account is not a US checking or savings account with account and routing numbers, Plaid cannot read it, or it cannot be validated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Bank linking is not enabled for this platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /customers/external-accounts:
     get:
       summary: List Customer external accounts
@@ -21867,6 +22001,7 @@ components:
             | CARDHOLDER_AGREEMENT_NOT_ACCEPTED | The customer has not accepted the cardholder agreement the platform requires before a card is issued |
             | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
             | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
+            | BANK_ACCOUNT_OWNER_MISMATCH | The bank does not list the customer as the bank account's owner |
             | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
             | QUOTE_EXPIRED | The quote has expired; request a new quote |
             | QUOTE_RATE_UNAVAILABLE | No exchange rate is available for this corridor right now |
@@ -21936,6 +22071,7 @@ components:
             - CARDHOLDER_AGREEMENT_NOT_ACCEPTED
             - TRANSACTION_SIZE_LIMIT_EXCEEDED
             - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
+            - BANK_ACCOUNT_OWNER_MISMATCH
             - INSUFFICIENT_FUNDS
             - QUOTE_EXPIRED
             - QUOTE_RATE_UNAVAILABLE
@@ -25732,6 +25868,49 @@ components:
           description: List of internal accounts matching the filter criteria
           items:
             $ref: '#/components/schemas/InternalAccount'
+    BankLinkTokenCreateRequest:
+      type: object
+      properties:
+        clientName:
+          type: string
+          minLength: 1
+          maxLength: 30
+          description: The application name Plaid Link shows the customer. Defaults to your platform's name.
+          example: Acme Wallet
+    BankLinkToken:
+      type: object
+      description: A Plaid Link token for linking one of the customer's bank accounts.
+      required:
+        - linkToken
+        - expiresAt
+      properties:
+        linkToken:
+          type: string
+          description: The token to open Plaid Link with.
+          example: link-production-840204-193734
+        expiresAt:
+          type: string
+          format: date-time
+          description: Time at which the link token expires.
+          example: '2027-01-15T14:32:00Z'
+    BankLinkCreateRequest:
+      type: object
+      required:
+        - publicToken
+        - accountId
+      properties:
+        publicToken:
+          type: string
+          minLength: 1
+          maxLength: 4096
+          description: The `public_token` Plaid Link returned when the customer finished.
+          example: public-production-0a1b2c3d-4e5f-6789-abcd-ef0123456789
+        accountId:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: The Plaid account ID of the bank account the customer selected in Plaid Link.
+          example: vzeNDwK7KQIm4yEog683uElbp9GRLEFXGK98D
     ExternalAccountStatus:
       type: string
       enum:
