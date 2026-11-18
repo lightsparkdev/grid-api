@@ -10,3 +10,4 @@ allOf:
         type: string
         enum:
         - SPEI
+        - BANK_TRANSFER

@@ -249,6 +249,8 @@ overrides:
       - "openapi.yaml#/components/schemas/InrAccountInfo/allOf/1/properties/paymentRails/items/enum"
       - "openapi.yaml#/components/schemas/PkrAccountInfo/allOf/1/properties/paymentRails/items/enum"
       - "openapi.yaml#/components/schemas/SgdAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/GbpAccountInfo/allOf/1/properties/paymentRails/items/enum"
+      - "openapi.yaml#/components/schemas/MxnAccountInfo/allOf/1/properties/paymentRails/items/enum"
       - "openapi.yaml#/components/schemas/SlvAccountInfo/allOf/1/properties/paymentRails/items/enum"
       - "openapi.yaml#/components/schemas/CopAccountInfoBase/properties/bankAccountType/enum"
       - "openapi.yaml#/components/schemas/GtqAccountInfoBase/properties/bankAccountType/enum"
