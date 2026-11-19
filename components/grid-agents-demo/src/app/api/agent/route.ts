@@ -23,7 +23,7 @@ const MAX_BLOCK = 4_000;
 const MAX_BODY = 240_000;
 const MAX_REPLY = 420;
 const MAX_NAME = 40;
-const MAX_OPEN = 800;
+const MAX_OPEN = 1_200;
 /** A line from the app (what they tapped, what happened then), as the page marks it; anything else is what they typed. */
 const FROM_APP = /^<app>[\s\S]*<\/app>$/;
 const COUNTRY_CODES = BANK_COUNTRIES.map((c) => c.code);
@@ -175,6 +175,7 @@ export async function POST(req: NextRequest) {
     mode,
     ...(mode === 'business' && businessOf(body.state)),
     ...(typeof body.state?.open === 'string' && body.state.open.trim() && { open: body.state.open.replace(/\s+/g, ' ').trim().slice(0, MAX_OPEN) }),
+    ...(typeof body.state?.seen === 'string' && body.state.seen.trim() && { seen: body.state.seen.replace(/\s+/g, ' ').trim().slice(0, MAX_OPEN) }),
   };
 
   try {

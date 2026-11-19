@@ -64,6 +64,8 @@ export interface PromptState {
   invoices?: string[];
   /** What the app has open on screen, waiting on them (an approval, options, an amount, a name); none when it's clear. */
   open?: string;
+  /** What the app has shown them since they last wrote (a product card, a receipt): already theirs to read. */
+  seen?: string;
 }
 
 const COUNTRY_LIST = BANK_COUNTRIES.map((c) => `${c.name} (${c.code}, ${currencyFor(c)})`).join('; ');
@@ -90,7 +92,7 @@ How a turn works:
 - Mostly you speak once the result is in, with reply: the app shows what you're doing while a tool works (searching, quoting, sending), so there's nothing to announce. Leave say off a tool unless there's something they need to hear before it runs (a part of what they asked that you can't do). Never an acknowledgement on its way to the work ("On it", "Sure, finding that", "Got it, checking"): it reads like a script.
 - Several things at once (two things to buy, a setup and then a payment): call them together, and say it all in one message once you know how it went, not a line apiece.
 - One message per moment. Never say the same thing twice in a row, and never repeat a fact (a price, a name, an amount) you gave in your last message. When something just finished and the next thing needs them, that's one message: how it went, then what's next ("Your iPhone's ordered, arriving Thursday. GTA 6 is next: approve it here.").
-- The app's cards and sheets carry the details (amounts, account numbers, rows, limits), and what a result lists under shown is already in front of them. Don't read it back (not the names and prices on a product card it just showed, not a receipt's rows): say what it means or what's next, in a sentence.
+- The app's cards and sheets carry the details (amounts, account numbers, rows, limits), and what a result lists under shown is already in front of them. Don't read it back: say what it means or what's next. Under a product card that shows two things and their prices, "Save your card here and I'll order both" is the whole message; "The iPhone is $1,999 and GTA 6 is $79.99. Save your card…" says the card over again. After a receipt, "It's ordered and arrives Thursday", without the price the receipt shows. A number belongs in your message only when it isn't on screen, or it's the point (it's over a limit, the balance is short by it).
 - could_offer and could_suggest in a result are next steps worth offering. Whether to is up to you: in your own words, with taps (suggestions or offer_choices), one offer at a time, and never something they just turned down.
 - Lines wrapped in <app>…</app> come from the app, never from ${them}. "they" in one is what they just did in the app (a tap, an approval, an amount given): it's done, so there's nothing in it to answer; the rest is what happened next. A tile they tap starts one of the app's flows right then: the <app> line says which, and what the flow has done or is waiting on so far, and you take it from there exactly as you would a tool's result (don't call a tool to start it again).
 
@@ -192,7 +194,12 @@ export function systemPrompt(connector: ConnectorId, state: PromptState): { fixe
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const business = state.mode === 'business';
   const here = `- They're texting you in ${connector} right now${business ? '' : `, where your money is the ${p.wallet}`}.`;
-  const screen = state.open ? `- On screen: ${state.open}` : '- On screen: nothing is waiting on them.';
+  const waits = state.open ? `- On screen: ${state.open}` : '- On screen: nothing is waiting on them.';
+  // Last in the list, nearest what it writes next.
+  const seen = state.seen
+    ? `\n- Already in front of them, on cards the app showed since they last wrote: ${state.seen}\n  They can read all of that, so your next message leaves it out: no item with its price, no amount off a receipt. Say only what the cards don't: what's next, or what it means.`
+    : '';
+  const screen = `${waits}${seen}`;
   if (business) return { fixed: BUSINESS_FIXED, now: businessNow(state, people, today, here, screen) };
   return { fixed: FIXED, now: `Right now:
 - Today is ${today}.

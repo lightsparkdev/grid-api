@@ -185,7 +185,7 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
   /** The model's next step (/api/agent), for the conversation so far, the account as it stands and what's open on
    *  screen. Off, limited or failing, the conversation carries on without it. */
   const reply = useCallback(
-    async (turns: Turn[], open?: string): Promise<StepReply> => {
+    async (turns: Turn[], screen: { open?: string; seen?: string }): Promise<StepReply> => {
       const a = sessionRef.current!.snapshot();
       const money = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
       const state: PromptState = {
@@ -206,7 +206,8 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
           budget: a.business.budget ? money(a.business.budget) : undefined,
           invoices: a.business.invoices.map((i) => `${i.number} ${i.client} ${money(i.amount)} ${i.status === 'PAID' ? 'paid' : `open, due ${i.due}`}`),
         }),
-        ...(open && { open }),
+        ...(screen.open && { open: screen.open }),
+        ...(screen.seen && { seen: screen.seen }),
       };
       try {
         const res = await fetch('/api/agent', {

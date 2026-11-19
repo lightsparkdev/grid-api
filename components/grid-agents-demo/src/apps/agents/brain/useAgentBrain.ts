@@ -239,7 +239,7 @@ export function useAgentBrain({
   /** Something they asked for on the other account that belongs here: heard as their message, once. */
   carried?: { nonce: number; text: string };
   /** The model's next step, for the conversation so far and what's open on screen (behind /api/agent). */
-  reply: (turns: Turn[], open?: string) => Promise<StepReply>;
+  reply: (turns: Turn[], screen: { open?: string; seen?: string }) => Promise<StepReply>;
   /** These messages as the app on screen draws them, for telling the model what the person is looking at. */
   render: (messages: StoredMessage[]) => Message[];
   /** A flow's own line as a plain fact, for the model to say in its own words. */
@@ -868,6 +868,16 @@ export function useAgentBrain({
     if (!runRef.current || openRef.current?.shown) setBusy(false);
   };
 
+  /**
+   * What the app has put in front of them since they last wrote (a product card, a receipt), for the model: they can
+   * read it, so its next line has no call to say it again.
+   */
+  const seenText = () => {
+    const all = messagesRef.current;
+    const since = all.slice(all.map((m) => m.kind).lastIndexOf('me') + 1).filter((m) => m.kind === 'products' || m.kind === 'card' || m.kind === 'meta');
+    return describe(cb.current.render(since)).slice(-4).join(' | ').slice(0, 900) || undefined;
+  };
+
   /** What's open, for the model: on screen and waiting, or held back until its line is out. */
   const openText = () => {
     const open = openRef.current;
@@ -1000,7 +1010,7 @@ export function useAgentBrain({
     let switching: (() => void) | undefined;
     for (let step = 0; step < MAX_STEPS && !ended; step++) {
       owed.current = false;
-      const [answer] = await Promise.all([c.reply(windowOf(log.current), openText()), step === 0 ? sleep(c.typesFor) : undefined]);
+      const [answer] = await Promise.all([c.reply(windowOf(log.current), { open: openText(), seen: seenText() }), step === 0 ? sleep(c.typesFor) : undefined]);
       if (overtaken()) return;
       if ('fallback' in answer) {
         stopTyping();

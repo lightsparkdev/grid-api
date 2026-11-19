@@ -27,8 +27,8 @@ export interface AgentHostProps extends Omit<BrainOptions, 'reply' | 'render' | 
   dark: boolean;
   /** On a business account, its money's name ("Acme Studio balance") in place of the app's. */
   wallet?: string;
-  /** The model's next step, for the conversation so far and what's open on screen. */
-  reply: (turns: Turn[], open?: string) => Promise<StepReply>;
+  /** The model's next step, for the conversation so far and what's on screen: what's open, and what they can already read. */
+  reply: (turns: Turn[], screen: { open?: string; seen?: string }) => Promise<StepReply>;
 }
 
 /**
