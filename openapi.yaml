@@ -6890,6 +6890,78 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /sandbox/open-banking-payments/{openBankingPaymentId}/complete:
+    post:
+      summary: Simulate the bank settling an open banking payment
+      description: |
+        Settle a `PENDING` open banking payment in the sandbox environment, as if the customer approved it at their bank (`COMPLETED`) or the bank refused it (`FAILED`). This is what the button on the sandbox `authorizationUrl` page does, without the browser.
+        `COMPLETED` credits the internal account with the payment's amount as an incoming transaction and sends the same webhooks as production: `OPEN_BANKING_PAYMENT.COMPLETED`, then the incoming payment's own. `FAILED` moves no funds and sends `OPEN_BANKING_PAYMENT.FAILED`.
+        This endpoint is only for the sandbox environment and will fail for production platforms/keys.
+      operationId: sandboxCompleteOpenBankingPayment
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: openBankingPaymentId
+          in: path
+          required: true
+          description: The ID of the open banking payment to settle.
+          schema:
+            type: string
+          example: OpenBankingPayment:019542f5-b3e7-1d02-0000-000000000020
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxOpenBankingPaymentCompleteRequest'
+            examples:
+              complete:
+                summary: The customer approves and the bank sends the funds
+                value:
+                  status: COMPLETED
+              fail:
+                summary: The bank refuses the payment
+                value:
+                  status: FAILED
+      responses:
+        '200':
+          description: The settled open banking payment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenBankingPayment'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Open banking payment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The payment is not `PENDING` (code `CONFLICT`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /tokens:
     post:
       summary: Create a new API token
@@ -7427,6 +7499,164 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /internal-accounts/{id}/open-banking-payments:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the EUR internal account to fund.
+        required: true
+        schema:
+          type: string
+        example: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+    post:
+      summary: Fund an EUR account by open banking
+      description: |
+        Start an open banking payment that pulls euros from the customer's own
+        bank account into their EUR internal account. The customer approves the
+        payment at their bank, so no card or bank details are entered in your app.
+
+        1. Create the payment. It is `PENDING` and carries an `authorizationUrl`.
+        2. Send the customer to `authorizationUrl`. They choose their bank and
+           approve the payment there.
+        3. The customer returns to your `redirectUrl`, with
+           `openBankingPaymentId` added to its query. Returning does not mean the
+           payment succeeded; show a "processing" state.
+        4. When the bank sends the funds, the payment becomes `COMPLETED`, an
+           `OPEN_BANKING_PAYMENT.COMPLETED` webhook is sent, and the funds credit
+           the internal account as an incoming transaction. A cancelled or refused
+           payment becomes `FAILED`, and one not approved before `expiresAt`
+           becomes `EXPIRED`.
+
+        Available for individual customers' `EUR` internal accounts, once
+        Lightspark has enabled open banking for your platform. Other accounts
+        return `400`.
+
+        In sandbox, `authorizationUrl` opens a Grid page that simulates the bank.
+        Its button completes the payment and returns the customer to your
+        `redirectUrl`, as in production. You can also settle the payment directly
+        with `POST /sandbox/open-banking-payments/{openBankingPaymentId}/complete`.
+
+        Send an `Idempotency-Key` header to make retries safe: a request carrying
+        a key already used returns the payment created by the first request.
+      operationId: createOpenBankingPayment
+      tags:
+        - Internal Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
+          schema:
+            type: string
+            maxLength: 255
+            example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenBankingPaymentCreateRequest'
+            examples:
+              topUp:
+                summary: Top up an EUR account with €250
+                value:
+                  amount: 25000
+                  redirectUrl: https://app.example.com/top-up/return
+      responses:
+        '200':
+          description: The `Idempotency-Key` was already used to create this payment. The payment created by the first request is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenBankingPayment'
+        '201':
+          description: Open banking payment created. Send the customer to its `authorizationUrl`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenBankingPayment'
+        '400':
+          description: Bad request. Returned with `INVALID_INPUT` when the account is not an individual customer's `EUR` internal account, or `redirectUrl` is not an `https` URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Open banking is not enabled for your platform (`OPEN_BANKING_NOT_ENABLED`), or the customer cannot use it (`CUSTOMER_NOT_VERIFIED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Internal account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /internal-accounts/{id}/open-banking-payments/{openBankingPaymentId}:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the EUR internal account the payment funds.
+        required: true
+        schema:
+          type: string
+        example: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+      - name: openBankingPaymentId
+        in: path
+        description: The ID of the open banking payment.
+        required: true
+        schema:
+          type: string
+        example: OpenBankingPayment:019542f5-b3e7-1d02-0000-000000000020
+    get:
+      summary: Get an open banking payment
+      description: Retrieve an open banking payment and its current status. Use it when the customer returns to your `redirectUrl`, to show the payment's state until the `OPEN_BANKING_PAYMENT` webhook arrives.
+      operationId: getOpenBankingPayment
+      tags:
+        - Internal Accounts
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: The open banking payment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenBankingPayment'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Internal account or open banking payment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -20116,6 +20346,111 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+  open-banking-payment:
+    post:
+      summary: Open banking payment webhook
+      description: |
+        Webhook that is called when an open banking payment reaches a final status. It is sent once per payment.
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+
+        ### Event types
+        - `OPEN_BANKING_PAYMENT.COMPLETED` — The customer's bank sent the payment. The credit is an incoming transaction with its own `INCOMING_PAYMENT` webhook. It can arrive just after this event, so `data.incomingTransactionId` may be absent here; `GET` the payment to read it once the credit lands.
+        - `OPEN_BANKING_PAYMENT.FAILED` — The customer cancelled, or their bank refused the payment. No funds move.
+        - `OPEN_BANKING_PAYMENT.EXPIRED` — The customer did not approve the payment before `expiresAt`. No funds move.
+      operationId: openBankingPaymentWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenBankingPaymentWebhook'
+            examples:
+              completed:
+                summary: The customer approved the payment and the bank sent it
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000030
+                  type: OPEN_BANKING_PAYMENT.COMPLETED
+                  timestamp: '2026-11-19T14:49:10Z'
+                  data:
+                    id: OpenBankingPayment:019542f5-b3e7-1d02-0000-000000000020
+                    internalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    status: COMPLETED
+                    amount:
+                      amount: 25000
+                      currency:
+                        code: EUR
+                        name: Euro
+                        symbol: €
+                        decimals: 2
+                    authorizationUrl: https://pay.example-provider.com/consent/7f3a9c1e
+                    redirectUrl: https://app.example.com/top-up/return
+                    reference: GRIDOB7F3A9C1E
+                    incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000021
+                    expiresAt: '2026-11-19T15:02:00Z'
+                    createdAt: '2026-11-19T14:47:00Z'
+                    updatedAt: '2026-11-19T14:49:10Z'
+              failed:
+                summary: The customer cancelled the payment at their bank
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000031
+                  type: OPEN_BANKING_PAYMENT.FAILED
+                  timestamp: '2026-11-19T14:48:30Z'
+                  data:
+                    id: OpenBankingPayment:019542f5-b3e7-1d02-0000-000000000020
+                    internalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    status: FAILED
+                    amount:
+                      amount: 25000
+                      currency:
+                        code: EUR
+                        name: Euro
+                        symbol: €
+                        decimals: 2
+                    authorizationUrl: https://pay.example-provider.com/consent/7f3a9c1e
+                    redirectUrl: https://app.example.com/top-up/return
+                    reference: GRIDOB7F3A9C1E
+                    failureReason: The customer cancelled the payment at their bank.
+                    expiresAt: '2026-11-19T15:02:00Z'
+                    createdAt: '2026-11-19T14:47:00Z'
+                    updatedAt: '2026-11-19T14:48:30Z'
+      responses:
+        '200':
+          description: |
+            Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
   external-account-status:
     post:
       summary: External account webhook
@@ -23407,6 +23742,7 @@ components:
             | CORRIDOR_UNDER_OUTAGE | Payments to this corridor are paused because of an outage. |
             | ACH_PULL_NOT_ENABLED | External-account pulls are not enabled for the platform |
             | ACH_PULL_BLOCKED | Pulls are blocked for this customer after an unauthorized ACH return |
+            | OPEN_BANKING_NOT_ENABLED | Open banking payments are not enabled for the platform |
           enum:
             - FORBIDDEN
             - USER_NOT_READY
@@ -23420,6 +23756,7 @@ components:
             - CORRIDOR_UNDER_OUTAGE
             - ACH_PULL_NOT_ENABLED
             - ACH_PULL_BLOCKED
+            - OPEN_BANKING_NOT_ENABLED
         reason:
           type: string
           description: Error message
@@ -36851,6 +37188,101 @@ components:
           maxLength: 128
           description: The wallet the deposit comes from, as an Ethereum (`0x…`) or Solana address. For an EU customer, Grid can hold the deposit until the customer adds or verifies this wallet.
           example: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b'
+    OpenBankingPaymentSimulatedOutcome:
+      type: string
+      enum:
+        - COMPLETED
+        - FAILED
+      description: The outcome to simulate. `COMPLETED` credits the internal account with the payment's amount; `FAILED` moves no funds.
+    SandboxOpenBankingPaymentCompleteRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/OpenBankingPaymentSimulatedOutcome'
+          default: COMPLETED
+    OpenBankingPaymentStatus:
+      type: string
+      enum:
+        - PENDING
+        - COMPLETED
+        - FAILED
+        - EXPIRED
+      description: |
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING` | Waiting for the customer to approve the payment at their bank, or for the bank to send it |
+        | `COMPLETED` | The bank sent the payment. The funds credit the internal account as an incoming transaction, reported by its own `INCOMING_PAYMENT` webhook |
+        | `FAILED` | The customer cancelled, or their bank refused the payment. No funds move |
+        | `EXPIRED` | The customer did not approve the payment before `expiresAt`. No funds move |
+    OpenBankingPayment:
+      type: object
+      required:
+        - id
+        - internalAccountId
+        - customerId
+        - status
+        - amount
+        - authorizationUrl
+        - redirectUrl
+        - reference
+        - expiresAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier for the open banking payment.
+          example: OpenBankingPayment:019542f5-b3e7-1d02-0000-000000000020
+        internalAccountId:
+          type: string
+          description: The EUR internal account the payment funds.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+        customerId:
+          type: string
+          description: The customer who owns the internal account and pays from their own bank.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        status:
+          $ref: '#/components/schemas/OpenBankingPaymentStatus'
+        amount:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: The amount requested from the customer's bank, in `EUR`.
+        authorizationUrl:
+          type: string
+          format: uri
+          description: Send the customer here to choose their bank and approve the payment. Open it in the customer's browser or a web view rather than an iframe, since many banks hand off to their own app to approve. In sandbox it opens a Grid page that simulates the bank.
+          example: https://pay.example-provider.com/consent/7f3a9c1e
+        redirectUrl:
+          type: string
+          format: uri
+          description: The page the customer returns to, as sent on create.
+          example: https://app.example.com/top-up/return
+        reference:
+          type: string
+          description: The payment reference the customer's bank sends with the funds, set by Grid. It appears on the customer's bank statement.
+          example: GRIDOB7F3A9C1E
+        incomingTransactionId:
+          type: string
+          description: The incoming transaction that credited the internal account. Set once the credit arrives, which can be shortly after the payment becomes `COMPLETED`.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000021
+        failureReason:
+          type: string
+          description: Why the payment did not complete, when Grid knows. Set only when `status` is `FAILED`.
+          example: The customer cancelled the payment at their bank.
+        expiresAt:
+          type: string
+          format: date-time
+          description: The deadline for the customer to approve the payment, after which `authorizationUrl` stops working. A payment the customer has not approved by then becomes `EXPIRED`. One approved in time stays `PENDING` until the bank sends the funds or refuses them.
+          example: '2026-11-19T15:02:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: When the payment was created.
+          example: '2026-11-19T14:47:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the payment last changed.
+          example: '2026-11-19T14:47:00Z'
     Permission:
       type: string
       enum:
@@ -36969,6 +37401,25 @@ components:
         scaFactor:
           $ref: '#/components/schemas/ScaTransferFactor'
           description: Optional preferred factor for the transfer's Strong Customer Authentication challenge. `SMS_OTP` (default) or `PASSKEY`.
+    OpenBankingPaymentCreateRequest:
+      type: object
+      required:
+        - amount
+        - redirectUrl
+      properties:
+        amount:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+          description: Amount to pull from the customer's bank, in euro cents.
+          example: 25000
+        redirectUrl:
+          type: string
+          format: uri
+          pattern: ^https://
+          maxLength: 1024
+          description: 'The `https` page the customer returns to after leaving their bank. Grid adds an `openBankingPaymentId` query parameter naming this payment and keeps any query parameters already present. Reaching this page does not mean the payment succeeded: read the outcome from the `OPEN_BANKING_PAYMENT` webhook or `GET` the payment. Ignore any other query parameters added on the way back.'
+          example: https://app.example.com/top-up/return
     InternalAccountExportRequest:
       title: Internal Account Export Request
       description: Request body for `POST /internal-accounts/{id}/export`. The `clientPublicKey` is required on both steps of the signed-retry flow. On step 1 Grid binds it into `payloadToSign` so the subsequent stamp in `Grid-Wallet-Signature` commits to the target pubkey; on step 2 the client echoes the same `clientPublicKey` back and Grid uses it to encrypt the wallet credentials returned in the `200` response.
@@ -44785,6 +45236,9 @@ components:
         - INTERNAL_ACCOUNT.BALANCE_UPDATED
         - INTERNAL_ACCOUNT.STATUS_UPDATED
         - INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED
+        - OPEN_BANKING_PAYMENT.COMPLETED
+        - OPEN_BANKING_PAYMENT.FAILED
+        - OPEN_BANKING_PAYMENT.EXPIRED
         - INVITATION.CLAIMED
         - BULK_UPLOAD.COMPLETED
         - BULK_UPLOAD.FAILED
@@ -45029,6 +45483,23 @@ components:
               $ref: '#/components/schemas/InternalAccount'
             type:
               $ref: '#/components/schemas/InternalAccountStatusWebhookEventType'
+    OpenBankingPaymentWebhookEventType:
+      type: string
+      enum:
+        - OPEN_BANKING_PAYMENT.COMPLETED
+        - OPEN_BANKING_PAYMENT.FAILED
+        - OPEN_BANKING_PAYMENT.EXPIRED
+    OpenBankingPaymentWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/OpenBankingPayment'
+            type:
+              $ref: '#/components/schemas/OpenBankingPaymentWebhookEventType'
     ExternalAccountStatusWebhookEventType:
       type: string
       enum:

@@ -20,6 +20,7 @@ properties:
       | CORRIDOR_UNDER_OUTAGE | Payments to this corridor are paused because of an outage. |
       | ACH_PULL_NOT_ENABLED | External-account pulls are not enabled for the platform |
       | ACH_PULL_BLOCKED | Pulls are blocked for this customer after an unauthorized ACH return |
+      | OPEN_BANKING_NOT_ENABLED | Open banking payments are not enabled for the platform |
     enum:
       - FORBIDDEN
       - USER_NOT_READY
@@ -33,6 +34,7 @@ properties:
       - CORRIDOR_UNDER_OUTAGE
       - ACH_PULL_NOT_ENABLED
       - ACH_PULL_BLOCKED
+      - OPEN_BANKING_NOT_ENABLED
   reason:
     type: string
     description: Error message

@@ -434,6 +434,8 @@ paths:
     $ref: paths/sandbox/sandbox_uma_receive.yaml
   /sandbox/internal-accounts/{accountId}/fund:
     $ref: paths/sandbox/sandbox_internal_accounts_{accountId}_fund.yaml
+  /sandbox/open-banking-payments/{openBankingPaymentId}/complete:
+    $ref: paths/sandbox/sandbox_open-banking-payments_{openBankingPaymentId}_complete.yaml
   /tokens:
     $ref: paths/tokens/tokens.yaml
   /tokens/{tokenId}:
@@ -446,6 +448,10 @@ paths:
     $ref: paths/internal_accounts/internal_accounts_{id}_authorize_resend.yaml
   /internal-accounts/{id}/stranded-funds/transfer:
     $ref: paths/internal_accounts/internal_accounts_{id}_stranded-funds_transfer.yaml
+  /internal-accounts/{id}/open-banking-payments:
+    $ref: paths/internal_accounts/internal_accounts_{id}_open-banking-payments.yaml
+  /internal-accounts/{id}/open-banking-payments/{openBankingPaymentId}:
+    $ref: paths/internal_accounts/internal_accounts_{id}_open-banking-payments_{openBankingPaymentId}.yaml
   /internal-accounts/{id}/export:
     $ref: paths/internal_accounts/internal_accounts_{id}_export.yaml
   /internal-accounts/{id}/balance-changes:
@@ -724,6 +730,8 @@ webhooks:
     $ref: webhooks/customer-update.yaml
   internal-account-status:
     $ref: webhooks/internal-account-status.yaml
+  open-banking-payment:
+    $ref: webhooks/open-banking-payment.yaml
   external-account-status:
     $ref: webhooks/external-account-status.yaml
   verification-update:

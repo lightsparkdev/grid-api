@@ -1,0 +1,51 @@
+parameters:
+  - name: id
+    in: path
+    description: The ID of the EUR internal account the payment funds.
+    required: true
+    schema:
+      type: string
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+  - name: openBankingPaymentId
+    in: path
+    description: The ID of the open banking payment.
+    required: true
+    schema:
+      type: string
+    example: OpenBankingPayment:019542f5-b3e7-1d02-0000-000000000020
+get:
+  summary: Get an open banking payment
+  description: >-
+    Retrieve an open banking payment and its current status. Use it when the
+    customer returns to your `redirectUrl`, to show the payment's state until
+    the `OPEN_BANKING_PAYMENT` webhook arrives.
+  operationId: getOpenBankingPayment
+  tags:
+    - Internal Accounts
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: The open banking payment.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/open_banking/OpenBankingPayment.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Internal account or open banking payment not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

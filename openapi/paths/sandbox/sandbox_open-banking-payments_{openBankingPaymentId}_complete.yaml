@@ -1,0 +1,80 @@
+post:
+  summary: Simulate the bank settling an open banking payment
+  description: >
+    Settle a `PENDING` open banking payment in the sandbox environment, as if
+    the customer approved it at their bank (`COMPLETED`) or the bank refused
+    it (`FAILED`). This is what the button on the sandbox `authorizationUrl`
+    page does, without the browser.
+
+    `COMPLETED` credits the internal account with the payment's amount as an
+    incoming transaction and sends the same webhooks as production:
+    `OPEN_BANKING_PAYMENT.COMPLETED`, then the incoming payment's own.
+    `FAILED` moves no funds and sends `OPEN_BANKING_PAYMENT.FAILED`.
+
+    This endpoint is only for the sandbox environment and will fail for
+    production platforms/keys.
+  operationId: sandboxCompleteOpenBankingPayment
+  tags:
+    - Sandbox
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: openBankingPaymentId
+      in: path
+      required: true
+      description: The ID of the open banking payment to settle.
+      schema:
+        type: string
+      example: OpenBankingPayment:019542f5-b3e7-1d02-0000-000000000020
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sandbox/SandboxOpenBankingPaymentCompleteRequest.yaml
+        examples:
+          complete:
+            summary: The customer approves and the bank sends the funds
+            value:
+              status: COMPLETED
+          fail:
+            summary: The bank refuses the payment
+            value:
+              status: FAILED
+  responses:
+    '200':
+      description: The settled open banking payment.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/open_banking/OpenBankingPayment.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - request was made with a production platform token
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Open banking payment not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: The payment is not `PENDING` (code `CONFLICT`).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
