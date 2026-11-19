@@ -174,6 +174,9 @@ function statesAmount(text: string, ask: AgentAsk) {
   return (text.match(/\d[\d,]*(?:\.\d+)?/g) ?? []).some((n) => bare(n) === bare(amount));
 }
 
+/** Whether the agent's text is the whole ask: the amount, and that a yes by text is the way to answer it. */
+const asksInFull = (text: string, ask: AgentAsk) => statesAmount(text, ask) && /\byes\b/i.test(text);
+
 /** Only what's sensitive (a card, a bank) opens app.instinct.com; everything else is answered by texting back. */
 const linksOut = (ask: AgentAsk) => !!(ask.card || ask.bank);
 
@@ -586,8 +589,9 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
       }
       case 'ask':
         if (linksOut(m.ask)) return <VaultLink m={m} onOpen={() => openLink(m.id)} />;
-        // The agent's own text asked for it, in its own words: there's no second text from the app.
-        if (m.led && statesAmount(all.slice(0, i).reverse().find((x) => x.kind === 'them')?.text ?? '', m.ask)) return null;
+        // The agent's own text asked for it, in its own words: there's no second text from the app. When that text
+        // leaves out the amount, or how to answer (here, a yes by text: there's nothing to tap), the app's own ask follows.
+        if (m.led && asksInFull(all.slice(0, i).reverse().find((x) => x.kind === 'them')?.text ?? '', m.ask)) return null;
         return bubble('ask', <Detected text={askText(m.ask)} />, !theirsNext);
       case 'chips':
         // The options' page is where you choose; the thread doesn't list them again (typing one still works).

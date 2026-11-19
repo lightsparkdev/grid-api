@@ -71,6 +71,8 @@ export interface ToolMemory {
   shown: Set<string>;
   /** The company's name and the owner's, as far as they've given them. */
   naming: { company?: string; owner?: string };
+  /** The team budget they asked for, USD: read when its approval is built, so it can change until then. */
+  budget?: number;
 }
 
 export const newToolMemory = (): ToolMemory => ({ seq: 0, options: new Map(), quotes: new Map(), stays: new Map(), approved: new Set(), shown: new Set(), naming: {} });
@@ -82,6 +84,8 @@ export interface ToolEnv {
   memory: ToolMemory;
   /** The call after this one in the same step, for what a no to a setup puts on hold. */
   next?: ToolCall;
+  /** The tool whose step is open on screen right now, if one is. */
+  openFor?: string;
 }
 
 const usd = (cents: number) => Math.round(cents) / 100;
@@ -445,7 +449,11 @@ function subscribe(env: ToolEnv, call: ToolCall): Outcome {
 const COUNTRY_CODES = new Set(BANK_COUNTRIES.map((c) => c.code));
 
 /** A payment priced: who (saved, or new in a country we pay), how much, in USD or their currency. */
+/** Set by the last quote: the saved person a bare first name was taken to mean. */
+let matchedSaved: string | undefined;
+
 function quoted(env: ToolEnv, input: ToolCall['input']): { id: string; rec: PayRecord } | Outcome {
+  matchedSaved = undefined;
   if (typeof input.quote_id === 'string') {
     const rec = env.memory.quotes.get(input.quote_id);
     return rec ? { id: input.quote_id, rec } : fail('unknown_quote', { fix: 'pass the details instead' });
@@ -460,6 +468,8 @@ function quoted(env: ToolEnv, input: ToolCall['input']): { id: string; rec: PayR
   if (known && said && COUNTRY_CODES.has(said) && said !== known.bank.country.code) {
     return fail('saved_elsewhere', { saved: `${known.name} is saved, and banks in ${known.bank.country.name}`, fix: `ask whether they mean ${known.name}, or someone else: then pass that person’s full name` });
   }
+  // Matched on a first name alone: who that is gets said, in case they meant someone else.
+  matchedSaved = known && known.name.toLowerCase() !== name.toLowerCase() ? `${known.name}, already saved, who banks in ${known.bank.country.name}: name them in full so they can say if they meant someone else` : undefined;
   const code = known?.bank.country.code ?? said;
   if (!code) return fail('need_country', { fix: `ask where ${first(name)} banks` });
   if (!COUNTRY_CODES.has(code)) return fail('country_not_supported', { country: code });
@@ -510,6 +520,7 @@ function quoteFacts(env: ToolEnv, id: string, rec: PayRecord): ToolResult {
   return {
     quote_id: id,
     to: rec.recipient.first,
+    ...(matchedSaved && { matched: matchedSaved }),
     they_receive: payee.local,
     you_pay_usd: usd(payee.usd),
     their_bank: to.bank,
@@ -602,6 +613,8 @@ function requestPayment(env: ToolEnv, call: ToolCall): Outcome {
 function raiseLimit(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
   if (!a.connected) return fail('no_account', { fix: 'setup_balance first' });
+  // "Ask me every time" is an approval limit of zero.
+  const everyTime = call.input.ask_above_usd === 0;
   const asked: FlowParams = {
     ...(positive(call.input.ask_above_usd, 100_000) && { approve: positive(call.input.ask_above_usd, 100_000) }),
     ...(positive(call.input.per_payment_usd, 100_000) && { perTx: positive(call.input.per_payment_usd, 100_000) }),
@@ -611,7 +624,8 @@ function raiseLimit(env: ToolEnv, call: ToolCall): Outcome {
   const spend = id ? costOf(env, id) : undefined;
   if (id && spend === undefined) return fail('unknown_id', { for: id });
   const from = a.limits;
-  const to = Object.keys(asked).length ? limitsFor({ ...env.ctx, params: asked }, from) : spend ? raisedFor(from, spend) : undefined;
+  const named = Object.keys(asked).length ? limitsFor({ ...env.ctx, params: asked }, from) : spend ? raisedFor(from, spend) : undefined;
+  const to = everyTime ? { ...(named ?? from), approvalAbove: 0 } : named;
   if (!to) return fail('need_limits', { fix: 'say which limit and to what' });
   if (spend && to.perTransaction < spend) return fail('not_enough', { needed_usd: usd(raisedFor(from, spend).perTransaction) });
   if (to.approvalAbove === from.approvalAbove && to.daily === from.daily && to.perTransaction === from.perTransaction) {
@@ -778,6 +792,13 @@ function setTeamBudget(env: ToolEnv, call: ToolCall): Outcome {
   const monthly = positive(call.input.monthly_usd, 50_000);
   const already = env.ctx.account().business?.budget;
   const empty = !env.ctx.account().business?.team.length;
+  // Asked again with another amount while the first teammate is still being added for it: the amount changes, and
+  // what's open (their role, pay or bank) stays where it is. The approval comes up at the new amount.
+  if (monthly && empty && !already && env.openFor === 'set_team_budget') {
+    env.memory.budget = monthly;
+    return { beats: [], result: { status: 'amount_updated', monthly_usd: monthly, note: 'the budget will come up for approval at this amount once the teammate is on the team: what’s open is still open, so point them back to it' } };
+  }
+  env.memory.budget = monthly;
   const result: ToolResult = {
     ...(empty && { not_yet: 'nothing is set and nothing is up for approval yet: the budget’s approval comes up once someone is on the team, which is what this is asking for first' }),
   };
@@ -789,7 +810,13 @@ function setTeamBudget(env: ToolEnv, call: ToolCall): Outcome {
     // Set once: there's nowhere to change it, here or anywhere they could be pointed to.
     return already ? { status: 'already_set_up', ...facts, ...(monthly && monthly * 100 !== already && { cannot_change: 'the budget can’t be changed once it’s set: say so plainly, and don’t send them anywhere else to do it' }) } : { status: 'set_up', ...facts };
   });
-  return { result, beats: [...noReact(teamBudget({ ...env.ctx, params: monthly ? { amount: monthly } : {} })), set] };
+  // Read when the approval is built, not now: the amount can change on the way there.
+  const params: FlowParams = {
+    get amount() {
+      return env.memory.budget;
+    },
+  };
+  return { result, beats: [...noReact(teamBudget({ ...env.ctx, params })), set] };
 }
 
 function issueEmployeeCard(env: ToolEnv, call: ToolCall): Outcome {

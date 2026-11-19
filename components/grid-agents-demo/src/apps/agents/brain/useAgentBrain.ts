@@ -1003,8 +1003,13 @@ export function useAgentBrain({
     run.asked = { name: call.name, input: asked };
     run.leads = !LOOKUPS.has(call.name);
     const ctx: FlowContext = { ...cb.current.context(), variant: 0, offer: (what) => (run.offer = what) };
-    const out = own(() => runTool({ ctx, memory: memory.current, next }, call));
+    const out = own(() => runTool({ ctx, memory: memory.current, next, openFor: openRef.current?.run.asked?.name }, call));
     if ('error' in out) return out;
+    // Nothing to show (it's already done, or it only changed a detail of what's under way): what's open stays open.
+    if (!out.beats.length) {
+      const still = openRef.current ? { note: 'what was open is still open' } : {};
+      return { spoke: () => false, start: () => Promise.resolve({ ...out.result, ...still, finished: true, account: accountNow(cb.current.context().account()) }) };
+    }
     run.result = out.result;
     if (opening) run.opening = call.input.say;
     // Something else to find while a pick waits: only what needs no pick of its own.
