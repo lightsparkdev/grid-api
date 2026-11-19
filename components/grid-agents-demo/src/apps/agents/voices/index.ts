@@ -120,8 +120,7 @@ export function renderThread(messages: StoredMessage[], voice: Voice): Message[]
         return {
           id: m.id,
           kind: 'products',
-          // Several things they named, shown together: each is wanted, so none is "the pick" among them.
-          products: [m.params, ...(m.also ?? [])].flatMap((p) => voice.products(m.key, p)).map((p) => (m.also?.length ? { ...p, pick: false } : p)),
+          products: [m.params, ...(m.also ?? [])].flatMap((p) => voice.products(m.key, p)),
           query: typeof m.params?.query === 'string' ? m.params.query : undefined,
         };
       case 'meta':

@@ -67,6 +67,8 @@ function BalanceArtifact({ balance, onOpen, pos }: { balance: AgentBalance; onOp
 
 /** What Muse found, as entity links in its bubble: a thumbnail, the name in bold, the price. */
 function EntityLinks({ products, pos }: { products: Product[]; pos?: string }) {
+  // Options to choose from have a pick among them; several things they named, shown together, are all wanted.
+  const choosing = products.length > 1 && !products.every((p) => p.pick);
   return (
     <div className={styles.them} data-bubble data-pos={pos}>
       {products.map((p, i) => (
@@ -75,7 +77,7 @@ function EntityLinks({ products, pos }: { products: Product[]; pos?: string }) {
           <img src={p.image} alt="" className={styles.entityThumb} />
           <strong className={styles.entity}>{p.title}</strong>
           {p.detail && `, ${p.detail},`} at {p.price}
-          {p.pick && products.length > 1 ? ' is my pick.' : i === 1 ? ', or' : '.'}
+          {choosing && p.pick ? ' is my pick.' : choosing && i === 1 ? ', or' : '.'}
         </span>
       ))}
     </div>
