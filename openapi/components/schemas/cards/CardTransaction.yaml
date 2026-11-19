@@ -55,6 +55,13 @@ properties:
     $ref: ./CardDeclinedReason.yaml
     description: Present only when `status` is `DECLINED`.
     example: INSUFFICIENT_FUNDS
+  velocityRuleViolation:
+    $ref: ./CardVelocityRuleViolation.yaml
+    description: >-
+      The recorded velocity rule and usage that caused the transaction's first
+      decline. Available when you retrieve or list your platform's transactions
+      and in card transaction webhooks. Absent if no velocity violation was
+      recorded, including older declines and declines for other reasons.
   platformDeclineReason:
     $ref: ./CardAuthorizationDeclineReason.yaml
     description: >-

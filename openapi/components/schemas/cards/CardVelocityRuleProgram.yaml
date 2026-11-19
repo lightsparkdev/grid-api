@@ -1,0 +1,5 @@
+type: string
+description: The card program restriction on the velocity rule.
+enum:
+  - RETAIL
+  - COMMERCIAL

@@ -35798,6 +35798,113 @@ components:
         | `PLATFORM_DECLINED` | Your platform returned `decision: DECLINE`. `platformDeclineReason` carries the reason it gave. |
         | `PLATFORM_UNAVAILABLE` | Your platform did not return a valid decision to a `CARD_AUTHORIZATION.REQUEST` in time, and `cardConfigs.realTimeAuthorization.timeoutBehavior` is `DECLINE`. |
         | `OTHER` | Any other reason, including a security or fraud decline the card processor made. |
+    CardVelocityRuleOwner:
+      type: string
+      description: Who configured the velocity rule.
+      enum:
+        - LIGHTSPARK
+        - PLATFORM
+    CardVelocityRuleScope:
+      type: string
+      description: The scope the velocity rule applied at.
+      enum:
+        - GLOBAL
+        - PLATFORM
+        - CARD
+    CardVelocityRuleProgram:
+      type: string
+      description: The card program restriction on the velocity rule.
+      enum:
+        - RETAIL
+        - COMMERCIAL
+    CardVelocityMetric:
+      type: string
+      description: ATTEMPTS counts every real-time authorization request, including declined requests. APPROVED counts distinct approved authorizations, including zero-amount authorizations, and can also cap the amount they hold.
+      enum:
+        - ATTEMPTS
+        - APPROVED
+    CardVelocityWindow:
+      type: string
+      description: 'AUTHORIZATION caps one authorization amount. ROLLING covers the trailing windowSeconds. Calendar windows use UTC: DAY starts at midnight, WEEK on Monday, MONTH on the first, QUARTER in January/April/July/October, and YEAR on January 1.'
+      enum:
+        - AUTHORIZATION
+        - ROLLING
+        - DAY
+        - WEEK
+        - MONTH
+        - QUARTER
+        - YEAR
+    CardVelocityRuleViolation:
+      title: Card Velocity Rule Violation
+      type: object
+      description: The velocity rule and evaluated usage recorded on a card transaction's first declined decision. This snapshot retains the values used for the decline even if the rule is later changed or deleted. It can describe a platform-managed or Lightspark-managed rule. It does not grant access to other rules or transactions.
+      required:
+        - ruleId
+        - name
+        - owner
+        - scope
+        - metric
+        - window
+      properties:
+        ruleId:
+          type: string
+          description: Identifier of the rule at the time of the decline. The rule may since have been deleted.
+          example: CardVelocityRule:019542f5-b3e7-1d02-0000-000000000004
+        name:
+          type: string
+          description: The rule name at the time of the decline.
+          example: Daily card spending cap
+        owner:
+          $ref: '#/components/schemas/CardVelocityRuleOwner'
+          description: Who configured the rule.
+          example: LIGHTSPARK
+        scope:
+          $ref: '#/components/schemas/CardVelocityRuleScope'
+          description: The scope the rule applied at.
+          example: GLOBAL
+        targetId:
+          type: string
+          format: uuid
+          description: UUID of the platform or card the rule targets. Absent for a global rule.
+          example: 019542f5-b3e7-1d02-0000-000000000010
+        program:
+          $ref: '#/components/schemas/CardVelocityRuleProgram'
+          description: The card program restriction, if any.
+          example: RETAIL
+        cardholderCountry:
+          type: string
+          description: Two-letter ISO 3166-1 alpha-2 cardholder address country restriction, if any.
+          example: US
+        metric:
+          $ref: '#/components/schemas/CardVelocityMetric'
+        window:
+          $ref: '#/components/schemas/CardVelocityWindow'
+        windowSeconds:
+          type: integer
+          description: Duration of a rolling window in seconds. Absent for other windows.
+          example: 600
+        maxCount:
+          type: integer
+          description: The configured count cap. Zero blocks applicable authorizations; absent means uncapped.
+          example: 5
+        maxAmount:
+          type: integer
+          format: int64
+          description: The configured amount cap in minor currency units. Zero blocks applicable authorizations; absent means uncapped.
+          example: 10000
+        currency:
+          type: string
+          description: Currency code for the amount cap and evaluated amount. Absent on count-only rules.
+          example: USD
+        observedCount:
+          type: integer
+          description: The evaluated count including the declined request. ATTEMPTS counts stop at maxCount plus one because additional requests do not change the decision.
+          example: 6
+        observedAmount:
+          type: integer
+          format: int64
+          description: The evaluated amount including the declined request, in minor currency units.
+          example: 12000
     CardAuthorizationDeclineReason:
       type: string
       enum:
@@ -35892,6 +35999,9 @@ components:
           $ref: '#/components/schemas/CardDeclinedReason'
           description: Present only when `status` is `DECLINED`.
           example: INSUFFICIENT_FUNDS
+        velocityRuleViolation:
+          $ref: '#/components/schemas/CardVelocityRuleViolation'
+          description: The recorded velocity rule and usage that caused the transaction's first decline. Available when you retrieve or list your platform's transactions and in card transaction webhooks. Absent if no velocity violation was recorded, including older declines and declines for other reasons.
         platformDeclineReason:
           $ref: '#/components/schemas/CardAuthorizationDeclineReason'
           description: The `declineReason` your platform returned for a `CARD_AUTHORIZATION.REQUEST`. Present only when `cardDeclinedReason` is `PLATFORM_DECLINED` and your endpoint supplied a reason.
@@ -43782,23 +43892,6 @@ components:
           example: '2026-05-08T14:16:00Z'
         environment:
           $ref: '#/components/schemas/GridEnvironment'
-    CardVelocityMetric:
-      type: string
-      description: ATTEMPTS counts every real-time authorization request, including declined requests. APPROVED counts distinct approved authorizations, including zero-amount authorizations, and can also cap the amount they hold.
-      enum:
-        - ATTEMPTS
-        - APPROVED
-    CardVelocityWindow:
-      type: string
-      description: 'AUTHORIZATION caps one authorization amount. ROLLING covers the trailing windowSeconds. Calendar windows use UTC: DAY starts at midnight, WEEK on Monday, MONTH on the first, QUARTER in January/April/July/October, and YEAR on January 1.'
-      enum:
-        - AUTHORIZATION
-        - ROLLING
-        - DAY
-        - WEEK
-        - MONTH
-        - QUARTER
-        - YEAR
     CreateCardVelocityRuleRequest:
       type: object
       required:
