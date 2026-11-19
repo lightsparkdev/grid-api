@@ -20364,7 +20364,7 @@ webhooks:
         If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
 
         ### Event types
-        - `OPEN_BANKING_PAYMENT.COMPLETED` — The customer's bank sent the payment. `data.incomingTransactionId` names the incoming transaction that credits the internal account; that transaction also sends its own `INCOMING_PAYMENT` webhook.
+        - `OPEN_BANKING_PAYMENT.COMPLETED` — The customer's bank sent the payment. The credit is an incoming transaction with its own `INCOMING_PAYMENT` webhook. It can arrive just after this event, so `data.incomingTransactionId` may be absent here; `GET` the payment to read it once the credit lands.
         - `OPEN_BANKING_PAYMENT.FAILED` — The customer cancelled, or their bank refused the payment. No funds move.
         - `OPEN_BANKING_PAYMENT.EXPIRED` — The customer did not approve the payment before `expiresAt`. No funds move.
       operationId: openBankingPaymentWebhook
@@ -37262,7 +37262,7 @@ components:
           example: GRIDOB7F3A9C1E
         incomingTransactionId:
           type: string
-          description: The incoming transaction that credited the internal account. Set once the payment is `COMPLETED`.
+          description: The incoming transaction that credited the internal account. Set once the credit arrives, which can be shortly after the payment becomes `COMPLETED`.
           example: Transaction:019542f5-b3e7-1d02-0000-000000000021
         failureReason:
           type: string

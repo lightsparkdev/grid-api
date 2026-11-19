@@ -51,7 +51,10 @@ properties:
     example: GRIDOB7F3A9C1E
   incomingTransactionId:
     type: string
-    description: The incoming transaction that credited the internal account. Set once the payment is `COMPLETED`.
+    description: >-
+      The incoming transaction that credited the internal account. Set once
+      the credit arrives, which can be shortly after the payment becomes
+      `COMPLETED`.
     example: Transaction:019542f5-b3e7-1d02-0000-000000000021
   failureReason:
     type: string
