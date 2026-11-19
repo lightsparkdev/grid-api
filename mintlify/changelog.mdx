@@ -76,6 +76,13 @@ instead of a signed-retry challenge. The `EMAIL_OTP_CREDENTIAL_SET_CHANGED`,
 `SMS_OTP_CREDENTIAL_SYNC_FAILED` codes are retired. See
 [Changing the sign-in email or phone number](/global-accounts/authentication#changing-the-sign-in-email-or-phone-number).
 
+## Beneficial owners carry a job title
+
+`POST /beneficial-owners` and `PATCH /beneficial-owners/{beneficialOwnerId}` accept an
+optional `title`, the person's job title within the business, such as
+`Chief Executive Officer`. Beneficial owner responses return it. Provide it for every
+control person: banks require a title for each individual who controls the business.
+
 ## Sandbox suffix for a paused corridor
 
 In sandbox, an external account whose account number ends in `014` simulates a corridor
