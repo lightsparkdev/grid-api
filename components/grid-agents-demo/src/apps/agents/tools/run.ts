@@ -826,7 +826,7 @@ function listInvoices(env: ToolEnv): Outcome {
   if (missing) return missing;
   const invoices = env.ctx.account().business?.invoices ?? [];
   const result: ToolResult = {
-    invoices: invoices.map((i) => ({ number: i.number, client: i.client, amount_usd: usd(i.amount), status: i.status === 'PAID' ? 'paid' : `open, due ${i.due}` })),
+    invoices: invoices.map((i) => ({ number: i.number, client: i.client, amount_usd: usd(i.amount), status: i.status === 'PAID' ? 'paid' : `already sent, not paid yet, due ${i.due}` })),
   };
   return { result, beats: noReact(trackInvoices(env.ctx)) };
 }

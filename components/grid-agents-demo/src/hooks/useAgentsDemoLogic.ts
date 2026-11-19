@@ -204,7 +204,7 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
           ...(a.business.named && { company: a.business.company, owner: a.business.owner }),
           team: a.business.team.map((m) => `${m.name} (${m.role}${m.hasAgent ? ', has an agent' : ''}${m.hasCard ? ', has a card' : ''})`),
           budget: a.business.budget ? money(a.business.budget) : undefined,
-          invoices: a.business.invoices.map((i) => `${i.number} ${i.client} ${money(i.amount)} ${i.status === 'PAID' ? 'paid' : `open, due ${i.due}`}`),
+          invoices: a.business.invoices.map((i) => `${i.number} ${i.client} ${money(i.amount)} ${i.status === 'PAID' ? 'paid' : `already sent, not paid yet, due ${i.due}`}`),
         }),
         ...(screen.open && { open: screen.open }),
         ...(screen.seen && { seen: screen.seen }),
