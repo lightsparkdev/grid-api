@@ -235,7 +235,7 @@ export const TOOL_DEFS: ToolDef[] = [
   ),
   tool(
     'request_payment',
-    'Get paid: someone pays them into the balance. Either from (who) and amount_usd, or split_with and total_usd to split a bill they paid (the app works out the shares). Their client Lucía’s invoice is on file: from "Lucía" alone plays it.',
+    'Get paid: someone pays them into the balance. Either from (who) and amount_usd, one call per person, or split_with and total_usd to split a bill they paid. A split is equal shares with them counted in: $90 with two friends is $30 from each, and they cover their own $30. When the others owe the whole amount between them ("they owe me 90 total"), that isn’t a split: use from and amount_usd for each. If it isn’t clear which they mean, ask before calling, and never say a share the app hasn’t worked out. Their client Lucía’s invoice is on file: from "Lucía" alone plays it.',
     {
       from: str('Who’s paying.'),
       amount_usd: num('How much they pay, USD.'),
@@ -245,7 +245,7 @@ export const TOOL_DEFS: ToolDef[] = [
   ),
   tool(
     'raise_limit',
-    'Change your spending limits: the app shows the change for them to approve with Face ID. "Raise my limit" means per_payment_usd. Set ask_above_usd only when they talk about asking them first or doing things alone. With for, one approval also covers that payment or purchase, so it doesn’t ask twice; call checkout or send_payment for it next.',
+    'Change your spending limits: the app shows the change for them to approve with Face ID. The limits are settings they choose, not ceilings: any of them can go up or down to what they ask (per payment up to $100,000), so never tell them a limit is the maximum. "Raise my limit" means per_payment_usd. Set ask_above_usd only when they talk about asking them first or doing things alone. With for, one approval also covers that payment or purchase, so it doesn’t ask twice; call checkout or send_payment for it next.',
     {
       per_payment_usd: num('The most per payment.'),
       daily_usd: num('The most per day.'),

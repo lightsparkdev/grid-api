@@ -584,7 +584,8 @@ function requestPayment(env: ToolEnv, call: ToolCall): Outcome {
     const total = positive(call.input.total_usd, 100_000);
     if (!total) return fail('need_total', { fix: 'ask how much the whole bill was' });
     const share = Math.round(cents(total) / (people.length + 1));
-    return { result, beats: [...split(env.ctx, people, cents(total)), record(result, () => ({ status: 'paid_back', each_usd: usd(share), from: people }))] };
+    Object.assign(result, { each_usd: usd(share), split: `${people.length + 1} ways, them included` });
+    return { result, beats: [...split(env.ctx, people, cents(total)), record(result, () => ({ status: 'paid_back', from: people }))] };
   }
   const from = text(call.input.from, 40);
   const amount = positive(call.input.amount_usd, 100_000);
@@ -594,7 +595,7 @@ function requestPayment(env: ToolEnv, call: ToolCall): Outcome {
   if (!params.name && !/^luc[ií]a\b/i.test(from)) return fail('need_amount');
   if (params.name && !amount) return fail('need_amount', { fix: 'ask how much' });
   const who = payerFor(params);
-  if (paid(env.ctx, who.payer)) return { result: { status: 'already_paid' }, beats: [{ say: 'getpaid.already', params: who }] };
+  if (paid(env.ctx, who.payer, params.name ? who.amount : undefined)) return { result: { status: 'already_paid' }, beats: [{ say: 'getpaid.already', params: who }] };
   return { result, beats: [...getpaid({ ...env.ctx, params }).filter((b) => !('react' in b)), record(result, () => ({ status: 'received', from: who.first, amount_usd: usd(who.amount) }))] };
 }
 

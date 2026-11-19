@@ -104,21 +104,25 @@ if (!KEY) {
 }
 
 /** One call to a model that answers with JSON. */
-async function ask(model, system, user, max = 700) {
+async function ask(model, system, user, max = 1500, quick = false) {
   let why = '';
+  // The person's next move needs no thinking, and thinking can use up the whole answer: off, where the model takes it.
+  let thinking = quick ? { thinking: { type: 'between_tools' } } : {};
   for (let attempt = 0; attempt < 6; attempt++) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model, max_tokens: max, system, messages: [{ role: 'user', content: user }] }),
+      body: JSON.stringify({ model, max_tokens: max, system, messages: [{ role: 'user', content: user }], ...thinking }),
     }).catch(() => null);
+    if (res?.status === 400 && quick) thinking = {};
     if (res?.ok) {
-      const text = (await res.json()).content?.find((c) => c.type === 'text')?.text ?? '';
+      const data = await res.json();
+      const text = data.content?.find((c) => c.type === 'text')?.text ?? '';
       const json = text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1);
       try {
         return JSON.parse(json);
       } catch {
-        why = `not JSON: ${text.slice(0, 160)}`;
+        why = `not JSON (stopped: ${data.stop_reason}, blocks: ${(data.content ?? []).map((c) => c.type).join(',') || 'none'}): ${text.slice(0, 160)}`;
       }
     } else why = res ? `HTTP ${res.status}: ${(await res.text().catch(() => '')).slice(0, 160)}` : 'no response';
     // Busy or rate-limited: wait longer each time before asking again.
@@ -162,7 +166,7 @@ Flag every agent line that has one of these problems:
 - promise: says it did or will do something no tool did
 - wrong_step: starts something the person didn't ask for, or redoes something already done
 
-What the agent is told about the app, and may say without a result: adding money takes nothing off (all of it lands in the balance) and has no second confirmation once the card is saved or the bank linked; a payment within the approval limit goes out without asking; a well-known subscription's usual price.
+What the agent is told about the app, and may say without a result: a team budget can't be changed once it's approved (before that it can); a bill split is equal shares with the person counted in; adding money takes nothing off (all of it lands in the balance) and has no second confirmation once the card is saved or the bank linked; a payment within the approval limit goes out without asking; a well-known subscription's usual price.
 
 Don't flag: the agent declining things outside money; wording you'd merely have written differently; the app's own cards.
 Severity: high = a person would be misled about their money or blocked; medium = clearly off but they could carry on; low = polish.
@@ -177,6 +181,8 @@ async function converse(browser, c, run, dir) {
   let inflight = 0;
   let modelCalls = 0;
   let fallbacks = 0;
+  /** Messages the agent has sent: someone approving stops to read a new one. */
+  let spoke = 0;
   let known = '';
   page.on('request', (r) => r.url().includes('/api/agent') && ((inflight += 1), (modelCalls += 1)));
   page.on('requestfailed', (r) => r.url().includes('/api/agent') && (inflight -= 1));
@@ -197,6 +203,7 @@ async function converse(browser, c, run, dir) {
     known = knows;
     const got = await r.json().catch(() => null);
     if (!got?.calls) fallbacks += 1;
+    if (got?.calls?.some((call) => call.name === 'reply' || call.name === 'offer_choices')) spoke += 1;
     for (const call of got?.calls ?? []) {
       const { say: lines, ...input } = call.input ?? {};
       // The line as this app shows it.
@@ -227,8 +234,11 @@ async function converse(browser, c, run, dir) {
   };
   /** Taps through whatever sheet or approval is up, as someone going along with it would. */
   const approve = async () => {
+    const before = spoke;
     for (let k = 0; k < 12; k++) {
       await settle(15_000);
+      // The agent has said something since: a person reads it before tapping whatever came up next.
+      if (k > 0 && spoke > before) break;
       const alert = page.locator('[data-screen-body] [role="alertdialog"] button:visible', { hasText: /^Continue$/ });
       if (await alert.count()) {
         await alert.first().click({ timeout: 800 }).catch(() => {});
@@ -301,7 +311,7 @@ async function converse(browser, c, run, dir) {
     const can = await tappable();
     const typing = (await page.locator('[data-screen-body] textarea:not([aria-hidden]):visible').count()) > 0;
     const did = moves.length ? `What you've done so far:\n${moves.map((m, i) => `${i + 1}. ${m}`).join('\n')}` : "You haven't done anything yet.";
-    const next = await ask(PLAYER, PLAYER_SYSTEM, `${who}\n\n${did}\n\nOn the phone now (latest at the bottom):\n${seen}\n\nYou could tap: ${can.length ? can.map((l) => `"${l}"`).join(', ') : 'nothing'}\n${typing ? 'You can type a message.' : 'There is no message field right now (a sheet is up): tap, approve or decline.'}\n\nWhat does this person do next? JSON only.`, 300);
+    const next = await ask(PLAYER, PLAYER_SYSTEM, `${who}\n\n${did}\n\nOn the phone now (latest at the bottom):\n${seen}\n\nYou could tap: ${can.length ? can.map((l) => `"${l}"`).join(', ') : 'nothing'}\n${typing ? 'You can type a message.' : 'There is no message field right now (a sheet is up): tap, approve or decline.'}\n\nWhat does this person do next? JSON only.`, 600, true);
     if (!next || next.do === 'done') {
       ended = next ? `done: ${next.why ?? ''}` : 'the player model gave no answer';
       break;
@@ -337,11 +347,31 @@ async function converse(browser, c, run, dir) {
   const thread = await body().innerText().catch(() => '');
   // A step's opening line that never reached the thread wasn't said: the trace says so, so it isn't judged.
   const flat = thread.replace(/\s+/g, ' ');
+  // The same goes for a message written alongside a call (before its result was in), which the app holds back. A line
+  // written twice and shown once was shown the last time: the thread says how many times each line appears.
+  const times = (line) => (line ? flat.split(line.replace(/\s+/g, ' ').slice(0, 60)).length - 1 : 0);
+  const lineOf = (entry) => {
+    const at = entry.indexOf(SAID);
+    if (at >= 0) return entry.slice(at + SAID.length);
+    const said = entry.match(/^AGENT (?:says|switches account, saying): (.*?)(?:  \{"suggestions".*)?$/);
+    return said ? said[1] : null;
+  };
+  const left = new Map();
+  for (const entry of trace) {
+    const line = lineOf(entry);
+    if (line) left.set(line.slice(0, 60), (left.get(line.slice(0, 60)) ?? 0) + 1);
+  }
   for (let i = 0; i < trace.length; i++) {
+    const line = lineOf(trace[i]);
+    if (line === null) continue;
+    const key = line.slice(0, 60);
+    const written = left.get(key) ?? 0;
+    left.set(key, written - 1);
+    // Of the times it was written, the last ones are the ones the thread shows.
+    const shown = written <= times(line);
     const at = trace[i].indexOf(SAID);
-    if (at < 0) continue;
-    const line = trace[i].slice(at + SAID.length);
-    trace[i] = flat.includes(line.slice(0, 40)) ? `${trace[i].slice(0, at)}, saying: ${line}` : `${trace[i].slice(0, at)} (it wrote an opening line, which wasn't shown)`;
+    if (at >= 0) trace[i] = shown ? `${trace[i].slice(0, at)}, saying: ${line}` : `${trace[i].slice(0, at)} (it wrote an opening line, which wasn't shown)`;
+    else if (!shown) trace[i] = `  (the agent wrote a message here that the app held back, so the person never saw it: not to be judged) ${line}`;
   }
   const name = `${String(c.id).padStart(2, '0')}${RUNS > 1 ? `-${run + 1}` : ''}-${c.mode}-${c.app.replace(/\s/g, '-').toLowerCase()}`;
   await body().screenshot({ path: `${dir}${name}.png` }).catch(() => {});
@@ -352,7 +382,7 @@ async function converse(browser, c, run, dir) {
       JUDGE,
       JUDGE_SYSTEM,
       `App: ${c.app} (${c.mode} account). Its voice: ${VOICE[c.app]}.\n\nWhat the person was trying to do: ${c.goal}\nHow they type: ${c.style}\nHow it ended: ${ended}\n\nWhat the person did:\n${moves.map((m, i) => `${i + 1}. ${m}`).join('\n')}\n\nThe trace (the agent's lines and calls, with what the app reported):\n${trace.join('\n').slice(0, 60_000)}\n\nThe thread as it ended (what the person sees):\n${thread.slice(-5000)}\n\nJSON only.`,
-      1800,
+      6000,
     )) ?? { goal_reached: false, issues: [{ severity: 'low', kind: 'stuck', quote: '', why: 'the judge gave no answer' }], summary: 'not judged' };
   const text = [`#${c.id} ${c.app} · ${c.mode}`, `STYLE: ${c.style}`, `GOAL: ${c.goal}`, `ENDED: ${ended}`, `MODEL CALLS: ${modelCalls}${fallbacks ? ` (${fallbacks} unanswered)` : ''}`, '', '=== MOVES ===', ...moves.map((m, i) => `${i + 1}. ${m}`), '', '=== VERDICT ===', JSON.stringify(verdict, null, 2), '', '=== TRACE ===', ...trace, '', '=== THREAD ===', thread, '', '=== PAGE ERRORS ===', errors.join('\n') || 'none'].join('\n');
   writeFileSync(`${dir}${name}.txt`, text);

@@ -3,7 +3,7 @@ import { ACTIONS, type ActionId } from '@/data/actions';
 import type { AgentEvent } from '@/data/agentEvents';
 import { BANK_COUNTRIES, BANK_REACH } from '@/data/bankCountries';
 import { activeMode, cleanName, MODES, setActiveMode, type Mode } from '@/data/mode';
-import type { Say, ToolCall, ToolResult, Turn } from '@/lib/llm/tools';
+import { ENDS_TURN, type Say, type ToolCall, type ToolResult, type Turn } from '@/lib/llm/tools';
 import type { AgentAsk, Beat, Chip, Message, Params, PayTo, Said, StoredMessage, Verification } from '../conversation';
 import { FLOWS, needsSetup, planFor, topicFor, type FlowContext } from '../flows';
 import { nextSteps } from '../nextSteps';
@@ -35,6 +35,16 @@ export interface FlowEntry {
 
 /** The model's next step: the tools it calls, or why the app carries on without it. */
 export type StepReply = { calls: ToolCall[] } | { fallback: 'fallback' | 'limited' };
+
+/**
+ * The call that put up what's waiting, made again with a detail changed ($800 becomes $1,000, another name): a
+ * correction, which replaces it even before it's shown. The same call unchanged, or any other, waits its turn.
+ */
+function corrects(run: { asked?: { name: string; input: Record<string, unknown> } }, call: ToolCall): boolean {
+  const was = run.asked;
+  if (!was || was.name !== call.name) return false;
+  return Object.entries(call.input).some(([k, v]) => k !== 'say' && k in was.input && JSON.stringify(was.input[k]) !== JSON.stringify(v));
+}
 
 /** The app's own line when the model can't answer: where the flow buttons are depends on the screen (beside the phone, or behind Configure). */
 const stockLine = (why: 'fallback' | 'limited') => ({
@@ -76,6 +86,8 @@ interface Run {
   began?: string;
   /** The model's call that started it, as made: the same call again while it waits is no new request. */
   made?: string;
+  /** That call's tool and what it was asked with: the same tool with a detail changed is a correction. */
+  asked?: { name: string; input: Record<string, unknown> };
   /** A look-up made while something else is open: it shows what it finds and leaves that open. */
   side?: boolean;
   /** What the tool fills in as it goes: its status and facts. */
@@ -980,6 +992,7 @@ export function useAgentBrain({
     }
     const run = newRun(flowOf(call), true);
     run.made = made;
+    run.asked = { name: call.name, input: asked };
     run.leads = !LOOKUPS.has(call.name);
     const ctx: FlowContext = { ...cb.current.context(), variant: 0, offer: (what) => (run.offer = what) };
     const out = own(() => runTool({ ctx, memory: memory.current, next }, call));
@@ -1050,6 +1063,8 @@ export function useAgentBrain({
       let stopped = '';
       /** A search is waiting on their pick, held back for the model's line: the rest of what it's finding still shows. */
       let picking = false;
+      /** A call in this step has run through: a line written alongside it was written before its result was in. */
+      let ran = false;
       for (let i = 0; i < calls.length; i++) {
         const call = calls[i];
         if (stopped) {
@@ -1060,6 +1075,13 @@ export function useAgentBrain({
           continue;
         }
         if (overtaken()) break;
+        if (ran && ENDS_TURN.has(call.name)) {
+          // Written in the same step as what it's about, so without knowing how that went ("Checking the fee…",
+          // or a guess at the outcome): it isn't shown, and the model says it with the result in front of it.
+          settled(log.current, call.id, { status: 'not_shown', note: 'you wrote this in the same step as the calls above, before their results were in, so they haven’t seen it: say how it went now, once' });
+          stopped = 'the step ended before this';
+          continue;
+        }
         if (call.name === 'wait' || call.name === 'reply' || call.name === 'offer_choices') {
           if (call.name !== 'wait' && call.input.say) await say(call.input.say);
           const options = call.name === 'offer_choices' ? call.input.options : call.input.suggestions;
@@ -1089,7 +1111,7 @@ export function useAgentBrain({
         // there's nothing else to start. (Once it's open, something they type can take its place.)
         const held = openRef.current && !openRef.current.shown ? openRef.current : null;
         const started: { error: ToolResult } | Started =
-          held && call.name !== 'answer'
+          held && call.name !== 'answer' && !corrects(held.run, call)
             ? { error: { error: 'waiting_on_them', waiting: waitText(held.wait), fix: 'the app shows this the moment your line is out, and the flow carries on by itself once they act: lead into it with reply, in one sentence, and call nothing else' } }
             : call.name === 'answer'
               ? answerOpen(call)
@@ -1102,6 +1124,7 @@ export function useAgentBrain({
         if (call.name !== 'answer' && call.input.say) opening = false;
         const result = await started.start();
         settled(log.current, call.id, result);
+        ran = true;
         if (result.waiting) {
           picking = call.name === 'search';
           stopped = 'an earlier call in this step is waiting on them: call this again once they’ve acted, if it’s still wanted';

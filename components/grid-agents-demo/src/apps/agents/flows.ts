@@ -184,7 +184,9 @@ export function approvalOr(
 }
 
 /** Whether the account has a settled payment to or from `title` (the ledger names the other side). */
-export const paid = (ctx: FlowContext, title: string) => ctx.account().ledger.some((l) => l.title === title && l.status === 'COMPLETED');
+/** Whether they've been paid by this person (for this much, when it's a request the person asked for by amount). */
+export const paid = (ctx: FlowContext, title: string, cents?: number) =>
+  ctx.account().ledger.some((l) => l.title === title && l.status === 'COMPLETED' && (cents === undefined || Math.abs(l.cents) === cents));
 
 const connect = (ctx: FlowContext): Beat[] => {
   if (ctx.mode === 'business') return companySetup(ctx);
@@ -1085,7 +1087,8 @@ export const getpaid = (ctx: FlowContext): Beat[] => {
   const total = cents(ctx.params?.amount);
   if (people.length && total) return split(ctx, people, total);
   const who = payerFor(ctx.params);
-  if (paid(ctx, who.payer)) return [{ react: '👍' }, { say: 'getpaid.already', params: who }];
+  // Someone who paid one request can be asked for another: only the same request twice is already paid.
+  if (paid(ctx, who.payer, ctx.params?.name ? who.amount : undefined)) return [{ react: '👍' }, { say: 'getpaid.already', params: who }];
   return [
     { react: '‼️' },
     { say: 'getpaid.ask', params: who },
