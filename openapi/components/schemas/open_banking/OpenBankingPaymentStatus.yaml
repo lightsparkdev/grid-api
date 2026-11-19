@@ -1,0 +1,13 @@
+type: string
+enum:
+  - PENDING
+  - COMPLETED
+  - FAILED
+  - EXPIRED
+description: |
+  | Status | Description |
+  |--------|-------------|
+  | `PENDING` | Waiting for the customer to approve the payment at their bank, or for the bank to send it |
+  | `COMPLETED` | The bank sent the payment. The funds credit the internal account as an incoming transaction, reported by its own `INCOMING_PAYMENT` webhook |
+  | `FAILED` | The customer cancelled, or their bank refused the payment. No funds move |
+  | `EXPIRED` | The customer did not approve the payment before `expiresAt`. No funds move |

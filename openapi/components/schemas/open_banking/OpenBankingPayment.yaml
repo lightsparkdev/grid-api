@@ -1,0 +1,78 @@
+type: object
+required:
+  - id
+  - internalAccountId
+  - customerId
+  - status
+  - amount
+  - authorizationUrl
+  - redirectUrl
+  - reference
+  - expiresAt
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique identifier for the open banking payment.
+    example: OpenBankingPayment:019542f5-b3e7-1d02-0000-000000000020
+  internalAccountId:
+    type: string
+    description: The EUR internal account the payment funds.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+  customerId:
+    type: string
+    description: The customer who owns the internal account and pays from their own bank.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  status:
+    $ref: ./OpenBankingPaymentStatus.yaml
+  amount:
+    $ref: ../common/CurrencyAmount.yaml
+    description: The amount requested from the customer's bank, in `EUR`.
+  authorizationUrl:
+    type: string
+    format: uri
+    description: >-
+      Send the customer here to choose their bank and approve the payment.
+      Open it in the customer's browser or a web view rather than an iframe,
+      since many banks hand off to their own app to approve. In sandbox it
+      opens a Grid page that simulates the bank.
+    example: https://pay.example-provider.com/consent/7f3a9c1e
+  redirectUrl:
+    type: string
+    format: uri
+    description: The page the customer returns to, as sent on create.
+    example: https://app.example.com/top-up/return
+  reference:
+    type: string
+    description: >-
+      The payment reference the customer's bank sends with the funds, set by
+      Grid. It appears on the customer's bank statement.
+    example: GRIDOB7F3A9C1E
+  incomingTransactionId:
+    type: string
+    description: The incoming transaction that credited the internal account. Set once the payment is `COMPLETED`.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000021
+  failureReason:
+    type: string
+    description: Why the payment did not complete, when Grid knows. Set only when `status` is `FAILED`.
+    example: The customer cancelled the payment at their bank.
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      The deadline for the customer to approve the payment, after which
+      `authorizationUrl` stops working. A payment the customer has not
+      approved by then becomes `EXPIRED`. One approved in time stays `PENDING`
+      until the bank sends the funds or refuses them.
+    example: '2026-11-19T15:02:00Z'
+  createdAt:
+    type: string
+    format: date-time
+    description: When the payment was created.
+    example: '2026-11-19T14:47:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the payment last changed.
+    example: '2026-11-19T14:47:00Z'

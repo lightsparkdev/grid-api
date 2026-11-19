@@ -1,0 +1,125 @@
+post:
+  summary: Open banking payment webhook
+  description: >
+    Webhook that is called when an open banking payment reaches a final
+    status. It is sent once per payment.
+
+    This endpoint should be implemented by clients of the Grid API.
+
+
+    ### Authentication
+
+    The webhook includes a signature in the `X-Grid-Signature` header that
+    allows you to verify that the webhook was sent by Grid.
+
+    To verify the signature:
+
+    1. Get the Grid public key provided to you during integration
+
+    2. Decode the base64 signature from the header
+
+    3. Create a SHA-256 hash of the request body
+
+    4. Verify the signature using the public key and the hash
+
+
+    If the signature verification succeeds, the webhook is authentic. If not, it
+    should be rejected.
+
+
+    ### Event types
+
+    - `OPEN_BANKING_PAYMENT.COMPLETED` — The customer's bank sent the payment.
+    `data.incomingTransactionId` names the incoming transaction that credits
+    the internal account; that transaction also sends its own
+    `INCOMING_PAYMENT` webhook.
+
+    - `OPEN_BANKING_PAYMENT.FAILED` — The customer cancelled, or their bank
+    refused the payment. No funds move.
+
+    - `OPEN_BANKING_PAYMENT.EXPIRED` — The customer did not approve the
+    payment before `expiresAt`. No funds move.
+  operationId: openBankingPaymentWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/webhooks/OpenBankingPaymentWebhook.yaml
+        examples:
+          completed:
+            summary: The customer approved the payment and the bank sent it
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000030
+              type: OPEN_BANKING_PAYMENT.COMPLETED
+              timestamp: '2026-11-19T14:49:10Z'
+              data:
+                id: OpenBankingPayment:019542f5-b3e7-1d02-0000-000000000020
+                internalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                status: COMPLETED
+                amount:
+                  amount: 25000
+                  currency:
+                    code: EUR
+                    name: Euro
+                    symbol: €
+                    decimals: 2
+                authorizationUrl: https://pay.example-provider.com/consent/7f3a9c1e
+                redirectUrl: https://app.example.com/top-up/return
+                reference: GRIDOB7F3A9C1E
+                incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000021
+                expiresAt: '2026-11-19T15:02:00Z'
+                createdAt: '2026-11-19T14:47:00Z'
+                updatedAt: '2026-11-19T14:49:10Z'
+          failed:
+            summary: The customer cancelled the payment at their bank
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000031
+              type: OPEN_BANKING_PAYMENT.FAILED
+              timestamp: '2026-11-19T14:48:30Z'
+              data:
+                id: OpenBankingPayment:019542f5-b3e7-1d02-0000-000000000020
+                internalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                status: FAILED
+                amount:
+                  amount: 25000
+                  currency:
+                    code: EUR
+                    name: Euro
+                    symbol: €
+                    decimals: 2
+                authorizationUrl: https://pay.example-provider.com/consent/7f3a9c1e
+                redirectUrl: https://app.example.com/top-up/return
+                reference: GRIDOB7F3A9C1E
+                failureReason: The customer cancelled the payment at their bank.
+                expiresAt: '2026-11-19T15:02:00Z'
+                createdAt: '2026-11-19T14:47:00Z'
+                updatedAt: '2026-11-19T14:48:30Z'
+  responses:
+    '200':
+      description: >
+        Webhook received successfully
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Signature validation failed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - Webhook has already been processed (duplicate id)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error409.yaml

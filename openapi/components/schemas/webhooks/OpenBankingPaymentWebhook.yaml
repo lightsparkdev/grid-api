@@ -1,0 +1,10 @@
+allOf:
+  - $ref: ./BaseWebhook.yaml
+  - type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: ../open_banking/OpenBankingPayment.yaml
+      type:
+        $ref: ./OpenBankingPaymentWebhookEventType.yaml

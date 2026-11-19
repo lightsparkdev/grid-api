@@ -1,0 +1,7 @@
+type: string
+enum:
+  - COMPLETED
+  - FAILED
+description: >-
+  The outcome to simulate. `COMPLETED` credits the internal account with the
+  payment's amount; `FAILED` moves no funds.

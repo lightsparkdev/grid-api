@@ -11,6 +11,15 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
+## Fund an EUR account by open banking
+
+`POST /internal-accounts/{id}/open-banking-payments` starts a payment that pulls euros
+from the customer's own bank into their EUR internal account. The customer approves it
+in their banking app through `authorizationUrl`, then returns to your `redirectUrl`
+with `openBankingPaymentId`. An `OPEN_BANKING_PAYMENT` webhook reports the outcome, and
+in sandbox `POST /sandbox/open-banking-payments/{openBankingPaymentId}/complete`
+settles a payment. See [open banking](/payouts-and-b2b/depositing-funds/open-banking).
+
 ## Wire tracking numbers and returns on `railDetails`
 
 Wire legs now carry `railDetails` with `paymentRail: WIRE`. Alongside `imad`, a wire

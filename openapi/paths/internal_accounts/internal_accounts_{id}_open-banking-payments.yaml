@@ -1,0 +1,109 @@
+parameters:
+  - name: id
+    in: path
+    description: The ID of the EUR internal account to fund.
+    required: true
+    schema:
+      type: string
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+post:
+  summary: Fund an EUR account by open banking
+  description: |
+    Start an open banking payment that pulls euros from the customer's own
+    bank account into their EUR internal account. The customer approves the
+    payment at their bank, so no card or bank details are entered in your app.
+
+    1. Create the payment. It is `PENDING` and carries an `authorizationUrl`.
+    2. Send the customer to `authorizationUrl`. They choose their bank and
+       approve the payment there.
+    3. The customer returns to your `redirectUrl`, with
+       `openBankingPaymentId` added to its query. Returning does not mean the
+       payment succeeded; show a "processing" state.
+    4. When the bank sends the funds, the payment becomes `COMPLETED`, an
+       `OPEN_BANKING_PAYMENT.COMPLETED` webhook is sent, and the funds credit
+       the internal account as an incoming transaction. A cancelled or refused
+       payment becomes `FAILED`, and one not approved before `expiresAt`
+       becomes `EXPIRED`.
+
+    Available for individual customers' `EUR` internal accounts, once
+    Lightspark has enabled open banking for your platform. Other accounts
+    return `400`.
+
+    In sandbox, `authorizationUrl` opens a Grid page that simulates the bank.
+    Its button completes the payment and returns the customer to your
+    `redirectUrl`, as in production. You can also settle the payment directly
+    with `POST /sandbox/open-banking-payments/{openBankingPaymentId}/complete`.
+
+    Send an `Idempotency-Key` header to make retries safe: a request carrying
+    a key already used returns the payment created by the first request.
+  operationId: createOpenBankingPayment
+  tags:
+    - Internal Accounts
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: false
+      description: >
+        A unique identifier for the request. If the same key is sent multiple times,
+        the server will return the same response as the first request.
+      schema:
+        type: string
+        maxLength: 255
+        example: 550e8400-e29b-41d4-a716-446655440000
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/open_banking/OpenBankingPaymentCreateRequest.yaml
+        examples:
+          topUp:
+            summary: Top up an EUR account with €250
+            value:
+              amount: 25000
+              redirectUrl: https://app.example.com/top-up/return
+  responses:
+    '201':
+      description: Open banking payment created. Send the customer to its `authorizationUrl`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/open_banking/OpenBankingPayment.yaml
+    '400':
+      description: >-
+        Bad request. Returned with `INVALID_INPUT` when the account is not an
+        individual customer's `EUR` internal account, or `redirectUrl` is not
+        an `https` URL.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Open banking is not enabled for your platform
+        (`OPEN_BANKING_NOT_ENABLED`), or the customer cannot use it
+        (`CUSTOMER_NOT_VERIFIED`).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Internal account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

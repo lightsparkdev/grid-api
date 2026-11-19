@@ -1,0 +1,100 @@
+---
+title: "Open Banking"
+description: "Let a customer fund their EUR account from their own bank, approved in their banking app"
+icon: "/images/icons/bank.svg"
+"og:image": "/images/og/pages/payouts-and-b2b/depositing-funds/open-banking.webp"
+---
+
+An open banking payment pulls euros from a customer's own bank account into their EUR internal account. You send the customer to a link, they choose their bank and approve the payment in their banking app, and the bank sends the money as a SEPA credit. The customer never enters account details in your app, and no external account is registered.
+
+This page covers creating the payment, returning the customer to your app, and learning the outcome.
+
+## Prerequisites
+
+- Lightspark has enabled open banking for your platform. Until then, creating a payment returns `403 OPEN_BANKING_NOT_ENABLED`.
+- The customer is an individual, and their verification status is `APPROVED`.
+- The customer has an `EUR` internal account. Open banking payments fund that account only.
+- You have an `https` page in your app for the customer to return to.
+
+## Fund an account by open banking
+
+<Steps>
+<Step title="Create the payment">
+Call `POST /internal-accounts/{id}/open-banking-payments` with the amount in euro cents and your `redirectUrl`. Send an `Idempotency-Key` so a retried request returns the same payment instead of starting a second one.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/internal-accounts/InternalAccount:019542f5-b3e7-1d02-0000-000000000005/open-banking-payments' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000' \
+  -d '{
+    "amount": 25000,
+    "redirectUrl": "https://app.example.com/top-up/return"
+  }'
+```
+
+The payment is `PENDING`. Grid sets its `reference`, which the customer sees on their bank statement.
+
+```json Response
+{
+  "id": "OpenBankingPayment:019542f5-b3e7-1d02-0000-000000000020",
+  "internalAccountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000005",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "status": "PENDING",
+  "amount": {
+    "amount": 25000,
+    "currency": { "code": "EUR", "name": "Euro", "symbol": "€", "decimals": 2 }
+  },
+  "authorizationUrl": "https://pay.example-provider.com/consent/7f3a9c1e",
+  "redirectUrl": "https://app.example.com/top-up/return",
+  "reference": "GRIDOB7F3A9C1E",
+  "expiresAt": "2026-11-19T15:02:00Z",
+  "createdAt": "2026-11-19T14:47:00Z",
+  "updatedAt": "2026-11-19T14:47:00Z"
+}
+```
+</Step>
+
+<Step title="Send the customer to their bank">
+Open `authorizationUrl` in the customer's browser or a web view. Avoid an iframe: many banks approve the payment by opening their own app or a full page, which an iframe can block. The customer chooses their bank, signs in, and approves the payment. The link stops working at `expiresAt`.
+</Step>
+
+<Step title="Handle the return">
+When the customer leaves their bank, they land on your `redirectUrl` with `openBankingPaymentId` added to the query, for example `https://app.example.com/top-up/return?openBankingPaymentId=OpenBankingPayment:019542f5-b3e7-1d02-0000-000000000020`. Any query parameters you put on `redirectUrl` are kept. Ignore any other parameters added on the way back.
+
+<Warning>
+Returning to your page does not mean the payment succeeded. The customer can come back after cancelling, and the bank sends the funds after the customer approves. Show a "processing" state while the payment is `PENDING`, then show its final status.
+</Warning>
+
+To show the current state, call `GET /internal-accounts/{id}/open-banking-payments/{openBankingPaymentId}`.
+
+<Note>
+In a native app, `redirectUrl` can be a universal link (iOS) or App Link (Android), since both are `https` URLs. The customer reaches it through a redirect, not a tap, so the operating system may not open your app. Serve a web page at the same URL that shows the payment's status and offers a button back to your app. To return reliably, open `authorizationUrl` in an authentication session (`ASWebAuthenticationSession` on iOS, a Custom Tab on Android) and watch for `redirectUrl`.
+</Note>
+</Step>
+
+<Step title="Learn the outcome">
+Grid sends one `OPEN_BANKING_PAYMENT` webhook when the payment reaches a final status.
+
+| Status | Webhook | What happened |
+|--------|---------|---------------|
+| `COMPLETED` | `OPEN_BANKING_PAYMENT.COMPLETED` | The bank sent the payment. `incomingTransactionId` names the incoming transaction that credits the account |
+| `FAILED` | `OPEN_BANKING_PAYMENT.FAILED` | The customer cancelled, or their bank refused the payment. No funds move |
+| `EXPIRED` | `OPEN_BANKING_PAYMENT.EXPIRED` | The customer did not approve before `expiresAt`. No funds move |
+
+The credit itself is an ordinary incoming transaction. It sends its own `INCOMING_PAYMENT` webhooks and updates the account balance like any other deposit.
+</Step>
+</Steps>
+
+## Sandbox
+
+In sandbox, `authorizationUrl` opens a Grid page that stands in for the bank. Its button completes the payment, credits the account and sends the webhooks, then returns the customer to your `redirectUrl` with `openBankingPaymentId`, as in production.
+
+To settle a payment without the browser, for example in automated tests, call the sandbox endpoint. Pass `status: FAILED` to simulate a refused payment.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/sandbox/open-banking-payments/OpenBankingPayment:019542f5-b3e7-1d02-0000-000000000020/complete' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{ "status": "COMPLETED" }'
+```

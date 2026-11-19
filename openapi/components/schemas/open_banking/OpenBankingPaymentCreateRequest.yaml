@@ -1,0 +1,24 @@
+type: object
+required:
+  - amount
+  - redirectUrl
+properties:
+  amount:
+    type: integer
+    format: int64
+    exclusiveMinimum: 0
+    description: Amount to pull from the customer's bank, in euro cents.
+    example: 25000
+  redirectUrl:
+    type: string
+    format: uri
+    pattern: '^https://'
+    maxLength: 1024
+    description: >-
+      The `https` page the customer returns to after leaving their bank.
+      Grid adds an `openBankingPaymentId` query parameter naming this payment
+      and keeps any query parameters already present. Reaching this page does
+      not mean the payment succeeded: read the outcome from the
+      `OPEN_BANKING_PAYMENT` webhook or `GET` the payment. Ignore any other
+      query parameters added on the way back.
+    example: https://app.example.com/top-up/return
