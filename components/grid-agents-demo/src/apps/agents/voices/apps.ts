@@ -392,7 +392,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       connect: (p) => ({
         ...ASKS.connect(p),
         title: 'Turn on Instinct balance',
-        text: `here’s what i’d set: up to ${usd(n(p, 'perTx'))} a payment, ${usd(n(p, 'daily'))} a day, and i’ll text you before anything over ${usd(n(p, 'approve'))}. reply yes and i’ll turn it on`,
+        text: `Instinct balance: up to ${usd(n(p, 'perTx'))} a payment, ${usd(n(p, 'daily'))} a day, your ok needed above ${usd(n(p, 'approve'))}. reply yes to turn it on`,
       }),
       vault: () => ({
         ...ASKS.vault(),
@@ -414,19 +414,19 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       limits: (p) => ({
         ...ASKS.limits(p),
         title: 'Update your limits',
-        text: `new limits: i’d act alone up to ${usd(n(p, 'approve'))}${wasText(p, 'approve', 'fromApprove')}, ${usd(n(p, 'daily'))} a day${wasText(p, 'daily', 'fromDaily')}, ${usd(n(p, 'perTx'))} a payment${wasText(p, 'perTx', 'fromPerTx')}. reply yes to save them${s(p, 'go') ? ` and ${s(p, 'go')} it` : ''}`,
+        text: `new limits: no ok needed up to ${usd(n(p, 'approve'))}${wasText(p, 'approve', 'fromApprove')}, ${usd(n(p, 'daily'))} a day${wasText(p, 'daily', 'fromDaily')}, ${usd(n(p, 'perTx'))} a payment${wasText(p, 'perTx', 'fromPerTx')}. reply yes to save them${s(p, 'go') ? ` and ${s(p, 'go')} it` : ''}`,
       }),
       company: (p) => ({
         ...ASKS.company(p),
-        text: `here’s what i’d set up for ${s(p, 'company')}: a verified business account, up to ${usd(n(p, 'perTx'))} a payment, ${usd(n(p, 'daily'))} a day, and i’ll text you before anything over ${usd(n(p, 'approve'))}. reply yes and i’ll set it up`,
+        text: `${s(p, 'company')}: a verified business account, up to ${usd(n(p, 'perTx'))} a payment, ${usd(n(p, 'daily'))} a day, your ok needed above ${usd(n(p, 'approve'))}. reply yes to set it up`,
       }),
       team: (p) => ({
         ...ASKS.team(p),
-        text: `${s(p, 'people')} ${n(p, 'count') > 1 ? 'each get their own agent, sharing' : 'gets their own agent, on'} ${usd(n(p, 'budget'))} a month from ${s(p, 'company')}’s balance. up to ${usd(n(p, 'perTx'))} a payment each, and i’ll text you before anything over ${usd(n(p, 'approve'))}. reply yes to set it up`,
+        text: `${s(p, 'people')} ${n(p, 'count') > 1 ? 'each get their own agent, sharing' : 'gets their own agent, on'} ${usd(n(p, 'budget'))} a month from ${s(p, 'company')}’s balance. up to ${usd(n(p, 'perTx'))} a payment each, your ok needed above ${usd(n(p, 'approve'))}. reply yes to set it up`,
       }),
       empcard: (p) => ({
         ...ASKS.empcard(p),
-        text: `a Visa in ${s(p, 'name')}’s name for ${s(p, 'purpose')}, on ${s(p, 'company')}’s balance. reply yes and i’ll issue it`,
+        text: `a Visa in ${s(p, 'name')}’s name for ${s(p, 'purpose')}, on ${s(p, 'company')}’s balance. reply yes to issue it`,
       }),
     },
   },
@@ -459,11 +459,11 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       // Duet asks for a yes in the thread, with reply pills, and keeps cards for money.
       connect: (p) => ({
         ...ASKS.connect(p),
-        text: `Up to ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day. I’ll check with you before anything over ${usd(n(p, 'approve'))}, and you can change these any time.`,
+        text: `Up to ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day. Your approval is needed above ${usd(n(p, 'approve'))}. You can change these any time.`,
       }),
       limits: (p) => ({
         ...ASKS.limits(p),
-        text: `I’d act alone up to ${usd(n(p, 'approve'))}${wasText(p, 'approve', 'fromApprove')}, ${usd(n(p, 'daily'))} a day${wasText(p, 'daily', 'fromDaily')} and ${usd(n(p, 'perTx'))} a payment${wasText(p, 'perTx', 'fromPerTx')}.`,
+        text: `No approval needed up to ${usd(n(p, 'approve'))}${wasText(p, 'approve', 'fromApprove')}, ${usd(n(p, 'daily'))} a day${wasText(p, 'daily', 'fromDaily')} and ${usd(n(p, 'perTx'))} a payment${wasText(p, 'perTx', 'fromPerTx')}.`,
       }),
       pay: duetSpend('pay'),
       cashout: duetSpend('cashout'),
@@ -474,7 +474,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       payroll: duetSpend('payroll'),
       company: (p) => ({
         ...ASKS.company(p),
-        text: `A verified business account for ${s(p, 'company')}: up to ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day. I’ll check with you before anything over ${usd(n(p, 'approve'))}, and you can change these any time.`,
+        text: `A verified business account for ${s(p, 'company')}: up to ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day. Your approval is needed above ${usd(n(p, 'approve'))}. You can change these any time.`,
       }),
       team: (p) => ({
         ...ASKS.team(p),

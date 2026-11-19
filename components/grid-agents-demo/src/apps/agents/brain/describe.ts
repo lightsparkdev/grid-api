@@ -44,7 +44,18 @@ export function describe(messages: Message[]): string[] {
       case 'card':
         return [describeCard(m.card)];
       case 'products':
-        return [cap(`products: ${m.products.map((p) => join([p.title, p.price, p.merchant, p.detail, p.pick && 'the app’s pick'], ', ')).join(' | ')}`)];
+        // Each search's results: one thing they named, or options to choose from, with the one worth suggesting.
+        return [
+          cap(
+            `a list of what was found, names and prices only: ${(m.shelves ?? [m.products])
+              .map((shelf) =>
+                shelf.length > 1
+                  ? `options to choose from (${shelf.map((p) => join([p.title, p.price, p.pick && 'the one you’d suggest'], ', ')).join(' / ')})`
+                  : shelf.map((p) => join([p.title, p.price, p.merchant, p.detail], ', ')).join(''),
+              )
+              .join(' | ')}`,
+          ),
+        ];
       case 'meta':
         return [`a note on screen: ${m.meta.text}`];
       case 'subagent':

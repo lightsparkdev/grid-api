@@ -181,8 +181,8 @@ export const SUBAGENTS = {
         {
           title: 'Checked it against your limits',
           detail: over
-            ? `${usd2(n(p, 'amount'))} is over the ${usd(n(p, 'approve'))} I can spend alone, so it goes to you to approve.`
-            : `${usd2(n(p, 'amount'))} is inside the ${usd(n(p, 'approve'))} I can spend alone, so I can pay it myself.`,
+            ? `${usd2(n(p, 'amount'))} is over the ${usd(n(p, 'approve'))} approval limit, so it goes to you to approve.`
+            : `${usd2(n(p, 'amount'))} is inside the ${usd(n(p, 'approve'))} approval limit, so it’s paid without asking.`,
         },
       ],
       messages: [

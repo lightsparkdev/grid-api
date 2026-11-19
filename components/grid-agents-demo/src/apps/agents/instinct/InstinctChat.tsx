@@ -153,13 +153,14 @@ function Detected({ text }: { text: string }) {
   );
 }
 
-/** A money ask, as Instinct texts it: what, how much, from where, and to reply yes. */
+/** A money ask, as Instinct texts it: what, how much, from where, and how to answer. Only that: what the agent has to
+ *  say about it is the agent's own line, above it. */
 function askText(ask: AgentAsk) {
   if (ask.text) return ask.text;
   const what = ask.who ? `${ask.who.name}, ${ask.amount}` : `${ask.title}, ${ask.amount}`;
   const from = ask.method ? ` ${ask.method.replace(/^From /, 'from ')}.` : '';
   const verb = ask.who?.icon ? 'place the order' : 'send it';
-  return `${what}.${from} reply yes and i’ll ${verb}`;
+  return `${what}.${from} reply yes to ${verb}`;
 }
 
 /** Only what's sensitive (a card, a bank) opens app.instinct.com; everything else is answered by texting back. */
@@ -211,7 +212,7 @@ const PICKED_MS = 700;
 
 /** A choice, as a numbered text to answer by typing. */
 function chipsText(m: Extract<Message, { kind: 'chips' }>) {
-  return `reply with one:\n${m.chips.map((c, i) => `${i + 1}. ${c.label}`).join('\n')}`;
+  return m.chips.map((c, i) => `${i + 1}. ${c.label}`).join('\n');
 }
 
 const today = () => new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
