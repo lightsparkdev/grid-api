@@ -86,6 +86,28 @@ The credit itself is an ordinary incoming transaction. It sends its own `INCOMIN
 </Step>
 </Steps>
 
+## Errors
+
+Creating a payment fails before anything is sent to the customer's bank, so a failed request leaves nothing to clean up.
+
+| Status | Code | When | What to do |
+|--------|------|------|------------|
+| `400` | `INVALID_INPUT` | The account is not an individual customer's open `EUR` internal account, `amount` is not positive, or `redirectUrl` is not `https` | Fix the request. Don't retry it unchanged |
+| `403` | `OPEN_BANKING_NOT_ENABLED` | Open banking is not enabled for your platform | Contact Lightspark |
+| `404` | `ACCOUNT_NOT_FOUND` | The internal account does not exist or belongs to another platform | Check the account id |
+| `5xx` | | A temporary failure | Retry with the same `Idempotency-Key`. A payment that was already created is returned with `200`, so a retry never starts a second payment |
+
+```json 403 OPEN_BANKING_NOT_ENABLED
+{
+  "code": "OPEN_BANKING_NOT_ENABLED",
+  "reason": "Open banking payments are not enabled for this platform."
+}
+```
+
+### Tracking status
+
+Use the `OPEN_BANKING_PAYMENT` webhook as the source of truth. Call the `GET` endpoint once when the customer returns to your page, and again if you need to refresh the screen. If you must poll, wait at least 5 seconds between calls, and stop once the payment is no longer `PENDING` or has passed `expiresAt`.
+
 ## Sandbox
 
 In sandbox, `authorizationUrl` opens a Grid page that stands in for the bank. Its button completes the payment, credits the account and sends the webhooks, then returns the customer to your `redirectUrl` with `openBankingPaymentId`, as in production.
