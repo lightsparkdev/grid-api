@@ -28,7 +28,7 @@ const BASE = option('base', 'http://localhost:4003');
 const ONLY = option('only')?.split(',').map(Number);
 const RUNS = Number(option('runs', 1));
 const CONCURRENCY = Number(option('concurrency', 4));
-const MAX_MOVES = Number(option('moves', 18));
+const MAX_MOVES = Number(option('moves', 26));
 const PLAYER = option('player', 'claude-sonnet-5-5');
 const JUDGE = option('judge', 'claude-sonnet-5-5');
 const ROOT = new URL('..', import.meta.url).pathname;
@@ -166,7 +166,7 @@ Flag every agent line that has one of these problems:
 - promise: says it did or will do something no tool did
 - wrong_step: starts something the person didn't ask for, or redoes something already done
 
-What the agent is told about the app, and may say without a result: a team budget can't be changed once it's approved (before that it can); a bill split is equal shares with the person counted in; adding money takes nothing off (all of it lands in the balance) and has no second confirmation once the card is saved or the bank linked; a payment within the approval limit goes out without asking; a well-known subscription's usual price.
+What the agent is told about the app, and may say without a result: withdrawals to their bank are instant; a card in the thread is a snapshot from when it appeared and doesn't update; in Instinct there are no buttons, so approvals are answered by replying yes; a team budget can't be changed once it's approved (before that it can); a bill split is equal shares with the person counted in; adding money takes nothing off (all of it lands in the balance) and has no second confirmation once the card is saved or the bank linked; a payment within the approval limit goes out without asking; a well-known subscription's usual price.
 
 Don't flag: the agent declining things outside money; wording you'd merely have written differently; the app's own cards.
 Severity: high = a person would be misled about their money or blocked; medium = clearly off but they could carry on; low = polish.
@@ -286,6 +286,27 @@ async function converse(browser, c, run, dir) {
     for (let i = (await all.count()) - 1; i >= 0; i--) if (await all.nth(i).click({ timeout: 700 }).then(() => true, () => false)) return;
     if (await back.count()) await back.click({ timeout: 800 }).catch(() => {});
   };
+  /**
+   * What someone would read on the phone: the thread's text without what's there but faded out (Duet keeps its
+   * "Thinking it through" label in place at zero opacity, which reads as the agent still working).
+   */
+  const visible = () =>
+    page.evaluate(() => {
+      const root = document.querySelector('[data-screen-body]');
+      if (!root) return '';
+      const hidden = [];
+      for (const el of root.querySelectorAll('*')) {
+        if (getComputedStyle(el).opacity !== '0') continue;
+        hidden.push([el, el.style.getPropertyValue('display'), el.style.getPropertyPriority('display')]);
+        el.style.setProperty('display', 'none', 'important');
+      }
+      const text = root.innerText;
+      for (const [el, was, priority] of hidden) {
+        if (was) el.style.setProperty('display', was, priority);
+        else el.style.removeProperty('display');
+      }
+      return text;
+    });
   /** What could be tapped in the phone right now, by label. */
   const tappable = () =>
     page.evaluate(() => {
@@ -307,7 +328,7 @@ async function converse(browser, c, run, dir) {
   let ended = 'ran out of moves';
   for (let move = 0; move < MAX_MOVES; move++) {
     // What they'd read: the thread's lines, without the bare counters and clock a text field shows.
-    const seen = (await body().innerText()).split('\n').map((l) => l.trim()).filter((l) => l && !/^\d{1,3}$/.test(l)).slice(-45).join('\n');
+    const seen = (await visible()).split('\n').map((l) => l.trim()).filter((l) => l && !/^\d{1,3}$/.test(l)).slice(-45).join('\n');
     const can = await tappable();
     const typing = (await page.locator('[data-screen-body] textarea:not([aria-hidden]):visible').count()) > 0;
     const did = moves.length ? `What you've done so far:\n${moves.map((m, i) => `${i + 1}. ${m}`).join('\n')}` : "You haven't done anything yet.";

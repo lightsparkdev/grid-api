@@ -86,6 +86,8 @@ interface Run {
   began?: string;
   /** The model's call that started it, as made: the same call again while it waits is no new request. */
   made?: string;
+  /** Its opening line, once shown and until the model has been told so: what it says next doesn't say it again. */
+  said?: Say;
   /** That call's tool and what it was asked with: the same tool with a detail changed is a correction. */
   asked?: { name: string; input: Record<string, unknown> };
   /** A look-up made while something else is open: it shows what it finds and leaves that open. */
@@ -459,6 +461,7 @@ export function useAgentBrain({
       ...(run.did && { they: run.did }),
       ...(run.began && { started: run.began }),
       ...(run.replaced && { replaced: `${run.replaced} closed when you called this: this took its place` }),
+      ...(run.said && { they_read: `your line as you started this is already in front of them (“${Object.values(run.said)[0] ?? ''}”): what you say next carries on from it, without saying it again` }),
       ...run.result,
       ...(notes.length && { notes }),
       ...(shown.length && { shown }),
@@ -473,6 +476,7 @@ export function useAgentBrain({
     run.offer = undefined;
     run.replaced = undefined;
     run.began = undefined;
+    run.said = undefined;
     const taker = run.taker;
     run.taker = undefined;
     if (taker) return taker(out);
@@ -535,6 +539,7 @@ export function useAgentBrain({
           const line = run.opening;
           run.opening = undefined;
           run.opened = true;
+          run.said = line;
           await say(line);
           if (run.cancelled) return false;
         }
