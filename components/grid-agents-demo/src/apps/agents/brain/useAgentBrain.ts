@@ -1021,8 +1021,10 @@ export function useAgentBrain({
         },
       };
     }
+    // What's about to close may be a step of something bigger (the top-up a payment was waiting on): that stops too.
+    const part = openRef.current?.run.asked;
     const closed = dismiss();
-    if (closed) run.replaced = closed;
+    if (closed) run.replaced = part && part.name !== call.name ? `${closed} (a step of ${part.name}, which stopped with it and did nothing more: call ${part.name} again if it’s still wanted)` : closed;
     group(run.flow, () => own(() => topicOf(call, ctx)));
     return {
       spoke: () => run.opened,
