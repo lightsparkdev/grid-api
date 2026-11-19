@@ -1172,6 +1172,14 @@ export function useAgentBrain({
     request.current = { text, answered: false };
     grouped.current = null;
     typed(log.current, meant);
+    // Where they typed it is something the model can't see: while a name or an amount is asked for, the message field
+    // itself says so ("Type a name"), so what goes into it is that, whatever else it reads like.
+    const asked = !heard.flow && openRef.current?.shown ? openRef.current.wait.kind : null;
+    if (asked === 'name' || asked === 'amount') {
+      fromApp(log.current, {
+        typed_into: `the message field, which read “Type ${asked === 'name' ? 'a name' : 'an amount'}” as they wrote this: it’s the ${asked} they’re giving, however much it reads like a request, unless it’s plainly a question for you or them backing out`,
+      });
+    }
     if (heard.flow) {
       setBusy(true);
       starting.current = true;
