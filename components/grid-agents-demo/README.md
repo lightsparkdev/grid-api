@@ -63,8 +63,9 @@ the model answers with tool calls.
 | `ANTHROPIC_API_KEY` | unset | The model's key. Keep it in `.env.local` (gitignored) or the Vercel project. |
 | `AGENT_MODEL_ENABLED` | unset | Must be `true` for the route to call the model. Set it to anything else to turn the model off. |
 | `AGENT_MODEL` | `claude-haiku-5-5` | The Anthropic model ID. |
-| `AGENT_RATE_LIMIT` | `75` | Messages to the model per visitor every 10 minutes. |
-| `AGENT_DAILY_CAP` | `20000` | Model calls per day across all visitors. Each step of a flow is a call (about 2 to 7 per flow), so one conversation counts many times. |
+| `AGENT_RATE_LIMIT` | `75` | Messages to the model per browser every 10 minutes. The steps that carry them out get six times that. |
+| `AGENT_NETWORK_LIMIT` | `3000` | The same, for everyone behind one network address (an office): messages every 10 minutes, and six times that in steps. |
+| `AGENT_DAILY_CAP` | `20000` | Model calls per day across all visitors. Every step of a conversation is a call, tiles included: about 13 per conversation. The server logs a warning at 50% and 80% of the cap, and an error when it's reached. |
 | `KV_REST_API_URL`, `KV_REST_API_TOKEN` | unset | Upstash Redis for the limits. Without them, the limits are per server instance, in memory. |
 
 The route rejects requests from other origins, caps what the visitor types at 300 characters, and

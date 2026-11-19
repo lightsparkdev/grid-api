@@ -213,7 +213,9 @@ export type MetaKey = keyof typeof METAS;
 export const LINES = {
   greeting: () => `Hi! I can pay people in ${BANK_REACH} countries, shop and get paid for you. Add a card or set up a balance to start, or ask me anything.`,
   'setup.auto': (p) => `Heads up: ${setupDone(p)}, so we can jump right in.`,
-  fallback: () => 'I can only help with money here: paying people, shopping, and getting paid.',
+  // The model can't answer (off, or failing): the playground's flow buttons still play, beside the phone or, on a
+  // small screen, behind Configure.
+  fallback: (p) => `I can’t chat right now. Pick a flow from the buttons ${n(p, 'narrow') ? 'under Configure' : 'on the left'} and I’ll take it from there.`,
   limited: () => 'I’ve hit my chat limit for now. You can still tap any of the things I can do.',
 
   'connect.intro': (p) =>
@@ -371,7 +373,6 @@ export const LINES = {
   'history.none': () => 'Nothing yet. Once I pay for something or money comes in, it shows up here.',
 
   'next.ask': () => 'What would you like to do next?',
-  'fallback.business': () => 'I can only help with the business’s money here: invoices, bills, contractors, payroll and the team’s cards.',
   'greeting.business': () =>
     'Hi! I can run your business’s money: send invoices, pay bills and contractors, run payroll, and give your team cards. Set up your company to start, or ask me anything.',
 

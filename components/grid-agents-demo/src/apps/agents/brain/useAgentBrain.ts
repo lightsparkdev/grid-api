@@ -36,6 +36,12 @@ export interface FlowEntry {
 /** The model's next step: the tools it calls, or why the app carries on without it. */
 export type StepReply = { calls: ToolCall[] } | { fallback: 'fallback' | 'limited' };
 
+/** The app's own line when the model can't answer: where the flow buttons are depends on the screen (beside the phone, or behind Configure). */
+const stockLine = (why: 'fallback' | 'limited') => ({
+  key: why,
+  ...(why === 'fallback' && typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches && { params: { narrow: 1 } }),
+});
+
 type Decision = 'allow' | 'deny' | { swap: PayTo };
 /** What settles something open: a decision, an option, an amount, a name; null when it's closed under them. */
 type Given = { decision: Decision } | { option: number; onPage?: boolean } | { amount: number } | { name: string } | null;
@@ -878,9 +884,9 @@ export function useAgentBrain({
       await sleep(400);
       fromApp(log.current, { note: 'you were unavailable, so the app said this itself', said: lines.map((l) => cb.current.plain(l.key, l.params)) });
     } else {
-      const key = why === 'fallback' && mode === 'business' ? 'fallback.business' : why;
-      show({ kind: 'them', said: { key }, typing: false });
-      fromApp(log.current, { note: 'you were unavailable, so the app said this itself', said: cb.current.plain(key) });
+      const said = stockLine(why);
+      show({ kind: 'them', said, typing: false });
+      fromApp(log.current, { note: 'you were unavailable, so the app said this itself', said: cb.current.plain(said.key, said.params) });
     }
     reveal();
     if (!runRef.current || openRef.current?.shown) setBusy(false);
@@ -1226,7 +1232,7 @@ export function useAgentBrain({
       if (!open.run.voiced) {
         setComposer('');
         push({ kind: 'me', text });
-        show({ kind: 'them', said: { key: without.current === 'limited' ? 'limited' : mode === 'business' ? 'fallback.business' : 'fallback' }, typing: false });
+        show({ kind: 'them', said: stockLine(without.current), typing: false });
         return;
       }
     }

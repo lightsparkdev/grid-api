@@ -39,6 +39,8 @@ export interface VoiceOverrides {
 
 const n = (p: Params | undefined, k: string) => Number(p?.[k] ?? 0);
 const s = (p: Params | undefined, k: string) => String(p?.[k] ?? '');
+/** Where the playground keeps its flow buttons: beside the phone, or on a small screen behind Configure. */
+const where = (p: Params | undefined) => (n(p, 'narrow') ? 'under Configure' : 'on the left');
 const lower = (p: Params | undefined, k: string) => s(p, k).toLowerCase();
 /** Grok's sign-off for a purchase on a one-time card; one on their own saved card has nothing to self-destruct. */
 const oneTime = (p: Params | undefined) => (n(p, 'card') ? '' : ' The card already self-destructed.');
@@ -85,7 +87,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank yet. Add it once and I’ll take it from there.`,
       'pay.done': (p) => `Sent! ${s(p, 'first')} has it, and I let them know it’s from you.`,
       'agent.done': () => 'You’re booked. The confirmation is in your inbox.',
-      fallback: () => 'I can only help with money here: paying people, shopping, and getting paid.',
+      fallback: (p) => `I can’t chat right now. Pick a flow from the buttons ${where(p)} and I’ll take it from there.`,
     },
     asks: {
       buy: (p) => MUSE_ORDER(p),
@@ -139,7 +141,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'agent.intro': (p) => `${s(p, 'hotel')}’s agent wanted ${usd(n(p, 'listed'))}. Paying directly knocks off 10%: ${usd2(n(p, 'amount'))}.`,
       'getpaid.done': (p) => `${s(p, 'first')} paid. ${usd2(n(p, 'amount'))} in, ${usd2(n(p, 'balance'))} total.`,
       'balance.answer': (p) => `${usd2(n(p, 'balance'))}. Here’s the breakdown.`,
-      fallback: () => 'Not my department. I only handle money: paying people, shopping, getting paid.',
+      fallback: (p) => `Chat’s down right now. Pick a flow from the buttons ${where(p)}.`,
     },
     asks: {
       connect: (p) => ({
@@ -299,7 +301,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'buy.done': (p) => (n(p, 'now') ? 'ordered! it’ll be there in **about 30 minutes**.' : 'ordered! it arrives **thursday**.'),
       'buy.sent': () => 'sent! it’s in your **inbox**.',
       'pay.intro': (p) => `${s(p, 'first')} banks with **${s(p, 'bank')}**, so i’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'from')} is about **${s(p, 'to')}** right now.` : ''}`,
-      fallback: () => 'i can only help with money here! paying people, shopping, getting paid.',
+      fallback: (p) => `i can’t chat right now! pick a flow from the buttons ${where(p)} and i’ll take it from there.`,
     },
     asks: {
       connect: (p) => ({
@@ -386,7 +388,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'cashout.bank': () => 'need your bank first. where is it?',
       'balance.answer': () => 'here’s where you’re at',
       'history.answer': () => 'here’s this week',
-      fallback: () => 'i only do money here, paying people, shopping, getting paid',
+      fallback: (p) => `can’t chat right now, pick a flow from the buttons ${where(p)}`,
     },
     asks: {
       connect: (p) => ({
@@ -453,7 +455,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
           : `${short(p)}I’ll use a card only ${s(p, 'merchant')} can charge, capped at ${usd2(n(p, 'amount'))} a month.`,
       'agent.done': () => 'Booked. I added it to your calendar and filed the receipt.',
       'history.answer': () => 'Here’s what moved this week.',
-      fallback: () => 'I can only help with money here: paying people, shopping, and getting paid.',
+      fallback: (p) => `I can’t chat at the moment. Choose a flow from the buttons ${where(p)} and I’ll take it from there.`,
     },
     asks: {
       // Duet asks for a yes in the thread, with reply pills, and keeps cards for money.
