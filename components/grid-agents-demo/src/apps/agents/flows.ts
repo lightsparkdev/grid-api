@@ -170,7 +170,8 @@ export function approvalOr(
 ): Beat[] {
   // Covered by an approval they already gave (the limit raised for it): it shows as each app draws a finished one, so
   // it sits in the thread like the ones they approved by hand, and goes straight on.
-  if (ctx.preApproved) return [{ ask: ask.key, params: ask.params, settled: true, allow: [{ emit: { type: 'action.approve' } }, ...after], deny: [] }];
+  // The approval goes through first, in the same moment the card appears; the beat for the card to land comes after.
+  if (ctx.preApproved) return [{ ask: ask.key, params: ask.params, settled: true, allow: [{ emit: { type: 'action.approve' } }, { pause: 400 }, ...after], deny: [] }];
   if (!needs) return [{ say: autoLine, params: { ...lineParams, ...limitParams(ctx) } }, ...after];
   return [
     ...(heldLine ? [{ say: heldLine, params: { ...lineParams, ...limitParams(ctx) } } as const] : []),

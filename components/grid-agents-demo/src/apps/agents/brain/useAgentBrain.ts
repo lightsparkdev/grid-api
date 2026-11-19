@@ -640,9 +640,9 @@ export function useAgentBrain({
         } else if ('when' in b) {
           if (!(await play(own(b.when), run))) return false;
         } else if ('ask' in b && b.settled) {
-          // Already approved: nothing to wait for. Its finished card goes in the thread, and the flow carries on.
+          // Already approved: nothing to wait for. Its finished card goes in the thread and the flow carries on at
+          // once, with no wait in between: the card never reads as finished while its approval has yet to go through.
           put({ kind: 'ask', key: b.ask, params: b.params, state: 'done', led: run.voiced, auto: true });
-          await sleep(400);
           if (!(await play(b.allow, run))) return false;
         } else if ('ask' in b) {
           const ask = askOf(b.ask, b.params);
