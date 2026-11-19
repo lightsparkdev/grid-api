@@ -8,7 +8,7 @@ import { takeStep, takeTurn } from '@/lib/llm/limits';
 import { sameOrigin } from '@/lib/llm/origin';
 import { lookUpPrice } from '@/lib/llm/priceLookup';
 import { systemPrompt, type PromptState } from '@/lib/llm/prompt';
-import { ENDS_TURN, SAYS_NOTHING, toolsIn, type Block, type ToolCall, type ToolName, type Turn } from '@/lib/llm/tools';
+import { CONNECTOR_IDS, ENDS_TURN, SAYS_NOTHING, toolsIn, type Block, type Say, type ToolCall, type ToolName, type Turn } from '@/lib/llm/tools';
 import type { AgentResponse } from '@/lib/llm/types';
 import { VISITOR_HEADER, visitorOf } from '@/lib/visitor';
 
@@ -180,12 +180,10 @@ export async function POST(req: NextRequest) {
   try {
     const { calls } = await anthropicAdapter(key).step({ system: systemPrompt(connector, state), turns, mode });
     const names = namesIn(state, turns, calls);
-    // The app's own name is a name too ("your Dots balance").
-    const own = CONNECTORS.find((c) => c.id === connector)?.label ?? '';
-    if (own) names.businesses.push(`${own} balance`);
     const keep = new Set([...names.people, ...names.businesses].flatMap(capitalized));
-    const voiced = LOWERCASE.has(connector) ? (line: string) => withNames(lowercased(line, keep), names) : (line: string) => line;
-    const out = await Promise.all(calls.map((c) => tidy(key, c, voiced)));
+    // A lowercase app's line is held to its casing, names kept; the rest go as written.
+    const voiced = (id: ConnectorId, line: string) => (LOWERCASE.has(id) ? withNames(lowercased(line, keep), names) : line);
+    const out = await Promise.all(calls.map((c) => tidy(key, c, connector, voiced)));
     return NextResponse.json({ calls: out } satisfies AgentResponse);
   } catch (e) {
     if (process.env.NODE_ENV === 'development') console.error('[agent]', e);
@@ -254,7 +252,8 @@ function namesIn(state: PromptState, turns: Turn[], calls: ToolCall[]): { people
   const named = (list: string[]) => list.map((n) => n.trim()).filter((n, i, all) => /^[A-ZÀ-Þ]/.test(n) && n.length <= MAX_NAME && all.indexOf(n) === i);
   return {
     people: named([...state.recipients.map((r) => r.name), state.owner ?? '', ...(state.team ?? []).map((m) => m.replace(/\s*\(.*$/, '')), ...said(PERSON_KEYS), ...split]),
-    businesses: named([state.company ?? '', ...said(BUSINESS_KEYS)]),
+    // An app's own name is a name too ("your Dots balance").
+    businesses: named([state.company ?? '', ...said(BUSINESS_KEYS), ...CONNECTORS.map((c) => `${c.label} balance`)]),
   };
 }
 
@@ -270,14 +269,24 @@ function withNames(text: string, names: { people: string[]; businesses: string[]
   return all.reduce((line, name) => line.replace(new RegExp(`(?<![A-Za-zÀ-ÿ])${escaped(name.toLowerCase())}(?![A-Za-zÀ-ÿ])`, 'g'), name), text);
 }
 
-/** A call made ready for the phone: its line cleaned and in the app's casing, taps checked, and a product we don't list priced from the web. */
-async function tidy(key: string, call: ToolCall, voiced: (line: string) => string): Promise<ToolCall> {
-  const said = typeof call.input.say === 'string' && !SAYS_NOTHING.has(call.name) ? voiced(clean(call.input.say)) : '';
-  const input: ToolCall['input'] = { ...call.input, say: ENDS_TURN.has(call.name) ? said : statement(said) };
-  // A line that lost a good part of itself on the way out is worth seeing as it was written.
-  if (process.env.NODE_ENV === 'development' && typeof call.input.say === 'string' && (input.say ?? '').length < call.input.say.trim().length * 0.8) {
-    console.info(`[agent] line shortened: ${JSON.stringify(call.input.say)} → ${JSON.stringify(input.say ?? '')}`);
-  }
+/**
+ * Every app's line, cleaned and in that app's casing. One the model left out is filled from a sentence-case app's
+ * (made lowercase for the apps that text that way), so no app shows another's casing.
+ */
+function saidBy(raw: unknown, connector: ConnectorId, voiced: (id: ConnectorId, line: string) => string): Say | undefined {
+  const lines = typeof raw === 'string' ? { [connector]: raw } : raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : null;
+  if (!lines) return undefined;
+  const given = Object.fromEntries(CONNECTOR_IDS.map((id) => [id, typeof lines[id] === 'string' ? clean(lines[id] as string) : ''])) as Record<ConnectorId, string>;
+  const plain = (['yourapp', 'claude', 'muse', 'grok'] as ConnectorId[]).map((id) => given[id]).find(Boolean) ?? given[connector] ?? CONNECTOR_IDS.map((id) => given[id]).find(Boolean);
+  if (!plain) return undefined;
+  return Object.fromEntries(CONNECTOR_IDS.map((id) => [id, voiced(id, given[id] || plain)])) as Say;
+}
+
+/** A call made ready for the phone: its lines cleaned and in each app's casing, taps checked, and a product we don't list priced from the web. */
+async function tidy(key: string, call: ToolCall, connector: ConnectorId, voiced: (id: ConnectorId, line: string) => string): Promise<ToolCall> {
+  const said = SAYS_NOTHING.has(call.name) ? undefined : saidBy(call.input.say, connector, voiced);
+  // A word before a tool's work doesn't ask anything: the question, if there is one, comes once its result is in.
+  const input: ToolCall['input'] = { ...call.input, say: said && !ENDS_TURN.has(call.name) ? (Object.fromEntries(Object.entries(said).map(([id, l]) => [id, statement(l ?? '')])) as Say) : said };
   if (!input.say) delete input.say;
   if (call.name === 'reply') input.suggestions = suggestionsOf(input.suggestions, false);
   if (call.name === 'offer_choices') input.options = suggestionsOf(input.options, true);

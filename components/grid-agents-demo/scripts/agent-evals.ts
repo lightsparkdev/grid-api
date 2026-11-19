@@ -748,9 +748,9 @@ async function ask(c: Case, i: number): Promise<AgentResponse | { fallback: stri
   // The first thing it does is the flow; a setup on the way to something else isn't it.
   const actions = ran.filter((k, at) => flowOf(k) && !((k.name === 'setup_balance' || k.name === 'setup_company') && ran.slice(at + 1).some((later) => flowOf(later))));
   const flows = actions.map((k) => ({ call: k, flow: flowOf(k)! })).filter((f, k, all) => k === 0 || f.flow !== all[k - 1].flow);
-  const lines = made.filter((k) => ran.includes(k) || ENDS_TURN.has(k.name)).flatMap((k) => (typeof k.input.say === 'string' ? [k.input.say] : []));
-  // The model writes for the app it's in, so that's the one reply there is.
-  const replies: Partial<Record<ConnectorId, string>> = { [connector]: lines.join(' ') };
+  const lines = made.filter((k) => ran.includes(k) || ENDS_TURN.has(k.name)).flatMap((k) => (k.input.say ? [k.input.say] : []));
+  const replies: Partial<Record<ConnectorId, string>> = {};
+  for (const id of VOICES) replies[id] = lines.map((l) => l[id] ?? '').filter(Boolean).join(' ');
   const head = flows[0];
   return {
     reply: replies[connector],

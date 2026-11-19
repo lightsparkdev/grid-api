@@ -1,5 +1,6 @@
 import { BANK_COUNTRIES } from '@/data/bankCountries';
-import type { Mode } from '@/data/mode';
+import { CONNECTORS, type ConnectorId } from '@/data/connectors';
+import { MODES, type Mode } from '@/data/mode';
 
 /* The agent's tools: what the model can do, each checked and carried out in the phone (apps/agents/tools). The
    model runs the conversation and writes every line; a tool does one thing in the app (a screen, an action) and
@@ -10,6 +11,7 @@ export const TOOL_NAMES = [
   'offer_choices',
   'wait',
   'answer',
+  'switch_account',
   'setup_balance',
   'add_card',
   'link_bank',
@@ -47,15 +49,19 @@ const TOOLS_IN: Record<Mode, ReadonlySet<ToolName>> = {
 export const toolsIn = (mode: Mode) => TOOLS_IN[mode];
 
 /** Tools that end the turn: the person acts next. */
-export const ENDS_TURN = new Set<ToolName>(['reply', 'offer_choices', 'wait']);
+export const ENDS_TURN = new Set<ToolName>(['reply', 'offer_choices', 'wait', 'switch_account']);
 /** Tools with no line of their own: what they lead to is what there is to say, once their result is in. */
 export const SAYS_NOTHING = new Set<ToolName>(['wait', 'answer']);
 
-/** One tool call as the model made it. `say` is its line to the person, in the voice of the app on screen. */
+/** A line to the person, written once per app: they can switch apps mid-conversation, and the thread follows in that app's voice. */
+export type Say = Partial<Record<ConnectorId, string>>;
+export const CONNECTOR_IDS = CONNECTORS.map((c) => c.id);
+
+/** One tool call as the model made it. */
 export interface ToolCall {
   id: string;
   name: ToolName;
-  input: Record<string, unknown> & { say?: string };
+  input: Record<string, unknown> & { say?: Say };
 }
 
 /** What a tool sends back: anything JSON, with `error` when it couldn't run. */
@@ -77,10 +83,15 @@ export const OWN_BANK_HOMES = ['us', 'mx', 'br', 'other'] as const;
 
 const str = (description: string, extra: Record<string, unknown> = {}) => ({ type: 'string', description, ...extra });
 const num = (description: string) => ({ type: 'number', description });
+const voices = { properties: Object.fromEntries(CONNECTOR_IDS.map((c) => [c, { type: 'string' }])), required: CONNECTOR_IDS };
+/** What a reply says: the one message, once per app. */
+const line = { type: 'object', description: 'Your message, written once per app in that app’s own voice: the same meaning, facts, amounts and question in each.', ...voices };
+/** A word before a tool's work, for the rare time there's something to say first. */
 const say = {
-  type: 'string',
+  type: 'object',
   description:
-    'A short line as the work starts ("On it, finding that for you"), in the voice of the app they’re in. Only when this takes a moment before anything needs them. Leave it out when you’d be guessing at what comes next: you write that line once the result is in.',
+    'Usually leave this out: the app shows what you’re doing, and you speak once the result is in. Only for something they need to hear before the work (a part of what they asked that you can’t do). Once per app, in each app’s voice.',
+  ...voices,
 };
 
 interface ToolDef {
@@ -94,7 +105,7 @@ const tool = (name: ToolName, description: string, properties: Record<string, un
   description,
   input_schema: {
     type: 'object',
-    properties: { ...(opts.say === 'none' ? {} : { say }), ...properties },
+    properties: { ...(opts.say === 'none' ? {} : { say: opts.say === 'required' ? line : say }), ...properties },
     required: [...(opts.say === 'required' ? ['say'] : []), ...required],
   },
 });
@@ -128,6 +139,16 @@ export const TOOL_DEFS: ToolDef[] = [
     },
     [],
     { say: 'none' },
+  ),
+  tool(
+    'switch_account',
+    'Take them to their other account in the app: its own conversation, balance and tools. The business account sets up a company and handles invoices, bills, contractors, payroll and the team’s budget and cards; the personal account shops, subscribes, books hotels and pays friends. Call it when they ask for something that lives on the other account, or say yes to switching. Ends your turn here.',
+    {
+      to: str('The account to go to.', { enum: MODES }),
+      carry: str('What they asked for that belongs there, in their own words, so it’s picked up there ("run payroll for my team"). Leave out when they only want to switch.'),
+    },
+    ['to'],
+    { say: 'required' },
   ),
   tool('setup_balance', 'Turn on their balance (and your account with it, at the default limits): the app shows its own consent sheet. Needed before adding money, getting paid, paying someone, withdrawing or sending stablecoins.', {}),
   tool('add_card', 'Save their credit or debit card to your vault, in the app’s own card sheet, so you can pay with it or add money from it. Works without a balance.', {}),

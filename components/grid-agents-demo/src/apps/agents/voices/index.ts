@@ -117,7 +117,13 @@ export function renderThread(messages: StoredMessage[], voice: Voice): Message[]
       case 'work':
         return { id: m.id, kind: 'work', key: m.key, status: voice.status(m.key, m.params) };
       case 'products':
-        return { id: m.id, kind: 'products', products: voice.products(m.key, m.params), query: typeof m.params?.query === 'string' ? m.params.query : undefined };
+        return {
+          id: m.id,
+          kind: 'products',
+          // Several things they named, shown together: each is wanted, so none is "the pick" among them.
+          products: [m.params, ...(m.also ?? [])].flatMap((p) => voice.products(m.key, p)).map((p) => (m.also?.length ? { ...p, pick: false } : p)),
+          query: typeof m.params?.query === 'string' ? m.params.query : undefined,
+        };
       case 'meta':
         return { id: m.id, kind: 'meta', meta: voice.meta(m.key, m.params) };
       case 'subagent':

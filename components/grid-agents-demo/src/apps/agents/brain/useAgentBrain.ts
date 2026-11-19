@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ACTIONS, actionLabel, type ActionId } from '@/data/actions';
 import type { AgentEvent } from '@/data/agentEvents';
 import { BANK_COUNTRIES, BANK_REACH } from '@/data/bankCountries';
-import { activeMode, cleanName, setActiveMode, type Mode } from '@/data/mode';
-import type { ToolCall, ToolResult, Turn } from '@/lib/llm/tools';
+import { activeMode, cleanName, MODES, setActiveMode, type Mode } from '@/data/mode';
+import type { Say, ToolCall, ToolResult, Turn } from '@/lib/llm/tools';
 import type { AgentAsk, Beat, Chip, Message, Params, PayTo, Said, StoredMessage, Verification } from '../conversation';
 import { FLOWS, needsSetup, planFor, topicFor, type FlowContext } from '../flows';
 import { nextSteps } from '../nextSteps';
@@ -55,9 +55,9 @@ interface Run {
   cancelled: boolean;
   /** The model writes what's said: the flow's own lines are kept back as notes, and each wait is reported. */
   voiced: boolean;
-  /** The model's line for as the work starts: said when the flow first shows it's working, dropped if it needs the
+  /** A word from the model before the work: said when the flow first shows it's working, dropped if it needs the
    *  person before that (the model then writes the line that leads into what it's waiting on). */
-  opening?: string;
+  opening?: Say;
   opened: boolean;
   /** Since its last report: the lines it kept back, what it showed, what the person just did, what's worth offering. */
   lines: Line[];
@@ -215,6 +215,8 @@ export function useAgentBrain({
   onRun,
   onCompleted,
   onDeclined,
+  onSwitchAccount,
+  carried,
   reply,
   render,
   plain,
@@ -232,6 +234,10 @@ export function useAgentBrain({
   onCompleted?: (flow: ActionId) => void;
   /** They said no to setting something up (a balance, a card, a bank). */
   onDeclined?: () => void;
+  /** The agent takes them to their other account, with what they asked for there (if anything) to pick up. */
+  onSwitchAccount?: (to: Mode, carry?: string) => void;
+  /** Something they asked for on the other account that belongs here: heard as their message, once. */
+  carried?: { nonce: number; text: string };
   /** The model's next step, for the conversation so far and what's open on screen (behind /api/agent). */
   reply: (turns: Turn[], open?: string) => Promise<StepReply>;
   /** These messages as the app on screen draws them, for telling the model what the person is looking at. */
@@ -302,8 +308,8 @@ export function useAgentBrain({
   /** Suggested replies under the agent's last answer: a tap sends one as if typed. */
   const suggested = useRef<{ id: number; chips: Chip[] } | null>({ id: 2, chips: STARTERS[mode] });
 
-  const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, onDeclined, reply, render, plain, readsFor, typesFor });
-  cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, onDeclined, reply, render, plain, readsFor, typesFor };
+  const cb = useRef({ context, onEvent, onActiveFlow, onRun, onCompleted, onDeclined, onSwitchAccount, reply, render, plain, readsFor, typesFor });
+  cb.current = { context, onEvent, onActiveFlow, onRun, onCompleted, onDeclined, onSwitchAccount, reply, render, plain, readsFor, typesFor };
   messagesRef.current = messages;
 
   /** Runs once the agent has read what you just sent. */
@@ -312,8 +318,12 @@ export function useAgentBrain({
     else f();
   };
 
+  /** The product it just showed, while that's still the last thing in the thread: the next one found joins it. */
+  const shelf = useRef<number | null>(null);
   const push = useCallback((m: NewMessage) => {
     const id = nextId.current++;
+    // The model's empty typing bubble isn't anything said yet.
+    if (!(m.kind === 'them' && m.typing && 'text' in m.said && !m.said.text)) shelf.current = null;
     setMessages((list) => [...list, { ...m, id } as StoredMessage].slice(-MAX_MESSAGES));
     return id;
   }, []);
@@ -354,13 +364,14 @@ export function useAgentBrain({
     },
     [stopTyping, clearWork, push],
   );
-  /** A line the model wrote, in the typing bubble if one is up. */
+  /** A line the model wrote, once per app, in the typing bubble if one is up. */
   const say = useCallback(
-    async (text: string) => {
-      const said: Said = { text };
+    async (lines: Say) => {
+      const said: Said = { text: lines.muse ?? Object.values(lines)[0] ?? '', voices: lines };
       const replyTo = request.current.answered ? request.current.text : undefined;
       request.current.answered = false;
       const id = typing.current;
+      shelf.current = null;
       if (id !== null) {
         typing.current = null;
         clearWork();
@@ -499,7 +510,18 @@ export function useAgentBrain({
           });
           await sleep(b.ms);
         } else if ('products' in b) {
-          put({ kind: 'products', key: b.products, params: b.params });
+          const onShelf = shelf.current;
+          const one = !!b.params?.only;
+          if (onShelf !== null && one) {
+            // Another thing found right after the last: one shelf, not a message apiece.
+            stopTyping();
+            clearWork();
+            patch(onShelf, (m) => (m.kind === 'products' ? { ...m, also: [...(m.also ?? []), b.params ?? {}] } : m));
+            if (run.voiced) run.shown.push({ id: onShelf, kind: 'products', key: b.products, params: b.params });
+          } else {
+            const id = put({ kind: 'products', key: b.products, params: b.params });
+            shelf.current = one ? id : null;
+          }
           await sleep(1200);
         } else if ('subagent' in b) {
           const id = show({ kind: 'subagent', key: b.subagent, params: b.params, done: false });
@@ -913,7 +935,7 @@ export function useAgentBrain({
    * One of the app's steps, checked and started for the model. An error before anything shows; otherwise whatever was
    * open gives way, and the step plays until it needs the person or ends, which is its result.
    */
-  const prepare = (call: ToolCall, next?: ToolCall): { error: ToolResult } | Started => {
+  const prepare = (call: ToolCall, next: ToolCall | undefined, opening: boolean): { error: ToolResult } | Started => {
     const { say: _line, ...asked } = call.input;
     const made = `${call.name} ${JSON.stringify(asked)}`;
     // The very call that put up what's open: making it again would only put the same thing up afresh, and lose
@@ -929,7 +951,7 @@ export function useAgentBrain({
     const out = own(() => runTool({ ctx, memory: memory.current, next }, call));
     if ('error' in out) return out;
     run.result = out.result;
-    run.opening = call.input.say;
+    if (opening) run.opening = call.input.say;
     // A look-up while something is open (what's the fee? what's my balance?) shows what it finds and leaves it open.
     if (BESIDE.has(call.name) && openRef.current?.shown) {
       run.side = true;
@@ -972,6 +994,10 @@ export function useAgentBrain({
     startTyping();
     let chips: Chip[] = [];
     let ended = false;
+    // A word before the work is for a turn they started by saying something, and once: carrying on from a tap, what
+    // there is to say is how that went, which comes with the result.
+    let opening = !!read;
+    let switching: (() => void) | undefined;
     for (let step = 0; step < MAX_STEPS && !ended; step++) {
       owed.current = false;
       const [answer] = await Promise.all([c.reply(windowOf(log.current), openText()), step === 0 ? sleep(c.typesFor) : undefined]);
@@ -1001,6 +1027,22 @@ export function useAgentBrain({
           stopped = 'the turn ended before this';
           continue;
         }
+        if (call.name === 'switch_account') {
+          const to = MODES.find((m) => m === call.input.to);
+          const go = cb.current.onSwitchAccount;
+          if (!to || to === mode || !go) {
+            settled(log.current, call.id, { error: 'already_here', fix: 'they’re on this account already: do what they asked here, or reply' }, true);
+            stopped = 'an earlier call in this step failed';
+            continue;
+          }
+          if (call.input.say) await say(call.input.say);
+          const carry = typeof call.input.carry === 'string' ? call.input.carry.trim().slice(0, 280) : '';
+          settled(log.current, call.id, { status: 'switched', note: `they’re on their ${to} account now, which has its own conversation${carry ? ': what they asked was passed on there' : ''}` });
+          switching = () => go(to, carry || undefined);
+          ended = true;
+          stopped = 'the turn ended before this';
+          continue;
+        }
         // What the app is holding back comes next, and they haven't seen it yet: until the model's line is out,
         // there's nothing else to start. (Once it's open, something they type can take its place.)
         const held = openRef.current && !openRef.current.shown ? openRef.current : null;
@@ -1009,12 +1051,13 @@ export function useAgentBrain({
             ? { error: { error: 'waiting_on_them', waiting: waitText(held.wait), fix: 'the app shows this the moment your line is out, and the flow carries on by itself once they act: lead into it with reply, in one sentence, and call nothing else' } }
             : call.name === 'answer'
               ? answerOpen(call)
-              : prepare(call, calls[i + 1]);
+              : prepare(call, calls[i + 1], opening && !!call.input.say);
         if ('error' in started) {
           settled(log.current, call.id, started.error, true);
           stopped = 'an earlier call in this step failed';
           continue;
         }
+        if (call.name !== 'answer' && call.input.say) opening = false;
         const result = await started.start();
         settled(log.current, call.id, result);
         if (result.waiting) {
@@ -1038,7 +1081,12 @@ export function useAgentBrain({
       const id = push({ kind: 'chips', chips, picked: null });
       suggested.current = { id, chips };
     }
-    if (!overtaken()) setBusy(false);
+    if (overtaken()) return;
+    setBusy(false);
+    if (!switching) return;
+    // Its line is read, then the other account comes up.
+    await sleep(900);
+    if (!overtaken()) switching();
   };
 
   /* ── The person's side ────────────────────────────────────────────── */
@@ -1083,6 +1131,16 @@ export function useAgentBrain({
     hear(def.prompts[entry.variant % def.prompts.length], { flow: entry.flow, variant: entry.variant, setup: entry.setup });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entry]);
+
+  // Something they asked for on the other account that belongs here: it arrives as their message.
+  const lastCarried = useRef(0);
+  useEffect(() => {
+    if (!carried || carried.nonce === lastCarried.current) return;
+    lastCarried.current = carried.nonce;
+    dropSuggestions();
+    hear(carried.text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carried]);
 
   /** A control in the thread (the balance card's Add money) asks as the visitor would, with its tile's line. */
   const prompt = useCallback(

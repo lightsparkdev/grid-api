@@ -17,13 +17,16 @@ export interface AppPanelProps {
   /** The accounts opened so far: each keeps its phone, so switching back finds it where it was. */
   opened: Mode[];
   accounts: Record<Mode, AccountState>;
+  /** The agent takes them to their other account, with what they asked for there. */
+  onSwitchAccount: (to: Mode, carry?: string) => void;
+  carried: Partial<Record<Mode, { nonce: number; text: string }>>;
 }
 
 /**
  * The stage: the person's phone on the dot grid, running the connected agent's app. Each account has its own
  * conversation; the one not showing stays mounted (once opened) so switching back finds it where it was.
  */
-export function AppPanel({ connector, mode, opened, accounts }: AppPanelProps) {
+export function AppPanel({ connector, mode, opened, accounts, onSwitchAccount, carried }: AppPanelProps) {
   const dark = useThemeMode() === 'dark';
   return (
     <section className={styles.panel}>
@@ -56,6 +59,8 @@ export function AppPanel({ connector, mode, opened, accounts }: AppPanelProps) {
                       onCompleted={a.onCompleted}
                       onDeclined={a.onDeclined}
                       reply={a.reply}
+                      onSwitchAccount={onSwitchAccount}
+                      carried={carried[m]}
                     />
                   </div>
                 );

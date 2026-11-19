@@ -227,7 +227,8 @@ export type StoredMessage =
   | { id: number; kind: 'card'; key: string; params?: Params }
   | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
   | { id: number; kind: 'work'; key: string; params?: Params }
-  | { id: number; kind: 'products'; key: string; params?: Params }
+  /** `also`: what it found next, shown with this (two things asked for at once are one shelf, not two). */
+  | { id: number; kind: 'products'; key: string; params?: Params; also?: Params[] }
   | { id: number; kind: 'subagent'; key: string; params?: Params; done: boolean }
   | { id: number; kind: 'meta'; key: string; params?: Params }
   | { id: number; kind: 'divider'; text: string }

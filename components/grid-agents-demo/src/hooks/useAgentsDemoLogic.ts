@@ -321,5 +321,16 @@ export function useAgentsDemoLogic() {
     setOpened((all) => (all.includes(next) ? all : [...all, next]));
   }, []);
 
-  return { connector, selectConnector, mode, selectMode, switched, opened, accounts, active: accounts[mode] };
+  /** What they asked one account's agent for that belongs on the other: it's picked up there as their message. */
+  const [carried, setCarried] = useState<Partial<Record<Mode, { nonce: number; text: string }>>>({});
+  /** The agent takes them to their other account, as the switcher would. */
+  const switchAccount = useCallback(
+    (to: Mode, carry?: string) => {
+      selectMode(to);
+      if (carry) setCarried((all) => ({ ...all, [to]: { nonce: Date.now(), text: carry } }));
+    },
+    [selectMode],
+  );
+
+  return { connector, selectConnector, mode, selectMode, switchAccount, carried, switched, opened, accounts, active: accounts[mode] };
 }

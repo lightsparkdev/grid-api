@@ -1,5 +1,5 @@
 import { MODES, type Mode } from '@/data/mode';
-import { SAYS_NOTHING, TOOL_DEFS, toolsIn, type ToolCall, type ToolName, type Turn } from './tools';
+import { TOOL_DEFS, toolsIn, type ToolCall, type ToolName, type Turn } from './tools';
 import type { ModelAdapter, StepRequest, StepAnswer } from './types';
 
 export const MODELS = { haiku: 'claude-haiku-5-5', sonnet: 'claude-sonnet-5-5' } as const;
@@ -61,8 +61,8 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
         .map((c) => ({ id: c.id!, name: c.name as ToolName, input: (c.input ?? {}) as ToolCall['input'] }));
       const text = (data.content ?? []).flatMap((c) => (c.type === 'text' && c.text?.trim() ? [c.text.trim()] : [])).join(' ');
       // Text written beside the calls is what it meant to say as they start; text alone is a reply.
-      if (text && calls.length && typeof calls[0].input.say !== 'string' && !SAYS_NOTHING.has(calls[0].name)) calls[0].input.say = text;
-      if (!calls.length && text) calls.push({ id: `toolu_text_${started}`, name: 'reply', input: { say: text } });
+      // Text alone is a reply: one line, which the route writes out for every app. Text beside calls isn't shown.
+      if (!calls.length && text) calls.push({ id: `toolu_text_${started}`, name: 'reply', input: { say: { yourapp: text } } });
       if (!calls.length) throw new Error('No tool call');
       return { calls, usage };
     },

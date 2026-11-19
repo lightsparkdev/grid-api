@@ -905,6 +905,7 @@ export function flowOf(call: ToolCall): ActionId | null {
     case 'offer_choices':
     case 'wait':
     case 'answer':
+    case 'switch_account':
       return null;
     default: {
       const exhaustive: never = call.name;
@@ -964,11 +965,12 @@ export function runTool(env: ToolEnv, call: ToolCall): Outcome {
       return payContractorTool(env, call);
     case 'run_payroll':
       return runPayrollTool(env);
-    // What the conversation itself carries out (a line, a pause, an answer to what's open): nothing to run here.
+    // What the conversation itself carries out (a line, a pause, an answer to what's open, the other account): nothing to run here.
     case 'reply':
     case 'offer_choices':
     case 'wait':
     case 'answer':
+    case 'switch_account':
       return { result: { status: 'shown' }, beats: [] };
     default: {
       const exhaustive: never = call.name;

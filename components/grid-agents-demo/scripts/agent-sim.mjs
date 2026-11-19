@@ -35,6 +35,8 @@ const ROOT = new URL('..', import.meta.url).pathname;
 const KEY = process.env.ANTHROPIC_API_KEY ?? readFileSync(`${ROOT}.env.local`, 'utf8').match(/^ANTHROPIC_API_KEY=(.+)$/m)?.[1]?.trim().replace(/^["']|["']$/g, '');
 
 const APPS = ['Muse', 'Grok Bot', 'Dots', 'Instinct', 'Duet', 'Your agent'];
+/** Each app's id, for reading its line out of a message written once per app. */
+const APP_ID = { Muse: 'muse', 'Grok Bot': 'grok', Dots: 'dot', Instinct: 'instinct', Duet: 'claude', 'Your agent': 'yourapp' };
 /** How each app texts, for the judge. */
 const VOICE = {
   Muse: 'warm, brief, a little playful; sentence case; an emoji now and then',
@@ -192,9 +194,11 @@ async function converse(browser, c, run, dir) {
     const got = await r.json().catch(() => null);
     if (!got?.calls) fallbacks += 1;
     for (const call of got?.calls ?? []) {
-      const { say, ...input } = call.input ?? {};
+      const { say: lines, ...input } = call.input ?? {};
+      // The line as this app shows it.
+      const say = lines && typeof lines === 'object' ? lines[APP_ID[c.app]] : lines;
       // A line on a step is only shown if the step shows work before it needs them: SAID marks it for checking against the thread.
-      trace.push(call.name === 'reply' || call.name === 'offer_choices' ? `AGENT says: ${say ?? ''}${Object.keys(input).length ? `  ${JSON.stringify(input)}` : ''}` : `AGENT calls ${call.name} ${JSON.stringify(input)}${say ? `${SAID}${say}` : ''}`);
+      trace.push(call.name === 'reply' || call.name === 'offer_choices' || call.name === 'switch_account' ? `AGENT ${call.name === 'switch_account' ? 'switches account, saying' : 'says'}: ${say ?? ''}${Object.keys(input).length ? `  ${JSON.stringify(input)}` : ''}` : `AGENT calls ${call.name} ${JSON.stringify(input)}${say ? `${SAID}${say}` : ''}`);
     }
     if (!got?.calls) trace.push(`  (the model didn't answer: ${JSON.stringify(got)})`);
     inflight -= 1;
