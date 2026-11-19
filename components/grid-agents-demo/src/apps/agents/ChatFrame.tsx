@@ -361,9 +361,12 @@ export function ChatFrame({
   onFaceIdDone,
   rowMotion,
   scroll,
+  foot,
   overlay,
   verify,
 }: {
+  /** After the last row, in the thread: room a skin holds open for what comes next (Grok's status row). */
+  foot?: ReactNode;
   className?: string;
   /** How the thread follows each kind of growth (measured per app); defaults to the ease-in-out most of them use. */
   scroll?: (cause: ScrollCause) => ScrollCurve;
@@ -437,7 +440,7 @@ export function ChatFrame({
         } as CSSProperties
       }
     >
-      <div ref={threadRef} className={styles.thread}>
+      <div ref={threadRef} className={styles.thread} data-thread>
         <div ref={stackRef} className={styles.stack} data-top={threadTop !== undefined || undefined}>
           {messages.map((m, i) => {
             const node = render(m, i, messages);
@@ -457,12 +460,13 @@ export function ChatFrame({
               </motion.div>
             );
           })}
+          {foot}
         </div>
       </div>
       {edge}
       {header}
       {tabBar}
-      <div ref={composerRef} className={styles.composer}>
+      <div ref={composerRef} className={styles.composer} data-composer>
         {composer}
         <ComposerBeam host={composerRef} fresh={!messages.some((m) => m.kind === 'me')} />
       </div>

@@ -50,8 +50,6 @@
     --grok-faint: #6b6b6e;
     --grok-bubble: #202020;
     --grok-me: #5c5c5c;
-    // Where the sent bubble's fill starts as it lands: lighter than its place in light mode, darker in dark.
-    --grok-me-from: #3a3a3a;
     --grok-me-text: #fff;
     --grok-card: #1f1f1f;
     --grok-line: #303030;
@@ -133,7 +131,13 @@
   }
 }
 
-// Sent: the bubble is in place from the first frame and its fill darkens from gray in ~170ms.
+// Sent: it shows just above the composer and rises into place as it fills in (SentRise moves this wrapper).
+.sentRise {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
 .me {
   max-width: 290px;
   padding: 11px 14px 12px;
@@ -142,7 +146,6 @@
   color: var(--grok-me-text, var(--grok-ink-text));
   font-size: 17px;
   line-height: 24px;
-  animation: grok-sent 0.17s cubic-bezier(0, 0, 0.2, 1);
 }
 
 // Where the same sender's bubbles meet, those corners tighten (after the mixin, so pills get them too).
@@ -166,10 +169,17 @@
   }
 }
 
-@keyframes grok-sent {
-  from {
-    background: var(--grok-me-from, #bebebe);
-  }
+// A reply, which fills in where Typing… was.
+.reply {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+// The status row's place, held open under a bubble you just sent (the same height as .status).
+.statusSlot {
+  flex: none;
+  height: 30px;
 }
 
 // The reaction on your bubble: a bare 23pt emoji inside its bottom-right corner, no pill.

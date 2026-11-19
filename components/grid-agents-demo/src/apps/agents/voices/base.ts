@@ -547,6 +547,7 @@ export const ASKS = {
     allow: 'Approve',
     allowed: 'Sent',
     denied: 'Declined',
+    settled: { title: 'Moved to your bank', status: 'Settled', detail: `${s(p, 'about')}${s(p, 'local')} over ${s(p, 'rail')}` },
   }),
   buy: (p) => ({
     title: ['ship', 'now', ''].includes(s(p, 'delivery')) ? `Buy at ${s(p, 'merchant')}` : Buying(p),
@@ -571,6 +572,7 @@ export const ASKS = {
     allow: 'Approve',
     allowed: 'Approved',
     denied: 'Declined',
+    settled: { title: 'Subscribed', status: 'Active', detail: `${usd2(n(p, 'amount'))} a month` },
   }),
   agent: (p) => ({
     title: `Pay ${s(p, 'hotel')}’s agent`,
@@ -580,6 +582,7 @@ export const ASKS = {
     allow: 'Approve',
     allowed: 'Paid',
     denied: 'Declined',
+    settled: { title: 'Stay booked', status: 'Confirmed', detail: `${n(p, 'nights')} ${n(p, 'nights') === 1 ? 'night' : 'nights'} in ${s(p, 'city')}, ${s(p, 'dates')}` },
   }),
   company: (p) => ({
     heading: { title: s(p, 'company') },
@@ -605,6 +608,7 @@ export const ASKS = {
     allow: 'Approve',
     allowed: 'Approved',
     denied: 'Declined',
+    settled: { title: 'Team budget set', status: 'Live', detail: `${usd(n(p, 'budget'))} a month, shared` },
   }),
   empcard: (p) => ({
     heading: { title: s(p, 'company') },
@@ -616,6 +620,7 @@ export const ASKS = {
     allow: 'Issue card',
     allowed: 'Issued',
     denied: 'Declined',
+    settled: { title: 'Card issued', status: 'Ready', detail: `${s(p, 'name')} · Visa in their name` },
   }),
 
   payroll: (p) => ({
@@ -630,6 +635,7 @@ export const ASKS = {
     allow: 'Approve',
     allowed: 'Paid',
     denied: 'Declined',
+    settled: { title: 'Payroll paid', status: 'Settled', detail: `${usd2(n(p, 'total'))} to ${s(p, 'people')}` },
   }),
 } satisfies Record<string, AskFn>;
 

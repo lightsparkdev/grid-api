@@ -27,7 +27,7 @@ import { SheetDisc } from '../SheetPage';
 import type { AgentAsk, AgentMeta, AgentNote, Message, PayTo, Product } from '../conversation';
 import { linkedBank } from '../linkedBank';
 import { recipientNamed } from '../recipients';
-import { AddressQr, BalanceCard, copyLabel, Divider, InvoiceCard, NoteCard, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
+import { AddressQr, AskMark, BalanceCard, copyLabel, Divider, InvoiceCard, NoteCard, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from '../vault/useAskSheet';
@@ -135,7 +135,7 @@ function ActionPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
           ? `${linkedBank().bankName} •••• ${linkedBank().last4}`
           : ask.card
             ? cardLabel(ask)
-            : (ask.allowed ?? 'Done')
+            : `${ask.allowed ?? 'Done'}${ask.amount ? ` · ${ask.amount}` : ''}`
       : state === 'denied'
         ? (ask.denied ?? 'Not now')
         : (ask.form?.title ?? ask.title);
@@ -144,7 +144,7 @@ function ActionPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
     <Pill
       m={m}
       lead={ask.recipient ? <Flag code={ask.recipient.country} size={20} /> : kind ? <DotGlyph glyph={kind} /> : <IconSettingsSliderHor size={20} />}
-      done={flag ? <Flag code={flag} size={20} /> : kind ? <DotGlyph glyph={kind} /> : <DotsMark size={20} />}
+      done={flag ? <Flag code={flag} size={20} /> : kind ? <DotGlyph glyph={kind} /> : ask.amount ? <AskMark ask={ask} size={20} round /> : <DotsMark size={20} />}
       label={label}
       onOpen={onOpen}
     />
@@ -418,7 +418,7 @@ function PayPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
         : state === 'expired'
           ? 'Expired'
           : `Review payment · ${ask.amount}`;
-  return <Pill m={m} lead={<IconReceiptBill size={20} />} done={<DotsMark size={20} />} label={label} onOpen={onOpen} />;
+  return <Pill m={m} lead={<IconReceiptBill size={20} />} done={<AskMark ask={ask} size={20} round={!ask.who?.icon} />} label={label} onOpen={onOpen} />;
 }
 
 /** What dot set up or saved, as the gray pill it leaves in the thread. */

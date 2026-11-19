@@ -690,6 +690,18 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   letter-spacing: -0.2px;
 }
 
+// A receipt's headline beside who it was with.
+.imageHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+
+  .imageTitle {
+    margin-top: 0;
+  }
+}
+
 .imageTitle {
   margin-top: 18px;
   font-family: 'New York', ui-serif, Georgia, serif;

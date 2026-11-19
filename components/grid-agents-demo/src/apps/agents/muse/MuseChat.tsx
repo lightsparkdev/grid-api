@@ -12,8 +12,7 @@ import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke
 import { ChatFrame, ComposerField, ScrollEdge, STILL, TypingDots, useOpenedIds, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton, useContinuousCorners } from '../glass';
 import type { AgentBalance, AgentNote, AskRow, Chip, Invoice, Message, Product } from '../conversation';
-import { AddressQr, askButtons, copyLabel, Divider, MetaLine, MORPH, InvoiceCard, NoteCard, RowGlyph, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
-import { BankMark } from '../BankMark';
+import { AddressQr, AskMark, askButtons, copyLabel, Divider, MetaLine, MORPH, InvoiceCard, NoteCard, RowGlyph, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import { useMuseBalance } from './MuseBalance';
 import { ConnectorCard, useMuseBank, useMuseCard, useMusePayWith } from './MuseConnect';
 import type { AgentChatProps } from '../types';
@@ -340,11 +339,7 @@ function ApprovalCard({
         <div className={styles.details}>
           <div className={styles.detail}>
             <span className={styles.lead}>
-              {ask.who.bank ? (
-                <BankMark bank={ask.who.bank} country={ask.who.flag} size={32} />
-              ) : (
-                <span className={styles.productLetter}>{ask.who.mark ?? ask.who.name[0]}</span>
-              )}
+              <AskMark ask={ask} size={32} />
             </span>
             <span className={styles.detailText}>
               <span className={styles.oneLine}>{ask.who.name}</span>

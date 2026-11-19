@@ -5,7 +5,7 @@ import { playAppSwitch, WALLPAPER } from '@/apps/shared/appSwitch';
 import { SfSymbol } from '@/apps/shared/icons';
 import { ChatFrame, ComposerField, NATIVE_IN, Said, ScrollEdge, STILL, TypingDots, useOpenedIds, useOpenedMarks } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
-import { InvoiceCard, shortCode, useCopy } from '../parts';
+import { AskMark, InvoiceCard, shortCode, useCopy } from '../parts';
 import type { AgentAsk, AgentBalance, AgentNote, Message, Product, SubAgent } from '../conversation';
 import { useKeptAsk, useKeptBalance } from '../openSheets';
 import type { AgentChatProps } from '../types';
@@ -246,15 +246,33 @@ function CodeText({ value, tail }: { value: string; tail: boolean }) {
   );
 }
 
+/** The payment a receipt is for: the approval settled just before it, when it names who it was with. */
+function paidTo(i: number, all: Message[]): AgentAsk | null {
+  if (!(all[i].kind === 'card' && (all[i] as Extract<Message, { kind: 'card' }>).card.stats)) return null;
+  for (let j = i - 1; j >= 0; j--) {
+    const m = all[j];
+    if (m.kind === 'ask') return m.state === 'done' && m.ask.amount && m.ask.who ? m.ask : null;
+    if (m.kind !== 'work' && m.kind !== 'meta' && m.kind !== 'me' && m.kind !== 'subagent') return null;
+  }
+  return null;
+}
+
 /** An image Instinct generates: its paper, the headline in its serif, the details, its wordmark. */
-function InstinctImage({ note }: { note: AgentNote }) {
+function InstinctImage({ note, lead }: { note: AgentNote; lead?: ReactNode }) {
   return (
     <div className={styles.image} role="img" aria-label={note.title}>
       <span className={styles.imageTop}>
         <span className={styles.wordmark}>Instinct</span>
         <span>{today()}</span>
       </span>
-      <strong className={styles.imageTitle}>{note.title}</strong>
+      {lead ? (
+        <span className={styles.imageHead}>
+          {lead}
+          <strong className={styles.imageTitle}>{note.title}</strong>
+        </span>
+      ) : (
+        <strong className={styles.imageTitle}>{note.title}</strong>
+      )}
       {note.code && <code className={styles.imageCode}>{shortCode(note.code)}</code>}
       {note.lines.map((l) => (
         <span key={l} className={styles.imageLine}>
@@ -548,7 +566,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
               <CodeText value={m.card.code} tail={!theirsNext} />
             </>
           ) : (
-            <InstinctImage note={m.card} />
+            <InstinctImage note={m.card} lead={paidTo(i, all) && <AskMark ask={paidTo(i, all)!} size={36} round={!paidTo(i, all)!.who?.icon} />} />
           );
         return (
           <>
