@@ -617,7 +617,21 @@ function raiseLimit(env: ToolEnv, call: ToolCall): Outcome {
   if (to.approvalAbove === from.approvalAbove && to.daily === from.daily && to.perTransaction === from.perTransaction) {
     return { result: { status: 'unchanged' }, beats: [{ say: 'limits.same', params: { approve: to.approvalAbove, daily: to.daily, perTx: to.perTransaction } }] };
   }
-  const result: ToolResult = {};
+  // The limits hold each other in: what's done alone can't be more than one payment, nor one payment more than a day.
+  // Asked for a pair that can't both hold, it says so rather than putting up a sheet with a number nobody asked for.
+  const money = (c: number) => usd2(c).replace(/\.00$/, '');
+  if (asked.perTx && asked.daily && to.perTransaction !== cents(asked.perTx)) {
+    return fail('per_payment_over_daily', { fix: `one payment can’t be more than the day’s limit, so ${money(cents(asked.perTx)!)} a payment needs a daily limit of at least that: ask whether to raise the daily limit to match, or keep each payment to ${money(to.daily)} or less` });
+  }
+  if (asked.approve && to.approvalAbove !== cents(asked.approve)) {
+    return fail('ask_above_over_per_payment', { fix: `what you do alone can’t be more than one payment (${money(to.perTransaction)}): ask whether to raise the per-payment limit too, or keep it to that or less` });
+  }
+  // A limit they didn't name moves with the one they did: the sheet shows both, and the model can say why.
+  const moved = [
+    !asked.daily && to.daily !== from.daily && `the daily limit goes from ${money(from.daily)} to ${money(to.daily)} with it, because one payment can’t be more than the day’s limit`,
+    !asked.perTx && !spend && to.perTransaction !== from.perTransaction && `the per-payment limit goes from ${money(from.perTransaction)} to ${money(to.perTransaction)} with it, because what you do alone can’t be more than one payment`,
+  ].filter(Boolean);
+  const result: ToolResult = { ...(moved.length && { also_changes: moved.join('; ') }) };
   const go = id ? (env.memory.quotes.has(id) ? 'send' : env.memory.stays.has(id) ? 'book' : 'buy') : undefined;
   return {
     result,
@@ -632,7 +646,7 @@ function raiseLimit(env: ToolEnv, call: ToolCall): Outcome {
           // Raised for a payment, that approval is the payment's too: it goes through next without asking again.
           record(result, () => {
             if (id) env.memory.approved.add(id);
-            return { status: 'raised', per_payment_usd: usd(to.perTransaction), daily_usd: usd(to.daily), ask_above_usd: usd(to.approvalAbove), ...(id && { approved_for: id }) };
+            return { status: 'raised', also_changes: undefined, per_payment_usd: usd(to.perTransaction), daily_usd: usd(to.daily), ask_above_usd: usd(to.approvalAbove), ...(id && { approved_for: id }) };
           }),
           ...(id
             ? []

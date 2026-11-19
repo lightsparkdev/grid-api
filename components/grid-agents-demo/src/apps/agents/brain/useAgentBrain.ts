@@ -924,7 +924,7 @@ export function useAgentBrain({
     const open = openRef.current;
     if (!open) return undefined;
     return open.shown
-      ? `open and waiting on them: ${waitText(open.wait)}. If what they just typed answers it in any words (a yes or a no, which one, how much, the name), call answer for them: don’t tell them to tap, and don’t call the tool that opened it again.`
+      ? `open and waiting on them: ${waitText(open.wait)}. If what they just typed answers it in any words (a yes or a no, which one, how much, the name), call answer for them: don’t tell them to tap, and don’t call the tool that opened it again. A no, or asking you to cancel or close it, is answer with decline: you close it for them, whether or not it has a button for that. A question about it is neither: answer the question, and it stays open.`
       : `about to appear once your line is out (they can’t see it yet): ${waitText(open.wait)}. Lead into it with reply; only if they’ve already said exactly what it asks for, call answer with that instead.`;
   };
 
@@ -1070,9 +1070,13 @@ export function useAgentBrain({
       let picking = false;
       /** A call in this step has run through: a line written alongside it was written before its result was in. */
       let ran = false;
+      /** The model turned down what was open for them, in this step: what it says in the same breath needs no result. */
+      let declined = false;
       for (let i = 0; i < calls.length; i++) {
         const call = calls[i];
-        if (stopped) {
+        // "Cancel that": it closes what was open and says so at once. A no has one outcome, so the line isn't a guess.
+        const closing = declined && (call.name === 'reply' || call.name === 'offer_choices' || call.name === 'wait') && !overtaken();
+        if (stopped && !closing) {
           // Asked for several things, they see everything found at once, then pick: not one thing, a question, then more.
           const also = picking && call.name === 'search' && !overtaken() ? prepare(call, undefined, false, true) : null;
           if (also && 'start' in also) settled(log.current, call.id, await also.start());
@@ -1080,7 +1084,7 @@ export function useAgentBrain({
           continue;
         }
         if (overtaken()) break;
-        if (ran && ENDS_TURN.has(call.name)) {
+        if (ran && !closing && ENDS_TURN.has(call.name)) {
           // Written in the same step as what it's about, so without knowing how that went ("Checking the fee…",
           // or a guess at the outcome): it isn't shown, and the model says it with the result in front of it.
           settled(log.current, call.id, { status: 'not_shown', note: 'you wrote this in the same step as the calls above, before their results were in, so they haven’t seen it: say how it went now, once' });
@@ -1137,6 +1141,7 @@ export function useAgentBrain({
           if (started.spoke() && !result.notes) ended = true;
         } else if (result.finished === false) {
           stopped = 'an earlier call in this step stopped: they said no';
+          declined = call.name === 'answer';
         }
       }
       if (overtaken()) return;
