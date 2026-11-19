@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { TextMorph } from 'torph/react';
 import { IconArrowCornerDownRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowCornerDownRight';
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
@@ -10,10 +10,10 @@ import { IconFileText } from '@central-icons-react/round-outlined-radius-3-strok
 import { IconPin } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPin';
 import { IconSquareBehindSquare1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare1';
 import { FLOW_ICON_COLORS, FLOW_ICONS } from '@/data/flowIcons';
-import { ChatFrame, ComposerField, Said, ScrollEdge, TypingDots } from '../ChatFrame';
+import { ChatFrame, ComposerField, Said, ScrollEdge, TypingDots, useOpenedIds } from '../ChatFrame';
 import { GlassPill, NoopButton, useContinuousCorners } from '../glass';
-import type { AgentNote, Message } from '../conversation';
-import { AddressQr, askButtons, AskCard, BalanceCard, Divider, MetaLine, MORPH, InvoiceCard, NoteCard, ProductRow, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
+import type { AgentAsk, AgentNote, Message } from '../conversation';
+import { AddressQr, askButtons, AskCard, AskMark, BalanceCard, NoteMark, Divider, MetaLine, MORPH, InvoiceCard, NoteCard, ProductRow, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import type { AgentChatProps } from '../types';
 import { ClaudeMascot } from './ClaudeMascot';
 import { useDuetBalance } from './DuetBalance';
@@ -154,6 +154,138 @@ function withChips(text: string): ReactNode {
   });
 }
 
+/** A payment or a purchase that went through: Duet shows its receipt in place of the card that asked for it. */
+const receipted = (m: Message) => m.kind === 'ask' && m.state === 'done' && !!m.ask.amount && !!(m.ask.who || m.ask.rows);
+
+/** A settled ask with its receipt comes next, before anything else Duet says. */
+function receiptFollows(i: number, all: Message[]) {
+  for (let j = i + 1; j < all.length; j++) {
+    const m = all[j];
+    if (m.kind === 'ask') return receipted(m);
+    if (m.kind !== 'subagent') return false;
+  }
+  return false;
+}
+
+/** The receipt just above already says what this card would: the same payment, with nothing said in between. */
+function receiptPrecedes(i: number, all: Message[]) {
+  for (let j = i - 1; j >= 0; j--) {
+    const m = all[j];
+    if (m.kind === 'ask') return receipted(m);
+    if (m.kind !== 'work' && m.kind !== 'meta' && m.kind !== 'subagent') return false;
+  }
+  return false;
+}
+
+/**
+ * What Duet did, as the app's own inline card: who it was with (their logo in an outlined tile) and the facts as
+ * label-value rows, the status in green; a payment to several people lists them, name and amount, to the total.
+ */
+function DuetReceipt({ ask }: { ask: AgentAsk }) {
+  const status = ask.receipt?.title ?? ask.allowed ?? 'Done';
+  const from = ask.method?.replace(/^From /, '');
+  if (ask.rows && !ask.who) {
+    return (
+      <div className={styles.receipt}>
+        <strong className={styles.receiptTitle}>{ask.title}</strong>
+        <div className={styles.receiptTable}>
+          <span className={styles.receiptHeader}>
+            <span>Name</span>
+            <span>Amount</span>
+          </span>
+          {ask.rows.map((r) => {
+            const [amount, ...rest] = (r.sub ?? '').split(' ');
+            return (
+              <span key={r.text} className={styles.receiptLine}>
+                <b>{r.text}</b>
+                <span>{amount}</span>
+                <small>{rest.join(' ').replace(/^· /, '')}</small>
+              </span>
+            );
+          })}
+          <span className={`${styles.receiptLine} ${styles.receiptTotal}`}>
+            <b>Total</b>
+            <span>{ask.amount}</span>
+          </span>
+        </div>
+        <dl className={styles.receiptFacts}>
+          <dt>Status</dt>
+          <dd data-status>{status}</dd>
+        </dl>
+      </div>
+    );
+  }
+  return (
+    <div className={styles.receipt}>
+      <span className={styles.receiptWho}>
+        {/* A bank's mark is its own tile, its flag hanging off the corner. */}
+        {ask.who?.bank ? (
+          <AskMark ask={ask} size={40} />
+        ) : (
+          <span className={styles.receiptMark}>
+            <AskMark ask={ask} size={40} />
+          </span>
+        )}
+        <span>
+          <strong>{ask.who?.name ?? ask.title}</strong>
+          <small>{ask.who?.detail}</small>
+        </span>
+      </span>
+      <dl className={styles.receiptFacts}>
+        <dt>Amount</dt>
+        <dd>{ask.amount}</dd>
+        {from && (
+          <>
+            <dt>From</dt>
+            <dd>{from}</dd>
+          </>
+        )}
+        <dt>Status</dt>
+        <dd data-status>{status}</dd>
+      </dl>
+    </div>
+  );
+}
+
+/**
+ * A receipt with no approval card before it (money that came in, a payment that went out by itself): the same inline
+ * receipt, from what the receipt card says. Who it was with at the head, its figures as rows, the status in green.
+ */
+function DuetNoteReceipt({ note }: { note: AgentNote }) {
+  const facts = note.stats ?? [];
+  const status = facts.find((s) => s.label === 'Status')?.value ?? 'Done';
+  return (
+    <div className={styles.receipt}>
+      <span className={styles.receiptWho}>
+        {note.who &&
+          (note.who.bank ? (
+            <NoteMark note={note} size={40} />
+          ) : (
+            <span className={styles.receiptMark}>
+              <NoteMark note={note} size={40} />
+            </span>
+          ))}
+        <span>
+          <strong>{note.title}</strong>
+          <small>{note.lines[0]}</small>
+        </span>
+      </span>
+      <dl className={styles.receiptFacts}>
+        {facts
+          .filter((s) => s.label !== 'Status')
+          .map((s) => (
+            <Fragment key={s.label}>
+              <dt>{s.label}</dt>
+              <dd>{s.value}</dd>
+            </Fragment>
+          ))}
+        <dt>Status</dt>
+        <dd data-status>{status}</dd>
+      </dl>
+    </div>
+  );
+}
+
 /** Duet's artifact: a preview on top (a small label, a serif headline, then tiles or a picture), and under a hairline
  *  its name, when it was updated, a pin and a chevron (or Copy, for something to copy). */
 function Artifact({
@@ -272,6 +404,7 @@ function DoneRow() {
 }
 
 export function ClaudeChat({ chat }: AgentChatProps) {
+  const openedIds = useOpenedIds(chat.messages);
   const sub = useSubAgentSheet(chat.messages);
   const card = useDuetCard({ messages: chat.messages, onAllow: chat.allow });
   const bank = useDuetBank({ messages: chat.messages, onAllow: chat.allow });
@@ -347,6 +480,12 @@ export function ClaudeChat({ chat }: AgentChatProps) {
             </Lift>
           );
         }
+        if (receipted(m))
+          return (
+            <Lift>
+              <DuetReceipt ask={m.ask} />
+            </Lift>
+          );
         // Money gets the spend card; a yes Duet needs without money (setting up, limits) gets a permission card.
         if (m.ask.amount)
           return (
@@ -362,6 +501,8 @@ export function ClaudeChat({ chat }: AgentChatProps) {
         );
       case 'card': {
         const b = m.card.balance;
+        // One receipt per payment: the flow's own receipt card repeats the one the settled ask became.
+        if (!b && !m.card.invoice && !m.card.code && (m.card.stats || m.card.rows) && receiptPrecedes(i, all)) return null;
         return (
           <Lift>
             {b ? (
@@ -370,6 +511,8 @@ export function ClaudeChat({ chat }: AgentChatProps) {
               <InvoiceCard invoice={m.card.invoice} className={styles.invoiceSkin} />
             ) : m.card.code ? (
               <AddressArtifact note={m.card} />
+            ) : m.card.done && m.card.stats && !m.card.rows ? (
+              <DuetNoteReceipt note={m.card} />
             ) : m.card.stats || m.card.rows ? (
               <NoteArtifact note={m.card} />
             ) : (
@@ -390,9 +533,11 @@ export function ClaudeChat({ chat }: AgentChatProps) {
           </span>
         );
       case 'products':
+        // A receipt that follows already shows what was bought.
+        if (receiptFollows(i, all)) return null;
         return (
           <Lift cards=":scope > * > *">
-            <ProductRow products={m.products} />
+            <ProductRow products={m.products} fresh={!openedIds.has(m.id)} />
           </Lift>
         );
       case 'meta': {

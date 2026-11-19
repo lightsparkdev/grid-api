@@ -60,10 +60,54 @@ $muse-font: 'Optimistic AI', var(--font-family-sf-pro);
   }
 }
 
+// As wide as what it says (a receipt), its name on two lines before it's cut.
+.card[data-hug] {
+  width: fit-content;
+  min-width: 200px;
+  max-width: 348px;
+  padding-bottom: 12px;
+
+  .cardText strong {
+    white-space: normal;
+    text-wrap: balance;
+  }
+}
+
+// The whole card opens something (the balance page).
+.cardOpens {
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active {
+    scale: 0.985;
+  }
+}
+
 .cardHead {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.cardTrail {
+  display: grid;
+  flex: none;
+  place-items: center;
+  margin-left: auto;
+  padding-left: 6px;
+  color: var(--muse-muted);
+}
+
+// The balance itself, under its name.
+.cardAmount {
+  font-size: 34px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 40px;
 }
 
 .cardTile {
@@ -79,6 +123,7 @@ $muse-font: 'Optimistic AI', var(--font-family-sf-pro);
 
 .cardText {
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-width: 0;
 

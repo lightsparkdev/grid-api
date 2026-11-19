@@ -3,12 +3,12 @@ import { Redis } from '@upstash/redis';
 /* Spend guards for the model: messages per browser and per network in a window, model calls per day across
    everyone, and web price lookups per day. A browser is the random ID the page sends (lib/visitor); the network
    is the address Vercel saw, which a visitor can't set. The network cap is the backstop for anyone minting browser
-   IDs, so it sits well above what a room of people behind one office, carrier or proxy address would send. Counts
+   IDs, so it sits well above what a whole office behind one address would send at once (a few hundred people). Counts
    live in Upstash when the deploy has it (the same KV_REST_* variables the cards demo uses), and in memory
    otherwise: fine locally, per instance in production. */
 
 const PER_BROWSER = Number(process.env.AGENT_RATE_LIMIT ?? 75);
-const PER_NETWORK = Number(process.env.AGENT_NETWORK_LIMIT ?? 1_000);
+const PER_NETWORK = Number(process.env.AGENT_NETWORK_LIMIT ?? 3_000);
 const WINDOW_SECONDS = 10 * 60;
 const PER_DAY = Number(process.env.AGENT_DAILY_CAP ?? 20_000);
 /** Web price lookups a day across everyone. Each runs up to two paid searches, so they get their own, smaller cap. */
@@ -65,9 +65,17 @@ export interface Visitor {
 
 async function windowed(kind: string, v: Visitor, perBrowser: number, perNetwork: number): Promise<LimitResult> {
   const net = networkOf(v.network);
-  if ((await bump(`${kind}:b:${v.browser ?? `net:${net}`}`, WINDOW_SECONDS)) > perBrowser) return 'visitor';
-  if ((await bump(`${kind}:n:${net}`, WINDOW_SECONDS)) > perNetwork) return 'visitor';
+  const mine = await bump(`${kind}:b:${v.browser ?? `net:${net}`}`, WINDOW_SECONDS);
+  if (mine > perBrowser) return blocked('one browser', kind, mine, perBrowser);
+  const ours = await bump(`${kind}:n:${net}`, WINDOW_SECONDS);
+  if (ours > perNetwork) return blocked('one network', kind, ours, perNetwork);
   return dailyCap();
+}
+
+/** Someone got the fallback because of a limit: logged the first time in each window, with no address or ID. */
+function blocked(who: string, kind: string, count: number, limit: number): LimitResult {
+  if (count === limit + 1) console.warn(`[agent] limit hit: ${who} passed ${limit} ${kind === 'rl' ? 'messages' : 'steps'} in ${WINDOW_SECONDS / 60} minutes; they get the fallback until the window ends`);
+  return 'visitor';
 }
 
 /** Count one message; say whether it may go to the model. */
@@ -78,10 +86,27 @@ export const takeStep = (v: Visitor) => windowed('st', v, PER_BROWSER * STEPS_PE
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+/** How far through the day's cap to say so in the logs, so it's seen coming. */
+const WARN_AT = [0.5, 0.8];
+
 async function dailyCap(): Promise<LimitResult> {
   const all = await bump(`day:${today()}`, 26 * 60 * 60);
+  for (const share of WARN_AT) {
+    if (all === Math.ceil(PER_DAY * share)) console.warn(`[agent] daily cap: ${all} of ${PER_DAY} model calls used today (${share * 100}%)`);
+  }
+  if (all === PER_DAY + 1) console.error(`[agent] daily cap reached: ${PER_DAY} model calls today; everyone gets the fallback until midnight UTC (raise AGENT_DAILY_CAP)`);
   return all > PER_DAY ? 'daily' : 'ok';
 }
+
+/**
+ * Count a second provider call made for one request (a retry), so the day's cap counts every call sent. Best effort:
+ * a failed write to the counter is logged, and never fails the request that's being retried.
+ */
+export const countRetry = (): Promise<void> =>
+  dailyCap().then(
+    () => undefined,
+    (e) => console.warn('[agent] a retry was not counted against the daily cap:', e instanceof Error ? e.message : e),
+  );
 
 /** Count one web price lookup; past the day's cap the shelf prices from the model's estimate instead. */
 export async function takeLookup(): Promise<boolean> {

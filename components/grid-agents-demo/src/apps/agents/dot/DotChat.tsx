@@ -3,6 +3,7 @@ import { AnimatePresence, motion, type Transition } from 'motion/react';
 import { IconArrowCornerDownRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowCornerDownRight';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
 import { IconCheckCircle2 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckCircle2';
+import { IconCheckmark1 as IconCheckBold } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCheckmark1';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconChevronDownSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronDownSmall';
 import { IconCreditCard1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCard1';
@@ -26,7 +27,7 @@ import { SheetDisc } from '../SheetPage';
 import type { AgentAsk, AgentMeta, AgentNote, Message, PayTo, Product } from '../conversation';
 import { linkedBank } from '../linkedBank';
 import { recipientNamed } from '../recipients';
-import { AddressQr, BalanceCard, copyLabel, Divider, InvoiceCard, NoteCard, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
+import { AddressQr, AskMark, BalanceCard, copyLabel, Divider, InvoiceCard, NoteCard, NoteMark, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from '../vault/useAskSheet';
@@ -83,9 +84,11 @@ function Markdown({ text }: { text: string }) {
   return <>{out}</>;
 }
 
-/** What dot found, as its markdown list. */
+/** What dot found, as its markdown list. Only what was found: which one it would pick is the agent's to say. */
 function productsText(products: Product[]) {
-  return products.map((p) => `- **${p.title}**, ${p.price} at ${p.merchant}${p.pick && products.length > 1 ? ' (my pick)' : ''}`).join('\n');
+  const line = (p: Product) => `**${p.title}**, ${p.price} at ${p.merchant}`;
+  // One thing is a line, not a list of one.
+  return products.length === 1 ? line(products[0]) : products.map((p) => `- ${line(p)}`).join('\n');
 }
 
 /** Dots' mark: the blue blob, as the logo in its sheets and pills. */
@@ -111,7 +114,7 @@ function Pill({ m, lead, label, done, onOpen }: { m: Ask; lead: ReactNode; label
       {pending ? (
         <i className={styles.spinner} />
       ) : state === 'done' ? (
-        <IconCheckmark1 size={18} className={styles.pillCheck} />
+        <IconCheckBold size={18} className={styles.pillCheck} />
       ) : state === 'open' ? (
         <span className={styles.chevron} />
       ) : null}
@@ -132,7 +135,7 @@ function ActionPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
           ? `${linkedBank().bankName} •••• ${linkedBank().last4}`
           : ask.card
             ? cardLabel(ask)
-            : (ask.allowed ?? 'Done')
+            : `${ask.allowed ?? 'Done'}${ask.amount ? ` · ${ask.amount}` : ''}`
       : state === 'denied'
         ? (ask.denied ?? 'Not now')
         : (ask.form?.title ?? ask.title);
@@ -141,7 +144,7 @@ function ActionPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
     <Pill
       m={m}
       lead={ask.recipient ? <Flag code={ask.recipient.country} size={20} /> : kind ? <DotGlyph glyph={kind} /> : <IconSettingsSliderHor size={20} />}
-      done={flag ? <Flag code={flag} size={20} /> : kind ? <DotGlyph glyph={kind} /> : <DotsMark size={20} />}
+      done={flag ? <Flag code={flag} size={20} /> : kind ? <DotGlyph glyph={kind} /> : ask.amount ? <AskMark ask={ask} size={20} round /> : <DotsMark size={20} />}
       label={label}
       onOpen={onOpen}
     />
@@ -415,7 +418,28 @@ function PayPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
         : state === 'expired'
           ? 'Expired'
           : `Review payment · ${ask.amount}`;
-  return <Pill m={m} lead={<IconReceiptBill size={20} />} done={<DotsMark size={20} />} label={label} onOpen={onOpen} />;
+  return <Pill m={m} lead={<IconReceiptBill size={20} />} done={<AskMark ask={ask} size={20} round={!ask.who?.icon} />} label={label} onOpen={onOpen} />;
+}
+
+/** A receipt as Dots shows what it did: a done pill, who it was with at its lead, as wide as what it says. */
+function ReceiptPill({ note }: { note: AgentNote }) {
+  return (
+    <span className={styles.pill} data-state="done" data-receipt>
+      <span className={styles.pillLead}>{note.who ? <NoteMark note={note} size={20} round={!note.who.icon} /> : <DotsMark size={20} />}</span>
+      <span className={styles.pillLabel}>{note.title}</span>
+      <IconCheckBold size={18} className={styles.pillCheck} />
+    </span>
+  );
+}
+
+/** The payment's own pill, just above, already says it went through: with nothing said in between, its receipt would say it twice. */
+function paidAbove(i: number, all: Message[]) {
+  for (let j = i - 1; j >= 0; j--) {
+    const m = all[j];
+    if (m.kind === 'ask') return m.state === 'done' && !!m.ask.amount && !m.ask.card && !m.ask.bank;
+    if (m.kind !== 'work' && m.kind !== 'meta' && m.kind !== 'subagent') return false;
+  }
+  return false;
 }
 
 /** What dot set up or saved, as the gray pill it leaves in the thread. */
@@ -737,6 +761,10 @@ export function DotChat({ chat }: AgentChatProps) {
           <InvoiceCard invoice={m.card.invoice} className={styles.invoiceSkin} />
         ) : m.card.code ? (
           <NotePill note={m.card} onOpen={() => setAddress({ note: m.card, open: true })} />
+        ) : m.card.done && !m.card.rows ? (
+          paidAbove(i, all) ? null : (
+            <ReceiptPill note={m.card} />
+          )
         ) : (
           <NoteCard note={m.card} />
         );

@@ -19,7 +19,7 @@ import {
   type TeamMember,
 } from './business';
 import type { Beat, Params } from './conversation';
-import { addShort, approvalOr, balanceParams, FLOWS, holdOr, offerFunds, recipientParams, type FlowContext, type FlowParams } from './flows';
+import { addShort, approvalOr, balanceParams, FLOWS, holdOr, offered, offerFunds, recipientParams, type FlowContext, type FlowParams } from './flows';
 import { draftRecipient, recipientNamed } from './recipients';
 import { renameBusinessBank } from './linkedBank';
 import { usd2 } from './story';
@@ -196,13 +196,27 @@ export function companySetup(ctx: FlowContext, given: { company?: string; owner?
     renameBusinessBank(company);
     return [{ emit: { type: 'business.name', company, owner } }, { when: approve }];
   };
-  const askOwner = (company: string): Beat[] => [
-    { say: 'company.owner', params: { company } },
-    { name: true, suggestion: DEFAULT_BUSINESS.owner, other: 'company.owner.other', named: (owner) => named(company, owner) },
-  ];
-  if (biz(ctx).named) return [{ react: '❤️' }, ...approve()];
-  if (given.company && given.owner) return [{ react: '❤️' }, ...named(given.company, given.owner)];
-  if (given.company) return [{ react: '❤️' }, ...askOwner(given.company)];
+  const askOwner = (company: string): Beat[] => {
+    if (ctx.naming) ctx.naming.company = company;
+    // The owner's name may have come first.
+    if (known.owner) return named(company, known.owner);
+    return [
+      { say: 'company.owner', params: { company } },
+      { name: true, suggestion: DEFAULT_BUSINESS.owner, other: 'company.owner.other', named: (owner) => named(company, owner) },
+    ];
+  };
+  // What they've said so far, here or in a setup that started over.
+  const known = {
+    ...(biz(ctx).named && { company: biz(ctx).company, owner: biz(ctx).owner }),
+    ...ctx.naming,
+    ...(given.company && { company: given.company }),
+    ...(given.owner && { owner: given.owner }),
+  };
+  if (ctx.naming) Object.assign(ctx.naming, known);
+  // Named already, and nothing new said: the approval as it stands. A name given now replaces the one it had.
+  if (biz(ctx).named && !given.company && !given.owner) return [{ react: '❤️' }, ...approve()];
+  if (known.company && known.owner) return [{ react: '❤️' }, ...named(known.company, known.owner)];
+  if (known.company) return [{ react: '❤️' }, ...askOwner(known.company)];
   return [
     { react: '❤️' },
     // On the way to something else, it says what's waiting on the account.
@@ -216,11 +230,13 @@ export function noCompanyYet(ctx: FlowContext): Beat[] {
   return [
     { react: '👍' },
     { say: 'company.none', params: names(ctx) },
-    {
-      chips: [{ label: 'Set up my company', glyph: 'wallet' }, { label: 'Not now' }],
-      reply: true,
-      then: (picked) => (picked === 0 ? companySetup(ctx).filter((b) => !('react' in b)) : [{ say: 'company.later' }]),
-    },
+    ...offered(ctx, 'setting up the company’s account (setup_company)', [
+      {
+        chips: [{ label: 'Set up my company', glyph: 'wallet' }, { label: 'Not now' }],
+        reply: true,
+        then: (picked) => (picked === 0 ? companySetup(ctx).filter((b) => !('react' in b)) : [{ say: 'company.later' }]),
+      },
+    ]),
   ];
 }
 

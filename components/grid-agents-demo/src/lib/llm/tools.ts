@@ -1,14 +1,17 @@
 import { BANK_COUNTRIES } from '@/data/bankCountries';
 import { CONNECTORS, type ConnectorId } from '@/data/connectors';
-import type { Mode } from '@/data/mode';
+import { MODES, type Mode } from '@/data/mode';
 
 /* The agent's tools: what the model can do, each checked and carried out in the phone (apps/agents/tools). The
-   model plans; the tools own prices, limits, approvals and the Grid calls, and answer with a result or an error
-   it can act on. */
+   model runs the conversation and writes every line; a tool does one thing in the app (a screen, an action) and
+   answers with what happened, what it's waiting on, or an error the model can act on. */
 
 export const TOOL_NAMES = [
   'reply',
   'offer_choices',
+  'wait',
+  'answer',
+  'switch_account',
   'setup_balance',
   'add_card',
   'link_bank',
@@ -45,18 +48,20 @@ const TOOLS_IN: Record<Mode, ReadonlySet<ToolName>> = {
 };
 export const toolsIn = (mode: Mode) => TOOLS_IN[mode];
 
-/** Tools that end the turn: the person answers next. */
-export const ENDS_TURN = new Set<ToolName>(['reply', 'offer_choices']);
-/** Tools whose result the model reads before the turn can end: they find or price something. */
-export const READS_RESULT = new Set<ToolName>(['search', 'quote_payment']);
+/** Tools that end the turn: the person acts next. */
+export const ENDS_TURN = new Set<ToolName>(['reply', 'offer_choices', 'wait', 'switch_account']);
+/** Tools with no line of their own: what they lead to is what there is to say, once their result is in. */
+export const SAYS_NOTHING = new Set<ToolName>(['wait', 'answer']);
 
+/** A line to the person, written once per app: they can switch apps mid-conversation, and the thread follows in that app's voice. */
 export type Say = Partial<Record<ConnectorId, string>>;
+export const CONNECTOR_IDS = CONNECTORS.map((c) => c.id);
 
 /** One tool call as the model made it. */
 export interface ToolCall {
   id: string;
   name: ToolName;
-  input: Record<string, unknown> & { say?: Say; more?: boolean };
+  input: Record<string, unknown> & { say?: Say };
 }
 
 /** What a tool sends back: anything JSON, with `error` when it couldn't run. */
@@ -72,21 +77,22 @@ export interface Turn {
   content: Block[];
 }
 
-export const CONNECTOR_IDS = CONNECTORS.map((c) => c.id);
 export const STABLE_ASSETS = ['USDC', 'USDT', 'USDB'] as const;
 export const STABLE_NETWORKS = ['BASE', 'SOLANA', 'ETHEREUM', 'POLYGON', 'ARBITRUM', 'TRON', 'SPARK'] as const;
 export const OWN_BANK_HOMES = ['us', 'mx', 'br', 'other'] as const;
 
 const str = (description: string, extra: Record<string, unknown> = {}) => ({ type: 'string', description, ...extra });
 const num = (description: string) => ({ type: 'number', description });
+const voices = { properties: Object.fromEntries(CONNECTOR_IDS.map((c) => [c, { type: 'string' }])), required: CONNECTOR_IDS };
+/** What a reply says: the one message, once per app. */
+const line = { type: 'object', description: 'Your message, written once per app in that app’s own voice: the same meaning, facts, amounts and question in each.', ...voices };
+/** The agent's word as it sets off to do what they asked. */
 const say = {
   type: 'object',
   description:
-    'What you text the person as this starts, once per app in its own voice: a warm sentence or two saying you’re on it, the same meaning, facts and amounts in each.',
-  properties: Object.fromEntries(CONNECTOR_IDS.map((c) => [c, { type: 'string' }])),
-  required: CONNECTOR_IDS,
+    'Your acknowledgement of what they just asked, as you set off to do it: a few words, the way a person answers a request before going to do it. On the first tool of your answer to something they typed, and only there. Once per app, in each app’s voice.',
+  ...voices,
 };
-const more = { type: 'boolean', description: 'True when you have more to do after this in the same turn (another task they asked for, or what this setup is for). Otherwise the turn ends once it’s done.' };
 
 interface ToolDef {
   name: ToolName;
@@ -94,13 +100,13 @@ interface ToolDef {
   input_schema: { type: 'object'; properties: Record<string, unknown>; required?: string[] };
 }
 
-const tool = (name: ToolName, description: string, properties: Record<string, unknown>, required: string[] = [], opts: { more?: boolean; sayRequired?: boolean } = {}): ToolDef => ({
+const tool = (name: ToolName, description: string, properties: Record<string, unknown>, required: string[] = [], opts: { say?: 'required' | 'none' } = {}): ToolDef => ({
   name,
   description,
   input_schema: {
     type: 'object',
-    properties: { say, ...properties, ...(opts.more === false ? {} : { more }) },
-    required: [...(opts.sayRequired ? ['say'] : []), ...required],
+    properties: { ...(opts.say === 'none' ? {} : { say: opts.say === 'required' ? line : say }), ...properties },
+    required: [...(opts.say === 'required' ? ['say'] : []), ...required],
   },
 });
 
@@ -109,26 +115,49 @@ const COUNTRY_CODES = BANK_COUNTRIES.map((c) => c.code);
 export const TOOL_DEFS: ToolDef[] = [
   tool(
     'reply',
-    'Text the person and end your turn: an answer, a question, or why you can’t do something. Use when nothing else fits.',
-    { suggestions: { type: 'array', items: { type: 'string' }, maxItems: 4, description: 'Only under a question about a country or a choice: up to 4 replies they can tap, each 1 to 3 words, written as they’d say it back. Never names; never bare amounts.' } },
+    'Text the person and end your turn: what just happened, an answer, a question, the line that leads into what the app is about to put on screen, or why you can’t do something. Whatever is open on screen stays open.',
+    { suggestions: { type: 'array', items: { type: 'string' }, maxItems: 4, description: 'Up to 4 replies they can tap, each 1 to 4 words, written as they’d say it back: under a question about a country or a choice, or a next step worth offering. Never names; never bare amounts. Leave out when the app is about to show its own taps (a result’s waiting).' } },
     [],
-    { more: false, sayRequired: true },
+    { say: 'required' },
   ),
   tool(
     'offer_choices',
-    'Ask the person to pick, with 2 to 4 tappable options, and end your turn. Their pick comes back as their next message. Use for a choice you need (which way to add money, which network) or an offer (add money now?).',
+    'Ask the person to pick, with 2 to 4 tappable options, and end your turn. Their pick comes back as their next message. Use for a choice of your own (which country, an offer: add money now?). Never for something a result is waiting on: the app shows its own taps for that.',
     { options: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 4, description: 'Each 1 to 4 words, as they’d say it back ("My card", "Not now", "$50").' } },
     ['options'],
-    { more: false, sayRequired: true },
+    { say: 'required' },
+  ),
+  tool('wait', 'End your turn without texting anything more: what’s on screen already says it. Rare; when there’s news (something done, something needed), say it with reply.', {}, [], { say: 'none' }),
+  tool(
+    'answer',
+    'Answer what’s open on screen for them, when what they typed does that: approve or decline the approval or form, pick one of the options, or give the amount or the name it asks for. The app carries on exactly as if they had tapped, and the result is what happened next. Only for what "On screen" lists right now, and only when their words clearly mean it. A question about it, or a change to it, is not an answer.',
+    {
+      decision: str('An approval or a form: approve it, or decline it.', { enum: ['approve', 'decline'] }),
+      option: { type: 'integer', description: 'Options: which one they mean, counting from 1.' },
+      amount_usd: num('An amount: how much, USD.'),
+      name: str('A name: just the name, written as a name ("pat capulong" is "Pat Capulong"); several people as they listed them.'),
+    },
+    [],
+    { say: 'none' },
+  ),
+  tool(
+    'switch_account',
+    'Take them to their other account in the app: its own conversation, balance and tools. The business account sets up a company and handles invoices, bills, contractors, payroll and the team’s budget and cards; the personal account shops, subscribes, books hotels and pays friends. Call it when they ask for something that lives on the other account, or say yes to switching. Ends your turn here.',
+    {
+      to: str('The account to go to.', { enum: MODES }),
+      carry: str('What they asked for that belongs there, in their own words, so it’s picked up there ("run payroll for my team"). Leave out when they only want to switch.'),
+    },
+    ['to'],
+    { say: 'required' },
   ),
   tool('setup_balance', 'Turn on their balance (and your account with it, at the default limits): the app shows its own consent sheet. Needed before adding money, getting paid, paying someone, withdrawing or sending stablecoins.', {}),
   tool('add_card', 'Save their credit or debit card to your vault, in the app’s own card sheet, so you can pay with it or add money from it. Works without a balance.', {}),
   tool('link_bank', 'Link their own bank so money can move in and out. A US bank links through Plaid; elsewhere the app’s form.', {
-    home: str('Where their bank is, if they said: "us", "mx", "br", or "other". Leave out to let the app ask.', { enum: OWN_BANK_HOMES }),
+    home: str('Where their bank is, if they said: "us", "mx", "br", or "other". Left out, the result waits on which country.', { enum: OWN_BANK_HOMES }),
   }),
   tool(
     'fund',
-    'Add money to their balance: from their card (saved first if it isn’t), their bank (linked first if it isn’t), or stablecoins (shows deposit details). Pass only what they said; the app asks how much and where from with its own taps.',
+    'Add money to their balance: from their card (saved first if it isn’t), their bank (linked first if it isn’t), or stablecoins (shows deposit details). Saving the card or linking a US bank for this is the go-ahead: the amount is taken right then, with no second confirmation. Adding money has no fee. Pass only what they said; what’s missing (how much, where from) comes back as waiting, with the app’s own taps.',
     {
       amount_usd: num('How much, USD, if they said.'),
       cover: str('Instead of an amount: a quote_id or an option_id (or "chosen"); adds exactly what the balance is short of it.'),
@@ -139,7 +168,7 @@ export const TOOL_DEFS: ToolDef[] = [
   ),
   tool(
     'search',
-    `Find something to buy and show it on a product card with real prices. Pass on exactly what they said; never invent a product, brand or price. A product they named comes back as the only option; anything vaguer comes back as three, and the app asks them to pick: they_picked in the result is their choice, so never ask again which one. Call checkout with option_id "chosen" in the same step.
+    `Find something to buy and show it on a product card with real prices. Pass on exactly what they said; never invent a product, brand or price. A product they named comes back as the only option (they_picked): call checkout with option_id "chosen" in the same step. Anything vaguer comes back as three and waits on their pick: once they’ve picked (they_picked), call checkout with option_id "chosen"; never ask again which one.
 - They named an exact product ("airpods pro", "a ps5"): product as they said it, brand (its maker), typical_price_usd (your estimate of its usual US price), query with what kind of thing it is.
 - A brand or store ("nike", "a dyson vacuum"): brand, and typical_price_usd for that brand's.
 - Vague ("a coffee maker", "sneakers"): query, typical_price_usd. Never ask what kind, which brand or how much. A present, a surprise or "you choose": one common, concrete thing as the query ("scented candle"), never a gift card unless they said gift card.
@@ -164,7 +193,6 @@ export const TOOL_DEFS: ToolDef[] = [
       value_usd: num('A gift card’s or phone top-up’s value; a bill’s amount only if they said it.'),
     },
     ['query'],
-    { more: false },
   ),
   tool(
     'checkout',
@@ -178,7 +206,7 @@ export const TOOL_DEFS: ToolDef[] = [
   ),
   tool('subscribe', 'Subscribe them to a well-known service with a card only that service can charge, monthly. Always asks them to approve.', {
     merchant: str('The service, as it brands itself ("Spotify Premium").'),
-    monthly_price_usd: num('Its usual monthly price, USD. Ask if you don’t know it.'),
+    monthly_price_usd: num('Its usual monthly price, USD, as you know it for that plan.'),
     pay_with: str('"card" only if they want it on their card.', { enum: ['balance', 'card'] }),
   }, ['merchant', 'monthly_price_usd']),
   tool(
@@ -191,7 +219,6 @@ export const TOOL_DEFS: ToolDef[] = [
       currency: str('"USD", or the ISO code of their local currency if they said it in that currency.'),
     },
     ['name', 'amount'],
-    { more: false },
   ),
   tool(
     'send_payment',
@@ -208,7 +235,7 @@ export const TOOL_DEFS: ToolDef[] = [
   ),
   tool(
     'request_payment',
-    'Get paid: someone pays them into the balance. Either from (who) and amount_usd, or split_with and total_usd to split a bill they paid (the app works out the shares). Their client Lucía’s invoice is on file: from "Lucía" alone plays it.',
+    'Get paid: someone pays them into the balance. Either from (who) and amount_usd, one call per person, or split_with and total_usd to split a bill they paid. A split is equal shares with them counted in: $90 with two friends is $30 from each, and they cover their own $30. When the others owe the whole amount between them ("they owe me 90 total"), that isn’t a split: use from and amount_usd for each. If it isn’t clear which they mean, ask before calling, and never say a share the app hasn’t worked out. Their client Lucía’s invoice is on file: from "Lucía" alone plays it.',
     {
       from: str('Who’s paying.'),
       amount_usd: num('How much they pay, USD.'),
@@ -218,7 +245,7 @@ export const TOOL_DEFS: ToolDef[] = [
   ),
   tool(
     'raise_limit',
-    'Change your spending limits: the app shows the change for them to approve with Face ID. "Raise my limit" means per_payment_usd. Set ask_above_usd only when they talk about asking them first or doing things alone. With for, one approval also covers that payment or purchase, so it doesn’t ask twice; call checkout or send_payment for it next.',
+    'Change your spending limits: the app shows the change for them to approve with Face ID. The limits are settings they choose, not ceilings: any of them can go up or down to what they ask (per payment up to $100,000), so never tell them a limit is the maximum. There are three, and they aren’t the same thing. ask_above_usd is how much you spend without asking: being asked less often, or more often, is this one ("stop asking me for small stuff", "check with me over $50"), and 0 means ask every time. per_payment_usd is the most any single payment can be, approved or not: "raise my limit" on its own means this one. daily_usd is the most in a day. Change only the one they mean, and when it isn’t clear which, ask. With for, one approval also covers that payment or purchase, so it doesn’t ask twice; call checkout or send_payment for it next.',
     {
       per_payment_usd: num('The most per payment.'),
       daily_usd: num('The most per day.'),
@@ -247,27 +274,27 @@ export const TOOL_DEFS: ToolDef[] = [
     check_out: str('YYYY-MM-DD.'),
     guests: num('How many are staying, only if they said.'),
   }, ['city', 'check_in', 'check_out']),
-  tool('show_account', 'Show the balance card (balance and limits) or recent activity.', { show: str('Which.', { enum: ['balance', 'history'] }) }, ['show'], { more: false }),
-  tool('setup_company', 'Set up the business’s own account, verified, with US bank details clients pay, at the default limits: the app asks for the company’s name and the owner’s if you don’t pass them, then shows its consent sheet. Needed before anything else on the business.', {
+  tool('show_account', 'Show the balance card (balance and limits) or recent activity.', { show: str('Which.', { enum: ['balance', 'history'] }) }, ['show']),
+  tool('setup_company', 'Set up the business’s own account, verified, with US bank details clients pay, at the default limits. It needs the company’s name and the owner’s: pass what they said, and whatever’s missing comes back as waiting; then the app shows its consent sheet. Until that sheet is approved the names can still change: call this again with the new name (company, owner, or both) and the sheet comes back with it. Needed before anything else on the business.', {
     company: str('The company’s name, only if they said it.'),
     owner: str('The owner’s full name, only if they said it.'),
   }),
-  tool('add_teammate', 'Add someone to the team: the app asks their role, their pay each payroll and the bank payroll pays, in its own taps and sheet, and asks their name too if you don’t pass it. Team budgets, team cards and payroll cover whoever is on the team.', {
+  tool('add_teammate', 'Add someone to the team. It needs their name, role, pay each payroll and the bank payroll pays: pass the name if they said it, and the rest comes back as waiting, one at a time, with the app’s own taps and sheet. All four are needed: saying Not now to the bank form means they aren’t added. Team budgets, team cards and payroll cover whoever is on the team.', {
     name: str('Their full name, only if the owner said it.'),
   }),
-  tool('set_team_budget', 'Give everyone on the team their own agent, sharing one monthly budget from the business’s account. The owner approves it.', {
-    monthly_usd: num('The team’s monthly budget, USD, only if they said.'),
+  tool('set_team_budget', 'Give everyone on the team their own agent, sharing one monthly budget from the business’s account. The owner approves it. Only when they ask for a team budget or agents for the team: what one person is paid is not a budget. The amount is theirs to say: if they haven’t, ask how much a month before calling. While it’s still waiting on their approval the amount can change as often as they like: call this again with the new amount and the approval comes back with it, with nothing to decline first. Only once they’ve approved it is it fixed (the result then says already_set_up): say that plainly, and offer nothing in its place.', {
+    monthly_usd: num('The team’s monthly budget, USD, as they said it.'),
   }),
-  tool('issue_employee_card', 'Issue a Visa in a teammate’s name, spending from the business’s account (inside the team budget once there is one). For someone not on the team yet, the app adds them first. The owner approves it.', {
+  tool('issue_employee_card', 'Issue a Visa in a teammate’s name, spending from the business’s account (inside the team budget once there is one). For someone not on the team yet, the app adds them first, in this same call: their role, pay and bank come back as waiting, one at a time, and you answer with whatever they already said. The owner approves it.', {
     name: str('The teammate, as they named them.'),
     purpose: str('What it’s for, a few words, only if they said ("travel").'),
   }, ['name']),
   tool('send_invoice', 'Write an invoice in the app and send it to a client, with the business’s bank details and the invoice number on it; the app matches the client’s bank transfer to it when it lands.', {
-    client: str('Who’s paying: the client, as they named them.'),
-    amount_usd: num('How much, USD.'),
+    client: str('Who’s paying: the client, as the owner just named them. Never taken from an invoice already on the account: if they haven’t said who, ask.'),
+    amount_usd: num('How much, USD, as the owner said. If they haven’t said, ask.'),
     memo: str('What it’s for, a few words, only if they said.'),
   }, ['client', 'amount_usd']),
-  tool('list_invoices', 'Show the invoices: which are paid and which are still open, with a reminder to send for an open one.', {}, [], { more: false }),
+  tool('list_invoices', 'Show the invoices: which are paid and which are still open, with a reminder to send for an open one.', {}),
   tool('pay_bill', 'Pay a company’s bill (internet, software, utilities, office rent, a supplier) to its bank from the business’s account. A company paid for the first time gets its bank added in the app’s form, as a business.', {
     vendor: str('The company, as it brands itself ("Wavelink Fiber").'),
     amount_usd: num('How much, USD.'),

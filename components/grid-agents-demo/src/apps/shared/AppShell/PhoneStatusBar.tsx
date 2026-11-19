@@ -3,11 +3,12 @@
 import { forwardRef } from 'react';
 import clsx from 'clsx';
 import { StatusBarTime } from './StatusBarTime';
-import type { StatusBarTone } from './useAdaptiveStatusBarTone';
+import type { StatusBarTone, StatusBarTones } from './useAdaptiveStatusBarTone';
 import styles from './PhoneStatusBar.module.scss';
 
 interface PhoneStatusBarProps {
-  tone?: StatusBarTone;
+  /** One tone for the whole bar, or one for each side (the time, and the levels), each read from what's behind it. */
+  tone?: StatusBarTone | StatusBarTones;
 }
 
 /** Cellular bar heights, shortest first. */
@@ -18,17 +19,13 @@ export const PhoneStatusBar = forwardRef<HTMLElement, PhoneStatusBarProps>(funct
   { tone = 'default' },
   ref,
 ) {
+  const sides = typeof tone === 'string' ? { time: tone, levels: tone } : tone;
   return (
-    <header
-      ref={ref}
-      className={clsx(styles.statusBar, tone === 'light' && styles.statusBarLight)}
-      data-status-bar
-      aria-hidden
-    >
-      <div className={styles.timeSlot}>
+    <header ref={ref} className={styles.statusBar} data-status-bar aria-hidden>
+      <div className={clsx(styles.timeSlot, sides.time === 'light' && styles.light)}>
         <StatusBarTime />
       </div>
-      <div className={styles.levelsSlot}>
+      <div className={clsx(styles.levelsSlot, sides.levels === 'light' && styles.light)}>
         <span className={styles.cellular}>
           {BARS.map((h) => (
             <span key={h} className={styles.bar} style={{ height: h }} />

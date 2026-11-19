@@ -6,7 +6,7 @@ import type { ConnectorId } from '@/data/connectors';
 import type { Turn } from '@/lib/llm/tools';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
 import { useAgentBrain, type StepReply } from './brain/useAgentBrain';
-import type { StoredMessage } from './conversation';
+import type { Params, StoredMessage } from './conversation';
 import { OpenSheetsContext, type OpenSheets } from './openSheets';
 import { SKINS } from './skins';
 import type { ChatView } from './types';
@@ -22,13 +22,13 @@ const SKIN_EXIT = { ...SKIN_HIDDEN, pointerEvents: 'none' as const };
 
 type BrainOptions = Parameters<typeof useAgentBrain>[0];
 
-export interface AgentHostProps extends Omit<BrainOptions, 'reply' | 'describe' | 'asked' | 'readsFor' | 'typesFor'> {
+export interface AgentHostProps extends Omit<BrainOptions, 'reply' | 'render' | 'plain' | 'readsFor' | 'typesFor'> {
   connector: ConnectorId;
   dark: boolean;
   /** On a business account, its money's name ("Acme Studio balance") in place of the app's. */
   wallet?: string;
-  /** The model's next step for the conversation so far. */
-  reply: (turns: Turn[]) => Promise<StepReply>;
+  /** The model's next step, for the conversation so far and what's on screen: what's open, and what they can already read. */
+  reply: (turns: Turn[], screen: { open?: string; seen?: string }) => Promise<StepReply>;
 }
 
 /**
@@ -40,33 +40,11 @@ export function AgentHost({ connector, dark, reply, wallet, ...options }: AgentH
   const voice = useMemo(() => voiceFor(connector, { wallet }), [connector, wallet]);
   const voiceRef = useRef(voice);
   voiceRef.current = voice;
-  // What a scripted run said, in this app's words, for the model to read back.
-  const describe = useCallback(
-    (list: StoredMessage[]) =>
-      renderThread(list, voiceRef.current)
-        .flatMap((m) => (m.kind === 'them' && !m.typing && m.text ? [m.text] : []))
-        .join(' ')
-        .slice(0, 600),
-    [],
-  );
-  // What an open question asked: the agent's latest line, and the approval card after it if one is up. Earlier lines
-  // would read as the question too ("what's your name?" over the account it then shows).
-  const asked = useCallback((list: StoredMessage[]) => {
-    const shown = renderThread(list, voiceRef.current);
-    let from = shown.length - 1;
-    const said = (m: (typeof shown)[number]) => m.kind === 'them' && !m.typing;
-    while (from > 0 && !said(shown[from])) from -= 1;
-    return shown
-      .slice(from)
-      .flatMap((m) => {
-        if (m.kind === 'them' && !m.typing && m.text) return [m.text];
-        if (m.kind === 'ask') return [[m.ask.title, m.ask.amount, m.ask.who && `to ${m.ask.who.name}`, m.ask.total && `total ${m.ask.total}`].filter(Boolean).join(', ')];
-        return [];
-      })
-      .join(' ')
-      .slice(-600);
-  }, []);
-  const brain = useAgentBrain({ ...options, reply, describe, asked, readsFor: SKINS[connector].readsFor, typesFor: SKINS[connector].typesFor });
+  // What the person is looking at, as this app draws it: how the model knows what a card or an approval says.
+  const render = useCallback((list: StoredMessage[]) => renderThread(list, voiceRef.current), []);
+  // A flow's own line as a plain fact (no app's manner of speaking), for the model to say in its own words.
+  const plain = useCallback((key: string, params?: Params) => voiceFor('yourapp', { wallet: voiceRef.current.wallet }).line(key, params), []);
+  const brain = useAgentBrain({ ...options, reply, render, plain, readsFor: SKINS[connector].readsFor, typesFor: SKINS[connector].typesFor });
   const messages = useMemo(() => renderThread(brain.messages, voice), [brain.messages, voice]);
   const chat: ChatView = { ...brain, messages };
   const { Chat } = SKINS[connector];

@@ -142,7 +142,7 @@ export default function Page() {
       </div>
       <div ref={stackColRef} className={styles.stackCol}>
         <div className={styles.appCol}>
-          <AppPanel connector={logic.connector} mode={logic.mode} opened={logic.opened} accounts={logic.accounts} />
+          <AppPanel connector={logic.connector} mode={logic.mode} opened={logic.opened} accounts={logic.accounts} onSwitchAccount={logic.switchAccount} carried={logic.carried} />
         </div>
         <ColumnResizeHandle onMouseDown={onResizeStart} />
         <div

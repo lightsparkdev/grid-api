@@ -1,6 +1,11 @@
 // Muse's chat, in light and dark.
 @use '../../../styles/corners';
 .screen {
+  // Muse's cards: a 22pt bubble, 12pt in, around lighter panels. A panel's corner is concentric with the bubble's:
+  // the bubble's radius less the padding between them.
+  --muse-card-radius: 22px;
+  --muse-card-pad: 12px;
+  --muse-panel-radius: calc(var(--muse-card-radius) - var(--muse-card-pad));
   // The agent-to-agent card: Muse's bubble gray, its 22pt corners.
   --sub-bg: var(--muse-them);
   --sub-radius: 22px;
@@ -194,8 +199,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
 .noteWrap,
 .choices,
 .card,
-.browser,
-.artifact {
+.browser {
   &[data-pos='first'],
   &[data-pos='middle'] {
     border-bottom-left-radius: corners.corner(6.5px);
@@ -399,8 +403,8 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   display: flex;
   flex-direction: column;
   width: 345px;
-  padding: 12px 12px 14px;
-  border-radius: 22px;
+  padding: var(--muse-card-pad) var(--muse-card-pad) 14px;
+  border-radius: var(--muse-card-radius);
   background: var(--muse-browser);
 
   .browserHead {
@@ -447,22 +451,9 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   }
 }
 
-.productLetter {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 7px;
-  background: var(--muse-rule);
-  color: var(--muse-muted);
-  font-size: 13px;
-  font-weight: 510;
-}
-
 .details {
   overflow: hidden;
-  border-radius: 22px;
+  border-radius: var(--muse-panel-radius);
   background: var(--muse-sunk);
 
   & + & {
@@ -634,7 +625,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   height: 56px;
   margin-top: 12px;
   padding: 0 16px;
-  border-radius: 22px;
+  border-radius: var(--muse-panel-radius);
   background: var(--muse-sunk);
   font-size: 17px;
 
@@ -699,10 +690,18 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   }
 
   &[data-done] {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
     background: var(--part-done);
     color: var(--part-done-text);
     cursor: default;
   }
+}
+
+.allowCheck {
+  flex: none;
 }
 
 .legal {
@@ -822,8 +821,8 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   flex-direction: column;
   gap: 12px;
   width: 345px;
-  padding: 12px;
-  border-radius: 22px;
+  padding: var(--muse-card-pad);
+  border-radius: var(--muse-card-radius);
   background: var(--muse-browser);
 }
 
@@ -869,7 +868,7 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   height: 180px;
   padding: 14px;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: var(--muse-panel-radius);
   background: rgba(255, 255, 255, 0.55);
   filter: blur(2.5px);
 
@@ -958,82 +957,6 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   background: #121114;
 }
 
-// ── Muse balance: an artifact of stat tiles, light on light and dark on dark ──
-.artifact {
-  --art-bg: var(--muse-card);
-  --art-tile: #f2f1f4;
-  --art-muted: #8a898e;
-  --art-line: rgba(0, 0, 0, 0.07);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 345px;
-  padding: 12px;
-  border-radius: 24px;
-  background: var(--art-bg);
-  border: 0;
-  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
-  color: var(--muse-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: scale 0.15s ease;
-
-  &:active {
-    scale: 0.985;
-  }
-
-  :global([data-theme='dark']) & {
-    --art-bg: #121316;
-    --art-tile: #1e2024;
-    --art-muted: #9a9ca3;
-    --art-line: rgba(255, 255, 255, 0.08);
-    box-shadow: none;
-  }
-}
-
-.artifactHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2px 4px 0;
-  color: var(--art-muted);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.balanceArtifact {
-  width: 240px;
-}
-
-.tileBig {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: var(--art-tile);
-
-  small {
-    color: var(--art-muted);
-    font-size: 12px;
-  }
-
-  b {
-    font-size: 34px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-    line-height: 40px;
-  }
-
-  em {
-    color: var(--art-muted);
-    font-size: 13px;
-    font-style: normal;
-  }
-}
-
 // The iOS 26 tab bar under the composer, 5 tabs, with Muse's own icons.
 .tabBar {
   position: absolute;
@@ -1096,6 +1019,6 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
 /* The document inside Muse's frame, on the white of its detail blocks. */
 .invoiceSkin {
   --part-surface: var(--muse-card);
-  --part-radius: 16px;
+  --part-radius: var(--muse-panel-radius);
   width: auto;
 }

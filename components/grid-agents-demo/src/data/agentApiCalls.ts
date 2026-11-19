@@ -200,6 +200,12 @@ function fiat(code: string) {
   return { code, name, symbol: parts.find((p) => p.type === 'currency')?.value ?? '', decimals: 2 };
 }
 const dollars = (cents: number) => Number((cents / 100).toFixed(2));
+/**
+ * What a payout to a bank costs (USD cents). Dollars to a US bank convert nothing, so nothing comes off: the bill or
+ * the pay arrives in full. Into another currency, the fee comes out of what lands.
+ */
+export const payoutFee = (p: Pick<Payee, 'currency' | 'usd'>) => (p.currency === 'USD' ? 0 : Math.max(12, Math.round(p.usd * 0.003)));
+
 /** Sending currency units per receiving currency unit, as the spec defines exchangeRate: fees come off the sending amount
  *  first, so the rate covers the conversion only. Amounts in minor units. */
 function exchangeRate(sent: number, fees: number, sending: { decimals: number }, received: number, receiving: { decimals: number }) {
@@ -1263,8 +1269,7 @@ export function createAgentSession(nameOf: () => string, opts: { business?: bool
   const runRow = (r: Run) => ({ clientRowId: 'row-1', amount: r.payee.usd, destination: { destinationType: 'EXTERNAL_ACCOUNT', externalAccountId: r.accountId } });
 
   const payoutPreview = (p: Payee, previewTool: string, sendTool: string, title: string, accountId: string): CallStep[] => {
-    // Dollars to a US bank convert nothing, so nothing comes off: the bill or the pay arrives in full.
-    const fee = p.currency === 'USD' ? 0 : Math.max(12, Math.round(p.usd * 0.003));
+    const fee = payoutFee(p);
     const local = money(p.amount, fiat(p.currency).symbol);
     const exact = p.currency === 'USD';
     const r: Run = { payee: p, accountId, fee, title, detail: `${p.bank} · ${p.rail.replace('_', ' ')}`, done: `${exact ? local : `About ${local}`} landed at ${p.bank}.`, previewTool, sendTool };

@@ -39,6 +39,8 @@ export interface VoiceOverrides {
 
 const n = (p: Params | undefined, k: string) => Number(p?.[k] ?? 0);
 const s = (p: Params | undefined, k: string) => String(p?.[k] ?? '');
+/** Where the playground keeps its flow buttons: beside the phone, or on a small screen behind Configure. */
+const where = (p: Params | undefined) => (n(p, 'narrow') ? 'under Configure' : 'on the left');
 const lower = (p: Params | undefined, k: string) => s(p, k).toLowerCase();
 /** Grok's sign-off for a purchase on a one-time card; one on their own saved card has nothing to self-destruct. */
 const oneTime = (p: Params | undefined) => (n(p, 'card') ? '' : ' The card already self-destructed.');
@@ -85,7 +87,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'pay.newRecipient': (p) => `I don’t have ${s(p, 'first')}’s bank yet. Add it once and I’ll take it from there.`,
       'pay.done': (p) => `Sent! ${s(p, 'first')} has it, and I let them know it’s from you.`,
       'agent.done': () => 'You’re booked. The confirmation is in your inbox.',
-      fallback: () => 'I can only help with money here: paying people, shopping, and getting paid.',
+      fallback: (p) => `I can’t chat right now. Pick a flow from the buttons ${where(p)} and I’ll take it from there.`,
     },
     asks: {
       buy: (p) => MUSE_ORDER(p),
@@ -122,11 +124,11 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
     name: 'Grok Bot',
     wallet: 'Grok Bot balance',
     lines: {
-      greeting: () => `Hey. Give me the money chores: paying people in ${BANK_REACH} countries, subscriptions, getting paid. Hand me a card or a balance, plus a leash. Pick one.`,
+      greeting: () => `Hey. Give me my own account and I’ll handle the money: paying people in ${BANK_REACH} countries, subscriptions, getting paid. Card or balance? You set the limits.`,
       'setup.auto': (p) => `FYI: ${setupDone(p)}. Skipped the paperwork.`,
       'connect.already': () => 'Already connected. Here’s the account.',
-      'connect.intro': (p) => (n(p, 'hasAgent') ? 'That needs a Grok Bot balance. Here’s the deal.' : 'First I need my own account and a leash. Here’s what I’m asking for.'),
-      'connect.self': (p) => (n(p, 'hasAgent') ? 'Sure. Here’s the Grok Bot balance deal.' : 'Sure. I need my own account and a leash. Here’s what I’m asking for.'),
+      'connect.intro': (p) => (n(p, 'hasAgent') ? 'That needs a Grok Bot balance. Here’s the deal.' : 'First I need my own account, with limits you set. Here’s what I’m asking for.'),
+      'connect.self': (p) => (n(p, 'hasAgent') ? 'Sure. Here’s the Grok Bot balance deal.' : 'Sure. I need my own account, with limits you set. Here’s what I’m asking for.'),
       'connect.done': (p) => (n(p, 'hasAgent') ? 'Grok Bot balance on. Your rules.' : 'Connected. My own account, your rules.'),
       'fund.offer': () => 'Empty for now. Add money?',
       'fund.offerShort': () => 'Add money?',
@@ -139,7 +141,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'agent.intro': (p) => `${s(p, 'hotel')}’s agent wanted ${usd(n(p, 'listed'))}. Paying directly knocks off 10%: ${usd2(n(p, 'amount'))}.`,
       'getpaid.done': (p) => `${s(p, 'first')} paid. ${usd2(n(p, 'amount'))} in, ${usd2(n(p, 'balance'))} total.`,
       'balance.answer': (p) => `${usd2(n(p, 'balance'))}. Here’s the breakdown.`,
-      fallback: () => 'Not my department. I only handle money: paying people, shopping, getting paid.',
+      fallback: (p) => `Chat’s down right now. Pick a flow from the buttons ${where(p)}.`,
     },
     asks: {
       connect: (p) => ({
@@ -299,7 +301,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'buy.done': (p) => (n(p, 'now') ? 'ordered! it’ll be there in **about 30 minutes**.' : 'ordered! it arrives **thursday**.'),
       'buy.sent': () => 'sent! it’s in your **inbox**.',
       'pay.intro': (p) => `${s(p, 'first')} banks with **${s(p, 'bank')}**, so i’ll send it over ${s(p, 'rail')}.${n(p, 'converted') ? ` ${s(p, 'from')} is about **${s(p, 'to')}** right now.` : ''}`,
-      fallback: () => 'i can only help with money here! paying people, shopping, getting paid.',
+      fallback: (p) => `i can’t chat right now! pick a flow from the buttons ${where(p)} and i’ll take it from there.`,
     },
     asks: {
       connect: (p) => ({
@@ -386,13 +388,13 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       'cashout.bank': () => 'need your bank first. where is it?',
       'balance.answer': () => 'here’s where you’re at',
       'history.answer': () => 'here’s this week',
-      fallback: () => 'i only do money here, paying people, shopping, getting paid',
+      fallback: (p) => `can’t chat right now, pick a flow from the buttons ${where(p)}`,
     },
     asks: {
       connect: (p) => ({
         ...ASKS.connect(p),
         title: 'Turn on Instinct balance',
-        text: `here’s what i’d set: up to ${usd(n(p, 'perTx'))} a payment, ${usd(n(p, 'daily'))} a day, and i’ll text you before anything over ${usd(n(p, 'approve'))}. reply yes and i’ll turn it on`,
+        text: `Instinct balance: up to ${usd(n(p, 'perTx'))} a payment, ${usd(n(p, 'daily'))} a day, your ok needed above ${usd(n(p, 'approve'))}. reply yes to turn it on`,
       }),
       vault: () => ({
         ...ASKS.vault(),
@@ -414,19 +416,19 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       limits: (p) => ({
         ...ASKS.limits(p),
         title: 'Update your limits',
-        text: `new limits: i’d act alone up to ${usd(n(p, 'approve'))}${wasText(p, 'approve', 'fromApprove')}, ${usd(n(p, 'daily'))} a day${wasText(p, 'daily', 'fromDaily')}, ${usd(n(p, 'perTx'))} a payment${wasText(p, 'perTx', 'fromPerTx')}. reply yes to save them${s(p, 'go') ? ` and ${s(p, 'go')} it` : ''}`,
+        text: `new limits: no ok needed up to ${usd(n(p, 'approve'))}${wasText(p, 'approve', 'fromApprove')}, ${usd(n(p, 'daily'))} a day${wasText(p, 'daily', 'fromDaily')}, ${usd(n(p, 'perTx'))} a payment${wasText(p, 'perTx', 'fromPerTx')}. reply yes to save them${s(p, 'go') ? ` and ${s(p, 'go')} it` : ''}`,
       }),
       company: (p) => ({
         ...ASKS.company(p),
-        text: `here’s what i’d set up for ${s(p, 'company')}: a verified business account, up to ${usd(n(p, 'perTx'))} a payment, ${usd(n(p, 'daily'))} a day, and i’ll text you before anything over ${usd(n(p, 'approve'))}. reply yes and i’ll set it up`,
+        text: `${s(p, 'company')}: a verified business account, up to ${usd(n(p, 'perTx'))} a payment, ${usd(n(p, 'daily'))} a day, your ok needed above ${usd(n(p, 'approve'))}. reply yes to set it up`,
       }),
       team: (p) => ({
         ...ASKS.team(p),
-        text: `${s(p, 'people')} ${n(p, 'count') > 1 ? 'each get their own agent, sharing' : 'gets their own agent, on'} ${usd(n(p, 'budget'))} a month from ${s(p, 'company')}’s balance. up to ${usd(n(p, 'perTx'))} a payment each, and i’ll text you before anything over ${usd(n(p, 'approve'))}. reply yes to set it up`,
+        text: `${s(p, 'people')} ${n(p, 'count') > 1 ? 'each get their own agent, sharing' : 'gets their own agent, on'} ${usd(n(p, 'budget'))} a month from ${s(p, 'company')}’s balance. up to ${usd(n(p, 'perTx'))} a payment each, your ok needed above ${usd(n(p, 'approve'))}. reply yes to set it up`,
       }),
       empcard: (p) => ({
         ...ASKS.empcard(p),
-        text: `a Visa in ${s(p, 'name')}’s name for ${s(p, 'purpose')}, on ${s(p, 'company')}’s balance. reply yes and i’ll issue it`,
+        text: `a Visa in ${s(p, 'name')}’s name for ${s(p, 'purpose')}, on ${s(p, 'company')}’s balance. reply yes to issue it`,
       }),
     },
   },
@@ -453,17 +455,17 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
           : `${short(p)}I’ll use a card only ${s(p, 'merchant')} can charge, capped at ${usd2(n(p, 'amount'))} a month.`,
       'agent.done': () => 'Booked. I added it to your calendar and filed the receipt.',
       'history.answer': () => 'Here’s what moved this week.',
-      fallback: () => 'I can only help with money here: paying people, shopping, and getting paid.',
+      fallback: (p) => `I can’t chat at the moment. Choose a flow from the buttons ${where(p)} and I’ll take it from there.`,
     },
     asks: {
       // Duet asks for a yes in the thread, with reply pills, and keeps cards for money.
       connect: (p) => ({
         ...ASKS.connect(p),
-        text: `Up to ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day. I’ll check with you before anything over ${usd(n(p, 'approve'))}, and you can change these any time.`,
+        text: `Up to ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day. Your approval is needed above ${usd(n(p, 'approve'))}. You can change these any time.`,
       }),
       limits: (p) => ({
         ...ASKS.limits(p),
-        text: `I’d act alone up to ${usd(n(p, 'approve'))}${wasText(p, 'approve', 'fromApprove')}, ${usd(n(p, 'daily'))} a day${wasText(p, 'daily', 'fromDaily')} and ${usd(n(p, 'perTx'))} a payment${wasText(p, 'perTx', 'fromPerTx')}.`,
+        text: `No approval needed up to ${usd(n(p, 'approve'))}${wasText(p, 'approve', 'fromApprove')}, ${usd(n(p, 'daily'))} a day${wasText(p, 'daily', 'fromDaily')} and ${usd(n(p, 'perTx'))} a payment${wasText(p, 'perTx', 'fromPerTx')}.`,
       }),
       pay: duetSpend('pay'),
       cashout: duetSpend('cashout'),
@@ -474,7 +476,7 @@ export const VOICES: Record<ConnectorId, VoiceOverrides> = {
       payroll: duetSpend('payroll'),
       company: (p) => ({
         ...ASKS.company(p),
-        text: `A verified business account for ${s(p, 'company')}: up to ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day. I’ll check with you before anything over ${usd(n(p, 'approve'))}, and you can change these any time.`,
+        text: `A verified business account for ${s(p, 'company')}: up to ${usd(n(p, 'perTx'))} a payment and ${usd(n(p, 'daily'))} a day. Your approval is needed above ${usd(n(p, 'approve'))}. You can change these any time.`,
       }),
       team: (p) => ({
         ...ASKS.team(p),

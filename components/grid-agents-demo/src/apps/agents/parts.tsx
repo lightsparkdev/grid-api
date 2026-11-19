@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { TextMorph } from 'torph/react';
-import type { Transition } from 'motion/react';
+import { motion, type Transition } from 'motion/react';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
 import { IconSquareBehindSquare1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare1';
@@ -26,13 +26,74 @@ const ROW_SYMBOL = {
   wallet: 'wallet.pass.fill',
 } as const;
 
+/** Avatar fills for people and businesses without a picture: strong enough for white initials on any skin. */
+const TINTS = ['#e8613c', '#2f9e55', '#2f7cf6', '#9b59e8', '#e2457a', '#d98a12', '#1597ad', '#5b67d8'];
+
+/** The same person or business always gets the same fill. */
+export function tintFor(seed: string) {
+  let h = 0;
+  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return TINTS[h % TINTS.length];
+}
+
+/**
+ * How a found thing arrives in the thread: it fades up into place, and several that arrive together follow one
+ * another. `count` is how many there are now; `fresh` is false for a row that was already there when the app opened,
+ * whose cards are just there. A card added to a row later still arrives.
+ */
+export function useCardArrival(fresh: boolean, count: number) {
+  const had = useRef(fresh ? 0 : count);
+  useEffect(() => {
+    had.current = count;
+  }, [count]);
+  return (index: number) => ({
+    initial: index < had.current ? false : ({ opacity: 0, y: 12, scale: 0.97 } as const),
+    animate: { opacity: 1, y: 0, scale: 1 },
+    transition: { duration: 0.32, ease: [0.2, 0.7, 0.2, 1] as [number, number, number, number], delay: Math.max(0, index - had.current) * 0.07 },
+  });
+}
+
 /** An ask row's lead: its image, or a symbol the playground has. */
 export function RowGlyph({ row, size = 18 }: { row: AskRow; size?: number }) {
   if (row.image) return <img className={styles.rowImage} src={row.image} alt="" width={32} height={32} />;
-  if (row.initials) return <span className={styles.rowInitials}>{row.initials}</span>;
+  if (row.initials)
+    return (
+      <span className={styles.rowInitials} style={{ background: tintFor(row.text), color: '#fff' }}>
+        {row.initials}
+      </span>
+    );
   const icon = row.icon;
   if (icon && icon in ROW_SYMBOL) return <SfSymbol name={ROW_SYMBOL[icon as keyof typeof ROW_SYMBOL]} size={size} />;
   return <span className={styles.rowDot} />;
+}
+
+/**
+ * Who an ask is with, as a picture at `size`: their logo, their bank's with their flag on it, their flag, or their
+ * initial on a colored tile. An ask with rows and no counterparty shows its first row (payroll's first person).
+ */
+export function AskMark({ ask, size = 32, round }: { ask: AgentAsk; size?: number; round?: boolean }) {
+  const who = ask.who;
+  const radius = round ? '50%' : `${Math.round(size * 0.24)}px`;
+  const tile = { width: size, height: size, borderRadius: radius };
+  if (who?.icon) return <img className={styles.markLogo} src={who.icon} alt="" style={tile} draggable={false} />;
+  if (who?.bank) return <BankMark bank={who.bank} country={who.flag} size={size} />;
+  if (who?.flag) return <Flag code={who.flag} size={size} />;
+  const row = ask.rows?.[0];
+  if (!who && row?.image) return <img className={styles.markLogo} src={row.image} alt="" style={tile} draggable={false} />;
+  const name = who?.name ?? row?.text ?? ask.title;
+  const letter = who?.mark ?? row?.initials ?? name[0];
+  return (
+    <span className={styles.markLetter} style={{ ...tile, background: tintFor(name), fontSize: Math.round(size * (letter.length > 1 ? 0.36 : 0.44)) }}>
+      {letter}
+    </span>
+  );
+}
+
+/** Who a settled note was with, drawn as `AskMark` draws an ask's: their picture, their bank's with their flag, or
+ *  their initial on its color. Nothing when the note doesn't say. */
+export function NoteMark({ note, size = 32, round }: { note: AgentNote; size?: number; round?: boolean }) {
+  if (!note.who) return null;
+  return <AskMark ask={{ title: note.title, who: { ...note.who, detail: '' } } as AgentAsk} size={size} round={round} />;
 }
 
 /** What copying a note's code is called, by what it is. */
@@ -218,7 +279,7 @@ export function SubAgentRow({
 }) {
   return (
     <button type="button" className={`${styles.sub} ${className ?? ''}`} onClick={onOpen} data-done={done || undefined} data-subagent>
-      <span className={styles.subMark}>{agent.initial}</span>
+      {agent.logo ? <img className={`${styles.subMark} ${styles.subLogo}`} src={agent.logo} alt="" draggable={false} /> : <span className={styles.subMark}>{agent.initial}</span>}
       <span className={styles.subLabel}>
         <strong>{agent.name}</strong>
         <small>{done ? agent.summary : <span className={styles.subShimmer}>{agent.status}…</span>}</small>
@@ -324,11 +385,12 @@ export function useSubAgentSheet(messages: Message[], present?: Transition) {
 const META_SYMBOL = { routine: 'clock.arrow.trianglehead.counterclockwise.rotate.90', check: 'checkmark' } as const;
 
 /** What the agent found, as a sideways row of cards; its pick is marked. */
-export function ProductRow({ products, className }: { products: Product[]; className?: string }) {
+export function ProductRow({ products, className, fresh = false }: { products: Product[]; className?: string; fresh?: boolean }) {
+  const arrive = useCardArrival(fresh, products.length);
   return (
     <div className={`${styles.products} ${className ?? ''}`}>
-      {products.map((p) => (
-        <div key={p.title} className={styles.product}>
+      {products.map((p, i) => (
+        <motion.div key={p.title} className={styles.product} {...arrive(i)}>
           <img className={styles.productImage} src={p.image} alt="" />
           <span className={styles.productText}>
             <strong>{p.title}</strong>
@@ -339,7 +401,7 @@ export function ProductRow({ products, className }: { products: Product[]; class
             <span>{p.price}</span>
             {p.pick && <span className={styles.productPick}>Best match</span>}
           </span>
-        </div>
+        </motion.div>
       ))}
     </div>
   );

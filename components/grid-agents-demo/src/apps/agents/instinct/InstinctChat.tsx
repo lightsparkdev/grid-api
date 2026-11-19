@@ -5,7 +5,7 @@ import { playAppSwitch, WALLPAPER } from '@/apps/shared/appSwitch';
 import { SfSymbol } from '@/apps/shared/icons';
 import { ChatFrame, ComposerField, NATIVE_IN, Said, ScrollEdge, STILL, TypingDots, useOpenedIds, useOpenedMarks } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton } from '../glass';
-import { InvoiceCard, shortCode, useCopy } from '../parts';
+import { AskMark, InvoiceCard, shortCode, useCardArrival, useCopy } from '../parts';
 import type { AgentAsk, AgentBalance, AgentNote, Message, Product, SubAgent } from '../conversation';
 import { useKeptAsk, useKeptBalance } from '../openSheets';
 import type { AgentChatProps } from '../types';
@@ -153,14 +153,29 @@ function Detected({ text }: { text: string }) {
   );
 }
 
-/** A money ask, as Instinct texts it: what, how much, from where, and to reply yes. */
+/** A money ask, as Instinct texts it: what, how much, from where, and how to answer. Only that: what the agent has to
+ *  say about it is the agent's own line, above it. */
 function askText(ask: AgentAsk) {
   if (ask.text) return ask.text;
   const what = ask.who ? `${ask.who.name}, ${ask.amount}` : `${ask.title}, ${ask.amount}`;
   const from = ask.method ? ` ${ask.method.replace(/^From /, 'from ')}.` : '';
   const verb = ask.who?.icon ? 'place the order' : 'send it';
-  return `${what}.${from} reply yes and i’ll ${verb}`;
+  return `${what}.${from} reply yes to ${verb}`;
 }
+
+/**
+ * Whether the agent's own text states the amount an approval is for. Its text is the ask here, so one that leaves the
+ * amount out is followed by the app's plain summary: nobody approves money without seeing how much.
+ */
+function statesAmount(text: string, ask: AgentAsk) {
+  const amount = (ask.total ?? ask.amount)?.match(/\d[\d,]*(?:\.\d+)?/)?.[0];
+  if (!amount) return true;
+  const bare = (n: string) => n.replace(/,/g, '').replace(/\.00$/, '');
+  return (text.match(/\d[\d,]*(?:\.\d+)?/g) ?? []).some((n) => bare(n) === bare(amount));
+}
+
+/** Whether the agent's text is the whole ask: the amount, and that a yes by text is the way to answer it. */
+const asksInFull = (text: string, ask: AgentAsk) => statesAmount(text, ask) && /\byes\b/i.test(text);
 
 /** Only what's sensitive (a card, a bank) opens app.instinct.com; everything else is answered by texting back. */
 const linksOut = (ask: AgentAsk) => !!(ask.card || ask.bank);
@@ -171,7 +186,7 @@ const linksOut = (ask: AgentAsk) => !!(ask.card || ask.bank);
  */
 const withReplies = (messages: Message[]): Message[] =>
   messages.flatMap((m, i) =>
-    m.kind === 'ask' && !linksOut(m.ask) && (m.state === 'done' || m.state === 'denied') && messages[i + 1]?.kind !== 'me'
+    m.kind === 'ask' && !m.auto && !linksOut(m.ask) && (m.state === 'done' || m.state === 'denied') && messages[i + 1]?.kind !== 'me'
       ? [m, { id: -m.id - 1, kind: 'me', text: m.state === 'done' ? 'yes' : 'no' }]
       : [m],
   );
@@ -193,7 +208,8 @@ function OptionsPage({ messages, id, onPick, onBack }: { messages: Message[]; id
   const choice = messages.slice(at + 1).find((m): m is Extract<Message, { kind: 'chips' }> => m.kind === 'chips');
   return (
     <InstinctOptionsPage
-      products={found.products}
+      // Found alongside other things, the page is for the ones to choose from.
+      products={found.shelves?.find((s) => s.length > 1) ?? found.products}
       query={found.query}
       open={!!choice && choice.picked === null && !choice.expired}
       onPick={(i) => {
@@ -210,7 +226,7 @@ const PICKED_MS = 700;
 
 /** A choice, as a numbered text to answer by typing. */
 function chipsText(m: Extract<Message, { kind: 'chips' }>) {
-  return `reply with one:\n${m.chips.map((c, i) => `${i + 1}. ${c.label}`).join('\n')}`;
+  return m.chips.map((c, i) => `${i + 1}. ${c.label}`).join('\n');
 }
 
 const today = () => new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -233,15 +249,33 @@ function CodeText({ value, tail }: { value: string; tail: boolean }) {
   );
 }
 
+/** The payment a receipt is for: the approval settled just before it, when it names who it was with. */
+function paidTo(i: number, all: Message[]): AgentAsk | null {
+  if (!(all[i].kind === 'card' && (all[i] as Extract<Message, { kind: 'card' }>).card.stats)) return null;
+  for (let j = i - 1; j >= 0; j--) {
+    const m = all[j];
+    if (m.kind === 'ask') return m.state === 'done' && m.ask.amount && m.ask.who ? m.ask : null;
+    if (m.kind !== 'work' && m.kind !== 'meta' && m.kind !== 'me' && m.kind !== 'subagent') return null;
+  }
+  return null;
+}
+
 /** An image Instinct generates: its paper, the headline in its serif, the details, its wordmark. */
-function InstinctImage({ note }: { note: AgentNote }) {
+function InstinctImage({ note, lead }: { note: AgentNote; lead?: ReactNode }) {
   return (
     <div className={styles.image} role="img" aria-label={note.title}>
       <span className={styles.imageTop}>
         <span className={styles.wordmark}>Instinct</span>
         <span>{today()}</span>
       </span>
-      <strong className={styles.imageTitle}>{note.title}</strong>
+      {lead ? (
+        <span className={styles.imageHead}>
+          {lead}
+          <strong className={styles.imageTitle}>{note.title}</strong>
+        </span>
+      ) : (
+        <strong className={styles.imageTitle}>{note.title}</strong>
+      )}
       {note.code && <code className={styles.imageCode}>{shortCode(note.code)}</code>}
       {note.lines.map((l) => (
         <span key={l} className={styles.imageLine}>
@@ -330,10 +364,10 @@ function PagesGlyph() {
  * One product, as the image Instinct makes for it: the photo large on light gray, the brand over
  * the name with the price in green, a rule, then the date and Instinct's wordmark.
  */
-function ProductShot({ product: p }: { product: Product }) {
+function ProductShot({ product: p, arrive }: { product: Product; arrive: Arrival }) {
   const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   return (
-    <div className={styles.shot} role="img" aria-label={`${p.title}, ${p.price}`}>
+    <motion.div className={styles.shot} role="img" aria-label={`${p.title}, ${p.price}`} {...arrive}>
       <span className={styles.shotPhoto}>
         <img src={p.image} alt="" />
       </span>
@@ -346,7 +380,33 @@ function ProductShot({ product: p }: { product: Product }) {
         <span>{date}</span>
         <span className={styles.shotWord}>Instinct</span>
       </span>
-    </div>
+    </motion.div>
+  );
+}
+
+type Arrival = ReturnType<ReturnType<typeof useCardArrival>>;
+
+/** Each thing it found: a shot of the one they named, or a link to the page of options to choose from. */
+function Found({ m, fresh, onOpen }: { m: Extract<Message, { kind: 'products' }>; fresh: boolean; onOpen: () => void }) {
+  const shelves = m.shelves ?? [m.products];
+  const arrive = useCardArrival(fresh, shelves.length);
+  return shelves.map((products, i) =>
+    products.length === 1 ? (
+      <ProductShot key={products[0].title} product={products[0]} arrive={arrive(i)} />
+    ) : (
+      <motion.button key={products[0].title} type="button" className={styles.link} data-open-link onClick={onOpen} {...arrive(i)}>
+        <span className={`${styles.linkHero} ${styles.linkHeroOptions}`}>
+          <Hatch src={products[0].image} className={styles.linkHatch} />
+          <span className={styles.linkHeadlineSans}>{optionsTitle(products, m.query)}</span>
+          <PagesGlyph />
+          <span className={styles.linkWord}>Instinct</span>
+        </span>
+        <span className={styles.linkMeta}>
+          <strong>{optionsTitle(products, m.query)}</strong>
+          <small>{OPTIONS_HOST}</small>
+        </span>
+      </motion.button>
+    ),
   );
 }
 
@@ -535,7 +595,7 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
               <CodeText value={m.card.code} tail={!theirsNext} />
             </>
           ) : (
-            <InstinctImage note={m.card} />
+            <InstinctImage note={m.card} lead={paidTo(i, all) && <AskMark ask={paidTo(i, all)!} size={36} round={!paidTo(i, all)!.who?.icon} />} />
           );
         return (
           <>
@@ -554,14 +614,16 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         );
       }
       case 'ask':
-        return linksOut(m.ask) ? (
-          <VaultLink m={m} onOpen={() => openLink(m.id)} />
-        ) : (
-          bubble('ask', <Detected text={askText(m.ask)} />, !theirsNext)
-        );
+        // Covered by an approval they already gave: nothing was asked, so there's no text for it. Its receipt follows.
+        if (m.auto) return null;
+        if (linksOut(m.ask)) return <VaultLink m={m} onOpen={() => openLink(m.id)} />;
+        // The agent's own text asked for it, in its own words: there's no second text from the app. When that text
+        // leaves out the amount, or how to answer (here, a yes by text: there's nothing to tap), the app's own ask follows.
+        if (m.led && asksInFull(all.slice(0, i).reverse().find((x) => x.kind === 'them')?.text ?? '', m.ask)) return null;
+        return bubble('ask', <Detected text={askText(m.ask)} />, !theirsNext);
       case 'chips':
         // The options' page is where you choose; the thread doesn't list them again (typing one still works).
-        if (choosesProduct(i, all)) return null;
+        if (choosesProduct(i, all) || m.led) return null;
         return bubble('chips', <span className={styles.lines}>{chipsText(m)}</span>, !theirsNext);
       case 'work':
         return (
@@ -573,25 +635,12 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           </div>
         );
       case 'products':
-        if (m.products.length === 1) return <ProductShot product={m.products[0]} />;
-        return (
-          <button type="button" className={styles.link} data-open-link onClick={() => openPage({ kind: 'options', id: m.id })}>
-            <span className={`${styles.linkHero} ${styles.linkHeroOptions}`}>
-              <Hatch src={m.products[0].image} className={styles.linkHatch} />
-              <span className={styles.linkHeadlineSans}>{optionsTitle(m.products, m.query)}</span>
-              <PagesGlyph />
-              <span className={styles.linkWord}>Instinct</span>
-            </span>
-            <span className={styles.linkMeta}>
-              <strong>{optionsTitle(m.products, m.query)}</strong>
-              <small>{OPTIONS_HOST}</small>
-            </span>
-          </button>
-        );
+        return <Found m={m} fresh={!opened.has(m.id)} onOpen={() => openPage({ kind: 'options', id: m.id })} />;
       case 'me': {
         // A reply to an ask or a choice shows what it answers, as iMessage's inline reply does.
+        // (What the agent asked in its own text isn't quoted: the reply sits right under it.)
         const answers =
-          prev?.kind === 'ask' && !linksOut(prev.ask) ? prev : prev?.kind === 'chips' && !prev.expired ? prev : null;
+          prev?.kind === 'ask' && !linksOut(prev.ask) && !prev.led ? prev : prev?.kind === 'chips' && !prev.expired && !prev.led ? prev : null;
         // Instinct only ever thumbs-ups what you send.
         const tapback = m.react || (answers?.kind === 'ask' && answers.state === 'done') ? '👍' : undefined;
         const fresh = !opened.has(m.id);

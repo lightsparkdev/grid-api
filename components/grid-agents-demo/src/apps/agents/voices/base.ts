@@ -181,8 +181,8 @@ export const SUBAGENTS = {
         {
           title: 'Checked it against your limits',
           detail: over
-            ? `${usd2(n(p, 'amount'))} is over the ${usd(n(p, 'approve'))} I can spend alone, so it goes to you to approve.`
-            : `${usd2(n(p, 'amount'))} is inside the ${usd(n(p, 'approve'))} I can spend alone, so I can pay it myself.`,
+            ? `${usd2(n(p, 'amount'))} is over the ${usd(n(p, 'approve'))} approval limit, so it goes to you to approve.`
+            : `${usd2(n(p, 'amount'))} is inside the ${usd(n(p, 'approve'))} approval limit, so it’s paid without asking.`,
         },
       ],
       messages: [
@@ -213,7 +213,9 @@ export type MetaKey = keyof typeof METAS;
 export const LINES = {
   greeting: () => `Hi! I can pay people in ${BANK_REACH} countries, shop and get paid for you. Add a card or set up a balance to start, or ask me anything.`,
   'setup.auto': (p) => `Heads up: ${setupDone(p)}, so we can jump right in.`,
-  fallback: () => 'I can only help with money here: paying people, shopping, and getting paid.',
+  // The model can't answer (off, or failing): the playground's flow buttons still play, beside the phone or, on a
+  // small screen, behind Configure.
+  fallback: (p) => `I can’t chat right now. Pick a flow from the buttons ${n(p, 'narrow') ? 'under Configure' : 'on the left'} and I’ll take it from there.`,
   limited: () => 'I’ve hit my chat limit for now. You can still tap any of the things I can do.',
 
   'connect.intro': (p) =>
@@ -371,7 +373,6 @@ export const LINES = {
   'history.none': () => 'Nothing yet. Once I pay for something or money comes in, it shows up here.',
 
   'next.ask': () => 'What would you like to do next?',
-  'fallback.business': () => 'I can only help with the business’s money here: invoices, bills, contractors, payroll and the team’s cards.',
   'greeting.business': () =>
     'Hi! I can run your business’s money: send invoices, pay bills and contractors, run payroll, and give your team cards. Set up your company to start, or ask me anything.',
 
@@ -546,6 +547,7 @@ export const ASKS = {
     allow: 'Approve',
     allowed: 'Sent',
     denied: 'Declined',
+    settled: { title: 'Moved to your bank', status: 'Settled', detail: `${s(p, 'about')}${s(p, 'local')} over ${s(p, 'rail')}` },
   }),
   buy: (p) => ({
     title: ['ship', 'now', ''].includes(s(p, 'delivery')) ? `Buy at ${s(p, 'merchant')}` : Buying(p),
@@ -570,6 +572,7 @@ export const ASKS = {
     allow: 'Approve',
     allowed: 'Approved',
     denied: 'Declined',
+    settled: { title: 'Subscribed', status: 'Active', detail: `${usd2(n(p, 'amount'))} a month` },
   }),
   agent: (p) => ({
     title: `Pay ${s(p, 'hotel')}’s agent`,
@@ -579,6 +582,7 @@ export const ASKS = {
     allow: 'Approve',
     allowed: 'Paid',
     denied: 'Declined',
+    settled: { title: 'Stay booked', status: 'Confirmed', detail: `${n(p, 'nights')} ${n(p, 'nights') === 1 ? 'night' : 'nights'} in ${s(p, 'city')}, ${s(p, 'dates')}` },
   }),
   company: (p) => ({
     heading: { title: s(p, 'company') },
@@ -604,6 +608,7 @@ export const ASKS = {
     allow: 'Approve',
     allowed: 'Approved',
     denied: 'Declined',
+    settled: { title: 'Team budget set', status: 'Live', detail: `${usd(n(p, 'budget'))} a month, shared` },
   }),
   empcard: (p) => ({
     heading: { title: s(p, 'company') },
@@ -615,6 +620,7 @@ export const ASKS = {
     allow: 'Issue card',
     allowed: 'Issued',
     denied: 'Declined',
+    settled: { title: 'Card issued', status: 'Ready', detail: `${s(p, 'name')} · Visa in their name` },
   }),
 
   payroll: (p) => ({
@@ -629,6 +635,7 @@ export const ASKS = {
     allow: 'Approve',
     allowed: 'Paid',
     denied: 'Declined',
+    settled: { title: 'Payroll paid', status: 'Settled', detail: `${usd2(n(p, 'total'))} to ${s(p, 'people')}` },
   }),
 } satisfies Record<string, AskFn>;
 
@@ -716,6 +723,7 @@ export const NOTES = {
   'receipt.pay': (p) => ({
     title: `${s(p, 'local')} to ${s(p, 'first')}`,
     lines: [`To ${s(p, 'bank')} over ${s(p, 'rail')}`, `${usd2(n(p, 'usd'))} from ${s(p, 'wallet')}`],
+    who: { name: s(p, 'first'), flag: s(p, 'flag') || undefined, bank: s(p, 'bank') || undefined },
     done: true,
     stats: [
       { label: 'Sent', value: s(p, 'local') },
@@ -726,6 +734,7 @@ export const NOTES = {
   'receipt.cashout': (p) => ({
     title: `${s(p, 'local')} to ${s(p, 'to')}`,
     lines: [s(p, 'rail'), `${usd2(n(p, 'usd'))} from ${s(p, 'wallet')}`],
+    who: { name: s(p, 'to'), flag: s(p, 'flag') || undefined, bank: s(p, 'bank') || undefined },
     done: true,
     stats: [
       { label: 'Moved', value: s(p, 'local') },
@@ -736,6 +745,7 @@ export const NOTES = {
   'receipt.buy': (p) => ({
     title: `${usd2(n(p, 'amount'))} at ${s(p, 'merchant')}`,
     lines: [n(p, 'card') ? `Paid with ${CARD}` : `Paid from ${yours(p)}`, n(p, 'card') ? 'Your own card' : 'One-time card'],
+    who: { name: s(p, 'merchant'), icon: s(p, 'image') || undefined },
     done: true,
     stats: [
       { label: 'Total', value: usd2(n(p, 'amount')) },
@@ -746,6 +756,7 @@ export const NOTES = {
   'receipt.sub': (p) => ({
     title: `${usd2(n(p, 'amount'))} at ${s(p, 'merchant')}`,
     lines: n(p, 'card') ? [`Renews monthly · billed to ${CARD}`] : [`Recurring Visa · renews monthly, only for ${s(p, 'merchant')}`],
+    who: { name: s(p, 'merchant') },
     done: true,
     stats: [
       { label: 'Monthly', value: usd2(n(p, 'amount')) },
@@ -756,6 +767,7 @@ export const NOTES = {
   'receipt.agent': (p) => ({
     title: `Paid ${s(p, 'hotel')} · ${usd2(n(p, 'amount'))}`,
     lines: [s(p, 'dates'), `You saved ${usd2(n(p, 'listed') - n(p, 'amount'))} by paying direct`],
+    who: { name: s(p, 'hotel') },
     done: true,
     stats: [
       { label: 'Paid', value: usd2(n(p, 'amount')) },
@@ -766,10 +778,13 @@ export const NOTES = {
   'receipt.getpaid': (p) => ({
     title: `${usd2(n(p, 'amount'))} from ${s(p, 'payer')}`,
     lines: [`${s(p, 'invoice')} · paid`],
+    // Who pays a personal account back (a friend's share, someone settling an invoice) is a person.
+    who: { name: s(p, 'payer'), person: true },
     done: true,
     stats: [
       { label: 'Received', value: usd2(n(p, 'amount')) },
-      { label: 'Invoice', value: s(p, 'invoice') },
+      // A split or a plain request has no invoice number: the row says what the money was for.
+      { label: s(p, 'invoice').startsWith('INV') ? 'Invoice' : 'For', value: s(p, 'invoice') },
       { label: 'Status', value: 'Paid' },
     ],
   }),

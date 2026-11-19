@@ -12,13 +12,16 @@ playground) and shares its chrome, design system, and embed contract:
 
 A visitor picks an agent app (Muse, Grok Bot, Dots, Instinct, Duet, or a plain "Your agent")
 and a flow: Connect, Add funds, Set limits, Pay someone, Buy online, Pay an agent, Get paid, Withdraw,
-Balance, or History. The flow's tile sends its first line as the visitor's message; the visitor
-then makes every choice in the chat (Approve or Decline, quick replies, Face ID). Anything they
-type goes to a small model with guardrails. The composer grows with the text, up to five lines. The API panel shows each agent tool call with the Grid
-calls behind it, plus the platform's own calls and webhooks.
+Balance, or History. The flow's tile sends its first line as the visitor's message and starts the
+flow; the visitor then makes every choice in the chat (Approve or Decline, quick replies, Face ID),
+by tapping or by typing. A model runs the conversation: it reads everything the visitor types and
+writes every line the agent says. The composer grows with the text, up to five lines. The API panel
+shows each agent tool call with the Grid calls behind it, plus the platform's own calls and webhooks.
 
-All six apps share one conversation and one account. Switching apps mid-flow re-renders the same
-thread, in the new app's voice and with its own approval UI.
+All six apps share one conversation and one account. Switching apps mid-flow keeps the thread: its
+cards and approvals redraw in the new app's design, and the agent's lines, earlier ones included,
+show in the new app's voice. The model writes each line once per app, so the wording for every app
+is already saved with the line.
 
 ## Develop
 
@@ -37,22 +40,54 @@ embed the local app while you preview the docs with `make mint`. The docs page t
 
 ### The model
 
-Free text in the composer posts to `src/app/api/agent/route.ts`, which calls Claude Haiku through
-the adapter in `src/lib/llm/`. Without the variables below, the route returns a fallback and the
-agent answers with a canned line, so the playground works without a key.
+The model runs the conversation, one step at a time. Each step posts the conversation so far to
+`src/app/api/agent/route.ts`, which calls Claude Haiku through the adapter in `src/lib/llm/`, and
+the model answers with tool calls.
+
+- **What the model does.** It reads every message, writes every line the agent says in the app's
+  voice, and picks each step: a tool that does one thing in the app, a reply, or an answer to what's
+  open on screen.
+- **What the app does.** A tool plays one of the flows in `flows.ts` for its screens and Grid calls.
+  The flow's own lines aren't shown: they reach the model as plain notes. The flow stops and reports
+  the moment it needs the visitor (an approval, options, an amount, a name), so everything that
+  happened is in the record before anything else is said.
+- **Taps and typing.** A tap settles what's open at once (an approval, an option, a tile), and the
+  model carries on from what happened. Anything typed goes to the model, which can answer what's
+  open, reply and leave it open, or do something else. Typed text acts by itself only when it's
+  exactly what a tap would send ("yes", an option's label, a plain amount).
+- **Without the model.** Without the variables below (or over the cap, or on an error), the route
+  returns a fallback, and tiles play their flows as scripts with the flows' own lines. The playground
+  works without a key.
 
 | Variable | Default | What it does |
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | unset | The model's key. Keep it in `.env.local` (gitignored) or the Vercel project. |
 | `AGENT_MODEL_ENABLED` | unset | Must be `true` for the route to call the model. Set it to anything else to turn the model off. |
 | `AGENT_MODEL` | `claude-haiku-5-5` | The Anthropic model ID. |
-| `AGENT_RATE_LIMIT` | `75` | Messages to the model per visitor every 10 minutes. |
-| `AGENT_DAILY_CAP` | `20000` | Model calls per day across all visitors. One message can take up to 6 calls, so it can count several times. |
+| `AGENT_RATE_LIMIT` | `75` | Messages to the model per browser every 10 minutes. The steps that carry them out get six times that. |
+| `AGENT_NETWORK_LIMIT` | `3000` | The same, for everyone behind one network address (an office): messages every 10 minutes, and six times that in steps. |
+| `AGENT_DAILY_CAP` | `20000` | Model calls per day across all visitors. Every step of a conversation is a call, tiles included: about 13 per conversation. The server logs a warning at 50% and 80% of the cap, and an error when it's reached. |
 | `KV_REST_API_URL`, `KV_REST_API_TOKEN` | unset | Upstash Redis for the limits. Without them, the limits are per server instance, in memory. |
 
-The route rejects requests from other origins, caps the input at 300 characters, keeps the last 12
-turns, forces a structured reply (a short answer plus an optional flow to start), and its prompt
-declines anything that isn't about the account, including coding help.
+The route rejects requests from other origins, caps what the visitor types at 300 characters, and
+requires a tool call in every answer. Its prompt declines anything that isn't about the account,
+including coding help. The model can't approve anything on its own: it can only answer an approval
+that's open on screen, from what the visitor typed.
+
+### Simulated people
+
+With the dev server up and the model on, `node scripts/agent-sim.mjs --base http://localhost:4003`
+has a model play 40 people in a real browser. Each has a goal and a way of typing (terse, typos,
+changes their mind, asks questions mid-flow), and decides each move from what's on the phone: type,
+tap, approve, decline, or tap a tile. A second model reads each conversation beside the agent's own
+calls and their results, and flags lines that are false, ignore what was said, repeat themselves,
+break the app's voice, or leave the person stuck. Transcripts land in `.tmp-sweep/sim/`.
+
+- `--only 3,7` runs some of them; `--runs 2` runs each more than once; `--list` prints them.
+- `AGENT_MODEL=claude-sonnet-5-5 npm run dev` serves a different model, to compare.
+
+`npx tsx --tsconfig tsconfig.json scripts/agent-evals.ts --base http://localhost:4003` checks that
+typed requests still start the right action with the right details.
 
 ### Flow sweep
 
@@ -69,12 +104,14 @@ doesn't settle in 60 seconds, and saves end-state screenshots to `.tmp-sweep/`.
 
 ## Where things live
 
-- `src/apps/agents/brain/useAgentBrain.ts`: the one conversation. It plays a flow's beats (lines,
-  cards, asks, quick replies, work statuses, products, reactions, sub-agents, pauses), waits on the
-  visitor's decisions, fires each Grid event at its beat, and cancels cleanly when another tile is
-  picked. An open ask or choice also takes a typed reply: "yes" approves, an option's number or
-  label picks it.
-- `src/apps/agents/flows.ts`: the ten flows as beats. They read the account's policy, so an amount
+- `src/apps/agents/brain/useAgentBrain.ts`: the one conversation. It runs the model's turns, plays
+  a flow's beats (cards, asks, quick replies, work statuses, products, sub-agents, pauses), reports
+  to the model each time a flow needs the visitor or ends, fires each Grid event at its beat, and
+  gives way cleanly when another tile is picked. `brain/log.ts` is the record the model reads;
+  `brain/describe.ts` turns what's on screen into text for it.
+- `src/apps/agents/tools/run.ts`: the model's tools, each checked against the account and carried
+  out with the flows' screens and Grid calls. `src/lib/llm/tools.ts` defines them for the model.
+- `src/apps/agents/flows.ts`: the flows as beats. They read the account's policy, so an amount
   over the approval threshold asks the person and one under it doesn't. Any tile works from any
   starting point: `useAgentsDemoLogic` installs the agent and tops up the balance silently when a
   flow needs it.
@@ -120,8 +157,9 @@ Vercel project to turn on free text.
 
 ## Scope
 
-The flows, amounts, and API calls are scripted. The model answers free text and can start a flow,
-but it never approves anything or changes the account. Nothing calls a live sandbox.
+The screens, amounts, and API calls are scripted, so a flow logs the same Grid calls every time.
+What the agent says is written by the model, so the wording varies from run to run. The model
+can't approve anything on its own or change its own limits. Nothing calls a live sandbox.
 
 ## Chrome files shared with the cards demo
 

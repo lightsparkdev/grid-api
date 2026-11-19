@@ -1,7 +1,7 @@
 import { TextMorph } from 'torph/react';
 import { SfSymbol } from '@/apps/shared/icons';
 import { IconAiBotHead } from '@central-icons-react/round-filled-radius-2-stroke-2/IconAiBotHead';
-import { ChatFrame, ComposerField, Said, ScrollEdge } from '../ChatFrame';
+import { ChatFrame, ComposerField, Said, ScrollEdge, useOpenedIds } from '../ChatFrame';
 import { GlassPill } from '../glass';
 import type { Message } from '../conversation';
 import { AskCard, BalanceCard, ChipRow, Divider, MetaLine, MORPH, InvoiceCard, NoteCard, ProductRow, SubAgentRow, useSubAgentSheet, WorkLine } from '../parts';
@@ -12,6 +12,7 @@ import styles from './YourAppChat.module.scss';
 
 /** A plain chat for the agent a platform builds itself: no brand, just the thread. */
 export function YourAppChat({ chat }: AgentChatProps) {
+  const openedIds = useOpenedIds(chat.messages);
   const sub = useSubAgentSheet(chat.messages);
   const card = useCardSheet({ messages: chat.messages, onAllow: chat.allow });
   const bank = useBankLink({ wallet: 'your balance', messages: chat.messages, onAllow: chat.allow, onDeny: chat.deny });
@@ -46,7 +47,7 @@ export function YourAppChat({ chat }: AgentChatProps) {
       case 'work':
         return <WorkLine status={m.status} />;
       case 'products':
-        return <ProductRow products={m.products} />;
+        return <ProductRow products={m.products} fresh={!openedIds.has(m.id)} />;
       case 'meta': {
         // A saved card or linked bank already says so.
         const prev = all[i - 1];

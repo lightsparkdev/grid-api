@@ -37,17 +37,6 @@ $shadow:
   }
 }
 
-// Blue glass: a flat #3672eb fill, a darker blue hairline, a lighter blue band just
-// inside the top and bottom, and a one-pixel pale cyan halo where the edge meets what's behind.
-.blue {
-  --glass-rim-side: rgba(16, 46, 130, 0.3);
-  --glass-rim-cap: rgba(16, 46, 130, 0.22);
-  --glass-rim-inset: rgba(130, 185, 255, 0.5);
-  box-shadow:
-    0 0 0 0.5px rgba(205, 248, 255, 0.9),
-    $shadow;
-}
-
 .disc {
   width: 44px;
   height: 44px;

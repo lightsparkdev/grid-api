@@ -1,5 +1,5 @@
 import type { ActionId } from '@/data/actions';
-import type { AccountSnapshot } from '@/data/agentApiCalls';
+import { payoutFee, type AccountSnapshot } from '@/data/agentApiCalls';
 import { purchaseSpendLimit, type DepositNetwork, type SendNetwork } from '@/data/agentEvents';
 import { BANK_COUNTRIES, currencyFor } from '@/data/bankCountries';
 import { addressKind, NETWORKS_FOR, SENDS_ON, type SendAsset } from '@/data/cryptoSend';
@@ -17,7 +17,6 @@ import {
   limitsFor,
   linkOwnBank,
   noBalanceToMove,
-  nothingToMove,
   offerBalance,
   offerFunds,
   offerFundsFrom,
@@ -45,10 +44,12 @@ import { addTeammate, companySetup, employeeCard, payBill, payContractor, runPay
 import { stayFor, type Stay } from '../hotels';
 import { purchaseFor, requestParams, shelfFor, shelfParams, shelfWith, type BuyKind, type BuyRequest, type Shelf } from '../products';
 import { draftRecipient, recipientNamed, type Recipient } from '../recipients';
-import { NETWORK_NAME } from '../story';
+import { NETWORK_NAME, usd2 } from '../story';
 
 /* Each tool, carried out in the phone: its inputs checked against the account as it is, then the same cards, sheets,
-   approvals and Grid calls the flows use. A tool that can't run says why, in terms the model can act on. */
+   approvals and Grid calls the flows use. A tool that can't run says why, in terms the model can act on. The model
+   writes what's said: a flow's own lines reach it as plain notes, and each point the flow waits on the person is
+   reported as it's reached (brain/useAgentBrain). */
 
 interface PayRecord {
   recipient: Recipient;
@@ -68,9 +69,15 @@ export interface ToolMemory {
   approved: Set<string>;
   /** Quotes already on screen: sending one again doesn't show it twice. */
   shown: Set<string>;
+  /** Quotes whose payment went out: a quote pays once. */
+  sent: Set<string>;
+  /** The company's name and the owner's, as far as they've given them. */
+  naming: { company?: string; owner?: string };
+  /** The team budget they asked for, USD: read when its approval is built, so it can change until then. */
+  budget?: number;
 }
 
-export const newToolMemory = (): ToolMemory => ({ seq: 0, options: new Map(), quotes: new Map(), stays: new Map(), approved: new Set(), shown: new Set() });
+export const newToolMemory = (): ToolMemory => ({ seq: 0, options: new Map(), quotes: new Map(), stays: new Map(), approved: new Set(), shown: new Set(), sent: new Set(), naming: {} });
 
 export type Outcome = { error: ToolResult } | { beats: Beat[]; result: ToolResult };
 
@@ -79,6 +86,8 @@ export interface ToolEnv {
   memory: ToolMemory;
   /** The call after this one in the same step, for what a no to a setup puts on hold. */
   next?: ToolCall;
+  /** The tool whose step is open on screen right now, if one is. */
+  openFor?: string;
 }
 
 const usd = (cents: number) => Math.round(cents) / 100;
@@ -93,8 +102,10 @@ const record = (result: ToolResult, patch: () => ToolResult): Beat => ({
 });
 
 const positive = (v: unknown, max: number) => (typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= max ? v : undefined);
+/** What the model writes in a field it has nothing for ("<UNKNOWN>", "n/a"): the same as leaving it out. */
+const BLANK = /^\W*(unknown|n\/?a|tbd|none|null|undefined|not (given|provided|specified|known))\W*$/i;
 const text = (v: unknown, max: number) => {
-  const s = typeof v === 'string' ? v.replace(/[^A-Za-z\u00C0-\u024F0-9 '’&.+-]/g, '').trim() : '';
+  const s = typeof v === 'string' && !BLANK.test(v) ? v.replace(/[^A-Za-z\u00C0-\u024F0-9 '’&.+-]/g, '').trim() : '';
   return s && s.length <= max ? s : undefined;
 };
 const first = (name: unknown) => (typeof name === 'string' ? name.trim().split(' ')[0] : '');
@@ -113,8 +124,8 @@ export function accountNow(a: AccountSnapshot): ToolResult {
   };
 }
 
-/** A step on the way to something else in the same turn: the follow-up offers a step makes on its own are left out. */
-const onTheWay = (env: ToolEnv, call: ToolCall) => call.input.more === true || (!!env.next && !ENDS_TURN.has(env.next.name));
+/** A step on the way to something else in the same step: what's worth offering once it's done is left out. */
+const onTheWay = (env: ToolEnv) => !!env.next && !ENDS_TURN.has(env.next.name);
 
 /** What a no to a setup step puts on hold, from the task that was to follow it. */
 function heldFor(next?: ToolCall): string | undefined {
@@ -165,26 +176,18 @@ const needsBalance = (env: ToolEnv) =>
   env.ctx.account().balanceOn
     ? undefined
     : env.ctx.mode === 'business'
-      ? fail('no_company', { fix: 'call setup_company (with more) first, then this again' })
-      : fail('no_balance', { fix: 'call setup_balance (with more) first, then this again' });
+      ? fail('no_company', { fix: 'call setup_company first, then this again once it’s set up' })
+      : fail('no_balance', { fix: 'call setup_balance first, then this again once it’s on' });
+
+/** What's worth offering once a step is done, read from the account as it is then (the flows hand it to `ctx.offer`). */
+const offering = (make: () => Beat[]): Beat => ({ when: make });
 
 /**
- * A follow-up offer from today's flows, added once the step is done, and noted in the result (`offered`) so the model
- * doesn't offer it again or contradict it. `make` decides from the account as it is then; nothing to offer, no note.
+ * The payments that settled since `before`. A step can end without doing its job (a no to a top-up on the way), so
+ * what its result reports is what the account shows happened, not how far the step got.
  */
-function offering(result: ToolResult, make: () => { what: string; beats: Beat[] } | undefined): Beat {
-  return {
-    when: () => {
-      const offer = make();
-      if (!offer?.beats.length) return [];
-      Object.assign(result, { offered: offer.what });
-      return offer.beats;
-    },
-  };
-}
-const ADD_MONEY = 'adding money to the empty balance (taps: Add money, Not now)';
-const A_BALANCE = 'a balance (taps: Set up a balance, Not now)';
-const A_COMPANY = 'setting up the company (taps: Set up my company, Not now)';
+const settledSince = (env: ToolEnv, before: AccountSnapshot) =>
+  env.ctx.account().ledger.filter((l) => l.status === 'COMPLETED' && !before.ledger.some((b) => b.id === l.id && b.status === 'COMPLETED'));
 
 /** Over the per-payment limit, today's ask to raise it (the product or quote on screen), or else straight on. */
 const withinLimit = (ctx: FlowContext, spend: number, go: 'buy' | 'send' | 'book', then: (c: FlowContext) => Beat[]): Beat[] => overLimit(ctx, spend, go, then) ?? then(ctx);
@@ -207,16 +210,15 @@ function approvedFor(env: ToolEnv, id: string): FlowContext {
 function setupBalance(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
   const result: ToolResult = {};
-  const onWay = onTheWay(env, call);
+  const onWay = onTheWay(env);
   // Already on and on the way to something else: nothing to say, the task just carries on.
   if (a.balanceOn && onWay) return { beats: [], result: { status: 'already_on' } };
-  // Already on: says so, and shows it; empty, it offers to fill it.
+  // Already on: says so, and shows it; empty, adding money is worth offering.
   if (a.balanceOn) {
-    const done: ToolResult = { status: 'already_on' };
-    const shown: Beat[] = onWay
-      ? []
-      : [{ when: () => [{ card: 'balance', params: balanceParams(env.ctx) }] }, offering(done, () => (env.ctx.account().balanceCents > 0 ? undefined : { what: ADD_MONEY, beats: offerFunds(env.ctx) }))];
-    return { beats: [{ say: 'connect.already' }, ...shown], result: done };
+    return {
+      beats: [{ say: 'connect.already' }, { when: () => [{ card: 'balance', params: balanceParams(env.ctx) }] }, offering(() => (env.ctx.account().balanceCents > 0 ? [] : offerFunds(env.ctx)))],
+      result: { status: 'already_on' },
+    };
   }
   const hasAgent = a.connected ? 1 : 0;
   const l = a.limits;
@@ -234,12 +236,12 @@ function setupBalance(env: ToolEnv, call: ToolCall): Outcome {
           { emit: { type: 'connect' } },
           record(result, () => ({ status: 'on' })),
           { say: 'connect.done', params: { hasAgent } },
-          // Asked for itself, it starts empty, so the agent offers to fill it; on the way to something else that's next.
+          // Asked for itself, it starts empty, so filling it is worth offering; on the way to something else that's next.
           ...(onWay
             ? []
             : [
                 { when: (): Beat[] => [{ card: 'account.ready', params: balanceParams(env.ctx) }] },
-                offering(result, () => (env.ctx.account().balanceCents > 0 ? undefined : { what: ADD_MONEY, beats: offerFunds(env.ctx) })),
+                offering(() => (env.ctx.account().balanceCents > 0 ? [] : offerFunds(env.ctx))),
               ]),
         ],
         deny: [heldOr(env, { say: 'connect.denied', params: { hasAgent } })],
@@ -248,7 +250,7 @@ function setupBalance(env: ToolEnv, call: ToolCall): Outcome {
   };
 }
 
-function addCard(env: ToolEnv, call: ToolCall): Outcome {
+function addCard(env: ToolEnv): Outcome {
   const a = env.ctx.account();
   const topUp = a.balanceOn ? 1 : 0;
   if (a.cardVaulted) return { beats: [{ say: 'card.already', params: { topUp } }], result: { status: 'already_saved' } };
@@ -265,16 +267,8 @@ function addCard(env: ToolEnv, call: ToolCall): Outcome {
           { meta: 'card.saved' },
           record(result, () => ({ status: 'saved' })),
           { say: 'card.done', params: { topUp } },
-          // With a balance it offers to fill it from the card; without, it offers the balance.
-          ...(onTheWay(env, call)
-            ? []
-            : [
-                offering(result, () =>
-                  env.ctx.account().balanceOn
-                    ? { what: 'adding money from the card (taps: Add money, Not now)', beats: offerFundsFrom(env.ctx, 'card') }
-                    : { what: A_BALANCE, beats: offerBalance(env.ctx) },
-                ),
-              ]),
+          // With a balance, filling it from the card is worth offering; without, the balance is.
+          ...(onTheWay(env) ? [] : [offering(() => (env.ctx.account().balanceOn ? offerFundsFrom(env.ctx, 'card') : offerBalance(env.ctx)))]),
         ],
         deny: [heldOr(env, { say: 'card.denied' })],
       },
@@ -286,7 +280,7 @@ function linkBank(env: ToolEnv, call: ToolCall): Outcome {
   if (env.ctx.account().bankLinked) return { beats: [{ say: 'bank.already' }], result: { status: 'already_linked' } };
   const result: ToolResult = {};
   const home = typeof call.input.home === 'string' ? call.input.home : undefined;
-  const offer: Beat[] = onTheWay(env, call) ? [] : [offering(result, () => ({ what: 'adding money from the bank (taps: Add money, Not now)', beats: offerFundsFrom(env.ctx, 'bank') }))];
+  const offer: Beat[] = onTheWay(env) ? [] : [offering(() => offerFundsFrom(env.ctx, 'bank'))];
   return { result, beats: linkOwnBank('bank.intro', [record(result, () => ({ status: 'linked' })), { say: 'bank.done' }, ...offer], [heldOr(env, { say: 'bank.denied' })], home) };
 }
 
@@ -325,9 +319,16 @@ function fund(env: ToolEnv, call: ToolCall): Outcome {
     ...((asset === 'USDC' || asset === 'USDT') && { asset }),
     ...(typeof network === 'string' && network !== 'SPARK' && { network: network as DepositNetwork }),
   };
-  // Today's Add funds: what's missing is asked with its own taps (how much, then where from), then the top-up.
-  const result: ToolResult = { ...(!amount && { asked: 'how much (taps: $25, $50, $100, Other)' }), ...(amount && !method && { asked: 'where from (taps: card, bank, stablecoins)' }) };
-  return { result, beats: [...FLOWS.fund({ ...env.ctx, params }).filter((b) => !('react' in b)), record(result, () => ({ status: 'added' }))] };
+  // What's missing is waited on in turn (how much, then where from), then the top-up.
+  const result: ToolResult = {
+    // Said before they act, so nothing is promised that won't happen: there's no second step to confirm the amount.
+    how_it_goes: 'once they’ve said how much and where from, it’s added right away: saving the card or linking the bank is the go-ahead, and nothing asks them to confirm the amount after that. All of what they add lands in the balance.',
+  };
+  const added = record(result, () => {
+    const more = env.ctx.account().balanceCents - a.balanceCents;
+    return more > 0 ? { status: 'added', added_usd: usd(more), how_it_goes: undefined } : {};
+  });
+  return { result, beats: [...FLOWS.fund({ ...env.ctx, params }), added] };
 }
 
 function search(env: ToolEnv, call: ToolCall): Outcome {
@@ -368,7 +369,15 @@ function search(env: ToolEnv, call: ToolCall): Outcome {
   ];
   if (shelf.named) {
     env.memory.chosen = ids[0];
-    return { result: { ...result, named: true, they_picked: { option_id: ids[0], title: shelf.pick.item } }, beats: found };
+    return {
+      result: {
+        ...result,
+        named: true,
+        they_picked: { option_id: ids[0], title: shelf.pick.item },
+        in_front_of_them: 'its card, with its name and price: they can see it’s found',
+      },
+      beats: found,
+    };
   }
   env.memory.chosen = undefined;
   return {
@@ -382,7 +391,7 @@ function search(env: ToolEnv, call: ToolCall): Outcome {
         reply: true,
         then: (picked) => {
           env.memory.chosen = ids[picked];
-          return [record(result, () => ({ they_picked: { option_id: ids[picked], title: shelf.options[picked].title }, next: 'they chose this one: call checkout with option_id "chosen" now; don’t ask again' }))];
+          return [record(result, () => ({ they_picked: { option_id: ids[picked], title: shelf.options[picked].title }, next: `they chose this one: check it out now with option_id "${ids[picked]}" (and anything else they asked to buy, by its option_id); don’t ask again` }))];
         },
         onPage: (picked) => [{ say: 'buy.picked', params: { ...shelfParams(shelf), item: shelf.options[picked].title } }],
       },
@@ -424,10 +433,9 @@ function checkout(env: ToolEnv, call: ToolCall): Outcome {
     };
     return { result, beats: watched(ctx, shelf, cents(below), buyIt, []) };
   }
-  // A card saved for this order: once it's through, the agent offers a balance, as when a card goes in on its own.
+  // A card saved for this order: once it's through, a balance is worth offering, as when a card goes in on its own.
   const newCard = !a.cardVaulted;
-  const offer = (onCard: boolean): Beat[] =>
-    onCard && newCard && !onTheWay(env, call) ? [offering(result, () => (env.ctx.account().balanceOn ? undefined : { what: A_BALANCE, beats: offerBalance(env.ctx) }))] : [];
+  const offer = (onCard: boolean): Beat[] => (onCard && newCard && !onTheWay(env) ? [offering(() => (env.ctx.account().balanceOn ? [] : offerBalance(env.ctx)))] : []);
   const buy = (c: FlowContext) => payWith(c, purchase.amount, (onCard, short) => [...placeOrder(c, shelf, onCard, short), bought(onCard), ...offer(onCard)]);
   return { result, beats: withinLimit(ctx, spend, 'buy', buy) };
 }
@@ -451,7 +459,11 @@ function subscribe(env: ToolEnv, call: ToolCall): Outcome {
 const COUNTRY_CODES = new Set(BANK_COUNTRIES.map((c) => c.code));
 
 /** A payment priced: who (saved, or new in a country we pay), how much, in USD or their currency. */
+/** Set by the last quote: the saved person a bare first name was taken to mean. */
+let matchedSaved: string | undefined;
+
 function quoted(env: ToolEnv, input: ToolCall['input']): { id: string; rec: PayRecord } | Outcome {
+  matchedSaved = undefined;
   if (typeof input.quote_id === 'string') {
     const rec = env.memory.quotes.get(input.quote_id);
     return rec ? { id: input.quote_id, rec } : fail('unknown_quote', { fix: 'pass the details instead' });
@@ -461,7 +473,14 @@ function quoted(env: ToolEnv, input: ToolCall['input']): { id: string; rec: PayR
   if (!name || RELATION.test(name)) return fail('need_name', { fix: name ? `ask their ${name.replace(/^my\s+/i, '')}'s name` : 'ask who' });
   if (!amount) return fail('need_amount', { fix: 'ask how much' });
   const known = recipientNamed(name);
-  const code = known?.bank.country.code ?? (typeof input.country === 'string' ? input.country.toLowerCase() : undefined);
+  const said = typeof input.country === 'string' ? input.country.toLowerCase() : undefined;
+  // Someone saved under that first name banks somewhere else: the same person, or someone new? Theirs to say.
+  if (known && said && COUNTRY_CODES.has(said) && said !== known.bank.country.code) {
+    return fail('saved_elsewhere', { saved: `${known.name} is saved, and banks in ${known.bank.country.name}`, fix: `ask whether they mean ${known.name}, or someone else: then pass that person’s full name` });
+  }
+  // Matched on a first name alone: who that is gets said, in case they meant someone else.
+  matchedSaved = known && known.name.toLowerCase() !== name.toLowerCase() ? `${known.name}, already saved, who banks in ${known.bank.country.name}: name them in full so they can say if they meant someone else` : undefined;
+  const code = known?.bank.country.code ?? said;
   if (!code) return fail('need_country', { fix: `ask where ${first(name)} banks` });
   if (!COUNTRY_CODES.has(code)) return fail('country_not_supported', { country: code });
   const recipient = known ?? draftRecipient(name, code)!;
@@ -483,15 +502,41 @@ function quoted(env: ToolEnv, input: ToolCall['input']): { id: string; rec: PayR
   return { id, rec };
 }
 
+/** What a fee question gets: nothing on top of what they pay; into another currency, a fee out of what lands. */
+const feeOf = (payee: Parameters<typeof payoutFee>[0], who: string) =>
+  payoutFee(payee) ? `${usd2(payoutFee(payee))}, taken out of what ${who} receives (what they receive is after it); nothing is added to what you pay` : 'none: dollars to a US bank arrive in full';
+
+/** The same, for a business paying a company or a contractor in dollars: known before anything is on screen. */
+function payFacts(env: ToolEnv, name: string, country: string, amount: number): ToolResult {
+  const to = recipientNamed(name) ?? draftRecipient(name, country);
+  if (!to) return {};
+  const { payee } = payQuote(to, { name, country, amount, currency: 'USD' });
+  return { fee: feeOf(payee, first(name)), they_receive: payee.local, ...asksFirst(env, payee.usd) };
+}
+
+/** Whether a payment stops for their approval, said before it's made: under the limit it goes out by itself. */
+function asksFirst(env: ToolEnv, cents: number): ToolResult {
+  const asks = env.ctx.needsApproval(cents);
+  return {
+    needs_their_approval: asks,
+    ...(!asks && { goes_without_asking: `it’s within the ${usd2(env.ctx.account().limits.approvalAbove).replace(/\.00$/, '')} they let you spend alone, so once it’s covered it goes out with no approval: tell them that before it does` }),
+  };
+}
+
 function quoteFacts(env: ToolEnv, id: string, rec: PayRecord): ToolResult {
   const a = env.ctx.account();
   const { payee } = rec.quote;
+  const to = recipientParams(rec.recipient);
   return {
     quote_id: id,
     to: rec.recipient.first,
+    ...(matchedSaved && { matched: matchedSaved }),
     they_receive: payee.local,
     you_pay_usd: usd(payee.usd),
-    needs_their_approval: env.ctx.needsApproval(payee.usd),
+    their_bank: to.bank,
+    sent_over: to.rail,
+    fee: feeOf(payee, rec.recipient.first),
+    ...asksFirst(env, payee.usd),
     ...(a.connected && payee.usd > a.limits.perTransaction && { over_per_payment_limit: true, raise_to_usd: usd(raisedFor(a.limits, payee.usd).perTransaction) }),
     ...(payee.usd > a.balanceCents && { short_usd: usd(payee.usd - a.balanceCents) }),
     ...(rec.params.every === 'month' && { monthly_on_day: rec.params.day ?? 1 }),
@@ -502,6 +547,8 @@ function quotePayment(env: ToolEnv, call: ToolCall): Outcome {
   const q = quoted(env, call.input);
   if ('error' in q) return q;
   if ('beats' in q) return q;
+  // Priced here, it isn't shown again when it's sent.
+  env.memory.shown.add(q.id);
   return { result: quoteFacts(env, q.id, q.rec), beats: [{ work: 'quoting', ms: 1200 }, { emit: { type: 'pay.quote', payee: q.rec.quote.payee } }] };
 }
 
@@ -511,16 +558,41 @@ function sendPayment(env: ToolEnv, call: ToolCall): Outcome {
   const q = quoted(env, call.input);
   if ('error' in q || 'beats' in q) return q;
   const { id, rec } = q;
+  // A quote pays once: sending its ID again would price and execute a second payout.
+  if (env.memory.sent.has(id)) {
+    return fail('already_sent', { to: rec.recipient.first, fix: 'this quote’s payment already went out: say so. If they want to send the same again, ask first, then pass the details (name, amount) for a new payment, not this quote_id' });
+  }
   const { payee } = rec.quote;
   const result: ToolResult = {};
   const ctx = approvedFor(env, id);
-  const sent = record(result, () => ({ status: rec.params.every === 'month' ? 'scheduled' : 'sent', to: rec.recipient.first, they_receive: payee.local, you_paid_usd: usd(payee.usd), ...(rec.params.every === 'month' && { every_month_on_day: rec.params.day ?? 1 }) }));
-  const go = (c: FlowContext): Beat[] => [...paySend(c, rec.quote, rec.params), sent];
+  const facts = (): ToolResult => ({ status: rec.params.every === 'month' ? 'scheduled' : 'sent', to: rec.recipient.first, they_receive: payee.local, you_paid_usd: usd(payee.usd), ...(rec.params.every === 'month' && { every_month_on_day: rec.params.day ?? 1 }) });
+  const sent = record(result, () => {
+    // Reached the end: it went out, whatever the ledger shows (a monthly payment is scheduled, not settled).
+    env.memory.sent.add(id);
+    return facts();
+  });
+  const go = (c: FlowContext): Beat[] => {
+    // The quote is marked paid the moment its money moves, not after the receipt: a tile tapped during the sending
+    // animation cuts the rest short, and the same quote must not pay again. Counted from here, after any top-up.
+    const before = c.account();
+    const moved = record(result, () => {
+      if (!settledSince(env, before).length) return {};
+      env.memory.sent.add(id);
+      // In the result from this moment, so a step cut short after it still reports that the money went.
+      return facts();
+    });
+    return [...paySend(c, rec.quote, rec.params, moved), sent];
+  };
   // The quote goes on screen once; then today's ask to raise the limit if it's over, and the top-up if it's short.
   const afterQuote = (): Beat[] => {
     const shown = env.memory.shown.has(id);
     env.memory.shown.add(id);
-    const quote: Beat[] = shown ? [] : [{ work: 'quoting', ms: 1200 }, { emit: { type: 'pay.quote', payee } }, { say: 'pay.intro', params: rec.quote.params }];
+    // The session holds one payment at a time, and anything priced since (another quote, a bill, a tile's payment)
+    // took its place. So a send always prices its own payment again, and that is the one executed. Shown before,
+    // it's priced quietly: no second "pricing" line.
+    const quote: Beat[] = shown
+      ? [{ emit: { type: 'pay.quote', payee } }]
+      : [{ work: 'quoting', ms: 1200 }, { emit: { type: 'pay.quote', payee } }, { say: 'pay.intro', params: rec.quote.params }];
     // In the same list as the quote line, so a top-up's first line joins its bubble, as today.
     return [...quote, ...withinLimit(ctx, payee.usd, 'send', (c) => coverThen(c, payee.usd, `paying ${rec.recipient.first}`, go))];
   };
@@ -558,7 +630,8 @@ function requestPayment(env: ToolEnv, call: ToolCall): Outcome {
     const total = positive(call.input.total_usd, 100_000);
     if (!total) return fail('need_total', { fix: 'ask how much the whole bill was' });
     const share = Math.round(cents(total) / (people.length + 1));
-    return { result, beats: [...split(env.ctx, people, cents(total)), record(result, () => ({ status: 'paid_back', each_usd: usd(share), from: people }))] };
+    Object.assign(result, { each_usd: usd(share), split: `${people.length + 1} ways, them included` });
+    return { result, beats: [...split(env.ctx, people, cents(total)), record(result, () => ({ status: 'paid_back', from: people }))] };
   }
   const from = text(call.input.from, 40);
   const amount = positive(call.input.amount_usd, 100_000);
@@ -568,13 +641,15 @@ function requestPayment(env: ToolEnv, call: ToolCall): Outcome {
   if (!params.name && !/^luc[ií]a\b/i.test(from)) return fail('need_amount');
   if (params.name && !amount) return fail('need_amount', { fix: 'ask how much' });
   const who = payerFor(params);
-  if (paid(env.ctx, who.payer)) return { result: { status: 'already_paid' }, beats: [{ say: 'getpaid.already', params: who }] };
+  if (paid(env.ctx, who.payer, params.name ? who.amount : undefined)) return { result: { status: 'already_paid' }, beats: [{ say: 'getpaid.already', params: who }] };
   return { result, beats: [...getpaid({ ...env.ctx, params }).filter((b) => !('react' in b)), record(result, () => ({ status: 'received', from: who.first, amount_usd: usd(who.amount) }))] };
 }
 
 function raiseLimit(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
   if (!a.connected) return fail('no_account', { fix: 'setup_balance first' });
+  // "Ask me every time" is an approval limit of zero.
+  const everyTime = call.input.ask_above_usd === 0;
   const asked: FlowParams = {
     ...(positive(call.input.ask_above_usd, 100_000) && { approve: positive(call.input.ask_above_usd, 100_000) }),
     ...(positive(call.input.per_payment_usd, 100_000) && { perTx: positive(call.input.per_payment_usd, 100_000) }),
@@ -584,13 +659,28 @@ function raiseLimit(env: ToolEnv, call: ToolCall): Outcome {
   const spend = id ? costOf(env, id) : undefined;
   if (id && spend === undefined) return fail('unknown_id', { for: id });
   const from = a.limits;
-  const to = Object.keys(asked).length ? limitsFor({ ...env.ctx, params: asked }, from) : spend ? raisedFor(from, spend) : undefined;
+  const named = Object.keys(asked).length ? limitsFor({ ...env.ctx, params: asked }, from) : spend ? raisedFor(from, spend) : undefined;
+  const to = everyTime ? { ...(named ?? from), approvalAbove: 0 } : named;
   if (!to) return fail('need_limits', { fix: 'say which limit and to what' });
   if (spend && to.perTransaction < spend) return fail('not_enough', { needed_usd: usd(raisedFor(from, spend).perTransaction) });
   if (to.approvalAbove === from.approvalAbove && to.daily === from.daily && to.perTransaction === from.perTransaction) {
     return { result: { status: 'unchanged' }, beats: [{ say: 'limits.same', params: { approve: to.approvalAbove, daily: to.daily, perTx: to.perTransaction } }] };
   }
-  const result: ToolResult = {};
+  // The limits hold each other in: what's done alone can't be more than one payment, nor one payment more than a day.
+  // Asked for a pair that can't both hold, it says so rather than putting up a sheet with a number nobody asked for.
+  const money = (c: number) => usd2(c).replace(/\.00$/, '');
+  if (asked.perTx && asked.daily && to.perTransaction !== cents(asked.perTx)) {
+    return fail('per_payment_over_daily', { fix: `one payment can’t be more than the day’s limit, so ${money(cents(asked.perTx)!)} a payment needs a daily limit of at least that: ask whether to raise the daily limit to match, or keep each payment to ${money(to.daily)} or less` });
+  }
+  if (asked.approve && to.approvalAbove !== cents(asked.approve)) {
+    return fail('ask_above_over_per_payment', { fix: `what you do alone can’t be more than one payment (${money(to.perTransaction)}): ask whether to raise the per-payment limit too, or keep it to that or less` });
+  }
+  // A limit they didn't name moves with the one they did: the sheet shows both, and the model can say why.
+  const moved = [
+    !asked.daily && to.daily !== from.daily && `the daily limit goes from ${money(from.daily)} to ${money(to.daily)} with it, because one payment can’t be more than the day’s limit`,
+    !asked.perTx && !spend && to.perTransaction !== from.perTransaction && `the per-payment limit goes from ${money(from.perTransaction)} to ${money(to.perTransaction)} with it, because what you do alone can’t be more than one payment`,
+  ].filter(Boolean);
+  const result: ToolResult = { ...(moved.length && { also_changes: moved.join('; ') }) };
   const go = id ? (env.memory.quotes.has(id) ? 'send' : env.memory.stays.has(id) ? 'book' : 'buy') : undefined;
   return {
     result,
@@ -605,7 +695,7 @@ function raiseLimit(env: ToolEnv, call: ToolCall): Outcome {
           // Raised for a payment, that approval is the payment's too: it goes through next without asking again.
           record(result, () => {
             if (id) env.memory.approved.add(id);
-            return { status: 'raised', per_payment_usd: usd(to.perTransaction), daily_usd: usd(to.daily), ask_above_usd: usd(to.approvalAbove), ...(id && { approved_for: id }) };
+            return { status: 'raised', also_changes: undefined, per_payment_usd: usd(to.perTransaction), daily_usd: usd(to.daily), ask_above_usd: usd(to.approvalAbove), ...(id && { approved_for: id }) };
           }),
           ...(id
             ? []
@@ -619,19 +709,12 @@ function raiseLimit(env: ToolEnv, call: ToolCall): Outcome {
 
 function withdraw(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
-  if (!a.balanceOn) return { result: { status: 'no_balance', offered: env.ctx.mode === 'business' ? A_COMPANY : A_BALANCE }, beats: noBalanceToMove(env.ctx).filter((b) => !('react' in b)) };
+  if (!a.balanceOn) return { result: { status: 'no_balance' }, beats: noBalanceToMove(env.ctx) };
   const amount = call.input.everything === true ? a.balanceCents : positive(call.input.amount_usd, 10_000) ? cents(call.input.amount_usd as number) : undefined;
-  // Today's Withdraw: nothing in it offers to add money, no amount asks, more than there is offers the whole balance;
-  // then the bank (linked first if it isn't), the limit, and the move.
-  const result: ToolResult =
-    a.balanceCents <= 0
-      ? { status: 'empty_balance', offered: ADD_MONEY }
-      : !amount
-        ? { asked: 'how much (they type it)' }
-        : amount > a.balanceCents
-          ? { status: 'more_than_balance', offered: `moving the whole ${usd(a.balanceCents)} instead (taps: Move, Not now)` }
-          : {};
-  return { result, beats: FLOWS.cashout({ ...env.ctx, params: amount ? { amount: amount / 100 } : {} }).filter((b) => !('react' in b)) };
+  // Nothing in it, there's nothing to move; no amount, it waits on one; more than there is, it waits on moving the
+  // whole balance instead; then the bank (linked first if it isn't), the limit, and the move.
+  const result: ToolResult = a.balanceCents <= 0 ? { status: 'empty_balance' } : amount && amount > a.balanceCents ? { status: 'more_than_balance', balance_usd: usd(a.balanceCents) } : {};
+  return { result, beats: FLOWS.cashout({ ...env.ctx, params: amount ? { amount: amount / 100 } : {} }) };
 }
 
 function sendStablecoins(env: ToolEnv, call: ToolCall): Outcome {
@@ -700,35 +783,26 @@ function showAccount(env: ToolEnv, call: ToolCall): Outcome {
     if (!a.ledger.length) return { result: { status: 'nothing_yet' }, beats: [{ say: 'history.none' }] };
     return { result: { status: 'shown', recent: a.ledger.slice(0, 6).map((l) => ({ what: l.title, usd: usd(l.cents) })) }, beats: historyShown(env.ctx) };
   }
-  if (!a.balanceOn) {
-    const offered = env.ctx.mode === 'business' ? A_COMPANY : a.cardVaulted ? A_BALANCE : 'a balance or a card (taps: Set up a balance, Add a card)';
-    return { result: { status: 'no_balance', offered }, beats: FLOWS.balance(env.ctx).filter((b) => !('react' in b)) };
-  }
-  return { result: { status: 'shown', ...(a.balanceCents <= 0 && { offered: ADD_MONEY }) }, beats: balanceShown(env.ctx) };
+  if (!a.balanceOn) return { result: { status: 'no_balance' }, beats: FLOWS.balance(env.ctx) };
+  return { result: { status: 'shown' }, beats: balanceShown(env.ctx) };
 }
 
 /* ── The business's tools ─────────────────────────────────────────── */
 
 const noReact = (beats: Beat[]) => beats.filter((b) => !('react' in b));
-const ownName = (v: unknown) => (typeof v === 'string' && cleanName(v)) || undefined;
+const ownName = (v: unknown) => (typeof v === 'string' && !BLANK.test(v) && cleanName(v)) || undefined;
 
 function setupCompany(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
-  const onWay = onTheWay(env, call);
+  const onWay = onTheWay(env);
   if (a.balanceOn) return { beats: onWay ? [] : noReact(companySetup(env.ctx)), result: { status: 'already_set_up' } };
   const company = ownName(call.input.company);
   const owner = ownName(call.input.owner);
-  const result: ToolResult =
-    a.business?.named || (company && owner)
-      ? {}
-      : { asked: company ? 'the owner’s name (they type it or tap the suggestion)' : 'the company’s name, then the owner’s (they type them or tap the suggestions)' };
+  const result: ToolResult = {};
   const held = heldFor(env.next);
-  // On the way to something else, that's next once it's set up; asked for itself, it shows the account and offers to fill it.
-  const ctx: FlowContext = { ...env.ctx, ...(held && { held }), ...(onWay && { then: () => [] }) };
-  const done = record(result, () => {
-    const now = env.ctx.account();
-    return { status: 'set_up', company: now.business?.company, ...(!onWay && now.balanceCents <= 0 && { offered: ADD_MONEY }) };
-  });
+  // On the way to something else, that's next once it's set up; asked for itself, it shows the account.
+  const ctx: FlowContext = { ...env.ctx, naming: env.memory.naming, ...(held && { held }), ...(onWay && { then: () => [] }) };
+  const done = record(result, () => ({ status: 'set_up', company: env.ctx.account().business?.company }));
   return { result, beats: noReact(companySetup(ctx, { company, owner }, [done])) };
 }
 
@@ -739,8 +813,11 @@ function addTeammateTool(env: ToolEnv, call: ToolCall): Outcome {
   if (name && RELATION.test(name)) return fail('need_name', { fix: 'ask their name' });
   const team = env.ctx.account().business?.team ?? [];
   if (name && memberOf(team, name)) return { result: { status: 'already_on_team', team: team.map((m) => m.name) }, beats: [] };
-  const result: ToolResult = { asked: name ? 'their role, pay and bank (they tap or type them)' : 'their name, role, pay and bank (they tap or type them)' };
-  const added = record(result, () => ({ status: 'added', team: (env.ctx.account().business?.team ?? []).map((m) => `${m.name} (${m.role})`) }));
+  const result: ToolResult = {};
+  const added = record(result, () => {
+    const now = env.ctx.account().business?.team ?? [];
+    return now.length > team.length ? { status: 'added', team: now.map((m) => `${m.name} (${m.role})`) } : {};
+  });
   return { result, beats: [...addTeammate(env.ctx, name ? { name } : {}), added] };
 }
 
@@ -749,9 +826,32 @@ function setTeamBudget(env: ToolEnv, call: ToolCall): Outcome {
   if (missing) return missing;
   const monthly = positive(call.input.monthly_usd, 50_000);
   const already = env.ctx.account().business?.budget;
-  const result: ToolResult = {};
-  const set = record(result, () => ({ status: already ? 'already_set_up' : 'set_up', monthly_usd: usd(env.ctx.account().business?.budget ?? 0), team: (env.ctx.account().business?.team ?? []).map((m) => m.name) }));
-  return { result, beats: [...noReact(teamBudget({ ...env.ctx, params: monthly ? { amount: monthly } : {} })), set] };
+  const empty = !env.ctx.account().business?.team.length;
+  // Asked again with another amount while the first teammate is still being added for it: the amount changes, and
+  // what's open (their role, pay or bank) stays where it is. The approval comes up at the new amount.
+  if (monthly && empty && !already && env.openFor === 'set_team_budget') {
+    env.memory.budget = monthly;
+    return { beats: [], result: { status: 'amount_updated', monthly_usd: monthly, note: 'the budget will come up for approval at this amount once the teammate is on the team: what’s open is still open, so point them back to it' } };
+  }
+  env.memory.budget = monthly;
+  const result: ToolResult = {
+    ...(empty && { not_yet: 'nothing is set and nothing is up for approval yet: the budget’s approval comes up once someone is on the team, which is what this is asking for first' }),
+  };
+  const set = record(result, () => {
+    const now = env.ctx.account().business;
+    if (!now?.budget) return {};
+    result.not_yet = undefined;
+    const facts = { monthly_usd: usd(now.budget), team: now.team.map((m) => m.name) };
+    // Set once: there's nowhere to change it, here or anywhere they could be pointed to.
+    return already ? { status: 'already_set_up', ...facts, ...(monthly && monthly * 100 !== already && { cannot_change: 'the budget can’t be changed once it’s set: say so plainly, and don’t send them anywhere else to do it' }) } : { status: 'set_up', ...facts };
+  });
+  // Read when the approval is built, not now: the amount can change on the way there.
+  const params: FlowParams = {
+    get amount() {
+      return env.memory.budget;
+    },
+  };
+  return { result, beats: [...noReact(teamBudget({ ...env.ctx, params })), set] };
 }
 
 function issueEmployeeCard(env: ToolEnv, call: ToolCall): Outcome {
@@ -761,11 +861,13 @@ function issueEmployeeCard(env: ToolEnv, call: ToolCall): Outcome {
   if (!name) return fail('need_name', { fix: 'ask which teammate' });
   const team = env.ctx.account().business?.team ?? [];
   const member = memberOf(team, name);
-  if (!member) return { result: { status: 'not_on_team', offered: `adding ${name} to the team first, then the card` }, beats: noReact(employeeCard({ ...env.ctx, params: { name } })) };
+  // Someone not on the team is added first (their role, pay and bank are waited on), then the card.
+  if (!member) return { result: { status: 'not_on_team' }, beats: noReact(employeeCard({ ...env.ctx, params: { name } })) };
   const purpose = text(call.input.purpose, 30)?.toLowerCase();
   const had = env.ctx.account().business?.team.find((m) => m.name === member.name)?.hasCard;
   const result: ToolResult = {};
-  const issued = record(result, () => ({ status: had ? 'already_has_card' : 'issued', to: member.name }));
+  const hasCard = () => env.ctx.account().business?.team.find((m) => m.name === member.name)?.hasCard;
+  const issued = record(result, () => (had ? { status: 'already_has_card', to: member.name } : hasCard() ? { status: 'issued', to: member.name } : {}));
   return { result, beats: [...noReact(employeeCard({ ...env.ctx, params: { name: member.name, ...(purpose && { note: purpose }) } })), issued] };
 }
 
@@ -789,10 +891,8 @@ function listInvoices(env: ToolEnv): Outcome {
   const missing = needsBalance(env);
   if (missing) return missing;
   const invoices = env.ctx.account().business?.invoices ?? [];
-  const open = invoices.filter((i) => i.status === 'OPEN');
   const result: ToolResult = {
-    invoices: invoices.map((i) => ({ number: i.number, client: i.client, amount_usd: usd(i.amount), status: i.status === 'PAID' ? 'paid' : `open, due ${i.due}` })),
-    ...(open.length && { offered: `a reminder for the open one (taps: Remind ${open[0].client}, Not now)` }),
+    invoices: invoices.map((i) => ({ number: i.number, client: i.client, amount_usd: usd(i.amount), status: i.status === 'PAID' ? 'paid' : `already sent, not paid yet, due ${i.due}` })),
   };
   return { result, beats: noReact(trackInvoices(env.ctx)) };
 }
@@ -807,9 +907,11 @@ function payBillTool(env: ToolEnv, call: ToolCall): Outcome {
   const asked = typeof call.input.country === 'string' ? call.input.country.toLowerCase() : 'us';
   if (!COUNTRY_CODES.has(asked)) return fail('country_not_supported', { country: asked });
   const note = text(call.input.note, 40);
-  const result: ToolResult = {};
+  const result: ToolResult = payFacts(env, vendor, asked, amount);
   const params: FlowParams = { name: vendor, country: asked, amount, currency: 'USD', ...(note && { note }) };
-  return { result, beats: [...noReact(payBill({ ...env.ctx, params })), record(result, () => ({ status: 'paid', to: vendor, amount_usd: amount }))] };
+  const before = env.ctx.account();
+  const paid = record(result, () => (settledSince(env, before).length ? { status: 'paid', to: vendor, amount_usd: amount } : {}));
+  return { result, beats: [...noReact(payBill({ ...env.ctx, params })), paid] };
 }
 
 function payContractorTool(env: ToolEnv, call: ToolCall): Outcome {
@@ -822,8 +924,9 @@ function payContractorTool(env: ToolEnv, call: ToolCall): Outcome {
   const country = typeof call.input.country === 'string' ? call.input.country.toLowerCase() : 'us';
   if (!COUNTRY_CODES.has(country)) return fail('country_not_supported', { country });
   const note = text(call.input.note, 40);
-  const result: ToolResult = {};
-  const paid = record(result, () => ({ status: 'paid', to: name, amount_usd: amount, how: 'to their own bank, in their currency' }));
+  const result: ToolResult = payFacts(env, name, country, amount);
+  const before = env.ctx.account();
+  const paid = record(result, () => (settledSince(env, before).length ? { status: 'paid', to: name, amount_usd: amount, how: 'to their own bank, in their currency' } : {}));
   return { result, beats: [...noReact(payContractor({ ...env.ctx, params: { name, country, amount, ...(note && { note }) } })), paid] };
 }
 
@@ -832,7 +935,8 @@ function runPayrollTool(env: ToolEnv): Outcome {
   if (missing) return missing;
   const result: ToolResult = {};
   const team = () => env.ctx.account().business?.team ?? [];
-  const paidOut = record(result, () => ({ status: 'paid', people: team().map((m) => m.name), total_usd: usd(payrollTotal(team())) }));
+  const before = env.ctx.account();
+  const paidOut = record(result, () => (settledSince(env, before).length ? { status: 'paid', people: team().map((m) => m.name), total_usd: usd(payrollTotal(team())) } : {}));
   return { result, beats: [...noReact(runPayroll(env.ctx)), paidOut] };
 }
 
@@ -908,6 +1012,9 @@ export function flowOf(call: ToolCall): ActionId | null {
       return 'payroll';
     case 'reply':
     case 'offer_choices':
+    case 'wait':
+    case 'answer':
+    case 'switch_account':
       return null;
     default: {
       const exhaustive: never = call.name;
@@ -922,7 +1029,7 @@ export function runTool(env: ToolEnv, call: ToolCall): Outcome {
     case 'setup_balance':
       return setupBalance(env, call);
     case 'add_card':
-      return addCard(env, call);
+      return addCard(env);
     case 'link_bank':
       return linkBank(env, call);
     case 'fund':
@@ -967,8 +1074,12 @@ export function runTool(env: ToolEnv, call: ToolCall): Outcome {
       return payContractorTool(env, call);
     case 'run_payroll':
       return runPayrollTool(env);
+    // What the conversation itself carries out (a line, a pause, an answer to what's open, the other account): nothing to run here.
     case 'reply':
     case 'offer_choices':
+    case 'wait':
+    case 'answer':
+    case 'switch_account':
       return { result: { status: 'shown' }, beats: [] };
     default: {
       const exhaustive: never = call.name;

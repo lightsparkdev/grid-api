@@ -17,7 +17,7 @@ import type { ActionId } from '@/data/actions';
 import type { ConnectorId } from '@/data/connectors';
 import type { AgentResponse as StepResponse } from '@/lib/llm/types';
 import type { Block, ToolCall, Turn } from '@/lib/llm/tools';
-import { ENDS_TURN, READS_RESULT } from '@/lib/llm/tools';
+import { ENDS_TURN } from '@/lib/llm/tools';
 import type { Beat } from '@/apps/agents/conversation';
 import type { AgentEvent } from '@/data/agentEvents';
 import type { FlowParams } from '@/apps/agents/flows';
@@ -41,7 +41,7 @@ const BASE = option('base') ?? 'http://localhost:4003';
 const ONLY = option('only')?.split(',');
 const CONCURRENCY = Number(option('concurrency') ?? 6);
 const VOICES: ConnectorId[] = ['muse', 'grok', 'dot', 'instinct', 'claude'];
-const MAX_STEPS = 3;
+const MAX_STEPS = 4;
 
 /** What one prompt came to, read back the way the flows took it: the reply, the flow it starts and its details. */
 interface AgentResponse {
@@ -605,21 +605,26 @@ const businessState = (a: AccountSnapshot) => ({
   mode: 'business',
   ...(a.business?.named && { company: a.business.company, owner: a.business.owner }),
   team: a.business?.team.map((m) => `${m.name} (${m.role})`),
-  invoices: a.business?.invoices.map((i) => `${i.number} ${i.client} ${dollarsOf(i.amount)} open, due ${i.due}`),
+  invoices: a.business?.invoices.map((i) => `${i.number} ${i.client} ${dollarsOf(i.amount)} ${i.status === 'PAID' ? 'paid' : `already sent, not paid yet, due ${i.due}`}`),
 });
 
 /** Plays a tool's beats with nobody watching: every ask allowed, the first of any choice, a suggested name kept, every
  *  result written. `emit` sees the events, for an account that changes as it plays. */
-function playAll(beats: Beat[], emit?: (e: AgentEvent) => void): void {
+function playAll(beats: Beat[], notes: string[], emit?: (e: AgentEvent) => void): void {
   for (const b of beats) {
-    if ('when' in b) playAll(b.when(), emit);
-    else if ('ask' in b) playAll(b.allow, emit);
-    else if ('chips' in b) playAll(b.then(0), emit);
-    else if ('amount' in b) playAll(b.then(b.options?.[0] ?? 50), emit);
-    else if ('name' in b) playAll(b.named(b.suggestion), emit);
+    if ('when' in b) playAll(b.when(), notes, emit);
+    else if ('ask' in b) playAll(b.allow, notes, emit);
+    else if ('chips' in b) playAll(b.then(0), notes, emit);
+    else if ('amount' in b) playAll(b.then(b.options?.[0] ?? 50), notes, emit);
+    else if ('name' in b) playAll(b.named(b.suggestion), notes, emit);
     else if ('emit' in b) emit?.(b.emit);
+    // The flow's own lines reach the model as plain notes, as they do in the phone.
+    else if ('say' in b && !b.sender) notes.push(PLAIN.line(b.say, b.params));
   }
 }
+const PLAIN = voiceFor('yourapp');
+/** Every number a result gives, as a number: a note writes "$1,049", a field 1049. */
+const amountsIn = (text: string) => (text.replace(/(\d),(?=\d{3})/g, '$1').match(/\d+(?:\.\d+)?/g) ?? []).map(Number);
 
 /** A new business account as the session would change it: named, then set up. */
 const settingUp = (account: AccountSnapshot) => (e: AgentEvent) => {
@@ -677,7 +682,9 @@ async function ask(c: Case, i: number): Promise<AgentResponse | { fallback: stri
   for (const t of [...(c.history ?? []), { role: 'user' as const, text: c.text }]) turns.push({ role: t.role, content: [{ type: 'text', text: t.text }] });
   const memory = newToolMemory();
   const mode = c.business ? ('business' as const) : ('personal' as const);
-  const ctx = { account: () => account, needsApproval: (usd: number) => usd > account.limits.approvalAbove, variant: 0, mode };
+  // What a step would offer next is the model's to offer, as in the phone: it's noted in the result, not played.
+  const offers: string[] = [];
+  const ctx = { account: () => account, needsApproval: (usd: number) => usd > account.limits.approvalAbove, variant: 0, mode, offer: (what: string) => void offers.push(what) };
   const made: ToolCall[] = [];
   /** What actually ran: a call that failed shows nothing in the phone. */
   const ran: ToolCall[] = [];
@@ -720,24 +727,26 @@ async function ask(c: Case, i: number): Promise<AgentResponse | { fallback: stri
       const out = runTool({ ctx, memory, next: data.calls[k + 1] }, call);
       if ('error' in out) {
         results.push({ type: 'tool_result', tool_use_id: call.id, content: JSON.stringify(out.error), is_error: true });
-        told.push(...(JSON.stringify(out.error).match(/\d+(?:\.\d+)?/g) ?? []).map(Number));
+        told.push(...amountsIn(JSON.stringify(out.error)));
         failed = stopped = true;
         continue;
       }
-      playAll(out.beats, c.business === 'new' ? settingUp(account) : undefined);
+      const notes: string[] = [];
+      offers.length = 0;
+      playAll(out.beats, notes, c.business === 'new' ? settingUp(account) : undefined);
       ran.push(call);
-      const result = { ...(out.result.error ? {} : { status: 'done' }), ...out.result, account: accountNow(account) };
-      told.push(...(JSON.stringify(result).match(/\d+(?:\.\d+)?/g) ?? []).map(Number));
-      results.push({ type: 'tool_result', tool_use_id: call.id, content: JSON.stringify(result), ...(out.result.error ? { is_error: true } : {}) });
+      // The step played through with nobody to wait on: its result reads as one that finished, as the phone's would.
+      const result = { ...out.result, ...(notes.length && { notes }), ...(offers.length && { could_offer: offers[offers.length - 1] }), finished: true, account: accountNow(account) };
+      told.push(...amountsIn(JSON.stringify(result)));
+      results.push({ type: 'tool_result', tool_use_id: call.id, content: JSON.stringify(result).slice(0, 3600), ...(out.result.error ? { is_error: true } : {}) });
       if (out.result.error) failed = stopped = true;
     }
-    const last = data.calls[data.calls.length - 1];
+    // The model ended its turn (a line, or nothing more to say); otherwise it reads what happened and carries on.
     if (stopped && !failed) break;
-    if (!failed && !READS_RESULT.has(last.name) && last.input.more !== true) break;
     turns.push({ role: 'user', content: results });
   }
   // The first thing it does is the flow; a setup on the way to something else isn't it.
-  const actions = ran.filter((k) => flowOf(k) && !((k.name === 'setup_balance' || k.name === 'setup_company') && k.input.more));
+  const actions = ran.filter((k, at) => flowOf(k) && !((k.name === 'setup_balance' || k.name === 'setup_company') && ran.slice(at + 1).some((later) => flowOf(later))));
   const flows = actions.map((k) => ({ call: k, flow: flowOf(k)! })).filter((f, k, all) => k === 0 || f.flow !== all[k - 1].flow);
   const lines = made.filter((k) => ran.includes(k) || ENDS_TURN.has(k.name)).flatMap((k) => (k.input.say ? [k.input.say] : []));
   const replies: Partial<Record<ConnectorId, string>> = {};

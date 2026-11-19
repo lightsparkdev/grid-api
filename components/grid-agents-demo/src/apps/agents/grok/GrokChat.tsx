@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from 'react';
-import { AnimatePresence, motion, type Transition } from 'motion/react';
-import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
+import { useEffect, useLayoutEffect, useReducer, useRef, useState, type ReactNode } from 'react';
+import { animate, AnimatePresence, motion, type Transition } from 'motion/react';
+import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowUp';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconChevronGrabberVertical } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronGrabberVertical';
 import { IconClock } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconClock';
@@ -11,10 +11,10 @@ import { IconSquareBehindSquare1 } from '@central-icons-react/round-outlined-rad
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconTag';
 import { Flag } from '@/apps/shared/Flag';
-import { ChatFrame, ComposerField, NATIVE_IN, ScrollEdge, useOpenedMarks, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
+import { ChatFrame, ComposerField, NATIVE_IN, ScrollEdge, STILL, useOpenedIds, useOpenedMarks, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton, ScanGlyph } from '../glass';
 import type { AgentAsk, AgentNote, Chip, Invoice, Message, Product } from '../conversation';
-import { BalanceCard, copyLabel, CopyCode, Divider, NoteCard, shortCode, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
+import { AskMark, BalanceCard, copyLabel, CopyCode, Divider, NoteCard, NoteMark, shortCode, SubAgentRow, useCardArrival, useCopy, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from '../vault/useAskSheet';
@@ -35,8 +35,26 @@ type Ask = Extract<Message, { kind: 'ask' }>;
 const COMPOSER_SPRING: Transition = { type: 'spring', stiffness: 975, damping: 62, mass: 1 };
 /** The form sheet: cubic-bezier(0.30, 0.70, 0.20, 1) over 450ms. */
 const SHEET_IN: Transition = { duration: 0.45, ease: [0.3, 0.7, 0.2, 1] };
-/** Your bubble lands in place at once; its fill darkens from gray (see .me). */
-const SENT: RowMotion = { initial: { opacity: 1 }, animate: { opacity: 1 }, transition: { duration: 0 } };
+/** The single-line composer's height (pt), where a sent bubble first shows, just above it. */
+const COMPOSER_H = 50;
+/**
+ * Sending, as the app does it: the bubble shows at once just above the composer, mostly see-through, and rises into
+ * its place as it fills in, ~170ms on an ease-out. The thread scrolls on the same curve, so the two move as one.
+ */
+const SENT_S = 0.17;
+const SENT_EASE: [number, number, number, number] = [0, 0, 0.2, 1];
+const SENT_SCROLL: ScrollCurve = { ms: SENT_S * 1000, ease: SENT_EASE };
+/** The status row ("Thinking…", "Typing…") shows only once your bubble has landed: ~350ms after you send. */
+const STATUS_AFTER_SEND_MS = 350;
+/** A reply that was typing fills in from pale as it lifts into place (~120ms). */
+const REPLY_IN: Transition = { duration: 0.12, ease: [0, 0, 0.2, 1] };
+/** A question box rises in from below as it fades in, on the thread's own curve, so it moves even when the thread
+ *  has room and doesn't scroll. */
+const CHOICES_IN: RowMotion = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.28, ease: [0.28, 0.05, 0.65, 1] },
+};
 /**
  * Grok's reaction: the emoji lands big (~30pt) in your bubble's bottom-right corner,
  * holds ~350ms, then shrinks to 15pt as it drops ~35pt onto the bubble's bottom edge, where a gray pill pops in
@@ -75,9 +93,41 @@ function Reaction({ emoji, still }: { emoji: string; still: boolean }) {
   );
 }
 
-/** Grok's thread: the status row's swap to Typing… jumps; everything else rises on the shared ease-in-out. */
+/** Grok's thread: the status row's swap to Typing… jumps; your sent bubble rises with its own curve; everything else
+ *  rises on the shared ease-in-out. */
 const grokScroll = (cause: ScrollCause): ScrollCurve =>
-  cause === 'typing' ? 'snap' : { ms: 280, ease: [0.28, 0.05, 0.65, 1] };
+  cause === 'typing' ? 'snap' : cause === 'me' ? SENT_SCROLL : { ms: 280, ease: [0.28, 0.05, 0.65, 1] };
+
+/**
+ * Your just-sent bubble: drawn first just above the composer, then carried to its place in the thread on the same
+ * curve the thread scrolls on, so wherever its place is (pinned to the foot or under the last message), it travels
+ * there in one move.
+ */
+function SentRise({ rise, children }: { rise: boolean; children: ReactNode }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const composer = el?.closest('[data-thread]')?.parentElement?.querySelector('[data-composer]');
+    if (!rise || !el || !composer) return;
+    // Measured where it sits in the thread, not where a previous run of this effect had moved it.
+    el.style.transform = '';
+    const r = el.getBoundingClientRect();
+    // The phone is scaled to fit the page; transforms are in its own px.
+    const k = r.height / el.offsetHeight || 1;
+    const start = composer.getBoundingClientRect().bottom - COMPOSER_H * k - 4 * k - r.height;
+    const y = (start - r.top) / k;
+    // Placed before the first paint, so it never flashes in its final spot.
+    el.style.transform = `translateY(${y}px)`;
+    el.style.opacity = '0.25';
+    const run = animate(el, { y: [y, 0], opacity: [0.25, 1] }, { duration: SENT_S, ease: SENT_EASE });
+    return () => run.stop();
+  }, [rise]);
+  return (
+    <span ref={ref} className={styles.sentRise}>
+      {children}
+    </span>
+  );
+}
 
 /**
  * A Grok bubble: a pill while it's one line, 20pt corners once it wraps (ChatFrame shapes it), and
@@ -148,11 +198,12 @@ function ChoiceCard({ m, onPick }: { m: Extract<Message, { kind: 'chips' }>; onP
 }
 
 /** What the bot found: a sideways carousel of product cards. */
-function Products({ products }: { products: Product[] }) {
+function Products({ products, fresh }: { products: Product[]; fresh: boolean }) {
+  const arrive = useCardArrival(fresh, products.length);
   return (
     <div className={styles.products}>
-      {products.map((p) => (
-        <div key={p.title} className={styles.product}>
+      {products.map((p, i) => (
+        <motion.div key={p.title} className={styles.product} {...arrive(i)}>
           <span className={styles.productImage}>
             <img src={p.image} alt="" />
           </span>
@@ -165,8 +216,44 @@ function Products({ products }: { products: Product[] }) {
               {p.merchant}
             </span>
           </span>
-        </div>
+        </motion.div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Something settled that has no order card of its own (money that came in, a payment that went out by itself): drawn
+ * as the card a finished order gets, who it was with at its head, as wide as what it says.
+ */
+function GrokReceipt({ note }: { note: AgentNote }) {
+  const status = note.stats?.find((s) => s.label === 'Status')?.value ?? 'Settled';
+  return (
+    <div className={`${styles.order} ${styles.receipt}`} data-state="done">
+      <div className={styles.orderHead}>
+        {note.who ? (
+          <NoteMark note={note} size={22} round={!note.who.icon && !note.who.bank} />
+        ) : (
+          <span className={styles.orderTile}>
+            <IconCheckmark1 size={12} />
+          </span>
+        )}
+        <span>{note.who?.name ?? note.title}</span>
+        <small>{status}</small>
+      </div>
+      <strong className={styles.orderTitle}>{note.title}</strong>
+      {note.lines.length > 0 && <span className={styles.orderSub}>{note.lines.join(' · ')}</span>}
+      <div className={styles.track} data-full>
+        <span className={styles.trackEnd}>
+          <IconPaperPlane size={12} />
+        </span>
+        <span className={styles.trackBar}>
+          <i />
+        </span>
+        <span className={styles.trackMark}>
+          <IconCheckmark1 size={12} />
+        </span>
+      </div>
     </div>
   );
 }
@@ -322,11 +409,14 @@ function GrokInvoice({ invoice }: { invoice: Invoice }) {
 function OrderCard({ m, onAllow, onDeny }: { m: Ask; onAllow: () => void; onDeny: () => void }) {
   const { ask, state } = m;
   const who = ask.who;
-  const order = !!who?.icon || ask.allowed === 'Approved';
+  // Something it can say better than "Your order is confirmed" (a bill, a booking) says that instead.
+  const order = !ask.settled && (!!who?.icon || ask.allowed === 'Approved');
   const placing = state === 'pressing' || state === 'authing';
   // A bank's mark is its own tile (an app icon with the flag hanging off it), so it skips the outlined one.
   const tile = who?.bank ? (
     <BankMark bank={who.bank} country={who.flag} size={22} />
+  ) : who?.icon || !who ? (
+    <AskMark ask={ask} size={22} round={!who} />
   ) : (
     <span className={styles.orderTile}>{who?.flag ? <Flag code={who.flag} size={20} /> : <span>{who?.mark ?? (who?.name ?? ask.title)[0]}</span>}</span>
   );
@@ -336,12 +426,12 @@ function OrderCard({ m, onAllow, onDeny }: { m: Ask; onAllow: () => void; onDeny
       <div className={styles.orderHead}>
         {tile}
         <span>{who?.name ?? ask.title}</span>
-        {state === 'done' && <small>{order ? 'PRP9GNCWF' : 'Settled'}</small>}
+        {state === 'done' && <small>{order ? 'PRP9GNCWF' : (ask.settled?.status ?? 'Settled')}</small>}
       </div>
       {state === 'done' ? (
         <>
-          <strong className={styles.orderTitle}>{order ? 'Your order is confirmed' : 'Payment sent'}</strong>
-          <span className={styles.orderSub}>{who?.detail.split(' · ')[0] ?? ask.title}</span>
+          <strong className={styles.orderTitle}>{order ? 'Your order is confirmed' : (ask.settled?.title ?? 'Payment sent')}</strong>
+          <span className={styles.orderSub}>{ask.settled?.detail ?? who?.detail.split(' · ')[0] ?? ask.title}</span>
           <div className={styles.track} data-full={!order || undefined}>
             <span className={styles.trackEnd}>
               <IconPaperPlane size={12} />
@@ -417,6 +507,23 @@ function settledByOrder(i: number, all: Message[]) {
 export function GrokChat({ chat }: AgentChatProps) {
   const [multiline, setMultiline] = useState(false);
   const reactedAtOpen = useOpenedMarks();
+  const openedIds = useOpenedIds(chat.messages);
+  /** Replies that showed Typing… first: they fill in when the text lands. */
+  const typedIds = useRef(new Set<number>());
+  /** When your last message went: until it has landed, the thread follows it and the status row waits. */
+  const sentIds = useRef(new Set<number>());
+  const sentAt = useRef(-Infinity);
+  const [, redraw] = useReducer((n: number) => n + 1, 0);
+  const statusTimer = useRef(0);
+  useEffect(() => () => window.clearTimeout(statusTimer.current), []);
+  /** A status row that came in with your message holds its (empty) place until the bubble lands. */
+  const statusOr = (row: ReactNode) => {
+    const wait = STATUS_AFTER_SEND_MS - (performance.now() - sentAt.current);
+    if (wait <= 0) return row;
+    window.clearTimeout(statusTimer.current);
+    statusTimer.current = window.setTimeout(redraw, wait);
+    return <div className={styles.statusSlot} aria-hidden />;
+  };
   // The sheet keeps its ask while it slides away.
   const bank = useGrokBank({ messages: chat.messages, onAllow: chat.allow });
   const balance = useGrokBalance({ account: chat.account, onAction: chat.prompt });
@@ -427,23 +534,37 @@ export function GrokChat({ chat }: AgentChatProps) {
   const render = (m: Message, i: number, all: Message[]) => {
     switch (m.kind) {
       case 'them':
-        if (m.typing) return <StatusRow label="Typing…" typing />;
+        if (m.typing) {
+          typedIds.current.add(m.id);
+          return statusOr(<StatusRow label="Typing…" typing />);
+        }
         return (
-          <>
+          <motion.div
+            className={styles.reply}
+            initial={typedIds.current.has(m.id) ? { opacity: 0.3, y: 6 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={REPLY_IN}
+          >
             {m.sender && <span className={styles.sender}>{m.sender}</span>}
             <Bubble className={styles.bubble} {...neighbors(i, all, 'them')}>
               {m.text}
             </Bubble>
-          </>
+          </motion.div>
         );
       case 'me':
+        if (!openedIds.has(m.id) && !sentIds.current.has(m.id)) {
+          sentIds.current.add(m.id);
+          sentAt.current = performance.now();
+        }
         return (
-          <span className={styles.meWrap} data-reacted={m.react ? true : undefined}>
-            <Bubble className={styles.me} {...neighbors(i, all, 'me')}>
-              {m.text}
-            </Bubble>
-            {m.react && <Reaction emoji={m.react} still={reactedAtOpen(`react-${m.id}`)} />}
-          </span>
+          <SentRise rise={!openedIds.has(m.id)}>
+            <span className={styles.meWrap} data-reacted={m.react ? true : undefined}>
+              <Bubble className={styles.me} {...neighbors(i, all, 'me')}>
+                {m.text}
+              </Bubble>
+              {m.react && <Reaction emoji={m.react} still={reactedAtOpen(`react-${m.id}`)} />}
+            </span>
+          </SentRise>
         );
       case 'ask':
         return m.ask.form ? (
@@ -471,14 +592,15 @@ export function GrokChat({ chat }: AgentChatProps) {
         if (m.card.done && settledByOrder(i, all)) return null;
         if (m.card.invoice) return <GrokInvoice invoice={m.card.invoice} />;
         if (m.card.code) return <AddressForm note={m.card} />;
+        if (m.card.done && !m.card.rows) return <GrokReceipt note={m.card} />;
         return <NoteCard note={m.card} className={styles.note} />;
       }
       case 'chips':
         return <ChoiceCard m={m} onPick={chat.pick} />;
       case 'work':
-        return <StatusRow label={m.status} />;
+        return statusOr(<StatusRow label={m.status} />);
       case 'products':
-        return <Products products={m.products} />;
+        return <Products products={m.products} fresh={!openedIds.has(m.id)} />;
       case 'meta':
         // The folded form already reads what was saved.
         if (m.meta.icon === 'check' && all[i - 1]?.kind === 'ask') return null;
@@ -506,6 +628,8 @@ export function GrokChat({ chat }: AgentChatProps) {
   };
 
   const hasText = chat.composer.trim().length > 0;
+  // Just sent: the status row's place under your bubble is held open, so it lands without moving anything.
+  const awaiting = chat.messages[chat.messages.length - 1]?.kind === 'me';
 
   return (
     <div className={styles.stage}>
@@ -514,8 +638,11 @@ export function GrokChat({ chat }: AgentChatProps) {
         className={styles.screen}
         messages={chat.messages}
         render={render}
-        rowMotion={(m) => (m.kind === 'me' ? SENT : NATIVE_IN)}
-        scroll={grokScroll}
+        // Your bubble moves itself (SentRise); a question box rises in.
+        rowMotion={(m) => (m.kind === 'me' ? STILL : m.kind === 'chips' ? CHOICES_IN : NATIVE_IN)}
+        // Whatever came in with your message (its status row), the thread carries your bubble up on the sent curve.
+        scroll={(cause) => (performance.now() - sentAt.current < STATUS_AFTER_SEND_MS ? SENT_SCROLL : grokScroll(cause))}
+        foot={awaiting ? <div className={styles.statusSlot} aria-hidden /> : undefined}
         faceId={chat.authing}
         onFaceIdDone={chat.authed}
         gap={9}

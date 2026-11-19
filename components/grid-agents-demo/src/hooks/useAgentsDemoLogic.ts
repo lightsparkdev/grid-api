@@ -14,7 +14,6 @@ import type { ConnectorId } from '@/data/connectors';
 import { MODES, modeFor, setActiveMode, type Mode } from '@/data/mode';
 import { appFor } from '@/lib/forApp';
 import type { PromptState } from '@/lib/llm/prompt';
-import type { ReadRequest, ReadResponse, Reading } from '@/lib/llm/read';
 import type { Turn } from '@/lib/llm/tools';
 import type { AgentResponse } from '@/lib/llm/types';
 import { visitorHeaders } from '@/lib/visitor';
@@ -183,9 +182,10 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
     setRuns((r) => ({ ...r, [flow]: r[flow] + 1 }));
   }, []);
 
-  /** Free text goes to the model (/api/agent), a step at a time. Off, limited or failing, the agent points at the flows. */
+  /** The model's next step (/api/agent), for the conversation so far, the account as it stands and what's open on
+   *  screen. Off, limited or failing, the conversation carries on without it. */
   const reply = useCallback(
-    async (turns: Turn[]): Promise<StepReply> => {
+    async (turns: Turn[], screen: { open?: string; seen?: string }): Promise<StepReply> => {
       const a = sessionRef.current!.snapshot();
       const money = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
       const state: PromptState = {
@@ -204,8 +204,10 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
           ...(a.business.named && { company: a.business.company, owner: a.business.owner }),
           team: a.business.team.map((m) => `${m.name} (${m.role}${m.hasAgent ? ', has an agent' : ''}${m.hasCard ? ', has a card' : ''})`),
           budget: a.business.budget ? money(a.business.budget) : undefined,
-          invoices: a.business.invoices.map((i) => `${i.number} ${i.client} ${money(i.amount)} ${i.status === 'PAID' ? 'paid' : `open, due ${i.due}`}`),
+          invoices: a.business.invoices.map((i) => `${i.number} ${i.client} ${money(i.amount)} ${i.status === 'PAID' ? 'paid' : `already sent, not paid yet, due ${i.due}`}`),
         }),
+        ...(screen.open && { open: screen.open }),
+        ...(screen.seen && { seen: screen.seen }),
       };
       try {
         const res = await fetch('/api/agent', {
@@ -222,20 +224,6 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
     },
     [mode, connectorRef],
   );
-
-  /** A typed reply to the agent's open question, read by the model (/api/agent/read); null when it can't say. */
-  const read = useCallback(async (req: ReadRequest): Promise<Reading | null> => {
-    try {
-      const res = await fetch('/api/agent/read', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', ...visitorHeaders() },
-        body: JSON.stringify(req),
-      });
-      return ((await res.json()) as ReadResponse).reading ?? null;
-    } catch {
-      return null;
-    }
-  }, []);
 
   /** A tile: set up what the flow needs (silently), then put its line in the composer. */
   const handleAction = useCallback(
@@ -281,7 +269,6 @@ function useAccount(mode: Mode, connectorRef: MutableRefObject<ConnectorId>) {
     onDeclined,
     context,
     reply,
-    read,
     reset,
     dirty: entries.length > 0 || account.connected,
   };
@@ -335,5 +322,16 @@ export function useAgentsDemoLogic() {
     setOpened((all) => (all.includes(next) ? all : [...all, next]));
   }, []);
 
-  return { connector, selectConnector, mode, selectMode, switched, opened, accounts, active: accounts[mode] };
+  /** What they asked one account's agent for that belongs on the other: it's picked up there as their message. */
+  const [carried, setCarried] = useState<Partial<Record<Mode, { nonce: number; text: string }>>>({});
+  /** The agent takes them to their other account, as the switcher would. */
+  const switchAccount = useCallback(
+    (to: Mode, carry?: string) => {
+      selectMode(to);
+      if (carry) setCarried((all) => ({ ...all, [to]: { nonce: Date.now(), text: carry } }));
+    },
+    [selectMode],
+  );
+
+  return { connector, selectConnector, mode, selectMode, switchAccount, carried, switched, opened, accounts, active: accounts[mode] };
 }
