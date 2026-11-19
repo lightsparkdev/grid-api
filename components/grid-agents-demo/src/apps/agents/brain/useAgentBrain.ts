@@ -332,6 +332,8 @@ export function useAgentBrain({
   const typedSeq = useRef(0);
   /** The turn under way was started by something they typed (not by a tap or a step's report). */
   const reading = useRef(false);
+  /** The typed message the turn under way is reading. One typed later, while a step plays, isn't this turn's to answer for. */
+  const readingId = useRef<number | null>(null);
   /** They typed while a step was playing with no turn under way: the step's report starts the turn that answers. */
   const late = useRef(false);
   /** A tile's flow is about to start (their message is being read). */
@@ -1034,6 +1036,8 @@ export function useAgentBrain({
     }
     if (!answer) return { error: { error: 'not_an_answer', open: waitText(open.wait), fix: 'give what it asks for, or reply instead' } };
     const run = open.run;
+    // The message this turn read, taken now: by the time the answer goes in, they may have typed something else.
+    const said = readingId.current;
     return {
       spoke: () => false,
       start: async () => {
@@ -1045,8 +1049,7 @@ export function useAgentBrain({
         // Closed meanwhile (a tap got there first): nothing left to answer.
         if (openRef.current !== open || !open.settle) return { status: 'already_settled', note: 'they tapped it themselves just now' };
         // What they typed turned out to be the answer to this, not something new: what's on screen stays theirs to see.
-        const said = lastMe.current;
-        if (reading.current && said !== null) patch(said, (m) => (m.kind === 'me' ? { ...m, answers: true } : m));
+        if (said !== null) patch(said, (m) => (m.kind === 'me' ? { ...m, answers: true } : m));
         inWords.current = true;
         // A script doesn't report: it carries on with its own lines.
         if (!run.voiced) {
@@ -1128,6 +1131,7 @@ export function useAgentBrain({
     const overtaken = () => seq !== turnSeq.current || !alive.current;
     const c = cb.current;
     reading.current = !!read;
+    readingId.current = read ? lastMe.current : null;
     setBusy(true);
     if (read && c.readsFor > 0) await sleep(c.readsFor);
     if (overtaken()) return;
