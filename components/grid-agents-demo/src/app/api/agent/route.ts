@@ -41,17 +41,6 @@ const PROMISE =
 const PROMISED = new RegExp(`(?:[,;]?\\s*\\b(?:and|but|so|then|plus)\\s+)?${PROMISE.source}[^,.;!?]*`, 'gi');
 
 /** A line never promises what no tool does: the clause that does goes, and the rest of what it said stays. */
-/**
- * "On it" and "Got it" are how people spot a bot, and the model reaches for them however it's asked not to. As an
- * opener with more after it, or tacked on the end, the phrase goes and the line stands without it.
- */
-function stockless(reply: string): string {
-  const line = reply.trim();
-  const rest = line.replace(/^(?:on it|got it)\s*[.!,:;—–-]+\s*(?=\S)/i, '').replace(/[,—–-]\s*on it\s*([.!]?)$/i, '$1');
-  if (rest === line || !rest) return line;
-  return line[0] === line[0].toLowerCase() ? rest : rest[0].toUpperCase() + rest.slice(1);
-}
-
 function noPromises(reply: string): string {
   if (!PROMISE.test(reply)) return reply;
   const kept = reply
@@ -79,7 +68,7 @@ function clean(reply: string): string {
   return capped(
     stablecoinsOnly(
       noPromises(
-        stockless(reply)
+        reply
           .replace(/\bcrypto(?:currenc(?:y|ies))?\b/gi, (m) => (m[0] === 'C' ? 'Stablecoins' : 'stablecoins'))
           .replace(/```[\s\S]*?```/g, '')
           .replace(/`([^`]*)`/g, '$1')
