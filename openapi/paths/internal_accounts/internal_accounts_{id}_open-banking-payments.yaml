@@ -65,6 +65,14 @@ post:
               amount: 25000
               redirectUrl: https://app.example.com/top-up/return
   responses:
+    '200':
+      description: >-
+        The `Idempotency-Key` was already used to create this payment. The
+        payment created by the first request is returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/open_banking/OpenBankingPayment.yaml
     '201':
       description: Open banking payment created. Send the customer to its `authorizationUrl`.
       content:
