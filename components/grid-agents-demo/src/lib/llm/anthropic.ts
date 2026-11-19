@@ -31,7 +31,7 @@ const TOOLS = Object.fromEntries(
  * Claude, planning one step at a time: it must call at least one tool, and the calls come back for the phone to
  * carry out. The tools, the fixed instructions and the conversation so far are marked for caching.
  */
-export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL || MODEL): ModelAdapter {
+export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL || MODEL, onRetry?: () => void): ModelAdapter {
   return {
     async step({ system, turns, mode }: StepRequest): Promise<StepAnswer> {
       const started = Date.now();
@@ -59,6 +59,7 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
       // Only when it failed fast: after a long hang, a second wait would hold the person up twice as long.
       if ((!res || res.status === 429 || res.status >= 500) && Date.now() - started < RETRY_WITHIN_MS) {
         await new Promise((r) => setTimeout(r, RETRY_AFTER_MS));
+        onRetry?.();
         res = await ask();
       }
       if (!res) throw new Error('Anthropic: no response');

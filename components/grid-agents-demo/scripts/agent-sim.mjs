@@ -15,7 +15,7 @@
 // Needs the dev server up with the model on, and ANTHROPIC_API_KEY (read from .env.local) for the two models here.
 // Results land in .tmp-sweep/sim/<stamp>/: a transcript per conversation, and summary.json.
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 
 const args = process.argv.slice(2);
@@ -32,7 +32,8 @@ const MAX_MOVES = Number(option('moves', 26));
 const PLAYER = option('player', 'claude-sonnet-5-5');
 const JUDGE = option('judge', 'claude-sonnet-5-5');
 const ROOT = new URL('..', import.meta.url).pathname;
-const KEY = process.env.ANTHROPIC_API_KEY ?? readFileSync(`${ROOT}.env.local`, 'utf8').match(/^ANTHROPIC_API_KEY=(.+)$/m)?.[1]?.trim().replace(/^["']|["']$/g, '');
+// Read only if it's there: listing the conversations needs no key.
+const KEY = process.env.ANTHROPIC_API_KEY ?? (existsSync(`${ROOT}.env.local`) ? readFileSync(`${ROOT}.env.local`, 'utf8') : '').match(/^ANTHROPIC_API_KEY=(.+)$/m)?.[1]?.trim().replace(/^["']|["']$/g, '');
 
 const APPS = ['Muse', 'Grok Bot', 'Dots', 'Instinct', 'Duet', 'Your agent'];
 /** Each app's id, for reading its line out of a message written once per app. */

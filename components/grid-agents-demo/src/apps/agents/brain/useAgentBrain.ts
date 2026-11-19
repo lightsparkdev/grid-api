@@ -110,6 +110,8 @@ interface Open {
   run: Run;
   wait: Wait;
   shown: boolean;
+  /** How many messages they had typed when it went on screen: an approval needs one typed after that. */
+  typedAt?: number;
   reveal: () => void;
   settle?: (given: Given) => void;
 }
@@ -179,7 +181,7 @@ function exactOption(text: string, labels: string[]) {
  * What a typed reply settles when it's exactly a tap. A flow playing as a script has no model to read anything else,
  * so there a typed name is the name.
  */
-function tapFor(text: string, wait: Wait, voiced: boolean): Given {
+function tapFor(text: string, wait: Wait, voiced: boolean, most: number): Given {
   switch (wait.kind) {
     case 'approval':
       if (voiced) return null;
@@ -191,7 +193,8 @@ function tapFor(text: string, wait: Wait, voiced: boolean): Given {
     case 'amount': {
       const m = BARE_AMOUNT.exec(text);
       const amount = m ? Number(m[1].replace(/,/g, '')) : 0;
-      return amount > 0 ? { amount } : null;
+      // Over the ceiling, it isn't a plain tap: the model says why not.
+      return amount > 0 && amount <= most ? { amount } : null;
     }
     case 'name': {
       if (exactOption(text, [wait.suggestion]) === 0) return { name: wait.suggestion };
@@ -312,6 +315,10 @@ export function useAgentBrain({
   const inWords = useRef(false);
   /** Turns queued or under way. */
   const pending = useRef(0);
+  /** Messages they've typed, counted: what an approval is checked against. */
+  const typedSeq = useRef(0);
+  /** The turn under way was started by something they typed (not by a tap or a step's report). */
+  const reading = useRef(false);
   /** They typed while a step was playing with no turn under way: the step's report starts the turn that answers. */
   const late = useRef(false);
   /** A tile's flow is about to start (their message is being read). */
@@ -519,6 +526,7 @@ export function useAgentBrain({
       if (run.cancelled) return null;
     }
     open.shown = true;
+    open.typedAt = typedSeq.current;
     put();
     setBusy(false);
     return open;
@@ -938,7 +946,7 @@ export function useAgentBrain({
     if (!open) return undefined;
     return open.shown
       ? `open and waiting on them: ${waitText(open.wait)}. If what they just typed answers it in any words (a yes or a no, which one, how much, the name), call answer for them: don’t tell them to tap, and don’t call the tool that opened it again. A no, or asking you to cancel or close it, is answer with decline: you close it for them, whether or not it has a button for that. A question about it is neither: answer the question, and it stays open.`
-      : `about to appear once your line is out (they can’t see it yet): ${waitText(open.wait)}. Lead into it with reply; only if they’ve already said exactly what it asks for, call answer with that instead.`;
+      : `about to appear once your line is out (they can’t see it yet): ${waitText(open.wait)}. Lead into it with reply; only if they’ve already said exactly what it asks for (a name, an amount, which one), call answer with that instead. An approval is never answered before they’ve seen it.`;
   };
 
   /** The model answers what's open from what the person typed: it settles as a tap would, and the flow reports on. */
@@ -962,6 +970,17 @@ export function useAgentBrain({
         },
       };
     }
+    // Only the person approves. The model can pass on a yes, and only one they typed after the approval was in front
+    // of them, in the message this turn is answering: never on a turn a tap or a step's report started, never for
+    // something they haven't seen, and one yes approves one thing.
+    if (open.wait.kind === 'approval' && i.decision === 'approve') {
+      if (!open.shown) return { error: { error: 'not_seen_yet', fix: 'they haven’t seen this yet, so they can’t have approved it: lead into it with reply, and they approve it once it’s up' } };
+      if (!reading.current || typedSeq.current <= (open.typedAt ?? Infinity)) {
+        return { error: { error: 'not_theirs_yet', fix: 'only they approve this, and they haven’t said yes to it since it came up: lead into it with reply, or wait for them' } };
+      }
+    }
+    // An amount typed in answer is held to the same ceiling as the tools that take one.
+    const most = mode === 'business' ? 100_000 : 10_000;
     const option = typeof i.option === 'number' && Number.isInteger(i.option) ? i.option - 1 : -1;
     let answer: Given = null;
     switch (open.wait.kind) {
@@ -973,6 +992,7 @@ export function useAgentBrain({
         break;
       case 'amount': {
         const amount = positive(i.amount_usd) ?? open.wait.options[option];
+        if (amount && amount > most) return { error: { error: 'too_much', fix: `at most $${most.toLocaleString('en-US')} here: say so, and ask for a smaller amount` } };
         answer = amount ? { amount: Math.round(amount * 100) / 100 } : null;
         break;
       }
@@ -1078,6 +1098,7 @@ export function useAgentBrain({
     const seq = turnSeq.current;
     const overtaken = () => seq !== turnSeq.current || !alive.current;
     const c = cb.current;
+    reading.current = !!read;
     setBusy(true);
     if (read && c.readsFor > 0) await sleep(c.readsFor);
     if (overtaken()) return;
@@ -1213,6 +1234,7 @@ export function useAgentBrain({
     request.current = { text, answered: false };
     grouped.current = null;
     typed(log.current, meant);
+    if (!heard.flow) typedSeq.current += 1;
     // Where they typed it is something the model can't see: while a name or an amount is asked for, the message field
     // itself says so ("Type a name"), so what goes into it is that, whatever else it reads like.
     const asked = !heard.flow && openRef.current?.shown ? openRef.current.wait.kind : null;
@@ -1295,7 +1317,7 @@ export function useAgentBrain({
     const open = openRef.current?.shown && openRef.current.settle ? openRef.current : null;
     if (open) {
       // Exactly what a tap would send: it settles what's open, as the tap would.
-      const tap = tapFor(text, open.wait, open.run.voiced);
+      const tap = tapFor(text, open.wait, open.run.voiced, mode === 'business' ? 100_000 : 10_000);
       if (tap) {
         setComposer('');
         push({ kind: 'me', text });

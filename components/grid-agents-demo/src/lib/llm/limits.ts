@@ -98,6 +98,9 @@ async function dailyCap(): Promise<LimitResult> {
   return all > PER_DAY ? 'daily' : 'ok';
 }
 
+/** Count a second provider call made for one request (a retry), so the day's cap counts every call sent. */
+export const countRetry = (): Promise<void> => dailyCap().then(() => undefined);
+
 /** Count one web price lookup; past the day's cap the shelf prices from the model's estimate instead. */
 export async function takeLookup(): Promise<boolean> {
   return (await bump(`lookups:${today()}`, 26 * 60 * 60)) <= LOOKUPS_PER_DAY;

@@ -4,7 +4,7 @@ import { BANK_COUNTRIES } from '@/data/bankCountries';
 import { CONNECTORS, type ConnectorId } from '@/data/connectors';
 import { cleanName, type Mode } from '@/data/mode';
 import { anthropicAdapter } from '@/lib/llm/anthropic';
-import { takeStep, takeTurn } from '@/lib/llm/limits';
+import { countRetry, takeStep, takeTurn } from '@/lib/llm/limits';
 import { sameOrigin } from '@/lib/llm/origin';
 import { lookUpPrice } from '@/lib/llm/priceLookup';
 import { systemPrompt, type PromptState } from '@/lib/llm/prompt';
@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
   };
 
   try {
-    const { calls } = await anthropicAdapter(key).step({ system: systemPrompt(connector, state), turns, mode });
+    const { calls } = await anthropicAdapter(key, undefined, () => void countRetry()).step({ system: systemPrompt(connector, state), turns, mode });
     const names = namesIn(state, turns, calls);
     const keep = new Set([...names.people, ...names.businesses].flatMap(capitalized));
     // A lowercase app's line is held to its casing, names kept; the rest go as written.
