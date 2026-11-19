@@ -86,11 +86,11 @@ const num = (description: string) => ({ type: 'number', description });
 const voices = { properties: Object.fromEntries(CONNECTOR_IDS.map((c) => [c, { type: 'string' }])), required: CONNECTOR_IDS };
 /** What a reply says: the one message, once per app. */
 const line = { type: 'object', description: 'Your message, written once per app in that app’s own voice: the same meaning, facts, amounts and question in each.', ...voices };
-/** A word before a tool's work, for the rare time there's something to say first. */
+/** The agent's word as it sets off to do what they asked. */
 const say = {
   type: 'object',
   description:
-    'Usually leave this out: the app shows what you’re doing, and you speak once the result is in. Only for something they need to hear before the work (a part of what they asked that you can’t do). Once per app, in each app’s voice.',
+    'Your acknowledgement of what they just asked, as you set off to do it: a few words, the way a person answers a request before going to do it. On the first tool of your answer to something they typed, and only there. Once per app, in each app’s voice.',
   ...voices,
 };
 
