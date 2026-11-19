@@ -557,11 +557,24 @@ function sendPayment(env: ToolEnv, call: ToolCall): Outcome {
   const { payee } = rec.quote;
   const result: ToolResult = {};
   const ctx = approvedFor(env, id);
+  const facts = (): ToolResult => ({ status: rec.params.every === 'month' ? 'scheduled' : 'sent', to: rec.recipient.first, they_receive: payee.local, you_paid_usd: usd(payee.usd), ...(rec.params.every === 'month' && { every_month_on_day: rec.params.day ?? 1 }) });
   const sent = record(result, () => {
+    // Reached the end: it went out, whatever the ledger shows (a monthly payment is scheduled, not settled).
     env.memory.sent.add(id);
-    return { status: rec.params.every === 'month' ? 'scheduled' : 'sent', to: rec.recipient.first, they_receive: payee.local, you_paid_usd: usd(payee.usd), ...(rec.params.every === 'month' && { every_month_on_day: rec.params.day ?? 1 }) };
+    return facts();
   });
-  const go = (c: FlowContext): Beat[] => [...paySend(c, rec.quote, rec.params), sent];
+  const go = (c: FlowContext): Beat[] => {
+    // The quote is marked paid the moment its money moves, not after the receipt: a tile tapped during the sending
+    // animation cuts the rest short, and the same quote must not pay again. Counted from here, after any top-up.
+    const before = c.account();
+    const moved = record(result, () => {
+      if (!settledSince(env, before).length) return {};
+      env.memory.sent.add(id);
+      // In the result from this moment, so a step cut short after it still reports that the money went.
+      return facts();
+    });
+    return [...paySend(c, rec.quote, rec.params, moved), sent];
+  };
   // The quote goes on screen once; then today's ask to raise the limit if it's over, and the top-up if it's short.
   const afterQuote = (): Beat[] => {
     const shown = env.memory.shown.has(id);

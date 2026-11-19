@@ -839,7 +839,13 @@ export function useAgentBrain({
           // told, so its turn ends and the turns queued behind it can run.
           const taker = run.taker;
           run.taker = undefined;
-          taker?.({ status: 'cut_short', note: 'something else took its place before this finished: what follows says what' });
+          // What it had done by then (a payment that already went out) is still what happened.
+          taker?.({
+            status: 'cut_short',
+            ...run.result,
+            note: 'something else took its place before this finished showing: anything above had already happened, nothing after it did, and what follows says what took its place',
+            account: accountNow(cb.current.context().account()),
+          });
           return;
         }
         if (runRef.current === run) runRef.current = null;

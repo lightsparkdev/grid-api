@@ -681,16 +681,21 @@ export function payQuote(r: Recipient, p: FlowParams) {
 }
 
 /** A quoted payment going out: sent on the agent's authority under the threshold, held for the person above it. */
-export function paySend(c: FlowContext, quote: ReturnType<typeof payQuote>, p: FlowParams): Beat[] {
+export function paySend(c: FlowContext, quote: ReturnType<typeof payQuote>, p: FlowParams, moved?: Beat): Beat[] {
   const sent = { ...quote.params, balance: c.account().balanceCents };
+  // `moved` runs straight after each step that can move the money (executing it under the limit, approving it over),
+  // before any line or animation that a tap could cut short.
+  const check = moved ? [moved] : [];
   return [
     { emit: { type: 'pay.execute' } },
+    ...check,
     ...approvalOr(
       c,
       c.needsApproval(quote.payee.usd),
       { key: 'pay', params: sent },
       'pay.auto',
       [
+        ...check,
         { work: 'sending', ms: 1000 },
         { card: 'receipt.pay', params: sent },
         ...(p.every === 'month'
