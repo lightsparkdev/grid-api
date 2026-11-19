@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, type Transition } from 'motion/react';
-import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
+import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconArrowUp';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconChevronGrabberVertical } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronGrabberVertical';
 import { IconClock } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconClock';
@@ -80,21 +80,15 @@ const grokScroll = (cause: ScrollCause): ScrollCurve =>
   cause === 'typing' ? 'snap' : { ms: 280, ease: [0.28, 0.05, 0.65, 1] };
 
 /**
- * A Grok bubble: a pill while it's one line, 20pt corners once it wraps (ChatFrame shapes it), and
- * tighter corners where it meets another bubble from the same sender.
+ * A Grok bubble: a pill while it's one line, 18pt corners once it wraps (ChatFrame shapes it), the same on every
+ * corner: bubbles from the same sender don't tighten where they meet.
  */
-function Bubble({ className, up, down, children }: { className: string; up: boolean; down: boolean; children: ReactNode }) {
+function Bubble({ className, children }: { className: string; children: ReactNode }) {
   return (
-    <div className={className} data-bubble data-up={up || undefined} data-down={down || undefined}>
+    <div className={className} data-bubble>
       {children}
     </div>
   );
-}
-
-/** Whether the bubble above or below is the same sender's. */
-function neighbors(i: number, all: Message[], kind: 'them' | 'me') {
-  const same = (m?: Message) => !!m && m.kind === kind && !(m.kind === 'them' && m.typing);
-  return { up: same(all[i - 1]), down: same(all[i + 1]) };
 }
 
 /** The status label with Grok's dark shimmer band sweeping across it. */
@@ -431,7 +425,7 @@ export function GrokChat({ chat }: AgentChatProps) {
         return (
           <>
             {m.sender && <span className={styles.sender}>{m.sender}</span>}
-            <Bubble className={styles.bubble} {...neighbors(i, all, 'them')}>
+            <Bubble className={styles.bubble}>
               {m.text}
             </Bubble>
           </>
@@ -439,7 +433,7 @@ export function GrokChat({ chat }: AgentChatProps) {
       case 'me':
         return (
           <span className={styles.meWrap} data-reacted={m.react ? true : undefined}>
-            <Bubble className={styles.me} {...neighbors(i, all, 'me')}>
+            <Bubble className={styles.me}>
               {m.text}
             </Bubble>
             {m.react && <Reaction emoji={m.react} still={reactedAtOpen(`react-${m.id}`)} />}

@@ -3,6 +3,7 @@ import { AnimatePresence, motion, type Transition } from 'motion/react';
 import { IconArrowCornerDownRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowCornerDownRight';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
 import { IconCheckCircle2 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckCircle2';
+import { IconCheckmark1 as IconCheckBold } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCheckmark1';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconChevronDownSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronDownSmall';
 import { IconCreditCard1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCard1';
@@ -85,7 +86,9 @@ function Markdown({ text }: { text: string }) {
 
 /** What dot found, as its markdown list. Only what was found: which one it would pick is the agent's to say. */
 function productsText(products: Product[]) {
-  return products.map((p) => `- **${p.title}**, ${p.price} at ${p.merchant}`).join('\n');
+  const line = (p: Product) => `**${p.title}**, ${p.price} at ${p.merchant}`;
+  // One thing is a line, not a list of one.
+  return products.length === 1 ? line(products[0]) : products.map((p) => `- ${line(p)}`).join('\n');
 }
 
 /** Dots' mark: the blue blob, as the logo in its sheets and pills. */
@@ -111,7 +114,7 @@ function Pill({ m, lead, label, done, onOpen }: { m: Ask; lead: ReactNode; label
       {pending ? (
         <i className={styles.spinner} />
       ) : state === 'done' ? (
-        <IconCheckmark1 size={18} className={styles.pillCheck} />
+        <IconCheckBold size={18} className={styles.pillCheck} />
       ) : state === 'open' ? (
         <span className={styles.chevron} />
       ) : null}

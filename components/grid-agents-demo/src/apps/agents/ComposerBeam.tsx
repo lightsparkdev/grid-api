@@ -31,21 +31,37 @@ function usePillOutline(host: RefObject<HTMLDivElement>) {
       return pill && pill !== el ? pill : null;
     };
     let found: HTMLElement | null = null;
-    const ro = new ResizeObserver(() => measure());
     const measure = () => {
       if (!found) return;
       const h = el.getBoundingClientRect();
       const r = found.getBoundingClientRect();
       // The phone is scaled to fit the page; positions inside it are in its own px.
       const scale = h.width / el.offsetWidth || 1;
-      setBox({
+      const next = {
         left: (r.left - h.left) / scale,
         top: (r.top - h.top) / scale,
         width: r.width / scale,
         height: r.height / scale,
         radius: parseFloat(getComputedStyle(found).borderTopLeftRadius),
-      });
+      };
+      setBox((prev) =>
+        prev && (Object.keys(next) as (keyof Box)[]).every((k) => Math.abs(prev[k] - next[k]) < 0.25) ? prev : next,
+      );
     };
+    // A pill that grows by a layout animation (Grok's composer turning into a card) resizes once, at the start, while
+    // a transform still holds it at its old size: follow it frame by frame until the animation has settled.
+    let raf = 0;
+    let until = 0;
+    const follow = () => {
+      until = performance.now() + 800;
+      if (raf) return;
+      const tick = () => {
+        measure();
+        raf = performance.now() < until ? requestAnimationFrame(tick) : 0;
+      };
+      raf = requestAnimationFrame(tick);
+    };
+    const ro = new ResizeObserver(follow);
     // The skin's field can arrive after the first paint (and a skin can redraw its pill): look again when it does.
     const look = () => {
       const pill = pillOf();
@@ -62,6 +78,7 @@ function usePillOutline(host: RefObject<HTMLDivElement>) {
     return () => {
       mo.disconnect();
       ro.disconnect();
+      cancelAnimationFrame(raf);
     };
   }, [host]);
   return box;

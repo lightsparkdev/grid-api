@@ -579,6 +579,16 @@ $theirs: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
     margin-top: 28px;
   }
 
+  // Under an inline reply, the cloud lands in the reply's thread instead: the thread runs long enough to clear it,
+  // and the row doesn't open above the quote.
+  &[data-tapped]:has(.replyTo) {
+    margin-top: 0;
+
+    .thread {
+      height: 34px;
+    }
+  }
+
   .me {
     transform-origin: 100% 100%;
   }

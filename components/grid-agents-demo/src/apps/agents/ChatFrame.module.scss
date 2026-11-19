@@ -85,6 +85,9 @@
   align-self: flex-end;
   min-width: 0;
   caret-color: #0a84ff;
+  // As you type, a line breaks where it runs out of room: the screen's pretty wrapping would rebalance the earlier
+  // lines with every keystroke.
+  text-wrap: wrap;
 }
 
 .field {

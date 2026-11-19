@@ -10,8 +10,8 @@ import styles from './glass.module.scss';
  * iOS 27 hairline rim on top. A displacement lens can only bend a static copy.
  */
 const TINT = 'var(--chat-glass-tint)';
-/** iOS's blue button glass, measured flat at its center. */
-const BLUE = '#3672eb';
+/** iOS's blue button glass, measured flat at its center (Display P3, as the phone renders it). */
+const BLUE = 'color(display-p3 0.075 0.435 0.831)';
 const BLUR = 3;
 /** iOS continuous corners, the chat bubbles' smoothing (styles/_corners.scss): a capsule's ends ease off its long edges. */
 const SMOOTHING = 0.6;
@@ -85,6 +85,40 @@ const PROMINENT_CAPS = [
   [0.14, 0.55],
   [0.3, 0],
 ] as const;
+/**
+ * iOS's blue button edge, measured on a 3x capture: a 1pt cyan line on the top and bottom (full at the outer pixel,
+ * ~0.68 then ~0.46 across the next two) over a faint glow gone by ~7pt. Nested inset bands (depth, opacity) of one
+ * color, which stack to those levels.
+ */
+const BLUE_LINE = 'color(display-p3 0.184 0.718 1)';
+const BLUE_BANDS = [
+  [7, 0.03],
+  [4, 0.05],
+  [2, 0.08],
+  [1, 0.36],
+  [0.67, 0.41],
+  [0.33, 1],
+] as const;
+/** ...strongest on the very top and bottom, faded by ~30° round the ends: (offset down the glass, opacity), mirrored. */
+const BLUE_CAPS = [
+  [0, 1],
+  [0.07, 0.6],
+  [0.15, 0.35],
+  [0.25, 0.18],
+  [0.38, 0],
+] as const;
+/**
+ * ...and a near-black hairline just outside the ends, taking over as the line fades (offset down the glass, opacity),
+ * mirrored. Outside, so the blue keeps its full outline: drawn inside, it pinches the ends in.
+ */
+const BLUE_RING = 0.6;
+const BLUE_RING_CAPS = [
+  [0, 0],
+  [0.05, 0.1],
+  [0.14, 0.7],
+  [0.25, 0.9],
+  [0.5, 0.9],
+] as const;
 /** Dark rim: ~29% white on the outer device pixel, falling to ~6% over the next two... */
 const DARK_BANDS = [
   [0.33, 0.14],
@@ -112,7 +146,7 @@ type Stops = readonly (readonly [number, number])[];
  * The rim, traced on the glass's own outline so it follows the continuous corners: each band is a stroke of that
  * outline clipped to its inside (an exact inset band), lit on the caps and faded to nothing on the sides.
  */
-function GlassRim({ radius, prominent }: { radius: number; prominent?: boolean }) {
+function GlassRim({ radius, prominent, fill, tone }: { radius: number; prominent?: boolean; fill?: string; tone?: 'blue' }) {
   const id = useId().replace(/:/g, '');
   const ref = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState<[number, number] | null>(null);
@@ -175,23 +209,41 @@ function GlassRim({ radius, prominent }: { radius: number; prominent?: boolean }
           ))}
         </linearGradient>
         {vertical('feather', '#fff', FEATHER, FEATHER)}
+        {caps('blueLine', BLUE_LINE, BLUE_CAPS)}
+        {caps('blueRing', '#000', BLUE_RING_CAPS)}
       </defs>
-      <g clipPath={`url(#${id}in)`} className={styles.rimLight}>
-        {prominent ? (
-          PROMINENT_BANDS.map(([depth, o]) => band('prominentGlow', depth, o))
-        ) : (
-          <>
+      {/* Filled glass keeps its own glow in either theme: the dark set's white hairlines are for clear glass, and on a
+          solid fill they read as thin, broken highlights. */}
+      {prominent ? (
+        <>
+          {/* Under the fill, so only its outer half shows. */}
+          {tone === 'blue' && <path d={d} fill="none" stroke={`url(#${id}blueRing)`} strokeWidth={BLUE_RING * 2} />}
+          <g clipPath={`url(#${id}in)`}>
+            {fill && <path d={d} style={{ fill }} />}
+            {tone === 'blue' ? (
+              BLUE_BANDS.map(([depth, o]) => band('blueLine', depth, o))
+            ) : (
+              <>
+                {PROMINENT_BANDS.map(([depth, o]) => band('prominentGlow', depth, o))}
+                <path d={d} fill="none" stroke={`url(#${id}ring)`} strokeWidth={LIGHT_RING * 2} />
+              </>
+            )}
+          </g>
+        </>
+      ) : (
+        <>
+          <g clipPath={`url(#${id}in)`} className={styles.rimLight}>
             <path d={d} fill={`url(#${id}lift)`} />
             <path d={d} fill="none" stroke={`url(#${id}glow)`} strokeWidth={LIGHT_GLOW.depth * 2} filter={`url(#${id}soft)`} />
             <path d={d} fill="none" stroke={`url(#${id}line)`} strokeWidth={LIGHT_LINE.depth * 2} strokeOpacity={LIGHT_LINE.opacity} />
-          </>
-        )}
-        <path d={d} fill="none" stroke={`url(#${id}ring)`} strokeWidth={LIGHT_RING * 2} />
-      </g>
-      <g clipPath={`url(#${id}in)`} className={styles.rimDark}>
-        <path d={d} fill={`url(#${id}feather)`} />
-        {DARK_BANDS.map(([depth, o]) => band('band', depth, o))}
-      </g>
+            <path d={d} fill="none" stroke={`url(#${id}ring)`} strokeWidth={LIGHT_RING * 2} />
+          </g>
+          <g clipPath={`url(#${id}in)`} className={styles.rimDark}>
+            <path d={d} fill={`url(#${id}feather)`} />
+            {DARK_BANDS.map(([depth, o]) => band('band', depth, o))}
+          </g>
+        </>
+      )}
     </svg>
   );
 }
@@ -229,12 +281,14 @@ export function GlassPill({
     <FrostPanel
       radius={radius}
       shape={shape}
-      tint={tint}
-      tintBlur={blur}
+      // A solid fill has nothing to frost, and a clip-path'd backdrop blur loses its edge antialiasing (stair-stepped
+      // curves on Retina), so the rim's SVG paints it instead.
+      tint={prominent ? 'transparent' : tint}
+      tintBlur={prominent ? 0 : blur}
       edge="none"
-      className={`${styles.pill} ${tone === 'blue' ? styles.blue : ''} ${className ?? ''}`}
+      className={`${styles.pill} ${className ?? ''}`}
       style={{ borderRadius: radius, ...(absolute && { position: 'absolute' }), ...style }}
-      overlay={<GlassRim radius={radius} prominent={prominent} />}
+      overlay={<GlassRim radius={radius} prominent={prominent} fill={prominent ? tint : undefined} tone={tone} />}
     >
       {children}
     </FrostPanel>

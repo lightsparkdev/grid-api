@@ -699,10 +699,18 @@ $groups: '[data-kind="them"], [data-kind="card"], [data-kind="chips"], [data-kin
   }
 
   &[data-done] {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
     background: var(--part-done);
     color: var(--part-done-text);
     cursor: default;
   }
+}
+
+.allowCheck {
+  flex: none;
 }
 
 .legal {

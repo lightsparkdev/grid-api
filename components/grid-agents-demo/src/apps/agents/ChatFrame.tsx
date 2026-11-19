@@ -47,7 +47,9 @@ function useStickToEnd(
   scroller: React.RefObject<HTMLDivElement>,
   content: React.RefObject<HTMLDivElement>,
   curveFor: React.MutableRefObject<() => ScrollCurve>,
-) {
+): React.MutableRefObject<() => void> {
+  /** Follow the foot now: for growth the observers can't see (a skin's room for its composer). */
+  const nudge = useRef(() => {});
   useEffect(() => {
     const el = scroller.current;
     const inner = content.current;
@@ -117,6 +119,7 @@ function useStickToEnd(
     const ro = new ResizeObserver(follow);
     ro.observe(inner);
     ro.observe(el);
+    nudge.current = follow;
     follow();
     el.dataset.ready = '1';
     el.addEventListener('scroll', onScroll, { passive: true });
@@ -134,8 +137,10 @@ function useStickToEnd(
       el.removeEventListener('touchmove', gestured);
       el.removeEventListener('pointerdown', onPointer);
       el.removeEventListener('keydown', onKey);
+      nudge.current = () => {};
     };
   }, [scroller, content, curveFor]);
+  return nudge;
 }
 
 /**
@@ -401,7 +406,7 @@ export function ChatFrame({
     followed.current = lastKey;
     return scroll?.(fresh ? cause : 'grow') ?? DEFAULT_SCROLL;
   };
-  useStickToEnd(threadRef, stackRef, curveFor);
+  const followFoot = useStickToEnd(threadRef, stackRef, curveFor);
   useBubbleShapes(stackRef);
   const screenRef = useRef<HTMLDivElement>(null);
   useWheelThrough(screenRef, threadRef);
@@ -417,6 +422,8 @@ export function ChatFrame({
     ro.observe(el);
     return () => ro.disconnect();
   }, [composerHeight]);
+  // Once the foot has risen with the composer, the thread follows it up, as it does for a new message.
+  useLayoutEffect(() => followFoot.current(), [composerH, followFoot]);
   return (
     <div
       ref={screenRef}

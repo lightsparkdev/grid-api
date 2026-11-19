@@ -4,6 +4,7 @@ import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke
 import { IconFileText } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconFileText';
 import { IconArrowUpRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpRight';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
+import { IconCheckmark1 as IconCheckBold } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconCheckmark1';
 import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
 import { IconSquareBehindSquare1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare1';
 import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
@@ -411,6 +412,7 @@ function ApprovalCard({
           disabled={!ready || b.settled || b.pressing}
           onClick={onAllow}
         >
+          {state === 'done' && <IconCheckBold size={18} className={styles.allowCheck} />}
           <TextMorph {...MORPH}>{b.allowLabel}</TextMorph>
         </button>
       </div>
