@@ -69,13 +69,15 @@ export interface ToolMemory {
   approved: Set<string>;
   /** Quotes already on screen: sending one again doesn't show it twice. */
   shown: Set<string>;
+  /** Quotes whose payment went out: a quote pays once. */
+  sent: Set<string>;
   /** The company's name and the owner's, as far as they've given them. */
   naming: { company?: string; owner?: string };
   /** The team budget they asked for, USD: read when its approval is built, so it can change until then. */
   budget?: number;
 }
 
-export const newToolMemory = (): ToolMemory => ({ seq: 0, options: new Map(), quotes: new Map(), stays: new Map(), approved: new Set(), shown: new Set(), naming: {} });
+export const newToolMemory = (): ToolMemory => ({ seq: 0, options: new Map(), quotes: new Map(), stays: new Map(), approved: new Set(), shown: new Set(), sent: new Set(), naming: {} });
 
 export type Outcome = { error: ToolResult } | { beats: Beat[]; result: ToolResult };
 
@@ -548,10 +550,17 @@ function sendPayment(env: ToolEnv, call: ToolCall): Outcome {
   const q = quoted(env, call.input);
   if ('error' in q || 'beats' in q) return q;
   const { id, rec } = q;
+  // A quote pays once: sending its ID again would price and execute a second payout.
+  if (env.memory.sent.has(id)) {
+    return fail('already_sent', { to: rec.recipient.first, fix: 'this quote’s payment already went out: say so. If they want to send the same again, ask first, then pass the details (name, amount) for a new payment, not this quote_id' });
+  }
   const { payee } = rec.quote;
   const result: ToolResult = {};
   const ctx = approvedFor(env, id);
-  const sent = record(result, () => ({ status: rec.params.every === 'month' ? 'scheduled' : 'sent', to: rec.recipient.first, they_receive: payee.local, you_paid_usd: usd(payee.usd), ...(rec.params.every === 'month' && { every_month_on_day: rec.params.day ?? 1 }) }));
+  const sent = record(result, () => {
+    env.memory.sent.add(id);
+    return { status: rec.params.every === 'month' ? 'scheduled' : 'sent', to: rec.recipient.first, they_receive: payee.local, you_paid_usd: usd(payee.usd), ...(rec.params.every === 'month' && { every_month_on_day: rec.params.day ?? 1 }) };
+  });
   const go = (c: FlowContext): Beat[] => [...paySend(c, rec.quote, rec.params), sent];
   // The quote goes on screen once; then today's ask to raise the limit if it's over, and the top-up if it's short.
   const afterQuote = (): Beat[] => {
