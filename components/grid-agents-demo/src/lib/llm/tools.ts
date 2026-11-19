@@ -290,8 +290,8 @@ export const TOOL_DEFS: ToolDef[] = [
     purpose: str('What it’s for, a few words, only if they said ("travel").'),
   }, ['name']),
   tool('send_invoice', 'Write an invoice in the app and send it to a client, with the business’s bank details and the invoice number on it; the app matches the client’s bank transfer to it when it lands.', {
-    client: str('Who’s paying: the client, as they named them.'),
-    amount_usd: num('How much, USD.'),
+    client: str('Who’s paying: the client, as the owner just named them. Never taken from an invoice already on the account: if they haven’t said who, ask.'),
+    amount_usd: num('How much, USD, as the owner said. If they haven’t said, ask.'),
     memo: str('What it’s for, a few words, only if they said.'),
   }, ['client', 'amount_usd']),
   tool('list_invoices', 'Show the invoices: which are paid and which are still open, with a reminder to send for an open one.', {}),

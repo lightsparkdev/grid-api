@@ -777,10 +777,14 @@ function setTeamBudget(env: ToolEnv, call: ToolCall): Outcome {
   if (missing) return missing;
   const monthly = positive(call.input.monthly_usd, 50_000);
   const already = env.ctx.account().business?.budget;
-  const result: ToolResult = {};
+  const empty = !env.ctx.account().business?.team.length;
+  const result: ToolResult = {
+    ...(empty && { not_yet: 'nothing is set and nothing is up for approval yet: the budget’s approval comes up once someone is on the team, which is what this is asking for first' }),
+  };
   const set = record(result, () => {
     const now = env.ctx.account().business;
     if (!now?.budget) return {};
+    result.not_yet = undefined;
     const facts = { monthly_usd: usd(now.budget), team: now.team.map((m) => m.name) };
     // Set once: there's nowhere to change it, here or anywhere they could be pointed to.
     return already ? { status: 'already_set_up', ...facts, ...(monthly && monthly * 100 !== already && { cannot_change: 'the budget can’t be changed once it’s set: say so plainly, and don’t send them anywhere else to do it' }) } : { status: 'set_up', ...facts };

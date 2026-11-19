@@ -8,6 +8,9 @@ const MODEL: string = MODELS.haiku;
 
 const MAX_TOKENS = 1500;
 const TIMEOUT_MS = 15_000;
+/** How long to wait before asking the provider once more after it failed. */
+const RETRY_AFTER_MS = 700;
+const RETRY_WITHIN_MS = 6_000;
 
 /** The last block of the conversation marked for caching, so the next step only pays full price for what's new. */
 function cachedTurns(turns: Turn[]) {
@@ -32,7 +35,8 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
   return {
     async step({ system, turns, mode }: StepRequest): Promise<StepAnswer> {
       const started = Date.now();
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const ask = () =>
+        fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
         signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -49,6 +53,15 @@ export function anthropicAdapter(apiKey: string, model = process.env.AGENT_MODEL
           tool_choice: { type: /sonnet|opus/.test(model) ? 'auto' : 'any' },
         }),
       });
+      // A dropped connection, an overloaded provider or a rate limit usually clears in a moment: it's asked once more
+      // before the person gets the app's "can't chat right now" line.
+      let res = await ask().catch(() => null);
+      // Only when it failed fast: after a long hang, a second wait would hold the person up twice as long.
+      if ((!res || res.status === 429 || res.status >= 500) && Date.now() - started < RETRY_WITHIN_MS) {
+        await new Promise((r) => setTimeout(r, RETRY_AFTER_MS));
+        res = await ask();
+      }
+      if (!res) throw new Error('Anthropic: no response');
       if (!res.ok) throw new Error(`Anthropic ${res.status}: ${(await res.text()).slice(0, 300)}`);
       const data = (await res.json()) as { content?: { type: string; id?: string; name?: string; input?: unknown; text?: string }[]; usage?: Record<string, number> };
       const u = data.usage ?? {};

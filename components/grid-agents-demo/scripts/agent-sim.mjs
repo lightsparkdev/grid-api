@@ -108,7 +108,8 @@ async function ask(model, system, user, max = 1500, quick = false) {
   let why = '';
   // The person's next move needs no thinking, and thinking can use up the whole answer: off, where the model takes it.
   let thinking = quick ? { thinking: { type: 'between_tools' } } : {};
-  for (let attempt = 0; attempt < 6; attempt++) {
+  // Ten tries, waiting longer each time: a provider blip of a minute or two shouldn't end a conversation.
+  for (let attempt = 0; attempt < 10; attempt++) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': KEY, 'anthropic-version': '2023-06-01' },
@@ -128,7 +129,7 @@ async function ask(model, system, user, max = 1500, quick = false) {
     // Busy or rate-limited: wait longer each time before asking again.
     await new Promise((r) => setTimeout(r, 2500 * (attempt + 1)));
   }
-  console.error(`  (${model} gave no answer after 6 tries: ${why})`);
+  console.error(`  (${model} gave no answer after 10 tries: ${why})`);
   return null;
 }
 

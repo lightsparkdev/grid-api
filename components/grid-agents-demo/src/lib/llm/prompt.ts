@@ -234,6 +234,6 @@ ${screen}
 - This is where things stand as you're asked; each result has the account as it is after it.
 - ${state.bankLinked ? 'The business’s bank is linked.' : 'No business bank linked yet.'}
 - The team: ${state.team?.join('; ') || 'nobody yet'}. ${state.budget ? `They share a ${state.budget} monthly budget.` : 'No team budget yet.'}
-- Invoices already sent to clients: ${state.invoices?.join('; ') || 'none yet'}. One that isn't paid yet is waiting on the client: there's nothing to send again, only the reminder.
+- Invoices already sent to clients: ${state.invoices?.join('; ') || 'none yet'}. One that isn't paid yet is waiting on the client: there's nothing to send again, only the reminder. Any listed here were on the account before this conversation, so don't bring one up unless they ask about invoices or who owes them.
 - Vendors and people already saved to pay: ${people}. Only bring one up if the owner names them first.`;
 }
