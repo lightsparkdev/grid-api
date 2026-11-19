@@ -111,12 +111,10 @@
 }
 
 // ── Thread ──────────────────────────────────────────────────────────────
-// Grok's corners are plain circular arcs, ~18pt (measured off the app), the same on every corner: bubbles from the
-// same sender don't tighten where they meet.
 .bubble {
   max-width: 325px;
   padding: 11px 14px 12px;
-  @include corners.bubble(18px, 0);
+  @include corners.bubble(20px);
   background: var(--grok-bubble);
   font-size: 17px;
   line-height: 24px;
@@ -139,12 +137,33 @@
 .me {
   max-width: 290px;
   padding: 11px 14px 12px;
-  @include corners.bubble(18px, 0);
+  @include corners.bubble(20px);
   background: var(--grok-me, var(--grok-ink));
   color: var(--grok-me-text, var(--grok-ink-text));
   font-size: 17px;
   line-height: 24px;
   animation: grok-sent 0.17s cubic-bezier(0, 0, 0.2, 1);
+}
+
+// Where the same sender's bubbles meet, those corners tighten (after the mixin, so pills get them too).
+.bubble {
+  &[data-up] {
+    border-top-left-radius: corners.corner(8px);
+  }
+
+  &[data-down] {
+    border-bottom-left-radius: corners.corner(8px);
+  }
+}
+
+.me {
+  &[data-up] {
+    border-top-right-radius: corners.corner(8px);
+  }
+
+  &[data-down] {
+    border-bottom-right-radius: corners.corner(8px);
+  }
 }
 
 @keyframes grok-sent {
