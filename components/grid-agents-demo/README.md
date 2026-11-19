@@ -19,8 +19,9 @@ writes every line the agent says. The composer grows with the text, up to five l
 shows each agent tool call with the Grid calls behind it, plus the platform's own calls and webhooks.
 
 All six apps share one conversation and one account. Switching apps mid-flow keeps the thread: its
-cards and approvals redraw in the new app's design, and the agent writes in the new app's voice
-from then on. Lines it already wrote stay as written.
+cards and approvals redraw in the new app's design, and the agent's lines, earlier ones included,
+show in the new app's voice. The model writes each line once per app, so the wording for every app
+is already saved with the line.
 
 ## Develop
 

@@ -36,6 +36,9 @@ export interface FlowEntry {
 /** The model's next step: the tools it calls, or why the app carries on without it. */
 export type StepReply = { calls: ToolCall[] } | { fallback: 'fallback' | 'limited' };
 
+/** Requests carried over from the other account that have been delivered: a reset conversation doesn't hear one again. */
+const deliveredCarries = new Set<number>();
+
 /**
  * The call that put up what's waiting, made again with a detail changed ($800 becomes $1,000, another name): a
  * correction, which replaces it even before it's shown. The same call unchanged, or any other, waits its turn.
@@ -823,7 +826,14 @@ export function useAgentBrain({
       setRunning(run.flow);
       setBusy(true);
       void play(beats, run).then((finished) => {
-        if (run.cancelled) return;
+        if (run.cancelled) {
+          // Something else took its place (a tile, another call) while a call was still waiting on it: the call is
+          // told, so its turn ends and the turns queued behind it can run.
+          const taker = run.taker;
+          run.taker = undefined;
+          taker?.({ status: 'cut_short', note: 'something else took its place before this finished: what follows says what' });
+          return;
+        }
         if (runRef.current === run) runRef.current = null;
         clearWork();
         setRunning(null);
@@ -936,6 +946,22 @@ export function useAgentBrain({
     const open = openRef.current;
     if (!open) return { error: { error: 'nothing_open', fix: 'nothing is waiting on screen: do what they asked with another tool, or reply' } };
     const i = call.input;
+    // "Cancel that", said to a question rather than an approval: the question closes and its step stops there.
+    if (i.decision === 'decline' && open.wait.kind !== 'approval') {
+      const what = waitLabel(open.wait);
+      return {
+        spoke: () => false,
+        start: async () => {
+          dismiss();
+          return {
+            they: `backed out of ${what}`,
+            finished: false,
+            note: 'it stopped here: they said no, so nothing after this step happened, and what it was a step of wasn’t done',
+            account: accountNow(cb.current.context().account()),
+          };
+        },
+      };
+    }
     const option = typeof i.option === 'number' && Number.isInteger(i.option) ? i.option - 1 : -1;
     let answer: Given = null;
     switch (open.wait.kind) {
@@ -1239,8 +1265,9 @@ export function useAgentBrain({
   // Something they asked for on the other account that belongs here: it arrives as their message.
   const lastCarried = useRef(0);
   useEffect(() => {
-    if (!carried || carried.nonce === lastCarried.current) return;
+    if (!carried || carried.nonce === lastCarried.current || deliveredCarries.has(carried.nonce)) return;
     lastCarried.current = carried.nonce;
+    deliveredCarries.add(carried.nonce);
     dropSuggestions();
     hear(carried.text);
     // eslint-disable-next-line react-hooks/exhaustive-deps

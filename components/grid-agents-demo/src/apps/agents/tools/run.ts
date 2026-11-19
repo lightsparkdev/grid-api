@@ -73,6 +73,8 @@ export interface ToolMemory {
   naming: { company?: string; owner?: string };
   /** The team budget they asked for, USD: read when its approval is built, so it can change until then. */
   budget?: number;
+  /** The quote the session priced last: the one a send would execute. */
+  priced?: string;
 }
 
 export const newToolMemory = (): ToolMemory => ({ seq: 0, options: new Map(), quotes: new Map(), stays: new Map(), approved: new Set(), shown: new Set(), naming: {} });
@@ -537,8 +539,9 @@ function quotePayment(env: ToolEnv, call: ToolCall): Outcome {
   const q = quoted(env, call.input);
   if ('error' in q) return q;
   if ('beats' in q) return q;
-  // Priced here, it isn't priced again when it's sent.
+  // Priced here, it isn't shown again when it's sent.
   env.memory.shown.add(q.id);
+  env.memory.priced = q.id;
   return { result: quoteFacts(env, q.id, q.rec), beats: [{ work: 'quoting', ms: 1200 }, { emit: { type: 'pay.quote', payee: q.rec.quote.payee } }] };
 }
 
@@ -556,8 +559,15 @@ function sendPayment(env: ToolEnv, call: ToolCall): Outcome {
   // The quote goes on screen once; then today's ask to raise the limit if it's over, and the top-up if it's short.
   const afterQuote = (): Beat[] => {
     const shown = env.memory.shown.has(id);
+    // Another payment priced since (Maria's, then Bob's): this one is priced again, so it's the one that's sent.
+    const current = env.memory.priced === id;
     env.memory.shown.add(id);
-    const quote: Beat[] = shown ? [] : [{ work: 'quoting', ms: 1200 }, { emit: { type: 'pay.quote', payee } }, { say: 'pay.intro', params: rec.quote.params }];
+    env.memory.priced = id;
+    const quote: Beat[] = !shown
+      ? [{ work: 'quoting', ms: 1200 }, { emit: { type: 'pay.quote', payee } }, { say: 'pay.intro', params: rec.quote.params }]
+      : current
+        ? []
+        : [{ emit: { type: 'pay.quote', payee } }];
     // In the same list as the quote line, so a top-up's first line joins its bubble, as today.
     return [...quote, ...withinLimit(ctx, payee.usd, 'send', (c) => coverThen(c, payee.usd, `paying ${rec.recipient.first}`, go))];
   };
