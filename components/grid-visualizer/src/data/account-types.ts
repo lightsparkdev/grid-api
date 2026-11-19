@@ -435,4 +435,33 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: true,
   },
+  ARS_ACCOUNT: {
+    accountType: 'ARS_ACCOUNT',
+    fields: [
+      { name: 'cbu', example: '2850590940090418135201', description: '22-digit CBU or CVU' },
+      { name: 'bankAccountType', example: 'CHECKING', description: 'CHECKING or SAVINGS' },
+    ],
+    beneficiaryRequired: true,
+  },
+  CZK_ACCOUNT: {
+    accountType: 'CZK_ACCOUNT',
+    fields: [
+      { name: 'iban', example: 'CZ6508000000192000145399', description: 'Czech IBAN (24 characters, starts with CZ)' },
+    ],
+    beneficiaryRequired: true,
+  },
+  PLN_ACCOUNT: {
+    accountType: 'PLN_ACCOUNT',
+    fields: [
+      { name: 'iban', example: 'PL61109010140000071219812874', description: 'Polish IBAN (28 characters, starts with PL)' },
+    ],
+    beneficiaryRequired: true,
+  },
+  SEK_ACCOUNT: {
+    accountType: 'SEK_ACCOUNT',
+    fields: [
+      { name: 'iban', example: 'SE4550000000058398257466', description: 'Swedish IBAN (24 characters, starts with SE)' },
+    ],
+    beneficiaryRequired: true,
+  },
 };
