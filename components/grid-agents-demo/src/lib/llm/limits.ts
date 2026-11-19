@@ -98,8 +98,15 @@ async function dailyCap(): Promise<LimitResult> {
   return all > PER_DAY ? 'daily' : 'ok';
 }
 
-/** Count a second provider call made for one request (a retry), so the day's cap counts every call sent. */
-export const countRetry = (): Promise<void> => dailyCap().then(() => undefined);
+/**
+ * Count a second provider call made for one request (a retry), so the day's cap counts every call sent. Best effort:
+ * a failed write to the counter is logged, and never fails the request that's being retried.
+ */
+export const countRetry = (): Promise<void> =>
+  dailyCap().then(
+    () => undefined,
+    (e) => console.warn('[agent] a retry was not counted against the daily cap:', e instanceof Error ? e.message : e),
+  );
 
 /** Count one web price lookup; past the day's cap the shelf prices from the model's estimate instead. */
 export async function takeLookup(): Promise<boolean> {
