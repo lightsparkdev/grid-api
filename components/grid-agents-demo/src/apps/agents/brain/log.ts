@@ -45,10 +45,19 @@ const UNSETTLED = JSON.stringify({ status: 'cut_short', note: 'something else ha
  * The model's calls, each paired with its result from the start, so the record always reads as a whole: a result is
  * filled in the moment its call is done, and one cut short (a tile tapped over it) says so.
  */
-export function called(log: Log, calls: ToolCall[]) {
+export function called(log: Log, calls: ToolCall[], asked?: End) {
+  // What landed while the model was answering (they typed again) wasn't in front of it: it reads after the answer.
+  const last = log[log.length - 1];
+  const since = asked && last?.role === 'user' && log.length === asked.turns ? last.content.slice(asked.blocks) : [];
+  if (since.length) log[log.length - 1] = { ...last, content: last.content.slice(0, asked!.blocks) };
   add(log, 'assistant', calls.map((c) => ({ type: 'tool_use', id: c.id, name: c.name, input: c.input })));
   add(log, 'user', calls.map((c) => ({ type: 'tool_result', tool_use_id: c.id, content: UNSETTLED })));
+  add(log, 'user', since);
 }
+
+/** Where the record ends: what's added after this point came later. */
+export type End = { turns: number; blocks: number };
+export const endOf = (log: Log): End => ({ turns: log.length, blocks: log[log.length - 1]?.content.length ?? 0 });
 
 /** What a call did, written over its place in the record. */
 export function settled(log: Log, id: string, result: ToolResult, isError = false) {

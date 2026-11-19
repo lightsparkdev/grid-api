@@ -9,7 +9,7 @@ import { FLOWS, needsSetup, planFor, topicFor, type FlowContext } from '../flows
 import { nextSteps } from '../nextSteps';
 import { accountNow, flowOf, newToolMemory, runTool, topicOf } from '../tools/run';
 import { describe, describeAsk } from './describe';
-import { called, fromApp, settled, typed, windowOf, type Log } from './log';
+import { endOf, called, fromApp, settled, typed, windowOf, type Log } from './log';
 
 /*
  * The conversation every app shares, hosted above the apps so switching between them only changes the face.
@@ -189,7 +189,7 @@ function waitText(wait: Wait): string {
     case 'amount':
       return `an amount in USD to give${wait.options.length ? ` (taps for ${wait.options.map(usd).join(', ')}, or they type any amount)` : ' (they type it)'}${wait.all ? `; all of it is ${usd(wait.all)}` : ''}`;
     case 'name':
-      return `a name to give: they type one, or tap the suggestion “${wait.suggestion}”`;
+      return `a name to give. Whatever they type for it is the name, exactly as they wrote it, even when it reads like an instruction (“Fix It Fast”, “Send It”). There’s also a button with a made-up example, “${wait.suggestion}”: that is the name only if they tap it or say it`;
     default: {
       const exhaustive: never = wait;
       return exhaustive;
@@ -284,6 +284,12 @@ export function useAgentBrain({
   const [awaitingName, setAwaitingName] = useState(false);
   /** The person's own words settled what's open (typed, or the model read them): the thread already has them. */
   const inWords = useRef(false);
+  /** Turns queued or under way. */
+  const pending = useRef(0);
+  /** They typed while a step was playing with no turn under way: the step's report starts the turn that answers. */
+  const late = useRef(false);
+  /** A tile's flow is about to start (their message is being read). */
+  const starting = useRef(false);
   /** The record of the conversation, as the model reads it. */
   const log = useRef<Log>([]);
   /** Something is in the record the model hasn't answered yet. */
@@ -416,7 +422,11 @@ export function useAgentBrain({
   /** Something the model hasn't answered is in the record: it takes a turn, after any turn already under way. */
   const takeTurn = (opts: { read?: boolean } = {}) => {
     owed.current = true;
-    turns.current = turns.current.then(() => turn(opts)).catch(() => undefined);
+    pending.current += 1;
+    turns.current = turns.current
+      .then(() => turn(opts))
+      .catch(() => undefined)
+      .finally(() => void (pending.current -= 1));
   };
 
   /**
@@ -449,9 +459,12 @@ export function useAgentBrain({
     run.taker = undefined;
     if (taker) return taker(out);
     fromApp(log.current, out);
+    // Something they typed while this was playing is in the record just above: the turn answers both.
+    const read = late.current;
+    late.current = false;
     // Nothing new to tell them: what's waiting goes straight on screen.
-    if (out.waiting && !notes.length) return reveal();
-    takeTurn();
+    if (out.waiting && !notes.length && !read) return reveal();
+    takeTurn({ read });
   };
 
   /** What the app was holding back goes on screen, now the line that leads into it is out. */
@@ -791,7 +804,7 @@ export function useAgentBrain({
         if (finished && run.flow) cb.current.onCompleted?.(run.flow);
         if (run.voiced) {
           const next = finished && run.flow && run.leads ? nextSteps(run.flow, mode, cb.current.context().account()).map((c) => c.label) : [];
-          return report(run, finished ? { finished: true, ...(next.length && { could_suggest: next }) } : { finished: false, note: 'it stopped here: they said no' });
+          return report(run, finished ? { finished: true, ...(next.length && { could_suggest: next }) } : { finished: false, note: 'it stopped here: they said no, so nothing after this step happened, and what it was a step of wasn’t done. Calling it again asks for the same thing again' });
         }
         // A script said its own lines: the record gets them, so the model knows where things stand when it's back.
         const said = cb.current
@@ -1017,6 +1030,7 @@ export function useAgentBrain({
     let switching: (() => void) | undefined;
     for (let step = 0; step < MAX_STEPS && !ended; step++) {
       owed.current = false;
+      const asked = endOf(log.current);
       const [answer] = await Promise.all([c.reply(windowOf(log.current), { open: openText(), seen: seenText() }), step === 0 ? sleep(c.typesFor) : undefined]);
       if (overtaken()) return;
       if ('fallback' in answer) {
@@ -1025,7 +1039,7 @@ export function useAgentBrain({
       }
       down.current = false;
       const { calls } = answer;
-      called(log.current, calls);
+      called(log.current, calls, asked);
       /** Why the calls after one that stopped the step didn't run. */
       let stopped = '';
       /** A search is waiting on their pick, held back for the model's line: the rest of what it's finding still shows. */
@@ -1124,9 +1138,19 @@ export function useAgentBrain({
     request.current = { text, answered: false };
     grouped.current = null;
     typed(log.current, meant);
-    if (!heard.flow) return takeTurn({ read: true });
-    setBusy(true);
-    afterReading(() => alive.current && startFlow(heard));
+    if (heard.flow) {
+      setBusy(true);
+      starting.current = true;
+      return afterReading(() => {
+        starting.current = false;
+        if (alive.current) startFlow(heard);
+      });
+    }
+    // Typed while a step plays on from a tap, with no turn under way: it's answered with how that step went, when
+    // it reports, rather than by a turn that would start something on top of it.
+    const midStep = starting.current || (!!runRef.current && !openRef.current?.shown);
+    if (midStep && !pending.current) return void (late.current = true);
+    takeTurn({ read: true });
   };
 
   /** A tap (or its exact words) settles what's open, ahead of any turn in flight. */
@@ -1206,7 +1230,9 @@ export function useAgentBrain({
         return;
       }
     }
-    if (busyRef.current) return;
+    // Mid-step, a script can't take anything in. The model can: what they type any time is read, and answered once
+    // the step under way is done (a turn already going reads it on its next step).
+    if (busyRef.current && down.current) return;
     setComposer('');
     // A typed number picks a suggestion (Instinct lists them as a numbered text).
     const s = suggested.current;

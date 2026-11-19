@@ -206,9 +206,15 @@ export function companySetup(ctx: FlowContext, given: { company?: string; owner?
     ];
   };
   // What they've said so far, here or in a setup that started over.
-  const known = { ...ctx.naming, ...(given.company && { company: given.company }), ...(given.owner && { owner: given.owner }) };
+  const known = {
+    ...(biz(ctx).named && { company: biz(ctx).company, owner: biz(ctx).owner }),
+    ...ctx.naming,
+    ...(given.company && { company: given.company }),
+    ...(given.owner && { owner: given.owner }),
+  };
   if (ctx.naming) Object.assign(ctx.naming, known);
-  if (biz(ctx).named) return [{ react: '❤️' }, ...approve()];
+  // Named already, and nothing new said: the approval as it stands. A name given now replaces the one it had.
+  if (biz(ctx).named && !given.company && !given.owner) return [{ react: '❤️' }, ...approve()];
   if (known.company && known.owner) return [{ react: '❤️' }, ...named(known.company, known.owner)];
   if (known.company) return [{ react: '❤️' }, ...askOwner(known.company)];
   return [

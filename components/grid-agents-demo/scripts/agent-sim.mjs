@@ -105,6 +105,7 @@ if (!KEY) {
 
 /** One call to a model that answers with JSON. */
 async function ask(model, system, user, max = 700) {
+  let why = '';
   for (let attempt = 0; attempt < 6; attempt++) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -117,12 +118,13 @@ async function ask(model, system, user, max = 700) {
       try {
         return JSON.parse(json);
       } catch {
-        /* asked again */
+        why = `not JSON: ${text.slice(0, 160)}`;
       }
-    }
+    } else why = res ? `HTTP ${res.status}: ${(await res.text().catch(() => '')).slice(0, 160)}` : 'no response';
     // Busy or rate-limited: wait longer each time before asking again.
     await new Promise((r) => setTimeout(r, 2500 * (attempt + 1)));
   }
+  console.error(`  (${model} gave no answer after 6 tries: ${why})`);
   return null;
 }
 
@@ -159,6 +161,8 @@ Flag every agent line that has one of these problems:
 - stuck: leaves the person with nowhere to go, loops, or never does what was asked though it could
 - promise: says it did or will do something no tool did
 - wrong_step: starts something the person didn't ask for, or redoes something already done
+
+What the agent is told about the app, and may say without a result: adding money takes nothing off (all of it lands in the balance) and has no second confirmation once the card is saved or the bank linked; a payment within the approval limit goes out without asking; a well-known subscription's usual price.
 
 Don't flag: the agent declining things outside money; wording you'd merely have written differently; the app's own cards.
 Severity: high = a person would be misled about their money or blocked; medium = clearly off but they could carry on; low = polish.

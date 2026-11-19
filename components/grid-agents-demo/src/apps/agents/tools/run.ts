@@ -96,8 +96,10 @@ const record = (result: ToolResult, patch: () => ToolResult): Beat => ({
 });
 
 const positive = (v: unknown, max: number) => (typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= max ? v : undefined);
+/** What the model writes in a field it has nothing for ("<UNKNOWN>", "n/a"): the same as leaving it out. */
+const BLANK = /^\W*(unknown|n\/?a|tbd|none|null|undefined|not (given|provided|specified|known))\W*$/i;
 const text = (v: unknown, max: number) => {
-  const s = typeof v === 'string' ? v.replace(/[^A-Za-z\u00C0-\u024F0-9 '’&.+-]/g, '').trim() : '';
+  const s = typeof v === 'string' && !BLANK.test(v) ? v.replace(/[^A-Za-z\u00C0-\u024F0-9 '’&.+-]/g, '').trim() : '';
   return s && s.length <= max ? s : undefined;
 };
 const first = (name: unknown) => (typeof name === 'string' ? name.trim().split(' ')[0] : '');
@@ -312,10 +314,13 @@ function fund(env: ToolEnv, call: ToolCall): Outcome {
     ...(typeof network === 'string' && network !== 'SPARK' && { network: network as DepositNetwork }),
   };
   // What's missing is waited on in turn (how much, then where from), then the top-up.
-  const result: ToolResult = {};
+  const result: ToolResult = {
+    // Said before they act, so nothing is promised that won't happen: there's no second step to confirm the amount.
+    how_it_goes: 'once they’ve said how much and where from, it’s added right away: saving the card or linking the bank is the go-ahead, and nothing asks them to confirm the amount after that. All of what they add lands in the balance.',
+  };
   const added = record(result, () => {
     const more = env.ctx.account().balanceCents - a.balanceCents;
-    return more > 0 ? { status: 'added', added_usd: usd(more) } : {};
+    return more > 0 ? { status: 'added', added_usd: usd(more), how_it_goes: undefined } : {};
   });
   return { result, beats: [...FLOWS.fund({ ...env.ctx, params }), added] };
 }
@@ -477,6 +482,27 @@ function quoted(env: ToolEnv, input: ToolCall['input']): { id: string; rec: PayR
   return { id, rec };
 }
 
+/** What a fee question gets: nothing on top of what they pay; into another currency, a fee out of what lands. */
+const feeOf = (payee: Parameters<typeof payoutFee>[0], who: string) =>
+  payoutFee(payee) ? `${usd2(payoutFee(payee))}, taken out of what ${who} receives (what they receive is after it); nothing is added to what you pay` : 'none: dollars to a US bank arrive in full';
+
+/** The same, for a business paying a company or a contractor in dollars: known before anything is on screen. */
+function payFacts(env: ToolEnv, name: string, country: string, amount: number): ToolResult {
+  const to = recipientNamed(name) ?? draftRecipient(name, country);
+  if (!to) return {};
+  const { payee } = payQuote(to, { name, country, amount, currency: 'USD' });
+  return { fee: feeOf(payee, first(name)), they_receive: payee.local, ...asksFirst(env, payee.usd) };
+}
+
+/** Whether a payment stops for their approval, said before it's made: under the limit it goes out by itself. */
+function asksFirst(env: ToolEnv, cents: number): ToolResult {
+  const asks = env.ctx.needsApproval(cents);
+  return {
+    needs_their_approval: asks,
+    ...(!asks && { goes_without_asking: `it’s within the ${usd2(env.ctx.account().limits.approvalAbove).replace(/\.00$/, '')} they let you spend alone, so once it’s covered it goes out with no approval: tell them that before it does` }),
+  };
+}
+
 function quoteFacts(env: ToolEnv, id: string, rec: PayRecord): ToolResult {
   const a = env.ctx.account();
   const { payee } = rec.quote;
@@ -488,9 +514,8 @@ function quoteFacts(env: ToolEnv, id: string, rec: PayRecord): ToolResult {
     you_pay_usd: usd(payee.usd),
     their_bank: to.bank,
     sent_over: to.rail,
-    // What a fee question gets: nothing on top of what they pay; into another currency, a fee out of what lands.
-    fee: payoutFee(payee) ? `${usd2(payoutFee(payee))}, taken out of what ${rec.recipient.first} receives (the amount above is after it); nothing is added to what you pay` : 'none: dollars to a US bank arrive in full',
-    needs_their_approval: env.ctx.needsApproval(payee.usd),
+    fee: feeOf(payee, rec.recipient.first),
+    ...asksFirst(env, payee.usd),
     ...(a.connected && payee.usd > a.limits.perTransaction && { over_per_payment_limit: true, raise_to_usd: usd(raisedFor(a.limits, payee.usd).perTransaction) }),
     ...(payee.usd > a.balanceCents && { short_usd: usd(payee.usd - a.balanceCents) }),
     ...(rec.params.every === 'month' && { monthly_on_day: rec.params.day ?? 1 }),
@@ -701,7 +726,7 @@ function showAccount(env: ToolEnv, call: ToolCall): Outcome {
 /* ── The business's tools ─────────────────────────────────────────── */
 
 const noReact = (beats: Beat[]) => beats.filter((b) => !('react' in b));
-const ownName = (v: unknown) => (typeof v === 'string' && cleanName(v)) || undefined;
+const ownName = (v: unknown) => (typeof v === 'string' && !BLANK.test(v) && cleanName(v)) || undefined;
 
 function setupCompany(env: ToolEnv, call: ToolCall): Outcome {
   const a = env.ctx.account();
@@ -740,7 +765,10 @@ function setTeamBudget(env: ToolEnv, call: ToolCall): Outcome {
   const result: ToolResult = {};
   const set = record(result, () => {
     const now = env.ctx.account().business;
-    return now?.budget ? { status: already ? 'already_set_up' : 'set_up', monthly_usd: usd(now.budget), team: now.team.map((m) => m.name) } : {};
+    if (!now?.budget) return {};
+    const facts = { monthly_usd: usd(now.budget), team: now.team.map((m) => m.name) };
+    // Set once: there's nowhere to change it, here or anywhere they could be pointed to.
+    return already ? { status: 'already_set_up', ...facts, ...(monthly && monthly * 100 !== already && { cannot_change: 'the budget can’t be changed once it’s set: say so plainly, and don’t send them anywhere else to do it' }) } : { status: 'set_up', ...facts };
   });
   return { result, beats: [...noReact(teamBudget({ ...env.ctx, params: monthly ? { amount: monthly } : {} })), set] };
 }
@@ -798,7 +826,7 @@ function payBillTool(env: ToolEnv, call: ToolCall): Outcome {
   const asked = typeof call.input.country === 'string' ? call.input.country.toLowerCase() : 'us';
   if (!COUNTRY_CODES.has(asked)) return fail('country_not_supported', { country: asked });
   const note = text(call.input.note, 40);
-  const result: ToolResult = {};
+  const result: ToolResult = payFacts(env, vendor, asked, amount);
   const params: FlowParams = { name: vendor, country: asked, amount, currency: 'USD', ...(note && { note }) };
   const before = env.ctx.account();
   const paid = record(result, () => (settledSince(env, before).length ? { status: 'paid', to: vendor, amount_usd: amount } : {}));
@@ -815,7 +843,7 @@ function payContractorTool(env: ToolEnv, call: ToolCall): Outcome {
   const country = typeof call.input.country === 'string' ? call.input.country.toLowerCase() : 'us';
   if (!COUNTRY_CODES.has(country)) return fail('country_not_supported', { country });
   const note = text(call.input.note, 40);
-  const result: ToolResult = {};
+  const result: ToolResult = payFacts(env, name, country, amount);
   const before = env.ctx.account();
   const paid = record(result, () => (settledSince(env, before).length ? { status: 'paid', to: name, amount_usd: amount, how: 'to their own bank, in their currency' } : {}));
   return { result, beats: [...noReact(payContractor({ ...env.ctx, params: { name, country, amount, ...(note && { note }) } })), paid] };

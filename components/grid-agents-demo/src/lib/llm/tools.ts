@@ -206,7 +206,7 @@ export const TOOL_DEFS: ToolDef[] = [
   ),
   tool('subscribe', 'Subscribe them to a well-known service with a card only that service can charge, monthly. Always asks them to approve.', {
     merchant: str('The service, as it brands itself ("Spotify Premium").'),
-    monthly_price_usd: num('Its usual monthly price, USD. Ask if you don’t know it.'),
+    monthly_price_usd: num('Its usual monthly price, USD, as you know it for that plan.'),
     pay_with: str('"card" only if they want it on their card.', { enum: ['balance', 'card'] }),
   }, ['merchant', 'monthly_price_usd']),
   tool(
@@ -275,17 +275,17 @@ export const TOOL_DEFS: ToolDef[] = [
     guests: num('How many are staying, only if they said.'),
   }, ['city', 'check_in', 'check_out']),
   tool('show_account', 'Show the balance card (balance and limits) or recent activity.', { show: str('Which.', { enum: ['balance', 'history'] }) }, ['show']),
-  tool('setup_company', 'Set up the business’s own account, verified, with US bank details clients pay, at the default limits. It needs the company’s name and the owner’s: pass what they said, and whatever’s missing comes back as waiting; then the app shows its consent sheet. Needed before anything else on the business.', {
+  tool('setup_company', 'Set up the business’s own account, verified, with US bank details clients pay, at the default limits. It needs the company’s name and the owner’s: pass what they said, and whatever’s missing comes back as waiting; then the app shows its consent sheet. Until that sheet is approved the names can still change: call this again with the new name (company, owner, or both) and the sheet comes back with it. Needed before anything else on the business.', {
     company: str('The company’s name, only if they said it.'),
     owner: str('The owner’s full name, only if they said it.'),
   }),
-  tool('add_teammate', 'Add someone to the team. It needs their name, role, pay each payroll and the bank payroll pays: pass the name if they said it, and the rest comes back as waiting, one at a time, with the app’s own taps and sheet. Team budgets, team cards and payroll cover whoever is on the team.', {
+  tool('add_teammate', 'Add someone to the team. It needs their name, role, pay each payroll and the bank payroll pays: pass the name if they said it, and the rest comes back as waiting, one at a time, with the app’s own taps and sheet. All four are needed: saying Not now to the bank form means they aren’t added. Team budgets, team cards and payroll cover whoever is on the team.', {
     name: str('Their full name, only if the owner said it.'),
   }),
-  tool('set_team_budget', 'Give everyone on the team their own agent, sharing one monthly budget from the business’s account. The owner approves it.', {
-    monthly_usd: num('The team’s monthly budget, USD, only if they said.'),
+  tool('set_team_budget', 'Give everyone on the team their own agent, sharing one monthly budget from the business’s account. The owner approves it. Only when they ask for a team budget or agents for the team: what one person is paid is not a budget. The amount is theirs to say: if they haven’t, ask how much a month before calling. Once it’s approved it can’t be changed or replaced with a new one: say so, and offer nothing in its place.', {
+    monthly_usd: num('The team’s monthly budget, USD, as they said it.'),
   }),
-  tool('issue_employee_card', 'Issue a Visa in a teammate’s name, spending from the business’s account (inside the team budget once there is one). For someone not on the team yet, the app adds them first. The owner approves it.', {
+  tool('issue_employee_card', 'Issue a Visa in a teammate’s name, spending from the business’s account (inside the team budget once there is one). For someone not on the team yet, the app adds them first, in this same call: their role, pay and bank come back as waiting, one at a time, and you answer with whatever they already said. The owner approves it.', {
     name: str('The teammate, as they named them.'),
     purpose: str('What it’s for, a few words, only if they said ("travel").'),
   }, ['name']),
