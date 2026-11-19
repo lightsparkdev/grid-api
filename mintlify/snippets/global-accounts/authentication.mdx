@@ -471,7 +471,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials" \
   }'
 ```
 
-**Response on the signed retry:** `201 AuthMethod`. Its `nickname` is the one you sent, or the customer's email on the account by default.
+**Response on the signed retry:** `201 AuthMethod`. Its `identifier` is the customer's email on the account, or their name if it has none, and its `nickname` is the one you sent or, by default, the `identifier`.
 
 ### OAuth verify / reauthentication
 
@@ -537,6 +537,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
   "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
   "type": "EMAIL_OTP",
   "nickname": "jane@example.com",
+  "identifier": "jane@example.com",
   "otpEncryptionTargetBundle": "{\"version\":\"v1.0.0\",\"data\":\"7b22...\",\"dataSignature\":\"3045...\",\"enclaveQuorumPublic\":\"04a1...\"}",
   "createdAt": "2026-04-19T12:00:00Z",
   "updatedAt": "2026-04-19T12:00:00Z"
@@ -590,6 +591,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
   "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
   "type": "EMAIL_OTP",
   "nickname": "jane@example.com",
+  "identifier": "jane@example.com",
   "createdAt": "2026-04-19T12:00:01Z",
   "updatedAt": "2026-04-19T12:00:01Z",
   "expiresAt": "2026-04-19T12:15:01Z"
@@ -665,7 +667,7 @@ A `PATCH` that changes the sign-in address without a verified replacement return
 
 ## EVM wallet
 
-Use an `EVM_WALLET` credential when the user already holds an Ethereum or other EVM wallet and you want that wallet to sign them in. The wallet proves control by signing Grid's messages with `personal_sign` (EIP-191). The signature names no chain, so the same key and `0x` address work on any EVM chain, such as Ethereum, Base, Polygon, or Arbitrum. The credential's `nickname` defaults to the wallet's address.
+Use an `EVM_WALLET` credential when the user already holds an Ethereum or other EVM wallet and you want that wallet to sign them in. The wallet proves control by signing Grid's messages with `personal_sign` (EIP-191). The signature names no chain, so the same key and `0x` address work on any EVM chain, such as Ethereum, Base, Polygon, or Arbitrum. The credential's `identifier` is the wallet's address, and its `nickname` defaults to it.
 
 The wallet must be an externally owned account: a wallet with a single private key. Smart-contract wallets that sign through ERC-1271, such as ERC-4337 accounts, are not supported. They have no single key whose signature recovers to their address, so registering one returns `401`. If your users hold a smart-contract account, register the externally owned account that owns it.
 
@@ -724,6 +726,7 @@ If the account has no wallet yet, as under `AT_FIRST_CREDENTIAL` (see <a href="#
   "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
   "type": "EVM_WALLET",
   "nickname": "0x2c7536E3605D9C16a7a3D7b1898e529396a65c23",
+  "identifier": "0x2c7536E3605D9C16a7a3D7b1898e529396a65c23",
   "createdAt": "2026-04-08T15:30:01Z",
   "updatedAt": "2026-04-08T15:30:01Z"
 }
@@ -753,7 +756,7 @@ sequenceDiagram
   C->>C: stamp(payloadToSign, existingSessionPrivateKey)
   C->>IB: { stamp, requestId }
   IB->>G: Same POST<br/>Grid-Wallet-Signature: stamp<br/>Request-Id: requestId
-  G-->>IB: 201 AuthMethod { id, type: EVM_WALLET, nickname: address, … }
+  G-->>IB: 201 AuthMethod { id, type: EVM_WALLET, identifier: address, … }
   IB-->>C: { credentialId }
 ```
 
@@ -945,6 +948,7 @@ curl -X GET "$GRID_BASE_URL/auth/credentials?accountId=InternalAccount:019542f5-
       "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
       "type": "EMAIL_OTP",
       "nickname": "jane@example.com",
+      "identifier": "jane@example.com",
       "createdAt": "2026-04-09T10:15:00Z",
       "updatedAt": "2026-04-09T10:15:00Z"
     }
@@ -1118,27 +1122,42 @@ A credential is revoked by signing with a session from **a different credential 
 
 ### Rename a credential
 
-Each credential has a `nickname`, the label you show in a credential list. Set one with `nickname` when you create the credential, or rename it later. Without one, a credential gets its type's default:
+Each credential response carries two names:
 
-| Type | Default `nickname` |
-|---|---|
-| `EMAIL_OTP` | The email address |
-| `SMS_OTP` | The phone number, in E.164 format |
-| `OAUTH` | The customer's email on the account, or their name if it has none |
-| `EVM_WALLET` | The wallet's address |
-| `PASSKEY` | None: a passkey's `nickname` is required at registration |
+- **`identifier`** is what the credential signs in with. Grid sets it when the credential is created, and it never changes. Show it so the user knows which email, phone, or wallet a credential uses.
+- **`nickname`** is the label you show in a credential list. Set it with `nickname` when you create the credential, or rename it later. Without one, it is the `identifier`.
 
-The email OTP credential Grid creates with the account has the default, so rename it to change its label.
+| Type | `identifier` | Default `nickname` |
+|---|---|---|
+| `EMAIL_OTP` | The email address that receives one-time codes | The `identifier` |
+| `SMS_OTP` | The phone number, in E.164 format | The `identifier` |
+| `OAUTH` | The customer's email on the account when the credential was added, or their name if it had none | The `identifier` |
+| `EVM_WALLET` | The wallet's address | The `identifier` |
+| `PASSKEY` | Absent: `credentialId` identifies a passkey | None: a passkey's `nickname` is required at registration |
+
+The email OTP credential Grid creates with the account has the default nickname. Rename it to give it a label of its own.
 
 Renaming needs only your platform credentials. It isn't a signed-retry call, because a nickname doesn't change who can sign for the wallet:
 
 ```bash
-curl -X PATCH "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000001" \
+curl -X PATCH "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000003" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
-  -d '{ "nickname": "Work phone" }'
+  -d '{ "nickname": "Jane'\''s wallet" }'
 ```
 
-**Response (200):** the `AuthMethod` with its new `nickname`.
+**Response (200):** the `AuthMethod` with its new `nickname`. The `identifier` is unchanged:
 
-A nickname is 1–100 characters after Grid trims leading and trailing whitespace, with no `<`, `>`, or control characters. It doesn't need to be unique. A passkey's `nickname` at registration also allows only letters, numbers, spaces, and `. _ - ' ( )`. Renaming changes only the label: one-time codes still go to the same email or phone, and the name a device shows for a passkey stays as it was. An invalid nickname returns `400 INVALID_INPUT`, and a revoked or unknown credential returns `404`.
+```json
+{
+  "id": "AuthMethod:019542f5-b3e7-1d02-0000-000000000003",
+  "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+  "type": "EVM_WALLET",
+  "identifier": "0x2c7536E3605D9C16a7a3D7b1898e529396a65c23",
+  "nickname": "Jane's wallet",
+  "createdAt": "2026-04-08T15:30:01Z",
+  "updatedAt": "2026-04-10T09:12:44Z"
+}
+```
+
+A nickname is 1–100 characters after Grid trims leading and trailing whitespace, with no `<`, `>`, or control characters. It doesn't need to be unique. A passkey's `nickname` at registration also allows only letters, numbers, spaces, and `. _ - ' ( )`. Renaming changes only the label. One-time codes still go to the same email or phone, and the name a device shows for a passkey stays as it was. An invalid nickname returns `400 INVALID_INPUT`, and a revoked or unknown credential returns `404`.

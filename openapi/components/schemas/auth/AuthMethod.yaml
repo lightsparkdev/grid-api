@@ -25,17 +25,30 @@ properties:
       `PublicKeyCredential.rawId`; pass this value as `allowCredentials[].id`
       when requesting a passkey assertion for this auth method.
     example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
+  identifier:
+    type: string
+    readOnly: true
+    description: >-
+      What the credential signs in with, set by Grid when the credential is
+      created. For EMAIL_OTP credentials it is the email address that receives
+      one-time codes; for SMS_OTP credentials the E.164 phone number; for
+      EVM_WALLET credentials the wallet's address; for OAUTH credentials the
+      customer's email on the account when the credential was added, or their
+      name when it had no email. Absent for PASSKEY credentials, which
+      `credentialId` identifies. A rename never changes it. Show it to say
+      which email, phone or wallet a credential uses, and show `nickname` as
+      its label. For example, an EVM_WALLET credential can have `identifier`
+      `0x2c7536E3605D9C16a7a3D7b1898e529396a65c23` and `nickname`
+      `Jane's wallet`.
+    example: example@lightspark.com
   nickname:
     type: string
     description: >-
-      Human-readable label for this credential. It is the `nickname` given
-      when the credential was created, or the latest one set with
-      `PATCH /auth/credentials/{id}`. Without one, it defaults by type: for
-      EMAIL_OTP credentials the email address; for SMS_OTP credentials the
-      E.164 phone number; for OAUTH credentials the customer's email on the
-      account, or their name when it has no email; for EVM_WALLET credentials
-      the wallet's address. A PASSKEY credential's is the nickname required at
-      registration.
+      Human-readable label for this credential, separate from `identifier`.
+      It is the `nickname` given when the credential was created, or the
+      latest one set with `PATCH /auth/credentials/{id}`. Without one, it is
+      the credential's `identifier`. A PASSKEY credential's is the nickname
+      required at registration.
     example: example@lightspark.com
   adminReference:
     type: string

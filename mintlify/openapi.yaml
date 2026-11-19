@@ -7829,6 +7829,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
                     nickname: example@lightspark.com
+                    identifier: example@lightspark.com
                     otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
@@ -7839,6 +7840,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: SMS_OTP
                     nickname: '+14155550123'
+                    identifier: '+14155550123'
                     otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
@@ -7849,6 +7851,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: OAUTH
                     nickname: example@lightspark.com
+                    identifier: example@lightspark.com
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
                 passkey:
@@ -7867,6 +7870,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EVM_WALLET
                     nickname: '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23'
+                    identifier: '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23'
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
         '202':
@@ -8000,12 +8004,14 @@ paths:
                         accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                         type: EMAIL_OTP
                         nickname: example@lightspark.com
+                        identifier: example@lightspark.com
                         createdAt: '2026-04-08T15:30:01Z'
                         updatedAt: '2026-04-08T15:30:01Z'
                       - id: AuthMethod:019542f5-b3e7-1d02-0000-000000000004
                         accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                         type: OAUTH
                         nickname: example@lightspark.com
+                        identifier: example@lightspark.com
                         createdAt: '2026-04-08T15:35:00Z'
                         updatedAt: '2026-04-08T15:35:00Z'
                       - id: AuthMethod:019542f5-b3e7-1d02-0000-000000000003
@@ -8130,7 +8136,7 @@ paths:
 
         This endpoint is authenticated by the platform credential alone and returns `200` directly. It does not use the 202 → signed-retry pattern. That pattern proves the account holder approved a change to who can sign for the wallet. A nickname changes no one's authority: it is a label Grid keeps for display.
 
-        Renaming changes only the label. The credential signs in as before, one-time codes go to the same email or phone, and the same wallet signs. The name a device or password manager shows for a passkey is not changed.
+        Renaming changes only the label. The credential's `identifier` stays the same, and the credential signs in as before. One-time codes go to the same email or phone, and the same wallet signs. The name a device or password manager shows for a passkey is not changed.
       operationId: updateAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -8168,6 +8174,7 @@ paths:
                     id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: SMS_OTP
+                    identifier: '+14155550123'
                     nickname: Work phone
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-10T09:12:44Z'
@@ -8387,6 +8394,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
                     nickname: example@lightspark.com
+                    identifier: example@lightspark.com
                     otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:35:00Z'
@@ -8630,6 +8638,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
                     nickname: example@lightspark.com
+                    identifier: example@lightspark.com
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:35:00Z'
                     expiresAt: '2026-04-08T15:50:00Z'
@@ -36527,9 +36536,14 @@ components:
           type: string
           description: Base64url-encoded WebAuthn credential identifier for this passkey. Present only for `PASSKEY` authentication credentials. Corresponds to `PublicKeyCredential.rawId`; pass this value as `allowCredentials[].id` when requesting a passkey assertion for this auth method.
           example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
+        identifier:
+          type: string
+          readOnly: true
+          description: What the credential signs in with, set by Grid when the credential is created. For EMAIL_OTP credentials it is the email address that receives one-time codes; for SMS_OTP credentials the E.164 phone number; for EVM_WALLET credentials the wallet's address; for OAUTH credentials the customer's email on the account when the credential was added, or their name when it had no email. Absent for PASSKEY credentials, which `credentialId` identifies. A rename never changes it. Show it to say which email, phone or wallet a credential uses, and show `nickname` as its label. For example, an EVM_WALLET credential can have `identifier` `0x2c7536E3605D9C16a7a3D7b1898e529396a65c23` and `nickname` `Jane's wallet`.
+          example: example@lightspark.com
         nickname:
           type: string
-          description: 'Human-readable label for this credential. It is the `nickname` given when the credential was created, or the latest one set with `PATCH /auth/credentials/{id}`. Without one, it defaults by type: for EMAIL_OTP credentials the email address; for SMS_OTP credentials the E.164 phone number; for OAUTH credentials the customer''s email on the account, or their name when it has no email; for EVM_WALLET credentials the wallet''s address. A PASSKEY credential''s is the nickname required at registration.'
+          description: Human-readable label for this credential, separate from `identifier`. It is the `nickname` given when the credential was created, or the latest one set with `PATCH /auth/credentials/{id}`. Without one, it is the credential's `identifier`. A PASSKEY credential's is the nickname required at registration.
           example: example@lightspark.com
         adminReference:
           type: string
