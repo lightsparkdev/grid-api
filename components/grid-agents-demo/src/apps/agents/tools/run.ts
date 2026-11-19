@@ -1,5 +1,5 @@
 import type { ActionId } from '@/data/actions';
-import type { AccountSnapshot } from '@/data/agentApiCalls';
+import { payoutFee, type AccountSnapshot } from '@/data/agentApiCalls';
 import { purchaseSpendLimit, type DepositNetwork, type SendNetwork } from '@/data/agentEvents';
 import { BANK_COUNTRIES, currencyFor } from '@/data/bankCountries';
 import { addressKind, NETWORKS_FOR, SENDS_ON, type SendAsset } from '@/data/cryptoSend';
@@ -44,7 +44,7 @@ import { addTeammate, companySetup, employeeCard, payBill, payContractor, runPay
 import { stayFor, type Stay } from '../hotels';
 import { purchaseFor, requestParams, shelfFor, shelfParams, shelfWith, type BuyKind, type BuyRequest, type Shelf } from '../products';
 import { draftRecipient, recipientNamed, type Recipient } from '../recipients';
-import { NETWORK_NAME } from '../story';
+import { NETWORK_NAME, usd2 } from '../story';
 
 /* Each tool, carried out in the phone: its inputs checked against the account as it is, then the same cards, sheets,
    approvals and Grid calls the flows use. A tool that can't run says why, in terms the model can act on. The model
@@ -488,6 +488,8 @@ function quoteFacts(env: ToolEnv, id: string, rec: PayRecord): ToolResult {
     you_pay_usd: usd(payee.usd),
     their_bank: to.bank,
     sent_over: to.rail,
+    // What a fee question gets: nothing on top of what they pay; into another currency, a fee out of what lands.
+    fee: payoutFee(payee) ? `${usd2(payoutFee(payee))}, taken out of what ${rec.recipient.first} receives (the amount above is after it); nothing is added to what you pay` : 'none: dollars to a US bank arrive in full',
     needs_their_approval: env.ctx.needsApproval(payee.usd),
     ...(a.connected && payee.usd > a.limits.perTransaction && { over_per_payment_limit: true, raise_to_usd: usd(raisedFor(a.limits, payee.usd).perTransaction) }),
     ...(payee.usd > a.balanceCents && { short_usd: usd(payee.usd - a.balanceCents) }),

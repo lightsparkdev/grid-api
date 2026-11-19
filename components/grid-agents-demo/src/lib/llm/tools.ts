@@ -136,7 +136,7 @@ export const TOOL_DEFS: ToolDef[] = [
   }),
   tool(
     'fund',
-    'Add money to their balance: from their card (saved first if it isn’t), their bank (linked first if it isn’t), or stablecoins (shows deposit details). Pass only what they said; what’s missing (how much, where from) comes back as waiting, with the app’s own taps.',
+    'Add money to their balance: from their card (saved first if it isn’t), their bank (linked first if it isn’t), or stablecoins (shows deposit details). Saving the card or linking a US bank for this is the go-ahead: the amount is taken right then, with no second confirmation. Adding money has no fee. Pass only what they said; what’s missing (how much, where from) comes back as waiting, with the app’s own taps.',
     {
       amount_usd: num('How much, USD, if they said.'),
       cover: str('Instead of an amount: a quote_id or an option_id (or "chosen"); adds exactly what the balance is short of it.'),

@@ -180,6 +180,9 @@ export async function POST(req: NextRequest) {
   try {
     const { calls } = await anthropicAdapter(key).step({ system: systemPrompt(connector, state), turns, mode });
     const names = namesIn(state, turns, calls);
+    // The app's own name is a name too ("your Dots balance").
+    const own = CONNECTORS.find((c) => c.id === connector)?.label ?? '';
+    if (own) names.businesses.push(`${own} balance`);
     const keep = new Set([...names.people, ...names.businesses].flatMap(capitalized));
     const voiced = LOWERCASE.has(connector) ? (line: string) => withNames(lowercased(line, keep), names) : (line: string) => line;
     const out = await Promise.all(calls.map((c) => tidy(key, c, voiced)));
@@ -271,6 +274,10 @@ function withNames(text: string, names: { people: string[]; businesses: string[]
 async function tidy(key: string, call: ToolCall, voiced: (line: string) => string): Promise<ToolCall> {
   const said = typeof call.input.say === 'string' && !SAYS_NOTHING.has(call.name) ? voiced(clean(call.input.say)) : '';
   const input: ToolCall['input'] = { ...call.input, say: ENDS_TURN.has(call.name) ? said : statement(said) };
+  // A line that lost a good part of itself on the way out is worth seeing as it was written.
+  if (process.env.NODE_ENV === 'development' && typeof call.input.say === 'string' && (input.say ?? '').length < call.input.say.trim().length * 0.8) {
+    console.info(`[agent] line shortened: ${JSON.stringify(call.input.say)} → ${JSON.stringify(input.say ?? '')}`);
+  }
   if (!input.say) delete input.say;
   if (call.name === 'reply') input.suggestions = suggestionsOf(input.suggestions, false);
   if (call.name === 'offer_choices') input.options = suggestionsOf(input.options, true);

@@ -623,6 +623,8 @@ function playAll(beats: Beat[], notes: string[], emit?: (e: AgentEvent) => void)
   }
 }
 const PLAIN = voiceFor('yourapp');
+/** Every number a result gives, as a number: a note writes "$1,049", a field 1049. */
+const amountsIn = (text: string) => (text.replace(/(\d),(?=\d{3})/g, '$1').match(/\d+(?:\.\d+)?/g) ?? []).map(Number);
 
 /** A new business account as the session would change it: named, then set up. */
 const settingUp = (account: AccountSnapshot) => (e: AgentEvent) => {
@@ -725,7 +727,7 @@ async function ask(c: Case, i: number): Promise<AgentResponse | { fallback: stri
       const out = runTool({ ctx, memory, next: data.calls[k + 1] }, call);
       if ('error' in out) {
         results.push({ type: 'tool_result', tool_use_id: call.id, content: JSON.stringify(out.error), is_error: true });
-        told.push(...(JSON.stringify(out.error).match(/\d+(?:\.\d+)?/g) ?? []).map(Number));
+        told.push(...amountsIn(JSON.stringify(out.error)));
         failed = stopped = true;
         continue;
       }
@@ -735,7 +737,7 @@ async function ask(c: Case, i: number): Promise<AgentResponse | { fallback: stri
       ran.push(call);
       // The step played through with nobody to wait on: its result reads as one that finished, as the phone's would.
       const result = { ...out.result, ...(notes.length && { notes }), ...(offers.length && { could_offer: offers[offers.length - 1] }), finished: true, account: accountNow(account) };
-      told.push(...(JSON.stringify(result).match(/\d+(?:\.\d+)?/g) ?? []).map(Number));
+      told.push(...amountsIn(JSON.stringify(result)));
       results.push({ type: 'tool_result', tool_use_id: call.id, content: JSON.stringify(result).slice(0, 3600), ...(out.result.error ? { is_error: true } : {}) });
       if (out.result.error) failed = stopped = true;
     }
