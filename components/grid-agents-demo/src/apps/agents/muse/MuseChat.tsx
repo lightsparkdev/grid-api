@@ -66,20 +66,27 @@ function BalanceArtifact({ balance, onOpen, pos }: { balance: AgentBalance; onOp
 }
 
 /** What Muse found, as entity links in its bubble: a thumbnail, the name in bold, the price. */
-function EntityLinks({ products, pos }: { products: Product[]; pos?: string }) {
-  // Options to choose from have a pick among them; several things they named, shown together, are all wanted.
-  const choosing = products.length > 1 && !products.every((p) => p.pick);
+function EntityLinks({ shelves, pos }: { shelves: Product[][]; pos?: string }) {
   return (
     <div className={styles.them} data-bubble data-pos={pos}>
-      {products.map((p, i) => (
-        <span key={p.title} className={styles.entityLine}>
-          {i > 0 && ' '}
-          <img src={p.image} alt="" className={styles.entityThumb} />
-          <strong className={styles.entity}>{p.title}</strong>
-          {p.detail && `, ${p.detail},`} at {p.price}
-          {choosing && p.pick ? ' is my pick.' : choosing && i === 1 ? ', or' : '.'}
-        </span>
-      ))}
+      {shelves.map((products) => {
+        // Options to choose from have a pick among them; something they named is just itself.
+        const choosing = products.length > 1;
+        return (
+          // Each thing it found gets its own line when there are several.
+          <span key={products[0]?.title} style={shelves.length > 1 ? { display: 'block' } : undefined}>
+            {products.map((p, i) => (
+              <span key={p.title} className={styles.entityLine}>
+                {i > 0 && ' '}
+                <img src={p.image} alt="" className={styles.entityThumb} />
+                <strong className={styles.entity}>{p.title}</strong>
+                {p.detail && `, ${p.detail},`} at {p.price}
+                {choosing && p.pick ? ' is my pick.' : choosing && i === 1 ? ', or' : '.'}
+              </span>
+            ))}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -560,7 +567,7 @@ export function MuseChat({ chat }: AgentChatProps) {
           </span>
         );
       case 'products':
-        return <EntityLinks products={m.products} pos={groupPosition(i, all)} />;
+        return <EntityLinks shelves={m.shelves ?? [m.products]} pos={groupPosition(i, all)} />;
       case 'meta': {
         if (repeatsCard(i, all)) return null;
         return <MetaLine meta={m.meta} />;

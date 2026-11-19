@@ -83,12 +83,9 @@ function Markdown({ text }: { text: string }) {
   return <>{out}</>;
 }
 
-/** Options to choose from have a pick among them; several things they named, shown together, are all wanted. */
-const choosing = (products: Product[]) => products.length > 1 && !products.every((p) => p.pick);
-
-/** What dot found, as its markdown list. */
-function productsText(products: Product[]) {
-  return products.map((p) => `- **${p.title}**, ${p.price} at ${p.merchant}${p.pick && choosing(products) ? ' (my pick)' : ''}`).join('\n');
+/** What dot found, as its markdown list. Options to choose from have a pick among them; something they named is just itself. */
+function productsText(shelves: Product[][]) {
+  return shelves.flatMap((products) => products.map((p) => `- **${p.title}**, ${p.price} at ${p.merchant}${p.pick && products.length > 1 ? ' (my pick)' : ''}`)).join('\n');
 }
 
 /** Dots' mark: the blue blob, as the logo in its sheets and pills. */
@@ -758,7 +755,7 @@ export function DotChat({ chat }: AgentChatProps) {
       case 'products':
         return (
           <div className={styles.them} data-bubble>
-            <Markdown text={productsText(m.products)} />
+            <Markdown text={productsText(m.shelves ?? [m.products])} />
           </div>
         );
       case 'meta': {

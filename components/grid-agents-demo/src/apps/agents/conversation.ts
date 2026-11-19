@@ -202,7 +202,9 @@ export type Message =
   | { id: number; kind: 'card'; card: AgentNote; sender?: string }
   | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
   | { id: number; kind: 'work'; key: string; status: string }
-  | { id: number; kind: 'products'; products: Product[]; query?: string }
+  /** `shelves`: when it found several things back to back, each search's own results (one thing they named, or
+   *  options to choose from), in order. `products` is then all of them side by side. */
+  | { id: number; kind: 'products'; products: Product[]; query?: string; shelves?: Product[][] }
   | { id: number; kind: 'subagent'; agent: SubAgent; done: boolean }
   | { id: number; kind: 'meta'; meta: AgentMeta }
   | { id: number; kind: 'divider'; text: string }

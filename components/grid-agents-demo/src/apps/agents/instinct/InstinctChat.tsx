@@ -193,7 +193,8 @@ function OptionsPage({ messages, id, onPick, onBack }: { messages: Message[]; id
   const choice = messages.slice(at + 1).find((m): m is Extract<Message, { kind: 'chips' }> => m.kind === 'chips');
   return (
     <InstinctOptionsPage
-      products={found.products}
+      // Found alongside other things, the page is for the ones to choose from.
+      products={found.shelves?.find((s) => s.length > 1) ?? found.products}
       query={found.query}
       open={!!choice && choice.picked === null && !choice.expired}
       onPick={(i) => {
@@ -573,20 +574,24 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
           </div>
         );
       case 'products':
-        if (m.products.length === 1) return <ProductShot product={m.products[0]} />;
-        return (
-          <button type="button" className={styles.link} data-open-link onClick={() => openPage({ kind: 'options', id: m.id })}>
-            <span className={`${styles.linkHero} ${styles.linkHeroOptions}`}>
-              <Hatch src={m.products[0].image} className={styles.linkHatch} />
-              <span className={styles.linkHeadlineSans}>{optionsTitle(m.products, m.query)}</span>
-              <PagesGlyph />
-              <span className={styles.linkWord}>Instinct</span>
-            </span>
-            <span className={styles.linkMeta}>
-              <strong>{optionsTitle(m.products, m.query)}</strong>
-              <small>{OPTIONS_HOST}</small>
-            </span>
-          </button>
+        // Each thing it found: a shot of the one they named, or a link to the page of options to choose from.
+        return (m.shelves ?? [m.products]).map((products) =>
+          products.length === 1 ? (
+            <ProductShot key={products[0].title} product={products[0]} />
+          ) : (
+            <button key={products[0].title} type="button" className={styles.link} data-open-link onClick={() => openPage({ kind: 'options', id: m.id })}>
+              <span className={`${styles.linkHero} ${styles.linkHeroOptions}`}>
+                <Hatch src={products[0].image} className={styles.linkHatch} />
+                <span className={styles.linkHeadlineSans}>{optionsTitle(products, m.query)}</span>
+                <PagesGlyph />
+                <span className={styles.linkWord}>Instinct</span>
+              </span>
+              <span className={styles.linkMeta}>
+                <strong>{optionsTitle(products, m.query)}</strong>
+                <small>{OPTIONS_HOST}</small>
+              </span>
+            </button>
+          ),
         );
       case 'me': {
         // A reply to an ask or a choice shows what it answers, as iMessage's inline reply does.

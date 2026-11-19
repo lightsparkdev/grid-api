@@ -372,7 +372,7 @@ function search(env: ToolEnv, call: ToolCall): Outcome {
         reply: true,
         then: (picked) => {
           env.memory.chosen = ids[picked];
-          return [record(result, () => ({ they_picked: { option_id: ids[picked], title: shelf.options[picked].title }, next: 'they chose this one: call checkout with option_id "chosen" now; don’t ask again' }))];
+          return [record(result, () => ({ they_picked: { option_id: ids[picked], title: shelf.options[picked].title }, next: `they chose this one: check it out now with option_id "${ids[picked]}" (and anything else they asked to buy, by its option_id); don’t ask again` }))];
         },
         onPage: (picked) => [{ say: 'buy.picked', params: { ...shelfParams(shelf), item: shelf.options[picked].title } }],
       },

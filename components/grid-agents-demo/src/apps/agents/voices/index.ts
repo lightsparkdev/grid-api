@@ -116,13 +116,19 @@ export function renderThread(messages: StoredMessage[], voice: Voice): Message[]
         return m;
       case 'work':
         return { id: m.id, kind: 'work', key: m.key, status: voice.status(m.key, m.params) };
-      case 'products':
+      case 'products': {
+        const shelves = [m.params, ...(m.also ?? [])].map((p) => voice.products(m.key, p));
+        const query = [m.params, ...(m.also ?? [])].find((p, i) => shelves[i].length > 1)?.query ?? m.params?.query;
+        if (shelves.length === 1) return { id: m.id, kind: 'products', products: shelves[0], query: typeof query === 'string' ? query : undefined };
         return {
           id: m.id,
           kind: 'products',
-          products: [m.params, ...(m.also ?? [])].flatMap((p) => voice.products(m.key, p)),
-          query: typeof m.params?.query === 'string' ? m.params.query : undefined,
+          // Side by side, a pick is marked only among options to choose from: something they named is just itself.
+          products: shelves.flatMap((s) => (s.length === 1 ? s.map((p) => ({ ...p, pick: false })) : s)),
+          query: typeof query === 'string' ? query : undefined,
+          shelves,
         };
+      }
       case 'meta':
         return { id: m.id, kind: 'meta', meta: voice.meta(m.key, m.params) };
       case 'subagent':

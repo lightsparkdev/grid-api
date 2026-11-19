@@ -511,16 +511,15 @@ export function useAgentBrain({
           await sleep(b.ms);
         } else if ('products' in b) {
           const onShelf = shelf.current;
-          const one = !!b.params?.only;
-          if (onShelf !== null && one) {
-            // Another thing found right after the last: one shelf, not a message apiece.
+          if (onShelf !== null) {
+            // Another thing found right after the last: one message, not one apiece.
             stopTyping();
             clearWork();
             patch(onShelf, (m) => (m.kind === 'products' ? { ...m, also: [...(m.also ?? []), b.params ?? {}] } : m));
             if (run.voiced) run.shown.push({ id: onShelf, kind: 'products', key: b.products, params: b.params });
           } else {
             const id = put({ kind: 'products', key: b.products, params: b.params });
-            shelf.current = one ? id : null;
+            shelf.current = id;
           }
           await sleep(1200);
         } else if ('subagent' in b) {
@@ -945,7 +944,7 @@ export function useAgentBrain({
    * One of the app's steps, checked and started for the model. An error before anything shows; otherwise whatever was
    * open gives way, and the step plays until it needs the person or ends, which is its result.
    */
-  const prepare = (call: ToolCall, next: ToolCall | undefined, opening: boolean): { error: ToolResult } | Started => {
+  const prepare = (call: ToolCall, next: ToolCall | undefined, opening: boolean, whilePicking = false): { error: ToolResult } | Started => {
     const { say: _line, ...asked } = call.input;
     const made = `${call.name} ${JSON.stringify(asked)}`;
     // The very call that put up what's open: making it again would only put the same thing up afresh, and lose
@@ -962,14 +961,16 @@ export function useAgentBrain({
     if ('error' in out) return out;
     run.result = out.result;
     if (opening) run.opening = call.input.say;
+    // Something else to find while a pick waits: only what needs no pick of its own.
+    if (whilePicking && out.result.named !== true) return { error: { status: 'not_run' } };
     // A look-up while something is open (what's the fee? what's my balance?) shows what it finds and leaves it open.
-    if (BESIDE.has(call.name) && openRef.current?.shown) {
+    if (whilePicking || (BESIDE.has(call.name) && openRef.current?.shown)) {
       run.side = true;
       return {
         spoke: () => run.opened,
         start: (): Promise<ToolResult> => {
           const found = new Promise<ToolResult>((resolve) => (run.taker = resolve));
-          void play(out.beats, run).then((finished) => report(run, { finished, note: 'what was open is still open' }));
+          void play(out.beats, run).then((finished) => report(run, whilePicking ? { finished } : { finished, note: 'what was open is still open' }));
           return found;
         },
       };
@@ -1021,10 +1022,15 @@ export function useAgentBrain({
       called(log.current, calls);
       /** Why the calls after one that stopped the step didn't run. */
       let stopped = '';
+      /** A search is waiting on their pick, held back for the model's line: the rest of what it's finding still shows. */
+      let picking = false;
       for (let i = 0; i < calls.length; i++) {
         const call = calls[i];
         if (stopped) {
-          settled(log.current, call.id, { status: 'not_run', note: stopped });
+          // Asked for several things, they see everything found at once, then pick: not one thing, a question, then more.
+          const also = picking && call.name === 'search' && !overtaken() ? prepare(call, undefined, false, true) : null;
+          if (also && 'start' in also) settled(log.current, call.id, await also.start());
+          else settled(log.current, call.id, { status: 'not_run', note: stopped });
           continue;
         }
         if (overtaken()) break;
@@ -1071,6 +1077,7 @@ export function useAgentBrain({
         const result = await started.start();
         settled(log.current, call.id, result);
         if (result.waiting) {
+          picking = call.name === 'search';
           stopped = 'an earlier call in this step is waiting on them: call this again once they’ve acted, if it’s still wanted';
           // Its line as it started leads into this, and there's nothing new to tell them: it goes straight on screen.
           if (started.spoke() && !result.notes) ended = true;
