@@ -156,8 +156,10 @@ const LOOKUPS = new Set<string>(['search', 'quote_payment']);
 /** Tools that look something up and wait on nothing: asked for while something is open, that stays open. */
 const BESIDE = new Set<string>(['quote_payment', 'show_account']);
 
-/* Typed replies that are exactly what a tap would send. There's nothing in them to read, so they settle what's open
-   at once, as the tap would; anything else typed goes to the model. */
+/* Typed replies that are exactly what a tap would send: an option's own label or number, a bare amount. There's
+   nothing in them to read, so they settle what's open at once, as the tap would; anything else typed goes to the
+   model. A yes or a no is the model's to read too ("ok" after an explanation isn't always a go-ahead): the word lists
+   are only for a script, which has no model to ask. */
 const BARE_YES = /^\s*(y|yes|yeah|yep|yup|k|kk|ok|okay|sure|approve|approved)\s*[.!]*\s*$/i;
 const BARE_NO = /^\s*(n|no|nope|nah)\s*[.!]*\s*$/i;
 const BARE_AMOUNT = /^\s*\$?\s*(\d[\d,]*(?:\.\d{1,2})?)\s*$/;
@@ -177,6 +179,7 @@ function exactOption(text: string, labels: string[]) {
 function tapFor(text: string, wait: Wait, voiced: boolean): Given {
   switch (wait.kind) {
     case 'approval':
+      if (voiced) return null;
       return BARE_YES.test(text) ? { decision: 'allow' } : BARE_NO.test(text) ? { decision: 'deny' } : null;
     case 'choice': {
       const i = exactOption(text, wait.options);
