@@ -605,7 +605,7 @@ const businessState = (a: AccountSnapshot) => ({
   mode: 'business',
   ...(a.business?.named && { company: a.business.company, owner: a.business.owner }),
   team: a.business?.team.map((m) => `${m.name} (${m.role})`),
-  invoices: a.business?.invoices.map((i) => `${i.number} ${i.client} ${dollarsOf(i.amount)} open, due ${i.due}`),
+  invoices: a.business?.invoices.map((i) => `${i.number} ${i.client} ${dollarsOf(i.amount)} ${i.status === 'PAID' ? 'paid' : `already sent, not paid yet, due ${i.due}`}`),
 });
 
 /** Plays a tool's beats with nobody watching: every ask allowed, the first of any choice, a suggested name kept, every
