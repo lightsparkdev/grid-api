@@ -576,7 +576,7 @@ export function useAgentBrain({
           const title = ask?.title ?? b.ask;
           let id = -1;
           const open = await hold(run, { kind: 'approval', title, what: ask ? describeAsk(ask) : `“${title}”` }, () => {
-            id = show({ kind: 'ask', key: b.ask, params: b.params, state: 'open' });
+            id = show({ kind: 'ask', key: b.ask, params: b.params, state: 'open', led: run.voiced });
           });
           if (!open) return false;
           let answer = await given(open);
@@ -630,7 +630,7 @@ export function useAgentBrain({
           let id = -1;
           const labels = b.chips.map((c) => c.label);
           const open = await hold(run, { kind: 'choice', options: labels }, () => {
-            id = show({ kind: 'chips', chips: b.chips, picked: null });
+            id = show({ kind: 'chips', chips: b.chips, picked: null, led: run.voiced });
           });
           if (!open) return false;
           const answer = await given(open);
@@ -654,7 +654,7 @@ export function useAgentBrain({
           let chipsId: number | null = null;
           const open = await hold(run, { kind: 'amount', options: offered, all: b.all ? b.all / 100 : undefined }, () => {
             setAwaitingAmount(true);
-            chipsId = labels.length ? show({ kind: 'chips', chips: labels.map((label) => ({ label })), picked: null }) : null;
+            chipsId = labels.length ? show({ kind: 'chips', chips: labels.map((label) => ({ label })), picked: null, led: run.voiced }) : null;
           });
           if (!open) return false;
           let amount = 0;
@@ -684,7 +684,7 @@ export function useAgentBrain({
           let chipsId = -1;
           const open = await hold(run, { kind: 'name', suggestion: b.suggestion }, () => {
             setAwaitingName(true);
-            chipsId = show({ kind: 'chips', chips: labels.map((label) => ({ label })), picked: null });
+            chipsId = show({ kind: 'chips', chips: labels.map((label) => ({ label })), picked: null, led: run.voiced });
           });
           if (!open) return false;
           let name = '';
@@ -1095,7 +1095,7 @@ export function useAgentBrain({
     if (chips.length && !openRef.current) {
       await sleep(350);
       if (overtaken()) return;
-      const id = push({ kind: 'chips', chips, picked: null });
+      const id = push({ kind: 'chips', chips, picked: null, led: true });
       suggested.current = { id, chips };
     }
     if (overtaken()) return;

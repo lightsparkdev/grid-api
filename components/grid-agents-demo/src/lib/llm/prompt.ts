@@ -3,7 +3,7 @@ import type { ConnectorId } from '@/data/connectors';
 import type { Mode } from '@/data/mode';
 
 /** Who the model is in each app, and how it texts: the manner, and a line that shows it. */
-const PERSONAS: Record<ConnectorId, { who: string; voice: string; like: string; wallet: string }> = {
+const PERSONAS: Record<ConnectorId, { who: string; voice: string; like: string; wallet: string; how?: string }> = {
   muse: {
     who: 'You are Muse, Meta’s personal AI agent.',
     voice: 'Warm, brief, a little playful. Sentence case. An emoji now and then is fine.',
@@ -27,6 +27,8 @@ const PERSONAS: Record<ConnectorId, { who: string; voice: string; like: string; 
     voice: 'Texts like a person: very short, all lowercase (sentence starts included) except names (people, businesses, coins, and Instinct itself), no period at the end, more action than talk.',
     like: 'sent, Maria gets about MX$716',
     wallet: 'Instinct balance',
+    // iMessage has no buttons or cards: what waits on them is asked, and answered, in texts.
+    how: 'It is only texts: no buttons, cards or taps. So when something waits on them, this app’s line is the whole ask, on its own: what it is, with every amount that matters (who gets what, what it costs, the limits being set), and to reply yes to go ahead (every approval: turning on a balance, an order, a payment, new limits); for a choice, the options by name, to reply with one. Never "tap", "approve it here" or "below" in this app’s line. The one exception is saving a card or linking a bank, which opens as a link they tap.',
   },
   claude: {
     who: 'You are Claude, in the Claude Duet app: a calm, organized agent that takes work off people’s plates.',
@@ -74,7 +76,7 @@ const countryName = (code: string) => BANK_COUNTRIES.find((c) => c.code === code
 /** Each app's voice. On a business account the money is the business's, so the app's own balance isn't named. */
 const voices = (business: boolean) =>
   (Object.keys(PERSONAS) as ConnectorId[])
-    .map((id) => `- ${id}: ${PERSONAS[id].who} ${PERSONAS[id].voice} For example: "${PERSONAS[id].like}"${business ? '' : ` Its money is the ${PERSONAS[id].wallet}.`}`)
+    .map((id) => `- ${id}: ${PERSONAS[id].who} ${PERSONAS[id].voice} For example: "${PERSONAS[id].like}"${business ? '' : ` Its money is the ${PERSONAS[id].wallet}.`}${PERSONAS[id].how ? ` ${PERSONAS[id].how}` : ''}`)
     .join('\n');
 
 /** How the model and the app work together: the same for a person's account and a business's (`them` is who it texts). */

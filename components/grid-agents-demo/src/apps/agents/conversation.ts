@@ -198,9 +198,10 @@ export type AskState = 'open' | 'pressing' | 'authing' | 'done' | 'denied' | 'ex
 export type Message =
   | { id: number; kind: 'me'; text: string; react?: string; meant?: string }
   | { id: number; kind: 'them'; text: string; sender?: string; bullets?: string[]; typing: boolean; replyTo?: string }
-  | { id: number; kind: 'ask'; ask: AgentAsk; state: AskState }
+  /** `led`: the agent's own line, above it, asks for this: an app that asks by text sends no text of its own. */
+  | { id: number; kind: 'ask'; ask: AgentAsk; state: AskState; led?: boolean }
   | { id: number; kind: 'card'; card: AgentNote; sender?: string }
-  | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
+  | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean; led?: boolean }
   | { id: number; kind: 'work'; key: string; status: string }
   /** `shelves`: when it found several things back to back, each search's own results (one thing they named, or
    *  options to choose from), in order. `products` is then all of them side by side. */
@@ -225,9 +226,9 @@ export type StoredMessage =
   | { id: number; kind: 'me'; text: string; react?: string; meant?: string }
   /** replyTo: the request this carries on, when the person answered something in between (Dots quotes it). */
   | { id: number; kind: 'them'; said: Said; sender?: string; typing: boolean; replyTo?: string }
-  | { id: number; kind: 'ask'; key: string; params?: Params; state: AskState }
+  | { id: number; kind: 'ask'; key: string; params?: Params; state: AskState; led?: boolean }
   | { id: number; kind: 'card'; key: string; params?: Params }
-  | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean }
+  | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean; led?: boolean }
   | { id: number; kind: 'work'; key: string; params?: Params }
   /** `also`: what it found next, shown with this (two things asked for at once are one shelf, not two). */
   | { id: number; kind: 'products'; key: string; params?: Params; also?: Params[] }

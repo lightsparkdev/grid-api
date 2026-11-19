@@ -163,6 +163,17 @@ function askText(ask: AgentAsk) {
   return `${what}.${from} reply yes to ${verb}`;
 }
 
+/**
+ * Whether the agent's own text states the amount an approval is for. Its text is the ask here, so one that leaves the
+ * amount out is followed by the app's plain summary: nobody approves money without seeing how much.
+ */
+function statesAmount(text: string, ask: AgentAsk) {
+  const amount = (ask.total ?? ask.amount)?.match(/\d[\d,]*(?:\.\d+)?/)?.[0];
+  if (!amount) return true;
+  const bare = (n: string) => n.replace(/,/g, '').replace(/\.00$/, '');
+  return (text.match(/\d[\d,]*(?:\.\d+)?/g) ?? []).some((n) => bare(n) === bare(amount));
+}
+
 /** Only what's sensitive (a card, a bank) opens app.instinct.com; everything else is answered by texting back. */
 const linksOut = (ask: AgentAsk) => !!(ask.card || ask.bank);
 
@@ -556,14 +567,13 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         );
       }
       case 'ask':
-        return linksOut(m.ask) ? (
-          <VaultLink m={m} onOpen={() => openLink(m.id)} />
-        ) : (
-          bubble('ask', <Detected text={askText(m.ask)} />, !theirsNext)
-        );
+        if (linksOut(m.ask)) return <VaultLink m={m} onOpen={() => openLink(m.id)} />;
+        // The agent's own text asked for it, in its own words: there's no second text from the app.
+        if (m.led && statesAmount(all.slice(0, i).reverse().find((x) => x.kind === 'them')?.text ?? '', m.ask)) return null;
+        return bubble('ask', <Detected text={askText(m.ask)} />, !theirsNext);
       case 'chips':
         // The options' page is where you choose; the thread doesn't list them again (typing one still works).
-        if (choosesProduct(i, all)) return null;
+        if (choosesProduct(i, all) || m.led) return null;
         return bubble('chips', <span className={styles.lines}>{chipsText(m)}</span>, !theirsNext);
       case 'work':
         return (
@@ -596,8 +606,9 @@ export function InstinctChat({ chat, dark }: AgentChatProps) {
         );
       case 'me': {
         // A reply to an ask or a choice shows what it answers, as iMessage's inline reply does.
+        // (What the agent asked in its own text isn't quoted: the reply sits right under it.)
         const answers =
-          prev?.kind === 'ask' && !linksOut(prev.ask) ? prev : prev?.kind === 'chips' && !prev.expired ? prev : null;
+          prev?.kind === 'ask' && !linksOut(prev.ask) && !prev.led ? prev : prev?.kind === 'chips' && !prev.expired && !prev.led ? prev : null;
         // Instinct only ever thumbs-ups what you send.
         const tapback = m.react || (answers?.kind === 'ask' && answers.state === 'done') ? '👍' : undefined;
         const fresh = !opened.has(m.id);

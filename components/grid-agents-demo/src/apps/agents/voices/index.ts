@@ -109,7 +109,7 @@ export function renderThread(messages: StoredMessage[], voice: Voice): Message[]
           replyTo: m.replyTo,
         };
       case 'ask':
-        return { id: m.id, kind: 'ask', ask: voice.ask(m.key, m.params), state: m.state };
+        return { id: m.id, kind: 'ask', ask: voice.ask(m.key, m.params), state: m.state, led: m.led };
       case 'card':
         return { id: m.id, kind: 'card', card: voice.note(m.key, m.params) };
       case 'chips':
