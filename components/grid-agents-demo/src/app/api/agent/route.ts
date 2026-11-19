@@ -271,11 +271,37 @@ function withNames(text: string, names: { people: string[]; businesses: string[]
 }
 
 /**
+ * The lines as the model gave them: one per app. Sometimes it sends them as a string of JSON rather than an object,
+ * which is read as what it is (whole, or as many lines as arrived whole), never shown to anyone as text.
+ */
+function linesOf(raw: unknown, connector: ConnectorId): Record<string, unknown> | null {
+  if (raw && typeof raw === 'object') return raw as Record<string, unknown>;
+  if (typeof raw !== 'string') return null;
+  const text = raw.trim();
+  if (!text.startsWith('{')) return { [connector]: raw };
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (parsed && typeof parsed === 'object') return parsed as Record<string, unknown>;
+  } catch {
+    // Cut short: the lines that arrived whole still count.
+  }
+  const found: Record<string, string> = {};
+  for (const m of Array.from(text.matchAll(/"(\w+)"\s*:\s*"((?:[^"\\]|\\.)*)"/g))) {
+    try {
+      found[m[1]] = JSON.parse(`"${m[2]}"`) as string;
+    } catch {
+      // An escape it can't read: that line is left out.
+    }
+  }
+  return Object.keys(found).length ? found : null;
+}
+
+/**
  * Every app's line, cleaned and in that app's casing. One the model left out is filled from a sentence-case app's
  * (made lowercase for the apps that text that way), so no app shows another's casing.
  */
 function saidBy(raw: unknown, connector: ConnectorId, voiced: (id: ConnectorId, line: string) => string): Say | undefined {
-  const lines = typeof raw === 'string' ? { [connector]: raw } : raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : null;
+  const lines = linesOf(raw, connector);
   if (!lines) return undefined;
   const given = Object.fromEntries(CONNECTOR_IDS.map((id) => [id, typeof lines[id] === 'string' ? clean(lines[id] as string) : ''])) as Record<ConnectorId, string>;
   const plain = (['yourapp', 'claude', 'muse', 'grok'] as ConnectorId[]).map((id) => given[id]).find(Boolean) ?? given[connector] ?? CONNECTOR_IDS.map((id) => given[id]).find(Boolean);

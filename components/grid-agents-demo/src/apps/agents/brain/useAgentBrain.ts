@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ACTIONS, actionLabel, type ActionId } from '@/data/actions';
+import { ACTIONS, type ActionId } from '@/data/actions';
 import type { AgentEvent } from '@/data/agentEvents';
 import { BANK_COUNTRIES, BANK_REACH } from '@/data/bankCountries';
 import { activeMode, cleanName, MODES, setActiveMode, type Mode } from '@/data/mode';
@@ -66,6 +66,8 @@ interface Run {
   offer?: string;
   /** What was open when it started, which it took the place of. */
   replaced?: string;
+  /** The app began it by itself, from a shortcut: said in its first report. */
+  began?: string;
   /** The model's call that started it, as made: the same call again while it waits is no new request. */
   made?: string;
   /** A look-up made while something else is open: it shows what it finds and leaves that open. */
@@ -345,10 +347,11 @@ export function useAgentBrain({
   const clearWork = useCallback(() => {
     setMessages((list) => (list.some((m) => m.kind === 'work') ? list.filter((m) => m.kind !== 'work') : list));
   }, []);
-  /** The model is working out what to say. */
+  /** The model is working out what to say. A step's status ("quoting…") gives way to it: one sign of thinking at a time. */
   const startTyping = useCallback(() => {
+    clearWork();
     if (typing.current === null) typing.current = push({ kind: 'them', said: { text: '' }, typing: true });
-  }, [push]);
+  }, [push, clearWork]);
   const stopTyping = useCallback(() => {
     const id = typing.current;
     if (id === null) return;
@@ -426,6 +429,7 @@ export function useAgentBrain({
     const shown = describe(c.render(run.shown));
     const out: ToolResult = {
       ...(run.did && { they: run.did }),
+      ...(run.began && { started: run.began }),
       ...(run.replaced && { replaced: `${run.replaced} closed when you called this: this took its place` }),
       ...run.result,
       ...(notes.length && { notes }),
@@ -440,6 +444,7 @@ export function useAgentBrain({
     run.did = undefined;
     run.offer = undefined;
     run.replaced = undefined;
+    run.began = undefined;
     const taker = run.taker;
     run.taker = undefined;
     if (taker) return taker(out);
@@ -827,7 +832,8 @@ export function useAgentBrain({
     dismiss();
     const run = newRun(flow, !down.current);
     run.leads = true;
-    run.did = `tapped “${actionLabel(flow)}”, which started this flow of the app’s`;
+    // Their message is what they said; that it came from a shortcut is nothing to them, or to the model.
+    run.began = 'what they just asked for, in their message above: the app has already begun it, so there is nothing to call to start it';
     const ctx: FlowContext = { ...cb.current.context(), variant: heard.variant ?? 0, naming: memory.current.naming, ...(run.voiced && { offer: (what: string) => void (run.offer = what) }) };
     // Still missing what it needs (a card-only account and a flow that holds money): it asks, as the chat would.
     const beats = own(() => (needsSetup(flow, ctx.account()) ? planFor(flow, ctx) : FLOWS[flow](ctx)));
