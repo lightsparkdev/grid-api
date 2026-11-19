@@ -105,6 +105,11 @@ export interface AgentAsk {
   text?: string;
   /** A purchase the checkout can switch the payment of: what pays now, and the other ways it could. */
   pay?: { by: 'card' | 'balance'; card: string; wallet: string; balance: string; enough: boolean };
+  /** Settled, what it did, for an app that shows that rather than the ask it answered (Instinct, over text). */
+  receipt?: AgentNote;
+  /** Settled, how a done card heads it when it isn't one payment ("3 invoices sent"): its status ("Awaiting
+   *  payment") and a line under it. */
+  settled?: { title: string; status: string; detail: string };
 }
 
 /** What a checkout's Pay with switches to: the saved card, the balance, or the balance after adding to it. */
@@ -177,6 +182,8 @@ export interface Product {
 export interface SubAgent {
   name: string;
   initial: string;
+  /** The business's logo, in place of the initial. */
+  logo?: string;
   working: string;
   done: string;
   /** Its card's line while they talk, and once they've agreed. */

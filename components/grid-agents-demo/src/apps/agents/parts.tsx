@@ -26,13 +26,50 @@ const ROW_SYMBOL = {
   wallet: 'wallet.pass.fill',
 } as const;
 
+/** Avatar fills for people and businesses without a picture: strong enough for white initials on any skin. */
+const TINTS = ['#e8613c', '#2f9e55', '#2f7cf6', '#9b59e8', '#e2457a', '#d98a12', '#1597ad', '#5b67d8'];
+
+/** The same person or business always gets the same fill. */
+export function tintFor(seed: string) {
+  let h = 0;
+  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return TINTS[h % TINTS.length];
+}
+
 /** An ask row's lead: its image, or a symbol the playground has. */
 export function RowGlyph({ row, size = 18 }: { row: AskRow; size?: number }) {
   if (row.image) return <img className={styles.rowImage} src={row.image} alt="" width={32} height={32} />;
-  if (row.initials) return <span className={styles.rowInitials}>{row.initials}</span>;
+  if (row.initials)
+    return (
+      <span className={styles.rowInitials} style={{ background: tintFor(row.text), color: '#fff' }}>
+        {row.initials}
+      </span>
+    );
   const icon = row.icon;
   if (icon && icon in ROW_SYMBOL) return <SfSymbol name={ROW_SYMBOL[icon as keyof typeof ROW_SYMBOL]} size={size} />;
   return <span className={styles.rowDot} />;
+}
+
+/**
+ * Who an ask is with, as a picture at `size`: their logo, their bank's with their flag on it, their flag, or their
+ * initial on a colored tile. An ask with rows and no counterparty shows its first row (payroll's first person).
+ */
+export function AskMark({ ask, size = 32, round }: { ask: AgentAsk; size?: number; round?: boolean }) {
+  const who = ask.who;
+  const radius = round ? '50%' : `${Math.round(size * 0.24)}px`;
+  const tile = { width: size, height: size, borderRadius: radius };
+  if (who?.icon) return <img className={styles.markLogo} src={who.icon} alt="" style={tile} draggable={false} />;
+  if (who?.bank) return <BankMark bank={who.bank} country={who.flag} size={size} />;
+  if (who?.flag) return <Flag code={who.flag} size={size} />;
+  const row = ask.rows?.[0];
+  if (!who && row?.image) return <img className={styles.markLogo} src={row.image} alt="" style={tile} draggable={false} />;
+  const name = who?.name ?? row?.text ?? ask.title;
+  const letter = who?.mark ?? row?.initials ?? name[0];
+  return (
+    <span className={styles.markLetter} style={{ ...tile, background: tintFor(name), fontSize: Math.round(size * (letter.length > 1 ? 0.36 : 0.44)) }}>
+      {letter}
+    </span>
+  );
 }
 
 /** What copying a note's code is called, by what it is. */
@@ -218,7 +255,7 @@ export function SubAgentRow({
 }) {
   return (
     <button type="button" className={`${styles.sub} ${className ?? ''}`} onClick={onOpen} data-done={done || undefined} data-subagent>
-      <span className={styles.subMark}>{agent.initial}</span>
+      {agent.logo ? <img className={`${styles.subMark} ${styles.subLogo}`} src={agent.logo} alt="" draggable={false} /> : <span className={styles.subMark}>{agent.initial}</span>}
       <span className={styles.subLabel}>
         <strong>{agent.name}</strong>
         <small>{done ? agent.summary : <span className={styles.subShimmer}>{agent.status}…</span>}</small>

@@ -116,6 +116,23 @@
   object-fit: contain;
 }
 
+// AskMark: a logo fills its tile; a letter sits on its color.
+.markLogo {
+  flex: none;
+  object-fit: cover;
+  corner-shape: round;
+}
+
+.markLetter {
+  display: grid;
+  flex: none;
+  place-items: center;
+  color: #fff;
+  font-weight: 600;
+  line-height: 1;
+  corner-shape: round;
+}
+
 .rowInitials {
   display: grid;
   place-items: center;
@@ -614,6 +631,10 @@
 .subChevron {
   flex: none;
   color: var(--part-muted, #8a8a8d);
+}
+
+.subLogo {
+  object-fit: cover;
 }
 
 .subMark {
