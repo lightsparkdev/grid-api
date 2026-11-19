@@ -26,8 +26,14 @@
   @include ios.ios-system-font;
 }
 
-.statusBarLight {
-  /* Scoped to status bar only — must not flip --ios-label-primary on .screen. */
+/* White glyphs over dark content, a side at a time (the time, the levels): each takes its tone from what's behind it.
+   Scoped to the status bar only — must not flip --ios-label-primary on .screen. */
+.timeSlot,
+.levelsSlot {
+  transition: color 0.2s ease;
+}
+
+.light {
   color: #ffffff;
 }
 

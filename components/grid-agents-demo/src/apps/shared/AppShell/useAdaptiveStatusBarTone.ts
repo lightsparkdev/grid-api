@@ -3,6 +3,17 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 
 export type StatusBarTone = 'default' | 'light';
+/** Each side of the bar picks its own: the time on the left, the signal, Wi-Fi and battery on the right. */
+export interface StatusBarTones {
+  time: StatusBarTone;
+  levels: StatusBarTone;
+}
+
+/** Where each side's glyphs sit across the bar (402pt wide: a 145.5pt slot either side of the 95pt island). */
+const SIDES: Record<keyof StatusBarTones, number[]> = {
+  time: [0.14, 0.2, 0.26],
+  levels: [0.73, 0.8, 0.87],
+};
 
 /** Luminance at or above this → dark status bar glyphs. */
 const LIGHT_GLYPH_THRESHOLD = 0.58;
@@ -85,17 +96,19 @@ function sampleLuminanceAt(
   return surface ? relativeLuminance(surface.r, surface.g, surface.b) : null;
 }
 
+/** One side's tone, from what's painted directly behind its glyphs. */
 function measureTone(
   contentRoot: HTMLElement,
   statusBarEl: HTMLElement,
   screenEl: HTMLElement,
   current: StatusBarTone,
+  across: number[],
 ): StatusBarTone {
   const rect = statusBarEl.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) return current;
 
   const y = rect.top + rect.height * 0.45;
-  const xs = [0.18, 0.36, 0.5, 0.64, 0.82].map((t) => rect.left + rect.width * t);
+  const xs = across.map((t) => rect.left + rect.width * t);
   const samples: number[] = [];
 
   for (const x of xs) {
@@ -112,14 +125,17 @@ function measureTone(
   return avg < DARK_GLYPH_THRESHOLD ? 'light' : 'default';
 }
 
-/** Pick white vs dark status bar glyphs from screen content behind the bar. */
+/**
+ * Pick white vs dark status bar glyphs from the screen content behind the bar, each side on its own: a bright bubble
+ * scrolling under the time flips the time and leaves the battery as it was.
+ */
 export function useAdaptiveStatusBarTone(
   screenRef: RefObject<HTMLElement | null>,
   screenBodyRef: RefObject<HTMLElement | null>,
   statusBarRef: RefObject<HTMLElement | null>,
-): StatusBarTone {
-  const [tone, setTone] = useState<StatusBarTone>('default');
-  const toneRef = useRef<StatusBarTone>('default');
+): StatusBarTones {
+  const [tone, setTone] = useState<StatusBarTones>({ time: 'default', levels: 'default' });
+  const toneRef = useRef<StatusBarTones>({ time: 'default', levels: 'default' });
 
   useEffect(() => {
     const screenEl = screenRef.current;
@@ -137,8 +153,12 @@ export function useAdaptiveStatusBarTone(
       const content = screenBodyRef.current;
       const bar = statusBarRef.current;
       if (!screen?.isConnected || !content?.isConnected || !bar?.isConnected) return;
-      const measured = measureTone(content, bar, screen, toneRef.current);
-      if (measured !== toneRef.current) {
+      const was = toneRef.current;
+      const measured: StatusBarTones = {
+        time: measureTone(content, bar, screen, was.time, SIDES.time),
+        levels: measureTone(content, bar, screen, was.levels, SIDES.levels),
+      };
+      if (measured.time !== was.time || measured.levels !== was.levels) {
         toneRef.current = measured;
         setTone(measured);
       }
