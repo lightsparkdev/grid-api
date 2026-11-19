@@ -1,0 +1,48 @@
+parameters:
+  - name: payoutRunId
+    in: path
+    required: true
+    description: System-generated unique payout run identifier
+    schema:
+      type: string
+    example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+get:
+  summary: Get a payout run
+  description: |
+    Retrieve a payout run the authenticated agent created.
+  operationId: agentGetPayoutRun
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentPayoutRun.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agent payout runs are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - No payout run with this id was created by this agent
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

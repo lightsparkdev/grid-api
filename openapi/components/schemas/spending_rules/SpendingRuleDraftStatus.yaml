@@ -1,0 +1,16 @@
+type: string
+enum:
+  - PROPOSED
+  - REFUSED
+  - CONFIRMED
+  - WITHDRAWN
+description: |
+  Where a spending rule draft stands. A draft keeps its status when it
+  expires: a `PROPOSED` draft past its `expiresAt` can no longer be confirmed.
+
+  | Status | Description | Terminal |
+  |--------|-------------|----------|
+  | `PROPOSED` | A rule was made and awaits confirmation by its `ruleHash` | No |
+  | `REFUSED` | No rule could be made; `refusal` says why | Yes |
+  | `CONFIRMED` | The rule was put in force | Yes |
+  | `WITHDRAWN` | Another draft was confirmed, or the rule was removed, first | Yes |

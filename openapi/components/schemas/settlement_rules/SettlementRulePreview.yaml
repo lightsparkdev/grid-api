@@ -1,0 +1,32 @@
+type: object
+required:
+  - currency
+  - amount
+  - splits
+  - ownerKeeps
+  - recentMatches
+properties:
+  currency:
+    type: string
+    example: USD
+  amount:
+    type: integer
+    format: int64
+    description: The payment previewed.
+    example: 1000000
+  splits:
+    type: array
+    description: Every row of the rule, in row order.
+    items:
+      $ref: ./SettlementRulePreviewSplit.yaml
+  ownerKeeps:
+    type: integer
+    format: int64
+    description: What stays with the customer.
+    example: 450000
+  skipReason:
+    $ref: ./SettlementRuleSkipReason.yaml
+  recentMatches:
+    type: array
+    items:
+      $ref: ./SettlementRuleRecentMatch.yaml

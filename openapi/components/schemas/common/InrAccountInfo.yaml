@@ -12,3 +12,4 @@ allOf:
         - UPI
         - NEFT
         - RTGS
+        - BANK_TRANSFER

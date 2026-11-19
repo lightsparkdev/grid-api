@@ -1,0 +1,19 @@
+type: object
+description: >-
+  A claim token for the recipient's link. Grid keeps only its hash and shows
+  it once: issuing another replaces it, so an earlier link stops working.
+required:
+  - claimToken
+  - expiresAt
+properties:
+  claimToken:
+    type: string
+    description: >-
+      The token to put in the link you send the recipient. Never log it or
+      show it to the agent.
+    example: 2mJ0b7cX4lXzv1q3eRk8Wf6YtN9pHs5aUo-dGiCQwLE
+  expiresAt:
+    type: string
+    format: date-time
+    description: When the payout's claim window ends.
+    example: '2025-10-10T15:00:00Z'

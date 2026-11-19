@@ -1,0 +1,56 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+  - name: depositId
+    in: path
+    description: System-generated unique deposit identifier
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get an agent deposit
+  description: >-
+    Returns one of the agent's deposits, including `achPull.authorization.text`
+    for an `ACH_PULL` deposit. The deposit must belong to the given agent on
+    the calling platform, otherwise `404` is returned. This endpoint uses
+    platform credentials, not agent credentials.
+  operationId: getAgentDeposit
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentDeposit.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Agent or deposit not found for this platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

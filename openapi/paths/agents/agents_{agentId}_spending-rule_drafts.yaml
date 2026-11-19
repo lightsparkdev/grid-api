@@ -1,0 +1,263 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Propose a spending rule for an agent
+  description: |
+    Propose a spending rule for every card the agent issued, written as a
+    sentence or as structured data. Nothing is put in force: the draft
+    returned carries the rule, its restatement in plain sentences and the
+    `ruleHash` to confirm it with `PUT /agents/{agentId}/spending-rule`, once
+    the person the rule is for has read the restatement.
+
+    **From text:** send `text` alone, and `timeZone` when the text speaks of
+    days, weeks, months or hours. Grid first checks that the text is a rule
+    about purchases and holds no instructions to the system, then writes the
+    rule, then checks the questions the rule asks about merchants. This can
+    take up to 90 seconds. Text that cannot be made into a rule is stored as
+    a `REFUSED` draft whose `refusal` says why, in fixed sentences that quote
+    the person's own words.
+
+    **Currency:** amounts in `text` are read in the agent's account
+    currency: the currency the agent's cards are charged in, which becomes
+    the rule's `currency`. The request carries no currency. A sentence that
+    names an amount in another currency is refused with code `OTHER`.
+
+    **Timing:** a proposal from text is one call that can take up to about
+    90 seconds. It is safe to retry with the same `Idempotency-Key`, which
+    returns the draft the first request stored rather than proposing again.
+
+    **As structured data:** send `rule`, `text` as what it was written from,
+    and `statement` if the rule has one. Grid checks the rule as it would one
+    it wrote. A question or statement that reads as instructions to the model
+    that judges merchants is stored as a `REFUSED` draft with code
+    `INSTRUCTIONS_IN_QUESTION`.
+
+    **Limits:** at most ten drafts that could still be confirmed (proposed,
+    unexpired, and proposed while the agent's current rule was in force) can
+    await confirmation for an agent at once. Three drafts within 24 hours whose text or questions read
+    as instructions to the system pause the agent's proposals until 24 hours
+    after the last of them. One proposal for an agent is read at a time.
+
+    The draft's `origin` is `PLATFORM`.
+  operationId: createAgentSpendingRuleDraft
+  x-hidden: true
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: true
+      description: >-
+        A unique identifier for the draft, scoped to the agent. A retry with
+        the same key and body returns the draft the first request stored
+        rather than proposing the rule again; the same key with a different
+        body is rejected with `400`.
+      schema:
+        type: string
+        maxLength: 255
+        example: <uuid>
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/spending_rules/SpendingRuleDraftCreateRequest.yaml
+        examples:
+          fromText:
+            summary: Propose a rule from a sentence
+            value:
+              text: Up to $20 a purchase at coffee shops, and nothing else.
+              timeZone: America/New_York
+          structured:
+            summary: Propose a structured rule
+            value:
+              text: Pizza up to $500 ever, gambling up to $100 ever, coffee at most $20 a purchase, nothing else.
+              rule:
+                schemaVersion: 2
+                currency: USD
+                buckets:
+                  - key: pizza
+                    match:
+                      question: The merchant sells pizza
+                    limits:
+                      total:
+                        amount: 50000
+                        period: LIFETIME
+                  - key: gambling
+                    match:
+                      categories:
+                        - '7995'
+                    limits:
+                      total:
+                        amount: 10000
+                        period: LIFETIME
+                  - key: coffee
+                    match:
+                      question: The merchant is a coffee shop
+                    limits:
+                      perPurchase: 2000
+                unmatched:
+                  action: DECLINE
+  responses:
+    '201':
+      description: >-
+        Draft stored, `PROPOSED` with a rule to confirm or `REFUSED` with why
+        no rule could be made
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/spending_rules/SpendingRuleDraft.yaml
+    '400':
+      description: >-
+        Bad request - The body is invalid; `text` is blank, too long or holds
+        control or invisible characters; `timeZone` is not one Grid accepts,
+        or is sent with `rule`; `statement` is sent without `rule`; or the
+        rule fails a check, such as a missing `currency` or `timeZone`, an
+        amount over the bound, more than four questions, or a `validUntil`
+        that has passed; the agent's card currency is not one a rule may
+        hold; or the Idempotency-Key was used for a different body. `reason`
+        says which, in a sentence for the person who wrote the rule. Nothing
+        is stored
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, spending rules
+        are not (`details.refusalReason` is `SPENDING_RULES_DISABLED`), or the
+        agent's proposals are paused (`SPENDING_RULE_PROPOSALS_PAUSED`).
+        Nothing is stored
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Agent not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict - Ten drafts that could still be confirmed already await
+        confirmation for the agent (`SPENDING_RULE_PROPOSAL_LIMIT_REACHED`).
+        Nothing is stored
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '429':
+      description: >-
+        Too many requests - Another proposal for the agent is still being read
+        (`RATE_LIMITED`). Retry after it returns
+      headers:
+        Retry-After:
+          description: Number of seconds to wait before retrying the request.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '503':
+      description: >-
+        Service unavailable - The rule's questions could not be checked just
+        now (`SERVICE_UNAVAILABLE`). Nothing is stored. Propose it again
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error503.yaml
+get:
+  summary: List an agent's spending rule drafts
+  description: >-
+    The agent's spending rule drafts, most recently proposed first: proposals
+    awaiting confirmation, refusals and the drafts that were confirmed or
+    withdrawn. A `PROPOSED` draft past its `expiresAt` can no longer be
+    confirmed.
+  operationId: listAgentSpendingRuleDrafts
+  x-hidden: true
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: status
+      in: query
+      description: Only drafts in this status
+      required: false
+      schema:
+        $ref: ../../components/schemas/spending_rules/SpendingRuleDraftStatus.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/spending_rules/SpendingRuleDraftListResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - Agents API is not enabled for the platform, or spending
+        rules are not (`SPENDING_RULES_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Agent not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

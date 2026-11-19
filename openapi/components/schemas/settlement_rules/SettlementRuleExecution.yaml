@@ -1,0 +1,70 @@
+type: object
+required:
+  - id
+  - settlementRuleId
+  - status
+  - incomingTransactionId
+  - creditedAccountId
+  - incomingAmount
+  - incomingCompletedAt
+  - firesAt
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique execution identifier
+    example: SettlementRuleExecution:019542f5-b3e7-1d02-0000-000000000003
+  settlementRuleId:
+    type: string
+    example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+  status:
+    $ref: ./SettlementRuleExecutionStatus.yaml
+  skipReason:
+    $ref: ./SettlementRuleSkipReason.yaml
+  incomingTransactionId:
+    type: string
+    description: The incoming transaction the rule fired on.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000004
+  creditedAccountId:
+    type: string
+    description: The customer's internal account the payment credited, which pays the shares.
+    example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+  incomingAmount:
+    $ref: ../common/CurrencyAmount.yaml
+    description: The incoming payment, as a `CurrencyAmount` (`amount` in the smallest unit, and `currency`) in the rule's currency.
+  splitAmount:
+    $ref: ../common/CurrencyAmount.yaml
+    description: What the shares add up to, as a `CurrencyAmount` (`amount` in the smallest unit, and `currency`) in the rule's currency. Set once the execution has fired.
+  payoutRunId:
+    type: string
+    description: The payout run that pays the shares. Set once the execution has fired.
+    example: PayoutRun:019542f5-b3e7-1d02-0000-000000000005
+  incomingCompletedAt:
+    type: string
+    format: date-time
+    description: When the incoming payment completed.
+    example: '2026-11-06T18:00:00Z'
+  firesAt:
+    type: string
+    format: date-time
+    description: When a held execution pays out.
+    example: '2026-11-06T18:00:00Z'
+  firstPaymentSentSeconds:
+    type: number
+    format: double
+    description: Seconds from the incoming payment's completion to the first share's payment being sent. Set once the payout run has finished.
+    example: 1.8
+  lastPaymentSentSeconds:
+    type: number
+    format: double
+    description: Seconds from the incoming payment's completion to the last share's payment being sent. Set once the payout run has finished.
+    example: 2.6
+  createdAt:
+    type: string
+    format: date-time
+    example: '2026-11-06T18:00:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    example: '2026-11-06T18:00:02Z'

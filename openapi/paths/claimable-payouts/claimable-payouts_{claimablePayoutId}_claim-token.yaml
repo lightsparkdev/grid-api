@@ -1,0 +1,58 @@
+parameters:
+  - name: claimablePayoutId
+    in: path
+    description: Unique identifier of the claimable payout
+    required: true
+    schema:
+      type: string
+post:
+  summary: Issue a claim token
+  description: >
+    Issue the claim token for the recipient's link to a payout that is
+    `AWAITING_CLAIM`. Grid stores only its hash, so it is returned once;
+    issuing another, for a reminder, replaces it and the earlier link stops
+    working. Put it in a link to your own claim page and send it to the
+    payout's `recipient.phoneNumber` or `recipient.email`. Never show it to
+    the agent.
+  operationId: issueClaimablePayoutClaimToken
+  tags:
+    - Claimable Payouts
+  security:
+    - BasicAuth: []
+  responses:
+    '201':
+      description: Claim token issued
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/claimable_payouts/ClaimablePayoutClaimToken.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Claimable payouts are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Claimable payout not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - The payout is not `AWAITING_CLAIM` (`CONFLICT`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,12 @@
+type: object
+description: >-
+  A locked quote paying the claimable payout to the recipient. Confirm it
+  before `quote.expiresAt`; after that, request another.
+required:
+  - claimablePayout
+  - quote
+properties:
+  claimablePayout:
+    $ref: ./ClaimablePayoutClaim.yaml
+  quote:
+    $ref: ../quotes/Quote.yaml

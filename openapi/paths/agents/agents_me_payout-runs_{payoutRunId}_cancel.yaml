@@ -1,0 +1,54 @@
+parameters:
+  - name: payoutRunId
+    in: path
+    required: true
+    description: System-generated unique payout run identifier
+    schema:
+      type: string
+    example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+post:
+  summary: Cancel a payout run
+  description: |
+    Cancel everything of the run that has not been sent. A `PENDING` row becomes `SKIPPED` with `failureCode` `CANCELLED`. A contact row whose claimable payout is still `AWAITING_CLAIM` has its payout cancelled, which ends its claim link and releases its hold, and becomes `SKIPPED` with `failureCode` `CANCELLED`. `PROCESSING` and `COMPLETED` rows, and contact rows already claimed, are left to finish. A run still `PENDING_APPROVAL` becomes `CANCELLED`, and its `PAYOUT_RUN` action fails with `AGENT_CANCELLED`. A run that has finished is refused with `409`.
+  operationId: agentCancelPayoutRun
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: The cancelled run
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentPayoutRun.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agent payout runs are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - No payout run with this id was created by this agent
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - The run has already finished
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

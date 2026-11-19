@@ -8,6 +8,8 @@ enum:
   - TRON
   - PLASMA
   - ARBITRUM
+  - OPTIMISM
+  - AVALANCHE
   - SPARK
 description: >-
   The blockchain network an on-chain transaction settled on. Whether this is the

@@ -8,9 +8,8 @@ parameters:
 post:
   summary: Start untrusting a beneficiary
   description: |
-    Begin untrusting (removing the trusted mark from) an external account, so
-    future sends to it are dynamically linked and require the per-transaction SCA
-    ceremony again. Returns the `scaChallenge` to satisfy (when one is issued).
+    Begin untrusting (removing the trusted mark from) an external account.
+    Returns the `scaChallenge` to satisfy (when one is issued).
     Complete with
     `POST /customers/external-accounts/{externalAccountId}/untrust/confirm`.
 

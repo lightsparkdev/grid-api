@@ -1,0 +1,52 @@
+parameters:
+  - name: payoutRunId
+    in: path
+    required: true
+    description: System-generated unique payout run identifier
+    schema:
+      type: string
+    example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+get:
+  summary: Export a payout run for reconciliation
+  description: |
+    Every row of the run in submission order, each with the transaction it
+    produced: what was sent and received, the fees, the rate, the
+    provider's reference and why it failed. Amounts are in the smallest
+    unit of their currency. The transaction fields are absent for a row
+    that produced no transaction.
+  operationId: exportPayoutRun
+  tags:
+    - Payout Runs
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: The reconciliation rows
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/payout_runs/PayoutRunExport.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Payout runs are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - No payout run with this id
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

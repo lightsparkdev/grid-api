@@ -1,0 +1,120 @@
+parameters:
+  - name: customerId
+    in: path
+    description: System-generated unique customer identifier
+    required: true
+    schema:
+      type: string
+  - name: storedCardId
+    in: path
+    description: System-generated unique stored card identifier
+    required: true
+    schema:
+      type: string
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+put:
+  summary: Let an agent use a stored card
+  description: >-
+    Let one of the customer's own agents use this card. The agent also needs
+    the `USE_STORED_CARDS` permission, which is never granted by default.
+    Every use still waits for the customer's approval unless they choose to
+    auto-approve a merchant. Granting access is a grant of spending power on
+    the customer's own card: confirm it with the customer (for example with a
+    passkey or an emailed code) before calling. Granting an agent that already
+    has access succeeds and changes nothing.
+  operationId: allowStoredCardAgent
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Access granted
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stored_cards/StoredCard.yaml
+    '400':
+      description: Bad request - the agent belongs to another customer, or is deleted
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Customer, stored card or agent not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: The stored card is `REMOVED`
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Stop an agent using a stored card
+  description: >-
+    Take the agent's access to this card away, with its auto-approved
+    merchants. Its links not yet opened stop working and its uses awaiting
+    approval fail. Removing access the agent does not have succeeds and
+    changes nothing.
+  operationId: disallowStoredCardAgent
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Access removed
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stored_cards/StoredCard.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Customer, stored card or agent not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

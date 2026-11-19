@@ -1,0 +1,19 @@
+type: string
+enum:
+  - PENDING
+  - PENDING_CLAIM
+  - PROCESSING
+  - COMPLETED
+  - FAILED
+  - SKIPPED
+description: |
+  State of one row of a payout run.
+
+  | State | Description |
+  |-------|-------------|
+  | `PENDING` | Accepted, not started. |
+  | `PENDING_CLAIM` | Addressed to a contact. On a platform's run, held and not paid by the run. On an agent's run, its claimable payout was sent and waits for the recipient to claim it: see `claimablePayoutId`. |
+  | `PROCESSING` | Its payment has started. |
+  | `COMPLETED` | Its transaction completed. |
+  | `FAILED` | Rejected at validation, refused when paid, or its transaction failed. See `failureCode`. |
+  | `SKIPPED` | Not paid, because the run was cancelled or another row was rejected under `allOrNothing`. On an agent's run, `failureCode` says why: `CANCELLED`, `APPROVAL_REJECTED` or `APPROVAL_EXPIRED`. |

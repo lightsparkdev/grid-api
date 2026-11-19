@@ -1,0 +1,48 @@
+type: object
+description: >-
+  A single-use link to the card's details. Open `detailsUrl` once, right
+  away, where the purchase is being made; it answers once and expires at
+  `expiresAt`. The number reaches the agent through Evervault's Relay, which
+  decrypts it on the way: Grid never sends it. Never store or log the URL or
+  what it returns.
+required:
+  - detailsUrl
+  - expiresAt
+  - actionId
+  - cvcIncluded
+  - card
+  - holderName
+  - billingAddress
+properties:
+  detailsUrl:
+    type: string
+    format: uri
+    maxLength: 2048
+    description: >-
+      The single-use link. It answers JSON with `number`, `expiryMonth`,
+      `expiryYear`, `holderName` and, when `cvcIncluded`, `cvc`.
+    example: https://relay.example.com/grid/2025-10-13/stored-card-reveals/abc
+  expiresAt:
+    type: string
+    format: date-time
+    description: When the link stops working, five minutes after it is issued.
+    example: '2026-11-06T15:05:00Z'
+  actionId:
+    type: string
+    maxLength: 64
+    description: The `USE_STORED_CARD` action that records this use.
+    example: AgentAction:019542f5-b3e7-1d02-0000-000000000099
+  cvcIncluded:
+    type: boolean
+    description: Whether the link also returns the security code the customer entered when approving.
+    example: false
+  card:
+    $ref: ./AgentStoredCard.yaml
+  holderName:
+    type: string
+    maxLength: 255
+    description: The name on the card, for the checkout form.
+    example: Jane Doe
+  billingAddress:
+    $ref: ../common/Address.yaml
+    description: The card's billing address, for the checkout form.

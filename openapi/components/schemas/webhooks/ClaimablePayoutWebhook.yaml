@@ -1,0 +1,10 @@
+allOf:
+  - $ref: ./BaseWebhook.yaml
+  - type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: ../claimable_payouts/ClaimablePayout.yaml
+      type:
+        $ref: ./ClaimablePayoutWebhookEventType.yaml

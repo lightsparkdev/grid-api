@@ -1,0 +1,134 @@
+---
+title: "Funding"
+description: "Get money into the Global Account an agent spends from: platform deposits and quotes, bank transfers, pulls from the customer's own bank account or debit card, and agent-created Lightning invoices and stablecoin addresses."
+icon: "/images/icons/arrow-inbox.svg"
+"og:image": "/images/og/pages/agent-accounts/funding.webp"
+---
+
+<Note>
+The Agents API must be enabled for your platform; until it is, agent endpoints answer `403`. To enable it, [book a demo](https://www.lightspark.com/contact) or reach out to your Lightspark contact.
+</Note>
+
+An agent spends from the customer's Global Account, so funding an agent account means funding that Embedded Wallet. Incoming funds never need the customer's signature or approval. There are two ways in: your platform funds the account as it funds any internal account, or the agent creates a deposit target the customer (or anyone) pays.
+
+## Funded by your platform
+
+A Global Account is an internal account, so every way you already fund internal accounts works. Create a quote with the Global Account's `InternalAccount` id as the `destination`, from any source currency your platform supports, and Grid converts into the wallet's currency on execute. A real-time funding source returns `paymentInstructions` the customer follows to pay in.
+
+See [Fund the account](/global-accounts/implementation-overview#4-fund-the-account) in the Global Accounts walkthrough for the request.
+
+### Bank transfers to the customer's account details
+
+Once a customer is verified, their USD internal account carries a US account and routing number: the `USD_ACCOUNT` entry in its `fundingPaymentInstructions`, which lists the payment rails it accepts (for example `ACH` and `WIRE`). Anyone can pay it, not only the customer: clients, employers and other people send an ordinary bank transfer on one of those rails, and the customer or your platform can share the details with any payer. The account number is unique to that account, so payers need no reference.
+
+## Deposits the agent creates
+
+With the `RECEIVE_FUNDS` permission, the agent can create a deposit target for the customer's account with `POST /agents/me/deposits`. `Idempotency-Key` is required: a retry with the same key returns the same deposit.
+
+| `sourceNetwork` | `sourceCurrency` | What the agent gets |
+|---|---|---|
+| `LIGHTNING` | `USD` | A BOLT11 invoice for an exact USD `amount` (in cents, required), with an expiry |
+| `BASE`, `ETHEREUM`, `SOLANA`, `POLYGON`, `ARBITRUM` | The asset sent on that chain | A deposit address on that chain. No amount is needed |
+| `TRON` | `USDT` only | A deposit address on Tron |
+
+`destinationInternalAccountId` must belong to the agent's customer and be allowed by the agent's policy.
+
+To pull from the customer's own bank account or debit card instead, see [Pull from the customer's bank account](#pull-from-the-customers-bank-account) and [Pull from the customer's debit card](#pull-from-the-customers-debit-card).
+
+<CodeGroup>
+```bash Lightning
+curl -X POST "$GRID_BASE_URL/agents/me/deposits" \
+  -H "Authorization: Bearer $AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 2c7e9a1f-5b3d-4e8a-9c0f-6d1b4e8a2c75" \
+  -d '{
+    "sourceNetwork": "LIGHTNING",
+    "sourceCurrency": "USD",
+    "destinationInternalAccountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+    "amount": 2000
+  }'
+```
+
+```bash Stablecoin address
+curl -X POST "$GRID_BASE_URL/agents/me/deposits" \
+  -H "Authorization: Bearer $AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 9f1a3c5e-7b2d-4a6f-8e0c-3d5b7a9e1c42" \
+  -d '{
+    "sourceNetwork": "BASE",
+    "sourceCurrency": "USDC",
+    "destinationInternalAccountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
+  }'
+```
+
+</CodeGroup>
+
+**Response:** `201 Created`
+
+```json
+{
+  "id": "AgentDeposit:019542f5-b3e7-1d02-0000-000000000001",
+  "status": "PENDING",
+  "sourceNetwork": "LIGHTNING",
+  "sourceCurrency": "USD",
+  "destinationInternalAccountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+  "destinationCurrency": "USDB",
+  "targetType": "LIGHTNING_INVOICE",
+  "target": "lnbc1pndepositpp5...",
+  "paymentLinks": {
+    "cashApp": "https://cash.app/launch/lightning/lnbc1pndepositpp5..."
+  },
+  "expiresAt": "2026-10-09T18:05:00Z",
+  "createdAt": "2026-10-09T18:00:00Z",
+  "updatedAt": "2026-10-09T18:00:00Z"
+}
+```
+
+### Lightning deposits
+
+The customer pays exactly `amount` in USD; deposit fees are deducted before the destination is credited, and `estimatedReceiveAmount` shows the estimate. The invoice must be paid by `expiresAt`. `paymentLinks.cashApp` opens the invoice in Cash App, and `paymentLinks.shortUrl` is a shortened link when one is available.
+
+### Chain deposits
+
+A chain request returns a standing address that does not expire. Grid counts the first payment the address receives from that network in that currency within 24 hours of the request. While that window is open with nothing paid, a second request for the same account, network and currency is refused with `409`; the error gives the time the window closes.
+
+Where Grid funds a chain deposit through a quote instead, the address is the quote's, the deposit carries the quote's `expiresAt`, and `quoteId` names the quote. A payment that arrives after it expired is not converted: the deposit stays `EXPIRED`, `paidAfterExpiry` becomes `true`, and Lightspark recovers the funds by hand. Do not send it again.
+
+### Tracking a deposit
+
+Read a deposit with `GET /agents/me/deposits/{depositId}`. `status` is `PENDING`, `PROCESSING`, `COMPLETED`, `EXPIRED`, `FAILED` or `REFUNDED`. The transaction that pays a deposit carries the deposit's `quoteId`, so you can match them, and your platform receives the usual `INCOMING_PAYMENT` webhook. Except for bank pulls, a deposit reported `FAILED` or `EXPIRED` can still become `COMPLETED` when funds arrive late; you then receive `INCOMING_PAYMENT` for its transaction again, now `COMPLETED`.
+
+A `503` means the deposit provider is unavailable or holding the order for review. Retry with the same `Idempotency-Key`.
+
+### Pull from the customer's bank account
+
+Where your platform enables external-account pulls, the agent can ask to pull USD from one of the customer's own US bank accounts into their USDB Global Account with `sourceNetwork: ACH_PULL`. Until then, the request is refused with `403` (`ACH_PULL_NOT_ENABLED`).
+
+1. Your backend validates the customer's bank account through Plaid and records it with `POST /agents/{agentId}/external-accounts/{externalAccountId}/ach-validations`. A pull needs an `ACTIVE` USD external account of the agent's customer with a recorded validation.
+2. The agent creates the deposit with `POST /agents/me/deposits`, giving `sourceCurrency: USD`, `amount` in cents, `sourceExternalAccountId`, and the customer's USDB `EMBEDDED_WALLET` as `destinationInternalAccountId`. This moves no money. The deposit is `PENDING` and carries `achPull.authorization.text`, the debit authorization the customer must accept, and `achPull.limits`, how much more the customer can pull.
+3. Your product shows that text verbatim to the signed-in customer (for a business, an admin). When they accept, your backend calls `POST /agents/{agentId}/deposits/{depositId}/authorize-debit` with platform credentials, sending the text's `textVersion` and `textSha256`.
+
+On success the debit is submitted, the deposit becomes `PROCESSING`, and the amount is credited to the Global Account at once. It becomes `COMPLETED` when the debit settles, or `FAILED` if Grid refuses it or the bank returns it (`achPull.returnCode`). A deposit that is not authorized within 30 minutes becomes `EXPIRED`. The agent can never authorize a debit itself.
+
+### Pull from the customer's debit card
+
+Where your platform enables card pulls, the agent can ask to pull USD from one of the customer's own debit cards into their USDB Global Account with `sourceNetwork: DEBIT_CARD_PULL`. It works like the bank pull above, with a [stored card](/agent-accounts/cards#stored-cards) in place of a bank account. Grid stores the card encrypted, so your platform never handles the card number. Until card pulls are enabled, the request is refused with `403` (`DEBIT_CARD_PULL_NOT_ENABLED`).
+
+1. The customer's debit card is stored with `POST /customers/{customerId}/stored-cards`, as in [Cards](/agent-accounts/cards#store-a-card). A pull needs an `ACTIVE` stored card that is a debit card, belongs to the agent's customer, and is shared with the agent.
+2. The agent creates the deposit with `POST /agents/me/deposits`, giving `sourceCurrency: USD`, `amount` in cents, `sourceStoredCardId`, and the customer's USDB `EMBEDDED_WALLET` as `destinationInternalAccountId`. This moves no money. The deposit is `PENDING` and carries `debitCardPull.authorization.text`, the debit authorization the customer must accept, and `debitCardPull.limits`, how much more the customer can pull.
+3. Your product shows that text verbatim to the signed-in customer and confirms their decision with a fresh step-up, such as a passkey or an emailed code. When they accept, your backend calls `POST /agents/{agentId}/deposits/{depositId}/authorize-debit` with platform credentials, sending the text's `textVersion` and `textSha256`.
+
+On success the card is charged, the deposit becomes `PROCESSING`, and the amount is credited to the Global Account at once. It becomes `COMPLETED` when the charge settles, or `FAILED` if Grid refuses it or the card issuer declines or reverses it (`debitCardPull.returnCode`). A deposit that is not authorized within 30 minutes becomes `EXPIRED`. The agent can never authorize a debit itself. Track the deposit and its `INCOMING_PAYMENT` webhooks as in [Tracking a deposit](#tracking-a-deposit).
+
+## Limits before verification
+
+Until a business customer's KYB status is `APPROVED`, its agents' sends and deposits are held to the same limits as an unverified individual's, counted across the whole business. With `MANAGE_IDENTITY`, an agent can help an individual customer finish verification: read and update identity details (`GET`/`PATCH /agents/me/customer`), submit for KYC (`POST /agents/me/verifications`), or generate a single-use hosted KYC link (`POST /agents/me/kyc-link`).
+
+## Funding in sandbox
+
+In sandbox, credit any internal account instantly with `POST /sandbox/internal-accounts/{accountId}/fund`. See [Sandbox testing](/agent-accounts/platform-tools/sandbox-testing).
+
+## Next steps
+
+- [Payments](/agent-accounts/payments)
+- [Webhooks](/agent-accounts/platform-tools/webhooks)

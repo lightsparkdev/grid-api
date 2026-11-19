@@ -69,6 +69,13 @@ post:
     `INCOMING_PAYMENT.FAILED` once more with `RETURN_CONTESTED`.
 
 
+    An agent `ACH_PULL` deposit (see `POST /agents/me/deposits`) credits the
+    destination USDB account when the debit is submitted. If the bank later
+    returns the debit, the payment's transaction follows the return rules
+    above, but the USDB already credited is not taken back. The deposit
+    reports `FAILED` with `achPull.returnCode`.
+
+
     Bank-rail incoming payments (e.g. SWIFT) are informational at every
     status, including PENDING: the funds have already moved interbank, so the
     approval mechanism and the 5-second response window do not apply.

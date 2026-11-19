@@ -1,0 +1,11 @@
+allOf:
+  - $ref: ./PayoutRun.yaml
+  - type: object
+    required:
+      - rejectedRows
+    properties:
+      rejectedRows:
+        type: array
+        description: The rows Grid rejected at validation, in submission order. Empty when every row was accepted.
+        items:
+          $ref: ./PayoutRunRow.yaml

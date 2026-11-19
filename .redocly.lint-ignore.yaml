@@ -21,6 +21,9 @@ openapi.yaml:
       #/paths/~1platform~1external-accounts/post/requestBody/content/application~1json/schema
     - '#/paths/~1quotes/post/requestBody/content/application~1json/schema'
   no-ambiguous-paths:
+    # The static velocity-limits segment takes precedence over card IDs,
+    # so rule IDs cannot be mistaken for card actions such as reveal.
+    - '#/paths/~1cards~1velocity-limits~1{id}'
     - '#/paths/~1customers~1external-accounts~1{externalAccountId}'
   paths-kebab-case:
     - '#/paths/~1sandbox~1cards~1{id}~1simulate~1balance_inquiry'

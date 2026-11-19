@@ -1,0 +1,61 @@
+post:
+  summary: List payout options for a claim
+  description: >
+    The currencies and rails Grid can pay a claimable payout to in a
+    country, priced for the payout's amount. It is the platform's corridor
+    set from `GET /exchange-rates`, limited to the country's currencies.
+    An empty `options` means Grid cannot pay out in that country.
+  operationId: listClaimablePayoutOptions
+  tags:
+    - Claimable Payouts
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/claimable_payouts/ClaimablePayoutOptionsRequest.yaml
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/claimable_payouts/ClaimablePayoutOptions.yaml
+    '400':
+      description: Bad request - Invalid country
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Claimable payouts are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: No claimable payout for this claim token
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - The payout is not `AWAITING_CLAIM` (`CONFLICT`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

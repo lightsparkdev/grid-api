@@ -98,17 +98,10 @@
             "group": "Account security",
             "pages": [
               "global-accounts/authentication",
+              "global-accounts/admin-credentials",
               "global-accounts/client-keys",
               "global-accounts/managing-sessions",
               "global-accounts/exporting-wallet"
-            ]
-          },
-          {
-            "group": "Agents (experimental)",
-            "pages": [
-              "global-accounts/agents/overview",
-              "global-accounts/agents/policies-and-permissions",
-              "global-accounts/agents/approvals-and-audit"
             ]
           },
           {
@@ -117,6 +110,49 @@
               "global-accounts/platform-tools/webhooks",
               "global-accounts/platform-tools/sandbox-testing",
               "global-accounts/platform-tools/postman-collection"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Agent Accounts",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "agent-accounts/demo",
+              "agent-accounts/index"
+            ]
+          },
+          {
+            "group": "Add to your AI app",
+            "pages": [
+              "agent-accounts/ai-app-connector"
+            ]
+          },
+          {
+            "group": "Build on the Agents API",
+            "pages": [
+              "agent-accounts/implementation-overview",
+              "agent-accounts/creating-agents",
+              "agent-accounts/policies-and-permissions",
+              "agent-accounts/spending-limits",
+              "agent-accounts/approvals-and-audit"
+            ]
+          },
+          {
+            "group": "Moving money",
+            "pages": [
+              "agent-accounts/funding",
+              "agent-accounts/payments",
+              "agent-accounts/cards"
+            ]
+          },
+          {
+            "group": "Platform tools",
+            "pages": [
+              "agent-accounts/platform-tools/webhooks",
+              "agent-accounts/platform-tools/sandbox-testing"
             ]
           }
         ]
@@ -155,6 +191,7 @@
             "pages": [
               "payouts-and-b2b/depositing-funds/depositing-funds",
               "payouts-and-b2b/depositing-funds/ach-pull",
+              "payouts-and-b2b/depositing-funds/open-banking",
               "payouts-and-b2b/payment-flow/send-payment",
               "payouts-and-b2b/payment-flow/recipient-descriptors",
               "payouts-and-b2b/payment-flow/assessing-fees",
@@ -171,6 +208,7 @@
               "payouts-and-b2b/global-accounts/overview",
               "payouts-and-b2b/global-accounts/client-keys",
               "payouts-and-b2b/global-accounts/authentication",
+              "payouts-and-b2b/global-accounts/admin-credentials",
               "payouts-and-b2b/global-accounts/managing-sessions",
               "payouts-and-b2b/global-accounts/exporting-wallet"
             ]
@@ -181,6 +219,12 @@
               "payouts-and-b2b/platform-tools/webhooks",
               "payouts-and-b2b/platform-tools/sandbox-testing",
               "payouts-and-b2b/platform-tools/postman-collection"
+            ]
+          },
+          {
+            "group": "Launch",
+            "pages": [
+              "payouts-and-b2b/launch/checklist"
             ]
           }
         ]
@@ -225,6 +269,7 @@
               "ramps/global-accounts/overview",
               "ramps/global-accounts/client-keys",
               "ramps/global-accounts/authentication",
+              "ramps/global-accounts/admin-credentials",
               "ramps/global-accounts/managing-sessions",
               "ramps/global-accounts/exporting-wallet"
             ]
@@ -282,6 +327,7 @@
               "global-p2p/global-accounts/overview",
               "global-p2p/global-accounts/client-keys",
               "global-p2p/global-accounts/authentication",
+              "global-p2p/global-accounts/admin-credentials",
               "global-p2p/global-accounts/managing-sessions",
               "global-p2p/global-accounts/exporting-wallet"
             ]
@@ -378,7 +424,7 @@
               "api-reference/authentication",
               "api-reference/webhooks",
               "api-reference/sandbox-testing",
-              "api-reference/sdks"
+              "api-reference/cli"
             ]
           },
           {
@@ -428,11 +474,11 @@
   "contextual": {
     "options": ["copy", "view", "chatgpt", "claude"]
   },
-  "thumbnails": {
-    "background": "/images/og/og-api-reference-generic.png",
-    "appearance": "dark"
+  "seo": {
+    "metatags": {
+      "og:image": "/images/og/home.png"
+    }
   },
-  "seo": {},
   "integrations": {
     "amplitude": {
       "apiKey": "7f2e340589501177fa6f8a5cc7b6bc51"
@@ -443,7 +489,7 @@
   },
   "footer": {},
   "head": {
-    "raw": "<style>@font-face{font-family:\"Suisse Intl\";src:url(\"/fonts/suisse-intl/SuisseIntl-Regular.woff2\") format(\"woff2\");font-weight:400;font-style:normal;font-display:swap;ascent-override:85%;descent-override:15%;line-gap-override:0%}@font-face{font-family:\"Suisse Intl\";src:url(\"/fonts/suisse-intl/SuisseIntl-Book.woff2\") format(\"woff2\");font-weight:450;font-style:normal;font-display:swap;ascent-override:85%;descent-override:15%;line-gap-override:0%}@font-face{font-family:\"Suisse Intl\";src:url(\"/fonts/suisse-intl/SuisseIntl-Medium.woff2\") format(\"woff2\");font-weight:500;font-style:normal;font-display:swap;ascent-override:85%;descent-override:15%;line-gap-override:0%}@font-face{font-family:\"Suisse Intl\";src:url(\"/fonts/suisse-intl/SuisseIntl-Medium.woff2\") format(\"woff2\");font-weight:700;font-style:normal;font-display:swap;ascent-override:85%;descent-override:15%;line-gap-override:0%}@font-face{font-family:\"Suisse Intl Mono\";src:url(\"/fonts/suisse-intl-mono/SuisseIntlMono-Regular-WebXL.woff2\") format(\"woff2\");font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:\"Suisse Intl Mono\";src:url(\"/fonts/suisse-intl-mono/SuisseIntlMono-Bold-WebXL.woff2\") format(\"woff2\");font-weight:700;font-style:normal;font-display:swap}*{font-feature-settings:\"salt\" on}</style><style>#header:empty,#page-title:empty{display:none!important}</style><script>if(location.pathname==='/'||location.pathname==='/index'||location.pathname===''){document.write('<style>header#header,#page-title,#page-context-menu-button,#page-context-menu,.eyebrow,#pagination,[class*=\"space-y-2\"]>*{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important}</style>');document.documentElement.classList.add('is-homepage');}</script><style>html.is-homepage #pagination,body.is-homepage #pagination,html.is-homepage #footer,body.is-homepage #footer,html.is-homepage header#header,body.is-homepage header#header,html.is-homepage #page-title,body.is-homepage #page-title,html.is-homepage #page-context-menu-button,body.is-homepage #page-context-menu-button,html.is-homepage #page-context-menu,body.is-homepage #page-context-menu,html.is-homepage .eyebrow,body.is-homepage .eyebrow{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important}</style><script>if(location.pathname==='/flow-builder'){document.write('<style>header#header,#page-title,#page-context-menu-button,#page-context-menu,.eyebrow,#pagination{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important}</style>');}</script><script>(function(){var p=location.pathname.replace(/\\/+$/,'')||'/';var c=document.documentElement.classList;if(p==='/flow-builder'){c.add('ls-page-flow-builder');}if(p==='/global-accounts/demo'||p==='/cards/demo'){c.add('ls-page-playground');}})();</script><style>html.ls-page-flow-builder header#header,html.ls-page-flow-builder #page-title,html.ls-page-flow-builder .eyebrow,html.ls-page-flow-builder #page-context-menu-button,html.ls-page-flow-builder #page-context-menu,html.ls-page-flow-builder #pagination{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important}</style><script>(function(){try{if(localStorage.getItem('ls-nav-collapsed')==='1'){document.documentElement.classList.add('ls-nav-collapsed');}}catch(e){}})();</script>",
+    "raw": "<style>@font-face{font-family:\"Suisse Intl\";src:url(\"/fonts/suisse-intl/SuisseIntl-Regular.woff2\") format(\"woff2\");font-weight:400;font-style:normal;font-display:swap;ascent-override:85%;descent-override:15%;line-gap-override:0%}@font-face{font-family:\"Suisse Intl\";src:url(\"/fonts/suisse-intl/SuisseIntl-Book.woff2\") format(\"woff2\");font-weight:450;font-style:normal;font-display:swap;ascent-override:85%;descent-override:15%;line-gap-override:0%}@font-face{font-family:\"Suisse Intl\";src:url(\"/fonts/suisse-intl/SuisseIntl-Medium.woff2\") format(\"woff2\");font-weight:500;font-style:normal;font-display:swap;ascent-override:85%;descent-override:15%;line-gap-override:0%}@font-face{font-family:\"Suisse Intl\";src:url(\"/fonts/suisse-intl/SuisseIntl-Medium.woff2\") format(\"woff2\");font-weight:700;font-style:normal;font-display:swap;ascent-override:85%;descent-override:15%;line-gap-override:0%}@font-face{font-family:\"Suisse Intl Mono\";src:url(\"/fonts/suisse-intl-mono/SuisseIntlMono-Regular-WebXL.woff2\") format(\"woff2\");font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:\"Suisse Intl Mono\";src:url(\"/fonts/suisse-intl-mono/SuisseIntlMono-Bold-WebXL.woff2\") format(\"woff2\");font-weight:700;font-style:normal;font-display:swap}*{font-feature-settings:\"salt\" on}</style><style>#header:empty,#page-title:empty{display:none!important}</style><script>if(location.pathname==='/'||location.pathname==='/index'||location.pathname===''){document.write('<style>header#header,#page-title,#page-context-menu-button,#page-context-menu,.eyebrow,#pagination,[class*=\"space-y-2\"]>*{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important}</style>');document.documentElement.classList.add('is-homepage');}</script><style>html.is-homepage #pagination,body.is-homepage #pagination,html.is-homepage #footer,body.is-homepage #footer,html.is-homepage header#header,body.is-homepage header#header,html.is-homepage #page-title,body.is-homepage #page-title,html.is-homepage #page-context-menu-button,body.is-homepage #page-context-menu-button,html.is-homepage #page-context-menu,body.is-homepage #page-context-menu,html.is-homepage .eyebrow,body.is-homepage .eyebrow{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important}</style><script>if(location.pathname==='/flow-builder'){document.write('<style>header#header,#page-title,#page-context-menu-button,#page-context-menu,.eyebrow,#pagination{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important}</style>');}</script><script>(function(){var p=location.pathname.replace(/\\/+$/,'')||'/';var c=document.documentElement.classList;if(p==='/flow-builder'){c.add('ls-page-flow-builder');}if(p==='/global-accounts/demo'||p==='/cards/demo'||p==='/agent-accounts/demo'){c.add('ls-page-playground');}})();</script><style>html.ls-page-flow-builder header#header,html.ls-page-flow-builder #page-title,html.ls-page-flow-builder .eyebrow,html.ls-page-flow-builder #page-context-menu-button,html.ls-page-flow-builder #page-context-menu,html.ls-page-flow-builder #pagination{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important}</style><script>(function(){try{if(localStorage.getItem('ls-nav-collapsed')==='1'){document.documentElement.classList.add('ls-nav-collapsed');}}catch(e){}})();</script>",
     "links": [
       {
         "rel": "preload",
@@ -483,6 +529,12 @@
     ]
   },
   "redirects": [
+    { "source": "/agents", "destination": "/agent-accounts/demo" },
+    { "source": "/global-accounts/agents/overview", "destination": "/agent-accounts" },
+    { "source": "/global-accounts/agents/policies-and-permissions", "destination": "/agent-accounts/policies-and-permissions" },
+    { "source": "/global-accounts/agents/approvals-and-audit", "destination": "/agent-accounts/approvals-and-audit" },
+    { "source": "/global-accounts/agents/claimable-payouts", "destination": "/agent-accounts/payments#pay-a-person-by-phone-or-email" },
+    { "source": "/api-reference/sdks", "destination": "/api-reference/cli" },
     { "source": "/payouts-and-b2b/embedded-wallets/overview", "destination": "/payouts-and-b2b/global-accounts/overview" },
     { "source": "/payouts-and-b2b/embedded-wallets/client-keys", "destination": "/payouts-and-b2b/global-accounts/client-keys" },
     { "source": "/payouts-and-b2b/embedded-wallets/authentication", "destination": "/payouts-and-b2b/global-accounts/authentication" },

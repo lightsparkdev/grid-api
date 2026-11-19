@@ -10,3 +10,4 @@ allOf:
         type: string
         enum:
         - FASTER_PAYMENTS
+        - BANK_TRANSFER

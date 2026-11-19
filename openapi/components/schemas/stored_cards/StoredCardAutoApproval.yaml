@@ -1,0 +1,35 @@
+type: object
+description: >-
+  A merchant where an agent may use the stored card without asking the
+  customer again, set when the customer approves a use with
+  `autoApproveMerchant`.
+required:
+  - agentId
+  - merchant
+  - maxAmount
+  - currency
+properties:
+  agentId:
+    type: string
+    maxLength: 64
+    description: The agent.
+    example: Agent:019542f5-b3e7-1d02-0000-000000000042
+  merchant:
+    type: string
+    maxLength: 255
+    description: The merchant, as the agent named it, lowercased.
+    example: example-store.com
+  maxAmount:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      The largest amount, in the smallest unit of `currency`, that a use at
+      this merchant may declare and still be approved without asking.
+    example: 4999
+  currency:
+    type: string
+    minLength: 3
+    maxLength: 3
+    description: ISO 4217 code of `maxAmount`.
+    example: USD

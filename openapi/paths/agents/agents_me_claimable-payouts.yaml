@@ -1,0 +1,147 @@
+post:
+  summary: Send a claimable payout
+  description: >
+    Send money from the agent's customer's Embedded Wallet to a person by
+    phone number or email. The recipient needs no Grid account: she claims
+    the payout from a link the platform sends her, choosing how to receive it
+    from what Grid pays out to in her country, and Grid pays her from the
+    customer's wallet.
+
+
+    Grid holds `amount` against the wallet's balance and the agent's
+    spending limits from creation. Funds do not leave the wallet until the
+    recipient claims; while the payout is held, quotes and card payments from
+    the wallet cannot spend the held amount. The hold is released when the
+    payout expires, is cancelled or rejected, or fails.
+
+
+    The request is evaluated against the agent's policy as a send of the same
+    amount to a bank account: it needs the EXECUTE_QUOTES permission, counts
+    toward the spending limits, and needs the customer's approval above the
+    policy's approval threshold or its spending pool's `approvalThreshold`,
+    in `APPROVAL_REQUIRED` mode, or above the
+    platform's limit for bank payouts without approval. A payout that needs
+    approval is created `PENDING_APPROVAL` with a `CLAIMABLE_PAYOUT` agent
+    action, and the `AGENT_ACTION.PENDING_APPROVAL` webhook fires; approving
+    the action makes it `AWAITING_CLAIM`. Otherwise it is created
+    `AWAITING_CLAIM`. Then issue the recipient's link with
+    `POST /claimable-payouts/{claimablePayoutId}/claim-token`.
+
+
+    Available only where the platform enables claimable payouts and agent
+    bank payouts, for a customer whose KYC status is `APPROVED`.
+  operationId: agentCreateClaimablePayout
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: true
+      description: >
+        A unique identifier for the request, scoped to the agent. A retry with
+        the same key returns the payout the first request created.
+      schema:
+        type: string
+        maxLength: 255
+        example: <uuid>
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/claimable_payouts/ClaimablePayoutCreateRequest.yaml
+  responses:
+    '201':
+      description: Claimable payout created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/claimable_payouts/ClaimablePayout.yaml
+    '400':
+      description: Bad request - Invalid parameters, or the wallet does not hold the amount on top of its existing holds (`INSUFFICIENT_FUNDS`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Claimable payouts are not enabled for the platform, the customer is not verified, or the agent policy does not permit this payout
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '503':
+      description: Service unavailable - Grid could not read the wallet's balance. Retry later.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error503.yaml
+get:
+  summary: List claimable payouts
+  description: >
+    List the claimable payouts the authenticated agent sent, newest first.
+  operationId: agentListClaimablePayouts
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: status
+      in: query
+      description: Filter by status
+      required: false
+      schema:
+        $ref: ../../components/schemas/claimable_payouts/ClaimablePayoutStatus.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/claimable_payouts/ClaimablePayoutListResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

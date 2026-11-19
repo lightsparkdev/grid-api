@@ -1,0 +1,31 @@
+type: object
+description: >-
+  The signed object Apple's `initAddToAppleWallet` script asks your
+  `jwsResolver` for.
+required:
+  - header
+  - protected
+  - payload
+  - signature
+properties:
+  header:
+    type: object
+    required:
+      - kid
+    properties:
+      kid:
+        type: string
+        description: Id of the key that signed the object.
+        example: 2f6c8f6a-9a64-4f4e-8a3c-5b0d6e1f2a3b
+  protected:
+    type: string
+    description: Base64url-encoded protected header.
+    example: eyJhbGciOiJFUzI1NiJ9
+  payload:
+    type: string
+    description: Base64url-encoded, encrypted provisioning payload.
+    example: eyJlbmMiOiIuLi4ifQ
+  signature:
+    type: string
+    description: Base64url-encoded signature.
+    example: c2lnbmF0dXJl

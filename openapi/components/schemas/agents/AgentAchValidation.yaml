@@ -1,0 +1,27 @@
+type: object
+description: An ACH account validation accepted for pulls from this external account.
+required:
+  - externalAccountId
+  - method
+  - validatedAt
+properties:
+  externalAccountId:
+    type: string
+    description: The customer's external account that was validated.
+    example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000003
+  method:
+    type: string
+    enum:
+      - PLAID_AUTH
+    description: Method used to validate the account's routing and account numbers.
+    example: PLAID_AUTH
+  institutionName:
+    type: string
+    maxLength: 255
+    description: Name of the bank reported by Plaid, when provided.
+    example: Chase
+  validatedAt:
+    type: string
+    format: date-time
+    description: When the platform validated the account and matched its owner.
+    example: '2026-10-09T17:55:00Z'

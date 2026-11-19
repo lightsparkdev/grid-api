@@ -1,0 +1,30 @@
+allOf:
+  - $ref: ./PayoutRunRow.yaml
+  - type: object
+    properties:
+      transactionStatus:
+        $ref: ../transactions/OutgoingTransactionStatus.yaml
+      sentAmount:
+        $ref: ../common/CurrencyAmount.yaml
+      receivedAmount:
+        $ref: ../common/CurrencyAmount.yaml
+      fees:
+        type: integer
+        format: int64
+        minimum: 0
+        description: The fees of the row's transaction, in the smallest unit of the sending currency.
+        example: 150
+      exchangeRate:
+        type: number
+        exclusiveMinimum: 0
+        description: Number of sending currency units per receiving currency unit, fee-exclusive, as on the transaction.
+        example: 0.058
+      providerReference:
+        type: string
+        description: The reference the payment carries at the receiving provider, when there is one.
+        example: TZP-0042-8812
+      settledAt:
+        type: string
+        format: date-time
+        description: When the transaction settled.
+        example: '2026-11-05T02:13:00Z'

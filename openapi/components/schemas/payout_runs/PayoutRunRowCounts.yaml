@@ -1,0 +1,32 @@
+type: object
+required:
+  - total
+  - pending
+  - pendingClaim
+  - processing
+  - completed
+  - failed
+  - skipped
+properties:
+  total:
+    type: integer
+    description: Rows submitted, rejected rows included.
+    example: 1000
+  pending:
+    type: integer
+    example: 0
+  pendingClaim:
+    type: integer
+    example: 12
+  processing:
+    type: integer
+    example: 0
+  completed:
+    type: integer
+    example: 980
+  failed:
+    type: integer
+    example: 8
+  skipped:
+    type: integer
+    example: 0

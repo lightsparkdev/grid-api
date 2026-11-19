@@ -1,0 +1,172 @@
+post:
+  summary: Create a settlement rule
+  description: |
+    A standing instruction on a customer's incoming payments. When a
+    payment into one of the customer's internal accounts completes and
+    matches the rule, Grid splits it by the rule's shares and pays each
+    share from the account the payment credited, through a payout run.
+    Each share sends the usual `OUTGOING_PAYMENT.*` webhooks.
+
+    **Matching:** a payment matches when it is in the rule's currency and
+    any selector in `match` matches it. A customer's rules are tried in
+    ascending `priority`, which is unique among its rules that are not
+    `DELETED`. The first `ACTIVE` rule that matches wins, so a payment
+    pays out under at most one rule.
+
+    **Shares:** a `PERCENT` share is the payment times `basisPoints` over
+    10,000, rounded down. A `FIXED` share is `amount`. A `REMAINDER` share
+    is what every other share leaves, wherever its row is; there is at
+    most one. Without one, the customer keeps the rest. Shares are paid,
+    and listed, in row order. The percentages add
+    up to at most 10,000, and to less than 10,000 with a `REMAINDER`
+    share. When a payment is smaller than its fixed and percentage shares
+    together, nothing is paid.
+
+    **Destinations:** the payout run row destinations. An `ACTIVE`
+    external account of the platform or of one of its customers. A
+    contact, held for a claim as on a payout run. An internal account of
+    the platform (`GRID_CUSTOMER`), paid as a transfer between internal
+    accounts under the rules of a quote between them.
+
+    **Limits:** a customer has at most 50 rules that are not `DELETED`,
+    and a rule has at most 20 shares.
+
+    Requires an API token with the `UMA_TRANSACT` permission. The rule's
+    shares are paid as that token. Once the token is deleted, expires or
+    loses the permission, the rule pays nothing more and is paused.
+  operationId: createSettlementRule
+  tags:
+    - Settlement Rules
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: true
+      description: Unique identifier for this rule. A retry with the same key and body returns the stored rule; the same key with a different body is rejected.
+      schema:
+        type: string
+        maxLength: 255
+        example: glossier-split
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/settlement_rules/SettlementRuleCreateRequest.yaml
+  responses:
+    '200':
+      description: The rule this Idempotency-Key already created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRule.yaml
+    '201':
+      description: Settlement rule created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRule.yaml
+    '400':
+      description: Bad request - The body is invalid, a share's external account is not active, or the Idempotency-Key was used for a different rule
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform, or the caller is not an API token with the UMA_TRANSACT permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - The customer, or an account a share pays, does not exist
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - Another of the customer's rules has this priority, or the customer already has 50 rules
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List settlement rules
+  description: The platform's settlement rules, oldest first, with their shares.
+  operationId: listSettlementRules
+  tags:
+    - Settlement Rules
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: customerId
+      in: query
+      description: Only the rules of this customer
+      required: false
+      schema:
+        type: string
+    - name: status
+      in: query
+      description: Only rules in this status
+      required: false
+      schema:
+        $ref: ../../components/schemas/settlement_rules/SettlementRuleStatus.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 100, max 200)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 100
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRuleListResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

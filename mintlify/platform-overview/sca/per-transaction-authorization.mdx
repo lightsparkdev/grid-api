@@ -2,7 +2,7 @@
 icon: "/images/icons/lock.svg"
 title: "Per-transaction authorization"
 description: "Authorize an SCA-gated money movement"
-"og:image": "/images/og/og-get-started.png"
+"og:image": "/images/og/pages/platform-overview/sca/per-transaction-authorization.webp"
 ---
 
 This is the flow you hit most often: an SCA-required customer initiates a money
@@ -39,30 +39,8 @@ with an `scaChallenge`.
 `POST /quotes/{quoteId}/authorize` with the proof. Re-inspect the returned quote:
 if it remains `PENDING_AUTHORIZATION`, authorize its next `scaChallenge`. Do not
 assume a fixed number of challenges for a cross-currency or other multi-step
-send.
-</Step>
-</Steps>
-</Tab>
-
-<Tab title="Realtime-funding quote">
-Here the challenge is issued at *quote* time and `paymentInstructions` are
-withheld until you clear it — you authorize before you fund.
-
-<Steps>
-<Step title="Request the quote">
-`POST /quotes` for a realtime-funded send returns `202` /
-`PENDING_AUTHORIZATION` with an `scaChallenge`. `paymentInstructions` are
-**omitted** from this response.
-</Step>
-<Step title="Authorize the quote">
-`POST /quotes/{quoteId}/authorize` with the proof — the challenge is carried by
-the quote. Re-inspect the returned quote and continue the authorization loop if
-it remains `PENDING_AUTHORIZATION`.
-</Step>
-<Step title="Read the payment instructions">
-Read `paymentInstructions` from the returned (advanced) quote and fund the
-transfer. Reading them off the initial pending response would show the customer
-nothing to fund.
+send. **In sandbox, the code is always `000000`, and `111111` expires the
+challenge.**
 </Step>
 </Steps>
 </Tab>

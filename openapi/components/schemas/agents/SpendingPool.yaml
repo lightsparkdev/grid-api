@@ -1,0 +1,119 @@
+title: Spending Pool
+type: object
+description: >-
+  A spending limit shared by the agents assigned to it, on their customer's
+  balance. A pool holds no money and no money moves between pools: it only
+  limits what its agents may spend, in addition to each agent's own policy.
+  Limits of different pools may add up to more than the balance. Each agent
+  belongs to at most one pool.
+required:
+  - id
+  - customerId
+  - name
+  - currency
+  - limitType
+  - limitAmount
+  - allowedPaymentTypes
+  - requiresAdminApproval
+  - isArchived
+  - usage
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique identifier for the pool.
+    example: SpendingPool:019542f5-b3e7-1d02-0000-000000000007
+  customerId:
+    type: string
+    description: The customer whose agents spend under the pool.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  name:
+    type: string
+    description: Human-readable name for the pool.
+    example: Marketing
+  currency:
+    type: string
+    description: >-
+      ISO 4217 currency code all of the pool's amounts are in. Only agents
+      whose policy is in the same currency may be assigned to it. Immutable.
+    example: USD
+  limitType:
+    $ref: ./SpendingPoolLimitType.yaml
+  period:
+    $ref: ./SpendingPoolPeriod.yaml
+    description: The period a `RECURRING` pool resets on. Absent for `TOTAL`.
+  limitAmount:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      The most the pool's agents may spend together: per `period` for a
+      `RECURRING` pool, in total for a `TOTAL` one.
+    example: 500000
+  perTransactionLimit:
+    type: integer
+    format: int64
+    minimum: 1
+    description: The most a single payment may be. Absent for no cap.
+    example: 50000
+  approvalThreshold:
+    type: integer
+    format: int64
+    minimum: 0
+    description: >-
+      A payment by one of the pool's agents above this amount waits for
+      approval, even when the agent's own policy would execute it at once. In
+      the pool's currency. Absent means the agents' own policies alone decide.
+      Card authorizations are never held for approval.
+    example: 25000
+  dailyLimit:
+    type: integer
+    format: int64
+    minimum: 1
+    description: The most the pool's agents may spend together per UTC day. Absent for no cap.
+    example: 100000
+  monthlyLimit:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      The most the pool's agents may spend together per UTC calendar month.
+      Absent for no cap.
+    example: 400000
+  allowedPaymentTypes:
+    type: array
+    description: >-
+      The kinds of payment the pool's agents may make. Any other is refused
+      with `policyDenialReason` `POOL_PAYMENT_TYPE_NOT_ALLOWED`.
+    items:
+      $ref: ./SpendingPoolPaymentType.yaml
+    uniqueItems: true
+    example:
+      - CARDS
+      - CRYPTO_SENDS
+  requiresAdminApproval:
+    type: boolean
+    description: >-
+      Whether the platform requires an administrator to approve the pool's
+      agents' payments that need approval. Grid stores it for the platform
+      and does not act on it.
+    example: false
+  isArchived:
+    type: boolean
+    description: >-
+      Whether the pool was archived. An archived pool takes no agents and
+      cannot be changed.
+    example: false
+  usage:
+    $ref: ./SpendingPoolUsage.yaml
+  createdAt:
+    type: string
+    format: date-time
+    description: Creation timestamp.
+    example: '2026-11-02T17:32:28Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: Last update timestamp.
+    example: '2026-11-02T17:32:28Z'

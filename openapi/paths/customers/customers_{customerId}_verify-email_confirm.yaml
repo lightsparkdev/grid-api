@@ -13,7 +13,7 @@ post:
 
     Both email and phone must be `VERIFIED` before the customer can begin KYC.
 
-    In sandbox, the code is always `123456`.
+    In sandbox, the code is always `000000`.
   operationId: confirmCustomerEmailVerification
   tags:
     - Contact Verification

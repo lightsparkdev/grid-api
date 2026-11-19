@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { CONFIGURE_COL_PX, navState } from '@/lib/layout';
+import { CONFIGURE_COL_PX, fitsFull, navState } from '@/lib/layout';
 
 const MIN_APP = 320;
 // Never resize the API column below the configure column width; dragging only
@@ -14,6 +14,8 @@ const MIN_API = CONFIGURE_COL_PX;
 // Embedded, the docs page posts `nav-sync` with the live sidebar width (48px
 // rail when collapsed, drag-resized values too) and the default follows.
 // Dragging can still grow the panel freely up to (middle − MIN_APP).
+// Where the frame can't hold that (the tight layout; fitsFull in
+// lib/layout.ts), the default is the configure column's width instead.
 const DOCS_SIDEBAR_DEFAULT = 280;
 const SNAP_THRESHOLD = 28;
 
@@ -35,6 +37,12 @@ function initialDefaultApi(): number {
 
 function clampApiWidth(width: number, totalMiddle: number): number {
   return Math.max(MIN_API, Math.min(totalMiddle - MIN_APP, width));
+}
+
+/** The default as it fits: sidebar + configure, or the configure column's width in the tight layout. */
+function defaultWidth(defaultApi: number, totalMiddle: number): number {
+  const fits = fitsFull(totalMiddle + CONFIGURE_COL_PX, defaultApi - CONFIGURE_COL_PX);
+  return clampApiWidth(fits ? defaultApi : MIN_API, totalMiddle);
 }
 
 export function useColumnResize() {
@@ -100,7 +108,7 @@ export function useColumnResize() {
       if (!layout) return;
       const totalMiddle = layout.getBoundingClientRect().width - CONFIGURE_COL_PX;
       setApiWidth((w) =>
-        clampApiWidth(userResized.current && w !== null ? w : defaultApi, totalMiddle),
+        userResized.current && w !== null ? clampApiWidth(w, totalMiddle) : defaultWidth(defaultApi, totalMiddle),
       );
     };
 
@@ -125,7 +133,7 @@ export function useColumnResize() {
         const totalMiddle = layout.getBoundingClientRect().width - CONFIGURE_COL_PX;
         const delta = clientX - startX;
         const raw = clampApiWidth(startApiWidth - delta, totalMiddle);
-        const target = clampApiWidth(defaultApi, totalMiddle);
+        const target = defaultWidth(defaultApi, totalMiddle);
         const snapped = Math.abs(raw - target) <= SNAP_THRESHOLD ? target : raw;
         // Snapping back to the default resumes default tracking on resize.
         userResized.current = snapped !== target;

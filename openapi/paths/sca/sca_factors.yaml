@@ -71,9 +71,9 @@ post:
     so SMS is always available as a factor with no extra setup and appears
     among the customer's enrolled factors in `GET /sca/factors`.
 
-    A customer may have **only one passkey**. Starting a passkey enrollment when
-    one is already enrolled returns `409` (`PASSKEY_ALREADY_ENROLLED`) — delete it
-    via `DELETE /sca/factors/{credentialId}` first.
+    A customer may have **up to two passkeys**. Starting a passkey enrollment
+    with two already enrolled returns `409` (`PASSKEY_ALREADY_ENROLLED`). Delete
+    one via `DELETE /sca/factors/{credentialId}` first.
 
     This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
   operationId: startScaFactorEnrollment
@@ -115,8 +115,9 @@ post:
     '409':
       description: >-
         SCA is not required for this customer (`CONFLICT`), or a passkey
-        enrollment was requested while one is already enrolled
-        (`PASSKEY_ALREADY_ENROLLED`) — only one passkey per customer is supported.
+        enrollment was requested while the customer already has the most
+        passkeys allowed (`PASSKEY_ALREADY_ENROLLED`). A customer may have up to
+        two passkeys.
       content:
         application/json:
           schema:

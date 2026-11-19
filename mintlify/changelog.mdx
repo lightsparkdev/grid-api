@@ -3,12 +3,78 @@ title: "Changelog"
 description: "New features, improvements, and updates to the Grid API."
 icon: "/images/icons/IconNewspaper2.svg"
 mode: "wide"
+"og:image": "/images/og/pages/changelog.webp"
 ---
 
 Follow along with the latest additions and improvements to the Grid API. For upcoming
 changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
+<Update label="November 2026">
+
+## Fund an EUR account by open banking
+
+`POST /internal-accounts/{id}/open-banking-payments` starts a payment that pulls euros
+from the customer's own bank into their EUR internal account. The customer approves it
+in their banking app through `authorizationUrl`, then returns to your `redirectUrl`
+with `openBankingPaymentId`. An `OPEN_BANKING_PAYMENT` webhook reports the outcome, and
+in sandbox `POST /sandbox/open-banking-payments/{openBankingPaymentId}/complete`
+settles a payment. See [open banking](/payouts-and-b2b/depositing-funds/open-banking).
+
+## Wire tracking numbers and returns on `railDetails`
+
+Wire legs now carry `railDetails` with `paymentRail: WIRE`. Alongside `imad`, a wire
+reports its `omad` once delivered, and a `returns` list with one item per wire the
+recipient's bank sent back, each with its own `amount`, `returnCode`, `imad` and
+`returnedAt`. `WireRailStatus` gains `RETURNED`, for a wire the bank sent back (even
+when bank fees reduced the amount).
+
+## Exchange rates report why a corridor is paused
+
+Each rate from `GET /exchange-rates` now has `corridorStatus`: `OPEN`, `OUTAGE`, or
+`MAINTENANCE`. It replaces `isAvailable`, which is removed. Read `corridorStatus ==
+OPEN` where you read `isAvailable` before.
+
+## Tell a corridor outage from maintenance
+
+A paused corridor now tells you why. The account lookup and `POST /quotes` fail with
+`403 CORRIDOR_UNDER_OUTAGE` when an outage pauses the corridor, and with `403
+CORRIDOR_UNDER_MAINTENANCE` for scheduled maintenance. Retry later in both cases. In
+sandbox, an external account whose account number ends in `015` simulates an outage. See
+[sandbox testing](/payouts-and-b2b/platform-tools/sandbox-testing#testing-cross-currency-quotes).
+
+## Tag transactions with your own ID
+
+`POST /quotes`, `POST /transfer-in`, and `POST /transfer-out` take an optional
+`platformTransactionId`, unique per platform. Transactions return it, and
+`GET /transactions` filters by it.
+
+## Issue a business's card to a named person
+
+`POST /cards` takes an optional `cardholder` for a `BUSINESS` customer: the person the
+card is issued to, with their name, email, phone number and US residential address. The
+card spends from the business's account and carries that person's name and contact
+details, so one business can hold cards for many people. Cards with the same
+`cardholder.reference` go to the same person. Omit `cardholder` to issue the card to the
+business itself, as before.
+
+</Update>
+
 <Update label="October 2026">
+
+## Verify a new sign-in email or phone number before it replaces the old one
+
+Changing a Global Account customer's `email` or `phoneNumber` on
+`PATCH /customers/{customerId}`, when the account signs in with it, now needs a verified
+replacement. Register the new address with `POST /auth/credentials`, verify its code with
+`POST /auth/credentials/{id}/verify`, then send the customer update and its signed retry.
+The signed retry can return `200` with `{ "status": "PROCESSING" }` while the change lands,
+and `409 OPERATION_IN_PROGRESS` while another operation on that contact is in progress.
+
+A change without a verified replacement returns `400 AUTH_CREDENTIAL_VERIFICATION_REQUIRED`
+instead of a signed-retry challenge. The `EMAIL_OTP_CREDENTIAL_SET_CHANGED`,
+`SMS_OTP_CREDENTIAL_SET_CHANGED`, `EMAIL_OTP_CREDENTIAL_SYNC_FAILED`, and
+`SMS_OTP_CREDENTIAL_SYNC_FAILED` codes are retired. See
+[Changing the sign-in email or phone number](/global-accounts/authentication#changing-the-sign-in-email-or-phone-number).
 
 ## Beneficial owners carry a job title
 

@@ -1,0 +1,19 @@
+type: object
+description: Conditions a payment must all meet. A selector with no conditions matches every payment in the rule's currency.
+properties:
+  creditedAccountId:
+    type: string
+    description: The customer's internal account the payment credited.
+    example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+  ruleBasedAccountId:
+    type: string
+    description: The rule-based account the payment arrived through.
+    example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d001
+  counterpartyName:
+    $ref: ./SettlementRuleCounterpartyNameMatch.yaml
+  receivedAtWalletAddress:
+    type: string
+    description: The deposit address the payment was sent to.
+    example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+  rail:
+    $ref: ../common/PaymentRail.yaml

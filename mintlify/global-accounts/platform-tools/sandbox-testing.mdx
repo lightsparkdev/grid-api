@@ -2,7 +2,7 @@
 title: "Sandbox testing"
 description: "Exercise the Global Account auth, signing, and funding flows without standing up real OTP delivery, WebAuthn, or OIDC providers"
 icon: "/images/icons/hammer.svg"
-"og:image": "/images/og/og-global-accounts.webp"
+"og:image": "/images/og/pages/global-accounts/platform-tools/sandbox-testing.webp"
 ---
 
 import SandboxGlobalAccountMagic from '/snippets/sandbox-global-account-magic.mdx';
@@ -18,7 +18,7 @@ To use the sandbox environment:
 3. Use the normal production base URL: `https://api.lightspark.com/grid/2025-10-13`.
 4. Authenticate using your sandbox token with HTTP Basic Auth.
 
-In sandbox, customers are KYC-approved on creation, and a Global Account is provisioned automatically alongside any other internal accounts whenever the platform has `USDB` in its supported currencies.
+In sandbox, customers are KYC-approved on creation, and a Global Account is created alongside any other internal accounts whenever the platform has `USDB` in its supported currencies. When the account opens while the platform's `walletProvisioning` is `AT_FIRST_CREDENTIAL`, it stays `PENDING` with no wallet until its first credential is added: `EMAIL_OTP`, `OAUTH`, `PASSKEY` or `EVM_WALLET`, but not `SMS_OTP`.
 
 ## Funding a Global Account
 

@@ -1,0 +1,19 @@
+type: object
+required:
+- accountType
+- iban
+properties:
+  accountType:
+    type: string
+    enum:
+    - CHF_ACCOUNT
+  iban:
+    type: string
+    description: Swiss IBAN (21 characters, starting with CH)
+    example: CH9300762011623852957
+    minLength: 21
+    maxLength: 21
+    pattern: ^CH[0-9]{7}[0-9A-Z]{12}$
+example:
+  accountType: CHF_ACCOUNT
+  iban: CH9300762011623852957

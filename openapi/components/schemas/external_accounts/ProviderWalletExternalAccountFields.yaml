@@ -1,0 +1,14 @@
+type: object
+properties:
+  providerWallet:
+    description: >-
+      The provider that custodies this wallet and the wallet's identity there.
+      Accepted only on `POST /customers/external-accounts`. Omit it for a plain
+      destination address. An account must carry it to fund a card.
+    oneOf:
+      - title: Dynamic Wallet
+        $ref: ./DynamicWalletInfo.yaml
+    discriminator:
+      propertyName: provider
+      mapping:
+        DYNAMIC: ./DynamicWalletInfo.yaml

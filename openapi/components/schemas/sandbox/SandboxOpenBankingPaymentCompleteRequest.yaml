@@ -1,0 +1,5 @@
+type: object
+properties:
+  status:
+    $ref: ../open_banking/OpenBankingPaymentSimulatedOutcome.yaml
+    default: COMPLETED

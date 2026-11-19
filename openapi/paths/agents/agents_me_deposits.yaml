@@ -2,9 +2,12 @@ post:
   summary: Create an agent deposit
   description: >-
     Create a deposit for the authenticated agent's customer.
-    The returned target is a BOLT11 invoice for Lightning or an address for a
-    supported chain. Requires the RECEIVE_FUNDS permission in the agent's
-    policy.
+    The returned target is a BOLT11 invoice for Lightning, an address for a
+    supported chain or the source external account ID for `ACH_PULL`.
+    Creating an `ACH_PULL` deposit moves no money and records no
+    authorization; it returns the text the customer must accept before the
+    platform calls `authorizeAgentDepositDebit`. Requires the RECEIVE_FUNDS
+    permission in the agent's policy.
   operationId: agentCreateDeposit
   tags:
     - Agent Operations
@@ -33,7 +36,12 @@ post:
           schema:
             $ref: ../../components/schemas/agents/AgentDeposit.yaml
     '400':
-      description: Bad request - Unsupported deposit route or invalid amount
+      description: >-
+        Bad request - Unsupported deposit route or invalid amount. For
+        `ACH_PULL`, the source account has no Plaid ACH validation, the amount
+        exceeds a pull limit, or the source account is not the customer's own
+        `ACTIVE` USD account. Also returned when `sourceExternalAccountId` is
+        sent with another network.
       content:
         application/json:
           schema:
@@ -47,7 +55,9 @@ post:
     '403':
       description: >-
         Forbidden - Agents API is not enabled for the platform or the agent does not have
-        the RECEIVE_FUNDS permission
+        the RECEIVE_FUNDS permission. For `ACH_PULL`, external-account pulls
+        are not enabled for the platform or the customer's pulls are blocked
+        after an unauthorized ACH return.
       content:
         application/json:
           schema:

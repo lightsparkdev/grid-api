@@ -37,7 +37,7 @@ app.post('/webhooks/uma', (req, res) => {
   try {
     let signature: Buffer;
     try {
-      // Parse the signature as JSON. It's in the format {"v": "1", "s": "base64_signature"}
+      // Parse the signature as JSON. It's in the format {"v": 1, "s": "base64_signature"}
       const signatureObj = JSON.parse(signatureHeader);
       if (signatureObj.v && signatureObj.s) {
         // The signature is in the 's' field

@@ -25,6 +25,7 @@ make lint           # Lint OpenAPI + markdown + run mint openapi-check
 make lint-openapi   # Lint OpenAPI only
 make lint-markdown  # Lint markdown only
 make mint           # Serve docs locally (cd mintlify && mint dev)
+make og             # Regenerate docs OG images and each page's og:image (scripts/og-images.mjs, settings in scripts/og/config.json)
 ```
 
 ## File Structure

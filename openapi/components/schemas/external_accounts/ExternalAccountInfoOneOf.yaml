@@ -42,12 +42,22 @@ oneOf:
 - $ref: ./PolygonWalletExternalAccountInfo.yaml
 - $ref: ./PlasmaWalletExternalAccountInfo.yaml
 - $ref: ./ArbitrumWalletExternalAccountInfo.yaml
+- $ref: ./OptimismWalletExternalAccountInfo.yaml
+- $ref: ./AvalancheWalletExternalAccountInfo.yaml
 - $ref: ./SolanaWalletExternalAccountInfo.yaml
 - $ref: ./SparkWalletExternalAccountInfo.yaml
 - $ref: ./TronWalletExternalAccountInfo.yaml
 - $ref: ./CnyExternalAccountInfo.yaml
 - $ref: ./IlsExternalAccountInfo.yaml
 - $ref: ./TryExternalAccountInfo.yaml
+- $ref: ./ChfExternalAccountInfo.yaml
+- $ref: ./RonExternalAccountInfo.yaml
+- $ref: ./KrwExternalAccountInfo.yaml
+- $ref: ./AudExternalAccountInfo.yaml
+- $ref: ./ArsExternalAccountInfo.yaml
+- $ref: ./CzkExternalAccountInfo.yaml
+- $ref: ./PlnExternalAccountInfo.yaml
+- $ref: ./SekExternalAccountInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -95,9 +105,19 @@ discriminator:
     POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml
     PLASMA_WALLET: ./PlasmaWalletExternalAccountInfo.yaml
     ARBITRUM_WALLET: ./ArbitrumWalletExternalAccountInfo.yaml
+    OPTIMISM_WALLET: ./OptimismWalletExternalAccountInfo.yaml
+    AVALANCHE_WALLET: ./AvalancheWalletExternalAccountInfo.yaml
     SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
     TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
     CNY_ACCOUNT: ./CnyExternalAccountInfo.yaml
     ILS_ACCOUNT: ./IlsExternalAccountInfo.yaml
     TRY_ACCOUNT: ./TryExternalAccountInfo.yaml
+    CHF_ACCOUNT: ./ChfExternalAccountInfo.yaml
+    RON_ACCOUNT: ./RonExternalAccountInfo.yaml
+    KRW_ACCOUNT: ./KrwExternalAccountInfo.yaml
+    AUD_ACCOUNT: ./AudExternalAccountInfo.yaml
+    ARS_ACCOUNT: ./ArsExternalAccountInfo.yaml
+    CZK_ACCOUNT: ./CzkExternalAccountInfo.yaml
+    PLN_ACCOUNT: ./PlnExternalAccountInfo.yaml
+    SEK_ACCOUNT: ./SekExternalAccountInfo.yaml

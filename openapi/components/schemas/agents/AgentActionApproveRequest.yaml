@@ -1,0 +1,22 @@
+type: object
+description: >-
+  Optional details for approving a `USE_STORED_CARD` action. Refused with
+  `400` on any other action type.
+properties:
+  storedCardCvc:
+    type: string
+    pattern: '^ev:'
+    maxLength: 2048
+    description: >-
+      The card's security code, encrypted by Evervault's Card component, when
+      the use has `storedCardUse.needsCvc`. Required for such a use. Grid
+      holds it only until the agent opens its link, or the link expires, and
+      never stores it with the card.
+    example: 'ev:Tk9D:cvc:...$'
+  autoApproveMerchant:
+    type: boolean
+    description: >-
+      Also let this agent use this card at this merchant again, up to this
+      use's amount, without asking. A later use that needs the security code
+      still asks.
+    example: false

@@ -1,0 +1,30 @@
+type: object
+description: Plaid account and owner validation performed by the platform.
+required:
+  - method
+  - ownerNameMatched
+  - validatedAt
+properties:
+  method:
+    type: string
+    enum:
+      - PLAID_AUTH
+    description: Method used to validate the account's routing and account numbers.
+    example: PLAID_AUTH
+  ownerNameMatched:
+    type: boolean
+    description: >-
+      Must be true: the platform matched an account owner reported by Plaid
+      Identity to the customer's verified name or business legal name.
+      Grid refuses the request when it is false.
+    example: true
+  institutionName:
+    type: string
+    maxLength: 255
+    description: Name of the bank reported by Plaid.
+    example: Chase
+  validatedAt:
+    type: string
+    format: date-time
+    description: When the platform validated the account and matched its owner.
+    example: '2026-10-09T17:55:00Z'

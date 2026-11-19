@@ -1,0 +1,23 @@
+type: object
+description: A rule as it would be created. Only the fields that decide what it pays and what it matches are needed; a `priority` is not.
+required:
+  - currency
+  - match
+  - splits
+properties:
+  currency:
+    type: string
+    description: ISO 4217 code of the payments the rule splits.
+    example: USD
+  match:
+    type: array
+    minItems: 1
+    maxItems: 20
+    items:
+      $ref: ./SettlementRuleSelector.yaml
+  splits:
+    type: array
+    minItems: 1
+    description: The shares, in the order they are paid. At most 20.
+    items:
+      $ref: ./SettlementRuleSplitInput.yaml

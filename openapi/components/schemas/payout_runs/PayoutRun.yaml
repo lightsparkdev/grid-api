@@ -1,0 +1,41 @@
+type: object
+required:
+  - id
+  - status
+  - source
+  - allOrNothing
+  - rowCounts
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique payout run identifier
+    example: PayoutRun:019542f5-b3e7-1d02-0000-000000000001
+  status:
+    $ref: ./PayoutRunStatus.yaml
+  source:
+    $ref: ./PayoutRunSource.yaml
+  scheduledAt:
+    type: string
+    format: date-time
+    description: When the run starts paying rows, if it was scheduled.
+    example: '2026-11-05T02:00:00Z'
+  allOrNothing:
+    type: boolean
+    example: false
+  rowCounts:
+    $ref: ./PayoutRunRowCounts.yaml
+  createdAt:
+    type: string
+    format: date-time
+    example: '2026-11-04T22:00:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    example: '2026-11-05T02:14:00Z'
+  finishedAt:
+    type: string
+    format: date-time
+    description: When the run reached `COMPLETED`, `PARTIALLY_FAILED`, `FAILED` or `CANCELLED`.
+    example: '2026-11-05T02:14:00Z'

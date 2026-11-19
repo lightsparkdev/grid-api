@@ -2,7 +2,7 @@
 icon: "/images/icons/wallet1.svg"
 title: "Account Model"
 description: "Internal accounts, external accounts, and how they work together"
-"og:image": "/images/og/og-get-started.png"
+"og:image": "/images/og/pages/platform-overview/core-concepts/account-model.webp"
 ---
 
 import InternalAccounts from '/snippets/internal-accounts.mdx';
@@ -212,10 +212,10 @@ PENDING → ACTIVE
 
 - **PENDING**: Created, undergoing verification/screening
 - **ACTIVE**: Verified, ready for transactions
-- **INACTIVE**: Disabled (can be reactivated)
+- **INACTIVE**: Deleted, by you or by Lightspark. This is final: an inactive account can't be reactivated or used for payments
 - **UNDER_REVIEW**: Additional review required
 
-You'll receive `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhooks as balance changes, and `INTERNAL_ACCOUNT.STATUS_UPDATED` webhooks when account status changes (e.g., ACTIVE to FROZEN).
+You'll receive `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks when account status changes (e.g., PENDING to ACTIVE, or ACTIVE to UNDER_REVIEW). If the receiving bank corrects the account details via an ACH notification of change (NOC), you'll receive `EXTERNAL_ACCOUNT.ACCOUNT_INFO_UPDATED` with the corrected `accountInfo`.
 
 ### Using External Accounts
 

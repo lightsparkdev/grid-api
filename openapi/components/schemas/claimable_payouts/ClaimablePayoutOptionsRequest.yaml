@@ -1,0 +1,16 @@
+type: object
+required:
+  - claimToken
+properties:
+  claimToken:
+    type: string
+    minLength: 1
+    maxLength: 128
+    description: The claim token from the recipient's link.
+  country:
+    type: string
+    pattern: ^[A-Z]{2}$
+    description: >-
+      ISO 3166-1 alpha-2 country to list payout options for. Defaults to the
+      payout's `recipient.country`.
+    example: PH

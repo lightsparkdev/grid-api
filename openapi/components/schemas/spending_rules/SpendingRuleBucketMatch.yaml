@@ -1,0 +1,81 @@
+type: object
+description: >-
+  What a purchase must be to fall in a bucket. Every part that is set must
+  hold. Only the last bucket may leave every part out and so match every
+  purchase the buckets before it did not.
+properties:
+  categories:
+    type: array
+    minItems: 1
+    description: >-
+      Merchant category codes (ISO 18245) the purchase's merchant must have
+      one of. A code listed twice counts once. Grid returns the codes sorted.
+    items:
+      type: string
+      pattern: '^[0-9]{4}$'
+    example:
+      - '5814'
+  categoryRanges:
+    type: array
+    minItems: 1
+    maxItems: 10
+    description: >-
+      Ranges of merchant category codes, each written as its first and last
+      code, inclusive. The merchant's code must fall in one of them. A range
+      must not start after it ends, and may not be listed twice. When
+      `categories` is also set, at least one of its codes must fall in a
+      range. Grid returns the ranges sorted.
+    items:
+      type: array
+      minItems: 2
+      maxItems: 2
+      items:
+        type: string
+        pattern: '^[0-9]{4}$'
+    example:
+      - - '5812'
+        - '5814'
+  merchants:
+    type: array
+    minItems: 1
+    maxItems: 50
+    description: >-
+      Merchants the purchase must be at one of, by name. Grid returns them
+      sorted.
+    items:
+      $ref: ./SpendingRuleMerchantMatch.yaml
+  amountBelow:
+    type: integer
+    format: int64
+    minimum: 0
+    maximum: 1000000000000000
+    description: >-
+      The purchase must be less than this, in the smallest unit of the rule's
+      `currency`. When `amountAbove` is also set, this must be at least 2
+      more, so a whole amount lies between them.
+    example: 10000
+  amountAbove:
+    type: integer
+    format: int64
+    minimum: 0
+    maximum: 1000000000000000
+    description: >-
+      The purchase must be more than this, in the smallest unit of the rule's
+      `currency`.
+    example: 500
+  hours:
+    $ref: ./SpendingRuleHours.yaml
+  question:
+    type: string
+    minLength: 1
+    maxLength: 500
+    description: >-
+      A plain statement about the merchant that a model judges from the
+      merchant's name, city, country and category as the card network reports
+      them, such as `The merchant sells pizza`. It holds when the model agrees.
+      When the model is unsure, the purchase needs the owner's approval. The
+      model cannot see the amount, the time or what is bought. Not blank, and
+      no control or invisible formatting characters. Each distinct question
+      counts toward the rule's limit of four, with `statement`. Text a person
+      or model wrote: escape it before display.
+    example: The merchant sells pizza

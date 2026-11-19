@@ -1,0 +1,26 @@
+type: object
+required:
+  - wallet
+  - serverSessionId
+  - publicDeviceId
+  - publicWalletId
+properties:
+  wallet:
+    type: string
+    enum:
+      - GOOGLE_PAY
+    description: Discriminator value identifying a Google Pay request.
+    example: GOOGLE_PAY
+  serverSessionId:
+    type: string
+    format: uuid
+    description: The `serverSessionId` from Google's `onSessionCreated` callback.
+    example: 8c3b8a7e-2a5d-4b7f-9c1e-6d2f0a1b3c4d
+  publicDeviceId:
+    type: string
+    description: The `publicDeviceId` from Google's `onSessionCreated` callback.
+    example: 3f1c2b8e-7d4a-4c1e-9b2f-6a5d0e8c7b1a
+  publicWalletId:
+    type: string
+    description: The `publicWalletId` from Google's `onSessionCreated` callback.
+    example: 9b7e6d5c-4a3b-4f2e-8d1c-0b9a8f7e6d5c

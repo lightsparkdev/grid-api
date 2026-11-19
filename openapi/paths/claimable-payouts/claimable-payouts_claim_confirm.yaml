@@ -1,0 +1,64 @@
+post:
+  summary: Confirm a claim
+  description: >
+    Pay a claimable payout on the locked quote from
+    `POST /claimable-payouts/claim/quote`. The payout becomes `CLAIMED`,
+    and Grid signs the payout from the sender's wallet with the agent's
+    delegated key; it becomes `PAID` when the payout completes, or
+    `FAILED`. A quote that has expired is refused with `QUOTE_EXPIRED`:
+    request another. Confirming a payout already `CLAIMED` or `PAID` on the
+    same quote returns it unchanged.
+  operationId: confirmClaimablePayoutClaim
+  tags:
+    - Claimable Payouts
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/claimable_payouts/ClaimablePayoutConfirmRequest.yaml
+  responses:
+    '200':
+      description: Claim confirmed
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/claimable_payouts/ClaimablePayoutClaim.yaml
+    '400':
+      description: Bad request - The quote expired (`QUOTE_EXPIRED`) or is not this payout's
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Claimable payouts are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: No claimable payout for this claim token
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - The payout expired, was cancelled, or was confirmed on another quote (`CONFLICT`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

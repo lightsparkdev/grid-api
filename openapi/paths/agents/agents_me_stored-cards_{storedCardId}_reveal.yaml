@@ -1,0 +1,101 @@
+parameters:
+  - name: storedCardId
+    in: path
+    description: System-generated unique stored card identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Ask for a stored card's details
+  description: >
+    Ask to use a stored card for one purchase. The agent names the merchant,
+    the amount it expects to be charged and what the purchase is; Grid cannot
+    enforce the amount, since the merchant charges the customer's own card.
+
+
+    The customer approves every use unless they chose to auto-approve this
+    agent at this merchant up to the amount. A use that waits answers `202`
+    with a `USE_STORED_CARD` action in `PENDING_APPROVAL`; once it is
+    `APPROVED`, call again with only its `actionId` to collect the link. A use
+    with `needsCvc` always waits, since the customer enters the security code
+    when approving.
+
+
+    An approved use answers `200` with a single-use `detailsUrl`, valid for
+    five minutes. The number reaches the agent through Evervault's Relay,
+    which decrypts it on the way; Grid never sends it. Open the URL once,
+    right away, where the purchase is being made, and never store or log it.
+    Each approved use issues one link: asking again with the same `actionId`
+    is refused with `409`.
+
+
+    Every use is audit-logged with the agent as the actor. Uses are rate
+    limited per card, per agent and per customer; beyond the limit the
+    request is rejected with `429 RATE_LIMITED`. Requires the USE_STORED_CARDS
+    permission and the customer's permission for this agent to use the card.
+  operationId: agentRevealStoredCard
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/stored_cards/AgentStoredCardRevealRequest.yaml
+  responses:
+    '200':
+      description: Link issued
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stored_cards/AgentStoredCardReveal.yaml
+    '202':
+      description: The use waits for the customer's approval
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentAction.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or stored cards are not enabled for the platform, the agent is paused, or the agent does not have the USE_STORED_CARDS permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Stored card not found, or not one this agent may use
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: The `actionId` is not an approved use of this card by this agent, or its link was already issued
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '429':
+      description: Too many uses for this card, agent or customer; retry later
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

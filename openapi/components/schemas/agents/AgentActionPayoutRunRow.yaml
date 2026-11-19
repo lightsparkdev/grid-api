@@ -1,0 +1,19 @@
+type: object
+required:
+  - clientRowId
+  - amount
+  - destination
+properties:
+  clientRowId:
+    type: string
+    example: contractor-0042
+  amount:
+    type: integer
+    format: int64
+    description: What leaves the wallet for this row, in the smallest unit of the run's currency.
+    example: 25000000
+  destination:
+    $ref: ../payout_runs/PayoutRunRowDestination.yaml
+  description:
+    type: string
+    example: October invoice

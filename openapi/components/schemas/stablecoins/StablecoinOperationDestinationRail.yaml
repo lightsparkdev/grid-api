@@ -4,4 +4,5 @@ enum:
   - ACH_CREDIT
   - SAME_DAY_ACH_CREDIT
   - RTP_CREDIT
+  - FEDNOW_CREDIT
 description: Fiat payout rail, present for burn (fiat redemption) destinations.

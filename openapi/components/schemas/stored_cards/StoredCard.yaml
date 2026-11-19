@@ -1,0 +1,71 @@
+type: object
+description: >-
+  A card the customer already owns, stored so their agents can use it. Grid
+  holds the card number only as Evervault ciphertext: no Grid system stores,
+  logs or returns the number itself.
+allOf:
+  - $ref: ./StoredCardDisplay.yaml
+  - type: object
+    required:
+      - id
+      - customerId
+      - status
+      - holderName
+      - agentIds
+      - createdAt
+      - updatedAt
+    properties:
+      id:
+        type: string
+        maxLength: 64
+        description: System-generated unique identifier of the stored card.
+        example: StoredCard:019542f5-b3e7-1d02-0000-000000000077
+      customerId:
+        type: string
+        maxLength: 64
+        description: The customer who owns the card.
+        example: Customer:019542f5-b3e7-1d02-0000-000000000010
+      status:
+        $ref: ./StoredCardStatus.yaml
+      holderName:
+        type: string
+        maxLength: 255
+        description: The cardholder name, as the customer entered it. Empty once the card is `REMOVED`.
+        example: Jane Doe
+      billingAddress:
+        $ref: ../common/Address.yaml
+        description: The card's billing address. Absent once the card is `REMOVED`.
+      agentIds:
+        type: array
+        maxItems: 100
+        description: >-
+          The agents the customer allowed to use this card. An agent also needs
+          the `USE_STORED_CARDS` permission. Empty once the card is `REMOVED`.
+        items:
+          type: string
+          maxLength: 64
+          example: Agent:019542f5-b3e7-1d02-0000-000000000042
+      autoApprovals:
+        type: array
+        maxItems: 100
+        description: >-
+          Merchants where the customer chose to let an agent use the card
+          without asking again, each up to an amount. Cleared for an agent
+          when its access is removed. Empty once the card is `REMOVED`.
+        items:
+          $ref: ./StoredCardAutoApproval.yaml
+      createdAt:
+        type: string
+        format: date-time
+        description: When the card was stored.
+        example: '2026-11-06T15:00:00Z'
+      updatedAt:
+        type: string
+        format: date-time
+        description: When the card was last changed.
+        example: '2026-11-06T15:00:00Z'
+      removedAt:
+        type: string
+        format: date-time
+        description: When the customer removed the card. Present only once it is `REMOVED`.
+        example: '2026-11-07T09:30:00Z'

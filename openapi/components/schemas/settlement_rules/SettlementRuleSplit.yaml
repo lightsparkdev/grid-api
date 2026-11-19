@@ -1,0 +1,10 @@
+allOf:
+  - $ref: ./SettlementRuleSplitInput.yaml
+  - type: object
+    required:
+      - position
+    properties:
+      position:
+        type: integer
+        description: The share's zero-based position in the rule. Shares are paid in this order.
+        example: 0

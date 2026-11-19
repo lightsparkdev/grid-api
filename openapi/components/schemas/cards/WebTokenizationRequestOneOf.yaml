@@ -1,0 +1,8 @@
+oneOf:
+  - $ref: ./AppleWebTokenizationRequest.yaml
+  - $ref: ./GoogleWebTokenizationRequest.yaml
+discriminator:
+  propertyName: wallet
+  mapping:
+    APPLE_PAY: ./AppleWebTokenizationRequest.yaml
+    GOOGLE_PAY: ./GoogleWebTokenizationRequest.yaml

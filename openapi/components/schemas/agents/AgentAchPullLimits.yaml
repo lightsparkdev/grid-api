@@ -1,0 +1,25 @@
+type: object
+description: >-
+  The per-pull maximum and how much more this customer can pull in rolling
+  7-day and 30-day windows, in USD cents. The windows count every submitted
+  pull that was not refused.
+required:
+  - perPullLimit
+  - rolling7DayRemaining
+  - rolling30DayRemaining
+properties:
+  perPullLimit:
+    type: integer
+    format: int64
+    description: Maximum amount for one pull, in USD cents.
+    example: 100000
+  rolling7DayRemaining:
+    type: integer
+    format: int64
+    description: Amount this customer can still pull in the rolling 7-day window, in USD cents.
+    example: 200000
+  rolling30DayRemaining:
+    type: integer
+    format: int64
+    description: Amount this customer can still pull in the rolling 30-day window, in USD cents.
+    example: 500000

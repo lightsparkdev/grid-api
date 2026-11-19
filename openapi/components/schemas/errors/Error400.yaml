@@ -39,19 +39,22 @@ properties:
       | SUSPECTED_FRAUD | Document suspected of being forged or edited |
       | UNSUITABLE_DOCUMENT | Document type is not accepted or not supported |
       | INCOMPLETE | Document is missing pages or sides |
-      | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
+      | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | The account holder already has an EMAIL_OTP credential on the target internal account; the holder may have one. Administrators' credentials, added with `POST /auth/admin-credentials`, are not counted |
       | SMS_OTP_CREDENTIAL_ALREADY_EXISTS | An SMS_OTP credential is already registered on the target internal account; only one SMS OTP credential is supported per internal account at this time |
       | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential with the same WebAuthn credentialId is already registered on the target internal account |
+      | WALLET_CREDENTIAL_ALREADY_EXISTS | A wallet credential for the same address is already registered on the target internal account |
       | AUTH_CREDENTIAL_VERIFICATION_REQUIRED | The new email or phone number has no verified replacement credential |
       | AUTH_CREDENTIAL_VERIFICATION_EXPIRED | The replacement credential's verification has expired |
       | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
       | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
       | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+      | STORED_CARD_VERIFICATION_FAILED | The card's issuer did not confirm the card: its security code, billing address or name did not match. Nothing was stored |
       | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
       | ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED | The customer create request omits an accountholder agreement its accounts require |
       | CARDHOLDER_AGREEMENT_NOT_ACCEPTED | The customer has not accepted the cardholder agreement the platform requires before a card is issued |
       | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
       | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
+      | BANK_ACCOUNT_OWNER_MISMATCH | The bank does not list the customer as the bank account's owner |
       | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
       | QUOTE_EXPIRED | The quote has expired; request a new quote |
       | QUOTE_RATE_UNAVAILABLE | No exchange rate is available for this corridor right now |
@@ -71,6 +74,9 @@ properties:
       | STABLECOIN_VERIFICATION_FAILED | The stablecoin could not be verified with the provider |
       | DOCUMENTS_REQUIRED | The destination requires supporting documents for the quote's `purposeOfPayment` that the request did not supply. `details.missingRequirements` lists the requirement ID of each one |
       | EXACT_AMOUNT_UNAVAILABLE | The quote cannot deliver exactly the requested receiving amount at the current rate; quote again shortly or lock the sending amount |
+      | DEBIT_AUTHORIZATION_MISMATCH | The authorization text version or hash does not match the deposit's |
+      | BANK_ACCOUNT_NOT_VALIDATED | The external account has no ACH validation accepted for pulls |
+      | ACH_PULL_LIMIT_EXCEEDED | The amount exceeds the per-pull limit or the customer's rolling 7-day or 30-day pull limit |
     enum:
       - INVALID_INPUT
       - END_USER_TERMS_VERSION_NOT_FOUND
@@ -106,16 +112,19 @@ properties:
       - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
       - SMS_OTP_CREDENTIAL_ALREADY_EXISTS
       - PASSKEY_CREDENTIAL_ALREADY_EXISTS
+      - WALLET_CREDENTIAL_ALREADY_EXISTS
       - AUTH_CREDENTIAL_VERIFICATION_REQUIRED
       - AUTH_CREDENTIAL_VERIFICATION_EXPIRED
       - STABLECOIN_PROVIDER_ACCOUNT_INVALID
       - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
       - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+      - STORED_CARD_VERIFICATION_FAILED
       - CARDHOLDER_KYC_NOT_APPROVED
       - ACCOUNTHOLDER_AGREEMENT_NOT_ACCEPTED
       - CARDHOLDER_AGREEMENT_NOT_ACCEPTED
       - TRANSACTION_SIZE_LIMIT_EXCEEDED
       - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
+      - BANK_ACCOUNT_OWNER_MISMATCH
       - INSUFFICIENT_FUNDS
       - QUOTE_EXPIRED
       - QUOTE_RATE_UNAVAILABLE
@@ -135,6 +144,9 @@ properties:
       - STABLECOIN_VERIFICATION_FAILED
       - DOCUMENTS_REQUIRED
       - EXACT_AMOUNT_UNAVAILABLE
+      - DEBIT_AUTHORIZATION_MISMATCH
+      - BANK_ACCOUNT_NOT_VALIDATED
+      - ACH_PULL_LIMIT_EXCEEDED
   reason:
     type: string
     description: Error message

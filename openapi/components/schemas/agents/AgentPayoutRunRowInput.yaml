@@ -1,0 +1,26 @@
+type: object
+required:
+  - clientRowId
+  - amount
+  - destination
+properties:
+  clientRowId:
+    type: string
+    minLength: 1
+    maxLength: 64
+    description: The agent's identifier for the row, unique within the run.
+    example: contractor-0042
+  amount:
+    type: integer
+    format: int64
+    minimum: 1
+    maximum: 9000000000000000
+    description: What leaves the wallet for this row, in the smallest unit of the source account's currency. The row's fees come out of what the recipient receives.
+    example: 25000000
+  destination:
+    $ref: ../payout_runs/PayoutRunRowDestination.yaml
+  description:
+    type: string
+    maxLength: 140
+    description: For a `CONTACT` row, the note on its claimable payout, which the recipient sees once she has proved she holds the link.
+    example: October invoice

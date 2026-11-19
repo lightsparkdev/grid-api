@@ -1,0 +1,96 @@
+parameters:
+  - name: customerId
+    in: path
+    description: System-generated unique customer identifier
+    required: true
+    schema:
+      type: string
+  - name: storedCardId
+    in: path
+    description: System-generated unique stored card identifier
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get a stored card
+  description: Retrieve one of the customer's stored cards, including a `REMOVED` one.
+  operationId: getStoredCard
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stored_cards/StoredCard.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Customer or stored card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Remove a stored card
+  description: >-
+    Remove a stored card. Grid erases its encrypted number, holder name and
+    billing address at once, so the card cannot be recovered; every agent
+    loses access, links not yet opened stop working, and uses awaiting
+    approval fail. The card stays readable with its display fields and
+    status `REMOVED`. Removing a removed card succeeds and changes nothing.
+  operationId: removeStoredCard
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Card removed
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stored_cards/StoredCard.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API or stored cards are not enabled for the platform (`details.refusalReason` `STORED_CARDS_DISABLED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Customer or stored card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

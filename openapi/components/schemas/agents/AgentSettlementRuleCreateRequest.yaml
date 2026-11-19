@@ -1,0 +1,54 @@
+type: object
+description: A settlement rule as an agent proposes it, for the agent's customer.
+required:
+  - name
+  - currency
+  - match
+  - splits
+properties:
+  name:
+    type: string
+    minLength: 1
+    maxLength: 255
+    description: What the rule is called. It is the description of each payment the rule sends.
+    example: Glossier deal
+  currency:
+    type: string
+    description: Code of the payments the rule splits, which is the currency of the Embedded Wallet its selectors name.
+    example: USDB
+  priority:
+    type: integer
+    format: int32
+    minimum: 0
+    maximum: 2147483647
+    description: Rules are tried in ascending priority. Unique among the customer's rules that are not `DELETED`, the platform's included. Omit it to try the rule after the customer's others.
+    example: 1
+  match:
+    type: array
+    minItems: 1
+    maxItems: 20
+    description: A payment matches when any selector matches it. Every selector sets `creditedAccountId` to the customer's Embedded Wallet.
+    items:
+      $ref: ../settlement_rules/SettlementRuleSelector.yaml
+  splits:
+    type: array
+    minItems: 1
+    description: The shares, in the order they are paid. At most 20.
+    items:
+      $ref: ../settlement_rules/SettlementRuleSplitInput.yaml
+  holdSeconds:
+    type: integer
+    minimum: 0
+    maximum: 86400
+    default: 0
+    description: How long after a payment completes the rule waits to pay it, for payments on rails other than ACH.
+    example: 0
+  achHoldSeconds:
+    type: integer
+    minimum: 0
+    maximum: 86400
+    default: 86400
+    description: How long after an ACH payment completes the rule waits to pay it.
+    example: 86400
+  limits:
+    $ref: ../settlement_rules/SettlementRuleLimits.yaml

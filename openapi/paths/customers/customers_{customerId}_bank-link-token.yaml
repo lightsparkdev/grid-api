@@ -1,0 +1,65 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The Grid customer ID to link a bank account for.
+    required: true
+    schema:
+      type: string
+post:
+  summary: Create a bank link token
+  description: |
+    Create a Plaid Link token for one of your customers. Open Plaid Link with it in your application; when the customer finishes, send the `public_token` and selected account ID from Plaid Link to `POST /customers/{customerId}/bank-links`.
+
+    Plaid Link shows `clientName` as the name of the application the customer is connecting to. Grid uses your platform's name when you do not send one.
+
+    Available to `INDIVIDUAL` and `BUSINESS` customers. The customer must have a full name (`INDIVIDUAL`) or a business legal name (`BUSINESS`) on file, because the bank account's owner name is matched against it.
+  operationId: createCustomerBankLinkToken
+  tags:
+    - External Accounts
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/external_accounts/BankLinkTokenCreateRequest.yaml
+  responses:
+    '201':
+      description: Link token created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/external_accounts/BankLinkToken.yaml
+    '400':
+      description: >-
+        Bad request. `MISSING_MANDATORY_USER_INFO` when the customer has no name
+        on file to match the bank account's owner against.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: Bank linking is not enabled for this platform.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml

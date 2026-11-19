@@ -1,0 +1,42 @@
+type: object
+description: >-
+  A spending rule to propose, written as a sentence or as structured data.
+  With `text` alone, Grid reads the text and writes the rule. With `rule`,
+  Grid takes the rule as given and keeps `text` beside it as what it was
+  written from.
+required:
+  - text
+properties:
+  text:
+    type: string
+    minLength: 1
+    maxLength: 2000
+    description: >-
+      The rule in plain words, such as `Up to $20 a purchase at coffee shops,
+      and nothing else`. Not blank, and no control or invisible formatting
+      characters other than line breaks and tabs. Grid reads it as data,
+      never as instructions. Amounts in it are read in the agent's account
+      currency, the currency its cards are charged in.
+    example: Up to $20 a purchase at coffee shops, and nothing else.
+  timeZone:
+    type: string
+    description: >-
+      The owner's IANA time zone, such as `America/New_York`, in which Grid
+      reads days, weeks, months and hours in `text`. `UTC` or a zone named
+      for a place. Without it, days run midnight to midnight UTC. Only with
+      `text` alone; refused with `rule`, which carries its own `timeZone`.
+    example: America/New_York
+  rule:
+    $ref: ./SpendingRuleSpec.yaml
+    description: >-
+      The rule as structured data. Grid proposes it as given, after the same
+      checks a rule written from text gets.
+  statement:
+    type: string
+    minLength: 1
+    maxLength: 500
+    description: >-
+      A plain statement every merchant must also satisfy for a purchase to be
+      approved, judged by a model as a bucket `question` is. Only with
+      `rule`. Not blank, and no control or invisible formatting characters.
+    example: The merchant is a coffee shop

@@ -1,0 +1,16 @@
+type: object
+description: At most `max` purchases over each `period`.
+required:
+  - max
+  - period
+properties:
+  max:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      The most purchases that may be made in one window. A purchase released
+      with nothing settled no longer counts.
+    example: 3
+  period:
+    $ref: ./SpendingRulePeriod.yaml

@@ -1,0 +1,15 @@
+type: string
+enum:
+  - INSUFFICIENT_FUNDS
+  - RECIPIENT_REFUSED
+  - AGENT_INACTIVE
+  - PAYOUT_FAILED
+description: |
+  Why a claimable payout is `FAILED`.
+
+  | Reason | Description |
+  |--------|-------------|
+  | `INSUFFICIENT_FUNDS` | The sender's wallet no longer held the amount when the recipient claimed it |
+  | `RECIPIENT_REFUSED` | Grid's screening did not clear the recipient's account |
+  | `AGENT_INACTIVE` | The agent was deleted or paused, or its delegated key revoked, before the payout was made |
+  | `PAYOUT_FAILED` | The payout to the recipient's account failed |

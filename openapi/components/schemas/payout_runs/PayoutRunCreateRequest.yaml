@@ -1,0 +1,22 @@
+type: object
+required:
+  - source
+  - rows
+properties:
+  source:
+    $ref: ./PayoutRunSource.yaml
+  scheduledAt:
+    type: string
+    format: date-time
+    description: When to start paying the rows. Omit it, or give a time in the past, to start as soon as the run is created.
+    example: '2026-11-05T02:00:00Z'
+  allOrNothing:
+    type: boolean
+    default: false
+    description: When true, a single rejected row fails the run and no row is paid.
+  rows:
+    type: array
+    minItems: 1
+    maxItems: 1000
+    items:
+      $ref: ./PayoutRunRowInput.yaml

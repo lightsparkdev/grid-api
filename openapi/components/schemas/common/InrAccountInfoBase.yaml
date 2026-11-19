@@ -3,9 +3,9 @@ required:
 - accountType
 description: 'Required fields depend on the selected paymentRails:
 
-  - NEFT: accountNumber, ifsc, rail
+  - NEFT: accountNumber, ifsc
 
-  - RTGS: accountNumber, ifsc, rail
+  - RTGS: accountNumber, ifsc
 
   - UPI: vpa'
 properties:
@@ -35,16 +35,8 @@ properties:
     minLength: 11
     maxLength: 11
     pattern: ^[A-Z]{4}0[A-Z0-9]{6}$
-  rail:
-    type: string
-    description: 'The payment rail to route the payout over: NEFT or RTGS. Omitted,
-      the payout resolves it by amount.'
-    minLength: 1
-    maxLength: 32
-    example: NEFT
 example:
   accountType: INR_ACCOUNT
   vpa: user@upi
   accountNumber: '000111222333'
   ifsc: HDFC0001234
-  rail: NEFT

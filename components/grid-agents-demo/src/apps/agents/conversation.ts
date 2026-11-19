@@ -1,0 +1,287 @@
+import type { ActionId } from '@/data/actions';
+import type { AgentEvent } from '@/data/agentEvents';
+import type { ConnectorId } from '@/data/connectors';
+
+/* Two shapes of the same conversation. The brain stores what was meant (a
+   line's key and its values); each app's voice renders it into what that app
+   would say. Switching apps re-renders the same thread in the new voice. */
+
+/** Values a line, ask or note is written with. */
+export type Params = Record<string, string | number>;
+
+/* ── Rendered: what a skin draws ─────────────────────────────────────── */
+
+/** A quick-reply chip the agent offers. */
+export interface Chip {
+  label: string;
+  /** Circle flag code (circle-flags), or an icon path. */
+  flag?: string;
+  icon?: string;
+  /** What it is, for the apps that draw a line glyph ahead of the label (Dots). */
+  glyph?: ChipGlyph;
+  /** A suggestion that is a flow's own request: tapped, it starts that flow rather than asking the model. */
+  flow?: ActionId;
+  /** A line under it, for the apps that list a choice as cards (Duet). */
+  detail?: string;
+}
+
+export type ChipGlyph = 'card' | 'bank' | 'coin' | 'bolt' | 'check' | 'wallet';
+
+/** A row of an approval card: what, where, who, paid with. */
+/** What the business verification page shows, filled in from what the platform already knows. */
+export interface Verification {
+  company: string;
+  entity: string;
+  taxId: string;
+  address: string;
+  owner: string;
+}
+
+export interface AskRow {
+  text: string;
+  sub?: string;
+  /** A glyph the skin knows how to draw, or an image path. */
+  icon?: 'product' | 'truck' | 'car' | 'envelope' | 'meta' | 'wallet' | 'lock' | 'gauge' | 'checkmark' | 'card';
+  image?: string;
+  /** A person, as the initials in their avatar ("MC"). */
+  initials?: string;
+}
+
+/** A form the person fills in and submits as their approval (Grok's consent and limits). */
+export interface AgentForm {
+  title: string;
+  sub: string;
+  sheetTitle: string;
+  fields: { label: string; value: string }[];
+  toggle?: string;
+  submitted: string;
+}
+
+/**
+ * What the agent needs the person to approve. One shape for every skin: Muse
+ * draws it as Muse's order sheet, Grok as a payout row, Duet as a spend
+ * card, and the rest as a plain approval card.
+ */
+export interface AgentAsk {
+  title: string;
+  /** The merchant's initial (or a short mark) in the card's corner. */
+  badge?: string;
+  /** A single counterparty: a person, a bank, an agent. Money going to a bank names it, so its mark can show (with `flag`, its country). */
+  /** `mark`: what stands in for them when there's no flag, bank or picture (their initial otherwise). */
+  who?: { name: string; flag?: string; bank?: string; icon?: string; mark?: string; detail: string };
+  /** The headline amount. */
+  amount?: string;
+  rows?: AskRow[];
+  total?: string;
+  /** What pays: a balance, a card, a rail. */
+  method?: string;
+  /** A checkout's Pay with row: what pays, named (`method` goes under it). */
+  payWith?: string;
+  expires?: string;
+  allow?: string;
+  allowed?: string;
+  /** Omitted when there's nothing to decline (the person asked for it): the card shows only the way forward. */
+  deny?: string;
+  denied?: string;
+  /** The merchant whose terms the person accepts by allowing (Muse's footnote): what's shared with them, and which
+   *  of their policies. */
+  legal?: { merchant: string; shares: string; policies: string[] };
+  /** Muse's sheet header when it isn't a store's checkout: a ride, a bill. `payment` draws it as a payment. */
+  heading?: { title: string; payment?: boolean };
+  /** Where an order goes when it isn't shipped to them: food delivered, a ride's pickup, the phone a top-up lands on, the
+   *  account a bill is paid to. */
+  where?: { label: string; lines: string[] };
+  form?: AgentForm;
+  /** A card going into the vault: what the scan finds. */
+  card?: { brand: string; last4: string; expires: string; name: string };
+  /** A bank to link for top-ups: the skin opens the bank flow (vault/BankLink), which picks the country and account. */
+  bank?: true;
+  /** With `bank`, the person's own: the country they said it's in. The US opens Plaid; another opens the app's form on
+   *  that country; `other` opens the form's country list. */
+  home?: string;
+  /** With `bank`: someone else's bank, to pay them. The flow opens on their account, filled in for their country. */
+  recipient?: { name: string; first: string; country: string };
+  /** The ask as a text, for an app you answer by texting back (Instinct): what it proposes and how to say yes. */
+  text?: string;
+  /** A purchase the checkout can switch the payment of: what pays now, and the other ways it could. */
+  pay?: { by: 'card' | 'balance'; card: string; wallet: string; balance: string; enough: boolean };
+  /** Settled, what it did, for an app that shows that rather than the ask it answered (Instinct, over text). */
+  receipt?: AgentNote;
+  /** Settled, how a done card heads it when it isn't one payment ("3 invoices sent"): its status ("Awaiting
+   *  payment") and a line under it. */
+  settled?: { title: string; status: string; detail: string };
+}
+
+/** What a checkout's Pay with switches to: the saved card, the balance, or the balance after adding to it. */
+export type PayTo = 'card' | 'balance' | 'topup';
+
+/** The app's own balance: the website card's anatomy, plus what each app shows natively. */
+export interface AgentBalance {
+  /** What the app calls it: "Grok Bot balance", "Dots balance". */
+  wallet: string;
+  amount: string;
+  note: string;
+  /** Spent today against the daily limit, 0..1, for the apps that draw a track. */
+  spent: { today: string; limit: string; ratio: number; left: string };
+  stats: { label: string; value: string }[];
+  activity: { title: string; detail: string; amount: string; incoming: boolean }[];
+}
+
+/** An info card in the thread: a receipt, an address, a summary, a list. */
+export interface AgentNote {
+  title: string;
+  lines: string[];
+  /** A settled receipt draws a check. */
+  done?: boolean;
+  /** A value to show in mono and copy whole: an address, an invoice, an account number. */
+  code?: string;
+  /** What the code is, for the apps that draw it their own way: a coin address, a Lightning invoice, bank details. */
+  glyph?: 'coin' | 'bolt' | 'bank';
+  /** A list of rows (History): title, detail, and a signed amount. */
+  rows?: { title: string; detail: string; amount: string; incoming: boolean }[];
+  /** The app's balance card (Balance, and the account a connect sets up). */
+  balance?: AgentBalance;
+  /** The figures that matter, for apps that lay a receipt out as tiles (Duet's artifacts). */
+  stats?: { label: string; value: string }[];
+  /** An invoice the app wrote, drawn as a document: what's owed by when, between whom, and how to pay it. */
+  invoice?: Invoice;
+  /** What the card is, for an app that names it (Duet's artifact footer); a settled one is otherwise a receipt. */
+  name?: string;
+  /** Who a receipt was with, for the apps that draw them: a person, a merchant (its picture), a bank (with its flag). */
+  /** `person`: someone rather than a business, for an app that draws people's marks round. */
+  who?: { name: string; flag?: string; bank?: string; icon?: string; mark?: string; person?: boolean };
+}
+
+export interface Invoice {
+  number: string;
+  from: string;
+  to: string;
+  memo: string;
+  amount: string;
+  due: string;
+  status: 'open' | 'paid';
+  bank: string;
+  routing: string;
+  account: string;
+}
+
+/** A product the agent found: a card in a carousel, an image Instinct sends, a line in a list. */
+export interface Product {
+  title: string;
+  /** What people call it, without the listing's extras ("Aura Max"). */
+  model?: string;
+  merchant: string;
+  domain: string;
+  price: string;
+  rating?: string;
+  /** Shown where the rating would be, when that matters more: how far away a ride is. */
+  detail?: string;
+  image: string;
+  /** The one the agent goes with. */
+  pick?: boolean;
+}
+
+/** Another agent yours worked with: what it thought, step by step, and what they said to each other. */
+export interface SubAgent {
+  name: string;
+  initial: string;
+  /** The business's logo, in place of the initial. */
+  logo?: string;
+  working: string;
+  done: string;
+  /** Its card's line while they talk, and once they've agreed. */
+  status: string;
+  summary: string;
+  steps: { title: string; detail: string }[];
+  messages: { from: 'us' | 'them'; text: string }[];
+}
+
+/** A small centered line about the agent itself: a routine it set up, a saved setting. */
+export interface AgentMeta {
+  text: string;
+  icon: 'routine' | 'check';
+}
+
+/** open → the visitor taps; pressing/authing → Face ID; done or denied; expired when a new flow replaced it. */
+export type AskState = 'open' | 'pressing' | 'authing' | 'done' | 'denied' | 'expired';
+
+export type Message =
+  | { id: number; kind: 'me'; text: string; react?: string; meant?: string; /** Answers what was open (a pick, a yes, an amount), not a new request. */ answers?: boolean }
+  | { id: number; kind: 'them'; text: string; sender?: string; bullets?: string[]; typing: boolean; replyTo?: string }
+  /** `led`: the agent's own line, above it, asks for this: an app that asks by text sends no text of its own. */
+  | { id: number; kind: 'ask'; ask: AgentAsk; state: AskState; led?: boolean; /** Settled without being asked (covered by an earlier approval). */ auto?: boolean }
+  | { id: number; kind: 'card'; card: AgentNote; sender?: string }
+  | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean; led?: boolean }
+  | { id: number; kind: 'work'; key: string; status: string }
+  /** `shelves`: when it found several things back to back, each search's own results (one thing they named, or
+   *  options to choose from), in order. `products` is then all of them side by side. */
+  | { id: number; kind: 'products'; products: Product[]; query?: string; shelves?: Product[][] }
+  | { id: number; kind: 'subagent'; agent: SubAgent; done: boolean }
+  | { id: number; kind: 'meta'; meta: AgentMeta }
+  | { id: number; kind: 'divider'; text: string }
+  | { id: number; kind: 'tag'; text: string }
+  | { id: number; kind: 'eyebrow'; flow: ActionId; text: string }
+  | { id: number; kind: 'stamp'; text: string };
+
+/* ── Stored: what the brain keeps ────────────────────────────────────── */
+
+/** Something said, by key (rendered in the current app's voice) or verbatim (the model's replies, written in every app's voice). */
+export type Said =
+  | { key: string; params?: Params }
+  | { text: string; voices?: Partial<Record<ConnectorId, string>> }
+  /** Lines a flow said as one bubble: a line, then the one that carries it on ("…$46.30 right now. I'll need $46.30…"). */
+  | { parts: { key: string; params?: Params }[] };
+
+export type StoredMessage =
+  | { id: number; kind: 'me'; text: string; react?: string; meant?: string; /** Answers what was open (a pick, a yes, an amount), not a new request. */ answers?: boolean }
+  /** replyTo: the request this carries on, when the person answered something in between (Dots quotes it). */
+  | { id: number; kind: 'them'; said: Said; sender?: string; typing: boolean; replyTo?: string }
+  | { id: number; kind: 'ask'; key: string; params?: Params; state: AskState; led?: boolean; auto?: boolean }
+  | { id: number; kind: 'card'; key: string; params?: Params }
+  | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean; led?: boolean }
+  | { id: number; kind: 'work'; key: string; params?: Params }
+  /** `also`: what it found next, shown with this (two things asked for at once are one shelf, not two). */
+  | { id: number; kind: 'products'; key: string; params?: Params; also?: Params[] }
+  | { id: number; kind: 'subagent'; key: string; params?: Params; done: boolean }
+  | { id: number; kind: 'meta'; key: string; params?: Params }
+  | { id: number; kind: 'divider'; text: string }
+  /** What a run of the conversation is about ("Pay Sofia"), for apps that label it (Duet's eyebrow). */
+  | { id: number; kind: 'eyebrow'; flow: ActionId; text: string }
+  | { id: number; kind: 'stamp'; text: string };
+
+/* ── Flows: what a conversation does ─────────────────────────────────── */
+
+/**
+ * One beat of a flow. Most play on their own; an ask, chips or an amount wait
+ * for the visitor. `when` builds its beats when it's reached, so they read the
+ * account as it is then. `work` shows what the agent is doing for `ms`, and
+ * stays up until the next thing it says or shows.
+ */
+export type Beat =
+  /** `join`: carries on the bubble just said, when nothing came between them. */
+  | { say: string; params?: Params; sender?: string; join?: boolean }
+  | { card: string; params?: Params }
+  | { work: string; ms: number; params?: Params }
+  | { products: string; params?: Params }
+  | { subagent: string; ms: number; params?: Params }
+  | { react: string }
+  | { meta: string; params?: Params }
+  | { divider: string }
+  /** An approval. `verify` opens the business verification page when it's approved, before Face ID; closing the page
+   *  leaves it waiting. `settled`: already approved (an earlier approval covered it), so it shows as its app draws a
+   *  finished one and goes straight on. */
+  | { ask: string; params?: Params; faceId?: boolean; verify?: Verification; allow: Beat[]; deny: Beat[]; settled?: boolean; swap?: (to: PayTo) => Beat[] }
+  /**
+   * A choice. Picked on a page the app opened (Instinct's options) there's no reply bubble, so `onPage` says what
+   * was picked before `then`.
+   */
+  | { chips: Chip[]; reply?: boolean; then: (picked: number) => Beat[]; onPage?: (picked: number) => Beat[] }
+  /** Waits for a typed dollar amount ("everything" means `all`, in cents); anything else lapses it and goes to the model.
+   *  `options` (dollars) show as chips, with an Other that leaves it to typing. */
+  | { amount: true; all?: number; options?: number[]; then: (usd: number) => Beat[] }
+  /** Waits for a typed name (the company, the owner), with `suggestion` one tap away beside Type my own, which says
+   *  `other` and leaves it to typing. Whatever they type is the answer, cleaned and capped. */
+  | { name: true; suggestion: string; other: string; named: (value: string) => Beat[] }
+  | { emit: AgentEvent }
+  | { pause: number }
+  | { when: () => Beat[] };

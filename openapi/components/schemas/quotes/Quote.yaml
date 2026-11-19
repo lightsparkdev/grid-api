@@ -152,5 +152,4 @@ properties:
     description: >-
       Present only while `status` is `PENDING_AUTHORIZATION`: the Strong
       Customer Authentication challenge to satisfy before this quote can be
-      executed (or, for realtime-funding sources, before `paymentInstructions`
-      are issued). Omitted for customers outside SCA-regulated regions (non-EU).
+      executed. Omitted for customers outside SCA-regulated regions (non-EU).

@@ -1,0 +1,17 @@
+type: string
+enum:
+  - BUCKET_TOTAL
+  - BUCKET_COUNT
+  - RULE_TOTAL
+  - RULE_COUNT
+  - SINGLE_USE
+description: |
+  Which limit of the rule a running total or count is held against.
+
+  | Type | Description |
+  |------|-------------|
+  | `BUCKET_TOTAL` | A bucket's `limits.total`, or `unmatched.limits.total` |
+  | `BUCKET_COUNT` | A bucket's `limits.count`, or `unmatched.limits.count` |
+  | `RULE_TOTAL` | The rule-wide `total` |
+  | `RULE_COUNT` | The rule-wide `count` |
+  | `SINGLE_USE` | `singleUse`: one purchase for the life of the rule |

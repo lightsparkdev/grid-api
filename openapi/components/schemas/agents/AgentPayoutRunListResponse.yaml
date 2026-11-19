@@ -1,0 +1,15 @@
+type: object
+required:
+  - data
+  - hasMore
+properties:
+  data:
+    type: array
+    items:
+      $ref: ./AgentPayoutRun.yaml
+  hasMore:
+    type: boolean
+    description: Indicates if more results are available beyond this page.
+  nextCursor:
+    type: string
+    description: Cursor to retrieve the next page of results (only present if hasMore is true).

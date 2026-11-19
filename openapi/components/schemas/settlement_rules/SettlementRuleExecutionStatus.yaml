@@ -1,0 +1,17 @@
+type: string
+enum:
+  - HELD
+  - EXECUTING
+  - EXECUTED
+  - FAILED
+  - SKIPPED
+description: |
+  What a rule's firing on one payment became.
+
+  | Status | Description |
+  |--------|-------------|
+  | `HELD` | Waiting out the rule's hold until `firesAt`. It can be cancelled. |
+  | `EXECUTING` | Its payout run is paying the shares. |
+  | `EXECUTED` | Its payout run finished `COMPLETED` or `PARTIALLY_FAILED`. |
+  | `FAILED` | Its payout run finished `FAILED`, or was cancelled. The customer keeps what the run did not pay. |
+  | `SKIPPED` | Nothing was paid. See `skipReason`. |

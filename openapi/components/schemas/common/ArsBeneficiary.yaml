@@ -1,0 +1,45 @@
+title: Individual Beneficiary
+type: object
+required:
+- beneficiaryType
+- address
+- documentNumber
+- documentType
+- fullName
+- phoneNumber
+properties:
+  beneficiaryType:
+    type: string
+    enum:
+    - INDIVIDUAL
+  fullName:
+    type: string
+    maxLength: 250
+    description: The full name of the beneficiary
+  birthDate:
+    type: string
+    description: The birth date of the beneficiary
+  nationality:
+    type: string
+    description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+  email:
+    type: string
+    maxLength: 320
+    description: The email of the beneficiary
+  phoneNumber:
+    type: string
+    maxLength: 50
+    description: The phone number of the beneficiary
+  countryOfResidence:
+    type: string
+    description: ISO 3166-1 alpha-2 country code, such as GB for the UK
+  address:
+    $ref: ./Address.yaml
+  documentType:
+    $ref: ./ArsDocumentType.yaml
+  documentNumber:
+    type: string
+    maxLength: 50
+    description: The person's CUIL or CUIT, written XY-12345678-Z or as 11 digits
+    example: 20-30123456-3
+    pattern: ^[0-9]{2}-?[0-9]{8}-?[0-9]$

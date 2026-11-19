@@ -1,0 +1,72 @@
+post:
+  summary: Preview a settlement rule
+  description: |
+    What a rule, or a draft of one, would pay on a payment of `amount`,
+    and which of the customer's recent payments it would have fired on.
+    Nothing is created or paid.
+
+    **splits** lists the rule's rows in order, each with what it would
+    send, computed exactly as an execution computes it: a percentage
+    rounds down, and the `REMAINDER` share takes what the others leave.
+    A share of 0 is not sent. `ownerKeeps` is what stays with the
+    customer. When the fixed and percentage shares add up to more than
+    `amount`, nothing would be paid, every row's `amount` is 0 and
+    `skipReason` is `AMOUNT_BELOW_RULE`. Fees are not estimated: each
+    share is sent by its own quote, whose fees come off the share.
+
+    **recentMatches** are the customer's completed bank and chain
+    deposits from the last 30 days that the rule's currency and `match`
+    select, newest first, at most 20, whatever the customer's other
+    rules would have done with them. Grid looks at the customer's latest
+    200 such deposits. Use them to spot a pattern that selects payments
+    it should not.
+
+    Give either `settlementRuleId` or `draft`.
+  operationId: previewSettlementRule
+  tags:
+    - Settlement Rules
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/settlement_rules/SettlementRulePreviewRequest.yaml
+  responses:
+    '200':
+      description: The preview
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRulePreview.yaml
+    '400':
+      description: Bad request - The body is invalid, it sets both or neither of settlementRuleId and draft, the rule is another customer's, or a share's destination cannot be paid
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - The customer or the settlement rule does not exist
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

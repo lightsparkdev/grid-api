@@ -2,10 +2,24 @@ type: string
 enum:
   - EXECUTE_QUOTE
   - ISSUE_PURCHASE_CARD
+  - CLAIMABLE_PAYOUT
+  - USE_STORED_CARD
+  - CREATE_SETTLEMENT_RULE
+  - UPDATE_SETTLEMENT_RULE
+  - PAYOUT_RUN
+  - SET_SPENDING_RULE
+  - SPENDING_RULE_QUESTION
 description: |
   The type of action the agent is requesting.
 
   | Type | Description |
   |------|-------------|
   | `EXECUTE_QUOTE` | Execute a quote |
-  | `ISSUE_PURCHASE_CARD` | Issue a single-use purchase card. See `purchaseCard` |
+  | `ISSUE_PURCHASE_CARD` | Issue a purchase card: single-use, or recurring when `purchaseCard.recurring` is `true`. When `purchaseCard.increaseCardId` is set, raise the amount of that existing single-use card instead of issuing one. See `purchaseCard` |
+  | `CLAIMABLE_PAYOUT` | Send a claimable payout to a person by phone number or email. See `claimablePayout` |
+  | `USE_STORED_CARD` | Use one of the customer's stored cards for a purchase. See `storedCardUse` |
+  | `CREATE_SETTLEMENT_RULE` | Make a settlement rule the agent proposed `ACTIVE`. See `settlementRule` |
+  | `UPDATE_SETTLEMENT_RULE` | Change the match, shares or limits of a settlement rule the agent created. See `settlementRule` |
+  | `PAYOUT_RUN` | Start a payout run the agent created. See `payoutRun` |
+  | `SET_SPENDING_RULE` | Put in force a spending rule the agent proposed for its own cards. See `spendingRuleDraft` |
+  | `SPENDING_RULE_QUESTION` | Answer whether the agent may buy from a merchant, which its spending rule asks the owner. See `spendingRuleQuestion` |

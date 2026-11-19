@@ -1,0 +1,57 @@
+parameters:
+  - name: claimablePayoutId
+    in: path
+    description: Unique identifier of the claimable payout
+    required: true
+    schema:
+      type: string
+post:
+  summary: Cancel a claimable payout
+  description: >
+    Cancel a claimable payout the authenticated agent sent that is
+    `PENDING_APPROVAL` or `AWAITING_CLAIM`, releasing its hold. Its claim
+    link stops working. Cancelling a payout already `CANCELLED` returns it
+    unchanged; one the recipient has claimed, or that has ended otherwise,
+    is refused with `409`.
+  operationId: agentCancelClaimablePayout
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  responses:
+    '200':
+      description: Claimable payout cancelled
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/claimable_payouts/ClaimablePayout.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Claimable payout not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - The payout was claimed or has already ended (`CONFLICT`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -1,0 +1,11 @@
+type: object
+description: >-
+  Fields shared by every web add-to-wallet response. The payload is
+  encrypted to the wallet provider's keys and signed for its web script:
+  hand it to the script unchanged. It is valid for one attempt; do not store
+  or log it.
+required:
+  - wallet
+properties:
+  wallet:
+    $ref: ./WebDigitalWallet.yaml

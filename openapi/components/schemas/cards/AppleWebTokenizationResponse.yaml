@@ -1,0 +1,4 @@
+title: Apple Pay Web Tokenization Response
+allOf:
+  - $ref: ./WebTokenizationResponse.yaml
+  - $ref: ./AppleWebTokenizationResponseFields.yaml

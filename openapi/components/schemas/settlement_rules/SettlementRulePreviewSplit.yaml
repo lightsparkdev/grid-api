@@ -1,0 +1,20 @@
+type: object
+required:
+  - position
+  - share
+  - destination
+  - amount
+properties:
+  position:
+    type: integer
+    description: The row's zero-based position in the rule.
+    example: 0
+  share:
+    $ref: ./SettlementRuleShare.yaml
+  destination:
+    $ref: ./SettlementRuleDestination.yaml
+  amount:
+    type: integer
+    format: int64
+    description: What the row would send, in the smallest unit of the rule's currency, before the fees of its quote. 0 when it would send nothing.
+    example: 400000

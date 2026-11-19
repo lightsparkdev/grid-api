@@ -1,0 +1,19 @@
+title: CZK Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/CzkAccountInfoBase.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/CzkBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/CzkBusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/CzkBeneficiary.yaml
+          BUSINESS: ../common/CzkBusinessBeneficiary.yaml

@@ -1,0 +1,16 @@
+type: object
+required:
+  - data
+  - hasMore
+properties:
+  data:
+    type: array
+    description: The claimable payouts on this page.
+    items:
+      $ref: ./ClaimablePayout.yaml
+  hasMore:
+    type: boolean
+    description: Whether more results exist past this page.
+  nextCursor:
+    type: string
+    description: Cursor for the next page.

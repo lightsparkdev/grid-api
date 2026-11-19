@@ -1,0 +1,63 @@
+type: object
+description: >-
+  A card collected with Evervault's Card UI component. `number` and `cvc` must
+  be Evervault ciphertext (strings starting `ev:`); a request carrying a
+  plaintext value is refused with `400` and the value is never stored or
+  logged. The CVC is used once, to verify the card with its issuer, and then
+  discarded.
+required:
+  - number
+  - cvc
+  - lastFour
+  - expiryMonth
+  - expiryYear
+  - holderName
+  - billingAddress
+properties:
+  number:
+    type: string
+    pattern: '^ev:'
+    maxLength: 2048
+    description: The card number, encrypted by Evervault's Card component.
+    example: 'ev:Tk9D:number:...$'
+  cvc:
+    type: string
+    pattern: '^ev:'
+    maxLength: 2048
+    description: >-
+      The card's security code, encrypted by Evervault's Card component. Used
+      only for the verification at add time; never stored.
+    example: 'ev:Tk9D:cvc:...$'
+  lastFour:
+    type: string
+    pattern: '^[0-9]{4}$'
+    minLength: 4
+    maxLength: 4
+    description: Last four digits of the number, as the Card component reports them.
+    example: '0005'
+  expiryMonth:
+    type: integer
+    minimum: 1
+    maximum: 12
+    description: Expiry month, 1 to 12.
+    example: 8
+  expiryYear:
+    type: integer
+    minimum: 2000
+    maximum: 2199
+    description: Four-digit expiry year.
+    example: 2029
+  holderName:
+    type: string
+    minLength: 1
+    maxLength: 255
+    description: The name on the card.
+    example: Jane Doe
+  billingAddress:
+    $ref: ../common/Address.yaml
+    description: The card's billing address, checked against the issuer's records.
+  nickname:
+    type: string
+    maxLength: 64
+    description: The customer's own label for the card.
+    example: Personal Visa

@@ -1,0 +1,6 @@
+type: string
+enum:
+  - APPLE_PAY
+  - GOOGLE_PAY
+description: A wallet that can be added to from a website.
+example: APPLE_PAY

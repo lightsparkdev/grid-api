@@ -1,0 +1,15 @@
+title: Grid Customer
+type: object
+description: An internal account on the platform, typically another customer's. The row is paid as a transfer between internal accounts and is held to the same rules as a quote between them.
+required:
+  - destinationType
+  - accountId
+properties:
+  destinationType:
+    type: string
+    enum:
+      - GRID_CUSTOMER
+  accountId:
+    type: string
+    description: An internal account of the platform or of one of its customers.
+    example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965

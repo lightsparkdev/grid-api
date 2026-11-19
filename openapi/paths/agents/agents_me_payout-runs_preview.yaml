@@ -1,0 +1,54 @@
+post:
+  summary: Preview a payout run
+  description: |
+    What `POST /agents/me/payout-runs` would do with this body, without doing any of it: nothing is created, held, reserved or quoted. The body is checked as a create checks it, so a body the create would refuse is refused here with the same error.
+
+    The answer gives `total`, which is what leaves the wallet, the wallet's free balance after it, and whether the run would wait for the customer's approval and why. When the agent's policy would refuse the run, `denialReason` says which rule. Each row's fee is an estimate where Grid knows it: a contact row's fee depends on the account the recipient claims to, so it is set at the claim.
+  operationId: agentPreviewPayoutRun
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentPayoutRunCreateRequest.yaml
+  responses:
+    '200':
+      description: The run as it would be created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentPayoutRunPreview.yaml
+    '400':
+      description: Bad request - The body is invalid, a row is invalid (the error names it, for example `rows[2].destination`), or there are more than 50 rows
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agent payout runs are not enabled for the platform, or a row pays a destination the agent may not pay (`DESTINATION_NOT_ALLOWED`)
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '503':
+      description: Service unavailable - Grid could not read the wallet's balance. Retry later.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error503.yaml

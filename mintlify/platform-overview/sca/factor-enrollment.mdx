@@ -2,7 +2,7 @@
 icon: "/images/icons/key2.svg"
 title: "Factor enrollment"
 description: "Enroll and manage a customer's TOTP and passkey factors"
-"og:image": "/images/og/og-get-started.png"
+"og:image": "/images/og/pages/platform-overview/sca/factor-enrollment.webp"
 ---
 
 <Note>
@@ -57,7 +57,7 @@ don't store them server-side.
 ```bash
 POST /sca/factors/confirm?customerId={customerId}
 
-{ "type": "TOTP", "secret": "…", "code": "123456" }
+{ "type": "TOTP", "secret": "…", "code": "000000" }
 ```
 
 ```json
@@ -65,7 +65,7 @@ POST /sca/factors/confirm?customerId={customerId}
 ```
 
 A wrong or expired code returns `400`. **In sandbox, the code is always
-`123456`.**
+`000000`.**
 </Step>
 </Steps>
 
@@ -75,9 +75,9 @@ Passkey enrollment is a standard WebAuthn registration ceremony. Grid issues the
 options, the customer's device produces the credential, and you hand it back.
 
 <Note>
-A customer may have **only one passkey**. If one is already enrolled, starting
-another returns `409` (`PASSKEY_ALREADY_ENROLLED`) — delete the existing passkey
-first (see below). `GET /sca/factors` therefore lists at most one passkey.
+A customer may have **up to two passkeys**. With two enrolled, starting another
+returns `409` (`PASSKEY_ALREADY_ENROLLED`). Delete one first (see below). To
+replace a passkey, enroll the new one before deleting the old one.
 </Note>
 
 <Steps>

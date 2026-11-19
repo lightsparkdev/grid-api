@@ -1,0 +1,71 @@
+parameters:
+  - name: agentId
+    in: path
+    description: System-generated unique agent identifier
+    required: true
+    schema:
+      type: string
+  - name: externalAccountId
+    in: path
+    description: System-generated unique external account identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Record an agent external account ACH validation
+  description: >-
+    Records that the platform validated the account's routing and account
+    numbers through Plaid Auth and matched an owner reported by Plaid
+    Identity to the customer's verified name or business legal name. Grid
+    counts it as an ACH account validation for that account; `ACH_PULL`
+    deposits require one. Refused with `400` if `ownerNameMatched` is false or
+    the account is not a USD account of the agent's customer. This endpoint
+    uses platform credentials, not agent credentials.
+  operationId: createAgentExternalAccountAchValidation
+  tags:
+    - Agent Management
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentAchValidationRequest.yaml
+  responses:
+    '201':
+      description: The recorded ACH account validation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentAchValidation.yaml
+    '400':
+      description: Bad request - Invalid input, `ownerNameMatched` is false or the account is not a USD account of the agent's customer
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Agents API is not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Agent or external account not found for this platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

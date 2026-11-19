@@ -1,0 +1,8 @@
+type: object
+description: What becomes of a purchase that matches no bucket.
+properties:
+  action:
+    $ref: ./SpendingRuleAction.yaml
+    description: Defaults to `DECLINE`.
+  limits:
+    $ref: ./SpendingRuleLimits.yaml

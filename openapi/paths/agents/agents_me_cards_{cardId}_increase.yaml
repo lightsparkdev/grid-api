@@ -1,0 +1,88 @@
+post:
+  summary: Increase a purchase card amount
+  description: >-
+    Increase an open, unused single-use purchase card belonging to this agent.
+    Recurring cards cannot be increased. Requires ISSUE_CARDS and MANAGE_CARDS
+    and platform enablement. The new amount must be greater than the current
+    amount and within the platform's purchase-card maximum. The new issuer
+    limit includes the platform's tax and shipping allowance.
+
+    Returns an ISSUE_PURCHASE_CARD action whose `purchaseCard.increaseCardId`
+    is the card being increased. It waits for the customer's approval through
+    the ordinary action approval endpoint when the agent's current policy
+    requires approval for the new limit (the funding account's execution
+    mode, else the default execution mode, or the approval threshold), or
+    when the original card required approval. Otherwise it is applied at
+    once. Approval rechecks the card, limits and platform gate.
+    The full new issuer limit is checked against the agent's current spending
+    limits. Increases do not reserve or count spending; authorization counts
+    the actual spend. Replaying the same key returns the same
+    action; a key used with different parameters is a conflict.
+  operationId: agentIncreasePurchaseCard
+  tags:
+    - Agent Operations
+  security:
+    - AgentAuth: []
+  parameters:
+    - name: cardId
+      in: path
+      required: true
+      description: The unused single-use purchase card to increase.
+      schema:
+        type: string
+    - name: Idempotency-Key
+      in: header
+      required: true
+      description: Unique key for this increase, reused on retries.
+      schema:
+        type: string
+        maxLength: 255
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/agents/AgentPurchaseCardIncreaseRequest.yaml
+  responses:
+    '200':
+      description: The increase action, applied or awaiting approval.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/agents/AgentAction.yaml
+    '400':
+      description: Invalid amount, reason, card state or recurring card.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Platform feature disabled, permission missing or policy denied.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found for this agent.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Idempotency key already used for another request or card changed.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

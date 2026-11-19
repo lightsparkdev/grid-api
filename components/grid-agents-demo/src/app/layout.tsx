@@ -1,0 +1,106 @@
+import type { Metadata, Viewport } from 'next';
+import { GeistSans } from 'geist/font/sans';
+import { easingVarsStylesheet } from '@/lib/easing';
+import { CONFIGURE_COL_PX, DOCS_SIDEBAR_EXPANDED_PX, LAYOUT_TIGHT_PX, LAYOUT_WIDE_PX, NAV_COLLAPSED_MAX_PX } from '@/lib/layout';
+import './globals.scss';
+
+const TITLE = 'Lightspark Agent Accounts — Playground';
+const DESCRIPTION =
+  'Give an agent an account and watch the exact API calls fire as you go.';
+
+/** The browser chrome's color (mobile Safari's bars): the app's surfaces. */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F0F0EE' },
+    { media: '(prefers-color-scheme: dark)', color: '#111111' },
+  ],
+};
+
+export const metadata: Metadata = {
+  // Favicons in public/favicons: ico, 32 and 16 png, and the apple-touch icon.
+  icons: {
+    icon: [
+      { url: '/favicons/favicon.ico', sizes: 'any' },
+      { url: '/favicons/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicons/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+    ],
+    apple: '/favicons/apple-touch-icon.png',
+  },
+  // Absolute base for social-card image URLs (scrapers need full URLs).
+  // VERCEL_PROJECT_PRODUCTION_URL covers previews; the default is prod.
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : 'https://grid-agents-demo.vercel.app',
+  ),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [{ url: '/og-agents-playground-v2.webp', width: 2400, height: 1260 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ['/og-agents-playground-v2.webp'],
+  },
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className={GeistSans.variable} suppressHydrationWarning>
+      <head>
+        {/* Preload the two variable fonts (every weight of Suisse Intl and of
+            its Mono) so the first paint shows the real font sooner.
+            crossOrigin is required even though the fonts are same-origin:
+            @font-face fetches use CORS mode, so without it the preload
+            wouldn't match and the font would download twice. */}
+        <link rel="preload" href="/fonts/SuisseIntlVF.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/SuisseIntlMonoVF.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        {/* Boot attributes, set before first paint to avoid flashes — an
+            effect is too late (the SSR HTML paints long before hydration):
+            - data-embed / data-theme from the URL (embed) or stored pref
+            - data-layout (stacked ⇄ 3-col) and data-tight (3-col with the
+              API column squeezed) from the viewport width and the docs
+              sidebar beside it (wideAt, isTight in lib/layout.ts)
+            - --api-col-default from the embed's ?nav param (the live docs
+              sidebar width) and the viewport, so the wide layout's code
+              column paints at its real default (defaultWidth in
+              useColumnResize) instead of re-fitting after hydration.
+            - data-nav (collapsed ⇄ expanded) from the same ?nav param, so
+              chrome keyed on the docs sidebar state paints right first time.
+              Absent standalone (no ?nav), where the rules don't apply. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{
+              var p=new URLSearchParams(window.location.search);
+              if(p.get('embed')==='true'){document.documentElement.setAttribute('data-embed','true');}
+              var t=p.get('theme');
+              if(t!=='dark'&&t!=='light'){
+                t=localStorage.getItem('grid-agents-theme');
+              }
+              if(t!=='dark'&&t!=='light'){
+                t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+              }
+              document.documentElement.setAttribute('data-theme',t);
+              var nav=parseFloat(p.get('nav'));
+              var side=isFinite(nav)&&nav>=0?nav:${DOCS_SIDEBAR_EXPANDED_PX};
+              var w=window.innerWidth,full=${LAYOUT_WIDE_PX - DOCS_SIDEBAR_EXPANDED_PX}+side;
+              var at=side<=${NAV_COLLAPSED_MAX_PX}?full:Math.min(full,${LAYOUT_TIGHT_PX});
+              document.documentElement.setAttribute('data-layout',w<at?'stacked':'wide');
+              if(w>=at&&w<full){document.documentElement.setAttribute('data-tight','');}
+              document.documentElement.style.setProperty('--api-col-default',(w<full?${CONFIGURE_COL_PX}:Math.round(side)+${CONFIGURE_COL_PX})+'px');
+              if(isFinite(nav)&&nav>=0){
+                document.documentElement.setAttribute('data-nav',nav<=${NAV_COLLAPSED_MAX_PX}?'collapsed':'expanded');
+              }
+            }catch(e){}})();`,
+          }}
+        />
+        <style dangerouslySetInnerHTML={{ __html: easingVarsStylesheet() }} />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}

@@ -1,0 +1,186 @@
+// The app's hosted business verification page, in the system's web sheet (PlaidLink's). Like Plaid's, the page
+// stays light in dark mode; only its button takes the app's color.
+
+$ink: #191f26;
+$muted: #5e6167;
+$line: #e3e7eb;
+
+.panel {
+  top: 56px;
+}
+
+.page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fcfcfc;
+  color: $ink;
+  font-family: var(--font-family-sf-pro);
+  -webkit-font-smoothing: antialiased;
+}
+
+.form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: 8px 24px 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.appTile {
+  display: block;
+  width: 48px;
+  height: 48px;
+  border-radius: 11px;
+  outline: 1px solid #e6e8e8;
+  outline-offset: -1px;
+  object-fit: cover;
+}
+
+.title {
+  margin: 16px 0 6px;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 32px;
+  letter-spacing: -0.4px;
+}
+
+.sub {
+  margin: 0;
+  color: $muted;
+  font-size: 15px;
+  line-height: 21px;
+}
+
+.fields {
+  margin: 20px 0 0;
+  border: 1px solid $line;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 11px 14px;
+
+  & + & {
+    border-top: 1px solid $line;
+  }
+
+  dt {
+    color: $muted;
+    font-size: 12.5px;
+    line-height: 16px;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 16px;
+    line-height: 21px;
+  }
+}
+
+.foot {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 24px 98px;
+  border-top: 1px solid #ebeef0;
+  background: #f6f8fa;
+}
+
+.legal {
+  margin: 0;
+  color: $muted;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.primary {
+  display: grid;
+  place-items: center;
+  height: 56px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--verify-accent, #111);
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: scale 0.15s ease;
+
+  &:active {
+    scale: 0.985;
+  }
+}
+
+.status {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 32px 120px;
+  text-align: center;
+}
+
+.badge {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 12px;
+  border-radius: 50%;
+  background: #eef1f4;
+  color: $ink;
+  transition: background 0.25s ease;
+
+  &[data-done] {
+    background: #34c759;
+    color: #fff;
+  }
+}
+
+.spinner {
+  width: 26px;
+  height: 26px;
+  border: 2.5px solid #c9d0d6;
+  border-top-color: $ink;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.statusTitle {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 26px;
+}
+
+.statusSub {
+  color: $muted;
+  font-size: 14.5px;
+  line-height: 20px;
+}

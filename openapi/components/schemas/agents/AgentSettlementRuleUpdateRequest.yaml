@@ -1,0 +1,38 @@
+type: object
+description: The fields to change. A field left out is unchanged.
+properties:
+  name:
+    type: string
+    minLength: 1
+    maxLength: 255
+    example: Glossier deal
+  status:
+    $ref: ../settlement_rules/SettlementRuleStatus.yaml
+    description: '`ACTIVE` or `PAUSED`.'
+  match:
+    type: array
+    minItems: 1
+    maxItems: 20
+    items:
+      $ref: ../settlement_rules/SettlementRuleSelector.yaml
+  splits:
+    type: array
+    minItems: 1
+    description: Every share, replacing the current ones. At most 20.
+    items:
+      $ref: ../settlement_rules/SettlementRuleSplitInput.yaml
+  holdSeconds:
+    type: integer
+    minimum: 0
+    maximum: 86400
+    example: 0
+  achHoldSeconds:
+    type: integer
+    minimum: 0
+    maximum: 86400
+    example: 0
+  limits:
+    anyOf:
+      - $ref: ../settlement_rules/SettlementRuleLimits.yaml
+      - type: 'null'
+    description: Both limits, replacing the current ones. A limit left out is removed; `null` removes both.

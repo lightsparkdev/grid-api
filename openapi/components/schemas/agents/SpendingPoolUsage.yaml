@@ -1,0 +1,50 @@
+type: object
+description: >-
+  What the pool's agents have spent, counting payments still in flight, as of
+  the request. Amounts are in the smallest unit of the pool's `currency`.
+required:
+  - spent
+  - remaining
+  - dailySpent
+  - monthlySpent
+properties:
+  periodStart:
+    type: string
+    format: date
+    description: >-
+      The first day (UTC) of the current period of a `RECURRING` pool. Absent
+      for a `TOTAL` pool.
+    example: '2026-11-01'
+  periodEnd:
+    type: string
+    format: date
+    description: >-
+      The first day (UTC) of the next period of a `RECURRING` pool, when its
+      spending resets. Absent for a `TOTAL` pool.
+    example: '2026-12-01'
+  spent:
+    type: integer
+    format: int64
+    description: >-
+      Spent against `limitAmount`: in the current period for a `RECURRING`
+      pool, ever for a `TOTAL` one.
+    example: 125000
+  remaining:
+    type: integer
+    format: int64
+    description: >-
+      What the pool's agents may still spend now: the least room left under
+      `limitAmount`, `dailyLimit` and `monthlyLimit`, and never below zero.
+      A single payment is also held to `perTransactionLimit`, and to each
+      agent's own policy.
+    example: 375000
+  dailySpent:
+    type: integer
+    format: int64
+    description: Spent today (UTC).
+    example: 2500
+  monthlySpent:
+    type: integer
+    format: int64
+    description: Spent in the current UTC calendar month.
+    example: 125000

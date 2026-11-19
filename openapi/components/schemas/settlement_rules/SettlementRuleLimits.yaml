@@ -1,0 +1,17 @@
+type: object
+description: Caps on what the rule pays, in the smallest unit of its currency. An execution that would go over a cap is skipped with `LIMIT_EXCEEDED`, and the customer keeps the payment.
+properties:
+  maxAmountPerExecution:
+    type: integer
+    format: int64
+    minimum: 1
+    maximum: 9000000000000000
+    description: The most the shares of one payment may add up to.
+    example: 1000000
+  maxAmountPerDay:
+    type: integer
+    format: int64
+    minimum: 1
+    maximum: 9000000000000000
+    description: The most the rule may pay out for the payments that completed in one UTC day.
+    example: 5000000

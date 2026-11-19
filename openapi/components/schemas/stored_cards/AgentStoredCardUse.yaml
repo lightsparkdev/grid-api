@@ -1,0 +1,68 @@
+type: object
+description: >-
+  A use of a stored card the agent asked for, so an approval decision can show
+  which card, where and for how much. Every value but the card's is supplied
+  by the agent and not verified by Grid.
+required:
+  - storedCardId
+  - card
+  - merchant
+  - amount
+  - currency
+  - purpose
+  - needsCvc
+  - autoApproved
+properties:
+  storedCardId:
+    type: string
+    maxLength: 64
+    description: The stored card.
+    example: StoredCard:019542f5-b3e7-1d02-0000-000000000077
+  card:
+    $ref: ./StoredCardDisplay.yaml
+  merchant:
+    type: string
+    maxLength: 255
+    description: Where the agent said the card will be used.
+    example: example-store.com
+  amount:
+    type: integer
+    format: int64
+    minimum: 1
+    description: The amount the agent said it expects to be charged, in the smallest unit of `currency`.
+    example: 4999
+  currency:
+    type: string
+    minLength: 3
+    maxLength: 3
+    description: ISO 4217 code of `amount`.
+    example: USD
+  purpose:
+    type: string
+    maxLength: 255
+    description: What the agent said the purchase is.
+    example: Running shoes, size 10
+  needsCvc:
+    type: boolean
+    description: >-
+      Whether the agent asked for the security code. Approving such a use
+      needs `storedCardCvc` on `POST /agents/{agentId}/actions/{actionId}/approve`.
+    example: false
+  autoApproved:
+    type: boolean
+    description: >-
+      Whether Grid approved the use without asking, because the customer had
+      chosen to auto-approve this agent at this merchant up to this amount.
+      Such a use is created `APPROVED` and sent as an `AGENT_ACTION.APPROVED`
+      webhook, so the platform can tell the customer of every use.
+    example: false
+  linkIssuedAt:
+    type: string
+    format: date-time
+    description: When Grid issued the agent's single-use link. Absent until then.
+    example: '2026-11-06T15:00:30Z'
+  revealedAt:
+    type: string
+    format: date-time
+    description: When the agent opened the link. Absent until then.
+    example: '2026-11-06T15:00:41Z'

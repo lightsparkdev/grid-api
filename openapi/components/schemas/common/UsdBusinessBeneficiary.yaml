@@ -1,5 +1,8 @@
 title: Business Beneficiary
 type: object
+description: Wires to this account may require `address.city`, at most 35 characters,
+  depending on the bank that sends them for your platform. When they do, creating
+  the account with an address that has no `city`, or a longer one, fails with `INVALID_INPUT`.
 required:
 - beneficiaryType
 - legalName
@@ -30,6 +33,6 @@ properties:
     description: The tax identification number of the business
   countryOfResidence:
     type: string
-    description: The country of residence of the beneficiary
+    description: ISO 3166-1 alpha-2 country code, such as GB for the UK
   address:
     $ref: ./Address.yaml

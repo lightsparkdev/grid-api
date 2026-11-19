@@ -1,0 +1,15 @@
+type: string
+enum:
+  - APPROVAL_MODE
+  - LIMIT
+  - BANK_ROW_OVER_THRESHOLD
+  - POOL
+description: |
+  Why a payout run waits for the customer's approval.
+
+  | Reason | Description |
+  |--------|-------------|
+  | `APPROVAL_MODE` | The agent's policy runs payments from the source account in `APPROVAL_REQUIRED` mode |
+  | `LIMIT` | `total` is above the approval threshold of the agent's policy or of the platform |
+  | `BANK_ROW_OVER_THRESHOLD` | A row is above the platform's limit for bank payouts without approval |
+  | `POOL` | `total` is above the `approvalThreshold` of the agent's spending pool |

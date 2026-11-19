@@ -1,0 +1,155 @@
+parameters:
+  - name: settlementRuleId
+    in: path
+    required: true
+    description: System-generated unique settlement rule identifier
+    schema:
+      type: string
+    example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+get:
+  summary: Get a settlement rule
+  description: Retrieve a settlement rule and its shares. A deleted rule is returned with status `DELETED`.
+  operationId: getSettlementRule
+  tags:
+    - Settlement Rules
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRule.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - No settlement rule with this id
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+patch:
+  summary: Update a settlement rule
+  description: |
+    Change the fields sent and leave the rest as they are. `splits`
+    replaces every share, checked as on create. `limits` replaces both
+    limits, so a limit left out of it is removed, and `null` removes both.
+    A change applies to the payments whose execution has not yet fired,
+    held ones included.
+
+    Requires an API token with the `UMA_TRANSACT` permission.
+  operationId: updateSettlementRule
+  tags:
+    - Settlement Rules
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/settlement_rules/SettlementRuleUpdateRequest.yaml
+  responses:
+    '200':
+      description: The updated rule
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRule.yaml
+    '400':
+      description: Bad request - The body is invalid or a share's external account is not active
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform, or the caller is not an API token with the UMA_TRANSACT permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - No settlement rule with this id, or an account a share pays does not exist
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict - The rule is deleted or awaiting approval, or another of the customer's rules has this priority
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Delete a settlement rule
+  description: |
+    The rule becomes `DELETED` and fires on no further payment. Its
+    executions still held are skipped with `CANCELLED`; one already
+    paying finishes. Deleting a deleted rule returns it unchanged.
+
+    Requires an API token with the `UMA_TRANSACT` permission.
+  operationId: deleteSettlementRule
+  tags:
+    - Settlement Rules
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: The deleted rule
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRule.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform, or the caller is not an API token with the UMA_TRANSACT permission
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - No settlement rule with this id
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

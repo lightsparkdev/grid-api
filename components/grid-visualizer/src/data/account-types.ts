@@ -279,6 +279,20 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: false,
   },
+  OPTIMISM_WALLET: {
+    accountType: 'OPTIMISM_WALLET',
+    fields: [
+      { name: 'address', example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12' },
+    ],
+    beneficiaryRequired: false,
+  },
+  AVALANCHE_WALLET: {
+    accountType: 'AVALANCHE_WALLET',
+    fields: [
+      { name: 'address', example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12' },
+    ],
+    beneficiaryRequired: false,
+  },
   AED_ACCOUNT: {
     accountType: 'AED_ACCOUNT',
     fields: [
@@ -403,6 +417,21 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '1234567890', description: 'For BANK_TRANSFER rail' },
       { name: 'phoneNumber', example: '+8613812345678', description: 'For MOBILE_MONEY rail' },
       { name: 'bankName', example: 'Industrial and Commercial Bank of China' },
+    ],
+    beneficiaryRequired: true,
+  },
+  CHF_ACCOUNT: {
+    accountType: 'CHF_ACCOUNT',
+    fields: [
+      { name: 'iban', example: 'CH9300762011623852957', description: 'Swiss IBAN (21 characters)' },
+    ],
+    beneficiaryRequired: true,
+  },
+  TRY_ACCOUNT: {
+    accountType: 'TRY_ACCOUNT',
+    fields: [
+      { name: 'iban', example: 'TR330006100519786457841326', description: 'Turkish IBAN (26 characters)' },
+      { name: 'bankName', example: 'Garanti BBVA', description: 'From GET /discoveries' },
     ],
     beneficiaryRequired: true,
   },

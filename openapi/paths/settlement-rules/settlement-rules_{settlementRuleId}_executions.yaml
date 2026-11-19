@@ -1,0 +1,69 @@
+parameters:
+  - name: settlementRuleId
+    in: path
+    required: true
+    description: System-generated unique settlement rule identifier
+    schema:
+      type: string
+    example: SettlementRule:019542f5-b3e7-1d02-0000-000000000001
+get:
+  summary: List the executions of a settlement rule
+  description: The payments the rule fired on, newest first, each with what it became, the payout run that paid it and how long the payments took.
+  operationId: listSettlementRuleExecutions
+  tags:
+    - Settlement Rules
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 100, max 200)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 100
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/settlement_rules/SettlementRuleExecutionListResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - Settlement rules are not enabled for the platform
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Not found - No settlement rule with this id
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

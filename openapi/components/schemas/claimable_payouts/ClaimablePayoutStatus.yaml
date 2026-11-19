@@ -1,0 +1,24 @@
+type: string
+enum:
+  - PENDING_APPROVAL
+  - AWAITING_CLAIM
+  - CLAIMED
+  - PAID
+  - EXPIRED
+  - CANCELLED
+  - FAILED
+description: |
+  Status of a claimable payout. Grid holds the amount against the sender's
+  Embedded Wallet balance and the agent's spending limits from creation until
+  the payout is `PAID`, or releases it when the payout ends in any other
+  status.
+
+  | Status | Description |
+  |--------|-------------|
+  | `PENDING_APPROVAL` | Waiting for the customer to approve the agent's request. No claim token can be issued yet |
+  | `AWAITING_CLAIM` | Approved; the recipient can claim it with a claim token until `expiresAt` |
+  | `CLAIMED` | The recipient confirmed a locked quote and Grid is paying her |
+  | `PAID` | The payout reached the recipient's account |
+  | `EXPIRED` | Not claimed by `expiresAt`, or not approved in time. The hold is released |
+  | `CANCELLED` | Cancelled by the agent, or rejected by the customer. The hold is released |
+  | `FAILED` | The payout could not be made; see `failureReason`. The hold is released |

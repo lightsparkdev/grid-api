@@ -8,13 +8,6 @@ properties:
     type: string
     enum:
     - PHP_ACCOUNT
-  rail:
-    type: string
-    description: 'The payment rail to route the payout over: INSTAPAY or PESONET.
-      Omitted, the payout resolves it by amount.'
-    minLength: 1
-    maxLength: 32
-    example: INSTAPAY
   bankName:
     type: string
     description: Name of the beneficiary's bank. Must be one of the `bankName` values
@@ -32,6 +25,5 @@ properties:
     pattern: ^[0-9]{8,16}$
 example:
   accountType: PHP_ACCOUNT
-  rail: INSTAPAY
   bankName: Bank of the Philippine Islands (BPI)
   accountNumber: '001234567890'
