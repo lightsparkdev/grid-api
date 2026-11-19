@@ -326,6 +326,8 @@ export function useAgentBrain({
     fromApp(log.current, { note: `they’ve switched back from their ${away.current} account, and are on this ${mode} account again now` });
     away.current = null;
   };
+  /** Their latest message in the thread: marked as an answer when the model takes it as one. */
+  const lastMe = useRef<number | null>(null);
   /** Messages they've typed, counted: what an approval is checked against. */
   const typedSeq = useRef(0);
   /** The turn under way was started by something they typed (not by a tap or a step's report). */
@@ -637,6 +639,11 @@ export function useAgentBrain({
           await sleep(b.pause);
         } else if ('when' in b) {
           if (!(await play(own(b.when), run))) return false;
+        } else if ('ask' in b && b.settled) {
+          // Already approved: nothing to wait for. Its finished card goes in the thread, and the flow carries on.
+          put({ kind: 'ask', key: b.ask, params: b.params, state: 'done', led: run.voiced, auto: true });
+          await sleep(400);
+          if (!(await play(b.allow, run))) return false;
         } else if ('ask' in b) {
           const ask = askOf(b.ask, b.params);
           const title = ask?.title ?? b.ask;
@@ -706,7 +713,7 @@ export function useAgentBrain({
           setBusy(true);
           patch(id, (m) => (m.kind === 'chips' ? { ...m, picked } : m));
           if (b.reply && !inWords.current && !answer.onPage) {
-            push({ kind: 'me', text: labels[picked] });
+            push({ kind: 'me', text: labels[picked], answers: true });
             request.current.answered = true;
           }
           inWords.current = false;
@@ -731,7 +738,7 @@ export function useAgentBrain({
             if (!('option' in answer)) continue;
             const picked = answer.option;
             if (chipsId !== null) patch(chipsId, (m) => (m.kind === 'chips' ? { ...m, picked } : m));
-            if (!inWords.current) push({ kind: 'me', text: labels[picked] ?? '' });
+            if (!inWords.current) push({ kind: 'me', text: labels[picked] ?? '', answers: true });
             if (picked < offered.length) amount = offered[picked];
             else void play([{ pause: 500 }, { say: 'amount.other' }], run).then(() => setBusy(false));
           }
@@ -765,7 +772,7 @@ export function useAgentBrain({
             if (!('option' in answer)) continue;
             const picked = answer.option;
             patch(chipsId, (m) => (m.kind === 'chips' ? { ...m, picked } : m));
-            if (!inWords.current) push({ kind: 'me', text: labels[picked] ?? '' });
+            if (!inWords.current) push({ kind: 'me', text: labels[picked] ?? '', answers: true });
             if (picked === 0) name = b.suggestion;
             else void play([{ pause: 500 }, { say: b.other }], run).then(() => setBusy(false));
           }
@@ -953,8 +960,10 @@ export function useAgentBrain({
    */
   const seenText = () => {
     const all = messagesRef.current;
-    const since = all.slice(all.map((m) => m.kind).lastIndexOf('me') + 1).filter((m) => m.kind === 'products' || m.kind === 'card' || m.kind === 'meta');
-    return describe(cb.current.render(since)).slice(-4).join(' | ').slice(0, 900) || undefined;
+    // Since their last request: a pick or a yes along the way doesn't make the cards above it any less in front of them.
+    const asked = all.map((m) => m.kind === 'me' && !m.answers).lastIndexOf(true);
+    const since = all.slice(asked + 1).filter((m) => m.kind === 'products' || m.kind === 'card' || m.kind === 'meta');
+    return describe(cb.current.render(since)).slice(-5).join(' | ').slice(0, 1100) || undefined;
   };
 
   /** What's open, for the model: on screen and waiting, or held back until its line is out. */
@@ -1035,6 +1044,9 @@ export function useAgentBrain({
         }
         // Closed meanwhile (a tap got there first): nothing left to answer.
         if (openRef.current !== open || !open.settle) return { status: 'already_settled', note: 'they tapped it themselves just now' };
+        // What they typed turned out to be the answer to this, not something new: what's on screen stays theirs to see.
+        const said = lastMe.current;
+        if (reading.current && said !== null) patch(said, (m) => (m.kind === 'me' ? { ...m, answers: true } : m));
         inWords.current = true;
         // A script doesn't report: it carries on with its own lines.
         if (!run.voiced) {
@@ -1250,7 +1262,7 @@ export function useAgentBrain({
    */
   const hear = (meant: string, heard: Heard = {}) => {
     const text = heard.shown ?? meant;
-    push({ kind: 'me', text, ...(meant !== text ? { meant } : {}) });
+    lastMe.current = push({ kind: 'me', text, ...(meant !== text ? { meant } : {}) });
     request.current = { text, answered: false };
     grouped.current = null;
     cameBack();
@@ -1342,7 +1354,7 @@ export function useAgentBrain({
       const tap = tapFor(text, open.wait, open.run.voiced, mode === 'business' ? 100_000 : 10_000);
       if (tap) {
         setComposer('');
-        push({ kind: 'me', text });
+        push({ kind: 'me', text, answers: true });
         inWords.current = true;
         afterReading(() => {
           if (openRef.current === open) settle(tap);

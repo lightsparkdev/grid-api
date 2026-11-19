@@ -27,7 +27,7 @@ import { SheetDisc } from '../SheetPage';
 import type { AgentAsk, AgentMeta, AgentNote, Message, PayTo, Product } from '../conversation';
 import { linkedBank } from '../linkedBank';
 import { recipientNamed } from '../recipients';
-import { AddressQr, AskMark, BalanceCard, copyLabel, Divider, InvoiceCard, NoteCard, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
+import { AddressQr, AskMark, BalanceCard, copyLabel, Divider, InvoiceCard, NoteCard, NoteMark, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from '../vault/useAskSheet';
@@ -421,6 +421,27 @@ function PayPill({ m, onOpen }: { m: Ask; onOpen: () => void }) {
   return <Pill m={m} lead={<IconReceiptBill size={20} />} done={<AskMark ask={ask} size={20} round={!ask.who?.icon} />} label={label} onOpen={onOpen} />;
 }
 
+/** A receipt as Dots shows what it did: a done pill, who it was with at its lead, as wide as what it says. */
+function ReceiptPill({ note }: { note: AgentNote }) {
+  return (
+    <span className={styles.pill} data-state="done" data-receipt>
+      <span className={styles.pillLead}>{note.who ? <NoteMark note={note} size={20} round={!note.who.icon} /> : <DotsMark size={20} />}</span>
+      <span className={styles.pillLabel}>{note.title}</span>
+      <IconCheckBold size={18} className={styles.pillCheck} />
+    </span>
+  );
+}
+
+/** The payment's own pill, just above, already says it went through: with nothing said in between, its receipt would say it twice. */
+function paidAbove(i: number, all: Message[]) {
+  for (let j = i - 1; j >= 0; j--) {
+    const m = all[j];
+    if (m.kind === 'ask') return m.state === 'done' && !!m.ask.amount && !m.ask.card && !m.ask.bank;
+    if (m.kind !== 'work' && m.kind !== 'meta' && m.kind !== 'subagent') return false;
+  }
+  return false;
+}
+
 /** What dot set up or saved, as the gray pill it leaves in the thread. */
 function MetaPill({ meta }: { meta: AgentMeta }) {
   const Glyph = meta.icon === 'routine' ? IconRepeat : IconCheckCircle2;
@@ -740,6 +761,10 @@ export function DotChat({ chat }: AgentChatProps) {
           <InvoiceCard invoice={m.card.invoice} className={styles.invoiceSkin} />
         ) : m.card.code ? (
           <NotePill note={m.card} onOpen={() => setAddress({ note: m.card, open: true })} />
+        ) : m.card.done && !m.card.rows ? (
+          paidAbove(i, all) ? null : (
+            <ReceiptPill note={m.card} />
+          )
         ) : (
           <NoteCard note={m.card} />
         );

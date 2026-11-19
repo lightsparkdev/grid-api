@@ -723,6 +723,7 @@ export const NOTES = {
   'receipt.pay': (p) => ({
     title: `${s(p, 'local')} to ${s(p, 'first')}`,
     lines: [`To ${s(p, 'bank')} over ${s(p, 'rail')}`, `${usd2(n(p, 'usd'))} from ${s(p, 'wallet')}`],
+    who: { name: s(p, 'first'), flag: s(p, 'flag') || undefined, bank: s(p, 'bank') || undefined },
     done: true,
     stats: [
       { label: 'Sent', value: s(p, 'local') },
@@ -733,6 +734,7 @@ export const NOTES = {
   'receipt.cashout': (p) => ({
     title: `${s(p, 'local')} to ${s(p, 'to')}`,
     lines: [s(p, 'rail'), `${usd2(n(p, 'usd'))} from ${s(p, 'wallet')}`],
+    who: { name: s(p, 'to'), flag: s(p, 'flag') || undefined, bank: s(p, 'bank') || undefined },
     done: true,
     stats: [
       { label: 'Moved', value: s(p, 'local') },
@@ -743,6 +745,7 @@ export const NOTES = {
   'receipt.buy': (p) => ({
     title: `${usd2(n(p, 'amount'))} at ${s(p, 'merchant')}`,
     lines: [n(p, 'card') ? `Paid with ${CARD}` : `Paid from ${yours(p)}`, n(p, 'card') ? 'Your own card' : 'One-time card'],
+    who: { name: s(p, 'merchant'), icon: s(p, 'image') || undefined },
     done: true,
     stats: [
       { label: 'Total', value: usd2(n(p, 'amount')) },
@@ -753,6 +756,7 @@ export const NOTES = {
   'receipt.sub': (p) => ({
     title: `${usd2(n(p, 'amount'))} at ${s(p, 'merchant')}`,
     lines: n(p, 'card') ? [`Renews monthly · billed to ${CARD}`] : [`Recurring Visa · renews monthly, only for ${s(p, 'merchant')}`],
+    who: { name: s(p, 'merchant') },
     done: true,
     stats: [
       { label: 'Monthly', value: usd2(n(p, 'amount')) },
@@ -763,6 +767,7 @@ export const NOTES = {
   'receipt.agent': (p) => ({
     title: `Paid ${s(p, 'hotel')} · ${usd2(n(p, 'amount'))}`,
     lines: [s(p, 'dates'), `You saved ${usd2(n(p, 'listed') - n(p, 'amount'))} by paying direct`],
+    who: { name: s(p, 'hotel') },
     done: true,
     stats: [
       { label: 'Paid', value: usd2(n(p, 'amount')) },
@@ -773,10 +778,13 @@ export const NOTES = {
   'receipt.getpaid': (p) => ({
     title: `${usd2(n(p, 'amount'))} from ${s(p, 'payer')}`,
     lines: [`${s(p, 'invoice')} · paid`],
+    // Who pays a personal account back (a friend's share, someone settling an invoice) is a person.
+    who: { name: s(p, 'payer'), person: true },
     done: true,
     stats: [
       { label: 'Received', value: usd2(n(p, 'amount')) },
-      { label: 'Invoice', value: s(p, 'invoice') },
+      // A split or a plain request has no invoice number: the row says what the money was for.
+      { label: s(p, 'invoice').startsWith('INV') ? 'Invoice' : 'For', value: s(p, 'invoice') },
       { label: 'Status', value: 'Paid' },
     ],
   }),

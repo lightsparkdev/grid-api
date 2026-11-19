@@ -423,6 +423,14 @@
 .pill {
   max-width: 330px;
   cursor: pointer;
+
+  // A receipt isn't a button: nothing opens from it. It can run the thread's width, so a full name fits.
+  &[data-receipt] {
+    width: fit-content;
+    max-width: 100%;
+    cursor: default;
+  }
+
   transition: scale 0.15s ease, opacity 0.2s ease;
 
   &:active:not(:disabled) {

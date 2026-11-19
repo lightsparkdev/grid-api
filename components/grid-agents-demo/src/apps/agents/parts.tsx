@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { TextMorph } from 'torph/react';
-import type { Transition } from 'motion/react';
+import { motion, type Transition } from 'motion/react';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
 import { IconSquareBehindSquare1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare1';
@@ -34,6 +34,23 @@ export function tintFor(seed: string) {
   let h = 0;
   for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return TINTS[h % TINTS.length];
+}
+
+/**
+ * How a found thing arrives in the thread: it fades up into place, and several that arrive together follow one
+ * another. `count` is how many there are now; `fresh` is false for a row that was already there when the app opened,
+ * whose cards are just there. A card added to a row later still arrives.
+ */
+export function useCardArrival(fresh: boolean, count: number) {
+  const had = useRef(fresh ? 0 : count);
+  useEffect(() => {
+    had.current = count;
+  }, [count]);
+  return (index: number) => ({
+    initial: index < had.current ? false : ({ opacity: 0, y: 12, scale: 0.97 } as const),
+    animate: { opacity: 1, y: 0, scale: 1 },
+    transition: { duration: 0.32, ease: [0.2, 0.7, 0.2, 1] as [number, number, number, number], delay: Math.max(0, index - had.current) * 0.07 },
+  });
 }
 
 /** An ask row's lead: its image, or a symbol the playground has. */
@@ -70,6 +87,13 @@ export function AskMark({ ask, size = 32, round }: { ask: AgentAsk; size?: numbe
       {letter}
     </span>
   );
+}
+
+/** Who a settled note was with, drawn as `AskMark` draws an ask's: their picture, their bank's with their flag, or
+ *  their initial on its color. Nothing when the note doesn't say. */
+export function NoteMark({ note, size = 32, round }: { note: AgentNote; size?: number; round?: boolean }) {
+  if (!note.who) return null;
+  return <AskMark ask={{ title: note.title, who: { ...note.who, detail: '' } } as AgentAsk} size={size} round={round} />;
 }
 
 /** What copying a note's code is called, by what it is. */
@@ -361,11 +385,12 @@ export function useSubAgentSheet(messages: Message[], present?: Transition) {
 const META_SYMBOL = { routine: 'clock.arrow.trianglehead.counterclockwise.rotate.90', check: 'checkmark' } as const;
 
 /** What the agent found, as a sideways row of cards; its pick is marked. */
-export function ProductRow({ products, className }: { products: Product[]; className?: string }) {
+export function ProductRow({ products, className, fresh = false }: { products: Product[]; className?: string; fresh?: boolean }) {
+  const arrive = useCardArrival(fresh, products.length);
   return (
     <div className={`${styles.products} ${className ?? ''}`}>
-      {products.map((p) => (
-        <div key={p.title} className={styles.product}>
+      {products.map((p, i) => (
+        <motion.div key={p.title} className={styles.product} {...arrive(i)}>
           <img className={styles.productImage} src={p.image} alt="" />
           <span className={styles.productText}>
             <strong>{p.title}</strong>
@@ -376,7 +401,7 @@ export function ProductRow({ products, className }: { products: Product[]; class
             <span>{p.price}</span>
             {p.pick && <span className={styles.productPick}>Best match</span>}
           </span>
-        </div>
+        </motion.div>
       ))}
     </div>
   );

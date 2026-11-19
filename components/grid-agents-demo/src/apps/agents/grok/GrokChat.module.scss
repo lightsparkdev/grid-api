@@ -790,6 +790,13 @@
   background: var(--grok-card);
 }
 
+// A receipt with no order of its own: the same card, as wide as what it says.
+.receipt {
+  width: fit-content;
+  min-width: 236px;
+  max-width: 325px;
+}
+
 .orderHead {
   display: flex;
   align-items: center;

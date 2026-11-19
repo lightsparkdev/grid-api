@@ -168,7 +168,9 @@ export function approvalOr(
   /** Said before the approval when the amount is over the limit, as `autoLine` is when it's under. */
   heldLine?: string,
 ): Beat[] {
-  if (ctx.preApproved) return [{ emit: { type: 'action.approve' } }, ...after];
+  // Covered by an approval they already gave (the limit raised for it): it shows as each app draws a finished one, so
+  // it sits in the thread like the ones they approved by hand, and goes straight on.
+  if (ctx.preApproved) return [{ ask: ask.key, params: ask.params, settled: true, allow: [{ emit: { type: 'action.approve' } }, ...after], deny: [] }];
   if (!needs) return [{ say: autoLine, params: { ...lineParams, ...limitParams(ctx) } }, ...after];
   return [
     ...(heldLine ? [{ say: heldLine, params: { ...lineParams, ...limitParams(ctx) } } as const] : []),

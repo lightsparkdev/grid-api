@@ -147,6 +147,9 @@ export interface AgentNote {
   invoice?: Invoice;
   /** What the card is, for an app that names it (Duet's artifact footer); a settled one is otherwise a receipt. */
   name?: string;
+  /** Who a receipt was with, for the apps that draw them: a person, a merchant (its picture), a bank (with its flag). */
+  /** `person`: someone rather than a business, for an app that draws people's marks round. */
+  who?: { name: string; flag?: string; bank?: string; icon?: string; mark?: string; person?: boolean };
 }
 
 export interface Invoice {
@@ -203,10 +206,10 @@ export interface AgentMeta {
 export type AskState = 'open' | 'pressing' | 'authing' | 'done' | 'denied' | 'expired';
 
 export type Message =
-  | { id: number; kind: 'me'; text: string; react?: string; meant?: string }
+  | { id: number; kind: 'me'; text: string; react?: string; meant?: string; /** Answers what was open (a pick, a yes, an amount), not a new request. */ answers?: boolean }
   | { id: number; kind: 'them'; text: string; sender?: string; bullets?: string[]; typing: boolean; replyTo?: string }
   /** `led`: the agent's own line, above it, asks for this: an app that asks by text sends no text of its own. */
-  | { id: number; kind: 'ask'; ask: AgentAsk; state: AskState; led?: boolean }
+  | { id: number; kind: 'ask'; ask: AgentAsk; state: AskState; led?: boolean; /** Settled without being asked (covered by an earlier approval). */ auto?: boolean }
   | { id: number; kind: 'card'; card: AgentNote; sender?: string }
   | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean; led?: boolean }
   | { id: number; kind: 'work'; key: string; status: string }
@@ -230,10 +233,10 @@ export type Said =
   | { parts: { key: string; params?: Params }[] };
 
 export type StoredMessage =
-  | { id: number; kind: 'me'; text: string; react?: string; meant?: string }
+  | { id: number; kind: 'me'; text: string; react?: string; meant?: string; /** Answers what was open (a pick, a yes, an amount), not a new request. */ answers?: boolean }
   /** replyTo: the request this carries on, when the person answered something in between (Dots quotes it). */
   | { id: number; kind: 'them'; said: Said; sender?: string; typing: boolean; replyTo?: string }
-  | { id: number; kind: 'ask'; key: string; params?: Params; state: AskState; led?: boolean }
+  | { id: number; kind: 'ask'; key: string; params?: Params; state: AskState; led?: boolean; auto?: boolean }
   | { id: number; kind: 'card'; key: string; params?: Params }
   | { id: number; kind: 'chips'; chips: Chip[]; picked: number | null; expired?: boolean; led?: boolean }
   | { id: number; kind: 'work'; key: string; params?: Params }
@@ -265,8 +268,9 @@ export type Beat =
   | { meta: string; params?: Params }
   | { divider: string }
   /** An approval. `verify` opens the business verification page when it's approved, before Face ID; closing the page
-   *  leaves it waiting. */
-  | { ask: string; params?: Params; faceId?: boolean; verify?: Verification; allow: Beat[]; deny: Beat[]; swap?: (to: PayTo) => Beat[] }
+   *  leaves it waiting. `settled`: already approved (an earlier approval covered it), so it shows as its app draws a
+   *  finished one and goes straight on. */
+  | { ask: string; params?: Params; faceId?: boolean; verify?: Verification; allow: Beat[]; deny: Beat[]; settled?: boolean; swap?: (to: PayTo) => Beat[] }
   /**
    * A choice. Picked on a page the app opened (Instinct's options) there's no reply bubble, so `onPage` says what
    * was picked before `then`.

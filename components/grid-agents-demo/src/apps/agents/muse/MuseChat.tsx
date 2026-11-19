@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { motion } from 'motion/react';
 import { TextMorph } from 'torph/react';
 import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
 import { IconFileText } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconFileText';
@@ -12,9 +13,10 @@ import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke
 import { ChatFrame, ComposerField, ScrollEdge, STILL, TypingDots, useOpenedIds, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton, useContinuousCorners } from '../glass';
 import type { AgentBalance, AgentNote, AskRow, Chip, Invoice, Message, Product } from '../conversation';
-import { AddressQr, AskMark, askButtons, copyLabel, Divider, MetaLine, MORPH, InvoiceCard, NoteCard, RowGlyph, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
+import { AddressQr, AskMark, askButtons, copyLabel, Divider, MetaLine, MORPH, InvoiceCard, NoteCard, NoteMark, RowGlyph, SubAgentRow, useCardArrival, useCopy, useSubAgentSheet } from '../parts';
 import { useMuseBalance } from './MuseBalance';
-import { ConnectorCard, useMuseBank, useMuseCard, useMusePayWith } from './MuseConnect';
+import { ConnectorCard, ThreadCard, useMuseBank, useMuseCard, useMusePayWith } from './MuseConnect';
+import connect from './MuseConnect.module.scss';
 import type { AgentChatProps } from '../types';
 import styles from './MuseChat.module.scss';
 
@@ -48,20 +50,12 @@ function BrowserCard({ status, waiting, pos }: { status: string; waiting?: boole
   );
 }
 
-/** Muse balance as one of Muse's artifacts: the balance tile; tapping it opens the balance page. */
+/** Muse balance in the thread, in the connector card's look: its tile and name, then the balance. Tapping it opens the balance page. */
 function BalanceArtifact({ balance, onOpen, pos }: { balance: AgentBalance; onOpen: () => void; pos?: string }) {
   return (
-    <button type="button" className={`${styles.artifact} ${styles.balanceArtifact}`} data-opens-sheet data-pos={pos} onClick={onOpen}>
-      <span className={styles.artifactHead}>
-        {balance.wallet}
-        <IconChevronRight size={14} />
-      </span>
-      <span className={styles.tileBig}>
-        <small>Balance</small>
-        <b>{balance.amount}</b>
-        <em>{balance.note}</em>
-      </span>
-    </button>
+    <ThreadCard glyph={<IconWallet1 size={20} />} name={balance.wallet} sub={balance.note} trail={<IconChevronRight size={16} />} pos={pos} onOpen={onOpen}>
+      <b className={connect.cardAmount}>{balance.amount}</b>
+    </ThreadCard>
   );
 }
 
@@ -69,15 +63,16 @@ function BalanceArtifact({ balance, onOpen, pos }: { balance: AgentBalance; onOp
  * What Muse found, as entity links in its bubble, one to a line: a thumbnail, the name in bold, the price. Only what
  * was found: which one it would pick, and anything else said about them, is the agent's to say.
  */
-function EntityLinks({ products, pos }: { products: Product[]; pos?: string }) {
+function EntityLinks({ products, pos, fresh }: { products: Product[]; pos?: string; fresh: boolean }) {
+  const arrive = useCardArrival(fresh, products.length);
   return (
     <div className={styles.them} data-bubble data-pos={pos}>
-      {products.map((p) => (
-        <span key={p.title} className={styles.entityLine} style={{ display: 'block' }}>
+      {products.map((p, i) => (
+        <motion.span key={p.title} className={styles.entityLine} style={{ display: 'block' }} {...arrive(i)}>
           <img src={p.image} alt="" className={styles.entityThumb} />
           <strong className={styles.entity}>{p.title}</strong>
           {p.detail && ` · ${p.detail}`} · {p.price}
-        </span>
+        </motion.span>
       ))}
     </div>
   );
@@ -274,6 +269,22 @@ function MuseInvoice({ invoice, pos }: { invoice: Invoice; pos?: string }) {
       </div>
       <InvoiceCard invoice={invoice} className={styles.invoiceSkin} />
     </div>
+  );
+}
+
+/** A receipt in the thread, in the connector card's look: who it was with, what settled, a check. As wide as what it says. */
+function MuseReceipt({ note, pos }: { note: AgentNote; pos?: string }) {
+  const settled = <IconCheckBold size={18} />;
+  return (
+    <ThreadCard
+      mark={note.who && <NoteMark note={note} size={35} round={note.who.person} />}
+      glyph={settled}
+      name={note.title}
+      sub={note.lines[0]}
+      trail={note.who && settled}
+      hug
+      pos={pos}
+    />
   );
 }
 
@@ -527,6 +538,7 @@ export function MuseChat({ chat }: AgentChatProps) {
         if (b) return <BalanceArtifact balance={b} pos={groupPosition(i, all)} onOpen={() => balance.open(b.wallet)} />;
         if (m.card.invoice) return <MuseInvoice invoice={m.card.invoice} pos={groupPosition(i, all)} />;
         if (m.card.code) return <AddressCard note={m.card} pos={groupPosition(i, all)} />;
+        if (m.card.done && !m.card.rows) return <MuseReceipt note={m.card} pos={groupPosition(i, all)} />;
         return (
           <div className={styles.noteWrap} data-pos={groupPosition(i, all)}>
             <NoteCard note={m.card} className={styles.note} />
@@ -556,7 +568,7 @@ export function MuseChat({ chat }: AgentChatProps) {
           </span>
         );
       case 'products':
-        return <EntityLinks products={m.products} pos={groupPosition(i, all)} />;
+        return <EntityLinks products={m.products} pos={groupPosition(i, all)} fresh={!openedIds.has(m.id)} />;
       case 'meta': {
         if (repeatsCard(i, all)) return null;
         return <MetaLine meta={m.meta} />;

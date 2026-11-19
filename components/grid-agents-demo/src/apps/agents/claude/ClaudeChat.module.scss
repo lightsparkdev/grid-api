@@ -806,7 +806,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  width: 363px;
+  // As wide as what it says, up to the thread's width.
+  width: fit-content;
+  min-width: 250px;
+  max-width: 363px;
   padding: 16px;
   border-radius: 18px;
   background: var(--cl-card);
@@ -852,7 +855,9 @@
 
 .receiptFacts {
   display: grid;
-  grid-template-columns: 72px 1fr;
+  // The labels' column fits the longest one ("From balance", "Paid with").
+  grid-template-columns: max-content 1fr;
+  column-gap: 16px;
   row-gap: 6px;
   margin: 0;
 

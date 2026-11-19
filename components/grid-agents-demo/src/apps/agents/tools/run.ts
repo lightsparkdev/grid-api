@@ -369,7 +369,15 @@ function search(env: ToolEnv, call: ToolCall): Outcome {
   ];
   if (shelf.named) {
     env.memory.chosen = ids[0];
-    return { result: { ...result, named: true, they_picked: { option_id: ids[0], title: shelf.pick.item } }, beats: found };
+    return {
+      result: {
+        ...result,
+        named: true,
+        they_picked: { option_id: ids[0], title: shelf.pick.item },
+        in_front_of_them: 'its card, with its name and price: they can see it’s found',
+      },
+      beats: found,
+    };
   }
   env.memory.chosen = undefined;
   return {

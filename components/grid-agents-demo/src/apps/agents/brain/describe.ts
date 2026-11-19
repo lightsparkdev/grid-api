@@ -40,7 +40,8 @@ export function describe(messages: Message[]): string[] {
   return messages.flatMap((m): string[] => {
     switch (m.kind) {
       case 'ask':
-        return [`approval ${describeAsk(m.ask)}`];
+        // One already settled (an earlier approval covered it) is a finished card, with nothing left to tap.
+        return [m.state === 'done' ? `a finished card, already approved, nothing to tap: ${describeAsk(m.ask)}` : `approval ${describeAsk(m.ask)}`];
       case 'card':
         return [describeCard(m.card)];
       case 'products':

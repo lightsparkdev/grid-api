@@ -14,7 +14,7 @@ import { Flag } from '@/apps/shared/Flag';
 import { ChatFrame, ComposerField, NATIVE_IN, ScrollEdge, STILL, useOpenedIds, useOpenedMarks, type RowMotion, type ScrollCause, type ScrollCurve } from '../ChatFrame';
 import { GlassDisc, GlassPill, NoopButton, ScanGlyph } from '../glass';
 import type { AgentAsk, AgentNote, Chip, Invoice, Message, Product } from '../conversation';
-import { AskMark, BalanceCard, copyLabel, CopyCode, Divider, NoteCard, shortCode, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
+import { AskMark, BalanceCard, copyLabel, CopyCode, Divider, NoteCard, NoteMark, shortCode, SubAgentRow, useCardArrival, useCopy, useSubAgentSheet } from '../parts';
 import { BankMark } from '../BankMark';
 import { AppSheet } from '../sheet';
 import { useAskSheet } from '../vault/useAskSheet';
@@ -198,11 +198,12 @@ function ChoiceCard({ m, onPick }: { m: Extract<Message, { kind: 'chips' }>; onP
 }
 
 /** What the bot found: a sideways carousel of product cards. */
-function Products({ products }: { products: Product[] }) {
+function Products({ products, fresh }: { products: Product[]; fresh: boolean }) {
+  const arrive = useCardArrival(fresh, products.length);
   return (
     <div className={styles.products}>
-      {products.map((p) => (
-        <div key={p.title} className={styles.product}>
+      {products.map((p, i) => (
+        <motion.div key={p.title} className={styles.product} {...arrive(i)}>
           <span className={styles.productImage}>
             <img src={p.image} alt="" />
           </span>
@@ -215,8 +216,44 @@ function Products({ products }: { products: Product[] }) {
               {p.merchant}
             </span>
           </span>
-        </div>
+        </motion.div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Something settled that has no order card of its own (money that came in, a payment that went out by itself): drawn
+ * as the card a finished order gets, who it was with at its head, as wide as what it says.
+ */
+function GrokReceipt({ note }: { note: AgentNote }) {
+  const status = note.stats?.find((s) => s.label === 'Status')?.value ?? 'Settled';
+  return (
+    <div className={`${styles.order} ${styles.receipt}`} data-state="done">
+      <div className={styles.orderHead}>
+        {note.who ? (
+          <NoteMark note={note} size={22} round={!note.who.icon && !note.who.bank} />
+        ) : (
+          <span className={styles.orderTile}>
+            <IconCheckmark1 size={12} />
+          </span>
+        )}
+        <span>{note.who?.name ?? note.title}</span>
+        <small>{status}</small>
+      </div>
+      <strong className={styles.orderTitle}>{note.title}</strong>
+      {note.lines.length > 0 && <span className={styles.orderSub}>{note.lines.join(' · ')}</span>}
+      <div className={styles.track} data-full>
+        <span className={styles.trackEnd}>
+          <IconPaperPlane size={12} />
+        </span>
+        <span className={styles.trackBar}>
+          <i />
+        </span>
+        <span className={styles.trackMark}>
+          <IconCheckmark1 size={12} />
+        </span>
+      </div>
     </div>
   );
 }
@@ -555,6 +592,7 @@ export function GrokChat({ chat }: AgentChatProps) {
         if (m.card.done && settledByOrder(i, all)) return null;
         if (m.card.invoice) return <GrokInvoice invoice={m.card.invoice} />;
         if (m.card.code) return <AddressForm note={m.card} />;
+        if (m.card.done && !m.card.rows) return <GrokReceipt note={m.card} />;
         return <NoteCard note={m.card} className={styles.note} />;
       }
       case 'chips':
@@ -562,7 +600,7 @@ export function GrokChat({ chat }: AgentChatProps) {
       case 'work':
         return statusOr(<StatusRow label={m.status} />);
       case 'products':
-        return <Products products={m.products} />;
+        return <Products products={m.products} fresh={!openedIds.has(m.id)} />;
       case 'meta':
         // The folded form already reads what was saved.
         if (m.meta.icon === 'check' && all[i - 1]?.kind === 'ask') return null;

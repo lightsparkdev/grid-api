@@ -16,7 +16,7 @@ import { BankMark } from '../BankMark';
 import { BANK_REACH, type BankCountry } from '@/data/bankCountries';
 import type { AgentAsk, AskState, Message, PayTo } from '../conversation';
 import { hasLinkedBank, linkedBank } from '../linkedBank';
-import { GlassButton, ScanButton } from '../glass';
+import { GlassButton, ScanButton, useContinuousCorners } from '../glass';
 import { PageSheet, SheetDisc, SheetPage, SheetSteps } from '../SheetPage';
 import { AppSheet } from '../sheet';
 import { APP_ICONS, opensPlaid, usePlaidLink } from '../vault/PlaidLink';
@@ -37,6 +37,16 @@ import styles from './MuseConnect.module.scss';
 const SHEET_IN = { duration: 0.45, ease: [0.3, 0.7, 0.2, 1] } as const;
 /** Muse's blue, the middle of its button's gradient, as the glass's tint. */
 const BLUE = '#2a62e3';
+
+/** The card's dark 35pt tile, its 9pt corners continuous as an iOS icon's are. */
+function Tile({ children }: { children: ReactNode }) {
+  const ref = useContinuousCorners<HTMLSpanElement>(9);
+  return (
+    <span ref={ref} className={styles.cardTile}>
+      {children}
+    </span>
+  );
+}
 
 /** The connector card in the thread: ~238pt in the bubble gray, a 35pt dark tile. */
 export function ConnectorCard({ ask, state, pos, onOpen }: { ask: AgentAsk; state: AskState; pos?: string; onOpen: () => void }) {
@@ -63,9 +73,7 @@ export function ConnectorCard({ ask, state, pos, onOpen }: { ask: AgentAsk; stat
         ) : done && ask.bank && !payee ? (
           <BankMark bank={linkedBank().bankName} country={linkedBank().country.code} size={35} />
         ) : (
-          <span className={styles.cardTile}>
-            {payee ? <Flag code={payee.country} size={24} /> : ask.bank ? <IconBank size={20} /> : <IconCreditCard1 size={20} />}
-          </span>
+          <Tile>{payee ? <Flag code={payee.country} size={24} /> : ask.bank ? <IconBank size={20} /> : <IconCreditCard1 size={20} />}</Tile>
         )}
         <span className={styles.cardText}>
           <strong>{name}</strong>
@@ -89,6 +97,56 @@ export function ConnectorCard({ ask, state, pos, onOpen }: { ask: AgentAsk; stat
                 ? 'Connecting…'
                 : 'Connect'}
       </button>
+    </div>
+  );
+}
+
+/**
+ * What else Muse leaves in the thread in the connector card's look (its balance, a receipt): the bubble gray, a 35pt
+ * mark, a name over a line, something trailing, and whatever goes under. `mark` as a glyph sits on the card's dark
+ * tile; `hug` makes the card as wide as what it says; with `onOpen` the whole card is a button.
+ */
+export function ThreadCard({
+  mark,
+  glyph,
+  name,
+  sub,
+  trail,
+  hug,
+  pos,
+  onOpen,
+  children,
+}: {
+  mark?: ReactNode;
+  glyph?: ReactNode;
+  name: string;
+  sub?: string;
+  trail?: ReactNode;
+  hug?: boolean;
+  pos?: string;
+  onOpen?: () => void;
+  children?: ReactNode;
+}) {
+  const body = (
+    <>
+      <span className={styles.cardHead}>
+        {mark ?? <Tile>{glyph}</Tile>}
+        <span className={styles.cardText}>
+          <strong>{name}</strong>
+          {sub && <small>{sub}</small>}
+        </span>
+        {trail && <span className={styles.cardTrail}>{trail}</span>}
+      </span>
+      {children}
+    </>
+  );
+  return onOpen ? (
+    <button type="button" className={`${styles.card} ${styles.cardOpens}`} data-hug={hug || undefined} data-kind="account" data-opens-sheet data-pos={pos} onClick={onOpen}>
+      {body}
+    </button>
+  ) : (
+    <div className={styles.card} data-hug={hug || undefined} data-pos={pos}>
+      {body}
     </div>
   );
 }

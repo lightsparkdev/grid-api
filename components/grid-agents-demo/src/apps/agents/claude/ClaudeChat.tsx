@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { TextMorph } from 'torph/react';
 import { IconArrowCornerDownRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowCornerDownRight';
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
@@ -10,10 +10,10 @@ import { IconFileText } from '@central-icons-react/round-outlined-radius-3-strok
 import { IconPin } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPin';
 import { IconSquareBehindSquare1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare1';
 import { FLOW_ICON_COLORS, FLOW_ICONS } from '@/data/flowIcons';
-import { ChatFrame, ComposerField, Said, ScrollEdge, TypingDots } from '../ChatFrame';
+import { ChatFrame, ComposerField, Said, ScrollEdge, TypingDots, useOpenedIds } from '../ChatFrame';
 import { GlassPill, NoopButton, useContinuousCorners } from '../glass';
 import type { AgentAsk, AgentNote, Message } from '../conversation';
-import { AddressQr, askButtons, AskCard, AskMark, BalanceCard, Divider, MetaLine, MORPH, InvoiceCard, NoteCard, ProductRow, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
+import { AddressQr, askButtons, AskCard, AskMark, BalanceCard, NoteMark, Divider, MetaLine, MORPH, InvoiceCard, NoteCard, ProductRow, SubAgentRow, useCopy, useSubAgentSheet } from '../parts';
 import type { AgentChatProps } from '../types';
 import { ClaudeMascot } from './ClaudeMascot';
 import { useDuetBalance } from './DuetBalance';
@@ -247,6 +247,45 @@ function DuetReceipt({ ask }: { ask: AgentAsk }) {
   );
 }
 
+/**
+ * A receipt with no approval card before it (money that came in, a payment that went out by itself): the same inline
+ * receipt, from what the receipt card says. Who it was with at the head, its figures as rows, the status in green.
+ */
+function DuetNoteReceipt({ note }: { note: AgentNote }) {
+  const facts = note.stats ?? [];
+  const status = facts.find((s) => s.label === 'Status')?.value ?? 'Done';
+  return (
+    <div className={styles.receipt}>
+      <span className={styles.receiptWho}>
+        {note.who &&
+          (note.who.bank ? (
+            <NoteMark note={note} size={40} />
+          ) : (
+            <span className={styles.receiptMark}>
+              <NoteMark note={note} size={40} />
+            </span>
+          ))}
+        <span>
+          <strong>{note.title}</strong>
+          <small>{note.lines[0]}</small>
+        </span>
+      </span>
+      <dl className={styles.receiptFacts}>
+        {facts
+          .filter((s) => s.label !== 'Status')
+          .map((s) => (
+            <Fragment key={s.label}>
+              <dt>{s.label}</dt>
+              <dd>{s.value}</dd>
+            </Fragment>
+          ))}
+        <dt>Status</dt>
+        <dd data-status>{status}</dd>
+      </dl>
+    </div>
+  );
+}
+
 /** Duet's artifact: a preview on top (a small label, a serif headline, then tiles or a picture), and under a hairline
  *  its name, when it was updated, a pin and a chevron (or Copy, for something to copy). */
 function Artifact({
@@ -365,6 +404,7 @@ function DoneRow() {
 }
 
 export function ClaudeChat({ chat }: AgentChatProps) {
+  const openedIds = useOpenedIds(chat.messages);
   const sub = useSubAgentSheet(chat.messages);
   const card = useDuetCard({ messages: chat.messages, onAllow: chat.allow });
   const bank = useDuetBank({ messages: chat.messages, onAllow: chat.allow });
@@ -471,6 +511,8 @@ export function ClaudeChat({ chat }: AgentChatProps) {
               <InvoiceCard invoice={m.card.invoice} className={styles.invoiceSkin} />
             ) : m.card.code ? (
               <AddressArtifact note={m.card} />
+            ) : m.card.done && m.card.stats && !m.card.rows ? (
+              <DuetNoteReceipt note={m.card} />
             ) : m.card.stats || m.card.rows ? (
               <NoteArtifact note={m.card} />
             ) : (
@@ -495,7 +537,7 @@ export function ClaudeChat({ chat }: AgentChatProps) {
         if (receiptFollows(i, all)) return null;
         return (
           <Lift cards=":scope > * > *">
-            <ProductRow products={m.products} />
+            <ProductRow products={m.products} fresh={!openedIds.has(m.id)} />
           </Lift>
         );
       case 'meta': {
