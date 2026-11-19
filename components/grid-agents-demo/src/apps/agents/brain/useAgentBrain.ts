@@ -315,6 +315,17 @@ export function useAgentBrain({
   const inWords = useRef(false);
   /** Turns queued or under way. */
   const pending = useRef(0);
+  /** The account the agent last took them to from here, until they do something in this conversation again. */
+  const away = useRef<Mode | null>(null);
+  /**
+   * They can only type or tap here while this account is the one on screen. So after the agent took them to the other
+   * account, anything they do here means they've come back, and the record says so: its last word was that they'd left.
+   */
+  const cameBack = () => {
+    if (!away.current) return;
+    fromApp(log.current, { note: `they’ve switched back from their ${away.current} account, and are on this ${mode} account again now` });
+    away.current = null;
+  };
   /** Messages they've typed, counted: what an approval is checked against. */
   const typedSeq = useRef(0);
   /** The turn under way was started by something they typed (not by a tap or a step's report). */
@@ -1174,7 +1185,10 @@ export function useAgentBrain({
           if (call.input.say) await say(call.input.say);
           const carry = typeof call.input.carry === 'string' ? call.input.carry.trim().slice(0, 280) : '';
           settled(log.current, call.id, { status: 'switched', note: `they’re on their ${to} account now, which has its own conversation${carry ? ': what they asked was passed on there' : ''}` });
-          switching = () => go(to, carry || undefined);
+          switching = () => {
+            away.current = to;
+            go(to, carry || undefined);
+          };
           ended = true;
           stopped = 'the turn ended before this';
           continue;
@@ -1239,6 +1253,7 @@ export function useAgentBrain({
     push({ kind: 'me', text, ...(meant !== text ? { meant } : {}) });
     request.current = { text, answered: false };
     grouped.current = null;
+    cameBack();
     typed(log.current, meant);
     if (!heard.flow) typedSeq.current += 1;
     // Where they typed it is something the model can't see: while a name or an amount is asked for, the message field
@@ -1270,6 +1285,7 @@ export function useAgentBrain({
     if (!open?.shown || !open.settle) return false;
     turnSeq.current += 1;
     stopTyping();
+    cameBack();
     open.settle(answer);
     return true;
   };
