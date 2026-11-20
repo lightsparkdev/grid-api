@@ -43,3 +43,18 @@ properties:
     description: >-
       Fee terms applied to every sweep this rule drives. Omit it to use the
       platform's configured fees.
+  refundAddresses:
+    type: array
+    maxItems: 16
+    items:
+      $ref: ./SweepRuleRefundAddress.yaml
+    description: >-
+      Optional, for `USDC` and `USDT` accounts only. Where a deposit is
+      returned when its sweep cannot complete, one address per network. A
+      deposit is returned in full, in the currency it arrived in, to the
+      address for the network it arrived on. A deposit on a network with no
+      address here, or any deposit when this is omitted, is returned to the
+      customer's internal account for that currency. Grid rejects a network
+      the account does not take deposits on, a network listed twice, or an
+      address that is not valid on its network. To use one EVM address on
+      several EVM networks, list it once for each.

@@ -50,3 +50,11 @@ properties:
     description: >-
       Fee terms applied to every sweep this rule drives. Null when the
       platform's configured fees apply.
+  refundAddresses:
+    type: array
+    items:
+      $ref: ./SweepRuleRefundAddress.yaml
+    description: >-
+      Where a deposit is returned when its sweep cannot complete, one address
+      per network. A deposit on a network with no address here is returned to
+      the customer's internal account. Empty when none are set.

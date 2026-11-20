@@ -1,0 +1,25 @@
+title: Sweep Rule Refund Address
+type: object
+description: >-
+  Where a deposit that arrived on `cryptoNetwork` is returned when its sweep
+  cannot complete.
+required:
+  - cryptoNetwork
+  - address
+properties:
+  cryptoNetwork:
+    allOf:
+      - $ref: ../crypto/CryptoNetwork.yaml
+    description: >-
+      The network this address receives refunds on. Must be one the account
+      takes deposits on.
+    example: BASE
+  address:
+    type: string
+    maxLength: 128
+    description: >-
+      On-chain address on `cryptoNetwork`. A deposit is returned here in full,
+      in the currency it arrived in. It should be an address the customer
+      controls. An exchange or custodian withdrawal address often cannot
+      credit a refund back to the customer.
+    example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
