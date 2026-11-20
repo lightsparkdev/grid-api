@@ -7,8 +7,11 @@ enum:
   - FAILED
   - EXPIRED
 description: >-
-  Current status of the quote. `PENDING_AUTHORIZATION` occurs only for
-  customers in a region where Strong Customer Authentication is required (e.g.
-  EU): the quote carries an `scaChallenge` that must be authorized before
-  execution.
+  Current status of the quote. `PENDING_AUTHORIZATION` means the quote is
+  waiting on the customer, in one of two cases. A customer in a region where
+  Strong Customer Authentication is required (e.g. EU) must authorize the
+  quote's `scaChallenge`. A card-funded quote whose card issuer asks for an
+  authentication check carries a `cardAuthentication` for the customer to
+  complete. A quote carries one or the other, never both. A `FAILED` quote
+  carries a `failureReason`.
 example: PENDING

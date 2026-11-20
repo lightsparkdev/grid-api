@@ -1208,7 +1208,7 @@ paths:
       description: |
         Store a card the customer already owns so the agents they choose can use it. Collect the card with Evervault's Card UI component and send its ciphertext: a number or security code that is not Evervault ciphertext is refused with `400 INVALID_INPUT` and never stored or logged.
 
-        Grid verifies the card with its issuer before storing it: the security code, billing address and name. A card the issuer does not confirm is refused with `400 STORED_CARD_VERIFICATION_FAILED`. The security code is then discarded; Grid never stores it. The new card is shared with no agent: add one with `PUT /customers/{customerId}/stored-cards/{storedCardId}/agents/{agentId}`. Available where the platform enables stored cards, for individual customers.
+        Grid verifies the card with its issuer before storing it: the security code, billing address and name. A card the issuer does not confirm is refused with `400 STORED_CARD_VERIFICATION_FAILED`. The security code is then discarded; Grid never stores it. The new card is shared with no agent: add one with `PUT /customers/{customerId}/stored-cards/{storedCardId}/agents/{agentId}`. Available where the platform enables stored cards, for individual customers. A stored debit card can also fund a quote as a `CARD` source.
       operationId: createStoredCard
       tags:
         - Agent Management
@@ -5422,7 +5422,11 @@ paths:
                 transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000005
         '202':
           description: |
-            Quote created and its execution started, but paused for Strong Customer Authentication. Returned only when `immediatelyExecute` is true and the customer's provider requires SCA (e.g. EU): the quote has status `PENDING_AUTHORIZATION` and carries an `scaChallenge`. Authorize it via `POST /quotes/{quoteId}/authorize`, the same as a quote executed through `POST /quotes/{quoteId}/execute`.
+            Quote created and its execution started, but paused waiting on the customer. Returned only when `immediatelyExecute` is true, with the quote in status `PENDING_AUTHORIZATION`, in one of two cases:
+
+            - **Strong Customer Authentication:** the customer's provider requires SCA (e.g. EU) and the quote carries an `scaChallenge`. Authorize it via `POST /quotes/{quoteId}/authorize`, the same as a quote executed through `POST /quotes/{quoteId}/execute`.
+
+            - **Card issuer check:** the source is `CARD`, the card issuer asks the customer to authenticate the charge, and the quote carries a `cardAuthentication`. Open its `url` in the customer's browser; do not call `/authorize`. The quote then moves to `PROCESSING`, or to `FAILED` with a `failureReason`.
           content:
             application/json:
               schema:
@@ -5576,11 +5580,13 @@ paths:
       responses:
         '200':
           description: |
-            Quote processed. The outcome depends on whether SCA applies to the customer (currently EU customers):
+            Quote processed. The outcome depends on whether the customer must authorize the quote, through SCA (currently EU customers) or a card issuer check:
 
-            - **No SCA required:** the transfer is initiated and the quote status advances (`PROCESSING` / `COMPLETED`).
+            - **No authorization required:** the transfer is initiated and the quote status advances (`PROCESSING` / `COMPLETED`).
 
             - **SCA required:** the transfer is **not** initiated yet. The quote is returned with status `PENDING_AUTHORIZATION` and an `scaChallenge`; release the transfer by authorizing the quote you already hold — `POST /quotes/{quoteId}/authorize` (re-calling `execute` returns 409). A pre-funded send is a single challenge, so one authorization releases it. The challenge (and its SMS code / passkey assertion) only comes into existence once this call initiates the transfer, so the proof is always supplied on the follow-up authorize, never inline on this call. If an SMS code lapses, re-send it via `POST /quotes/{quoteId}/authorize/resend`.
+
+            - **Card issuer check:** for a `CARD` source, the card issuer may ask the customer to authenticate the charge. The quote is returned with status `PENDING_AUTHORIZATION` and a `cardAuthentication`; open its `url` in the customer's browser. The quote then moves to `PROCESSING`, or to `FAILED` with a `failureReason`.
           content:
             application/json:
               schema:
@@ -5643,8 +5649,13 @@ paths:
         `PENDING_AUTHORIZATION` status by submitting an `ScaAuthorization` proof.
 
         Use it for a quote that `POST /quotes/{quoteId}/execute`, or `POST /quotes`
-        with `immediatelyExecute`, returned in `PENDING_AUTHORIZATION`. A customer
-        who needs SCA can't fund a quote in realtime.
+        with `immediatelyExecute`, returned in `PENDING_AUTHORIZATION` with an
+        `scaChallenge`. A customer who needs SCA can't fund a quote in realtime.
+
+        A card-funded quote in `PENDING_AUTHORIZATION` carries a
+        `cardAuthentication` and no `scaChallenge`. It is not authorized here: the
+        customer completes the check at `cardAuthentication.url`, and this endpoint
+        returns `409` for it.
 
         As with all SCA, a quote may require more than one authorization: after
         authorizing, if the quote is still `PENDING_AUTHORIZATION` it carries the
@@ -11854,7 +11865,7 @@ paths:
       summary: Create a transfer quote
       description: |
         Generate a quote for a cross-currency transfer on behalf of the authenticated agent's customer. Accounts referenced in the request must belong to the agent's customer. Requires the CREATE_QUOTES permission in the agent's policy.
-        The destination is another embedded wallet, one of the customer's Spark addresses, or one of the customer's saved bank accounts (`ACCOUNT`; save a Spark address or bank account with `POST /agents/me/external-accounts`), an address on another chain (`CHAIN_ADDRESS`), or a BOLT11 Lightning invoice (`LIGHTNING_INVOICE`). Grid answers `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held for review, on any of the customer's records of it, under either prefix and including removed ones. A bank account must belong to the agent's customer on the agent's platform and be `ACTIVE`, which Grid sets when it screens the account; any other bank account is refused with `DESTINATION_NOT_ALLOWED`. A bank payout cannot be called back once it leaves, so executing one needs the customer's approval unless it is at or below a small amount Lightspark sets for the platform, whatever the agent's `defaultExecutionMode` and approval thresholds. Spending pools count it as a `BANK_PAYOUTS` payment. An `ACCOUNT` destination must not set `paymentRail`; a quote that does is refused with `400`. A `CHAIN_ADDRESS` quote sends `USDB`. Grid pays the chain itself at a locked rate, so the amount the recipient receives is fixed when the quote is created and equals the quote's `minimumReceivingAmount`. A `LIGHTNING_INVOICE` quote debits the source wallet and pays exactly the invoice's amount, which it locks on the receiving side in satoshis, through the platform's Lightning invoice quote (`POST /quotes`).
+        The destination is another embedded wallet, one of the customer's Spark addresses, or one of the customer's saved bank accounts (`ACCOUNT`; save a Spark address or bank account with `POST /agents/me/external-accounts`), an address on another chain (`CHAIN_ADDRESS`), or a BOLT11 Lightning invoice (`LIGHTNING_INVOICE`). Grid answers `DESTINATION_NOT_ALLOWED` for a Spark address that was refused, or is held for review, on any of the customer's records of it, under either prefix and including removed ones. A bank account must belong to the agent's customer on the agent's platform and be `ACTIVE`, which Grid sets when it screens the account; any other bank account is refused with `DESTINATION_NOT_ALLOWED`. A bank payout cannot be called back once it leaves, so executing one needs the customer's approval unless it is at or below a small amount Lightspark sets for the platform, whatever the agent's `defaultExecutionMode` and approval thresholds. Spending pools count it as a `BANK_PAYOUTS` payment. An `ACCOUNT` destination must not set `paymentRail`; a quote that does is refused with `400`. A `CHAIN_ADDRESS` quote sends `USDB`. Grid pays the chain itself at a locked rate, so the amount the recipient receives is fixed when the quote is created and equals the quote's `minimumReceivingAmount`. A `LIGHTNING_INVOICE` quote debits the source wallet and pays exactly the invoice's amount, which it locks on the receiving side in satoshis, through the platform's Lightning invoice quote (`POST /quotes`). A `CARD` source is not accepted here and is refused with `400`.
         If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount exceeds the agent's approvalThresholds or the approvalThreshold of the spending pool the agent belongs to, the resulting transaction will require explicit approval before funds move.
       operationId: agentCreateQuote
       tags:
@@ -19166,6 +19177,8 @@ webhooks:
         The Grid system will proceed or cancel the payment based on your response.
 
         For transactions with other statuses (COMPLETED, FAILED, REFUNDED), this webhook is purely informational.
+
+        A card-funded payment into the customer's own account sends `INCOMING_PAYMENT.PENDING_AUTHORIZATION` while the card issuer waits on the customer's authentication check. Read the check from the quote's `cardAuthentication`. A declined charge sends `INCOMING_PAYMENT.FAILED` with the decline in `failureReason`.
 
         An ACH deposit can be returned after `COMPLETED`, days after it settled. The return takes the funds back, so the payment moves to `FAILED` and `INCOMING_PAYMENT.FAILED` is sent with `source.railDetails.status` set to `RETURNED` and `returnedAt` set. If the return is dishonored and the funds come back, the payment moves to `COMPLETED` again and `INCOMING_PAYMENT.COMPLETED` is sent with `railDetails.status` set to `RETURN_DISHONORED` and `dishonoredAt` set. A contested dishonor sends `INCOMING_PAYMENT.FAILED` once more with `RETURN_CONTESTED`.
 
@@ -34670,7 +34683,7 @@ components:
         |--------|-------------|
         | `CREATED` | Initial lookup has been created |
         | `PENDING` | Quote has been created |
-        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
+        | `PENDING_AUTHORIZATION` | Waiting on the customer. Either Strong Customer Authentication is required (customers in a region where SCA is required, e.g. EU), or the card issuer of a card-funded payment asked for an authentication check. The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`, or have the customer complete its `cardAuthentication`. |
         | `PROCESSING` | Funding has been received and payment initiated |
         | `COMPLETED` | The funds are where settlement put them. A return that takes them back moves the transaction to `FAILED`, and the returned side's `railDetails` shows `RETURNED`. A transaction stays `COMPLETED` through a return only when a later step that can't be undone already used the funds |
         | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
@@ -35331,6 +35344,7 @@ components:
         - ACCOUNT
         - UMA_ADDRESS
         - REALTIME_FUNDING
+        - CARD
       description: Type of transaction source
       example: ACCOUNT
     BaseTransactionSource:
@@ -35454,17 +35468,52 @@ components:
               deprecated: true
               description: Deprecated. Use `railDetails`, which carries the same hash and network when `paymentRail` is `ONCHAIN`.
           description: Transaction was funded using an external funding source. `railDetails` describes the transfer that delivered the funds; its fields are populated on a best-effort basis depending on what the funding source provides. Rails without a `railDetails` variant, such as SWIFT, carry the originator's details in the deprecated flat fields only.
+    CardTransactionSource:
+      title: Card
+      allOf:
+        - $ref: '#/components/schemas/BaseTransactionSource'
+        - type: object
+          required:
+            - sourceType
+            - storedCardId
+            - lastFour
+            - brand
+          properties:
+            sourceType:
+              type: string
+              enum:
+                - CARD
+            storedCardId:
+              type: string
+              description: The stored card that was charged.
+              example: StoredCard:019542f5-b3e7-1d02-0000-000000000077
+            customerId:
+              type: string
+              description: The customer who owns the card.
+              example: Customer:019542f5-b3e7-1d02-0000-000000000010
+            lastFour:
+              type: string
+              pattern: ^[0-9]{4}$
+              minLength: 4
+              maxLength: 4
+              description: Last four digits of the card number.
+              example: '0005'
+            brand:
+              $ref: '#/components/schemas/StoredCardBrand'
+          description: Transaction was funded by charging the customer's stored debit card.
     TransactionSourceOneOf:
       oneOf:
         - $ref: '#/components/schemas/AccountTransactionSource'
         - $ref: '#/components/schemas/UmaAddressTransactionSource'
         - $ref: '#/components/schemas/RealtimeFundingTransactionSource'
+        - $ref: '#/components/schemas/CardTransactionSource'
       discriminator:
         propertyName: sourceType
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionSource'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionSource'
           REALTIME_FUNDING: '#/components/schemas/RealtimeFundingTransactionSource'
+          CARD: '#/components/schemas/CardTransactionSource'
     ReconciliationInstructions:
       type: object
       minProperties: 1
@@ -35499,9 +35548,16 @@ components:
         - COLLECTION_FAILED
         - SWEEP_AMOUNT_OUT_OF_RANGE
         - SWEEP_QUOTE_FAILED
+        - INSUFFICIENT_FUNDS
+        - CARD_DECLINED
+        - AUTHENTICATION_FAILED
+        - CARD_NOT_SUPPORTED
+        - LIMIT_EXCEEDED
+        - TRY_AGAIN_LATER
       description: |-
         Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted. COMPLIANCE_REJECTED means compliance blocked the incoming funds. COLLECTION_FAILED means an inbound bank-rail collection deposit (e.g. a SWIFT wire) failed after arrival and did not credit — most commonly a compliance-screening rejection or an unresolved request for information, on either the collection provider's side or Grid's. Failed collections are returned to the sender per the collection provider's process.
         A payment that settled into a rule-based account but could not be swept to the destination of the account's rule fails with one of the `SWEEP_*` reasons. A rule-based account never holds a balance, so the funds are moved to the account holder's own account in the same currency. SWEEP_AMOUNT_OUT_OF_RANGE means the amount was outside the band the corridor to the destination can carry — the rule's minimumAmount and maximumAmount give the current band — and SWEEP_QUOTE_FAILED that Grid could not price it. A sweep that was priced and then failed on the way to settlement reports QUOTE_EXECUTION_FAILED, the same as any other payment.
+        A card-funded payment into the customer's own account that the card issuer declined fails with the same reason as its quote's `failureReason`: INSUFFICIENT_FUNDS, CARD_DECLINED, AUTHENTICATION_FAILED, CARD_NOT_SUPPORTED, LIMIT_EXCEEDED or TRY_AGAIN_LATER. This list may grow: treat a value you do not recognize as a generic failure.
     IncomingTransaction:
       title: Incoming Transaction
       allOf:
@@ -35546,7 +35602,7 @@ components:
         | Status | Description |
         |--------|-------------|
         | `PENDING` | Quote is pending confirmation |
-        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
+        | `PENDING_AUTHORIZATION` | Waiting on the customer. Either Strong Customer Authentication is required (customers in a region where SCA is required, e.g. EU), or the card issuer of a card-funded payment asked for an authentication check. The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`, or have the customer complete its `cardAuthentication`. |
         | `EXPIRED` | Quote wasn't executed before expiry window. Terminal |
         | `PROCESSING` | Executing the quote after receiving funds |
         | `COMPLETED` | The funds are at the destination. A bank return moves the payout to `FAILED` |
@@ -35615,6 +35671,11 @@ components:
         - COUNTERPARTY_POST_TX_FAILED
         - SWEEP_AMOUNT_OUT_OF_RANGE
         - SWEEP_QUOTE_FAILED
+        - INSUFFICIENT_FUNDS
+        - CARD_DECLINED
+        - AUTHENTICATION_FAILED
+        - CARD_NOT_SUPPORTED
+        - TRY_AGAIN_LATER
       description: |
         Reason for failure of an outgoing transaction. This is used to provide more
         context on why a transaction failed. If the transaction is not in a failed
@@ -35640,7 +35701,7 @@ components:
         | `FUNDING_AMOUNT_MISMATCH` | The funds received did not match the expected amount |
         | `SCA_NOT_COMPLETED` | The customer did not complete the Strong Customer Authentication challenge before it expired |
         | `PAYOUT_RETURNED` | The receiving bank accepted the payout and then returned or reversed it |
-        | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner |
+        | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner. For a card-funded payment, the charge exceeds a limit set by the card issuer or by Grid for card funding |
         | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency or payment rail isn't supported for that account. A sweep whose rule names a rail the destination cannot accept reports this |
         | `ACCOUNT_INVALID` | The recipient account couldn't be found or the details are wrong — bad IBAN/account number, beneficiary not found, or account closed |
         | `COMPLIANCE_REJECTED` | The payout partner rejected the recipient on compliance grounds — sanctions, watchlist, or KYC/AML screening |
@@ -35648,6 +35709,11 @@ components:
         | `COUNTERPARTY_POST_TX_FAILED` | Deprecated — coarse fallback retained for historical transactions when no granular payout reason is available |
         | `SWEEP_AMOUNT_OUT_OF_RANGE` | The amount was outside the range the corridor to the rule's destination can carry — below its minimum or above its maximum. The rule's `minimumAmount` and `maximumAmount` give the current band |
         | `SWEEP_QUOTE_FAILED` | Grid could not price the sweep to the rule's destination. A sweep that was priced and then failed on the way to settlement reports `QUOTE_EXECUTION_FAILED`, the same as any other payout |
+        | `INSUFFICIENT_FUNDS` | Card-funded payment: the card's account did not have enough funds for the charge |
+        | `CARD_DECLINED` | Card-funded payment: the card issuer declined the charge without a more specific reason |
+        | `AUTHENTICATION_FAILED` | Card-funded payment: the customer did not pass the card issuer's authentication check, or did not complete it in time |
+        | `CARD_NOT_SUPPORTED` | Card-funded payment: the card cannot fund a payment, for example because it is not a debit card |
+        | `TRY_AGAIN_LATER` | Card-funded payment: a temporary problem stopped the charge. Create a new quote to try again |
 
         The `SWEEP_*` reasons apply to a payment that settled into a rule-based
         account and could not be swept onward. A rule-based account never holds a
@@ -36403,13 +36469,14 @@ components:
         - COMPLETED
         - FAILED
         - EXPIRED
-      description: 'Current status of the quote. `PENDING_AUTHORIZATION` occurs only for customers in a region where Strong Customer Authentication is required (e.g. EU): the quote carries an `scaChallenge` that must be authorized before execution.'
+      description: Current status of the quote. `PENDING_AUTHORIZATION` means the quote is waiting on the customer, in one of two cases. A customer in a region where Strong Customer Authentication is required (e.g. EU) must authorize the quote's `scaChallenge`. A card-funded quote whose card issuer asks for an authentication check carries a `cardAuthentication` for the customer to complete. A quote carries one or the other, never both. A `FAILED` quote may carry a `failureReason`.
       example: PENDING
     QuoteSourceType:
       type: string
       enum:
         - ACCOUNT
         - REALTIME_FUNDING
+        - CARD
       description: Type of quote funding source
       example: ACCOUNT
     BaseQuoteSource:
@@ -36467,15 +36534,52 @@ components:
               description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `ARBITRUM`, `OPTIMISM`, `AVALANCHE`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
               example: SOLANA
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
+    CardQuoteSource:
+      title: Card
+      allOf:
+        - $ref: '#/components/schemas/BaseQuoteSource'
+        - type: object
+          required:
+            - sourceType
+            - storedCardId
+            - currency
+            - returnUrl
+          properties:
+            sourceType:
+              type: string
+              enum:
+                - CARD
+            storedCardId:
+              type: string
+              description: The stored card to charge, from `POST /customers/{customerId}/stored-cards`. The card must be `ACTIVE` and its `funding` must be `DEBIT`. Any other card fails the quote with `CARD_NOT_SUPPORTED`.
+              example: StoredCard:019542f5-b3e7-1d02-0000-000000000077
+            customerId:
+              type: string
+              description: The customer on whose behalf the quote is created. Defaults to the card's owner. If set, it must be the card's owner, or the request is refused with `400 INVALID_INPUT`.
+              example: Customer:019542f5-b3e7-1d02-0000-000000000010
+            currency:
+              type: string
+              description: Currency code charged to the card.
+              example: USD
+            returnUrl:
+              type: string
+              format: uri
+              pattern: ^https://
+              maxLength: 1024
+              description: 'The `https` page the customer''s browser returns to after the card issuer''s authentication check (see `cardAuthentication` on the quote). The issuer decides whether to ask for that check, so every card quote names a return page. The URL must match an entry on the platform''s return URL allow-list. Any other URL is refused with `400 INVALID_INPUT`. To add entries to the allow-list, contact Grid support with the return pages to register before creating card quotes. Grid adds a `quoteId` query parameter naming this quote and keeps any query parameters already present, so one page can serve every quote. Reaching this page does not mean the charge succeeded: read the outcome from `GET /quotes/{quoteId}` or the payment webhooks. Ignore any other query parameters added on the way back.'
+              example: https://app.example.com/add-funds/return
+          description: 'Fund the quote by charging the customer''s stored debit card. The destination can be any account the customer can fund, including a USDB internal account, in which case the conversion happens as part of the same payment. The card issuer may ask the customer to authenticate the charge: the quote then has status `PENDING_AUTHORIZATION` and carries a `cardAuthentication`. A declined charge fails the quote with a `failureReason`.'
     QuoteSourceOneOf:
       oneOf:
         - $ref: '#/components/schemas/AccountQuoteSource'
         - $ref: '#/components/schemas/RealtimeFundingQuoteSource'
+        - $ref: '#/components/schemas/CardQuoteSource'
       discriminator:
         propertyName: sourceType
         mapping:
           ACCOUNT: '#/components/schemas/AccountQuoteSource'
           REALTIME_FUNDING: '#/components/schemas/RealtimeFundingQuoteSource'
+          CARD: '#/components/schemas/CardQuoteSource'
     DestinationType:
       type: string
       enum:
@@ -36545,6 +36649,46 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressDestination'
+    CardAuthentication:
+      type: object
+      description: An authentication check the card issuer requires before charging the card, such as 3-D Secure. Open `url` in the customer's browser. When the customer finishes, the browser returns to the quote's `returnUrl`, and the quote moves on to `PROCESSING`, or to `FAILED` with a `failureReason`.
+      required:
+        - url
+        - expiresAt
+      properties:
+        url:
+          type: string
+          format: uri
+          maxLength: 2048
+          description: The page where the customer completes the card issuer's check.
+          example: https://authentication.example.com/challenge/abc123
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the check expires. A check not completed by then fails the quote with `AUTHENTICATION_FAILED`.
+          example: '2025-10-03T12:10:00Z'
+    QuoteFailureReason:
+      type: string
+      enum:
+        - INSUFFICIENT_FUNDS
+        - CARD_DECLINED
+        - AUTHENTICATION_FAILED
+        - CARD_NOT_SUPPORTED
+        - LIMIT_EXCEEDED
+        - TRY_AGAIN_LATER
+      description: |
+        Why the quote failed. Present only when the quote's `status` is `FAILED`. This
+        list may grow: treat a value you do not recognize as a generic failure.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `INSUFFICIENT_FUNDS` | The card's account did not have enough funds for the charge |
+        | `CARD_DECLINED` | The card issuer declined the charge without a more specific reason. Ask the customer to use another card or contact their issuer |
+        | `AUTHENTICATION_FAILED` | The customer did not pass the card issuer's authentication check, or did not complete it before `cardAuthentication.expiresAt` |
+        | `CARD_NOT_SUPPORTED` | The card cannot fund a quote: it is not a debit card, it is not `ACTIVE`, or its issuer or network is not supported |
+        | `LIMIT_EXCEEDED` | The charge exceeds a limit set by the card issuer or by Grid for card funding |
+        | `TRY_AGAIN_LATER` | The charge could not be completed because of a temporary problem. Create a new quote to try again |
+      example: CARD_DECLINED
     Quote:
       type: object
       required:
@@ -36661,7 +36805,13 @@ components:
             - PaymentDocument:019542f5-b3e7-1d02-0000-000000000003
         scaChallenge:
           $ref: '#/components/schemas/ScaChallenge'
-          description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this quote can be executed. Omitted for customers outside SCA-regulated regions (non-EU).'
+          description: 'Present only while `status` is `PENDING_AUTHORIZATION` for a customer in an SCA-regulated region: the Strong Customer Authentication challenge to satisfy before this quote can be executed. Omitted for customers outside SCA-regulated regions (non-EU), and never present together with `cardAuthentication`.'
+        cardAuthentication:
+          $ref: '#/components/schemas/CardAuthentication'
+          description: 'Present only while `status` is `PENDING_AUTHORIZATION` and the source is `CARD`: the card issuer''s authentication check for the customer to complete before the card is charged. Never present together with `scaChallenge`.'
+        failureReason:
+          $ref: '#/components/schemas/QuoteFailureReason'
+          description: Why the quote failed. Present only when `status` is `FAILED`, and not on every failed quote.
     QuoteLockSide:
       type: string
       enum:
@@ -45322,6 +45472,7 @@ components:
         - OUTGOING_PAYMENT.REFUND_COMPLETED
         - OUTGOING_PAYMENT.REFUND_FAILED
         - INCOMING_PAYMENT.PENDING
+        - INCOMING_PAYMENT.PENDING_AUTHORIZATION
         - INCOMING_PAYMENT.PROCESSING
         - INCOMING_PAYMENT.COMPLETED
         - INCOMING_PAYMENT.FAILED
@@ -45448,6 +45599,7 @@ components:
       type: string
       enum:
         - INCOMING_PAYMENT.PENDING
+        - INCOMING_PAYMENT.PENDING_AUTHORIZATION
         - INCOMING_PAYMENT.PROCESSING
         - INCOMING_PAYMENT.COMPLETED
         - INCOMING_PAYMENT.FAILED

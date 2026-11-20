@@ -185,12 +185,22 @@ post:
             transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000005
     '202':
       description: >
-        Quote created and its execution started, but paused for Strong
-        Customer Authentication. Returned only when `immediatelyExecute` is
-        true and the customer's provider requires SCA (e.g. EU): the quote has
-        status `PENDING_AUTHORIZATION` and carries an `scaChallenge`. Authorize
-        it via `POST /quotes/{quoteId}/authorize`, the same as a quote executed
-        through `POST /quotes/{quoteId}/execute`.
+        Quote created and its execution started, but paused waiting on the
+        customer. Returned only when `immediatelyExecute` is true, with the quote
+        in status `PENDING_AUTHORIZATION`, in one of two cases:
+
+
+        - **Strong Customer Authentication:** the customer's provider requires
+        SCA (e.g. EU) and the quote carries an `scaChallenge`. Authorize it via
+        `POST /quotes/{quoteId}/authorize`, the same as a quote executed through
+        `POST /quotes/{quoteId}/execute`.
+
+
+        - **Card issuer check:** the source is `CARD`, the card issuer asks the
+        customer to authenticate the charge, and the quote carries a
+        `cardAuthentication`. Open its `url` in the customer's browser; do not
+        call `/authorize`. The quote then moves to `PROCESSING`, or to `FAILED`
+        with a `failureReason`.
       content:
         application/json:
           schema:

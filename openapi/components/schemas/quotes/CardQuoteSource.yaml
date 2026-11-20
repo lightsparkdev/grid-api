@@ -1,0 +1,59 @@
+title: Card
+allOf:
+  - $ref: ./BaseQuoteSource.yaml
+  - type: object
+    required:
+      - sourceType
+      - storedCardId
+      - currency
+      - returnUrl
+    properties:
+      sourceType:
+        type: string
+        enum:
+          - CARD
+      storedCardId:
+        type: string
+        description: >-
+          The stored card to charge, from `POST /customers/{customerId}/stored-cards`.
+          The card must be `ACTIVE` and its `funding` must be `DEBIT`. Any other
+          card fails the quote with `CARD_NOT_SUPPORTED`.
+        example: StoredCard:019542f5-b3e7-1d02-0000-000000000077
+      customerId:
+        type: string
+        description: >-
+          The customer on whose behalf the quote is created. Defaults to the
+          card's owner. If set, it must be the card's owner, or the request is
+          refused with `400 INVALID_INPUT`.
+        example: Customer:019542f5-b3e7-1d02-0000-000000000010
+      currency:
+        type: string
+        description: Currency code charged to the card.
+        example: USD
+      returnUrl:
+        type: string
+        format: uri
+        pattern: '^https://'
+        maxLength: 1024
+        description: >-
+          The `https` page the customer's browser returns to after the card
+          issuer's authentication check (see `cardAuthentication` on the quote).
+          The issuer decides whether to ask for that check, so every card quote
+          names a return page. The URL must match an entry on the platform's
+          return URL allow-list. Any other URL is refused with
+          `400 INVALID_INPUT`. To add entries to the allow-list, contact Grid
+          support with the return pages to register before creating card
+          quotes. Grid adds a `quoteId` query parameter naming this
+          quote and keeps any query parameters already present, so one page can
+          serve every quote. Reaching this page does not mean the charge
+          succeeded: read the outcome from `GET /quotes/{quoteId}` or the payment
+          webhooks. Ignore any other query parameters added on the way back.
+        example: https://app.example.com/add-funds/return
+    description: >-
+      Fund the quote by charging the customer's stored debit card. The
+      destination can be any account the customer can fund, including a USDB
+      internal account, in which case the conversion happens as part of the same
+      payment. The card issuer may ask the customer to authenticate the charge:
+      the quote then has status `PENDING_AUTHORIZATION` and carries a
+      `cardAuthentication`. A declined charge fails the quote with a
+      `failureReason`.

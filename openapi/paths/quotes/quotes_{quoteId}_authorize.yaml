@@ -13,8 +13,13 @@ post:
     `PENDING_AUTHORIZATION` status by submitting an `ScaAuthorization` proof.
 
     Use it for a quote that `POST /quotes/{quoteId}/execute`, or `POST /quotes`
-    with `immediatelyExecute`, returned in `PENDING_AUTHORIZATION`. A customer
-    who needs SCA can't fund a quote in realtime.
+    with `immediatelyExecute`, returned in `PENDING_AUTHORIZATION` with an
+    `scaChallenge`. A customer who needs SCA can't fund a quote in realtime.
+
+    A card-funded quote in `PENDING_AUTHORIZATION` carries a
+    `cardAuthentication` and no `scaChallenge`. It is not authorized here: the
+    customer completes the check at `cardAuthentication.url`, and this endpoint
+    returns `409` for it.
 
     As with all SCA, a quote may require more than one authorization: after
     authorizing, if the quote is still `PENDING_AUTHORIZATION` it carries the

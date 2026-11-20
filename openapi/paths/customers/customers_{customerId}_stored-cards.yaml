@@ -20,7 +20,8 @@ post:
     then discarded; Grid never stores it. The new card is shared with no agent:
     add one with `PUT /customers/{customerId}/stored-cards/{storedCardId}/agents/{agentId}`.
     Available where the platform enables stored cards, for individual
-    customers.
+    customers. A stored debit card can also fund a
+    quote as a `CARD` source.
   operationId: createStoredCard
   tags:
     - Agent Management
