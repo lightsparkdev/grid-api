@@ -7758,7 +7758,7 @@ paths:
       description: |
         Open the customer's Embedded Wallet internal accounts that are waiting for the customer to authorize their wallet address.
 
-        When your platform adds a currency on a network the customer's wallet does not cover yet, Grid opens that currency's account as `PENDING` with `provisioningRequired: true`. The account cannot send or receive until the customer signs once to add the network to their wallet. `{id}` can be any of the customer's Embedded Wallet internal accounts. One call provisions every account the customer has waiting, whichever id is in the path.
+        When your platform adds a currency on a network the customer's wallet does not cover yet, Grid opens that currency's account as `PENDING` with `provisioningRequired: true`, and sends `INTERNAL_ACCOUNT.STATUS_UPDATED` with the new account. The account cannot send or receive until the customer signs once to add the network to their wallet. `{id}` can be any of the customer's Embedded Wallet internal accounts. One call provisions every account the customer has waiting, whichever id is in the path.
 
         Provisioning is a two-step signed-retry flow (same pattern as adding a credential and exporting a wallet):
 
@@ -20392,7 +20392,7 @@ webhooks:
 
         ### Event types
         - `INTERNAL_ACCOUNT.BALANCE_UPDATED` — Fired when the balance of an internal account changes. The `data` payload contains the full internal account object.
-        - `INTERNAL_ACCOUNT.STATUS_UPDATED` — Fired when the status of an internal account changes (e.g., `OPEN` → `FROZEN`). The `data` payload contains the full internal account object.
+        - `INTERNAL_ACCOUNT.STATUS_UPDATED` — Fired when the status of an internal account changes (e.g., `OPEN` → `FROZEN`). Grid also sends it when an Embedded Wallet account is created with `provisioningRequired: true`, so you can ask the customer to call `POST /internal-accounts/{id}/provision`. The `data` payload contains the full internal account object.
         - `INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED` — Fired when the account's `fundingPaymentInstructions` change: new funding coordinates became available (e.g., a SWIFT collection account finished provisioning) or previously served coordinates were withdrawn. The `data` payload contains the full internal account object, including the current `fundingPaymentInstructions`.
       operationId: internalAccountStatusWebhook
       tags:

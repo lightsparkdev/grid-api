@@ -7,7 +7,8 @@ post:
 
     When your platform adds a currency on a network the customer's wallet
     does not cover yet, Grid opens that currency's account as `PENDING` with
-    `provisioningRequired: true`. The account cannot send or receive until the
+    `provisioningRequired: true`, and sends `INTERNAL_ACCOUNT.STATUS_UPDATED`
+    with the new account. The account cannot send or receive until the
     customer signs once to add the network to their wallet. `{id}` can be any
     of the customer's Embedded Wallet internal accounts. One call provisions
     every account the customer has waiting, whichever id is in the path.

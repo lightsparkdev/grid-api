@@ -21,7 +21,7 @@ While Grid is still creating a wallet, `POST /auth/credentials` returns `409 WAL
 
 ### Currencies added later
 
-The wallet covers every currency your platform supports when it is created. If your platform later adds a currency on a network the wallet does not cover, Grid opens that currency's Global Account as `PENDING` with `provisioningRequired: true`. The customer signs once to add the network to their wallet:
+The wallet covers every currency your platform supports when it is created. If your platform later adds a currency on a network the wallet does not cover, Grid opens that currency's Global Account as `PENDING` with `provisioningRequired: true` and sends `INTERNAL_ACCOUNT.STATUS_UPDATED` with it. The customer signs once to add the network to their wallet:
 
 1. Call `POST /internal-accounts/{id}/provision` with the id of any of the customer's Global Accounts. Grid returns `202` with `payloadToSign`, `requestId`, and the `accountIds` and `currencies` the signature opens.
 2. Stamp `payloadToSign` with an active session signing key, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`. The retry returns `200` with the customer's Global Accounts, now `ACTIVE`, and the `provisionedAccountIds` and `provisionedCurrencies` it opened.
