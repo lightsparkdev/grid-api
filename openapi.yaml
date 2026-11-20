@@ -21731,8 +21731,9 @@ components:
             sends. Defaults to `GRID_PAYS`. A change applies to quotes created after
             it. Of cards, only those funded by an Embedded Wallet account on Tempo
             follow this setting, and each one's delegated key is created for the
-            mode in force at the time. A change does not move them: to move one to
-            the new mode, revoke its delegated key with
+            mode in force at the time, shown as the key's `networkFees`. A change
+            does not move them: to move one to the new mode, revoke its delegated
+            key with
             `DELETE /auth/delegated-keys/{id}` and delegate it again with
             `POST /auth/delegated-keys`. Cards funded on Spark pay no network fee. Card transfers Grid makes with an access
             key from a Tempo wallet your platform runs are always paid by Grid,
@@ -38426,6 +38427,10 @@ components:
           example: Settlement service key
         status:
           $ref: '#/components/schemas/DelegatedKeyStatus'
+        networkFees:
+          allOf:
+            - $ref: '#/components/schemas/NetworkFeeMode'
+          description: The platform's `embeddedWalletConfig.networkFees` in force when this key was created, which its card's transfers keep until the key is revoked. Present only on card keys for an Embedded Wallet account on Tempo. After a mode change, re-delegate the cards whose keys show the old mode.
         createdAt:
           type: string
           format: date-time
