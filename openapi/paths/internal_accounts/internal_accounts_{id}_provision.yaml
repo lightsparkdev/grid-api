@@ -33,9 +33,10 @@ post:
 
 
     Grid checks the customer's delegated keys before it issues a challenge,
-    so the customer never signs one that cannot complete. An `ACTIVE` or
-    `PENDING` delegated key created before the network being added was
-    supported blocks provisioning: the call returns
+    so the customer never signs one that cannot complete. An `ACTIVE`
+    delegated key, or a `PENDING` one whose authorization hasn't expired,
+    created before the network being added was supported blocks
+    provisioning: the call returns
     `409 DELEGATED_KEYS_REISSUE_REQUIRED`,
     with the keys in `details.delegatedKeyIds` and the cards and agents they
     serve in `details.cardIds` and `details.agentIds`. Revoke each key with
@@ -208,8 +209,9 @@ post:
         first wallet covers every currency the platform supports, so retry
         only if an account still has `provisioningRequired: true` once the
         wallet exists. Returned with `DELEGATED_KEYS_REISSUE_REQUIRED` when
-        the customer has an `ACTIVE` or `PENDING` delegated key created before
-        this network was supported. Grid returns it in place of the `202`, and on a signed
+        the customer has an `ACTIVE` delegated key, or a `PENDING` one whose
+        authorization hasn't expired, created before this network was
+        supported. Grid returns it in place of the `202`, and on a signed
         retry if such a key appeared after the challenge. Revoke each key in
         `details.delegatedKeyIds` (`DELETE /auth/delegated-keys/{id}`) and
         create it again, then retry. `details.cardIds` and `details.agentIds`

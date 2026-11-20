@@ -28,7 +28,7 @@ The wallet covers every currency your platform supports when it is created. If y
 
 One signature covers every account the customer has waiting. When nothing needs a signature, the first call returns `200` directly. A customer with no wallet yet gets `409 WALLET_NOT_PROVISIONED`.
 
-Grid checks the customer's delegated keys before it issues the challenge, so the customer never signs one that can't complete. If the customer has an `ACTIVE` or `PENDING` delegated key created before the new network was supported, the first call returns `409 DELEGATED_KEYS_REISSUE_REQUIRED` instead of the `202`:
+Grid checks the customer's delegated keys before it issues the challenge, so the customer never signs one that can't complete. If the customer has an `ACTIVE` delegated key, or a `PENDING` one whose authorization hasn't expired, created before the new network was supported, the first call returns `409 DELEGATED_KEYS_REISSUE_REQUIRED` instead of the `202`:
 
 - `details.delegatedKeyIds` lists the keys to re-create, and `details.cardIds` and `details.agentIds` list the cards and agents they serve.
 - Revoke each key with `DELETE /auth/delegated-keys/{id}` and create it again with `POST /auth/delegated-keys`, then call the provision endpoint again. A card whose key is revoked is `PENDING_AUTH` until its new key is `ACTIVE`.
