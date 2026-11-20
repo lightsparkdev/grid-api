@@ -48,7 +48,8 @@ delete:
     Revoke an `ACTIVE` or `PENDING` delegated signing key. Revoking a
     `PENDING` key only discards Grid's key material and voids its outstanding
     challenge, so the key can never be completed. Revoking an `ACTIVE` card
-    key moves an active card using this funding source becomes `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`. Frozen
+    key moves an active card using this funding source to `PENDING_AUTH`
+    with `statusReason: "DELEGATION_REQUIRED"`. Frozen
     and closed cards retain their status. Grid uses the custodied
     delegated key to authorize deleting its own signer identity. Deleting the
     identity also removes its API key, after which the delegated key can no

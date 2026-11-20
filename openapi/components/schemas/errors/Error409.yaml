@@ -35,7 +35,7 @@ properties:
       | SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS | The phone number is already associated with an SMS_OTP credential |
       | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
       | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
-      | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
+      | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned. When the request names an Embedded Wallet account whose wallet has no address on that account's network yet, `details.network` gives that network as a `CryptoNetwork` value |
       | DELEGATED_KEYS_REISSUE_REQUIRED | The customer has an `ACTIVE` delegated key, or a `PENDING` one whose authorization hasn't expired, created before the network being added was supported. `details.delegatedKeys` lists each key's `id`, `status` and, for a `PENDING` key, `authorizationExpiresAt`. Revoke each listed key with `DELETE /auth/delegated-keys/{id}`, create new ones where still needed with `POST /auth/delegated-keys`, then retry. `details.cardIds` and `details.agentIds` list the cards and agents those keys serve |
       | PAYMENT_DOCUMENT_ALREADY_USED | The payment document is already attached to a quote. A document can be used on one quote only, so upload the file again to use it on another quote. `details.documentIds` lists each such document |
       | INVOICE_ALREADY_USED | Another quote for the Lightning invoice can still be executed or funded, or was executed. An invoice has one live quote at a time; ask the recipient for a new one, or retry once Grid has closed the earlier quote as expired |
