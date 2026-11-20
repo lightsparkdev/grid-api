@@ -172,7 +172,7 @@ post:
                       - accountOrWalletInfo:
                           accountType: TEMPO_WALLET
                           assetType: OUSD
-                          address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+                          address: '0xabCDEF1234567890ABcDEF1234567890aBCDeF12'
                     createdAt: '2026-11-19T12:30:00Z'
                     updatedAt: '2026-11-19T12:31:00Z'
             processing:
