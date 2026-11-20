@@ -64,7 +64,10 @@ post:
     `cardId`, `externalAccountId`, `nickname` and `restrictions` instead of
     `internalAccountId`. Grid generates a Tempo access key and keeps its private
     key. The wallet's root account authorizes it, and the network then holds
-    the key to `restrictions`:
+    the key to `restrictions`: a lifetime spending limit per token and an
+    expiry. Grid pays the network fee on every transfer it makes with the key,
+    whatever the platform's network-fee setting, so only transfer amounts
+    count against the limits. The root account must be a secp256k1 account.
 
 
     1. Call with no `Request-Id`. The response is `202` with the key's `keyId`,
@@ -75,18 +78,21 @@ post:
     2. Sign `payloadToSign` with the wallet's root account, with no message
     prefix. Retry the same request with the signature in
     `keyAuthorizationSignature` and the `requestId` in `Request-Id`. Grid
-    checks that the signature comes from the external account's address, then
-    returns `201` with the key `ACTIVE`. The key reaches the network with the
-    card's first transfer, which carries the authorization.
+    accepts `v` as 0/1 or 27/28, checks that the signature comes from the
+    external account's address, then returns `201` with the key `ACTIVE`.
+    The key reaches the network with the card's first transfer, which carries
+    the authorization.
 
 
     If the root authorizes `keyId` on chain itself instead, retry without
-    `keyAuthorizationSignature`. Grid reads the key on chain and accepts it
-    when its limits and expiry match `requestedRestrictions`.
+    `keyAuthorizationSignature`. The network does not report a key's
+    configured limits, so Grid checks what it can read: the key is not
+    revoked, it enforces limits, its expiry equals `requestedRestrictions`,
+    and each token's remaining limit equals the requested amount. That holds
+    only before the key has spent anything, so retry right after authorizing.
 
 
-    The network enforces each spending limit, including over each period,
-    and the key's expiry. The wallet's root can revoke the key on chain at any
+    The network enforces each spending limit and the key's expiry. The wallet's root can revoke the key on chain at any
     time. Grid then marks it `REVOKED`, and the card becomes `PENDING_AUTH`
     with `statusReason: "DELEGATION_REQUIRED"`. Each card funding source may
     have at most one `ACTIVE` access key.
@@ -142,7 +148,6 @@ post:
                 spendingLimits:
                   - currency: OUSD
                     amount: 50000000
-                    periodSeconds: 2592000
                 expiresAt: '2027-11-19T00:00:00Z'
   responses:
     '201':
@@ -179,7 +184,6 @@ post:
                   spendingLimits:
                     - currency: OUSD
                       amount: 50000000
-                      periodSeconds: 2592000
                   expiresAt: '2027-11-19T00:00:00Z'
                 nickname: Card payments key
                 status: ACTIVE
@@ -203,8 +207,10 @@ post:
         both or neither of `internalAccountId` and `externalAccountId` are
         provided, when `externalAccountId` is sent with `agentId` or without
         `restrictions`, when the external account is not a `TEMPO_WALLET` whose
-        `providerWallet` is `PLATFORM`, or when `restrictions` names a currency
-        twice or one the network does not carry.
+        `providerWallet` is `PLATFORM`, when `restrictions` names a currency
+        twice or one the network does not carry, when `restrictions` or
+        `keyAuthorizationSignature` is sent with `internalAccountId`, or when
+        `keyAuthorizationSignature` is not a 65-byte secp256k1 signature.
       content:
         application/json:
           schema:
@@ -217,7 +223,8 @@ post:
         pending challenge. For an access key, also returned when
         `keyAuthorizationSignature` is malformed or does not come from the
         external account's address, or when the root's on-chain authorization
-        of `keyId` is missing or does not match `requestedRestrictions`.
+        of `keyId` is missing, revoked, not limit-enforcing, or does not match
+        the requested expiry and remaining limits.
       content:
         application/json:
           schema:

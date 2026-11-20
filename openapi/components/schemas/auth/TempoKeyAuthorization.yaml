@@ -3,13 +3,17 @@ type: object
 description: >-
   The access-key authorization Grid asks the wallet's root account to sign,
   as the network will read it. Decode `unsignedKeyAuthorization` to check
-  these fields before signing.
+  these fields before signing. It carries limits and an expiry only, with no
+  periodic limits and no call scopes. Unless the root authorizes the key on
+  chain itself, it rides inline in the first transfer Grid makes with the
+  key.
 required:
   - chainId
   - keyType
   - keyId
   - expiry
   - limits
+  - isAdmin
   - unsignedKeyAuthorization
 properties:
   chainId:
@@ -34,7 +38,7 @@ properties:
     example: 1795229075
   limits:
     type: array
-    description: Per-token spending limits, in the token's base units.
+    description: Per-token spending limits over the key's lifetime, in the token's base units.
     items:
       type: object
       required:
@@ -51,40 +55,12 @@ properties:
             Limit in the token's base units, as a decimal string because it
             can exceed 64 bits.
           example: '50000000'
-        period:
-          type: integer
-          format: int64
-          description: Period in seconds. 0 for a single limit over the key's lifetime.
-          example: 2592000
-  allowedCalls:
-    type: array
+  isAdmin:
+    type: boolean
     description: >-
-      Contract calls the key may make. Grid scopes the key to transfers of the
-      limited tokens to Grid's settlement address. Omitted when the key is not
-      scoped by call.
-    items:
-      type: object
-      required:
-        - target
-      properties:
-        target:
-          type: string
-          description: Address of the contract the key may call.
-          example: '0x20c0000000000000000000006a37da5c996874be'
-        selectors:
-          type: array
-          description: Four-byte function selectors the key may call on `target`, as hex.
-          items:
-            type: string
-          example:
-            - '0xa9059cbb'
-        recipients:
-          type: array
-          description: Addresses the key may transfer to.
-          items:
-            type: string
-          example:
-            - '0x1111111111111111111111111111111111111111'
+      Whether the key may authorize further keys. Always `false`: an access
+      key Grid holds can never add keys to the wallet.
+    example: false
   unsignedKeyAuthorization:
     type: string
     description: >-

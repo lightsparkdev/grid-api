@@ -8975,15 +8975,15 @@ paths:
 
         Each card funding source may have at most one `ACTIVE` delegated key, and each agent and Embedded Wallet pair at most one unrevoked (`PENDING` or `ACTIVE`) delegated key; revoke the existing key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by the public API. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
 
-        **Access keys for a wallet your platform runs.** For a card funded by a `TEMPO_WALLET` external account whose `providerWallet` is `PLATFORM`, send `cardId`, `externalAccountId`, `nickname` and `restrictions` instead of `internalAccountId`. Grid generates a Tempo access key and keeps its private key. The wallet's root account authorizes it, and the network then holds the key to `restrictions`:
+        **Access keys for a wallet your platform runs.** For a card funded by a `TEMPO_WALLET` external account whose `providerWallet` is `PLATFORM`, send `cardId`, `externalAccountId`, `nickname` and `restrictions` instead of `internalAccountId`. Grid generates a Tempo access key and keeps its private key. The wallet's root account authorizes it, and the network then holds the key to `restrictions`: a lifetime spending limit per token and an expiry. Grid pays the network fee on every transfer it makes with the key, whatever the platform's network-fee setting, so only transfer amounts count against the limits. The root account must be a secp256k1 account.
 
         1. Call with no `Request-Id`. The response is `202` with the key's `keyId`, the `requestedRestrictions`, the `keyAuthorization` fields the root signs, and `payloadToSign`, the hash of that authorization.
 
-        2. Sign `payloadToSign` with the wallet's root account, with no message prefix. Retry the same request with the signature in `keyAuthorizationSignature` and the `requestId` in `Request-Id`. Grid checks that the signature comes from the external account's address, then returns `201` with the key `ACTIVE`. The key reaches the network with the card's first transfer, which carries the authorization.
+        2. Sign `payloadToSign` with the wallet's root account, with no message prefix. Retry the same request with the signature in `keyAuthorizationSignature` and the `requestId` in `Request-Id`. Grid accepts `v` as 0/1 or 27/28, checks that the signature comes from the external account's address, then returns `201` with the key `ACTIVE`. The key reaches the network with the card's first transfer, which carries the authorization.
 
-        If the root authorizes `keyId` on chain itself instead, retry without `keyAuthorizationSignature`. Grid reads the key on chain and accepts it when its limits and expiry match `requestedRestrictions`.
+        If the root authorizes `keyId` on chain itself instead, retry without `keyAuthorizationSignature`. The network does not report a key's configured limits, so Grid checks what it can read: the key is not revoked, it enforces limits, its expiry equals `requestedRestrictions`, and each token's remaining limit equals the requested amount. That holds only before the key has spent anything, so retry right after authorizing.
 
-        The network enforces each spending limit, including over each period, and the key's expiry. The wallet's root can revoke the key on chain at any time. Grid then marks it `REVOKED`, and the card becomes `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`. Each card funding source may have at most one `ACTIVE` access key.
+        The network enforces each spending limit and the key's expiry. The wallet's root can revoke the key on chain at any time. Grid then marks it `REVOKED`, and the card becomes `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`. Each card funding source may have at most one `ACTIVE` access key.
       operationId: createDelegatedKey
       tags:
         - Embedded Wallet Auth
@@ -9027,7 +9027,6 @@ paths:
                     spendingLimits:
                       - currency: OUSD
                         amount: 50000000
-                        periodSeconds: 2592000
                     expiresAt: '2027-11-19T00:00:00Z'
       responses:
         '201':
@@ -9061,7 +9060,6 @@ paths:
                       spendingLimits:
                         - currency: OUSD
                           amount: 50000000
-                          periodSeconds: 2592000
                       expiresAt: '2027-11-19T00:00:00Z'
                     nickname: Card payments key
                     status: ACTIVE
@@ -9074,13 +9072,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/DelegatedKeyCreateChallenge'
         '400':
-          description: Bad request. Returned when both `cardId` and `agentId` are provided, or when neither owner id is provided. Returned with `INVALID_INPUT` when both or neither of `internalAccountId` and `externalAccountId` are provided, when `externalAccountId` is sent with `agentId` or without `restrictions`, when the external account is not a `TEMPO_WALLET` whose `providerWallet` is `PLATFORM`, or when `restrictions` names a currency twice or one the network does not carry.
+          description: Bad request. Returned when both `cardId` and `agentId` are provided, or when neither owner id is provided. Returned with `INVALID_INPUT` when both or neither of `internalAccountId` and `externalAccountId` are provided, when `externalAccountId` is sent with `agentId` or without `restrictions`, when the external account is not a `TEMPO_WALLET` whose `providerWallet` is `PLATFORM`, when `restrictions` names a currency twice or one the network does not carry, when `restrictions` or `keyAuthorizationSignature` is sent with `internalAccountId`, or when `keyAuthorizationSignature` is not a 65-byte secp256k1 signature.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing on a retry, malformed, or does not match the pending challenge, or when the `Request-Id` does not match an unexpired pending challenge. For an access key, also returned when `keyAuthorizationSignature` is malformed or does not come from the external account's address, or when the root's on-chain authorization of `keyId` is missing or does not match `requestedRestrictions`.
+          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing on a retry, malformed, or does not match the pending challenge, or when the `Request-Id` does not match an unexpired pending challenge. For an access key, also returned when `keyAuthorizationSignature` is malformed or does not come from the external account's address, or when the root's on-chain authorization of `keyId` is missing, revoked, not limit-enforcing, or does not match the requested expiry and remaining limits.
           content:
             application/json:
               schema:
@@ -38456,17 +38454,12 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
-          description: The most the key may spend in `currency`, in the smallest unit of the currency, over each period or over the key's lifetime. Network fees the wallet pays from this token count against it.
+          description: The most the key may spend in `currency` over its lifetime, in the smallest unit of the currency. Grid pays the network fee on every transfer it makes with the key, whatever the platform's network-fee setting, so only transfer amounts count against the limit.
           example: 50000000
-        periodSeconds:
-          type: integer
-          exclusiveMinimum: 0
-          description: Length of the recurring period, in seconds. The limit resets at the start of each period. Omit it for a single limit over the key's lifetime.
-          example: 2592000
     AccessKeyRestrictions:
       title: Access Key Restrictions
       type: object
-      description: What a Tempo access key may spend, and until when. The network enforces these limits. Any call scope Grid adds is in the key authorization's `allowedCalls`.
+      description: 'What a Tempo access key may spend, and until when. The network enforces both. Each limit covers the key''s whole lifetime: recurring limits and call scopes are not offered.'
       required:
         - spendingLimits
         - expiresAt
@@ -38480,7 +38473,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: When the key stops working. Delegate a new key before then to keep the card funded.
+          description: When the key stops working. It must be in the future. Delegate a new key before then to keep the card funded.
           example: '2027-11-19T00:00:00Z'
     DelegatedKeyStatus:
       type: string
@@ -38592,10 +38585,10 @@ components:
         restrictions:
           allOf:
             - $ref: '#/components/schemas/AccessKeyRestrictions'
-          description: What the access key may spend, and until when. Required with `externalAccountId`; rejected otherwise.
+          description: What the access key may spend, and until when. Required with `externalAccountId`; refused with `internalAccountId`.
         keyAuthorizationSignature:
           type: string
-          description: The wallet root account's signature over the `payloadToSign` of the prior `202`, as hex in the network's signature encoding for the root's key type (65-byte `r || s || v` for a secp256k1 root). Send it on the retry for an access key, with `Request-Id`. Omit it if the root already authorized `keyId` on chain itself; Grid then reads the key on chain.
+          description: The wallet root account's signature over the `payloadToSign` of the prior `202`, as 65-byte `r || s || v` hex, with `v` either 0/1 or 27/28. Only secp256k1 root accounts are supported; another signature format is refused with `400 INVALID_INPUT`. Send it on the retry for an access key, with `Request-Id`. Omit it if the root already authorized `keyId` on chain itself; Grid then reads the key on chain. Refused with `internalAccountId`.
           example: '0x72422cb2a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5cf0ca0e4e6572a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c5a1d01'
         nickname:
           type: string
@@ -38606,13 +38599,14 @@ components:
     TempoKeyAuthorization:
       title: Tempo Key Authorization
       type: object
-      description: The access-key authorization Grid asks the wallet's root account to sign, as the network will read it. Decode `unsignedKeyAuthorization` to check these fields before signing.
+      description: The access-key authorization Grid asks the wallet's root account to sign, as the network will read it. Decode `unsignedKeyAuthorization` to check these fields before signing. It carries limits and an expiry only, with no periodic limits and no call scopes. Unless the root authorizes the key on chain itself, it rides inline in the first transfer Grid makes with the key.
       required:
         - chainId
         - keyType
         - keyId
         - expiry
         - limits
+        - isAdmin
         - unsignedKeyAuthorization
       properties:
         chainId:
@@ -38637,7 +38631,7 @@ components:
           example: 1795229075
         limits:
           type: array
-          description: Per-token spending limits, in the token's base units.
+          description: Per-token spending limits over the key's lifetime, in the token's base units.
           items:
             type: object
             required:
@@ -38652,37 +38646,10 @@ components:
                 type: string
                 description: Limit in the token's base units, as a decimal string because it can exceed 64 bits.
                 example: '50000000'
-              period:
-                type: integer
-                format: int64
-                description: Period in seconds. 0 for a single limit over the key's lifetime.
-                example: 2592000
-        allowedCalls:
-          type: array
-          description: Contract calls the key may make. Grid scopes the key to transfers of the limited tokens to Grid's settlement address. Omitted when the key is not scoped by call.
-          items:
-            type: object
-            required:
-              - target
-            properties:
-              target:
-                type: string
-                description: Address of the contract the key may call.
-                example: '0x20c0000000000000000000006a37da5c996874be'
-              selectors:
-                type: array
-                description: Four-byte function selectors the key may call on `target`, as hex.
-                items:
-                  type: string
-                example:
-                  - '0xa9059cbb'
-              recipients:
-                type: array
-                description: Addresses the key may transfer to.
-                items:
-                  type: string
-                example:
-                  - '0x1111111111111111111111111111111111111111'
+        isAdmin:
+          type: boolean
+          description: 'Whether the key may authorize further keys. Always `false`: an access key Grid holds can never add keys to the wallet.'
+          example: false
         unsignedKeyAuthorization:
           type: string
           description: Hex RLP encoding of the unsigned authorization, the exact bytes whose Keccak-256 hash is `payloadToSign`.

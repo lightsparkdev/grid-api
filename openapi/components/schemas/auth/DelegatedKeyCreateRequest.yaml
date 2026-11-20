@@ -42,15 +42,17 @@ properties:
       - $ref: ./AccessKeyRestrictions.yaml
     description: >-
       What the access key may spend, and until when. Required with
-      `externalAccountId`; rejected otherwise.
+      `externalAccountId`; refused with `internalAccountId`.
   keyAuthorizationSignature:
     type: string
     description: >-
       The wallet root account's signature over the `payloadToSign` of the
-      prior `202`, as hex in the network's signature encoding for the root's
-      key type (65-byte `r || s || v` for a secp256k1 root). Send it on the
-      retry for an access key, with `Request-Id`. Omit it if the root already
-      authorized `keyId` on chain itself; Grid then reads the key on chain.
+      prior `202`, as 65-byte `r || s || v` hex, with `v` either 0/1 or 27/28.
+      Only secp256k1 root accounts are supported; another signature format is
+      refused with `400 INVALID_INPUT`. Send it on the retry for an access
+      key, with `Request-Id`. Omit it if the root already authorized `keyId`
+      on chain itself; Grid then reads the key on chain. Refused with
+      `internalAccountId`.
     example: '0x72422cb2a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5cf0ca0e4e6572a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c5a1d01'
   nickname:
     type: string
