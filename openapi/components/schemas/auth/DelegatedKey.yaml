@@ -59,6 +59,14 @@ properties:
     example: Settlement service key
   status:
     $ref: ./DelegatedKeyStatus.yaml
+  networkFees:
+    allOf:
+      - $ref: ../config/NetworkFeeMode.yaml
+    description: >-
+      The platform's `embeddedWalletConfig.networkFees` in force when this key
+      was created, which its card's transfers keep until the key is revoked.
+      Present only on card keys for an Embedded Wallet account on Tempo.
+      After a mode change, re-delegate the cards whose keys show the old mode.
   createdAt:
     type: string
     format: date-time

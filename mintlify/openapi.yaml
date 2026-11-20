@@ -5428,7 +5428,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Quote'
         '400':
-          description: Bad request. Returned with `DOCUMENTS_REQUIRED` when the destination requires supporting documents for the `purposeOfPayment` and `documentIds` does not supply all of them. `details.missingRequirements` lists the requirement ID of each missing document. Returned with `INVALID_INPUT` for missing or invalid parameters. These include `documentIds` without an `Idempotency-Key` header, `documentIds` sent to a destination that does not require documents, a document whose `documentType` fills no remaining requirement for the `purposeOfPayment`, and a `purposeOfPayment` the destination does not accept.
+          description: Bad request. Returned with `DOCUMENTS_REQUIRED` when the destination requires supporting documents for the `purposeOfPayment` and `documentIds` does not supply all of them. `details.missingRequirements` lists the requirement ID of each missing document. Returned with `INVALID_INPUT` for missing or invalid parameters. These include `documentIds` without an `Idempotency-Key` header, `documentIds` sent to a destination that does not require documents, a document whose `documentType` fills no remaining requirement for the `purposeOfPayment`, and a `purposeOfPayment` the destination does not accept. Returned with `INSUFFICIENT_FUNDS` when an Embedded Wallet source pays the network fee and cannot cover `totalSendingAmount` plus `networkFee`.
           content:
             application/json:
               schema:
@@ -5586,7 +5586,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Quote'
         '400':
-          description: Bad request - Invalid quote ID or quote cannot be confirmed
+          description: Bad request - Invalid quote ID or quote cannot be confirmed. Returned with `QUOTE_EXPIRED` when the quote's source pays the network fee and the fee has risen above the quote's `networkFee`; nothing is sent, so create a new quote.
           content:
             application/json:
               schema:
@@ -21641,6 +21641,16 @@ components:
         When a customer's embedded wallet is created. Grid reads the platform's value once, when it opens the customer's first embedded-wallet account. Changing it later doesn't move a customer whose account is already open.
         - `AT_CUSTOMER_CREATE`: When the customer's first embedded-wallet account opens, once the customer is eligible. The customer's email becomes the wallet's first `EMAIL_OTP` credential. Creating a customer requires an email. A customer with no email on file when the account opens gets the `AT_FIRST_CREDENTIAL` behavior.
         - `AT_FIRST_CREDENTIAL`: When the first auth credential is added to the customer's embedded-wallet account. Once the customer is eligible, the account is created and stays `PENDING` until then. The first credential can be `EMAIL_OTP`, `OAUTH`, `PASSKEY` or `EVM_WALLET`, but not `SMS_OTP`. See `POST /auth/credentials`. Creating a customer requires no email.
+    NetworkFeeMode:
+      type: string
+      enum:
+        - GRID_PAYS
+        - CUSTOMER_PAYS
+      description: |-
+        Who pays the network fee when a customer's Embedded Wallet sends on a network that charges the sender one (Tempo today).
+        - `GRID_PAYS`: Grid pays the fee. The wallet needs only the amount it sends, and the quote's `networkFee` is 0.
+        - `CUSTOMER_PAYS`: The wallet pays the fee on chain, in the currency it sends, on top of the amount it sends. The quote's `networkFee` is the most the fee can cost, and the wallet must hold the amount plus that fee.
+      example: GRID_PAYS
     EmbeddedWalletConfig:
       type: object
       description: |
@@ -21714,6 +21724,20 @@ components:
             configure, currently one year; a value above it is rejected. A change
             applies to sessions created after it.
           example: 3600
+        networkFees:
+          $ref: '#/components/schemas/NetworkFeeMode'
+          description: |
+            Who pays the network fee on this platform's customers' Embedded Wallet
+            sends. Defaults to `GRID_PAYS`. A change applies to quotes created after
+            it. Of cards, only those funded by an Embedded Wallet account on Tempo
+            follow this setting, and each one's delegated key is created for the
+            mode in force at the time, shown as the key's `networkFees`. A change
+            does not move them: to move one to the new mode, revoke its delegated
+            key with
+            `DELETE /auth/delegated-keys/{id}` and delegate it again with
+            `POST /auth/delegated-keys`. Cards funded on Spark pay no network fee. Card transfers Grid makes with an access
+            key from a Tempo wallet your platform runs are always paid by Grid,
+            whatever this setting.
     CardTokenization2FAEmailConfig:
       type: object
       description: Email branding and sender settings for card-tokenization authentication messages. Invalid or unverified sender identities can cause delivery to fail.
@@ -22344,7 +22368,7 @@ components:
             | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
             | BANK_ACCOUNT_OWNER_MISMATCH | The bank does not list the customer as the bank account's owner |
             | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
-            | QUOTE_EXPIRED | The quote has expired; request a new quote |
+            | QUOTE_EXPIRED | The quote has expired, or the network fee it would now pay exceeds its `networkFee`; request a new quote |
             | QUOTE_RATE_UNAVAILABLE | No exchange rate is available for this corridor right now |
             | STABLECOIN_AMOUNT_NOT_REPRESENTABLE | The amount cannot be represented at the token's precision |
             | STABLECOIN_BURN_SOURCE_NOT_SUPPORTED | The burn source account cannot be used for this operation |
@@ -35695,6 +35719,10 @@ components:
               description: The portion of `fees` collected by the platform (platform-configured transaction fees), in the smallest unit of the sending currency. 0 when the platform has no applicable fee configured. Already included in `fees`.
               minimum: 0
               example: 5
+            networkFee:
+              allOf:
+                - $ref: '#/components/schemas/CurrencyAmount'
+              description: The network fee the source Embedded Wallet paid on chain for this send, in the source account's currency. Present only when the wallet paid it, under the platform's `CUSTOMER_PAYS` network-fee setting, and only once the send has settled on chain. It is at most the quote's `networkFee`, and the wallet's balance drops by `sentAmount` plus this fee.
             reconciliationInstructions:
               $ref: '#/components/schemas/ReconciliationInstructions'
               description: Reconciliation details for this transaction. For the on-chain hash of a crypto payout to an external wallet, see the destination's `railDetails` instead.
@@ -36615,6 +36643,10 @@ components:
           description: The portion of `feesIncluded` collected by the platform (platform-configured transaction fees), in the smallest unit of the sending currency. 0 when the platform has no applicable fee configured. Already included in `feesIncluded`. May be omitted from payloads produced before platform fees existed.
           minimum: 0
           example: 5
+        networkFee:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: 'The most the network fee for this quote''s on-chain send can cost the source Embedded Wallet, in the source account''s currency. Present only when the source is an Embedded Wallet that sends on a network charging the sender a fee (Tempo today). The amount is 0 when the platform''s `embeddedWalletConfig.networkFees` is `GRID_PAYS`. Under `CUSTOMER_PAYS` the wallet pays the fee on top of `totalSendingAmount`, so it is not part of `totalSendingAmount` or `feesIncluded`. Grid refuses the quote with `400 INSUFFICIENT_FUNDS` when the wallet cannot cover both. The fee charged on chain is never more than this amount: if the network fee has risen above it by execution, the execute is refused with `400 QUOTE_EXPIRED` and nothing is sent. Create a new quote.'
         paymentInstructions:
           type: array
           description: Payment instructions for executing the payment. This is not required when using an internal account source.
@@ -38395,6 +38427,10 @@ components:
           example: Settlement service key
         status:
           $ref: '#/components/schemas/DelegatedKeyStatus'
+        networkFees:
+          allOf:
+            - $ref: '#/components/schemas/NetworkFeeMode'
+          description: The platform's `embeddedWalletConfig.networkFees` in force when this key was created, which its card's transfers keep until the key is revoked. Present only on card keys for an Embedded Wallet account on Tempo. After a mode change, re-delegate the cards whose keys show the old mode.
         createdAt:
           type: string
           format: date-time

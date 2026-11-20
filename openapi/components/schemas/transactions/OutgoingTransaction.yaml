@@ -39,6 +39,16 @@ allOf:
           in `fees`.
         minimum: 0
         example: 5
+      networkFee:
+        allOf:
+          - $ref: ../common/CurrencyAmount.yaml
+        description: >-
+          The network fee the source Embedded Wallet paid on chain for this
+          send, in the source account's currency. Present only when the wallet
+          paid it, under the platform's `CUSTOMER_PAYS` network-fee setting,
+          and only once the send has settled on chain. It is at most the
+          quote's `networkFee`, and the wallet's balance drops by `sentAmount`
+          plus this fee.
       reconciliationInstructions:
         $ref: ../common/ReconciliationInstructions.yaml
         description: >-

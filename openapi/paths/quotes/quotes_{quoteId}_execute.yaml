@@ -87,7 +87,11 @@ post:
           schema:
             $ref: ../../components/schemas/quotes/Quote.yaml
     '400':
-      description: Bad request - Invalid quote ID or quote cannot be confirmed
+      description: >-
+        Bad request - Invalid quote ID or quote cannot be confirmed. Returned
+        with `QUOTE_EXPIRED` when the quote's source pays the network fee and
+        the fee has risen above the quote's `networkFee`; nothing is sent, so
+        create a new quote.
       content:
         application/json:
           schema:
