@@ -60,6 +60,7 @@ The **Available Rails** column lists the payment rails Grid may use for the crea
 | ARBITRUM_WALLET | USDC, USDT | Arbitrum wallet address (0x...) |
 | OPTIMISM_WALLET | USDC | Optimism wallet address (0x...) |
 | AVALANCHE_WALLET | USDC | Avalanche C-Chain wallet address (0x...) |
+| TEMPO_WALLET | USDC | Tempo wallet address (0x...) |
 | POLYGON_WALLET | USDC | Polygon wallet address (0x...) |
 | BASE_WALLET | USDC | Base wallet address (0x...) |
 

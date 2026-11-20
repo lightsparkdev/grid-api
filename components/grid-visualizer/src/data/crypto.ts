@@ -37,6 +37,7 @@ export const cryptoAssets: CryptoAsset[] = [
       { type: 'ARBITRUM_WALLET', label: 'Wallet', network: 'Arbitrum' },
       { type: 'OPTIMISM_WALLET', label: 'Wallet', network: 'Optimism' },
       { type: 'AVALANCHE_WALLET', label: 'Wallet', network: 'Avalanche C-Chain' },
+      { type: 'TEMPO_WALLET', label: 'Wallet', network: 'Tempo' },
     ],
     examplePerson: { fullName: 'Alex Rivera', nationality: 'US' },
   },

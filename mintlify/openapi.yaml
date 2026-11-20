@@ -25306,6 +25306,7 @@ components:
         - ARBITRUM_WALLET
         - OPTIMISM_WALLET
         - AVALANCHE_WALLET
+        - TEMPO_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
         - ETHEREUM_WALLET
@@ -25911,6 +25912,32 @@ components:
               description: Type of asset
               enum:
                 - USDC
+    TempoWalletInfo:
+      type: object
+      required:
+        - address
+        - accountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - TEMPO_WALLET
+        address:
+          type: string
+          description: Tempo wallet address
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+    PaymentTempoWalletInfo:
+      title: Tempo Wallet
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/TempoWalletInfo'
+        - type: object
+          properties:
+            assetType:
+              type: string
+              description: Type of asset
+              enum:
+                - USDC
     TronWalletInfo:
       type: object
       required:
@@ -26014,6 +26041,7 @@ components:
             - $ref: '#/components/schemas/PaymentArbitrumWalletInfo'
             - $ref: '#/components/schemas/PaymentOptimismWalletInfo'
             - $ref: '#/components/schemas/PaymentAvalancheWalletInfo'
+            - $ref: '#/components/schemas/PaymentTempoWalletInfo'
             - $ref: '#/components/schemas/PaymentTronWalletInfo'
             - $ref: '#/components/schemas/PaymentPlasmaWalletInfo'
             - $ref: '#/components/schemas/PaymentEmbeddedWalletInfo'
@@ -26037,6 +26065,7 @@ components:
               ARBITRUM_WALLET: '#/components/schemas/PaymentArbitrumWalletInfo'
               OPTIMISM_WALLET: '#/components/schemas/PaymentOptimismWalletInfo'
               AVALANCHE_WALLET: '#/components/schemas/PaymentAvalancheWalletInfo'
+              TEMPO_WALLET: '#/components/schemas/PaymentTempoWalletInfo'
               TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
               PLASMA_WALLET: '#/components/schemas/PaymentPlasmaWalletInfo'
               EMBEDDED_WALLET: '#/components/schemas/PaymentEmbeddedWalletInfo'
@@ -26362,6 +26391,7 @@ components:
         - ARBITRUM_WALLET
         - OPTIMISM_WALLET
         - AVALANCHE_WALLET
+        - TEMPO_WALLET
         - POLYGON_WALLET
         - SOLANA_WALLET
         - SPARK_WALLET
@@ -31208,6 +31238,13 @@ components:
         - $ref: '#/components/schemas/AvalancheWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+    TempoWalletExternalAccountInfo:
+      title: Tempo Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/TempoWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
@@ -32716,6 +32753,7 @@ components:
         - $ref: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/OptimismWalletExternalAccountInfo'
         - $ref: '#/components/schemas/AvalancheWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/TempoWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -32779,6 +32817,7 @@ components:
           ARBITRUM_WALLET: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
           OPTIMISM_WALLET: '#/components/schemas/OptimismWalletExternalAccountInfo'
           AVALANCHE_WALLET: '#/components/schemas/AvalancheWalletExternalAccountInfo'
+          TEMPO_WALLET: '#/components/schemas/TempoWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -33873,6 +33912,7 @@ components:
         - $ref: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/OptimismWalletExternalAccountInfo'
         - $ref: '#/components/schemas/AvalancheWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/TempoWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -33935,6 +33975,7 @@ components:
           ARBITRUM_WALLET: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
           OPTIMISM_WALLET: '#/components/schemas/OptimismWalletExternalAccountInfo'
           AVALANCHE_WALLET: '#/components/schemas/AvalancheWalletExternalAccountInfo'
+          TEMPO_WALLET: '#/components/schemas/TempoWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -34730,6 +34771,7 @@ components:
         - ARBITRUM
         - OPTIMISM
         - AVALANCHE
+        - TEMPO
         - SPARK
       description: The blockchain network an on-chain transaction settled on. Whether this is the mainnet or a test network (e.g. Solana devnet) is determined by your platform's environment — sandbox platforms operate on test networks, production platforms on mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
       example: SOLANA
@@ -36464,7 +36506,7 @@ components:
               example: USD
             cryptoNetwork:
               type: string
-              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `ARBITRUM`, `OPTIMISM`, `AVALANCHE`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
+              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `ARBITRUM`, `OPTIMISM`, `AVALANCHE`, `TEMPO`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
               example: SOLANA
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSourceOneOf:
@@ -36978,7 +37020,7 @@ components:
           example: USDC
         cryptoNetwork:
           type: string
-          description: 'The blockchain network for the withdrawal. Example values: SOLANA, ETHEREUM, BASE, POLYGON, ARBITRUM, OPTIMISM, AVALANCHE, SPARK, LIGHTNING, BITCOIN.'
+          description: 'The blockchain network for the withdrawal. Example values: SOLANA, ETHEREUM, BASE, POLYGON, ARBITRUM, OPTIMISM, AVALANCHE, TEMPO, SPARK, LIGHTNING, BITCOIN.'
           example: SOLANA
         amount:
           type: integer
@@ -38787,16 +38829,17 @@ components:
         - SOLANA
         - POLYGON
         - AVALANCHE
+        - TEMPO
         - ARBITRUM
         - OPTIMISM
         - TRON
-      description: Network an agent can send USDC or USDT to from an embedded wallet. `TRON` supports `USDT` only, and `BASE`, `OPTIMISM` and `AVALANCHE` support `USDC` only.
+      description: Network an agent can send USDC or USDT to from an embedded wallet. `TRON` supports `USDT` only, and `BASE`, `OPTIMISM`, `AVALANCHE` and `TEMPO` support `USDC` only.
     AgentSendCurrency:
       type: string
       enum:
         - USDC
         - USDT
-      description: Asset an agent can send to an address on another chain. `TRON` supports `USDT` only, and `BASE`, `OPTIMISM` and `AVALANCHE` support `USDC` only.
+      description: Asset an agent can send to an address on another chain. `TRON` supports `USDT` only, and `BASE`, `OPTIMISM`, `AVALANCHE` and `TEMPO` support `USDC` only.
     AgentChainAddressDestination:
       title: Chain Address
       type: object
@@ -38818,7 +38861,7 @@ components:
           example: BASE
         currency:
           $ref: '#/components/schemas/AgentSendCurrency'
-          description: 'Asset the recipient receives: `USDC` or `USDT`. `TRON` supports `USDT` only, and `BASE`, `OPTIMISM` and `AVALANCHE` support `USDC` only.'
+          description: 'Asset the recipient receives: `USDC` or `USDT`. `TRON` supports `USDT` only, and `BASE`, `OPTIMISM`, `AVALANCHE` and `TEMPO` support `USDC` only.'
           example: USDC
         address:
           type: string
@@ -40127,11 +40170,12 @@ components:
         - SOLANA
         - POLYGON
         - AVALANCHE
+        - TEMPO
         - ARBITRUM
         - OPTIMISM
         - TRON
         - ACH_PULL
-      description: Network from which an agent customer can fund a deposit. `TRON` deposits support `USDT` only, and `OPTIMISM` and `AVALANCHE` deposits support `USDC` only. `ACH_PULL` is an ACH debit from one of the customer's own US bank accounts (external accounts).
+      description: Network from which an agent customer can fund a deposit. `TRON` deposits support `USDT` only, and `OPTIMISM`, `AVALANCHE` and `TEMPO` deposits support `USDC` only. `ACH_PULL` is an ACH debit from one of the customer's own US bank accounts (external accounts).
     AgentDepositCreateRequest:
       type: object
       description: Request for a deposit into one of the agent customer's internal accounts. For `LIGHTNING`, set `sourceCurrency` to `USD` and provide `amount`; the user pays that exact USD amount and fees are deducted from the amount received. For chain networks, no amount is required and the returned standing deposit address does not expire. A chain request counts the first order the address receives from that network in that currency within 24 hours of the request; while that window is open with nothing paid, a second request for the same account, network and currency is refused. Where Grid funds a chain deposit through a quote instead, the address is the quote's and the deposit carries the quote's `expiresAt`; a payment after it is not converted (see `paidAfterExpiry`). For `ACH_PULL`, `sourceCurrency` must be `USD`, and `amount` in USD cents and `sourceExternalAccountId` are required. The source must be the agent customer's own `ACTIVE` USD external account with a Plaid ACH validation recorded through `POST /agents/{agentId}/external-accounts/{externalAccountId}/ach-validations`. The destination must be the customer's USDB `EMBEDDED_WALLET`. Creating an `ACH_PULL` deposit moves no money and records no authorization; it returns the authorization text the customer must accept. Requires the `RECEIVE_FUNDS` permission.

@@ -10,6 +10,7 @@ enum:
   - ARBITRUM
   - OPTIMISM
   - AVALANCHE
+  - TEMPO
   - SPARK
 description: >-
   The blockchain network an on-chain transaction settled on. Whether this is the
