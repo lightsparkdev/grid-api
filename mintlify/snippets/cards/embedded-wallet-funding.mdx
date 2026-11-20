@@ -272,7 +272,8 @@ curl -X DELETE "$GRID_BASE_URL/auth/delegated-keys/DelegatedKey:019542f5-b3e7-1d
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
-The response is `204`. Revoking a key that is not `ACTIVE` returns
+The response is `204`. Revoking a `PENDING` key discards it and voids its
+unsigned challenge. Revoking a key that is already `REVOKED` returns
 `400 INVALID_INPUT`. Revocation is permanent. To let the card spend again,
 run the three-leg flow to create a new key.
 

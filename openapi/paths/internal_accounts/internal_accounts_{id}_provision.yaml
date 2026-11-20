@@ -37,16 +37,28 @@ post:
     delegated key, or a `PENDING` one whose authorization hasn't expired,
     created before the network being added was supported blocks
     provisioning: the call returns
-    `409 DELEGATED_KEYS_REISSUE_REQUIRED`,
-    with the keys in `details.delegatedKeyIds` and the cards and agents they
-    serve in `details.cardIds` and `details.agentIds`. Revoke each key with
-    `DELETE /auth/delegated-keys/{id}` and create it again with
-    `POST /auth/delegated-keys`, then call this endpoint again. A revoked
-    card key moves its card to `PENDING_AUTH` until the new key is `ACTIVE`.
-    The accounts keep `provisioningRequired: true` meanwhile. A revoked key
-    Grid is still cleaning up also blocks provisioning, but needs no action
-    from the customer: the call returns `409 OPERATION_IN_PROGRESS`. Retry
-    later.
+    `409 DELEGATED_KEYS_REISSUE_REQUIRED`. `details.delegatedKeys` lists
+    each key with its `status` and, for a `PENDING` key,
+    `authorizationExpiresAt`. `details.cardIds` and `details.agentIds` list
+    the cards and agents they serve. Revoke each listed key with
+    `DELETE /auth/delegated-keys/{id}`, which accepts `ACTIVE` and `PENDING`
+    keys alike. Create a new key with `POST /auth/delegated-keys` for each
+    card and agent that still needs one, then call this endpoint again. A
+    revoked `ACTIVE` card key moves its card to `PENDING_AUTH` until the new
+    key is `ACTIVE`. The accounts keep `provisioningRequired: true`
+    meanwhile. A revoked key Grid is still cleaning up also blocks
+    provisioning, but needs no action from the customer: the call returns
+    `409 OPERATION_IN_PROGRESS` with a `Retry-After` header.
+
+
+    Each call without signature headers issues a new challenge, and every
+    issued challenge stays valid until its `expiresAt`. The first signed
+    retry to arrive adds the waiting networks. A signed retry for another
+    challenge, sent after that, adds nothing and returns `200` with the
+    accounts its challenge covered, which are open by then. When a signed
+    retry gets `409 DELEGATED_KEYS_REISSUE_REQUIRED`, its challenge is not
+    used up: once the keys are revoked, re-send the same signed retry before
+    `expiresAt`, or start over with a call without signature headers.
 
 
     The call is idempotent. While a provisioning for the customer is still in
@@ -212,13 +224,22 @@ post:
         the customer has an `ACTIVE` delegated key, or a `PENDING` one whose
         authorization hasn't expired, created before this network was
         supported. Grid returns it in place of the `202`, and on a signed
-        retry if such a key appeared after the challenge. Revoke each key in
-        `details.delegatedKeyIds` (`DELETE /auth/delegated-keys/{id}`) and
-        create it again, then retry. `details.cardIds` and `details.agentIds`
-        list the cards and agents those keys serve. Returned with
-        `OPERATION_IN_PROGRESS` while Grid is still cleaning up a revoked key
-        from before this network was supported. Such keys are never listed in
-        `details`, since there is nothing to revoke. Retry later.
+        retry if such a key appeared after the challenge. `details.delegatedKeys`
+        lists each key's `id`, `status` and, for a `PENDING` key,
+        `authorizationExpiresAt`. `details.cardIds` and `details.agentIds`
+        list the cards and agents those keys serve. Revoke each listed key
+        (`DELETE /auth/delegated-keys/{id}`) and create new ones where still
+        needed, then retry. Returned with `OPERATION_IN_PROGRESS` while Grid
+        is still cleaning up a revoked key from before this network was
+        supported. Such keys are never listed in `details`, since there is
+        nothing to revoke. Retry after the `Retry-After` interval.
+      headers:
+        Retry-After:
+          description: >-
+            Number of seconds to wait before retrying. Sent with
+            `OPERATION_IN_PROGRESS`.
+          schema:
+            type: integer
       content:
         application/json:
           schema:
@@ -230,10 +251,15 @@ post:
                 code: DELEGATED_KEYS_REISSUE_REQUIRED
                 reason: Revoke and re-create the listed delegated keys before adding a network to this wallet.
                 details:
-                  delegatedKeyIds:
-                    - DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+                  delegatedKeys:
+                    - id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+                      status: ACTIVE
+                    - id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000022
+                      status: PENDING
+                      authorizationExpiresAt: '2026-11-20T15:45:00Z'
                   cardIds:
                     - Card:019542f5-b3e7-1d02-0000-000000000010
+                    - Card:019542f5-b3e7-1d02-0000-000000000011
                   agentIds: []
     '500':
       description: Internal service error

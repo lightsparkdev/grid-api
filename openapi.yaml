@@ -7766,7 +7766,9 @@ paths:
 
         2. Use the session API keypair of a verified authentication credential on any of the customer's Embedded Wallet internal accounts to build an API-key stamp over `payloadToSign`. Retry with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `200` with the customer's Embedded Wallet accounts and the `provisionedCurrencies` it opened.
 
-        Grid checks the customer's delegated keys before it issues a challenge, so the customer never signs one that cannot complete. An `ACTIVE` delegated key, or a `PENDING` one whose authorization hasn't expired, created before the network being added was supported blocks provisioning: the call returns `409 DELEGATED_KEYS_REISSUE_REQUIRED`, with the keys in `details.delegatedKeyIds` and the cards and agents they serve in `details.cardIds` and `details.agentIds`. Revoke each key with `DELETE /auth/delegated-keys/{id}` and create it again with `POST /auth/delegated-keys`, then call this endpoint again. A revoked card key moves its card to `PENDING_AUTH` until the new key is `ACTIVE`. The accounts keep `provisioningRequired: true` meanwhile. A revoked key Grid is still cleaning up also blocks provisioning, but needs no action from the customer: the call returns `409 OPERATION_IN_PROGRESS`. Retry later.
+        Grid checks the customer's delegated keys before it issues a challenge, so the customer never signs one that cannot complete. An `ACTIVE` delegated key, or a `PENDING` one whose authorization hasn't expired, created before the network being added was supported blocks provisioning: the call returns `409 DELEGATED_KEYS_REISSUE_REQUIRED`. `details.delegatedKeys` lists each key with its `status` and, for a `PENDING` key, `authorizationExpiresAt`. `details.cardIds` and `details.agentIds` list the cards and agents they serve. Revoke each listed key with `DELETE /auth/delegated-keys/{id}`, which accepts `ACTIVE` and `PENDING` keys alike. Create a new key with `POST /auth/delegated-keys` for each card and agent that still needs one, then call this endpoint again. A revoked `ACTIVE` card key moves its card to `PENDING_AUTH` until the new key is `ACTIVE`. The accounts keep `provisioningRequired: true` meanwhile. A revoked key Grid is still cleaning up also blocks provisioning, but needs no action from the customer: the call returns `409 OPERATION_IN_PROGRESS` with a `Retry-After` header.
+
+        Each call without signature headers issues a new challenge, and every issued challenge stays valid until its `expiresAt`. The first signed retry to arrive adds the waiting networks. A signed retry for another challenge, sent after that, adds nothing and returns `200` with the accounts its challenge covered, which are open by then. When a signed retry gets `409 DELEGATED_KEYS_REISSUE_REQUIRED`, its challenge is not used up: once the keys are revoked, re-send the same signed retry before `expiresAt`, or start over with a call without signature headers.
 
         The call is idempotent. While a provisioning for the customer is still in flight, the response is `200` with `status: "PROCESSING"`; re-send the byte-identical signed retry, or listen for the `INTERNAL_ACCOUNT.STATUS_UPDATED` webhook, to learn when the accounts are `ACTIVE`. Re-sending a signed retry after it completed returns the same `200`. An abandoned challenge changes nothing.
       operationId: provisionInternalAccount
@@ -7893,7 +7895,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: 'Conflict. Returned with `WALLET_NOT_PROVISIONED` when the customer has no wallet yet: before the first credential under `AT_FIRST_CREDENTIAL`, or while Grid is still creating the wallet. The first wallet covers every currency the platform supports, so retry only if an account still has `provisioningRequired: true` once the wallet exists. Returned with `DELEGATED_KEYS_REISSUE_REQUIRED` when the customer has an `ACTIVE` delegated key, or a `PENDING` one whose authorization hasn''t expired, created before this network was supported. Grid returns it in place of the `202`, and on a signed retry if such a key appeared after the challenge. Revoke each key in `details.delegatedKeyIds` (`DELETE /auth/delegated-keys/{id}`) and create it again, then retry. `details.cardIds` and `details.agentIds` list the cards and agents those keys serve. Returned with `OPERATION_IN_PROGRESS` while Grid is still cleaning up a revoked key from before this network was supported. Such keys are never listed in `details`, since there is nothing to revoke. Retry later.'
+          description: 'Conflict. Returned with `WALLET_NOT_PROVISIONED` when the customer has no wallet yet: before the first credential under `AT_FIRST_CREDENTIAL`, or while Grid is still creating the wallet. The first wallet covers every currency the platform supports, so retry only if an account still has `provisioningRequired: true` once the wallet exists. Returned with `DELEGATED_KEYS_REISSUE_REQUIRED` when the customer has an `ACTIVE` delegated key, or a `PENDING` one whose authorization hasn''t expired, created before this network was supported. Grid returns it in place of the `202`, and on a signed retry if such a key appeared after the challenge. `details.delegatedKeys` lists each key''s `id`, `status` and, for a `PENDING` key, `authorizationExpiresAt`. `details.cardIds` and `details.agentIds` list the cards and agents those keys serve. Revoke each listed key (`DELETE /auth/delegated-keys/{id}`) and create new ones where still needed, then retry. Returned with `OPERATION_IN_PROGRESS` while Grid is still cleaning up a revoked key from before this network was supported. Such keys are never listed in `details`, since there is nothing to revoke. Retry after the `Retry-After` interval.'
+          headers:
+            Retry-After:
+              description: Number of seconds to wait before retrying. Sent with `OPERATION_IN_PROGRESS`.
+              schema:
+                type: integer
           content:
             application/json:
               schema:
@@ -7905,10 +7912,15 @@ paths:
                     code: DELEGATED_KEYS_REISSUE_REQUIRED
                     reason: Revoke and re-create the listed delegated keys before adding a network to this wallet.
                     details:
-                      delegatedKeyIds:
-                        - DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+                      delegatedKeys:
+                        - id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+                          status: ACTIVE
+                        - id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000022
+                          status: PENDING
+                          authorizationExpiresAt: '2026-11-20T15:45:00Z'
                       cardIds:
                         - Card:019542f5-b3e7-1d02-0000-000000000010
+                        - Card:019542f5-b3e7-1d02-0000-000000000011
                       agentIds: []
         '500':
           description: Internal service error
@@ -9320,7 +9332,7 @@ paths:
     delete:
       summary: Revoke a delegated signing key
       description: |
-        Revoke an `ACTIVE` delegated signing key, or an agent's `PENDING` key. Revoking a `PENDING` agent key only discards Grid's key material. An active card using this funding source becomes `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`. Frozen and closed cards retain their status. Grid uses the custodied delegated key to authorize deleting its own signer identity. Deleting the identity also removes its API key, after which the delegated key can no longer sign. The response is `204` when revocation completes.
+        Revoke an `ACTIVE` or `PENDING` delegated signing key. Revoking a `PENDING` key only discards Grid's key material and voids its outstanding challenge, so the key can never be completed. Revoking an `ACTIVE` card key moves an active card using this funding source becomes `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`. Frozen and closed cards retain their status. Grid uses the custodied delegated key to authorize deleting its own signer identity. Deleting the identity also removes its API key, after which the delegated key can no longer sign. The response is `204` when revocation completes.
 
         The underlying signing policies are left in place. Their consensus references the now-deleted signer identity, so they can never authorize anything, and deleting them is unnecessary for correctness or security.
 
@@ -9342,7 +9354,7 @@ paths:
         '204':
           description: Delegated key revoked. The key can no longer authorize signing.
         '400':
-          description: Bad request. Returned when the delegated key has already been revoked, or is a card key that is not `ACTIVE`.
+          description: Bad request. Returned when the delegated key has already been revoked.
           content:
             application/json:
               schema:
@@ -23983,7 +23995,7 @@ components:
             | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
             | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
             | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
-            | DELEGATED_KEYS_REISSUE_REQUIRED | The customer has an `ACTIVE` delegated key, or a `PENDING` one whose authorization hasn't expired, created before the network being added was supported. Revoke each key in `details.delegatedKeyIds` with `DELETE /auth/delegated-keys/{id}`, create it again with `POST /auth/delegated-keys`, then retry. `details.cardIds` and `details.agentIds` list the cards and agents those keys serve |
+            | DELEGATED_KEYS_REISSUE_REQUIRED | The customer has an `ACTIVE` delegated key, or a `PENDING` one whose authorization hasn't expired, created before the network being added was supported. `details.delegatedKeys` lists each key's `id`, `status` and, for a `PENDING` key, `authorizationExpiresAt`. Revoke each listed key with `DELETE /auth/delegated-keys/{id}`, create new ones where still needed with `POST /auth/delegated-keys`, then retry. `details.cardIds` and `details.agentIds` list the cards and agents those keys serve |
             | PAYMENT_DOCUMENT_ALREADY_USED | The payment document is already attached to a quote. A document can be used on one quote only, so upload the file again to use it on another quote. `details.documentIds` lists each such document |
             | INVOICE_ALREADY_USED | Another quote for the Lightning invoice can still be executed or funded, or was executed. An invoice has one live quote at a time; ask the recipient for a new one, or retry once Grid has closed the earlier quote as expired |
             | DEPOSIT_NOT_PENDING | The deposit is not waiting for authorization (already authorized, expired or failed) |
@@ -25419,7 +25431,7 @@ components:
       description: |-
         Status of a Grid internal account. The status determines whether the account can send or receive payments.
 
-        - `PENDING`: The account is under review and is being provisioned. The account cannot send or receive payments until provisioning completes.
+        - `PENDING`: The account is under review and is being provisioned. The account cannot send or receive payments until provisioning completes. For an `EMBEDDED_WALLET` account, check `provisioningRequired`: when it is `true`, the account is waiting for the customer, so call `POST /internal-accounts/{id}/provision`.
         - `PENDING_AUTHORIZATION`: The account is provisioned but waiting for the account holder to satisfy its Strong Customer Authentication challenge (`scaChallenge`). Only `RULE_BASED` accounts for customers in a region where SCA is required (the EU) enter this status. The account cannot receive payments until it is authorized with `POST /internal-accounts/{id}/authorize`.
         - `ACTIVE`: The account is ready to send and receive payments.
         - `CLOSED`: The account cannot send or receive payments. A customer can initiate the closing of an internal account, after which the account transitions to this status.

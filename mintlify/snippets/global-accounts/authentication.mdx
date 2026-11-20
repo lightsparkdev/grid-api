@@ -30,10 +30,10 @@ One signature covers every account the customer has waiting. When nothing needs 
 
 Grid checks the customer's delegated keys before it issues the challenge, so the customer never signs one that can't complete. If the customer has an `ACTIVE` delegated key, or a `PENDING` one whose authorization hasn't expired, created before the new network was supported, the first call returns `409 DELEGATED_KEYS_REISSUE_REQUIRED` instead of the `202`:
 
-- `details.delegatedKeyIds` lists the keys to re-create, and `details.cardIds` and `details.agentIds` list the cards and agents they serve.
-- Revoke each key with `DELETE /auth/delegated-keys/{id}` and create it again with `POST /auth/delegated-keys`, then call the provision endpoint again. A card whose key is revoked is `PENDING_AUTH` until its new key is `ACTIVE`.
+- `details.delegatedKeys` lists each key with its `status` and, for a `PENDING` key, `authorizationExpiresAt`. `details.cardIds` and `details.agentIds` list the cards and agents they serve.
+- Revoke each listed key with `DELETE /auth/delegated-keys/{id}`, which accepts `ACTIVE` and `PENDING` keys. Create new keys with `POST /auth/delegated-keys` for the cards and agents that still need one, then call the provision endpoint again. A card whose `ACTIVE` key is revoked is `PENDING_AUTH` until its new key is `ACTIVE`. Each re-created key takes the usual signatures, so a customer with several cards signs for each.
 - The accounts keep `provisioningRequired: true` until provisioning completes.
-- A revoked key Grid is still cleaning up blocks provisioning too, but there's nothing to revoke. The call returns `409 OPERATION_IN_PROGRESS` and the key isn't listed in `details`. Retry later.
+- A revoked key Grid is still cleaning up blocks provisioning too, but there's nothing to revoke. The call returns `409 OPERATION_IN_PROGRESS` with a `Retry-After` header, and the key isn't listed in `details`.
 
 ## Registration vs. verification
 

@@ -13,7 +13,10 @@ description: >-
 
 
   - `PENDING`: The account is under review and is being provisioned. The account
-  cannot send or receive payments until provisioning completes.
+  cannot send or receive payments until provisioning completes. For an
+  `EMBEDDED_WALLET` account, check `provisioningRequired`: when it is `true`,
+  the account is waiting for the customer, so call
+  `POST /internal-accounts/{id}/provision`.
 
   - `PENDING_AUTHORIZATION`: The account is provisioned but waiting for the
   account holder to satisfy its Strong Customer Authentication challenge

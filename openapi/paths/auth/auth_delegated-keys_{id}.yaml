@@ -45,9 +45,10 @@ get:
 delete:
   summary: Revoke a delegated signing key
   description: >
-    Revoke an `ACTIVE` delegated signing key, or an agent's `PENDING` key.
-    Revoking a `PENDING` agent key only discards Grid's key material. An active
-    card using this funding source becomes `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`. Frozen
+    Revoke an `ACTIVE` or `PENDING` delegated signing key. Revoking a
+    `PENDING` key only discards Grid's key material and voids its outstanding
+    challenge, so the key can never be completed. Revoking an `ACTIVE` card
+    key moves an active card using this funding source becomes `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`. Frozen
     and closed cards retain their status. Grid uses the custodied
     delegated key to authorize deleting its own signer identity. Deleting the
     identity also removes its API key, after which the delegated key can no
@@ -87,7 +88,7 @@ delete:
     '400':
       description: >-
         Bad request. Returned when the delegated key has already been
-        revoked, or is a card key that is not `ACTIVE`.
+        revoked.
       content:
         application/json:
           schema:
