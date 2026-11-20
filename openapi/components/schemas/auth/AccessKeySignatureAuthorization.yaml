@@ -1,0 +1,24 @@
+title: Access Key Signature Authorization
+type: object
+description: >-
+  The root signed `payloadToSign`. Grid attaches the signed authorization to
+  the first transfer it makes with the key.
+required:
+  - method
+  - signature
+properties:
+  method:
+    type: string
+    enum:
+      - SIGNATURE
+    description: The root signed `payloadToSign`.
+    example: SIGNATURE
+  signature:
+    type: string
+    description: >-
+      The root account's signature over the 32-byte `payloadToSign` hash, as
+      65-byte `r || s || v` hex, with `v` either 0/1 or 27/28. The root must
+      be able to sign a raw hash with no message prefix. Only secp256k1 root
+      accounts are supported; another signature format is refused with
+      `400 INVALID_INPUT`.
+    example: '0x72422cb2a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5cf0ca0e4e6572a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c5a1d01'

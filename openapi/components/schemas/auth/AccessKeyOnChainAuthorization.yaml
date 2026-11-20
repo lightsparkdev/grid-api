@@ -1,0 +1,17 @@
+title: Access Key On-Chain Authorization
+type: object
+description: >-
+  The root authorized `keyId` on chain itself. The network does not report a
+  key's configured limits, so Grid checks what it can read: the key is not
+  revoked, it enforces limits, its expiry equals the requested `expiresAt`,
+  and each token's remaining limit equals the requested amount. That last
+  check holds only before the key has spent anything.
+required:
+  - method
+properties:
+  method:
+    type: string
+    enum:
+      - ON_CHAIN
+    description: The root authorized `keyId` on chain.
+    example: ON_CHAIN

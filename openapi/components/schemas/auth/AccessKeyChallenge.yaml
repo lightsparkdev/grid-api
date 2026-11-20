@@ -1,9 +1,9 @@
-title: Delegated Key Authorization Challenge
+title: Access Key Challenge
 description: >-
-  `202` response from `POST /auth/delegated-keys` for an access key on a
-  `TEMPO_WALLET` external account. Have the wallet's root account sign
-  `payloadToSign`, then retry the same request with the signature in
-  `keyAuthorizationSignature` and the `requestId` echoed in `Request-Id`.
+  `202` response from `POST /auth/access-keys`. Have the wallet's root account
+  sign `payloadToSign`, or authorize `keyId` on chain, then retry the same
+  request with `authorization` in the body and the `requestId` echoed in
+  `Request-Id`.
 type: object
 required:
   - requestId
@@ -27,8 +27,8 @@ properties:
   keyId:
     type: string
     description: >-
-      Address of the access key Grid generated for this card. Grid holds its
-      private key and never returns it.
+      Address of the access key Grid generated for this card, in EIP-55
+      checksum form. Grid holds its private key and never returns it.
     example: '0xfbE89dD5f773c84ea858EF1d4622d2D58E69e9c9'
   requestedRestrictions:
     $ref: ./AccessKeyRestrictions.yaml

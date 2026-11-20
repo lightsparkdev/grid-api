@@ -2,6 +2,7 @@ title: Delegated Key
 type: object
 required:
   - id
+  - kind
   - accountId
   - nickname
   - status
@@ -10,8 +11,9 @@ required:
 description: >-
   A delegated signing key for either a card funding source or an agent. Card
   keys include `cardId` and `fundingSourceId`; agent keys include `agentId`.
-  Returned from `POST /auth/delegated-keys` (on activation),
-  `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`.
+  Returned from `POST /auth/delegated-keys` and `POST /auth/access-keys` (on
+  activation), `GET /auth/delegated-keys` (list), and
+  `GET /auth/delegated-keys/{id}`. `kind` says which kind of key it is.
   `accountId` says where the signing material comes from. For a key on an
   Embedded Wallet internal account, Grid generates and custodies the keypair
   and never returns the private key; `publicKey` identifies it. While `ACTIVE`,
@@ -22,14 +24,16 @@ description: >-
   wallet at the provider and the card is funded by that wallet, and while
   `ACTIVE` uses the delegated share to sign the card's transfers. For a
   `PLATFORM` wallet on Tempo, it is an access key: Grid generates it when you
-  call `POST /auth/delegated-keys` with `externalAccountId`, the wallet's root
-  account authorizes it, and while `ACTIVE` Grid uses it to make the card's
-  transfers within `restrictions`.
+  call `POST /auth/access-keys`, the wallet's root account authorizes it, and
+  while `ACTIVE` Grid uses it to make the card's transfers within
+  `restrictions`.
 properties:
   id:
     type: string
     description: Grid-issued `DelegatedKey:<uuid>` identifier.
     example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+  kind:
+    $ref: ./DelegatedKeyKind.yaml
   cardId:
     type: string
     description: The card this key is delegated for. Present only for card keys.
@@ -60,8 +64,8 @@ properties:
   keyId:
     type: string
     description: >-
-      Address of the access key on the network. Present only on access keys
-      for a `TEMPO_WALLET` external account.
+      Address of the access key on the network, in EIP-55 checksum form.
+      Present only on access keys.
     example: '0xfbE89dD5f773c84ea858EF1d4622d2D58E69e9c9'
   restrictions:
     allOf:

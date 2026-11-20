@@ -1,0 +1,33 @@
+title: Access Key Create Request
+type: object
+description: >-
+  Creates a Tempo access key that funds a card from a `TEMPO_WALLET` external
+  account your platform runs. Send the same `cardId`, `externalAccountId`,
+  `nickname` and `restrictions` on both calls. Add `authorization` on the
+  retry, the call that carries `Request-Id`.
+required:
+  - cardId
+  - externalAccountId
+  - nickname
+  - restrictions
+properties:
+  cardId:
+    type: string
+    description: The id of the card this access key funds.
+    example: Card:019542f5-b3e7-1d02-0000-000000000010
+  externalAccountId:
+    type: string
+    description: >-
+      The id of the card's funding source: a `TEMPO_WALLET` external account
+      whose `providerWallet` is `PLATFORM`.
+    example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000031
+  nickname:
+    type: string
+    minLength: 1
+    maxLength: 256
+    description: Human-readable label for the access key.
+    example: Card payments key
+  restrictions:
+    $ref: ./AccessKeyRestrictions.yaml
+  authorization:
+    $ref: ./AccessKeyAuthorization.yaml

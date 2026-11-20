@@ -29,7 +29,7 @@ post:
     `providerWallet` is `DYNAMIC`, the cardholder must delegate the wallet to
     Grid at the provider, and Grid then creates the delegated key. If its
     `providerWallet` is `PLATFORM`, a Tempo wallet your platform runs, you
-    create the key yourself: an access key from `POST /auth/delegated-keys`
+    create the key yourself: an access key from `POST /auth/access-keys`
     with the card, the external account and its spending restrictions. Until
     the key is `ACTIVE`, Authorization Decisioning cannot use the account to
     fund card transactions.
@@ -48,7 +48,8 @@ post:
     A provisioned card whose funding source needs a delegated key, an
     Embedded Wallet account or a `PLATFORM` provider wallet, remains
     `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"` until all
-    signed retries of `POST /auth/delegated-keys` are complete.
+    signed retries of `POST /auth/delegated-keys`, or of
+    `POST /auth/access-keys` for a `PLATFORM` wallet, are complete.
     Replacing USD funding with USDB without an active key, or revoking the
     required key, also moves an active card to `PENDING_AUTH`. Completing delegation
     or switching back to USD restores `ACTIVE`; frozen and closed cards keep

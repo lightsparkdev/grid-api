@@ -29,7 +29,9 @@ properties:
     example: SECP256K1
   keyId:
     type: string
-    description: Address of the access key. Grid generated it and holds its private key.
+    description: >-
+      Address of the access key, in EIP-55 checksum form. Grid generated it
+      and holds its private key.
     example: '0xfbE89dD5f773c84ea858EF1d4622d2D58E69e9c9'
   expiry:
     type: integer
@@ -47,8 +49,8 @@ properties:
       properties:
         token:
           type: string
-          description: Address of the token contract.
-          example: '0x20c0000000000000000000006a37da5c996874be'
+          description: Address of the token contract, in EIP-55 checksum form.
+          example: '0x20c0000000000000000000006a37DA5C996874BE'
         amount:
           type: string
           description: >-

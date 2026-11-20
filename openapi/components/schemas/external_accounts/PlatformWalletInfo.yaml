@@ -10,6 +10,6 @@ properties:
     description: >-
       Your platform runs the wallet and holds its root key. Grid funds the
       wallet's cards through an access key that the wallet's root authorizes,
-      created with `POST /auth/delegated-keys`. Accepted only on a
+      created with `POST /auth/access-keys`. Accepted only on a
       `TEMPO_WALLET` external account.
     example: PLATFORM
