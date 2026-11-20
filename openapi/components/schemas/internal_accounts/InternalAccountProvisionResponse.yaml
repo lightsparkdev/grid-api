@@ -1,0 +1,37 @@
+title: Internal Account Provision Response
+description: >-
+  The customer's Embedded Wallet internal accounts once provisioning has
+  completed.
+type: object
+required:
+  - accounts
+  - provisionedAccountIds
+  - provisionedCurrencies
+properties:
+  accounts:
+    type: array
+    description: >-
+      Every Embedded Wallet internal account the customer holds, one per
+      currency, each with its own `fundingPaymentInstructions`.
+    items:
+      $ref: ../customers/InternalAccount.yaml
+  provisionedAccountIds:
+    type: array
+    description: >-
+      Ids of the accounts this provisioning opened. Empty when no account was
+      waiting for provisioning. A re-sent signed retry returns the same list
+      as the retry that completed it.
+    items:
+      type: string
+    example:
+      - InternalAccount:019542f5-b3e7-1d02-0000-000000000011
+  provisionedCurrencies:
+    type: array
+    description: >-
+      Currency codes of the accounts this provisioning opened. Empty when no
+      account was waiting for provisioning. A re-sent signed retry returns
+      the same list as the retry that completed it.
+    items:
+      type: string
+    example:
+      - OUSD

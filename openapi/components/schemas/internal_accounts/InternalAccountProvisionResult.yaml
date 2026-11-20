@@ -1,0 +1,10 @@
+title: Internal Account Provision Result
+description: >-
+  `200` response body of `POST /internal-accounts/{id}/provision`. Normally
+  an `InternalAccountProvisionResponse`. When the wallet operation behind a
+  signed retry is still in flight, this is instead a
+  `WalletOperationProcessing` body with `status: "PROCESSING"`. Re-send the
+  byte-identical signed retry to collect the accounts once it settles.
+anyOf:
+  - $ref: ./InternalAccountProvisionResponse.yaml
+  - $ref: ../common/WalletOperationProcessing.yaml
