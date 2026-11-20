@@ -1,0 +1,29 @@
+title: Access Key Spending Limit
+type: object
+required:
+  - currency
+  - amount
+properties:
+  currency:
+    type: string
+    description: >-
+      Currency code of the token this limit covers. The key cannot spend a
+      token that has no limit.
+    example: OUSD
+  amount:
+    type: integer
+    format: int64
+    exclusiveMinimum: 0
+    description: >-
+      The most the key may spend in `currency`, in the smallest unit of the
+      currency, over each period or over the key's lifetime. Network fees the
+      wallet pays from this token count against it.
+    example: 50000000
+  periodSeconds:
+    type: integer
+    exclusiveMinimum: 0
+    description: >-
+      Length of the recurring period, in seconds. The limit resets at the
+      start of each period. Omit it for a single limit over the key's
+      lifetime.
+    example: 2592000

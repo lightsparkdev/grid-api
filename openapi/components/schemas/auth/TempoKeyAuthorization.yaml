@@ -1,0 +1,93 @@
+title: Tempo Key Authorization
+type: object
+description: >-
+  The access-key authorization Grid asks the wallet's root account to sign,
+  as the network will read it. Decode `unsignedKeyAuthorization` to check
+  these fields before signing.
+required:
+  - chainId
+  - keyType
+  - keyId
+  - expiry
+  - limits
+  - unsignedKeyAuthorization
+properties:
+  chainId:
+    type: integer
+    format: int64
+    description: Chain id of the Tempo network the key is valid on.
+    example: 4217
+  keyType:
+    type: string
+    enum:
+      - SECP256K1
+    description: Signature type of the access key.
+    example: SECP256K1
+  keyId:
+    type: string
+    description: Address of the access key. Grid generated it and holds its private key.
+    example: '0xfbE89dD5f773c84ea858EF1d4622d2D58E69e9c9'
+  expiry:
+    type: integer
+    format: int64
+    description: Unix time, in seconds, at which the key expires.
+    example: 1795229075
+  limits:
+    type: array
+    description: Per-token spending limits, in the token's base units.
+    items:
+      type: object
+      required:
+        - token
+        - amount
+      properties:
+        token:
+          type: string
+          description: Address of the token contract.
+          example: '0x20c0000000000000000000006a37da5c996874be'
+        amount:
+          type: string
+          description: >-
+            Limit in the token's base units, as a decimal string because it
+            can exceed 64 bits.
+          example: '50000000'
+        period:
+          type: integer
+          format: int64
+          description: Period in seconds. 0 for a single limit over the key's lifetime.
+          example: 2592000
+  allowedCalls:
+    type: array
+    description: >-
+      Contract calls the key may make. Grid scopes the key to transfers of the
+      limited tokens to Grid's settlement address. Omitted when the key is not
+      scoped by call.
+    items:
+      type: object
+      required:
+        - target
+      properties:
+        target:
+          type: string
+          description: Address of the contract the key may call.
+          example: '0x20c0000000000000000000006a37da5c996874be'
+        selectors:
+          type: array
+          description: Four-byte function selectors the key may call on `target`, as hex.
+          items:
+            type: string
+          example:
+            - '0xa9059cbb'
+        recipients:
+          type: array
+          description: Addresses the key may transfer to.
+          items:
+            type: string
+          example:
+            - '0x1111111111111111111111111111111111111111'
+  unsignedKeyAuthorization:
+    type: string
+    description: >-
+      Hex RLP encoding of the unsigned authorization, the exact bytes whose
+      Keccak-256 hash is `payloadToSign`.
+    example: '0xf84f82a5a1809...'

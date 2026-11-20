@@ -1,0 +1,12 @@
+title: Delegated Key Create Challenge
+description: >-
+  `202` response body of `POST /auth/delegated-keys`. A
+  `DelegatedKeyAuthorizationChallenge` for an access key on a `TEMPO_WALLET`
+  external account, which the wallet's root account signs. A
+  `DelegatedKeySignedRequestChallenge` for a key on an Embedded Wallet
+  internal account, which a session stamps.
+# The access-key challenge goes first: it carries every field of the session
+# challenge, so a generated client trying them in order would misread it.
+anyOf:
+  - $ref: ./DelegatedKeyAuthorizationChallenge.yaml
+  - $ref: ./DelegatedKeySignedRequestChallenge.yaml

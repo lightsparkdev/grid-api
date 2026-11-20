@@ -2,10 +2,10 @@ title: Delegated Key Create Request
 type: object
 description: >-
   Creates a delegated signing key for a card funding source or an agent.
-  Exactly one of `cardId` or `agentId` is required. Requests that provide both
-  fields or neither field return a 400 response.
+  Exactly one of `cardId` or `agentId` is required, and exactly one of
+  `internalAccountId` or `externalAccountId`. Requests that provide both
+  fields of a pair, or neither, return a 400 response.
 required:
-  - internalAccountId
   - nickname
 properties:
   cardId:
@@ -27,8 +27,31 @@ properties:
       The id of the Embedded Wallet internal account this key may sign for. For
       a card key, Grid uses the `(cardId, internalAccountId)` pair to find the
       active card funding-source binding. For an agent key, the account must
-      belong to the agent's customer.
+      belong to the agent's customer. Omit when creating an access key on an
+      external account.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  externalAccountId:
+    type: string
+    description: >-
+      The id of a `TEMPO_WALLET` external account whose `providerWallet` is
+      `PLATFORM`. Grid creates a Tempo access key that funds the card from
+      that wallet. Card keys only; requires `restrictions`.
+    example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000031
+  restrictions:
+    allOf:
+      - $ref: ./AccessKeyRestrictions.yaml
+    description: >-
+      What the access key may spend, and until when. Required with
+      `externalAccountId`; rejected otherwise.
+  keyAuthorizationSignature:
+    type: string
+    description: >-
+      The wallet root account's signature over the `payloadToSign` of the
+      prior `202`, as hex in the network's signature encoding for the root's
+      key type (65-byte `r || s || v` for a secp256k1 root). Send it on the
+      retry for an access key, with `Request-Id`. Omit it if the root already
+      authorized `keyId` on chain itself; Grid then reads the key on chain.
+    example: '0x72422cb2a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5cf0ca0e4e6572a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c5a1d01'
   nickname:
     type: string
     minLength: 1

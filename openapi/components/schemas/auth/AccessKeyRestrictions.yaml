@@ -1,0 +1,23 @@
+title: Access Key Restrictions
+type: object
+description: >-
+  What a Tempo access key may spend, and until when. The network enforces
+  these limits. Any call scope Grid adds is in the key authorization's
+  `allowedCalls`.
+required:
+  - spendingLimits
+  - expiresAt
+properties:
+  spendingLimits:
+    type: array
+    minItems: 1
+    description: One limit per token the key may spend. Each currency appears once.
+    items:
+      $ref: ./AccessKeySpendingLimit.yaml
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      When the key stops working. Delegate a new key before then to keep the
+      card funded.
+    example: '2027-11-19T00:00:00Z'
