@@ -9,7 +9,7 @@ description: >-
   - `GRID_PAYS`: Grid pays the fee. The wallet needs only the amount it sends,
   and the quote's `networkFee` is 0.
 
-  - `CUSTOMER_PAYS`: The wallet pays the fee on chain, on top of the amount it
-  sends. The quote's `networkFee` is the most the fee can cost, and the wallet
-  must hold the amount plus that fee.
+  - `CUSTOMER_PAYS`: The wallet pays the fee on chain, in the currency it
+  sends, on top of the amount it sends. The quote's `networkFee` is the most
+  the fee can cost, and the wallet must hold the amount plus that fee.
 example: GRID_PAYS

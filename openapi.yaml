@@ -5586,7 +5586,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Quote'
         '400':
-          description: Bad request - Invalid quote ID or quote cannot be confirmed
+          description: Bad request - Invalid quote ID or quote cannot be confirmed. Returned with `QUOTE_EXPIRED` when the quote's source pays the network fee and the fee has risen above the quote's `networkFee`; nothing is sent, so create a new quote.
           content:
             application/json:
               schema:
@@ -21649,7 +21649,7 @@ components:
       description: |-
         Who pays the network fee when a customer's Embedded Wallet sends on a network that charges the sender one (Tempo today).
         - `GRID_PAYS`: Grid pays the fee. The wallet needs only the amount it sends, and the quote's `networkFee` is 0.
-        - `CUSTOMER_PAYS`: The wallet pays the fee on chain, on top of the amount it sends. The quote's `networkFee` is the most the fee can cost, and the wallet must hold the amount plus that fee.
+        - `CUSTOMER_PAYS`: The wallet pays the fee on chain, in the currency it sends, on top of the amount it sends. The quote's `networkFee` is the most the fee can cost, and the wallet must hold the amount plus that fee.
       example: GRID_PAYS
     EmbeddedWalletConfig:
       type: object
@@ -21733,7 +21733,9 @@ components:
             so a change does not move existing cards: to move a card funded by an
             Embedded Wallet to the new mode, revoke its delegated key with
             `DELETE /auth/delegated-keys/{id}` and delegate it again with
-            `POST /auth/delegated-keys`.
+            `POST /auth/delegated-keys`. Card transfers Grid makes with an access
+            key from a Tempo wallet your platform runs are always paid by Grid,
+            whatever this setting.
     CardTokenization2FAEmailConfig:
       type: object
       description: Email branding and sender settings for card-tokenization authentication messages. Invalid or unverified sender identities can cause delivery to fail.
@@ -36638,7 +36640,7 @@ components:
         networkFee:
           allOf:
             - $ref: '#/components/schemas/CurrencyAmount'
-          description: The most the network fee for this quote's on-chain send can cost the source Embedded Wallet. Present only when the source is an Embedded Wallet that sends on a network charging the sender a fee (Tempo today). The amount is 0 when the platform's `embeddedWalletConfig.networkFees` is `GRID_PAYS`. Under `CUSTOMER_PAYS` the wallet pays the fee on top of `totalSendingAmount`, so it is not part of `totalSendingAmount` or `feesIncluded`. The fee charged on chain is at most this amount, and Grid refuses the quote with `400 INSUFFICIENT_FUNDS` when the wallet cannot cover both.
+          description: 'The most the network fee for this quote''s on-chain send can cost the source Embedded Wallet, in the source account''s currency. Present only when the source is an Embedded Wallet that sends on a network charging the sender a fee (Tempo today). The amount is 0 when the platform''s `embeddedWalletConfig.networkFees` is `GRID_PAYS`. Under `CUSTOMER_PAYS` the wallet pays the fee on top of `totalSendingAmount`, so it is not part of `totalSendingAmount` or `feesIncluded`. Grid refuses the quote with `400 INSUFFICIENT_FUNDS` when the wallet cannot cover both. The fee charged on chain is never more than this amount: if the network fee has risen above it by execution, the execute is refused with `400 QUOTE_EXPIRED` and nothing is sent. Create a new quote.'
         paymentInstructions:
           type: array
           description: Payment instructions for executing the payment. This is not required when using an internal account source.

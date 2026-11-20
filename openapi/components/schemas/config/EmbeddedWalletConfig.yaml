@@ -79,4 +79,6 @@ properties:
       so a change does not move existing cards: to move a card funded by an
       Embedded Wallet to the new mode, revoke its delegated key with
       `DELETE /auth/delegated-keys/{id}` and delegate it again with
-      `POST /auth/delegated-keys`.
+      `POST /auth/delegated-keys`. Card transfers Grid makes with an access
+      key from a Tempo wallet your platform runs are always paid by Grid,
+      whatever this setting.
