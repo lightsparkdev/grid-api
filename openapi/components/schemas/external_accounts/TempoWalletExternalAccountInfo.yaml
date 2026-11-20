@@ -1,0 +1,7 @@
+title: Tempo Wallet
+allOf:
+  - $ref: ./BaseExternalAccountInfo.yaml
+  - $ref: ../common/TempoWalletInfo.yaml
+  - $ref: ./WalletBeneficiaryFields.yaml
+  - $ref: ./WalletCustodyFields.yaml
+  - $ref: ./ProviderWalletExternalAccountFields.yaml

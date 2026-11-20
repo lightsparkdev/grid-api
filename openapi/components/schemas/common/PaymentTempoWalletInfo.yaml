@@ -1,0 +1,11 @@
+title: Tempo Wallet
+allOf:
+  - $ref: ./BasePaymentAccountInfo.yaml
+  - $ref: ./TempoWalletInfo.yaml
+  - type: object
+    properties:
+      assetType:
+        type: string
+        description: Type of asset
+        enum:
+          - USDC
