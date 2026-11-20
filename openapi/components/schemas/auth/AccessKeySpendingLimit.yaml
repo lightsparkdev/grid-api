@@ -6,20 +6,11 @@ required:
 properties:
   currency:
     type: string
-    description: >-
-      Currency code of the token this limit covers. The key cannot spend a
-      token that has no limit.
+    description: Currency code of the token.
     example: OUSD
   amount:
     type: integer
     format: int64
-    exclusiveMinimum: 0
-    description: >-
-      The most the key may spend in `currency` over its lifetime, in the
-      smallest unit of the currency. Grid pays the network fee on every
-      transfer it makes with the key, whatever the platform's network-fee
-      setting, so only transfer amounts count against the limit. An
-      authorization larger than what is left is declined with
-      `SPEND_LIMIT_EXCEEDED`. Once nothing is left of every limit, Grid
-      revokes the key and the card becomes `PENDING_AUTH`.
+    minimum: 0
+    description: Amount in the smallest unit of `currency`.
     example: 50000000

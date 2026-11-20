@@ -8,9 +8,9 @@ post:
     card is funded by that wallet.
 
 
-    Delegate Spark token-transaction signing authority for a card funding
-    source or agent backed by an Embedded Wallet internal account to a
-    Grid-custodied P-256 API key. Grid uses the requested owner and internal
+    Delegate signing authority for a card funding source's or agent's
+    transfers from an Embedded Wallet internal account to a Grid-custodied
+    P-256 API key. Grid uses the requested owner and internal
     account to identify the wallet, generates the keypair
     server-side, creates an isolated signer identity holding the public key,
     then policies granting that identity signing and self-revocation authority.

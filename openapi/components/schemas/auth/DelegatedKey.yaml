@@ -77,11 +77,11 @@ properties:
   remainingSpendingLimits:
     type: array
     description: >-
-      What is left of each spending limit, read from the network, in the
-      smallest unit of each currency. Present only on an `ACTIVE` access key
+      What is left of each entry in `restrictions.spendingLimits`, read from
+      the network, in the same shape. Present only on an `ACTIVE` access key
       returned by `GET /auth/delegated-keys/{id}`. Lists omit it.
     items:
-      $ref: ../common/CurrencyAmount.yaml
+      $ref: ./AccessKeySpendingLimit.yaml
   nickname:
     type: string
     description: Human-readable label for the delegated key.

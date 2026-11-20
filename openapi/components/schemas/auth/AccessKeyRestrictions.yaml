@@ -11,7 +11,15 @@ properties:
   spendingLimits:
     type: array
     minItems: 1
-    description: One limit per token the key may spend. Each currency appears once.
+    description: >-
+      The most the key may spend of each token over its lifetime, one entry
+      per token. Each currency appears once, each `amount` is greater than 0,
+      and the key cannot spend a token with no entry. Grid pays the network
+      fee on every transfer it makes with the key, whatever the platform's
+      network-fee setting, so only transfer amounts count against a limit. An
+      authorization larger than what is left is declined with
+      `SPEND_LIMIT_EXCEEDED`. Once nothing is left of every limit, Grid
+      revokes the key and the card becomes `PENDING_AUTH`.
     items:
       $ref: ./AccessKeySpendingLimit.yaml
   expiresAt:

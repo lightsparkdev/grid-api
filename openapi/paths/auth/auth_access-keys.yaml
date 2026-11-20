@@ -29,8 +29,9 @@ post:
     transfer, which carries the authorization.
 
 
-    Re-sending a completed retry byte for byte returns the same `201` and
-    the same key. A challenge left unused until its `expiresAt` is discarded
+    Re-sending a completed retry byte for byte returns `201` with the same
+    key in its current state, which is `REVOKED` if it has been replaced
+    since. A challenge left unused until its `expiresAt` is discarded
     with the key Grid generated for it. If the root authorized `keyId` on
     chain and the retry was refused or never sent, revoke `keyId` on chain:
     Grid no longer holds that key once the challenge expires.

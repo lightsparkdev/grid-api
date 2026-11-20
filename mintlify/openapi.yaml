@@ -8969,7 +8969,7 @@ paths:
 
         2. Authorize the key, then retry the same request with `authorization` in the body and the `requestId` in `Request-Id`. Either the root signs `payloadToSign` with no message prefix and you send `authorization: {method: SIGNATURE, signature}`, or the root authorizes `keyId` on chain itself and you send `authorization: {method: ON_CHAIN}`. Grid checks the authorization and returns `201` with the key `ACTIVE`. With a signature, the key reaches the network with the card's first transfer, which carries the authorization.
 
-        Re-sending a completed retry byte for byte returns the same `201` and the same key. A challenge left unused until its `expiresAt` is discarded with the key Grid generated for it. If the root authorized `keyId` on chain and the retry was refused or never sent, revoke `keyId` on chain: Grid no longer holds that key once the challenge expires.
+        Re-sending a completed retry byte for byte returns `201` with the same key in its current state, which is `REVOKED` if it has been replaced since. A challenge left unused until its `expiresAt` is discarded with the key Grid generated for it. If the root authorized `keyId` on chain and the retry was refused or never sent, revoke `keyId` on chain: Grid no longer holds that key once the challenge expires.
 
         A card funding source has at most one `ACTIVE` access key. When a new one becomes `ACTIVE`, Grid revokes the previous one in the same step, so a key can be replaced before its `expiresAt` with no gap in funding. The network enforces each spending limit and the key's expiry. An authorization larger than what is left of a limit is declined with `SPEND_LIMIT_EXCEEDED`. When a key's limits are used up, its `expiresAt` passes, or the wallet's root revokes it on chain, Grid marks it `REVOKED` and the card becomes `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`. List, read and revoke access keys with the `/auth/delegated-keys` endpoints, where their `kind` is `ACCESS_KEY`.
       operationId: createAccessKey
@@ -9092,7 +9092,7 @@ paths:
       description: |
         Only keys for an Embedded Wallet internal account are created through this endpoint. Access keys for a Tempo wallet your platform runs are created with `POST /auth/access-keys`. Grid creates `DYNAMIC` provider wallet keys itself, when the cardholder has delegated the wallet at the provider and a card is funded by that wallet.
 
-        Delegate Spark token-transaction signing authority for a card funding source or agent backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested owner and internal account to identify the wallet, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
+        Delegate signing authority for a card funding source's or agent's transfers from an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested owner and internal account to identify the wallet, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
 
         1. Call `POST /auth/delegated-keys` with no signature headers. Grid generates the delegated keypair and the response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
 
@@ -38540,13 +38540,13 @@ components:
       properties:
         currency:
           type: string
-          description: Currency code of the token this limit covers. The key cannot spend a token that has no limit.
+          description: Currency code of the token.
           example: OUSD
         amount:
           type: integer
           format: int64
-          exclusiveMinimum: 0
-          description: The most the key may spend in `currency` over its lifetime, in the smallest unit of the currency. Grid pays the network fee on every transfer it makes with the key, whatever the platform's network-fee setting, so only transfer amounts count against the limit. An authorization larger than what is left is declined with `SPEND_LIMIT_EXCEEDED`. Once nothing is left of every limit, Grid revokes the key and the card becomes `PENDING_AUTH`.
+          minimum: 0
+          description: Amount in the smallest unit of `currency`.
           example: 50000000
     AccessKeyRestrictions:
       title: Access Key Restrictions
@@ -38559,7 +38559,7 @@ components:
         spendingLimits:
           type: array
           minItems: 1
-          description: One limit per token the key may spend. Each currency appears once.
+          description: The most the key may spend of each token over its lifetime, one entry per token. Each currency appears once, each `amount` is greater than 0, and the key cannot spend a token with no entry. Grid pays the network fee on every transfer it makes with the key, whatever the platform's network-fee setting, so only transfer amounts count against a limit. An authorization larger than what is left is declined with `SPEND_LIMIT_EXCEEDED`. Once nothing is left of every limit, Grid revokes the key and the card becomes `PENDING_AUTH`.
           items:
             $ref: '#/components/schemas/AccessKeySpendingLimit'
         expiresAt:
@@ -38713,9 +38713,9 @@ components:
           description: What the access key may spend, and until when, as the wallet's root authorized it. Present only on access keys. The network tracks what is left of each limit.
         remainingSpendingLimits:
           type: array
-          description: What is left of each spending limit, read from the network, in the smallest unit of each currency. Present only on an `ACTIVE` access key returned by `GET /auth/delegated-keys/{id}`. Lists omit it.
+          description: What is left of each entry in `restrictions.spendingLimits`, read from the network, in the same shape. Present only on an `ACTIVE` access key returned by `GET /auth/delegated-keys/{id}`. Lists omit it.
           items:
-            $ref: '#/components/schemas/CurrencyAmount'
+            $ref: '#/components/schemas/AccessKeySpendingLimit'
         nickname:
           type: string
           description: Human-readable label for the delegated key.
