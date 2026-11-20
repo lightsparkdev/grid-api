@@ -94,6 +94,19 @@ properties:
       produced before platform fees existed.
     minimum: 0
     example: 5
+  networkFee:
+    allOf:
+      - $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      The most the network fee for this quote's on-chain send can cost the
+      source Embedded Wallet. Present only when the source is an Embedded
+      Wallet that sends on a network charging the sender a fee (Tempo today).
+      The amount is 0 when the platform's `embeddedWalletConfig.networkFees`
+      is `GRID_PAYS`. Under `CUSTOMER_PAYS` the wallet pays the fee on top of
+      `totalSendingAmount`, so it is not part of `totalSendingAmount` or
+      `feesIncluded`. The fee charged on chain is at most this amount, and
+      Grid refuses the quote with `400 INSUFFICIENT_FUNDS` when the wallet cannot
+      cover both.
   paymentInstructions:
     type: array
     description: Payment instructions for executing the payment. This is not required when using an internal account source.

@@ -6,6 +6,7 @@ Global Account settings live under `embeddedWalletConfig` in the platform config
 |---|---|---|
 | `walletProvisioning` | `AT_CUSTOMER_CREATE` | When each new customer's wallet is created. |
 | `sessionLifetime` | `900` (15 minutes) | How long each new session lasts, in seconds. |
+| `networkFees` | `GRID_PAYS` | Who pays the network fee on your customers' on-chain sends. |
 
 ```bash
 curl -sS -X PATCH "https://api.lightspark.com/grid/2025-10-13/config" \
@@ -31,3 +32,12 @@ Grid reads this value once, when the customer's first Global Account opens. Chan
 ### Session lifetime
 
 `sessionLifetime` is how long each new session lasts, in seconds, for every sign-in and every session refresh by your customers. It must be at least `60`. The maximum is one year, and a larger value is rejected with `400 INVALID_INPUT`. A change applies to sessions created after it; existing sessions keep their expiry. See <a href="../global-accounts/managing-sessions">Sessions</a>.
+
+### Network fees
+
+`networkFees` sets who pays the network fee when a customer's Global Account sends on a network that charges the sender one (Tempo today):
+
+- **`GRID_PAYS`** (default): Grid pays the fee. The customer's wallet needs only the amount it sends, and the quote's `networkFee` amount is `0`.
+- **`CUSTOMER_PAYS`**: the wallet pays the fee on chain, on top of the amount it sends. The quote's `networkFee` is the most the fee can cost. The wallet must hold `totalSendingAmount` plus that fee, or the quote is refused with `400 INSUFFICIENT_FUNDS`.
+
+A change applies to quotes created after it. Cards are different: a card's delegated key is created for the mode in force when the card is delegated. To move an existing card to the new mode, revoke its delegated key with `DELETE /auth/delegated-keys/{id}` and delegate it again with `POST /auth/delegated-keys`.

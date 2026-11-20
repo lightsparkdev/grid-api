@@ -70,3 +70,13 @@ properties:
       configure, currently one year; a value above it is rejected. A change
       applies to sessions created after it.
     example: 3600
+  networkFees:
+    $ref: ./NetworkFeeMode.yaml
+    description: |
+      Who pays the network fee on this platform's customers' Embedded Wallet
+      sends. Defaults to `GRID_PAYS`. A change applies to quotes created after
+      it. A card's delegated key is created for the mode in force at the time,
+      so a change does not move existing cards: to move a card funded by an
+      Embedded Wallet to the new mode, revoke its delegated key with
+      `DELETE /auth/delegated-keys/{id}` and delegate it again with
+      `POST /auth/delegated-keys`.
