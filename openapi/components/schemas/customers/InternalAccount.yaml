@@ -81,6 +81,16 @@ properties:
       Whether wallet privacy is enabled for the Embedded Wallet. Only present
       for `EMBEDDED_WALLET` internal accounts.
     example: true
+  provisioningRequired:
+    type: boolean
+    description: >-
+      Whether this `PENDING` Embedded Wallet account is waiting for the
+      customer to authorize its wallet address. When `true`, call
+      `POST /internal-accounts/{id}/provision` while the customer has an active
+      session. `false` while Grid is still creating the customer's wallet and
+      once the account is `ACTIVE`. Only present for `EMBEDDED_WALLET`
+      internal accounts.
+    example: false
   cardCapabilities:
     $ref: ../cards/CardCapabilities.yaml
     description: >-
