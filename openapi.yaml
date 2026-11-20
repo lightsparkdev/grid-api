@@ -21729,11 +21729,12 @@ components:
           description: |
             Who pays the network fee on this platform's customers' Embedded Wallet
             sends. Defaults to `GRID_PAYS`. A change applies to quotes created after
-            it. A card's delegated key is created for the mode in force at the time,
-            so a change does not move existing cards: to move a card funded by an
-            Embedded Wallet to the new mode, revoke its delegated key with
+            it. Of cards, only those funded by an Embedded Wallet account on Tempo
+            follow this setting, and each one's delegated key is created for the
+            mode in force at the time. A change does not move them: to move one to
+            the new mode, revoke its delegated key with
             `DELETE /auth/delegated-keys/{id}` and delegate it again with
-            `POST /auth/delegated-keys`. Card transfers Grid makes with an access
+            `POST /auth/delegated-keys`. Cards funded on Spark pay no network fee. Card transfers Grid makes with an access
             key from a Tempo wallet your platform runs are always paid by Grid,
             whatever this setting.
     CardTokenization2FAEmailConfig:
@@ -22366,7 +22367,7 @@ components:
             | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
             | BANK_ACCOUNT_OWNER_MISMATCH | The bank does not list the customer as the bank account's owner |
             | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
-            | QUOTE_EXPIRED | The quote has expired; request a new quote |
+            | QUOTE_EXPIRED | The quote has expired, or the network fee it would now pay exceeds its `networkFee`; request a new quote |
             | QUOTE_RATE_UNAVAILABLE | No exchange rate is available for this corridor right now |
             | STABLECOIN_AMOUNT_NOT_REPRESENTABLE | The amount cannot be represented at the token's precision |
             | STABLECOIN_BURN_SOURCE_NOT_SUPPORTED | The burn source account cannot be used for this operation |
@@ -35717,6 +35718,10 @@ components:
               description: The portion of `fees` collected by the platform (platform-configured transaction fees), in the smallest unit of the sending currency. 0 when the platform has no applicable fee configured. Already included in `fees`.
               minimum: 0
               example: 5
+            networkFee:
+              allOf:
+                - $ref: '#/components/schemas/CurrencyAmount'
+              description: The network fee the source Embedded Wallet paid on chain for this send, in the source account's currency. Present only when the wallet paid it, under the platform's `CUSTOMER_PAYS` network-fee setting, and only once the send has settled on chain. It is at most the quote's `networkFee`, and the wallet's balance drops by `sentAmount` plus this fee.
             reconciliationInstructions:
               $ref: '#/components/schemas/ReconciliationInstructions'
               description: Reconciliation details for this transaction. For the on-chain hash of a crypto payout to an external wallet, see the destination's `railDetails` instead.

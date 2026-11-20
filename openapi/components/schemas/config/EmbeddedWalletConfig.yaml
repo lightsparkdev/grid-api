@@ -75,10 +75,11 @@ properties:
     description: |
       Who pays the network fee on this platform's customers' Embedded Wallet
       sends. Defaults to `GRID_PAYS`. A change applies to quotes created after
-      it. A card's delegated key is created for the mode in force at the time,
-      so a change does not move existing cards: to move a card funded by an
-      Embedded Wallet to the new mode, revoke its delegated key with
+      it. Of cards, only those funded by an Embedded Wallet account on Tempo
+      follow this setting, and each one's delegated key is created for the
+      mode in force at the time. A change does not move them: to move one to
+      the new mode, revoke its delegated key with
       `DELETE /auth/delegated-keys/{id}` and delegate it again with
-      `POST /auth/delegated-keys`. Card transfers Grid makes with an access
+      `POST /auth/delegated-keys`. Cards funded on Spark pay no network fee. Card transfers Grid makes with an access
       key from a Tempo wallet your platform runs are always paid by Grid,
       whatever this setting.
