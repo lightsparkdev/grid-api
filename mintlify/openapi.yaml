@@ -25302,6 +25302,7 @@ components:
         - ARBITRUM_WALLET
         - OPTIMISM_WALLET
         - AVALANCHE_WALLET
+        - TEMPO_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
         - ETHEREUM_WALLET
@@ -25907,6 +25908,33 @@ components:
               description: Type of asset
               enum:
                 - USDC
+    TempoWalletInfo:
+      type: object
+      required:
+        - address
+        - accountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - TEMPO_WALLET
+        address:
+          type: string
+          description: Tempo wallet address. Any letter case is accepted; Grid returns it in EIP-55 checksum form.
+          example: '0xabCDEF1234567890ABcDEF1234567890aBCDeF12'
+    PaymentTempoWalletInfo:
+      title: Tempo Wallet
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/TempoWalletInfo'
+        - type: object
+          required:
+            - assetType
+          properties:
+            assetType:
+              type: string
+              description: Currency code of the configured Tempo token
+              example: OUSD
     TronWalletInfo:
       type: object
       required:
@@ -26010,6 +26038,7 @@ components:
             - $ref: '#/components/schemas/PaymentArbitrumWalletInfo'
             - $ref: '#/components/schemas/PaymentOptimismWalletInfo'
             - $ref: '#/components/schemas/PaymentAvalancheWalletInfo'
+            - $ref: '#/components/schemas/PaymentTempoWalletInfo'
             - $ref: '#/components/schemas/PaymentTronWalletInfo'
             - $ref: '#/components/schemas/PaymentPlasmaWalletInfo'
             - $ref: '#/components/schemas/PaymentEmbeddedWalletInfo'
@@ -26033,6 +26062,7 @@ components:
               ARBITRUM_WALLET: '#/components/schemas/PaymentArbitrumWalletInfo'
               OPTIMISM_WALLET: '#/components/schemas/PaymentOptimismWalletInfo'
               AVALANCHE_WALLET: '#/components/schemas/PaymentAvalancheWalletInfo'
+              TEMPO_WALLET: '#/components/schemas/PaymentTempoWalletInfo'
               TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
               PLASMA_WALLET: '#/components/schemas/PaymentPlasmaWalletInfo'
               EMBEDDED_WALLET: '#/components/schemas/PaymentEmbeddedWalletInfo'
@@ -26358,6 +26388,7 @@ components:
         - ARBITRUM_WALLET
         - OPTIMISM_WALLET
         - AVALANCHE_WALLET
+        - TEMPO_WALLET
         - POLYGON_WALLET
         - SOLANA_WALLET
         - SPARK_WALLET
@@ -31205,6 +31236,13 @@ components:
         - $ref: '#/components/schemas/AvalancheWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+    TempoWalletExternalAccountInfo:
+      title: Tempo Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/TempoWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
@@ -32715,6 +32753,7 @@ components:
         - $ref: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/OptimismWalletExternalAccountInfo'
         - $ref: '#/components/schemas/AvalancheWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/TempoWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -32778,6 +32817,7 @@ components:
           ARBITRUM_WALLET: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
           OPTIMISM_WALLET: '#/components/schemas/OptimismWalletExternalAccountInfo'
           AVALANCHE_WALLET: '#/components/schemas/AvalancheWalletExternalAccountInfo'
+          TEMPO_WALLET: '#/components/schemas/TempoWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -33872,6 +33912,7 @@ components:
         - $ref: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/OptimismWalletExternalAccountInfo'
         - $ref: '#/components/schemas/AvalancheWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/TempoWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -33934,6 +33975,7 @@ components:
           ARBITRUM_WALLET: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
           OPTIMISM_WALLET: '#/components/schemas/OptimismWalletExternalAccountInfo'
           AVALANCHE_WALLET: '#/components/schemas/AvalancheWalletExternalAccountInfo'
+          TEMPO_WALLET: '#/components/schemas/TempoWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -34729,6 +34771,7 @@ components:
         - ARBITRUM
         - OPTIMISM
         - AVALANCHE
+        - TEMPO
         - SPARK
       description: The blockchain network an on-chain transaction settled on. Whether this is the mainnet or a test network (e.g. Solana devnet) is determined by your platform's environment — sandbox platforms operate on test networks, production platforms on mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
       example: SOLANA

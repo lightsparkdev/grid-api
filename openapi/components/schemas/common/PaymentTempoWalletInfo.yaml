@@ -1,0 +1,12 @@
+title: Tempo Wallet
+allOf:
+  - $ref: ./BasePaymentAccountInfo.yaml
+  - $ref: ./TempoWalletInfo.yaml
+  - type: object
+    required:
+      - assetType
+    properties:
+      assetType:
+        type: string
+        description: Currency code of the configured Tempo token
+        example: OUSD

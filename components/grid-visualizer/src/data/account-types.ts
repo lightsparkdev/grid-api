@@ -293,6 +293,13 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: false,
   },
+  TEMPO_WALLET: {
+    accountType: 'TEMPO_WALLET',
+    fields: [
+      { name: 'address', example: '0xabCDEF1234567890ABcDEF1234567890aBCDeF12' },
+    ],
+    beneficiaryRequired: false,
+  },
   AED_ACCOUNT: {
     accountType: 'AED_ACCOUNT',
     fields: [
