@@ -194,6 +194,20 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
     ```
   </Accordion>
 
+  <Accordion title="Tempo Stablecoin Funding">
+    For stablecoin accounts on Tempo, deposits go to the account's Tempo wallet address:
+
+    ```json
+    {
+      "accountOrWalletInfo": {
+        "accountType": "TEMPO_WALLET",
+        "assetType": "OUSD",
+        "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
+      }
+    }
+    ```
+  </Accordion>
+
   <Accordion title="Solana Stablecoin Funding">
     For Solana wallet accounts, using a Solana wallet as the funding source:
 
