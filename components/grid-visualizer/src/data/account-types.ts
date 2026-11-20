@@ -296,7 +296,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
   TEMPO_WALLET: {
     accountType: 'TEMPO_WALLET',
     fields: [
-      { name: 'address', example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12' },
+      { name: 'address', example: '0xabCDEF1234567890ABcDEF1234567890aBCDeF12' },
     ],
     beneficiaryRequired: false,
   },
