@@ -1,0 +1,33 @@
+title: Access Key Restrictions
+type: object
+description: >-
+  What a Tempo access key may spend, and until when. The network enforces
+  both. Each limit covers the key's whole lifetime: recurring limits and
+  call scopes are not offered.
+required:
+  - spendingLimits
+  - expiresAt
+properties:
+  spendingLimits:
+    type: array
+    minItems: 1
+    description: >-
+      The most the key may spend of each token over its lifetime, one entry
+      per token. Each currency appears once, each `amount` is greater than 0,
+      and the key cannot spend a token with no entry. Grid pays the network
+      fee on every transfer it makes with the key, whatever the platform's
+      network-fee setting, so only transfer amounts count against a limit. An
+      authorization larger than what is left is declined with
+      `SPEND_LIMIT_EXCEEDED`. Once nothing is left of every limit, Grid
+      revokes the key and the card becomes `PENDING_AUTH`.
+    items:
+      $ref: ./AccessKeySpendingLimit.yaml
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      When the key stops working. It must be in the future. To keep the card
+      funded, create a new access key before then: when the new key becomes
+      `ACTIVE`, Grid revokes this one in the same step, so the card is never
+      without a key.
+    example: '2027-11-19T00:00:00Z'

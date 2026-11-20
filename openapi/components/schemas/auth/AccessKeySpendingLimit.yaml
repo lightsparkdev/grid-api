@@ -1,0 +1,16 @@
+title: Access Key Spending Limit
+type: object
+required:
+  - currency
+  - amount
+properties:
+  currency:
+    type: string
+    description: Currency code of the token.
+    example: OUSD
+  amount:
+    type: integer
+    format: int64
+    minimum: 0
+    description: Amount in the smallest unit of `currency`.
+    example: 50000000

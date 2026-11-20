@@ -8957,13 +8957,142 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /auth/access-keys:
+    post:
+      summary: Create an access key
+      description: |
+        Create a Tempo access key that funds a card from a `TEMPO_WALLET` external account your platform runs, one whose `providerWallet` is `PLATFORM`. Grid generates the key and keeps its private key. The wallet's root account authorizes it, and the network then holds the key to `restrictions`: a lifetime spending limit per token and an expiry. Grid pays the network fee on every transfer it makes with the key, whatever the platform's network-fee setting, so only transfer amounts count against the limits. The root account must be a secp256k1 account.
+
+        Creation is a two-step flow:
+
+        1. Call with no `Request-Id`. The response is `202` with the key's `keyId`, the `requestedRestrictions`, the `keyAuthorization` fields the root signs, and `payloadToSign`, the hash of that authorization.
+
+        2. Authorize the key, then retry the same request with `authorization` in the body and the `requestId` in `Request-Id`. Either the root signs `payloadToSign` with no message prefix and you send `authorization: {method: SIGNATURE, signature}`, or the root authorizes `keyId` on chain itself and you send `authorization: {method: ON_CHAIN}`. Grid checks the authorization and returns `201` with the key `ACTIVE`. With a signature, the key reaches the network with the card's first transfer, which carries the authorization.
+
+        Re-sending a completed retry byte for byte returns `201` with the same key in its current state, which is `REVOKED` if it has been replaced since. A challenge left unused until its `expiresAt` is discarded with the key Grid generated for it. If the root authorized `keyId` on chain and the retry was refused or never sent, revoke `keyId` on chain: Grid no longer holds that key once the challenge expires.
+
+        A card funding source has at most one `ACTIVE` access key. When a new one becomes `ACTIVE`, Grid revokes the previous one in the same step, so a key can be replaced before its `expiresAt` with no gap in funding. The network enforces each spending limit and the key's expiry. An authorization larger than what is left of a limit is declined with `SPEND_LIMIT_EXCEEDED`. When a key's limits are used up, its `expiresAt` passes, or the wallet's root revokes it on chain, Grid marks it `REVOKED` and the card becomes `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`. List, read and revoke access keys with the `/auth/delegated-keys` endpoints, where their `kind` is `ACCESS_KEY`.
+      operationId: createAccessKey
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Request-Id
+          in: header
+          required: false
+          description: The `requestId` returned in the `202` response, echoed back exactly on the retry. Required on the retry, which must also carry `authorization`; omitted on the first call.
+          schema:
+            type: string
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessKeyCreateRequest'
+            examples:
+              firstCall:
+                summary: First call
+                value:
+                  cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                  externalAccountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000031
+                  nickname: Card payments key
+                  restrictions:
+                    spendingLimits:
+                      - currency: OUSD
+                        amount: 50000000
+                    expiresAt: '2027-11-19T00:00:00Z'
+              signedRetry:
+                summary: Retry with the root's signature
+                value:
+                  cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                  externalAccountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000031
+                  nickname: Card payments key
+                  restrictions:
+                    spendingLimits:
+                      - currency: OUSD
+                        amount: 50000000
+                    expiresAt: '2027-11-19T00:00:00Z'
+                  authorization:
+                    method: SIGNATURE
+                    signature: '0x72422cb2a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5cf0ca0e4e6572a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c5a1d01'
+              onChainRetry:
+                summary: Retry after the root authorized the key on chain
+                value:
+                  cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                  externalAccountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000031
+                  nickname: Card payments key
+                  restrictions:
+                    spendingLimits:
+                      - currency: OUSD
+                        amount: 50000000
+                    expiresAt: '2027-11-19T00:00:00Z'
+                  authorization:
+                    method: ON_CHAIN
+      responses:
+        '201':
+          description: The access key is `ACTIVE`. Any previous `ACTIVE` access key for the card funding source is now `REVOKED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegatedKey'
+              examples:
+                accessKey:
+                  summary: Active access key
+                  value:
+                    id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000022
+                    kind: ACCESS_KEY
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    fundingSourceId: CardFundingSource:019542f5-b3e7-1d02-0000-000000000012
+                    accountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000031
+                    keyId: '0xfbE89dD5f773c84ea858EF1d4622d2D58E69e9c9'
+                    restrictions:
+                      spendingLimits:
+                        - currency: OUSD
+                          amount: 50000000
+                      expiresAt: '2027-11-19T00:00:00Z'
+                    nickname: Card payments key
+                    status: ACTIVE
+                    createdAt: '2026-11-19T15:30:01Z'
+                    updatedAt: '2026-11-19T15:31:12Z'
+        '202':
+          description: Challenge issued. Authorize `keyId` and retry with `authorization` and `Request-Id`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessKeyChallenge'
+        '400':
+          description: Bad request. Returned with `INVALID_INPUT` when the external account is not a `TEMPO_WALLET` whose `providerWallet` is `PLATFORM` or is not the card's funding source, when `restrictions` names a currency twice or one the network does not carry, when `authorization` is missing on the retry or sent on the first call, or when a `SIGNATURE` authorization is not a 65-byte secp256k1 signature.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized. Returned when the `Request-Id` does not match an unexpired pending challenge, when a `SIGNATURE` authorization does not come from the external account's address, or when an `ON_CHAIN` authorization of `keyId` is missing, revoked, not limit-enforcing, or does not match the requested expiry and remaining limits.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Card, card funding source, or external account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /auth/delegated-keys:
     post:
       summary: Create a delegated signing key
       description: |
-        Only keys for an Embedded Wallet internal account are created through this endpoint. Grid creates provider wallet keys itself, when the cardholder has delegated the wallet at the provider and a card is funded by that wallet.
+        Only keys for an Embedded Wallet internal account are created through this endpoint. Access keys for a Tempo wallet your platform runs are created with `POST /auth/access-keys`. Grid creates `DYNAMIC` provider wallet keys itself, when the cardholder has delegated the wallet at the provider and a card is funded by that wallet.
 
-        Delegate Spark token-transaction signing authority for a card funding source or agent backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested owner and internal account to identify the wallet, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
+        Delegate signing authority for a card funding source's or agent's transfers from an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested owner and internal account to identify the wallet, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
 
         1. Call `POST /auth/delegated-keys` with no signature headers. Grid generates the delegated keypair and the response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
 
@@ -9019,6 +9148,7 @@ paths:
                   summary: Active delegated key
                   value:
                     id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+                    kind: EMBEDDED_WALLET_KEY
                     cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                     fundingSourceId: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
@@ -9052,7 +9182,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: An `ACTIVE` delegated key already exists for this card funding source, or an `ACTIVE` or `PENDING` key already exists for this agent and Embedded Wallet pair. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one.
+          description: An `ACTIVE` delegated key already exists for this card funding source, or an `ACTIVE` or `PENDING` key already exists for this agent and Embedded Wallet pair. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one. Grid checks this on the first call, before issuing any challenge. Returned with `WALLET_NOT_PROVISIONED` when the requested Embedded Wallet account (`internalAccountId`) has no wallet address on its own network yet. `details.network` names that network. If the account's `provisioningRequired` is `true`, call `POST /internal-accounts/{id}/provision` first, then retry. Otherwise Grid is still creating the wallet, so retry once the account is `ACTIVE`. On the first call, Grid returns it before issuing any challenge. On a signed retry, the challenge stays usable until its `expiresAt`.
           content:
             application/json:
               schema:
@@ -9161,6 +9291,8 @@ paths:
         The underlying signing policies are left in place. Their consensus references the now-deleted signer identity, so they can never authorize anything, and deleting them is unnecessary for correctness or security.
 
         Revoking a provider wallet key revokes the wallet's whole delegation: every key on that wallet becomes `REVOKED`, and Grid deletes its share and asks the provider to stop reporting the wallet as delegated. No cardholder approval is needed. To stop a single card, freeze or close it instead. When the cardholder delegates the wallet again, Grid creates new keys for the wallet's open cards.
+
+        Revoking an access key discards Grid's copy of its private key, so the key can never sign again. The authorization may already be on chain. To remove it there as well, have the wallet's root revoke `keyId`.
       operationId: revokeDelegatedKey
       tags:
         - Embedded Wallet Auth
@@ -14685,13 +14817,13 @@ paths:
 
         Configure card velocity limits through `POST /cards/velocity-limits`. Omit cardId to set platform defaults before issuance, or supply the returned card id to set card-specific limits after issuance. Limits use the smallest unit of the card's currency, including USD cents for USDB-funded USD cards.
 
-        If the funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
+        If the funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign the card's transfers from that account by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
 
-        If the funding source is a provider wallet external account, the cardholder must delegate the wallet to Grid at the provider, and Grid then creates the delegated key. Until that key is `ACTIVE`, Authorization Decisioning cannot use the account to fund card transactions.
+        If the funding source is a provider wallet external account whose `providerWallet` is `DYNAMIC`, the cardholder must delegate the wallet to Grid at the provider, and Grid then creates the delegated key. If its `providerWallet` is `PLATFORM`, a Tempo wallet your platform runs, you create the key yourself: an access key from `POST /auth/access-keys` with the card, the external account and its spending restrictions. Until the key is `ACTIVE`, Authorization Decisioning cannot use the account to fund card transactions.
 
         A platform may be limited to a maximum number of live cards. Once that limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED` until a card is closed or Lightspark raises the limit. Cards in `CLOSED` status do not count toward the limit.
 
-        New cards start in `status: "PROCESSING"` while the card issuer provisions the card. The `card.status_change` webhook fires on each status transition, including the transition to `ACTIVE` (or to `CLOSED` with `statusReason: "ISSUER_REJECTED"` if provisioning fails). A provisioned card funded by a USDB Embedded Wallet remains `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"` until all signed retries of `POST /auth/delegated-keys` are complete. Replacing USD funding with USDB without an active key, or revoking the required key, also moves an active card to `PENDING_AUTH`. Completing delegation or switching back to USD restores `ACTIVE`; frozen and closed cards keep their status.
+        New cards start in `status: "PROCESSING"` while the card issuer provisions the card. The `card.status_change` webhook fires on each status transition, including the transition to `ACTIVE` (or to `CLOSED` with `statusReason: "ISSUER_REJECTED"` if provisioning fails). A provisioned card whose funding source needs a delegated key, an Embedded Wallet account or a `PLATFORM` provider wallet, remains `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"` until all signed retries of `POST /auth/delegated-keys`, or of `POST /auth/access-keys` for a `PLATFORM` wallet, are complete. Replacing USD funding with USDB without an active key, or revoking the required key, also moves an active card to `PENDING_AUTH`. Completing delegation or switching back to USD restores `ACTIVE`; frozen and closed cards keep their status.
       operationId: createCard
       tags:
         - Cards
@@ -31146,18 +31278,33 @@ components:
           format: uuid
           description: Dynamic's identifier for the wallet.
           example: b6f2c0e4-9d2a-4c1e-8f3b-2a7d5e9c1f40
+    PlatformWalletInfo:
+      title: Platform Wallet
+      type: object
+      required:
+        - provider
+      properties:
+        provider:
+          type: string
+          enum:
+            - PLATFORM
+          description: Your platform runs the wallet and holds its root key. Grid funds the wallet's cards through an access key that the wallet's root authorizes, created with `POST /auth/access-keys`. Accepted only on a `TEMPO_WALLET` external account.
+          example: PLATFORM
     ProviderWalletExternalAccountFields:
       type: object
       properties:
         providerWallet:
-          description: The provider that custodies this wallet and the wallet's identity there. Accepted only on `POST /customers/external-accounts`. Omit it for a plain destination address. An account must carry it to fund a card.
+          description: The provider that custodies this wallet and the wallet's identity there, or `PLATFORM` when your platform runs the wallet itself. Accepted only on `POST /customers/external-accounts`. Omit it for a plain destination address. An account must carry it to fund a card.
           oneOf:
             - title: Dynamic Wallet
               $ref: '#/components/schemas/DynamicWalletInfo'
+            - title: Platform Wallet
+              $ref: '#/components/schemas/PlatformWalletInfo'
           discriminator:
             propertyName: provider
             mapping:
               DYNAMIC: '#/components/schemas/DynamicWalletInfo'
+              PLATFORM: '#/components/schemas/PlatformWalletInfo'
     BaseWalletExternalAccountInfo:
       title: Base Wallet
       allOf:
@@ -31243,6 +31390,7 @@ components:
         - $ref: '#/components/schemas/TempoWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+        - $ref: '#/components/schemas/ProviderWalletExternalAccountFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
@@ -35831,7 +35979,7 @@ components:
         | Reason | Returned when |
         |--------|---------------|
         | `CARD_NOT_ACTIVE` | The card is not `ACTIVE`. A `FROZEN`, `PROCESSING`, `PENDING_KYC`, or `CLOSED` card declines every authorization. |
-        | `SPEND_LIMIT_EXCEEDED` | The authorization exceeds a configured card velocity limit or an applicable agent spending-policy cap. |
+        | `SPEND_LIMIT_EXCEEDED` | The authorization exceeds a configured card velocity limit, an applicable agent spending-policy cap, or what is left of the funding source's access-key spending limit. For the access key, create a new one with `POST /auth/access-keys`. |
         | `INSUFFICIENT_FUNDS` | The funding source balance does not cover the authorization. Grid reserves the amount when it decides the authorization, so an underfunded card is declined. |
         | `NO_ELIGIBLE_FUNDING_SOURCE` | The card has no usable funding source, for example an Embedded Wallet source with no active delegated key. |
         | `BLOCKED` | Program rules block the merchant category or the transaction. |
@@ -38383,6 +38531,126 @@ components:
           maxLength: 66
           description: 'Client-generated P-256 public key as a compressed SEC1 point in lowercase hex: 66 characters, a `02` or `03` prefix followed by the 32-byte X coordinate. The client keeps the matching private key as the new session signing key. An uppercase or uncompressed key is rejected with `400 INVALID_INPUT`.'
           example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
+    AccessKeySpendingLimit:
+      title: Access Key Spending Limit
+      type: object
+      required:
+        - currency
+        - amount
+      properties:
+        currency:
+          type: string
+          description: Currency code of the token.
+          example: OUSD
+        amount:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Amount in the smallest unit of `currency`.
+          example: 50000000
+    AccessKeyRestrictions:
+      title: Access Key Restrictions
+      type: object
+      description: 'What a Tempo access key may spend, and until when. The network enforces both. Each limit covers the key''s whole lifetime: recurring limits and call scopes are not offered.'
+      required:
+        - spendingLimits
+        - expiresAt
+      properties:
+        spendingLimits:
+          type: array
+          minItems: 1
+          description: The most the key may spend of each token over its lifetime, one entry per token. Each currency appears once, each `amount` is greater than 0, and the key cannot spend a token with no entry. Grid pays the network fee on every transfer it makes with the key, whatever the platform's network-fee setting, so only transfer amounts count against a limit. An authorization larger than what is left is declined with `SPEND_LIMIT_EXCEEDED`. Once nothing is left of every limit, Grid revokes the key and the card becomes `PENDING_AUTH`.
+          items:
+            $ref: '#/components/schemas/AccessKeySpendingLimit'
+        expiresAt:
+          type: string
+          format: date-time
+          description: 'When the key stops working. It must be in the future. To keep the card funded, create a new access key before then: when the new key becomes `ACTIVE`, Grid revokes this one in the same step, so the card is never without a key.'
+          example: '2027-11-19T00:00:00Z'
+    AccessKeySignatureAuthorization:
+      title: Access Key Signature Authorization
+      type: object
+      description: The root signed `payloadToSign`. Grid attaches the signed authorization to the first transfer it makes with the key.
+      required:
+        - method
+        - signature
+      properties:
+        method:
+          type: string
+          enum:
+            - SIGNATURE
+          description: The root signed `payloadToSign`.
+          example: SIGNATURE
+        signature:
+          type: string
+          description: The root account's signature over the 32-byte `payloadToSign` hash, as 65-byte `r || s || v` hex, with `v` either 0/1 or 27/28. The root must be able to sign a raw hash with no message prefix. Only secp256k1 root accounts are supported; another signature format is refused with `400 INVALID_INPUT`.
+          example: '0x72422cb2a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5cf0ca0e4e6572a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c5a1d01'
+    AccessKeyOnChainAuthorization:
+      title: Access Key On-Chain Authorization
+      type: object
+      description: 'The root authorized `keyId` on chain itself. The network does not report a key''s configured limits, so Grid checks what it can read: the key is not revoked, it enforces limits, its expiry equals the requested `expiresAt`, and each token''s remaining limit equals the requested amount. That last check holds only before the key has spent anything.'
+      required:
+        - method
+      properties:
+        method:
+          type: string
+          enum:
+            - ON_CHAIN
+          description: The root authorized `keyId` on chain.
+          example: ON_CHAIN
+    AccessKeyAuthorization:
+      title: Access Key Authorization
+      description: How the wallet's root account authorized the access key. Required on the retry, the call that carries `Request-Id`, and refused on the first call.
+      oneOf:
+        - $ref: '#/components/schemas/AccessKeySignatureAuthorization'
+        - $ref: '#/components/schemas/AccessKeyOnChainAuthorization'
+      discriminator:
+        propertyName: method
+        mapping:
+          SIGNATURE: '#/components/schemas/AccessKeySignatureAuthorization'
+          ON_CHAIN: '#/components/schemas/AccessKeyOnChainAuthorization'
+    AccessKeyCreateRequest:
+      title: Access Key Create Request
+      type: object
+      description: Creates a Tempo access key that funds a card from a `TEMPO_WALLET` external account your platform runs. Send the same `cardId`, `externalAccountId`, `nickname` and `restrictions` on both calls. Add `authorization` on the retry, the call that carries `Request-Id`.
+      required:
+        - cardId
+        - externalAccountId
+        - nickname
+        - restrictions
+      properties:
+        cardId:
+          type: string
+          description: The id of the card this access key funds.
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+        externalAccountId:
+          type: string
+          description: 'The id of the card''s funding source: a `TEMPO_WALLET` external account whose `providerWallet` is `PLATFORM`.'
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000031
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Human-readable label for the access key.
+          example: Card payments key
+        restrictions:
+          $ref: '#/components/schemas/AccessKeyRestrictions'
+        authorization:
+          $ref: '#/components/schemas/AccessKeyAuthorization'
+    DelegatedKeyKind:
+      title: Delegated Key Kind
+      type: string
+      enum:
+        - EMBEDDED_WALLET_KEY
+        - PROVIDER_WALLET_KEY
+        - ACCESS_KEY
+      description: |-
+        What kind of key a delegated key is.
+
+        - `EMBEDDED_WALLET_KEY`: A key on an Embedded Wallet internal account, created with `POST /auth/delegated-keys`.
+        - `PROVIDER_WALLET_KEY`: A key on a crypto external account whose `providerWallet` is `DYNAMIC`. Grid creates it when the cardholder delegates the wallet at the provider.
+        - `ACCESS_KEY`: A Tempo access key on a `TEMPO_WALLET` external account whose `providerWallet` is `PLATFORM`, created with `POST /auth/access-keys`.
+      example: EMBEDDED_WALLET_KEY
     DelegatedKeyStatus:
       type: string
       enum:
@@ -38392,26 +38660,29 @@ components:
       description: |-
         Status of a delegated signing key.
 
-        - `PENDING`: The policy-creation leg never completed, so the key cannot sign yet. Only keys for an Embedded Wallet internal account are ever `PENDING`.
+        - `PENDING`: The policy-creation leg never completed, so the key cannot sign yet. Only keys for an Embedded Wallet internal account are ever `PENDING`. An access key appears only once it is `ACTIVE`.
         - `ACTIVE`: Grid holds material that can sign for the card funding source or agent.
-        - `REVOKED`: The key was revoked through Grid, or the delegation was revoked at the provider. It can no longer sign, and this is terminal.
+        - `REVOKED`: The key was revoked through Grid, or the delegation was revoked at the provider. An access key is also `REVOKED` once the wallet's root revokes it on chain, its `expiresAt` passes, its spending limits are used up, or a newer access key for the same card funding source becomes `ACTIVE`. It can no longer sign, and this is terminal.
       example: ACTIVE
     DelegatedKey:
       title: Delegated Key
       type: object
       required:
         - id
+        - kind
         - accountId
         - nickname
         - status
         - createdAt
         - updatedAt
-      description: A delegated signing key for either a card funding source or an agent. Card keys include `cardId` and `fundingSourceId`; agent keys include `agentId`. Returned from `POST /auth/delegated-keys` (on activation), `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`. `accountId` says where the signing material comes from. For a key on an Embedded Wallet internal account, Grid generates and custodies the keypair and never returns the private key; `publicKey` identifies it. While `ACTIVE`, Grid may use it to authorize Spark token-transaction signing for the selected card funding source or agent in place of a session keypair. A key on a crypto external account that carries `providerWallet` is a provider wallet key. Grid creates it when the cardholder has delegated the wallet at the provider and the card is funded by that wallet, and while `ACTIVE` uses the delegated share to sign the card's transfers.
+      description: 'A delegated signing key for either a card funding source or an agent. Card keys include `cardId` and `fundingSourceId`; agent keys include `agentId`. Returned from `POST /auth/delegated-keys` and `POST /auth/access-keys` (on activation), `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`. `kind` says which kind of key it is. `accountId` says where the signing material comes from. For a key on an Embedded Wallet internal account, Grid generates and custodies the keypair and never returns the private key; `publicKey` identifies it. While `ACTIVE`, Grid may use it to authorize Spark token-transaction signing for the selected card funding source or agent in place of a session keypair. A key on a crypto external account that carries `providerWallet` is a provider wallet key. For a `DYNAMIC` wallet, Grid creates it when the cardholder has delegated the wallet at the provider and the card is funded by that wallet, and while `ACTIVE` uses the delegated share to sign the card''s transfers. For a `PLATFORM` wallet on Tempo, it is an access key: Grid generates it when you call `POST /auth/access-keys`, the wallet''s root account authorizes it, and while `ACTIVE` Grid uses it to make the card''s transfers within `restrictions`.'
       properties:
         id:
           type: string
           description: Grid-issued `DelegatedKey:<uuid>` identifier.
           example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+        kind:
+          $ref: '#/components/schemas/DelegatedKeyKind'
         cardId:
           type: string
           description: The card this key is delegated for. Present only for card keys.
@@ -38432,6 +38703,19 @@ components:
           type: string
           description: Compressed P-256 public key (hex) of the delegated API keypair. It equals the key in the payload the wallet owner stamped on the first leg. Present only on keys for an Embedded Wallet internal account.
           example: 02a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+        keyId:
+          type: string
+          description: Address of the access key on the network, in EIP-55 checksum form. Present only on access keys.
+          example: '0xfbE89dD5f773c84ea858EF1d4622d2D58E69e9c9'
+        restrictions:
+          allOf:
+            - $ref: '#/components/schemas/AccessKeyRestrictions'
+          description: What the access key may spend, and until when, as the wallet's root authorized it. Present only on access keys. The network tracks what is left of each limit.
+        remainingSpendingLimits:
+          type: array
+          description: What is left of each entry in `restrictions.spendingLimits`, read from the network, in the same shape. Present only on an `ACTIVE` access key returned by `GET /auth/delegated-keys/{id}`. Lists omit it.
+          items:
+            $ref: '#/components/schemas/AccessKeySpendingLimit'
         nickname:
           type: string
           description: Human-readable label for the delegated key.
@@ -38448,6 +38732,97 @@ components:
           format: date-time
           description: When the delegated key was last updated.
           example: '2026-04-08T15:30:42Z'
+    TempoKeyAuthorization:
+      title: Tempo Key Authorization
+      type: object
+      description: The access-key authorization Grid asks the wallet's root account to sign, as the network will read it. Decode `unsignedKeyAuthorization` to check these fields before signing. It carries limits and an expiry only, with no periodic limits and no call scopes. Unless the root authorizes the key on chain itself, it rides inline in the first transfer Grid makes with the key.
+      required:
+        - chainId
+        - keyType
+        - keyId
+        - expiry
+        - limits
+        - isAdmin
+        - unsignedKeyAuthorization
+      properties:
+        chainId:
+          type: integer
+          format: int64
+          description: Chain id of the Tempo network the key is valid on.
+          example: 4217
+        keyType:
+          type: string
+          enum:
+            - SECP256K1
+          description: Signature type of the access key.
+          example: SECP256K1
+        keyId:
+          type: string
+          description: Address of the access key, in EIP-55 checksum form. Grid generated it and holds its private key.
+          example: '0xfbE89dD5f773c84ea858EF1d4622d2D58E69e9c9'
+        expiry:
+          type: integer
+          format: int64
+          description: Unix time, in seconds, at which the key expires.
+          example: 1795229075
+        limits:
+          type: array
+          description: Per-token spending limits over the key's lifetime, in the token's base units.
+          items:
+            type: object
+            required:
+              - token
+              - amount
+            properties:
+              token:
+                type: string
+                description: Address of the token contract, in EIP-55 checksum form.
+                example: '0x20c0000000000000000000006a37DA5C996874BE'
+              amount:
+                type: string
+                description: Limit in the token's base units, as a decimal string because it can exceed 64 bits.
+                example: '50000000'
+        isAdmin:
+          type: boolean
+          description: 'Whether the key may authorize further keys. Always `false`: an access key Grid holds can never add keys to the wallet.'
+          example: false
+        unsignedKeyAuthorization:
+          type: string
+          description: Hex RLP encoding of the unsigned authorization, the exact bytes whose Keccak-256 hash is `payloadToSign`.
+          example: 0xf84f82a5a1809...
+    AccessKeyChallenge:
+      title: Access Key Challenge
+      description: '`202` response from `POST /auth/access-keys`. Have the wallet''s root account sign `payloadToSign`, or authorize `keyId` on chain, then retry the same request with `authorization` in the body and the `requestId` echoed in `Request-Id`.'
+      type: object
+      required:
+        - requestId
+        - expiresAt
+        - keyId
+        - requestedRestrictions
+        - keyAuthorization
+        - payloadToSign
+      properties:
+        requestId:
+          type: string
+          description: Grid-issued `Request:<uuid>` identifier for this pending request. Echo it exactly in the `Request-Id` header on the retry.
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+        expiresAt:
+          type: string
+          format: date-time
+          description: Timestamp after which this challenge is no longer valid.
+          example: '2026-11-19T15:35:00Z'
+        keyId:
+          type: string
+          description: Address of the access key Grid generated for this card, in EIP-55 checksum form. Grid holds its private key and never returns it.
+          example: '0xfbE89dD5f773c84ea858EF1d4622d2D58E69e9c9'
+        requestedRestrictions:
+          $ref: '#/components/schemas/AccessKeyRestrictions'
+        keyAuthorization:
+          $ref: '#/components/schemas/TempoKeyAuthorization'
+        payloadToSign:
+          type: string
+          description: Keccak-256 hash of `keyAuthorization.unsignedKeyAuthorization`, as 32-byte hex. The wallet's root account signs this hash directly, with no message prefix.
+          example: '0x3843290a5c1f0e6d4b2a9c8e7f6d5c4b3a291807f6e5d4c3b2a1908f7e6d2eb3'
     DelegatedKeyListResponse:
       title: Delegated Key List Response
       type: object
@@ -40513,7 +40888,7 @@ components:
         |-------|-------------|
         | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this status cannot transact. |
         | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
-        | `PENDING_AUTH` | The issuer has provisioned the card, but its USDB Embedded Wallet funding source lacks an active delegated signing key. Complete `POST /auth/delegated-keys` before using the card. |
+        | `PENDING_AUTH` | The issuer has provisioned the card, but its funding source lacks an active delegated key or access key. Complete `POST /auth/delegated-keys`, or `POST /auth/access-keys` for a `PLATFORM` wallet, before using the card. |
         | `ACTIVE` | The card is live and can authorize transactions. |
         | `FROZEN` | The card is temporarily disabled by the platform or by Grid. New authorizations are declined with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing settlements and refunds continue to reconcile. A card Grid froze for review, or one frozen as `COMPROMISED`, cannot be unfrozen by the platform. |
         | `CLOSED` | The card is permanently closed. Terminal, irreversible status. |

@@ -1,0 +1,182 @@
+post:
+  summary: Create an access key
+  description: >
+    Create a Tempo access key that funds a card from a `TEMPO_WALLET` external
+    account your platform runs, one whose `providerWallet` is `PLATFORM`.
+    Grid generates the key and keeps its private key. The wallet's root
+    account authorizes it, and the network then holds the key to
+    `restrictions`: a lifetime spending limit per token and an expiry. Grid
+    pays the network fee on every transfer it makes with the key, whatever
+    the platform's network-fee setting, so only transfer amounts count
+    against the limits. The root account must be a secp256k1 account.
+
+
+    Creation is a two-step flow:
+
+
+    1. Call with no `Request-Id`. The response is `202` with the key's
+    `keyId`, the `requestedRestrictions`, the `keyAuthorization` fields the
+    root signs, and `payloadToSign`, the hash of that authorization.
+
+
+    2. Authorize the key, then retry the same request with `authorization` in
+    the body and the `requestId` in `Request-Id`. Either the root signs
+    `payloadToSign` with no message prefix and you send
+    `authorization: {method: SIGNATURE, signature}`, or the root authorizes
+    `keyId` on chain itself and you send `authorization: {method: ON_CHAIN}`.
+    Grid checks the authorization and returns `201` with the key `ACTIVE`.
+    With a signature, the key reaches the network with the card's first
+    transfer, which carries the authorization.
+
+
+    Re-sending a completed retry byte for byte returns `201` with the same
+    key in its current state, which is `REVOKED` if it has been replaced
+    since. A challenge left unused until its `expiresAt` is discarded
+    with the key Grid generated for it. If the root authorized `keyId` on
+    chain and the retry was refused or never sent, revoke `keyId` on chain:
+    Grid no longer holds that key once the challenge expires.
+
+
+    A card funding source has at most one `ACTIVE` access key. When a new one
+    becomes `ACTIVE`, Grid revokes the previous one in the same step, so a key
+    can be replaced before its `expiresAt` with no gap in funding. The network
+    enforces each spending limit and the key's expiry. An authorization
+    larger than what is left of a limit is declined with
+    `SPEND_LIMIT_EXCEEDED`. When a key's limits are used up, its `expiresAt`
+    passes, or the wallet's root revokes it on chain, Grid marks it `REVOKED`
+    and the card becomes `PENDING_AUTH` with
+    `statusReason: "DELEGATION_REQUIRED"`. List, read and revoke access keys
+    with the `/auth/delegated-keys` endpoints, where their `kind` is
+    `ACCESS_KEY`.
+  operationId: createAccessKey
+  tags:
+    - Embedded Wallet Auth
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: Request-Id
+      in: header
+      required: false
+      description: >-
+        The `requestId` returned in the `202` response, echoed back exactly on
+        the retry. Required on the retry, which must also carry
+        `authorization`; omitted on the first call.
+      schema:
+        type: string
+      example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/auth/AccessKeyCreateRequest.yaml
+        examples:
+          firstCall:
+            summary: First call
+            value:
+              cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+              externalAccountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000031
+              nickname: Card payments key
+              restrictions:
+                spendingLimits:
+                  - currency: OUSD
+                    amount: 50000000
+                expiresAt: '2027-11-19T00:00:00Z'
+          signedRetry:
+            summary: Retry with the root's signature
+            value:
+              cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+              externalAccountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000031
+              nickname: Card payments key
+              restrictions:
+                spendingLimits:
+                  - currency: OUSD
+                    amount: 50000000
+                expiresAt: '2027-11-19T00:00:00Z'
+              authorization:
+                method: SIGNATURE
+                signature: '0x72422cb2a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5cf0ca0e4e6572a1d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c5a1d01'
+          onChainRetry:
+            summary: Retry after the root authorized the key on chain
+            value:
+              cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+              externalAccountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000031
+              nickname: Card payments key
+              restrictions:
+                spendingLimits:
+                  - currency: OUSD
+                    amount: 50000000
+                expiresAt: '2027-11-19T00:00:00Z'
+              authorization:
+                method: ON_CHAIN
+  responses:
+    '201':
+      description: >-
+        The access key is `ACTIVE`. Any previous `ACTIVE` access key for the
+        card funding source is now `REVOKED`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/auth/DelegatedKey.yaml
+          examples:
+            accessKey:
+              summary: Active access key
+              value:
+                id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000022
+                kind: ACCESS_KEY
+                cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                fundingSourceId: CardFundingSource:019542f5-b3e7-1d02-0000-000000000012
+                accountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000031
+                keyId: '0xfbE89dD5f773c84ea858EF1d4622d2D58E69e9c9'
+                restrictions:
+                  spendingLimits:
+                    - currency: OUSD
+                      amount: 50000000
+                  expiresAt: '2027-11-19T00:00:00Z'
+                nickname: Card payments key
+                status: ACTIVE
+                createdAt: '2026-11-19T15:30:01Z'
+                updatedAt: '2026-11-19T15:31:12Z'
+    '202':
+      description: >-
+        Challenge issued. Authorize `keyId` and retry with `authorization` and
+        `Request-Id`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/auth/AccessKeyChallenge.yaml
+    '400':
+      description: >-
+        Bad request. Returned with `INVALID_INPUT` when the external account is
+        not a `TEMPO_WALLET` whose `providerWallet` is `PLATFORM` or is not the
+        card's funding source, when `restrictions` names a currency twice or
+        one the network does not carry, when `authorization` is missing on the
+        retry or sent on the first call, or when a `SIGNATURE` authorization is
+        not a 65-byte secp256k1 signature.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: >-
+        Unauthorized. Returned when the `Request-Id` does not match an
+        unexpired pending challenge, when a `SIGNATURE` authorization does not
+        come from the external account's address, or when an `ON_CHAIN`
+        authorization of `keyId` is missing, revoked, not limit-enforcing, or
+        does not match the requested expiry and remaining limits.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Card, card funding source, or external account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

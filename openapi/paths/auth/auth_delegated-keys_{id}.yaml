@@ -65,6 +65,11 @@ delete:
     approval is needed. To stop a single card, freeze or close it instead. When
     the cardholder delegates the wallet again, Grid creates new keys for the
     wallet's open cards.
+
+
+    Revoking an access key discards Grid's copy of its private key, so the key
+    can never sign again. The authorization may already be on chain. To remove
+    it there as well, have the wallet's root revoke `keyId`.
   operationId: revokeDelegatedKey
   tags:
     - Embedded Wallet Auth

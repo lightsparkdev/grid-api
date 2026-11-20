@@ -2,13 +2,15 @@ post:
   summary: Create a delegated signing key
   description: >
     Only keys for an Embedded Wallet internal account are created through this
-    endpoint. Grid creates provider wallet keys itself, when the cardholder has
-    delegated the wallet at the provider and a card is funded by that wallet.
+    endpoint. Access keys for a Tempo wallet your platform runs are created
+    with `POST /auth/access-keys`. Grid creates `DYNAMIC` provider wallet keys
+    itself, when the cardholder has delegated the wallet at the provider and a
+    card is funded by that wallet.
 
 
-    Delegate Spark token-transaction signing authority for a card funding
-    source or agent backed by an Embedded Wallet internal account to a
-    Grid-custodied P-256 API key. Grid uses the requested owner and internal
+    Delegate signing authority for a card funding source's or agent's
+    transfers from an Embedded Wallet internal account to a Grid-custodied
+    P-256 API key. Grid uses the requested owner and internal
     account to identify the wallet, generates the keypair
     server-side, creates an isolated signer identity holding the public key,
     then policies granting that identity signing and self-revocation authority.
@@ -111,6 +113,7 @@ post:
               summary: Active delegated key
               value:
                 id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+                kind: EMBEDDED_WALLET_KEY
                 cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                 fundingSourceId: CardFundingSource:019542f5-b3e7-1d02-0000-000000000011
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
@@ -156,7 +159,17 @@ post:
         An `ACTIVE` delegated key already exists for this card funding source,
         or an `ACTIVE` or `PENDING` key already exists for this agent and
         Embedded Wallet pair. Revoke it with `DELETE /auth/delegated-keys/{id}`
-        before creating a new one.
+        before creating a new one. Grid checks this on the first call, before
+        issuing any challenge.
+        Returned with `WALLET_NOT_PROVISIONED` when the requested Embedded
+        Wallet account (`internalAccountId`) has no wallet address on its own
+        network yet. `details.network` names that network. If the account's
+        `provisioningRequired` is `true`, call
+        `POST /internal-accounts/{id}/provision` first, then retry. Otherwise
+        Grid is still creating the wallet, so retry once the account is
+        `ACTIVE`. On the first call, Grid returns it before issuing any
+        challenge. On a signed retry, the challenge stays usable until its
+        `expiresAt`.
       content:
         application/json:
           schema:
