@@ -2,5 +2,6 @@ type: string
 enum:
   - ACCOUNT
   - REALTIME_FUNDING
+  - CARD
 description: Type of quote funding source
 example: ACCOUNT

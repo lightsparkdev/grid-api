@@ -66,11 +66,13 @@ post:
   responses:
     '200':
       description: >
-        Quote processed. The outcome depends on whether SCA applies to the customer (currently EU customers):
+        Quote processed. The outcome depends on whether the customer must
+        authorize the quote, through SCA (currently EU customers) or a card
+        issuer check:
 
 
-        - **No SCA required:** the transfer is initiated and the quote status
-        advances (`PROCESSING` / `COMPLETED`).
+        - **No authorization required:** the transfer is initiated and the
+        quote status advances (`PROCESSING` / `COMPLETED`).
 
 
         - **SCA required:** the transfer is **not** initiated yet. The quote is
@@ -82,6 +84,13 @@ post:
         existence once this call initiates the transfer, so the proof is always
         supplied on the follow-up authorize, never inline on this call. If an SMS
         code lapses, re-send it via `POST /quotes/{quoteId}/authorize/resend`.
+
+
+        - **Card issuer check:** for a `CARD` source, the card issuer may ask
+        the customer to authenticate the charge. The quote is returned with
+        status `PENDING_AUTHORIZATION` and a `cardAuthentication`; open its
+        `url` in the customer's browser. The quote then moves to `PROCESSING`,
+        or to `FAILED` with a `failureReason`.
       content:
         application/json:
           schema:

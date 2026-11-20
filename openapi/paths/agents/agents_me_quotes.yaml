@@ -28,6 +28,7 @@ post:
     wallet and pays exactly the invoice's amount, which it locks on the
     receiving side in satoshis, through the platform's Lightning invoice quote
     (`POST /quotes`).
+    A `CARD` source is not accepted here and is refused with `400`.
 
     If the agent's defaultExecutionMode is APPROVAL_REQUIRED, or the quote amount
     exceeds the agent's approvalThresholds or the approvalThreshold of the

@@ -1,0 +1,21 @@
+type: string
+enum:
+  - INSUFFICIENT_FUNDS
+  - CARD_DECLINED
+  - AUTHENTICATION_FAILED
+  - CARD_NOT_SUPPORTED
+  - LIMIT_EXCEEDED
+  - TRY_AGAIN_LATER
+description: |
+  Why the quote failed. Present only when the quote's `status` is `FAILED`. This
+  list may grow: treat a value you do not recognize as a generic failure.
+
+  | Reason | Description |
+  |--------|-------------|
+  | `INSUFFICIENT_FUNDS` | The card's account did not have enough funds for the charge |
+  | `CARD_DECLINED` | The card issuer declined the charge without a more specific reason. Ask the customer to use another card or contact their issuer |
+  | `AUTHENTICATION_FAILED` | The customer did not pass the card issuer's authentication check, or did not complete it before `cardAuthentication.expiresAt` |
+  | `CARD_NOT_SUPPORTED` | The card cannot fund a quote: it is not a debit card, it is not `ACTIVE`, or its issuer or network is not supported |
+  | `LIMIT_EXCEEDED` | The charge exceeds a limit set by the card issuer or by Grid for card funding |
+  | `TRY_AGAIN_LATER` | The charge could not be completed because of a temporary problem. Create a new quote to try again |
+example: CARD_DECLINED

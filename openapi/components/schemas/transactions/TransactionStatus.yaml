@@ -16,7 +16,7 @@ description: |
   |--------|-------------|
   | `CREATED` | Initial lookup has been created |
   | `PENDING` | Quote has been created |
-  | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
+  | `PENDING_AUTHORIZATION` | Waiting on the customer. Either Strong Customer Authentication is required (customers in a region where SCA is required, e.g. EU), or the card issuer of a card-funded payment asked for an authentication check. The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`, or have the customer complete its `cardAuthentication`. |
   | `PROCESSING` | Funding has been received and payment initiated |
   | `COMPLETED` | The funds are where settlement put them. A return that takes them back moves the transaction to `FAILED`, and the returned side's `railDetails` shows `RETURNED`. A transaction stays `COMPLETED` through a return only when a later step that can't be undone already used the funds |
   | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
