@@ -1,0 +1,23 @@
+type: object
+description: >-
+  An authentication check the card issuer requires before charging the card,
+  such as 3-D Secure. Open `url` in the customer's browser. When the customer
+  finishes, the browser returns to the quote's `returnUrl`, and the quote moves
+  on to `PROCESSING`, or to `FAILED` with a `failureReason`.
+required:
+  - url
+  - expiresAt
+properties:
+  url:
+    type: string
+    format: uri
+    maxLength: 2048
+    description: The page where the customer completes the card issuer's check.
+    example: https://authentication.example.com/challenge/abc123
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      When the check expires. A check not completed by then fails the quote with
+      `AUTHENTICATION_FAILED`.
+    example: '2025-10-03T12:10:00Z'

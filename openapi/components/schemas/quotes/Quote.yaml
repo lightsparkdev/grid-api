@@ -150,6 +150,18 @@ properties:
   scaChallenge:
     $ref: ../sca/ScaChallenge.yaml
     description: >-
-      Present only while `status` is `PENDING_AUTHORIZATION`: the Strong
-      Customer Authentication challenge to satisfy before this quote can be
-      executed. Omitted for customers outside SCA-regulated regions (non-EU).
+      Present only while `status` is `PENDING_AUTHORIZATION` for a customer in
+      an SCA-regulated region: the Strong Customer Authentication challenge to
+      satisfy before this quote can be executed. Omitted for customers outside
+      SCA-regulated regions (non-EU), and never present together with
+      `cardAuthentication`.
+  cardAuthentication:
+    $ref: ./CardAuthentication.yaml
+    description: >-
+      Present only while `status` is `PENDING_AUTHORIZATION` and the source is
+      `CARD`: the card issuer's authentication check for the customer to
+      complete before the card is charged. Never present together with
+      `scaChallenge`.
+  failureReason:
+    $ref: ./QuoteFailureReason.yaml
+    description: Why the quote failed. Present only when `status` is `FAILED`, and not on every failed quote.

@@ -112,8 +112,11 @@ fun Route.quoteRoutes() {
 
 private fun buildQuoteSource(sourceNode: JsonNode): QuoteSourceOneOf {
     val sourceType = sourceNode.optText("sourceType")
+    require(sourceType == null || sourceType == "REALTIME_FUNDING" || sourceType == "ACCOUNT") {
+        "This sample does not support sourceType $sourceType"
+    }
 
-    if (sourceType == "REALTIME_FUNDING" || sourceNode.has("currency")) {
+    if (sourceType == "REALTIME_FUNDING" || (sourceType == null && sourceNode.has("currency"))) {
         val realtimeSource = QuoteSourceOneOf.RealtimeFunding.builder()
             .currency(sourceNode.get("currency").asText())
             .apply {

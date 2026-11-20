@@ -12,6 +12,12 @@ enum:
   - COLLECTION_FAILED
   - SWEEP_AMOUNT_OUT_OF_RANGE
   - SWEEP_QUOTE_FAILED
+  - INSUFFICIENT_FUNDS
+  - CARD_DECLINED
+  - AUTHENTICATION_FAILED
+  - CARD_NOT_SUPPORTED
+  - LIMIT_EXCEEDED
+  - TRY_AGAIN_LATER
 description: >-
   Reason for failure of an incoming transaction. This is used to provide more
   context on why a transaction failed. If the transaction is not in a failed
@@ -32,3 +38,9 @@ description: >-
   SWEEP_QUOTE_FAILED that Grid could not price it. A sweep that was priced and
   then failed on the way to settlement reports QUOTE_EXECUTION_FAILED, the same
   as any other payment.
+
+  A card-funded payment into the customer's own account that the card issuer
+  declined fails with the same reason as its quote's `failureReason`:
+  INSUFFICIENT_FUNDS, CARD_DECLINED, AUTHENTICATION_FAILED, CARD_NOT_SUPPORTED,
+  LIMIT_EXCEEDED or TRY_AGAIN_LATER. This list may grow: treat a value you do
+  not recognize as a generic failure.
