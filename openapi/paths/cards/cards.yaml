@@ -18,17 +18,21 @@ post:
 
 
     If the funding source is an Embedded Wallet internal account, the
-    cardholder must authorize Grid to sign Spark token transactions for that
-    card funding source by completing the delegated-key creation flow with
+    cardholder must authorize Grid to sign the card's transfers from that
+    account by completing the delegated-key creation flow with
     `POST /auth/delegated-keys`. Until an active delegated key exists for that
     funding source, Authorization Decisioning cannot use it to fund card
     transactions.
 
 
-    If the funding source is a provider wallet external account, the cardholder
-    must delegate the wallet to Grid at the provider, and Grid then creates the
-    delegated key. Until that key is `ACTIVE`, Authorization Decisioning cannot
-    use the account to fund card transactions.
+    If the funding source is a provider wallet external account whose
+    `providerWallet` is `DYNAMIC`, the cardholder must delegate the wallet to
+    Grid at the provider, and Grid then creates the delegated key. If its
+    `providerWallet` is `PLATFORM`, a Tempo wallet your platform runs, you
+    create the key yourself: an access key from `POST /auth/delegated-keys`
+    with the card, the external account and its spending restrictions. Until
+    the key is `ACTIVE`, Authorization Decisioning cannot use the account to
+    fund card transactions.
 
 
     A platform may be limited to a maximum number of live cards. Once that
@@ -41,9 +45,10 @@ post:
     provisions the card. The `card.status_change` webhook fires on each status
     transition, including the transition to `ACTIVE` (or to `CLOSED` with
     `statusReason: "ISSUER_REJECTED"` if provisioning fails).
-    A provisioned card funded by a USDB Embedded Wallet remains `PENDING_AUTH`
-    with `statusReason: "DELEGATION_REQUIRED"`
-    until all signed retries of `POST /auth/delegated-keys` are complete.
+    A provisioned card whose funding source needs a delegated key, an
+    Embedded Wallet account or a `PLATFORM` provider wallet, remains
+    `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"` until all
+    signed retries of `POST /auth/delegated-keys` are complete.
     Replacing USD funding with USDB without an active key, or revoking the
     required key, also moves an active card to `PENDING_AUTH`. Completing delegation
     or switching back to USD restores `ACTIVE`; frozen and closed cards keep

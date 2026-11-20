@@ -9090,7 +9090,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: An `ACTIVE` delegated key or access key already exists for this card funding source, or an `ACTIVE` or `PENDING` key already exists for this agent and Embedded Wallet pair. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one. Returned with `WALLET_NOT_PROVISIONED` when the Embedded Wallet account's wallet has no Spark account yet, which happens when it holds only currencies on other networks. On the first call, Grid returns it before issuing any challenge. On a signed retry, the challenge stays usable, so the same retry succeeds once the Spark account exists.
+          description: An `ACTIVE` delegated key or access key already exists for this card funding source, or an `ACTIVE` or `PENDING` key already exists for this agent and Embedded Wallet pair. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one. Returned with `WALLET_NOT_PROVISIONED` when the requested Embedded Wallet account (`internalAccountId`) has no wallet address on its own network yet. `details.network` names that network. If the account's `provisioningRequired` is `true`, call `POST /internal-accounts/{id}/provision` first, then retry. Otherwise Grid is still creating the wallet, so retry once the account is `ACTIVE`. On the first call, Grid returns it before issuing any challenge. On a signed retry, the challenge stays usable until its `expiresAt`.
           content:
             application/json:
               schema:
@@ -14725,13 +14725,13 @@ paths:
 
         Configure card velocity limits through `POST /cards/velocity-limits`. Omit cardId to set platform defaults before issuance, or supply the returned card id to set card-specific limits after issuance. Limits use the smallest unit of the card's currency, including USD cents for USDB-funded USD cards.
 
-        If the funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
+        If the funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign the card's transfers from that account by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
 
-        If the funding source is a provider wallet external account, the cardholder must delegate the wallet to Grid at the provider, and Grid then creates the delegated key. Until that key is `ACTIVE`, Authorization Decisioning cannot use the account to fund card transactions.
+        If the funding source is a provider wallet external account whose `providerWallet` is `DYNAMIC`, the cardholder must delegate the wallet to Grid at the provider, and Grid then creates the delegated key. If its `providerWallet` is `PLATFORM`, a Tempo wallet your platform runs, you create the key yourself: an access key from `POST /auth/delegated-keys` with the card, the external account and its spending restrictions. Until the key is `ACTIVE`, Authorization Decisioning cannot use the account to fund card transactions.
 
         A platform may be limited to a maximum number of live cards. Once that limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED` until a card is closed or Lightspark raises the limit. Cards in `CLOSED` status do not count toward the limit.
 
-        New cards start in `status: "PROCESSING"` while the card issuer provisions the card. The `card.status_change` webhook fires on each status transition, including the transition to `ACTIVE` (or to `CLOSED` with `statusReason: "ISSUER_REJECTED"` if provisioning fails). A provisioned card funded by a USDB Embedded Wallet remains `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"` until all signed retries of `POST /auth/delegated-keys` are complete. Replacing USD funding with USDB without an active key, or revoking the required key, also moves an active card to `PENDING_AUTH`. Completing delegation or switching back to USD restores `ACTIVE`; frozen and closed cards keep their status.
+        New cards start in `status: "PROCESSING"` while the card issuer provisions the card. The `card.status_change` webhook fires on each status transition, including the transition to `ACTIVE` (or to `CLOSED` with `statusReason: "ISSUER_REJECTED"` if provisioning fails). A provisioned card whose funding source needs a delegated key, an Embedded Wallet account or a `PLATFORM` provider wallet, remains `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"` until all signed retries of `POST /auth/delegated-keys` are complete. Replacing USD funding with USDB without an active key, or revoking the required key, also moves an active card to `PENDING_AUTH`. Completing delegation or switching back to USD restores `ACTIVE`; frozen and closed cards keep their status.
       operationId: createCard
       tags:
         - Cards
@@ -35887,7 +35887,7 @@ components:
         | Reason | Returned when |
         |--------|---------------|
         | `CARD_NOT_ACTIVE` | The card is not `ACTIVE`. A `FROZEN`, `PROCESSING`, `PENDING_KYC`, or `CLOSED` card declines every authorization. |
-        | `SPEND_LIMIT_EXCEEDED` | The authorization exceeds a configured card velocity limit or an applicable agent spending-policy cap. |
+        | `SPEND_LIMIT_EXCEEDED` | The authorization exceeds a configured card velocity limit, an applicable agent spending-policy cap, or what is left of the funding source's access-key spending limit. For the access key, create a new one with `POST /auth/delegated-keys`. |
         | `INSUFFICIENT_FUNDS` | The funding source balance does not cover the authorization. Grid reserves the amount when it decides the authorization, so an underfunded card is declined. |
         | `NO_ELIGIBLE_FUNDING_SOURCE` | The card has no usable funding source, for example an Embedded Wallet source with no active delegated key. |
         | `BLOCKED` | Program rules block the merchant category or the transaction. |
@@ -38454,7 +38454,7 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
-          description: The most the key may spend in `currency` over its lifetime, in the smallest unit of the currency. Grid pays the network fee on every transfer it makes with the key, whatever the platform's network-fee setting, so only transfer amounts count against the limit.
+          description: The most the key may spend in `currency` over its lifetime, in the smallest unit of the currency. Grid pays the network fee on every transfer it makes with the key, whatever the platform's network-fee setting, so only transfer amounts count against the limit. An authorization larger than what is left is declined with `SPEND_LIMIT_EXCEEDED`. Once nothing is left of every limit, Grid revokes the key and the card becomes `PENDING_AUTH`.
           example: 50000000
     AccessKeyRestrictions:
       title: Access Key Restrictions
@@ -38473,7 +38473,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: When the key stops working. It must be in the future. Delegate a new key before then to keep the card funded.
+          description: 'When the key stops working. It must be in the future. To keep the card funded, create a new access key before then: when the new key becomes `ACTIVE`, Grid revokes this one in the same step, so the card is never without a key.'
           example: '2027-11-19T00:00:00Z'
     DelegatedKeyStatus:
       type: string
@@ -38484,9 +38484,9 @@ components:
       description: |-
         Status of a delegated signing key.
 
-        - `PENDING`: The key cannot sign yet. For a key on an Embedded Wallet internal account, the policy-creation leg never completed. For an access key, the wallet's root has not authorized it. Only these two kinds are ever `PENDING`.
+        - `PENDING`: The policy-creation leg never completed, so the key cannot sign yet. Only keys for an Embedded Wallet internal account are ever `PENDING`. An access key appears only once it is `ACTIVE`.
         - `ACTIVE`: Grid holds material that can sign for the card funding source or agent.
-        - `REVOKED`: The key was revoked through Grid, or the delegation was revoked at the provider. An access key is also `REVOKED` once the wallet's root revokes it on chain or its `expiresAt` passes. It can no longer sign, and this is terminal.
+        - `REVOKED`: The key was revoked through Grid, or the delegation was revoked at the provider. An access key is also `REVOKED` once the wallet's root revokes it on chain, its `expiresAt` passes, its spending limits are used up, or a newer access key for the same card funding source becomes `ACTIVE`. It can no longer sign, and this is terminal.
       example: ACTIVE
     DelegatedKey:
       title: Delegated Key
@@ -38532,6 +38532,11 @@ components:
           allOf:
             - $ref: '#/components/schemas/AccessKeyRestrictions'
           description: What the access key may spend, and until when, as the wallet's root authorized it. Present only on access keys. The network tracks what is left of each limit.
+        remainingSpendingLimits:
+          type: array
+          description: What is left of each spending limit, read from the network, in the smallest unit of each currency. Present only on an `ACTIVE` access key returned by `GET /auth/delegated-keys/{id}`. Lists omit it.
+          items:
+            $ref: '#/components/schemas/CurrencyAmount'
         nickname:
           type: string
           description: Human-readable label for the delegated key.
@@ -40721,7 +40726,7 @@ components:
         |-------|-------------|
         | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this status cannot transact. |
         | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
-        | `PENDING_AUTH` | The issuer has provisioned the card, but its USDB Embedded Wallet funding source lacks an active delegated signing key. Complete `POST /auth/delegated-keys` before using the card. |
+        | `PENDING_AUTH` | The issuer has provisioned the card, but its funding source lacks an active delegated key or access key. Complete `POST /auth/delegated-keys` before using the card. |
         | `ACTIVE` | The card is live and can authorize transactions. |
         | `FROZEN` | The card is temporarily disabled by the platform or by Grid. New authorizations are declined with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing settlements and refunds continue to reconcile. A card Grid froze for review, or one frozen as `COMPROMISED`, cannot be unfrozen by the platform. |
         | `CLOSED` | The card is permanently closed. Terminal, irreversible status. |

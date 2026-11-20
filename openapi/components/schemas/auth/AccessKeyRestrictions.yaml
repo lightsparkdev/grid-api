@@ -18,6 +18,8 @@ properties:
     type: string
     format: date-time
     description: >-
-      When the key stops working. It must be in the future. Delegate a new key
-      before then to keep the card funded.
+      When the key stops working. It must be in the future. To keep the card
+      funded, create a new access key before then: when the new key becomes
+      `ACTIVE`, Grid revokes this one in the same step, so the card is never
+      without a key.
     example: '2027-11-19T00:00:00Z'

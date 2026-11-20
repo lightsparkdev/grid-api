@@ -7,16 +7,16 @@ description: >-
   Status of a delegated signing key.
 
 
-  - `PENDING`: The key cannot sign yet. For a key on an Embedded Wallet
-  internal account, the policy-creation leg never completed. For an access key,
-  the wallet's root has not authorized it. Only these two kinds are ever
-  `PENDING`.
+  - `PENDING`: The policy-creation leg never completed, so the key cannot sign
+  yet. Only keys for an Embedded Wallet internal account are ever `PENDING`.
+  An access key appears only once it is `ACTIVE`.
 
   - `ACTIVE`: Grid holds material that can sign for the card funding source or
   agent.
 
   - `REVOKED`: The key was revoked through Grid, or the delegation was revoked
   at the provider. An access key is also `REVOKED` once the wallet's root
-  revokes it on chain or its `expiresAt` passes. It can no longer sign, and
-  this is terminal.
+  revokes it on chain, its `expiresAt` passes, its spending limits are used
+  up, or a newer access key for the same card funding source becomes
+  `ACTIVE`. It can no longer sign, and this is terminal.
 example: ACTIVE

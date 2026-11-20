@@ -18,5 +18,8 @@ properties:
       The most the key may spend in `currency` over its lifetime, in the
       smallest unit of the currency. Grid pays the network fee on every
       transfer it makes with the key, whatever the platform's network-fee
-      setting, so only transfer amounts count against the limit.
+      setting, so only transfer amounts count against the limit. An
+      authorization larger than what is left is declined with
+      `SPEND_LIMIT_EXCEEDED`. Once nothing is left of every limit, Grid
+      revokes the key and the card becomes `PENDING_AUTH`.
     example: 50000000
