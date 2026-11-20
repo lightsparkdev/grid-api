@@ -33,15 +33,19 @@ post:
 
 
     Grid checks the customer's delegated keys before it issues a challenge,
-    so the customer never signs one that cannot complete. An `ACTIVE`
-    delegated key created before the network being added was supported
-    blocks provisioning: the call returns `409 DELEGATED_KEYS_REISSUE_REQUIRED`,
+    so the customer never signs one that cannot complete. An `ACTIVE` or
+    `PENDING` delegated key created before the network being added was
+    supported blocks provisioning: the call returns
+    `409 DELEGATED_KEYS_REISSUE_REQUIRED`,
     with the keys in `details.delegatedKeyIds` and the cards and agents they
     serve in `details.cardIds` and `details.agentIds`. Revoke each key with
     `DELETE /auth/delegated-keys/{id}` and create it again with
     `POST /auth/delegated-keys`, then call this endpoint again. A revoked
     card key moves its card to `PENDING_AUTH` until the new key is `ACTIVE`.
-    The accounts keep `provisioningRequired: true` meanwhile.
+    The accounts keep `provisioningRequired: true` meanwhile. A revoked key
+    Grid is still cleaning up also blocks provisioning, but needs no action
+    from the customer: the call returns `409 OPERATION_IN_PROGRESS`. Retry
+    later.
 
 
     The call is idempotent. While a provisioning for the customer is still in
@@ -204,12 +208,15 @@ post:
         first wallet covers every currency the platform supports, so retry
         only if an account still has `provisioningRequired: true` once the
         wallet exists. Returned with `DELEGATED_KEYS_REISSUE_REQUIRED` when
-        the customer has an `ACTIVE` delegated key created before this network
-        was supported. Grid returns it in place of the `202`, and on a signed
+        the customer has an `ACTIVE` or `PENDING` delegated key created before
+        this network was supported. Grid returns it in place of the `202`, and on a signed
         retry if such a key appeared after the challenge. Revoke each key in
         `details.delegatedKeyIds` (`DELETE /auth/delegated-keys/{id}`) and
         create it again, then retry. `details.cardIds` and `details.agentIds`
-        list the cards and agents those keys serve.
+        list the cards and agents those keys serve. Returned with
+        `OPERATION_IN_PROGRESS` while Grid is still cleaning up a revoked key
+        from before this network was supported. Such keys are never listed in
+        `details`, since there is nothing to revoke. Retry later.
       content:
         application/json:
           schema:
