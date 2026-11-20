@@ -11,6 +11,21 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
+## Velocity decline snapshots on card transactions
+
+A declined card transaction caused by a velocity rule now carries `velocityRuleViolation`:
+a frozen snapshot of the rule and evaluated usage that caused the first decline. It includes
+the rule's id, name, owner (`LIGHTSPARK` or `PLATFORM`), scope (`GLOBAL`, `PLATFORM`, or
+`CARD`), metric, window, and configured caps, alongside the observed count and amount at
+the time of the decline. The snapshot survives rule changes or deletion, so you can audit
+why a past transaction was declined even if the rule has since been adjusted.
+
+`velocityRuleViolation` appears on `CARD_TRANSACTION.DECLINED` webhook payloads and in
+responses from `GET /transactions`. It is absent when no velocity violation was recorded,
+including older declines and declines for other reasons.
+
+See [velocity limits](/cards/card-management/velocity-limits#debugging-declined-transactions).
+
 ## Fund an EUR account by open banking
 
 `POST /internal-accounts/{id}/open-banking-payments` starts a payment that pulls euros
