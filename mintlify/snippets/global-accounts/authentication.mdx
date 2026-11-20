@@ -23,10 +23,16 @@ While Grid is still creating a wallet, `POST /auth/credentials` returns `409 WAL
 
 The wallet covers every currency your platform supports when it is created. If your platform later adds a currency on a network the wallet does not cover, Grid opens that currency's Global Account as `PENDING` with `provisioningRequired: true`. The customer signs once to add the network to their wallet:
 
-1. Call `POST /internal-accounts/{id}/provision` with the id of any of the customer's Global Accounts. Grid returns `202` with `payloadToSign`, `requestId`, and the `currencies` the signature opens.
-2. Stamp `payloadToSign` with an active session signing key, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`. The retry returns `200` with the customer's Global Accounts, now `ACTIVE`, and the `provisionedCurrencies` it opened.
+1. Call `POST /internal-accounts/{id}/provision` with the id of any of the customer's Global Accounts. Grid returns `202` with `payloadToSign`, `requestId`, and the `accountIds` and `currencies` the signature opens.
+2. Stamp `payloadToSign` with an active session signing key, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`. The retry returns `200` with the customer's Global Accounts, now `ACTIVE`, and the `provisionedAccountIds` and `provisionedCurrencies` it opened.
 
 One signature covers every account the customer has waiting. When nothing needs a signature, the first call returns `200` directly. A customer with no wallet yet gets `409 WALLET_NOT_PROVISIONED`.
+
+Grid checks the customer's delegated keys before it issues the challenge, so the customer never signs one that can't complete. If the customer has an `ACTIVE` delegated key created before the new network was supported, the first call returns `409 DELEGATED_KEYS_REISSUE_REQUIRED` instead of the `202`:
+
+- `details.delegatedKeyIds` lists the keys to re-create, and `details.cardIds` and `details.agentIds` list the cards and agents they serve.
+- Revoke each key with `DELETE /auth/delegated-keys/{id}` and create it again with `POST /auth/delegated-keys`, then call the provision endpoint again. A card whose key is revoked is `PENDING_AUTH` until its new key is `ACTIVE`.
+- The accounts keep `provisioningRequired: true` until provisioning completes.
 
 ## Registration vs. verification
 

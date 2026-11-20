@@ -7762,9 +7762,11 @@ paths:
 
         Provisioning is a two-step signed-retry flow (same pattern as adding a credential and exporting a wallet):
 
-        1. Call `POST /internal-accounts/{id}/provision` with no signature headers. When no account needs a signature, Grid opens any waiting accounts and returns `200` with no challenge. Otherwise the response is `202` with `payloadToSign`, `requestId`, `expiresAt`, and the `currencies` the signed retry opens.
+        1. Call `POST /internal-accounts/{id}/provision` with no signature headers. When no account needs a signature, Grid opens any waiting accounts and returns `200` with no challenge. Otherwise the response is `202` with `payloadToSign`, `requestId`, `expiresAt`, and the `accountIds` and `currencies` the signed retry opens.
 
         2. Use the session API keypair of a verified authentication credential on any of the customer's Embedded Wallet internal accounts to build an API-key stamp over `payloadToSign`. Retry with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `200` with the customer's Embedded Wallet accounts and the `provisionedCurrencies` it opened.
+
+        Grid checks the customer's delegated keys before it issues a challenge, so the customer never signs one that cannot complete. An `ACTIVE` delegated key created before the network being added was supported blocks provisioning: the call returns `409 DELEGATED_KEYS_REISSUE_REQUIRED`, with the keys in `details.delegatedKeyIds` and the cards and agents they serve in `details.cardIds` and `details.agentIds`. Revoke each key with `DELETE /auth/delegated-keys/{id}` and create it again with `POST /auth/delegated-keys`, then call this endpoint again. A revoked card key moves its card to `PENDING_AUTH` until the new key is `ACTIVE`. The accounts keep `provisioningRequired: true` meanwhile.
 
         The call is idempotent. While a provisioning for the customer is still in flight, the response is `200` with `status: "PROCESSING"`; re-send the byte-identical signed retry, or listen for the `INTERNAL_ACCOUNT.STATUS_UPDATED` webhook, to learn when the accounts are `ACTIVE`. Re-sending a signed retry after it completed returns the same `200`. An abandoned challenge changes nothing.
       operationId: provisionInternalAccount
@@ -7804,6 +7806,8 @@ paths:
                 provisioned:
                   summary: Signed retry opened the OUSD account
                   value:
+                    provisionedAccountIds:
+                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000011
                     provisionedCurrencies:
                       - OUSD
                     accounts:
@@ -7865,7 +7869,7 @@ paths:
                     status: PROCESSING
                     message: This provisioning is still being processed. Retry the same request in a moment.
         '202':
-          description: Challenge issued. Build an API-key stamp over `payloadToSign` with the session API keypair and echo `requestId` on the retry. `currencies` lists the accounts the signed retry opens.
+          description: Challenge issued. Build an API-key stamp over `payloadToSign` with the session API keypair and echo `requestId` on the retry. `accountIds` and `currencies` list the accounts the signed retry opens.
           content:
             application/json:
               schema:
@@ -7889,11 +7893,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: 'Conflict. Returned with `WALLET_NOT_PROVISIONED` when the customer has no wallet yet: before the first credential under `AT_FIRST_CREDENTIAL`, or while Grid is still creating the wallet. The first wallet covers every currency the platform supports, so retry only if an account still has `provisioningRequired: true` once the wallet exists.'
+          description: 'Conflict. Returned with `WALLET_NOT_PROVISIONED` when the customer has no wallet yet: before the first credential under `AT_FIRST_CREDENTIAL`, or while Grid is still creating the wallet. The first wallet covers every currency the platform supports, so retry only if an account still has `provisioningRequired: true` once the wallet exists. Returned with `DELEGATED_KEYS_REISSUE_REQUIRED` when the customer has an `ACTIVE` delegated key created before this network was supported. Grid returns it in place of the `202`, and on a signed retry if such a key appeared after the challenge. Revoke each key in `details.delegatedKeyIds` (`DELETE /auth/delegated-keys/{id}`) and create it again, then retry. `details.cardIds` and `details.agentIds` list the cards and agents those keys serve.'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+              examples:
+                reissueRequired:
+                  summary: Delegated keys must be created again first
+                  value:
+                    code: DELEGATED_KEYS_REISSUE_REQUIRED
+                    reason: Revoke and re-create the listed delegated keys before adding a network to this wallet.
+                    details:
+                      delegatedKeyIds:
+                        - DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+                      cardIds:
+                        - Card:019542f5-b3e7-1d02-0000-000000000010
+                      agentIds: []
         '500':
           description: Internal service error
           content:
@@ -23967,6 +23983,7 @@ components:
             | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
             | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
             | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
+            | DELEGATED_KEYS_REISSUE_REQUIRED | The customer has an `ACTIVE` delegated key created before the network being added was supported. Revoke each key in `details.delegatedKeyIds` with `DELETE /auth/delegated-keys/{id}`, create it again with `POST /auth/delegated-keys`, then retry. `details.cardIds` and `details.agentIds` list the cards and agents those keys serve |
             | PAYMENT_DOCUMENT_ALREADY_USED | The payment document is already attached to a quote. A document can be used on one quote only, so upload the file again to use it on another quote. `details.documentIds` lists each such document |
             | INVOICE_ALREADY_USED | Another quote for the Lightning invoice can still be executed or funded, or was executed. An invoice has one live quote at a time; ask the recipient for a new one, or retry once Grid has closed the earlier quote as expired |
             | DEPOSIT_NOT_PENDING | The deposit is not waiting for authorization (already authorized, expired or failed) |
@@ -24001,6 +24018,7 @@ components:
             - STABLECOIN_SYMBOL_ALREADY_EXISTS
             - STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS
             - WALLET_NOT_PROVISIONED
+            - DELEGATED_KEYS_REISSUE_REQUIRED
             - PAYMENT_DOCUMENT_ALREADY_USED
             - INVOICE_ALREADY_USED
             - DEPOSIT_NOT_PENDING
@@ -26355,7 +26373,7 @@ components:
           example: true
         provisioningRequired:
           type: boolean
-          description: Whether this `PENDING` Embedded Wallet account is waiting for the customer to authorize its wallet address. When `true`, call `POST /internal-accounts/{id}/provision` while the customer has an active session. `false` while Grid is still creating the customer's wallet and once the account is `ACTIVE`. Only present for `EMBEDDED_WALLET` internal accounts.
+          description: Whether this `PENDING` Embedded Wallet account is waiting for the customer to authorize its wallet address. When `true`, call `POST /internal-accounts/{id}/provision` while the customer has an active session. `false` while Grid is still creating the customer's wallet and once the account is `ACTIVE`. It stays `true` while the provision call is refused with `409 DELEGATED_KEYS_REISSUE_REQUIRED`. Only present for `EMBEDDED_WALLET` internal accounts.
           example: false
         cardCapabilities:
           $ref: '#/components/schemas/CardCapabilities'
@@ -37785,6 +37803,7 @@ components:
       type: object
       required:
         - accounts
+        - provisionedAccountIds
         - provisionedCurrencies
       properties:
         accounts:
@@ -37792,6 +37811,13 @@ components:
           description: Every Embedded Wallet internal account the customer holds, one per currency, each with its own `fundingPaymentInstructions`.
           items:
             $ref: '#/components/schemas/InternalAccount'
+        provisionedAccountIds:
+          type: array
+          description: Ids of the accounts this provisioning opened. Empty when no account was waiting for provisioning. A re-sent signed retry returns the same list as the retry that completed it.
+          items:
+            type: string
+          example:
+            - InternalAccount:019542f5-b3e7-1d02-0000-000000000011
         provisionedCurrencies:
           type: array
           description: Currency codes of the accounts this provisioning opened. Empty when no account was waiting for provisioning. A re-sent signed retry returns the same list as the retry that completed it.
@@ -37812,8 +37838,16 @@ components:
         - $ref: '#/components/schemas/SignedRequestChallenge'
         - type: object
           required:
+            - accountIds
             - currencies
           properties:
+            accountIds:
+              type: array
+              description: Ids of the internal accounts the signed retry opens.
+              items:
+                type: string
+              example:
+                - InternalAccount:019542f5-b3e7-1d02-0000-000000000011
             currencies:
               type: array
               description: Currency codes of the accounts the signed retry opens. Show them to the customer before asking for the signature.

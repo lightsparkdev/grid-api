@@ -88,8 +88,9 @@ properties:
       customer to authorize its wallet address. When `true`, call
       `POST /internal-accounts/{id}/provision` while the customer has an active
       session. `false` while Grid is still creating the customer's wallet and
-      once the account is `ACTIVE`. Only present for `EMBEDDED_WALLET`
-      internal accounts.
+      once the account is `ACTIVE`. It stays `true` while the provision call
+      is refused with `409 DELEGATED_KEYS_REISSUE_REQUIRED`. Only present for
+      `EMBEDDED_WALLET` internal accounts.
     example: false
   cardCapabilities:
     $ref: ../cards/CardCapabilities.yaml

@@ -20,8 +20,8 @@ post:
     1. Call `POST /internal-accounts/{id}/provision` with no signature
     headers. When no account needs a signature, Grid opens any waiting
     accounts and returns `200` with no challenge. Otherwise the response is
-    `202` with `payloadToSign`, `requestId`, `expiresAt`, and the `currencies`
-    the signed retry opens.
+    `202` with `payloadToSign`, `requestId`, `expiresAt`, and the `accountIds`
+    and `currencies` the signed retry opens.
 
 
     2. Use the session API keypair of a verified authentication credential on
@@ -30,6 +30,18 @@ post:
     `Grid-Wallet-Signature` header and the `requestId` echoed back as the
     `Request-Id` header. The signed retry returns `200` with the customer's
     Embedded Wallet accounts and the `provisionedCurrencies` it opened.
+
+
+    Grid checks the customer's delegated keys before it issues a challenge,
+    so the customer never signs one that cannot complete. An `ACTIVE`
+    delegated key created before the network being added was supported
+    blocks provisioning: the call returns `409 DELEGATED_KEYS_REISSUE_REQUIRED`,
+    with the keys in `details.delegatedKeyIds` and the cards and agents they
+    serve in `details.cardIds` and `details.agentIds`. Revoke each key with
+    `DELETE /auth/delegated-keys/{id}` and create it again with
+    `POST /auth/delegated-keys`, then call this endpoint again. A revoked
+    card key moves its card to `PENDING_AUTH` until the new key is `ACTIVE`.
+    The accounts keep `provisioningRequired: true` meanwhile.
 
 
     The call is idempotent. While a provisioning for the customer is still in
@@ -89,6 +101,8 @@ post:
             provisioned:
               summary: Signed retry opened the OUSD account
               value:
+                provisionedAccountIds:
+                  - InternalAccount:019542f5-b3e7-1d02-0000-000000000011
                 provisionedCurrencies:
                   - OUSD
                 accounts:
@@ -152,8 +166,8 @@ post:
     '202':
       description: >-
         Challenge issued. Build an API-key stamp over `payloadToSign` with the
-        session API keypair and echo `requestId` on the retry. `currencies`
-        lists the accounts the signed retry opens.
+        session API keypair and echo `requestId` on the retry. `accountIds`
+        and `currencies` list the accounts the signed retry opens.
       content:
         application/json:
           schema:
@@ -189,11 +203,29 @@ post:
         `AT_FIRST_CREDENTIAL`, or while Grid is still creating the wallet. The
         first wallet covers every currency the platform supports, so retry
         only if an account still has `provisioningRequired: true` once the
-        wallet exists.
+        wallet exists. Returned with `DELEGATED_KEYS_REISSUE_REQUIRED` when
+        the customer has an `ACTIVE` delegated key created before this network
+        was supported. Grid returns it in place of the `202`, and on a signed
+        retry if such a key appeared after the challenge. Revoke each key in
+        `details.delegatedKeyIds` (`DELETE /auth/delegated-keys/{id}`) and
+        create it again, then retry. `details.cardIds` and `details.agentIds`
+        list the cards and agents those keys serve.
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error409.yaml
+          examples:
+            reissueRequired:
+              summary: Delegated keys must be created again first
+              value:
+                code: DELEGATED_KEYS_REISSUE_REQUIRED
+                reason: Revoke and re-create the listed delegated keys before adding a network to this wallet.
+                details:
+                  delegatedKeyIds:
+                    - DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+                  cardIds:
+                    - Card:019542f5-b3e7-1d02-0000-000000000010
+                  agentIds: []
     '500':
       description: Internal service error
       content:
