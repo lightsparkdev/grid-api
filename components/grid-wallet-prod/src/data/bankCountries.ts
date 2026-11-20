@@ -1,7 +1,10 @@
-// Country list for the bank picker: the US plus the euro area (20), seeded from
-// the Grid docs' country-support table (mintlify/snippets/country-support.mdx).
-// The production demo settles on two rails only — ACH/wire/RTP for USD and SEPA
-// for EUR — so the other corridors in that table are deliberately not offered.
+// Curated country list for the bank picker, seeded from the Grid docs'
+// country-support table (mintlify/snippets/country-support.mdx - 55 countries).
+//
+// PAYING OUT reaches all of them: withdraw and send offer this whole list.
+// FUNDING does not — money comes IN over the rails the wallet settles (ACH/wire/
+// RTP for USD, SEPA for EUR), so Add money filters to FUNDING_ACCOUNT_TYPES
+// below. The split lives with the flow (useMoneySheet), not in this list.
 //
 // Accuracy split:
 // - `accountType` (and `region` for the CFA zones) are SPEC-BOUND: each must
@@ -19,6 +22,9 @@
 
 import { BANK_ACCOUNT_SCHEMAS } from './bankAccountFields.generated';
 
+/** Rails the wallet can be FUNDED over — Add money offers only these corridors. */
+export const FUNDING_ACCOUNT_TYPES = ['USD_ACCOUNT', 'EUR_ACCOUNT'];
+
 export interface BankCountry {
   /** ISO 3166-1 alpha-2, lowercase - also the circle-flags asset key. */
   code: string;
@@ -33,8 +39,11 @@ export interface BankCountry {
   bankName: string;
   /** Required for XAF/XOF accounts (CFA franc sub-region). */
   region?: string;
-  /** Top-of-picker rank (1 = highest by payment volume); unranked = "All" only. */
+  /** Top-of-picker rank for PAYOUTS (1 = highest by payment volume); unranked =
+   *  "All" only. Withdraw and send use this. */
   popularRank?: number;
+  /** Top-of-picker rank for FUNDING (Add money's shorter list). */
+  fundingRank?: number;
   /** Illustrative bank-name pool — repeat adds from this country cycle through
    *  these so saved banks don't look like duplicates. Falls back to [bankName].
    *  First entry should match `bankName` (the default for the first add). */
@@ -45,28 +54,74 @@ export interface BankCountry {
   sampleOverrides?: Record<string, string>;
 }
 
-export const BANK_COUNTRIES: BankCountry[] = [] = [
+export const BANK_COUNTRIES: BankCountry[] = [
   { code: 'at', name: 'Austria', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Erste Bank' },
   { code: 'be', name: 'Belgium', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'KBC' },
+  { code: 'bj', name: 'Benin', accountType: 'XOF_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 605, bankName: 'Bank of Africa', region: 'BJ' },
+  {
+    code: 'br',
+    name: 'Brazil',
+    accountType: 'BRL_ACCOUNT',
+    rail: 'PIX',
+    usdToLocal: 5.4,
+    bankName: 'Nubank',
+    popularRank: 5,
+    banks: ['Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil'],
+    // Spec example pairs an email pixKey with pixKeyType CPF; make it consistent.
+    sampleOverrides: { pixKey: '12345678901', pixKeyType: 'CPF', taxId: '12345678901' },
+  },
+  { code: 'bg', name: 'Bulgaria', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'DSK Bank' },
+  { code: 'cm', name: 'Cameroon', accountType: 'XAF_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 605, bankName: 'Afriland First Bank', region: 'CM' },
+  { code: 'cn', name: 'China', accountType: 'CNY_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 7.25, bankName: 'ICBC', popularRank: 8, banks: ['ICBC', 'Bank of China', 'China Construction Bank', 'Agricultural Bank of China'] },
   { code: 'hr', name: 'Croatia', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Zagrebacka banka' },
   { code: 'cy', name: 'Cyprus', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Bank of Cyprus' },
+  { code: 'cz', name: 'Czech Republic', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Komercni banka' },
+  { code: 'dk', name: 'Denmark', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Danske Bank' },
   { code: 'ee', name: 'Estonia', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Swedbank' },
   { code: 'fi', name: 'Finland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Nordea' },
-  { code: 'fr', name: 'France', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'BNP Paribas', popularRank: 3, banks: ['BNP Paribas', 'Crédit Agricole', 'Société Générale', 'La Banque Postale'] },
-  { code: 'de', name: 'Germany', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Deutsche Bank', banks: ['Deutsche Bank', 'Commerzbank', 'N26', 'DKB'], popularRank: 2 },
+  { code: 'fr', name: 'France', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'BNP Paribas', fundingRank: 3, banks: ['BNP Paribas', 'Crédit Agricole', 'Société Générale', 'La Banque Postale'] },
+  { code: 'de', name: 'Germany', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Deutsche Bank', popularRank: 7, banks: ['Deutsche Bank', 'Commerzbank', 'N26', 'DKB'], fundingRank: 2 },
   { code: 'gr', name: 'Greece', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Alpha Bank' },
+  { code: 'hu', name: 'Hungary', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'OTP Bank' },
+  { code: 'is', name: 'Iceland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Landsbankinn' },
+  { code: 'in', name: 'India', accountType: 'INR_ACCOUNT', rail: 'UPI', usdToLocal: 83.3, bankName: 'HDFC Bank', popularRank: 2, banks: ['HDFC Bank', 'ICICI Bank', 'State Bank of India', 'Axis Bank'] },
+  { code: 'id', name: 'Indonesia', accountType: 'IDR_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 15800, bankName: 'Bank Mandiri' },
   { code: 'ie', name: 'Ireland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'AIB' },
-  { code: 'it', name: 'Italy', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'UniCredit', popularRank: 5, banks: ['UniCredit', 'Intesa Sanpaolo', 'Banco BPM', 'BPER Banca'] },
+  { code: 'it', name: 'Italy', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'UniCredit', fundingRank: 5, banks: ['UniCredit', 'Intesa Sanpaolo', 'Banco BPM', 'BPER Banca'] },
+  { code: 'ci', name: 'Ivory Coast', accountType: 'XOF_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 605, bankName: 'Societe Generale', region: 'CI' },
+  { code: 'ke', name: 'Kenya', accountType: 'KES_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 129, bankName: 'Equity Bank' },
   { code: 'lv', name: 'Latvia', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Swedbank' },
+  { code: 'li', name: 'Liechtenstein', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'LGT Bank' },
   { code: 'lt', name: 'Lithuania', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'SEB' },
   { code: 'lu', name: 'Luxembourg', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'BIL' },
+  { code: 'mw', name: 'Malawi', accountType: 'MWK_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 1730, bankName: 'National Bank of Malawi' },
+  { code: 'my', name: 'Malaysia', accountType: 'MYR_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 4.7, bankName: 'Maybank' },
   { code: 'mt', name: 'Malta', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Bank of Valletta' },
-  { code: 'nl', name: 'Netherlands', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'ING', popularRank: 6, banks: ['ING', 'Rabobank', 'ABN AMRO', 'bunq'] },
+  { code: 'mx', name: 'Mexico', accountType: 'MXN_ACCOUNT', rail: 'SPEI', usdToLocal: 17.9, bankName: 'Nu México', popularRank: 1, banks: ['Nu México', 'BBVA', 'Santander', 'Citibanamex'] },
+  { code: 'nl', name: 'Netherlands', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'ING', fundingRank: 6, banks: ['ING', 'Rabobank', 'ABN AMRO', 'bunq'] },
+  { code: 'ng', name: 'Nigeria', accountType: 'NGN_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 1500, bankName: 'GTBank', popularRank: 4, banks: ['GTBank', 'Access Bank', 'Zenith Bank', 'First Bank'] },
+  { code: 'no', name: 'Norway', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'DNB' },
+  { code: 'ph', name: 'Philippines', accountType: 'PHP_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 58, bankName: 'BDO', popularRank: 3, banks: ['BDO', 'BPI', 'Metrobank', 'UnionBank'] },
+  { code: 'pl', name: 'Poland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'PKO Bank Polski' },
   { code: 'pt', name: 'Portugal', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Millennium BCP' },
+  { code: 'ro', name: 'Romania', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Banca Transilvania' },
+  { code: 'rw', name: 'Rwanda', accountType: 'RWF_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 1300, bankName: 'Bank of Kigali' },
+  { code: 'sn', name: 'Senegal', accountType: 'XOF_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 605, bankName: 'CBAO', region: 'SN' },
+  { code: 'sg', name: 'Singapore', accountType: 'SGD_ACCOUNT', rail: 'PayNow', usdToLocal: 1.35, bankName: 'DBS' },
   { code: 'sk', name: 'Slovakia', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Slovenska sporitelna' },
   { code: 'si', name: 'Slovenia', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'NLB' },
-  { code: 'es', name: 'Spain', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Santander', popularRank: 4, banks: ['Santander', 'BBVA', 'CaixaBank', 'Banco Sabadell'] },
-  { code: 'us', name: 'United States', accountType: 'USD_ACCOUNT', rail: 'ACH', usdToLocal: 1, bankName: 'Chase', popularRank: 1, banks: ['Chase', 'Bank of America', 'Wells Fargo', 'Citi'] },
+  { code: 'za', name: 'South Africa', accountType: 'ZAR_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 18.5, bankName: 'Standard Bank' },
+  { code: 'es', name: 'Spain', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Santander', fundingRank: 4, banks: ['Santander', 'BBVA', 'CaixaBank', 'Banco Sabadell'] },
+  { code: 'se', name: 'Sweden', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'SEB' },
+  { code: 'ch', name: 'Switzerland', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'UBS' },
+  { code: 'tz', name: 'Tanzania', accountType: 'TZS_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 2600, bankName: 'CRDB Bank' },
+  { code: 'th', name: 'Thailand', accountType: 'THB_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 36, bankName: 'Bangkok Bank' },
+  { code: 'ug', name: 'Uganda', accountType: 'UGX_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 3800, bankName: 'Stanbic Bank' },
+  { code: 'ae', name: 'United Arab Emirates', accountType: 'AED_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 3.67, bankName: 'Emirates NBD' },
+  { code: 'gb', name: 'United Kingdom', accountType: 'GBP_ACCOUNT', rail: 'Faster Payments', usdToLocal: 0.79, bankName: 'Barclays', popularRank: 6, banks: ['Barclays', 'HSBC', 'Lloyds', 'Monzo'] },
+  { code: 'us', name: 'United States', accountType: 'USD_ACCOUNT', rail: 'ACH', usdToLocal: 1, bankName: 'Chase', fundingRank: 1, banks: ['Chase', 'Bank of America', 'Wells Fargo', 'Citi'] },
+  { code: 'vn', name: 'Vietnam', accountType: 'VND_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 25400, bankName: 'Vietcombank' },
+  { code: 'zm', name: 'Zambia', accountType: 'ZMW_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 26, bankName: 'Zanaco' },
 ];
 
 /** ISO 4217 currency for a country, derived from the spec schema (not stored). */
@@ -78,24 +133,33 @@ export function currencyFor(country: BankCountry): string {
  *  recipient rows). NOT spec data — purely for the demo's "send to someone
  *  else's bank" story. Falls back to a neutral name. */
 const DEMO_RECIPIENTS: Record<string, string> = {
-  at: 'Lukas Gruber', be: 'Lucas Peeters', hr: 'Ivan Horvat', cy: 'Andreas Georgiou',
-  ee: 'Kristjan Tamm', fi: 'Mikko Virtanen', fr: 'Lucas Martin', de: 'Anna Müller',
-  gr: 'Giorgos Papadopoulos', ie: 'Conor Murphy', it: 'Giulia Rossi', lv: 'Jānis Bērziņš',
-  lt: 'Tomas Kazlauskas', lu: 'Marc Weber', mt: 'Joseph Borg', nl: 'Daan de Vries',
-  pt: 'João Silva', sk: 'Martin Horváth', si: 'Luka Novak', es: 'Javier García',
-  us: 'Emily Johnson'
+  at: 'Lukas Gruber', be: 'Lucas Peeters', bj: 'Kossi Adjavon', br: 'Lucas Silva',
+  bg: 'Georgi Ivanov', cm: 'Jean Mbarga', hr: 'Ivan Horvat', cy: 'Andreas Georgiou',
+  cn: 'Li Wei', cz: 'Jan Novák', dk: 'Mads Jensen', ee: 'Kristjan Tamm', fi: 'Mikko Virtanen',
+  fr: 'Lucas Martin', de: 'Anna Müller', gr: 'Giorgos Papadopoulos', hu: 'Bence Nagy',
+  is: 'Jón Jónsson', in: 'Priya Sharma', id: 'Budi Santoso', ie: 'Conor Murphy',
+  it: 'Giulia Rossi', ci: 'Kouadio Yao', ke: 'Wanjiru Kamau', lv: 'Jānis Bērziņš',
+  li: 'Thomas Frick', lt: 'Tomas Kazlauskas', lu: 'Marc Weber', mw: 'Chimwemwe Banda',
+  my: 'Nurul Abdullah', mt: 'Joseph Borg', mx: 'Carlos Herrera', nl: 'Daan de Vries',
+  ng: 'Chidi Okafor', no: 'Henrik Hansen', ph: 'Maria Santos', pl: 'Jakub Kowalski',
+  pt: 'João Silva', ro: 'Andrei Popescu', rw: 'Eric Mugisha', sn: 'Abdou Diop',
+  sg: 'Wei Lim', sk: 'Martin Horváth', si: 'Luka Novak', za: 'Thabo Nkosi',
+  es: 'Javier García', se: 'Erik Andersson', ch: 'Luca Meier', tz: 'Juma Mwita',
+  th: 'Somchai Suwan', ug: 'David Okello', ae: 'Ahmed Al Mansoori', gb: 'James Smith',
+  us: 'Emily Johnson', vn: 'Minh Nguyen', zm: 'Mwila Phiri',
 };
 
 /** Illustrative recipient-name POOLS for the popular corridors — repeat sends to
  *  the same country cycle through these so recipients don't duplicate (mirrors the
  *  bank-name pools). Others fall back to the single DEMO_RECIPIENTS name. */
 const DEMO_RECIPIENT_POOLS: Record<string, string[]> = {
-  us: ['Emily Johnson', 'Michael Chen', 'Sarah Miller', 'David Nguyen'],
+  mx: ['Carlos Herrera', 'Sofía Ramírez', 'Diego Torres', 'Valentina Cruz'],
+  in: ['Priya Sharma', 'Arjun Patel', 'Ananya Iyer', 'Rohan Gupta'],
+  ph: ['Maria Santos', 'Jose Reyes', 'Andrea Cruz', 'Mark Dela Rosa'],
+  ng: ['Chidi Okafor', 'Aisha Bello', 'Emeka Eze', 'Ngozi Adeyemi'],
+  br: ['Lucas Silva', 'Mariana Costa', 'Gabriel Souza', 'Beatriz Oliveira'],
+  gb: ['James Smith', 'Olivia Brown', 'Oliver Jones', 'Emily Wilson'],
   de: ['Anna Müller', 'Lukas Schmidt', 'Lena Wagner', 'Felix Becker'],
-  fr: ['Lucas Martin', 'Camille Bernard', 'Hugo Petit', 'Léa Moreau'],
-  es: ['Javier García', 'Lucía Fernández', 'Pablo Ruiz', 'Marta Díaz'],
-  it: ['Giulia Rossi', 'Marco Ferrari', 'Chiara Russo', 'Alessandro Conti'],
-  nl: ['Daan de Vries', 'Sanne Bakker', 'Lars Visser', 'Emma Jansen'],
 };
 
 /** Demo recipient-name pool for a country's send flow — cycle by saved count so
