@@ -241,6 +241,11 @@ post:
         funding source, or an `ACTIVE` or `PENDING` key already exists for this agent and
         Embedded Wallet pair. Revoke it with `DELETE /auth/delegated-keys/{id}`
         before creating a new one.
+        Returned with `WALLET_NOT_PROVISIONED` when the Embedded Wallet
+        account's wallet has no Spark account yet, which happens when it holds
+        only currencies on other networks. On the first call, Grid returns it
+        before issuing any challenge. On a signed retry, the challenge stays
+        usable, so the same retry succeeds once the Spark account exists.
       content:
         application/json:
           schema:
