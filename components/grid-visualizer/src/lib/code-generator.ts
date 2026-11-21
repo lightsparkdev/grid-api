@@ -50,13 +50,17 @@ function buildAccountInfoBody(sel: CurrencySelection): Record<string, unknown> {
 
   // Beneficiary goes inside accountInfo per API spec
   if (spec.beneficiaryRequired) {
-    info.beneficiary = {
+    const beneficiary: Record<string, unknown> = {
       beneficiaryType: 'INDIVIDUAL',
       fullName: sel.examplePerson.fullName,
       birthDate: '1985-06-20',
       nationality: sel.examplePerson.nationality,
       countryOfResidence: sel.examplePerson.nationality,
     };
+    if (sel.examplePerson.phoneNumber) {
+      beneficiary.phoneNumber = sel.examplePerson.phoneNumber;
+    }
+    info.beneficiary = beneficiary;
   }
 
   return info;
