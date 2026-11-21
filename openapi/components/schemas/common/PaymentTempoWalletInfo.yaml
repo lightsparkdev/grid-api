@@ -5,7 +5,4 @@ allOf:
   - type: object
     properties:
       assetType:
-        type: string
-        description: Type of asset
-        enum:
-          - USDC
+        $ref: ./TempoAssetType.yaml

@@ -25926,6 +25926,12 @@ components:
           type: string
           description: Tempo wallet address
           example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+    TempoAssetType:
+      type: string
+      description: Type of asset
+      enum:
+        - USDC
+        - OUSD
     PaymentTempoWalletInfo:
       title: Tempo Wallet
       allOf:
@@ -25934,10 +25940,7 @@ components:
         - type: object
           properties:
             assetType:
-              type: string
-              description: Type of asset
-              enum:
-                - USDC
+              $ref: '#/components/schemas/TempoAssetType'
     TronWalletInfo:
       type: object
       required:
