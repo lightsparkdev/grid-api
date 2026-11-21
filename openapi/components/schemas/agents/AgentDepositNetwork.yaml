@@ -6,12 +6,13 @@ enum:
   - SOLANA
   - POLYGON
   - AVALANCHE
+  - TEMPO
   - ARBITRUM
   - OPTIMISM
   - TRON
   - ACH_PULL
 description: >-
   Network from which an agent customer can fund a deposit. `TRON` deposits
-  support `USDT` only, and `OPTIMISM` and `AVALANCHE` deposits support `USDC`
-  only. `ACH_PULL` is an ACH debit from one of the customer's
+  support `USDT` only, and `OPTIMISM`, `AVALANCHE` and `TEMPO` deposits support
+  `USDC` only. `ACH_PULL` is an ACH debit from one of the customer's
   own US bank accounts (external accounts).
