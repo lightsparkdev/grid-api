@@ -4,3 +4,4 @@ allOf:
   - $ref: ../common/OptimismWalletInfo.yaml
   - $ref: ./WalletBeneficiaryFields.yaml
   - $ref: ./WalletCustodyFields.yaml
+  - $ref: ./ProviderWalletExternalAccountFields.yaml
