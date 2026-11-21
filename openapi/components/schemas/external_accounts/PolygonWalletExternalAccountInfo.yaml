@@ -4,3 +4,4 @@ allOf:
   - $ref: ../common/PolygonWalletInfo.yaml
   - $ref: ./WalletBeneficiaryFields.yaml
   - $ref: ./WalletCustodyFields.yaml
+  - $ref: ./ProviderWalletExternalAccountFields.yaml
