@@ -942,6 +942,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. Returned with `FORBIDDEN` when the customer's KYC/KYB application has been approved with a banking partner that locks the customer's details against updates. Both detail edits and sign-in contact changes are refused; a contact change is refused before any challenge is issued. Accepting agreements is not affected.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Customer not found
           content:
