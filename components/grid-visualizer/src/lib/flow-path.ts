@@ -41,7 +41,7 @@ function getCountryName(countryCode?: string): string {
   return countryCode ? map[countryCode] || countryCode.toUpperCase() : '';
 }
 
-const STABLES = new Set(['USDC', 'USDT', 'USDB']);
+const STABLES = new Set(['USDC', 'USDT', 'USDB', 'OUSD']);
 
 function colorForCurrency(code: string, type: 'fiat' | 'crypto'): ActionColor {
   if (type === 'fiat') return 'fiat';

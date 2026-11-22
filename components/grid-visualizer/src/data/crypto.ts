@@ -60,4 +60,12 @@ export const cryptoAssets: CryptoAsset[] = [
     ],
     examplePerson: { fullName: 'Jordan Lee', nationality: 'US' },
   },
+  {
+    symbol: 'OUSD',
+    name: 'Open USD',
+    accountTypes: [
+      { type: 'TEMPO_WALLET', label: 'Wallet', network: 'Tempo' },
+    ],
+    examplePerson: { fullName: 'Riley Park', nationality: 'US' },
+  },
 ];
