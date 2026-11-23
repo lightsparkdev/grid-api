@@ -24,7 +24,7 @@ While Grid is still creating a wallet, `POST /auth/credentials` returns `409 WAL
 The wallet covers every currency your platform supports when it is created. If your platform later adds a currency on a network the wallet does not cover, Grid opens that currency's Global Account as `PENDING` with `provisioningRequired: true` and sends `INTERNAL_ACCOUNT.STATUS_UPDATED` with it. The customer signs once to add the network to their wallet:
 
 1. Call `POST /internal-accounts/{id}/provision` with the id of any of the customer's Global Accounts. Grid returns `202` with `payloadToSign`, `requestId`, and the `accountIds` and `currencies` the signature opens.
-2. Stamp `payloadToSign` with an active session signing key, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`. The retry returns `200` with the customer's Global Accounts, now `ACTIVE`, and the `provisionedAccountIds` and `provisionedCurrencies` it opened.
+2. Stamp `payloadToSign` with an active session signing key, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`. The retry returns `200` with the customer's Global Accounts, now `ACTIVE`, and the `provisionedAccountIds` and `provisionedCurrencies` it opened. While the network is still being added, the retry instead returns `200 { "status": "PROCESSING" }` with no accounts. Re-send the same signed retry until it returns them. See <a href="#handling-a-still-processing-response">Handling a still-processing response</a>.
 
 One signature covers every account the customer has waiting. When nothing needs a signature, the first call returns `200` directly. A customer with no wallet yet gets `409 WALLET_NOT_PROVISIONED`.
 
@@ -1025,6 +1025,7 @@ Every signed-retry endpoint can return it on the retry step:
 | `DELETE /auth/credentials/{id}` | Revoke a credential |
 | `DELETE /auth/sessions/{id}` | Revoke a session |
 | `POST /internal-accounts/{id}/export` | Export wallet credentials |
+| `POST /internal-accounts/{id}/provision` | Add a network to the customer's wallet |
 | `PATCH /customers/{customerId}` | Change a sign-in email or phone number |
 
 To handle it:
@@ -1034,7 +1035,7 @@ To handle it:
 3. **Keep retrying with backoff** until you get a terminal response — the success code above, or an error. Grid also reconciles the operation to its terminal state on its own, so even a client that stops retrying and checks back later (for example via `GET /auth/credentials` or `GET /auth/sessions`) will see the settled result. **Wallet export is the exception**: Grid never stores the encrypted credentials, so re-sending the signed retry is the only way to receive them. Grid's own reconciliation settles the operation but has nothing to hand back, and the export challenge expires like any other (typically 5 minutes) — if it lapses, start a fresh export.
 
 <Note>
-  `verify`, `challenge`, `export`, and the customer update already use `200` for their terminal success body (`AuthSession`, the challenge response, the encrypted credentials, or the customer). For those four, `200` alone doesn't tell you which case you're in — check the response body's `status` field for `"PROCESSING"` to distinguish it from a settled success. The other four endpoints (`add credential`, `session refresh`, `revoke credential`, `revoke session`) use `201` or `204` on success, so a `200` by itself already means still-processing.
+  `verify`, `challenge`, `export`, `provision`, and the customer update already use `200` for their terminal success body (`AuthSession`, the challenge response, the encrypted credentials, the provisioned accounts, or the customer). For those five, `200` alone doesn't tell you which case you're in — check the response body's `status` field for `"PROCESSING"` to distinguish it from a settled success. The other four endpoints (`add credential`, `session refresh`, `revoke credential`, `revoke session`) use `201` or `204` on success, so a `200` by itself already means still-processing.
 </Note>
 
 ### Add an additional credential

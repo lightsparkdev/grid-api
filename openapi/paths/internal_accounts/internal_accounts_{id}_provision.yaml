@@ -67,7 +67,8 @@ post:
     or not, answers `200` with `status: "PROCESSING"`; re-send the
     byte-identical signed retry, or listen for the
     `INTERNAL_ACCOUNT.STATUS_UPDATED` webhook, to learn when the accounts are `ACTIVE`. Re-sending a signed retry after
-    it completed returns the same `200`. An abandoned challenge changes
+    it completed returns the same `200`, even after the challenge's
+    `expiresAt`. An abandoned challenge changes
     nothing.
   operationId: provisionInternalAccount
   tags:
@@ -204,7 +205,10 @@ post:
         Unauthorized. Returned when the provided `Grid-Wallet-Signature` is
         missing on a retry, malformed, or not made by a session of one of the
         customer's verified credentials, or when the `Request-Id` does not
-        match an unexpired pending provisioning challenge for this customer.
+        match a provisioning challenge issued for this customer, or matches
+        one that expired before any signed retry for it completed. A
+        byte-identical re-send of a signed retry that already completed is not
+        refused: it returns that retry's `200`, even after `expiresAt`.
       content:
         application/json:
           schema:
