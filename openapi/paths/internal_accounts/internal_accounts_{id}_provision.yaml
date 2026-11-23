@@ -63,7 +63,8 @@ post:
 
 
     The call is idempotent. While a provisioning for the customer is still in
-    flight, the response is `200` with `status: "PROCESSING"`; re-send the
+    flight, the accounts keep `provisioningRequired: true` and any call, signed
+    or not, answers `200` with `status: "PROCESSING"`; re-send the
     byte-identical signed retry, or listen for the
     `INTERNAL_ACCOUNT.STATUS_UPDATED` webhook, to learn when the accounts are `ACTIVE`. Re-sending a signed retry after
     it completed returns the same `200`. An abandoned challenge changes

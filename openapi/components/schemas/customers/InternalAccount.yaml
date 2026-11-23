@@ -89,7 +89,10 @@ properties:
       `POST /internal-accounts/{id}/provision` while the customer has an active
       session. `false` while Grid is still creating the customer's wallet and
       once the account is `ACTIVE`. It stays `true` while the provision call
-      is refused with `409 DELEGATED_KEYS_REISSUE_REQUIRED`. Only present for
+      is refused with `409 DELEGATED_KEYS_REISSUE_REQUIRED`, and while the
+      signed provisioning is still adding the network to the wallet. A call to
+      `POST /internal-accounts/{id}/provision` meanwhile answers `200` with
+      `status: "PROCESSING"`. Only present for
       `EMBEDDED_WALLET` internal accounts.
     example: false
   cardCapabilities:

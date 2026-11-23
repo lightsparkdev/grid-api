@@ -7770,7 +7770,7 @@ paths:
 
         Each call without signature headers issues a new challenge, and every issued challenge stays valid until its `expiresAt`. The first signed retry to arrive adds the waiting networks. A signed retry for another challenge, sent after that, adds nothing and returns `200` with the accounts its challenge covered, which are open by then. When a signed retry gets `409 DELEGATED_KEYS_REISSUE_REQUIRED`, its challenge is not used up: once the keys are revoked, re-send the same signed retry before `expiresAt`, or start over with a call without signature headers.
 
-        The call is idempotent. While a provisioning for the customer is still in flight, the response is `200` with `status: "PROCESSING"`; re-send the byte-identical signed retry, or listen for the `INTERNAL_ACCOUNT.STATUS_UPDATED` webhook, to learn when the accounts are `ACTIVE`. Re-sending a signed retry after it completed returns the same `200`. An abandoned challenge changes nothing.
+        The call is idempotent. While a provisioning for the customer is still in flight, the accounts keep `provisioningRequired: true` and any call, signed or not, answers `200` with `status: "PROCESSING"`; re-send the byte-identical signed retry, or listen for the `INTERNAL_ACCOUNT.STATUS_UPDATED` webhook, to learn when the accounts are `ACTIVE`. Re-sending a signed retry after it completed returns the same `200`. An abandoned challenge changes nothing.
       operationId: provisionInternalAccount
       tags:
         - Internal Accounts
@@ -26389,7 +26389,7 @@ components:
           example: true
         provisioningRequired:
           type: boolean
-          description: Whether this `PENDING` Embedded Wallet account is waiting for the customer to authorize its wallet address. When `true`, call `POST /internal-accounts/{id}/provision` while the customer has an active session. `false` while Grid is still creating the customer's wallet and once the account is `ACTIVE`. It stays `true` while the provision call is refused with `409 DELEGATED_KEYS_REISSUE_REQUIRED`. Only present for `EMBEDDED_WALLET` internal accounts.
+          description: 'Whether this `PENDING` Embedded Wallet account is waiting for the customer to authorize its wallet address. When `true`, call `POST /internal-accounts/{id}/provision` while the customer has an active session. `false` while Grid is still creating the customer''s wallet and once the account is `ACTIVE`. It stays `true` while the provision call is refused with `409 DELEGATED_KEYS_REISSUE_REQUIRED`, and while the signed provisioning is still adding the network to the wallet. A call to `POST /internal-accounts/{id}/provision` meanwhile answers `200` with `status: "PROCESSING"`. Only present for `EMBEDDED_WALLET` internal accounts.'
           example: false
         cardCapabilities:
           $ref: '#/components/schemas/CardCapabilities'
