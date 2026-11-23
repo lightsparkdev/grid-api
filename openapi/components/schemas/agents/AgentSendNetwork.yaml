@@ -5,10 +5,11 @@ enum:
   - SOLANA
   - POLYGON
   - AVALANCHE
+  - TEMPO
   - ARBITRUM
   - OPTIMISM
   - TRON
 description: >-
   Network an agent can send USDC or USDT to from an embedded wallet. `TRON`
-  supports `USDT` only, and `BASE`, `OPTIMISM` and `AVALANCHE` support `USDC`
-  only.
+  supports `USDT` only, and `BASE`, `OPTIMISM`, `AVALANCHE` and `TEMPO` support
+  `USDC` only.
