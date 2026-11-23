@@ -65,7 +65,7 @@ delete:
     To stop spending on a single card, freeze or close that card.
 
 
-    Revoking a provider wallet key revokes the wallet's whole delegation:
+    Revoking a `DYNAMIC` provider wallet key revokes the wallet's whole delegation:
     every key on that wallet becomes `REVOKED`, and Grid deletes its share and
     asks the provider to stop reporting the wallet as delegated. No cardholder
     approval is needed. To stop a single card, freeze or close it instead. When
@@ -73,9 +73,11 @@ delete:
     wallet's open cards.
 
 
-    Revoking an access key discards Grid's copy of its private key, so the key
-    can never sign again. The authorization may already be on chain. To remove
-    it there as well, have the wallet's root revoke `keyId`.
+    Revoking an access key revokes only that key: Grid discards its copy of
+    the private key, so the key can never sign again. Other access keys on the
+    same wallet, for other cards, stay usable. The authorization may already
+    be on chain. To remove it there as well, have the wallet's root revoke
+    `keyId`.
   operationId: revokeDelegatedKey
   tags:
     - Embedded Wallet Auth

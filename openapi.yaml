@@ -9294,9 +9294,9 @@ paths:
 
         For a shared Turnkey signer, supply any of its card binding IDs. Grid disables all bindings to that signer and schedules its removal at Turnkey. Repeating the request returns 204, including after a replacement is approved. To stop spending on a single card, freeze or close that card.
 
-        Revoking a provider wallet key revokes the wallet's whole delegation: every key on that wallet becomes `REVOKED`, and Grid deletes its share and asks the provider to stop reporting the wallet as delegated. No cardholder approval is needed. To stop a single card, freeze or close it instead. When the cardholder delegates the wallet again, Grid creates new keys for the wallet's open cards.
+        Revoking a `DYNAMIC` provider wallet key revokes the wallet's whole delegation: every key on that wallet becomes `REVOKED`, and Grid deletes its share and asks the provider to stop reporting the wallet as delegated. No cardholder approval is needed. To stop a single card, freeze or close it instead. When the cardholder delegates the wallet again, Grid creates new keys for the wallet's open cards.
 
-        Revoking an access key discards Grid's copy of its private key, so the key can never sign again. The authorization may already be on chain. To remove it there as well, have the wallet's root revoke `keyId`.
+        Revoking an access key revokes only that key: Grid discards its copy of the private key, so the key can never sign again. Other access keys on the same wallet, for other cards, stay usable. The authorization may already be on chain. To remove it there as well, have the wallet's root revoke `keyId`.
       operationId: revokeDelegatedKey
       tags:
         - Embedded Wallet Auth
@@ -31281,33 +31281,18 @@ components:
           format: uuid
           description: Dynamic's identifier for the wallet.
           example: b6f2c0e4-9d2a-4c1e-8f3b-2a7d5e9c1f40
-    PlatformWalletInfo:
-      title: Platform Wallet
-      type: object
-      required:
-        - provider
-      properties:
-        provider:
-          type: string
-          enum:
-            - PLATFORM
-          description: Your platform runs the wallet and holds its root key. Grid funds the wallet's cards through an access key that the wallet's root authorizes, created with `POST /auth/access-keys`. Accepted only on a `TEMPO_WALLET` external account.
-          example: PLATFORM
     ProviderWalletExternalAccountFields:
       type: object
       properties:
         providerWallet:
-          description: The provider that custodies this wallet and the wallet's identity there, or `PLATFORM` when your platform runs the wallet itself. Accepted only on `POST /customers/external-accounts`. Omit it for a plain destination address. An account must carry it to fund a card.
+          description: The provider that custodies this wallet and the wallet's identity there. Accepted only on `POST /customers/external-accounts`. Omit it for a plain destination address. An account must carry it to fund a card.
           oneOf:
             - title: Dynamic Wallet
               $ref: '#/components/schemas/DynamicWalletInfo'
-            - title: Platform Wallet
-              $ref: '#/components/schemas/PlatformWalletInfo'
           discriminator:
             propertyName: provider
             mapping:
               DYNAMIC: '#/components/schemas/DynamicWalletInfo'
-              PLATFORM: '#/components/schemas/PlatformWalletInfo'
     BaseWalletExternalAccountInfo:
       title: Base Wallet
       allOf:
@@ -31386,6 +31371,30 @@ components:
         - $ref: '#/components/schemas/AvalancheWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+    PlatformWalletInfo:
+      title: Platform Wallet
+      type: object
+      required:
+        - provider
+      properties:
+        provider:
+          type: string
+          enum:
+            - PLATFORM
+          description: Your platform runs the wallet and holds its root key. Grid funds the wallet's cards through an access key that the wallet's root authorizes, created with `POST /auth/access-keys`. Accepted only on a `TEMPO_WALLET` external account.
+          example: PLATFORM
+    PlatformProviderWalletFields:
+      type: object
+      properties:
+        providerWallet:
+          description: Set when your platform runs this Tempo wallet itself and will fund cards from it with an access key. Accepted only on `POST /customers/external-accounts`. Omit it for a plain destination address. An account must carry it to fund a card.
+          oneOf:
+            - title: Platform Wallet
+              $ref: '#/components/schemas/PlatformWalletInfo'
+          discriminator:
+            propertyName: provider
+            mapping:
+              PLATFORM: '#/components/schemas/PlatformWalletInfo'
     TempoWalletExternalAccountInfo:
       title: Tempo Wallet
       allOf:
@@ -31393,7 +31402,7 @@ components:
         - $ref: '#/components/schemas/TempoWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
-        - $ref: '#/components/schemas/ProviderWalletExternalAccountFields'
+        - $ref: '#/components/schemas/PlatformProviderWalletFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
@@ -38676,7 +38685,7 @@ components:
         - status
         - createdAt
         - updatedAt
-      description: 'A delegated signing key for either a card funding source or an agent. Card keys include `cardId` and `fundingSourceId`; agent keys include `agentId`. Returned from `POST /auth/delegated-keys` and `POST /auth/access-keys` (on activation), `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`. `kind` says which kind of key it is. `accountId` says where the signing material comes from. For a key on an Embedded Wallet internal account, Grid generates and custodies the keypair and never returns the private key; `publicKey` identifies it. While `ACTIVE`, Grid may use it to authorize Spark token-transaction signing for the selected card funding source or agent in place of a session keypair. A key on a crypto external account that carries `providerWallet` is a provider wallet key. For a `DYNAMIC` wallet, Grid creates it when the cardholder has delegated the wallet at the provider and the card is funded by that wallet, and while `ACTIVE` uses the delegated share to sign the card''s transfers. For a `PLATFORM` wallet on Tempo, it is an access key: Grid generates it when you call `POST /auth/access-keys`, the wallet''s root account authorizes it, and while `ACTIVE` Grid uses it to make the card''s transfers within `restrictions`.'
+      description: 'A delegated signing key for either a card funding source or an agent. Card keys include `cardId` and `fundingSourceId`; agent keys include `agentId`. Returned from `POST /auth/delegated-keys` and `POST /auth/access-keys` (on activation), `GET /auth/delegated-keys` (list), and `GET /auth/delegated-keys/{id}`. `kind` says which kind of key it is. `accountId` says where the signing material comes from. For a key on an Embedded Wallet internal account, Grid generates and custodies the keypair and never returns the private key; `publicKey` identifies it. While `ACTIVE`, Grid may use it to authorize Spark token-transaction signing for the selected card funding source or agent in place of a session keypair. A key on a crypto external account whose `providerWallet` is `DYNAMIC` is a provider wallet key: Grid creates it when the cardholder has delegated the wallet at the provider and the card is funded by that wallet, and while `ACTIVE` uses the delegated share to sign the card''s transfers. A key on a `TEMPO_WALLET` external account whose `providerWallet` is `PLATFORM` is an access key: Grid generates it when you call `POST /auth/access-keys`, the wallet''s root account authorizes it, and while `ACTIVE` Grid uses it to make the card''s transfers within `restrictions`.'
       properties:
         id:
           type: string
@@ -38698,7 +38707,7 @@ components:
           example: Agent:019542f5-b3e7-1d02-0000-000000000042
         accountId:
           type: string
-          description: The account this key is delegated for, derived from the card funding source or the agent's customer. An Embedded Wallet internal account for a key Grid generated, or a crypto external account that carries `providerWallet` for a provider wallet key.
+          description: The account this key is delegated for, derived from the card funding source or the agent's customer. An Embedded Wallet internal account for a key Grid generated, or a crypto external account that carries `providerWallet` for a provider wallet key or an access key.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         publicKey:
           type: string

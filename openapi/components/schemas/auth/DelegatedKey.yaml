@@ -19,14 +19,14 @@ description: >-
   and never returns the private key; `publicKey` identifies it. While `ACTIVE`,
   Grid may use it to authorize Spark token-transaction signing for the selected
   card funding source or agent in place of a session keypair. A key on a crypto
-  external account that carries `providerWallet` is a provider wallet key. For
-  a `DYNAMIC` wallet, Grid creates it when the cardholder has delegated the
-  wallet at the provider and the card is funded by that wallet, and while
-  `ACTIVE` uses the delegated share to sign the card's transfers. For a
-  `PLATFORM` wallet on Tempo, it is an access key: Grid generates it when you
-  call `POST /auth/access-keys`, the wallet's root account authorizes it, and
-  while `ACTIVE` Grid uses it to make the card's transfers within
-  `restrictions`.
+  external account whose `providerWallet` is `DYNAMIC` is a provider wallet
+  key: Grid creates it when the cardholder has delegated the wallet at the
+  provider and the card is funded by that wallet, and while `ACTIVE` uses the
+  delegated share to sign the card's transfers. A key on a `TEMPO_WALLET`
+  external account whose `providerWallet` is `PLATFORM` is an access key: Grid
+  generates it when you call `POST /auth/access-keys`, the wallet's root
+  account authorizes it, and while `ACTIVE` Grid uses it to make the card's
+  transfers within `restrictions`.
 properties:
   id:
     type: string
@@ -52,7 +52,7 @@ properties:
       The account this key is delegated for, derived from the card funding
       source or the agent's customer. An Embedded Wallet internal account for a
       key Grid generated, or a crypto external account that carries
-      `providerWallet` for a provider wallet key.
+      `providerWallet` for a provider wallet key or an access key.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   publicKey:
     type: string
