@@ -11,6 +11,87 @@ changes and roadmap, [contact our team](https://www.lightspark.com/contact).
 
 <Update label="November 2026">
 
+## Fund every card from a Turnkey wallet with one approval
+
+A Turnkey Embedded Wallet owner now approves card funding once for the wallet,
+not once per card. After that approval, `POST /auth/delegated-keys` for another
+eligible card returns `201` with an `ACTIVE` delegated key and no challenge. The
+request body and signed retries are unchanged. A wallet that has ever had a
+card-specific signer, including a revoked one, keeps approving each card on its own.
+`DELETE /auth/delegated-keys/{id}` with any card's key ID revokes the shared signer
+for every card it funds. To stop spending on one card only, freeze or close that
+card. See [Embedded Wallet funding](/cards/card-management/embedded-wallet-funding#authorize-card-funding-once-per-wallet).
+
+## See which velocity limit declined a card transaction
+
+A card transaction declined by a velocity limit now carries `velocityRuleViolation`
+on `GET /transactions`, `GET /transactions/{transactionId}`, and card transaction
+webhooks. It records the rule as it stood at the decline: `ruleId`, `name`, `owner`
+(`PLATFORM` or `LIGHTSPARK`), `scope`, `metric`, `window`, its caps, and the usage
+Grid evaluated. Grid keeps this record after the rule is changed or deleted.
+Approvals, declines for other reasons, and declines from before this change have no
+`velocityRuleViolation`. See [velocity limits](/cards/card-management/velocity-limits).
+
+## Sign in to a Global Account with an EVM wallet
+
+`EVM_WALLET` is a new auth credential type. A wallet the customer already holds
+signs a Grid message with `personal_sign` to prove it owns the address, sent in the
+`Grid-Wallet-Ownership-Signature` header. As the account's first credential, it
+creates the account's wallet. It then signs in through
+`POST /auth/credentials/{id}/challenge` and `POST /auth/credentials/{id}/verify`.
+`POST /auth/admin-credentials` also takes an `EVM_WALLET` administrator, added by
+its secp256k1 `publicKey` with the owner's approval. See
+[EVM wallet](/global-accounts/authentication#evm-wallet) and
+[administrators](/global-accounts/admin-credentials).
+
+## Choose when embedded wallets are created and how long sessions last
+
+`embeddedWalletConfig` on `PATCH /config` takes two new settings:
+
+- `walletProvisioning`: `AT_CUSTOMER_CREATE` (the default) creates the wallet when the
+  customer's embedded-wallet account opens, with the customer's email as its first
+  `EMAIL_OTP` credential. `AT_FIRST_CREDENTIAL` waits for the first credential added
+  with `POST /auth/credentials`, and creating a customer no longer requires an email.
+- `sessionLifetime`: how long each new embedded-wallet session lasts, in seconds. It
+  defaults to 900 (15 minutes) and must be at least 60.
+
+See [when the wallet is created](/global-accounts/authentication#when-the-wallet-is-created)
+and [session lifetime](/global-accounts/managing-sessions#session-lifetime).
+
+## Send a debit authorization with a bank pull
+
+`POST /quotes` and `POST /transfer-in` take an optional `debitAuthorization` when the
+source is a customer's external bank account. It records when the customer agreed
+(`authorizedAt`), the version of the text you showed (`textVersion`, and optionally
+`textSha256`), and the customer's `ipAddress` and `userAgent`. Grid stores it with the
+pull so it can be produced if the customer's bank asks for proof. It does not change
+how the pull is processed. Sending it with any other source returns `400 INVALID_INPUT`.
+
+## RTP and FedNow transactions carry network IDs
+
+RTP and FedNow payouts and deposits now return `railDetails`. Besides `endToEndId`,
+each carries `uetr`, `transactionId`, and `instructionId` when the bank reports them.
+Give `transactionId` to the counterparty's bank to trace an instant payment.
+
+## Payouts report `BANK_TRANSFER` for bank rails
+
+A payout over a bank rail that `BANK_TRANSFER` covers now reports `paymentRail:
+BANK_TRANSFER` instead of the specific rail name. This applies to outgoing
+transactions and their webhooks, claimable payouts, and sweep rule destinations. The
+names `ACH_COLOMBIA`, `BRE_B`, `SEPA`, `SEPA_INSTANT`, `NEFT`, `RTGS`, `INSTAPAY`, and
+`PESONET` are deprecated for payouts. Requests that send them still work. Other rails,
+such as `UPI`, `FASTER_PAYMENTS`, and `ACH`, are unchanged.
+
+<Warning>
+If you read `paymentRail` on payouts in EUR, COP, DKK, INR, or PHP, accept
+`BANK_TRANSFER`.
+</Warning>
+
+## Stablecoin burns pay out over FedNow
+
+A stablecoin burn's destination `rail` accepts `FEDNOW_CREDIT`, and stablecoin
+operations report it as a destination rail.
+
 ## Fund an EUR account by open banking
 
 `POST /internal-accounts/{id}/open-banking-payments` starts a payment that pulls euros
