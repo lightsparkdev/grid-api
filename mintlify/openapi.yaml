@@ -8960,18 +8960,20 @@ paths:
   /auth/delegated-keys:
     post:
       summary: Create a delegated signing key
-      description: |
+      description: |-
         Only keys for an Embedded Wallet internal account are created through this endpoint. Grid creates provider wallet keys itself, when the cardholder has delegated the wallet at the provider and a card is funded by that wallet.
+
+        On every platform that issues USDB-funded cards, a Turnkey wallet owner authorizes Grid once to fund current and future eligible cards. A wallet that has ever used a card-specific signer continues to authorize each card individually, including after revocation. Send the same cardId, internalAccountId and nickname in both cases. Agent grants retain their existing scope.
 
         Delegate Spark token-transaction signing authority for a card funding source or agent backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested owner and internal account to identify the wallet, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
 
-        1. Call `POST /auth/delegated-keys` with no signature headers. Grid generates the delegated keypair and the response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
+        1. Call `POST /auth/delegated-keys` with no signature headers. If an active wallet signer already covers this card, Grid returns `201` with the active delegated key and the flow is complete. Otherwise, Grid returns `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
 
         2. Use the session API keypair of a verified credential on the requested Embedded Wallet internal account to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The response is a second `202` with a new `payloadToSign`, `requestId`, and `expiresAt`.
 
-        3. Stamp the new `payloadToSign` with the same session keypair and retry once more with the new `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status. For card keys, a provisioned `PENDING_AUTH` card using this funding source becomes `ACTIVE` automatically. Cards still provisioning remain `PROCESSING`; frozen and closed cards retain their status.
+        3. Show the wallet owner the permissions in the policy challenge. After approval, stamp the exact `payloadToSign` string from the second `202` response with the same session keypair. Retry with that stamp and the same response's `requestId` as `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status. For card keys, a provisioned `PENDING_AUTH` card using this funding source becomes `ACTIVE` automatically. Cards still provisioning remain `PROCESSING`; frozen and closed cards retain their status.
 
-        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the signer identity exists but holds no policies, so it cannot sign or revoke itself. Abandoned `PENDING` card keys do not block creating another delegated key. For an agent, a `PENDING` key blocks a new one until it is revoked with `DELETE /auth/delegated-keys/{id}`; revoking a `PENDING` key only discards Grid's key material. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account or for policy-approved agent actions in place of a session keypair; the platform never handles the key material.
+        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the signer identity exists but holds no policies, so it cannot sign or revoke itself. Resume a pending wallet-wide approval on the initiating card. For a historical card-specific signer, an abandoned pending key allows a new attempt. For an agent, a `PENDING` key blocks a new one until it is revoked with `DELETE /auth/delegated-keys/{id}`; revoking a `PENDING` key only discards Grid's key material. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account or for policy-approved agent actions in place of a session keypair; the platform never handles the key material.
 
         Each card funding source may have at most one `ACTIVE` delegated key, and each agent and Embedded Wallet pair at most one unrevoked (`PENDING` or `ACTIVE`) delegated key; revoke the existing key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by the public API. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
       operationId: createDelegatedKey
@@ -9009,7 +9011,7 @@ paths:
                   nickname: Card payments key
       responses:
         '201':
-          description: Delegated key created and policy granted. The key is `ACTIVE` and Grid may use it to stamp card-payment quote executions or policy-approved actions for the selected agent.
+          description: Delegated key activated or an existing wallet signer linked to this card. An active wallet signer returns 201 on the first request, without a challenge. The key is `ACTIVE` and Grid may use it to stamp card-payment quote executions or policy-approved actions for the selected agent.
           content:
             application/json:
               schema:
@@ -9052,7 +9054,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: An `ACTIVE` delegated key already exists for this card funding source, or an `ACTIVE` or `PENDING` key already exists for this agent and Embedded Wallet pair. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one.
+          description: If another card has a wallet approval in progress, complete it on its initiating card, then retry for this card. If the funding source already has an `ACTIVE` card-specific key, use that key. To replace it, revoke it with `DELETE /auth/delegated-keys/{id}` before retrying. For an agent and Embedded Wallet pair, revoke its existing `PENDING` or `ACTIVE` key before requesting a replacement.
           content:
             application/json:
               schema:
@@ -9160,6 +9162,8 @@ paths:
 
         The underlying signing policies are left in place. Their consensus references the now-deleted signer identity, so they can never authorize anything, and deleting them is unnecessary for correctness or security.
 
+        For a shared Turnkey signer, supply any of its card binding IDs. Grid disables all bindings to that signer and schedules its removal at Turnkey. Repeating the request returns 204, including after a replacement is approved. To stop spending on a single card, freeze or close that card.
+
         Revoking a provider wallet key revokes the wallet's whole delegation: every key on that wallet becomes `REVOKED`, and Grid deletes its share and asks the provider to stop reporting the wallet as delegated. No cardholder approval is needed. To stop a single card, freeze or close it instead. When the cardholder delegates the wallet again, Grid creates new keys for the wallet's open cards.
       operationId: revokeDelegatedKey
       tags:
@@ -9178,7 +9182,7 @@ paths:
         '204':
           description: Delegated key revoked. The key can no longer authorize signing.
         '400':
-          description: Bad request. Returned when the delegated key has already been revoked, or is a card key that is not `ACTIVE`.
+          description: Bad request. Returned when the delegated key has already been revoked for a card-specific delegation, or is a pending card signer.
           content:
             application/json:
               schema:
@@ -27903,7 +27907,6 @@ components:
       type: object
       required:
         - beneficiaryType
-        - countryOfResidence
         - fullName
         - phoneNumber
       properties:
@@ -31585,7 +31588,6 @@ components:
       type: object
       required:
         - beneficiaryType
-        - countryOfResidence
         - fullName
       properties:
         beneficiaryType:
@@ -31620,7 +31622,6 @@ components:
       type: object
       required:
         - beneficiaryType
-        - countryOfResidence
         - legalName
       properties:
         beneficiaryType:

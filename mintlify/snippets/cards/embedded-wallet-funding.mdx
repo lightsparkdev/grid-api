@@ -31,7 +31,7 @@ key.
 ## How the pieces fit
 
 1. You issue the card with the wallet account as its `fundingSource`.
-2. The cardholder authorizes a delegated key for that card and account
+2. The cardholder authorizes one delegated key for eligible cards on the wallet
    through a three-leg signed-retry flow. Grid generates the keypair,
    registers it as a signer on the wallet, and keeps the private key.
 3. When an authorization arrives, Grid runs its usual decisioning, then pays
@@ -70,10 +70,16 @@ Manage transaction amount, daily amount, and daily count caps through
 platform defaults or supply the issued card's id for a card-specific limit.
 USD- and USDB-funded USD cards both use USD cents for amount caps.
 
+## Authorize card funding once per wallet
+
+Use `POST /auth/delegated-keys` with the card’s ID, wallet account ID and nickname. On every platform that issues USDB-funded cards, the first eligible card on a Turnkey wallet without a prior card-specific signer starts a wallet-wide approval. Before signing the policy, ask the wallet owner to authorize **current and future eligible cards**. Later cards use the same signer automatically. When an active signer covers the card, the first request returns `201` without a signature.
+
+A wallet that previously used a card-specific signer continues to use one signer per card (the old deprecated flow), even if the original signer was revoked. Use the same endpoint and request body. Grid selects the applicable scope and preserves it across signed retries. Agent grants continue to use their existing flow.
+
 ## Create the delegated key
 
-`POST /auth/delegated-keys` is a three-leg flow. Every leg sends the same
-body; the second and third legs add a stamp from the cardholder's session
+If the first request returns `201`, the active signer already covers this card and funding authorization is complete.
+If Grid returns `202`, continue with the challenge. Every leg uses the same endpoint and request body. The second and third legs add a stamp from the cardholder's session
 signing key. Your backend relays each `payloadToSign` to the client and the
 resulting stamp back to Grid, the same shape as
 [passkey registration](/global-accounts/authentication#passkey-registration).
@@ -85,17 +91,21 @@ sequenceDiagram
   participant G as Grid
 
   IB->>G: POST /auth/delegated-keys { cardId, internalAccountId, nickname }
-  G-->>IB: 202 { payloadToSign, requestId, expiresAt }
-  IB-->>C: payloadToSign, requestId
-  C->>C: stamp(payloadToSign, sessionPrivateKey)
-  C-->>IB: stamp
-  IB->>G: Same POST<br/>Grid-Wallet-Signature: stamp<br/>Request-Id: requestId
-  G-->>IB: 202 { payloadToSign, requestId, expiresAt }
-  IB-->>C: payloadToSign, requestId
-  C->>C: stamp(payloadToSign, sessionPrivateKey)
-  C-->>IB: stamp
-  IB->>G: Same POST<br/>Grid-Wallet-Signature: stamp<br/>Request-Id: requestId
-  G-->>IB: 201 DelegatedKey { status: ACTIVE }
+  alt Active wallet signer covers this card
+    G-->>IB: 201 DelegatedKey { status: ACTIVE }
+  else Wallet approval required
+    G-->>IB: 202 { payloadToSign, requestId, expiresAt }
+    IB-->>C: payloadToSign, requestId
+    C->>C: stamp(payloadToSign, sessionPrivateKey)
+    C-->>IB: stamp
+    IB->>G: Same POST<br/>Grid-Wallet-Signature: stamp<br/>Request-Id: requestId
+    G-->>IB: 202 { payloadToSign, requestId, expiresAt }
+    IB-->>C: payloadToSign, requestId
+    C->>C: stamp(payloadToSign, sessionPrivateKey)
+    C-->>IB: stamp
+    IB->>G: Same POST<br/>Grid-Wallet-Signature: stamp<br/>Request-Id: requestId
+    G-->>IB: 201 DelegatedKey { status: ACTIVE }
+  end
 ```
 
 ### Leg 1: request the challenge
@@ -154,8 +164,11 @@ so it cannot sign.
 
 ### Leg 3: grant the signing policy
 
-The client stamps the new `payloadToSign`. Retry once more with the new
-`Request-Id`. The response is `201` with the key in `ACTIVE` status:
+Check the permissions in the policy challenge before asking the wallet owner to approve them.
+Turnkey grants Grid's delegated key raw-payload signing authority on the wallet and permission to revoke itself.
+Grid enforces which cards can use that key for payments.
+After approval, stamp the exact `payloadToSign` string from the **second** `202` response.
+Retry with that stamp and the `requestId` from the same response. Grid returns `201` with the active key.
 
 ```json
 {
@@ -177,14 +190,9 @@ client can check that the key Grid activated is the one the cardholder approved.
 
 ### Rules
 
-- A card funding source has at most one `ACTIVE` key. A second create
-  returns `409 CONFLICT` until you revoke the first.
-- A flow abandoned after leg 2 leaves a `PENDING` key. It cannot sign and
-  does not block creating another key.
-- The key does not expire. It stays `ACTIVE` until you revoke it.
-- The key is bound to the pair of card and funding account. If you replace
-  the card's `fundingSource` with a different account, create a new key for
-  the new pairing and revoke the old one.
+- When the wallet already has an active shared signer, Grid returns the card’s binding ID. Each linked card has its own binding ID and shares the same public key.
+- Resume an interrupted wallet approval on the initiating card. A pending signer can fund cards once the wallet owner completes the signing policy.
+- Removing a funding source retires its binding. Other eligible cards can continue using the signer. After changing wallets, use the destination wallet’s delegation.
 
 ### Errors
 
@@ -193,7 +201,7 @@ client can check that the key Grid activated is the one the cardholder approved.
 | 400 | `INVALID_INPUT` | `internalAccountId` is not an `EMBEDDED_WALLET` account, or the wallet is not provisioned yet. Verify a credential on the account first. |
 | 401 | `UNAUTHORIZED` | The stamp is missing on a retry, does not verify against an active session on the account, or `Request-Id` does not match an unexpired challenge. |
 | 404 | `NOT_FOUND` | The card or account is not on your platform, or the account is not the card's current funding source. |
-| 409 | `CONFLICT` | The funding source already has an `ACTIVE` delegated key. Revoke it with `DELETE /auth/delegated-keys/{id}` first. |
+| 409 | `CONFLICT` | If another card has a wallet approval in progress, finish it on that card and retry. If this funding source already has an active card-specific key, use it or revoke it before requesting a replacement. For agent funding, revoke the existing pending or active agent key before replacing it. |
 
 ## What happens at authorization
 
@@ -244,8 +252,7 @@ curl -X GET "$GRID_BASE_URL/auth/delegated-keys?fundingSourceId=CardFundingSourc
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
-An empty `data` array, or one with no `ACTIVE` entry, means the cardholder
-must complete the three-leg flow, including both signed retries. Once the
+If the funding source has no active binding, call `POST /auth/delegated-keys`. Complete the signed flow if Grid returns a challenge. Once the
 new key is `ACTIVE`, the pending card becomes `ACTIVE` automatically and
 emits `CARD.STATUS_CHANGE`.
 
@@ -264,21 +271,14 @@ curl -X GET "$GRID_BASE_URL/auth/delegated-keys?accountId=InternalAccount:019542
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
-Revoke a key. No signature is needed; Grid uses the custodied key to remove
-its own signer from the wallet:
+To revoke a shared signer for every linked card, use any of its binding IDs.
 
 ```bash
 curl -X DELETE "$GRID_BASE_URL/auth/delegated-keys/DelegatedKey:019542f5-b3e7-1d02-0000-000000000021" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
-The response is `204`. Revoking a key that is not `ACTIVE` returns
-`400 INVALID_INPUT`. Revocation is permanent. To let the card spend again,
-run the three-leg flow to create a new key.
-
-Revoke the key when the card is closed or when the cardholder asks to
-withdraw Grid's authority over the wallet. Closing the card does not revoke
-the key.
+Grid returns `204`. Revoking the shared signer affects every card that used it. For a legacy per-card signer, the same request revokes only that card’s signer.
 
 ## Testing in Sandbox
 
