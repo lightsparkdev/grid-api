@@ -38846,13 +38846,14 @@ components:
         - ARBITRUM
         - OPTIMISM
         - TRON
-      description: Network an agent can send USDC or USDT to from an embedded wallet. `TRON` supports `USDT` only, and `BASE`, `OPTIMISM`, `AVALANCHE` and `TEMPO` support `USDC` only.
+      description: Network an agent can send USDC, USDT or OUSD to from an embedded wallet. `TRON` supports `USDT` only, `BASE`, `OPTIMISM` and `AVALANCHE` support `USDC` only, and `TEMPO` supports `USDC` and `OUSD`.
     AgentSendCurrency:
       type: string
       enum:
         - USDC
         - USDT
-      description: Asset an agent can send to an address on another chain. `TRON` supports `USDT` only, and `BASE`, `OPTIMISM`, `AVALANCHE` and `TEMPO` support `USDC` only.
+        - OUSD
+      description: Asset an agent can send to an address on another chain. `TRON` supports `USDT` only, `BASE`, `OPTIMISM` and `AVALANCHE` support `USDC` only, and `TEMPO` supports `USDC` and `OUSD`. `OUSD` is available on `TEMPO` only.
     AgentChainAddressDestination:
       title: Chain Address
       type: object
@@ -38874,7 +38875,7 @@ components:
           example: BASE
         currency:
           $ref: '#/components/schemas/AgentSendCurrency'
-          description: 'Asset the recipient receives: `USDC` or `USDT`. `TRON` supports `USDT` only, and `BASE`, `OPTIMISM`, `AVALANCHE` and `TEMPO` support `USDC` only.'
+          description: 'Asset the recipient receives: `USDC`, `USDT` or `OUSD`. `TRON` supports `USDT` only, `BASE`, `OPTIMISM` and `AVALANCHE` support `USDC` only, and `TEMPO` supports `USDC` and `OUSD`. `OUSD` is available on `TEMPO` only.'
           example: USDC
         address:
           type: string
@@ -40188,7 +40189,7 @@ components:
         - OPTIMISM
         - TRON
         - ACH_PULL
-      description: Network from which an agent customer can fund a deposit. `TRON` deposits support `USDT` only, and `OPTIMISM`, `AVALANCHE` and `TEMPO` deposits support `USDC` only. `ACH_PULL` is an ACH debit from one of the customer's own US bank accounts (external accounts).
+      description: Network from which an agent customer can fund a deposit. `TRON` deposits support `USDT` only, `OPTIMISM` and `AVALANCHE` deposits support `USDC` only, and `TEMPO` deposits support `USDC` and `OUSD`. `ACH_PULL` is an ACH debit from one of the customer's own US bank accounts (external accounts).
     AgentDepositCreateRequest:
       type: object
       description: Request for a deposit into one of the agent customer's internal accounts. For `LIGHTNING`, set `sourceCurrency` to `USD` and provide `amount`; the user pays that exact USD amount and fees are deducted from the amount received. For chain networks, no amount is required and the returned standing deposit address does not expire. A chain request counts the first order the address receives from that network in that currency within 24 hours of the request; while that window is open with nothing paid, a second request for the same account, network and currency is refused. Where Grid funds a chain deposit through a quote instead, the address is the quote's and the deposit carries the quote's `expiresAt`; a payment after it is not converted (see `paidAfterExpiry`). For `ACH_PULL`, `sourceCurrency` must be `USD`, and `amount` in USD cents and `sourceExternalAccountId` are required. The source must be the agent customer's own `ACTIVE` USD external account with a Plaid ACH validation recorded through `POST /agents/{agentId}/external-accounts/{externalAccountId}/ach-validations`. The destination must be the customer's USDB `EMBEDDED_WALLET`. Creating an `ACH_PULL` deposit moves no money and records no authorization; it returns the authorization text the customer must accept. Requires the `RECEIVE_FUNDS` permission.
@@ -40202,7 +40203,7 @@ components:
           description: Network from which the customer will send the deposit.
         sourceCurrency:
           type: string
-          description: Currency or asset the customer will deposit. Must be `USD` for `LIGHTNING` or `ACH_PULL`; for a chain network, use the asset sent on that chain. `TRON` supports `USDT` only.
+          description: Currency or asset the customer will deposit. Must be `USD` for `LIGHTNING` or `ACH_PULL`; for a chain network, use the asset sent on that chain. `TRON` supports `USDT` only, and `OUSD` is accepted on `TEMPO` only.
           example: USD
         destinationInternalAccountId:
           type: string

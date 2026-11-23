@@ -10,6 +10,6 @@ enum:
   - OPTIMISM
   - TRON
 description: >-
-  Network an agent can send USDC or USDT to from an embedded wallet. `TRON`
-  supports `USDT` only, and `BASE`, `OPTIMISM`, `AVALANCHE` and `TEMPO` support
-  `USDC` only.
+  Network an agent can send USDC, USDT or OUSD to from an embedded wallet.
+  `TRON` supports `USDT` only, `BASE`, `OPTIMISM` and `AVALANCHE` support `USDC`
+  only, and `TEMPO` supports `USDC` and `OUSD`.
