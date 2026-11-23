@@ -31145,6 +31145,7 @@ components:
         - $ref: '#/components/schemas/EthereumWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+        - $ref: '#/components/schemas/ProviderWalletExternalAccountFields'
     LightningInfo:
       type: object
       description: |
@@ -31180,6 +31181,7 @@ components:
         - $ref: '#/components/schemas/PolygonWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+        - $ref: '#/components/schemas/ProviderWalletExternalAccountFields'
     PlasmaWalletExternalAccountInfo:
       title: Plasma Wallet
       allOf:
@@ -31187,6 +31189,7 @@ components:
         - $ref: '#/components/schemas/PlasmaWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+        - $ref: '#/components/schemas/ProviderWalletExternalAccountFields'
     ArbitrumWalletExternalAccountInfo:
       title: Arbitrum Wallet
       allOf:
@@ -31194,6 +31197,7 @@ components:
         - $ref: '#/components/schemas/ArbitrumWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+        - $ref: '#/components/schemas/ProviderWalletExternalAccountFields'
     OptimismWalletExternalAccountInfo:
       title: Optimism Wallet
       allOf:
@@ -31201,6 +31205,7 @@ components:
         - $ref: '#/components/schemas/OptimismWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+        - $ref: '#/components/schemas/ProviderWalletExternalAccountFields'
     AvalancheWalletExternalAccountInfo:
       title: Avalanche Wallet
       allOf:
@@ -31208,6 +31213,7 @@ components:
         - $ref: '#/components/schemas/AvalancheWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+        - $ref: '#/components/schemas/ProviderWalletExternalAccountFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
@@ -31215,6 +31221,7 @@ components:
         - $ref: '#/components/schemas/SolanaWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+        - $ref: '#/components/schemas/ProviderWalletExternalAccountFields'
     SparkWalletExternalAccountInfo:
       title: Spark Wallet
       allOf:
@@ -31222,6 +31229,7 @@ components:
         - $ref: '#/components/schemas/SparkWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+        - $ref: '#/components/schemas/ProviderWalletExternalAccountFields'
     TronWalletExternalAccountInfo:
       title: Tron Wallet
       allOf:
@@ -31229,6 +31237,7 @@ components:
         - $ref: '#/components/schemas/TronWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+        - $ref: '#/components/schemas/ProviderWalletExternalAccountFields'
     CnyAccountInfoBase:
       type: object
       required:
