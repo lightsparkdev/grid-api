@@ -19,6 +19,12 @@ export interface CurrencySelection {
   examplePerson: ExamplePerson;
 }
 
+// The funding network for a crypto source, e.g. TEMPO for a TEMPO_WALLET.
+function cryptoNetworkFor(sel: CurrencySelection): string | undefined {
+  if (sel.type !== 'crypto' || !sel.accountType.endsWith('_WALLET')) return undefined;
+  return sel.accountType.slice(0, -'_WALLET'.length);
+}
+
 export interface ApiStep {
   step: number;
   title: string;
@@ -245,9 +251,11 @@ export function generateSteps(
 
     let quoteSource: Record<string, unknown>;
     if (jitFunding) {
+      const cryptoNetwork = cryptoNetworkFor(source);
       quoteSource = {
         sourceType: 'REALTIME_FUNDING',
         currency: source.code,
+        ...(cryptoNetwork ? { cryptoNetwork } : {}),
         customerId: 'Customer:<customer_id>',
       };
     } else if (sourceIsExternal) {
