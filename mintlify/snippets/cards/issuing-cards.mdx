@@ -66,8 +66,8 @@ including the populated `last4`, `expMonth`, and `expYear`.
 
 For USDB Embedded Wallet funding without an active delegated key, the
 provisioning webhook reports `PENDING_AUTH` with `statusReason: "DELEGATION_REQUIRED"`.
-Complete all three calls to `POST /auth/delegated-keys`, including both signed
-retries. When the final retry returns an `ACTIVE` delegated key, the pending
+Call `POST /auth/delegated-keys`. A `201` with an active key completes authorization.
+For each `202`, sign that response's challenge and retry. Once authorized, the pending
 card becomes `ACTIVE` automatically and emits `CARD.STATUS_CHANGE`.
 
 USD funding does not require delegation. If delegation completes before
