@@ -32,7 +32,7 @@ properties:
     description: >-
       Currency or asset the customer will deposit. Must be `USD` for
       `LIGHTNING` or `ACH_PULL`; for a chain network, use the asset sent on that chain.
-      `TRON` supports `USDT` only.
+      `TRON` supports `USDT` only, and `OUSD` is accepted on `TEMPO` only.
     example: USD
   destinationInternalAccountId:
     type: string
