@@ -87,7 +87,8 @@ post:
     '503':
       description: >-
         Service unavailable - The deposit provider is unavailable, or is
-        holding the order for review. Retry with the same Idempotency-Key.
+        holding the order for review, or sanction screening could not reach
+        its vendor. Retry with the same Idempotency-Key.
       content:
         application/json:
           schema:
