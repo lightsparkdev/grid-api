@@ -1,0 +1,15 @@
+type: object
+required:
+  - address
+  - accountType
+properties:
+  accountType:
+    type: string
+    enum:
+      - TEMPO_WALLET
+  address:
+    type: string
+    description: >-
+      Tempo wallet address. Any letter case is accepted; Grid returns it in
+      EIP-55 checksum form.
+    example: '0xabCDEF1234567890ABcDEF1234567890aBCDeF12'
