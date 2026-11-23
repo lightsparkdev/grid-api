@@ -1,8 +1,10 @@
 oneOf:
   - $ref: ./AccountQuoteSource.yaml
   - $ref: ./RealtimeFundingQuoteSource.yaml
+  - $ref: ./CardQuoteSource.yaml
 discriminator:
   propertyName: sourceType
   mapping:
     ACCOUNT: ./AccountQuoteSource.yaml
     REALTIME_FUNDING: ./RealtimeFundingQuoteSource.yaml
+    CARD: ./CardQuoteSource.yaml

@@ -107,7 +107,7 @@ A single `status` field represents whether the transaction reached its destinati
 | Status | Description |
 |--------|-------------|
 | **PENDING** | Quote is pending confirmation |
-| **PENDING_AUTHORIZATION** | Awaiting Strong Customer Authentication. Only occurs for customers in regions where SCA is required (e.g., EU). The challenge lives on the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` with `POST /quotes/{quoteId}/authorize`. |
+| **PENDING_AUTHORIZATION** | Awaiting the customer. Occurs in two cases, and the details live on the quote, not the transaction: fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`. For a customer in a region where Strong Customer Authentication is required (e.g., EU), authorize its `scaChallenge` with `POST /quotes/{quoteId}/authorize`. For a debit card funded quote whose card issuer asks for an authentication check, send the customer to its `cardAuthentication.url` instead; `/authorize` does not apply. |
 | **EXPIRED** | Quote wasn't executed before the expiry window |
 | **PROCESSING** | Executing the quote after receiving funds (checking internal balances, or push/pull to/from external account) |
 | **COMPLETED** | Payout successfully reached the destination account |
@@ -124,7 +124,7 @@ Each side's `railDetails` reports the transfer on its rail and follows every ste
 ```mermaid
 stateDiagram-v2
     [*] --> PENDING : Quote created
-    PENDING --> PENDING_AUTHORIZATION : SCA required (EU)
+    PENDING --> PENDING_AUTHORIZATION : SCA or card issuer check required
     PENDING_AUTHORIZATION --> PROCESSING : Authorized
     PENDING_AUTHORIZATION --> FAILED : Challenge expired unsatisfied
     PENDING --> PROCESSING : Quote confirmed, funds received
@@ -195,7 +195,7 @@ The webhook request body contains the full transaction resource.
 | Event | Description |
 |-------|-------------|
 | `OUTGOING_PAYMENT.PENDING` | Transaction created, quote pending confirmation |
-| `OUTGOING_PAYMENT.PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication (EU customers only) |
+| `OUTGOING_PAYMENT.PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication or a card issuer check |
 | `OUTGOING_PAYMENT.PROCESSING` | Quote confirmed, payout in progress |
 | `OUTGOING_PAYMENT.COMPLETED` | Payout reached destination |
 | `OUTGOING_PAYMENT.FAILED` | Payout failed |
@@ -209,6 +209,7 @@ The webhook request body contains the full transaction resource.
 | Event | Description |
 |-------|-------------|
 | `INCOMING_PAYMENT.PENDING` | Funds are on their way to the internal account |
+| `INCOMING_PAYMENT.PENDING_AUTHORIZATION` | A debit card deposit is awaiting a card issuer check |
 | `INCOMING_PAYMENT.PROCESSING` | Funding received, credit in progress |
 | `INCOMING_PAYMENT.COMPLETED` | Funds credited to the internal account |
 | `INCOMING_PAYMENT.FAILED` | The deposit failed, or a bank returned it after it completed |
@@ -310,9 +311,13 @@ app.post('/webhooks/grid', async (req, res) => {
 
   switch (type) {
     case 'OUTGOING_PAYMENT.PENDING_AUTHORIZATION': {
-      // EU customers only: the challenge is on the quote, not the transaction
+      // The challenge is on the quote, not the transaction
       const quote = await getQuote(data.quoteId);
-      await promptScaChallenge(data.customerId, data.quoteId, quote.scaChallenge);
+      if (quote.cardAuthentication) {
+        await sendToCardAuthentication(data.customerId, quote.cardAuthentication.url);
+      } else {
+        await promptScaChallenge(data.customerId, data.quoteId, quote.scaChallenge);
+      }
       break;
     }
 

@@ -1,0 +1,32 @@
+title: Card
+allOf:
+  - $ref: ./BaseTransactionSource.yaml
+  - type: object
+    required:
+      - sourceType
+      - storedCardId
+      - lastFour
+      - brand
+    properties:
+      sourceType:
+        type: string
+        enum:
+          - CARD
+      storedCardId:
+        type: string
+        description: The stored card that was charged.
+        example: StoredCard:019542f5-b3e7-1d02-0000-000000000077
+      customerId:
+        type: string
+        description: The customer who owns the card.
+        example: Customer:019542f5-b3e7-1d02-0000-000000000010
+      lastFour:
+        type: string
+        pattern: '^[0-9]{4}$'
+        minLength: 4
+        maxLength: 4
+        description: Last four digits of the card number.
+        example: '0005'
+      brand:
+        $ref: ../stored_cards/StoredCardBrand.yaml
+    description: Transaction was funded by charging the customer's stored debit card.

@@ -3,5 +3,6 @@ enum:
   - ACCOUNT
   - UMA_ADDRESS
   - REALTIME_FUNDING
+  - CARD
 description: Type of transaction source
 example: ACCOUNT

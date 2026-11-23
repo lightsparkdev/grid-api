@@ -14,6 +14,11 @@ enum:
   - COUNTERPARTY_POST_TX_FAILED
   - SWEEP_AMOUNT_OUT_OF_RANGE
   - SWEEP_QUOTE_FAILED
+  - INSUFFICIENT_FUNDS
+  - CARD_DECLINED
+  - AUTHENTICATION_FAILED
+  - CARD_NOT_SUPPORTED
+  - TRY_AGAIN_LATER
 description: |
   Reason for failure of an outgoing transaction. This is used to provide more
   context on why a transaction failed. If the transaction is not in a failed
@@ -39,7 +44,7 @@ description: |
   | `FUNDING_AMOUNT_MISMATCH` | The funds received did not match the expected amount |
   | `SCA_NOT_COMPLETED` | The customer did not complete the Strong Customer Authentication challenge before it expired |
   | `PAYOUT_RETURNED` | The receiving bank accepted the payout and then returned or reversed it |
-  | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner |
+  | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner. For a card-funded payment, the charge exceeds a limit set by the card issuer or by Grid for card funding |
   | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency or payment rail isn't supported for that account. A sweep whose rule names a rail the destination cannot accept reports this |
   | `ACCOUNT_INVALID` | The recipient account couldn't be found or the details are wrong — bad IBAN/account number, beneficiary not found, or account closed |
   | `COMPLIANCE_REJECTED` | The payout partner rejected the recipient on compliance grounds — sanctions, watchlist, or KYC/AML screening |
@@ -47,6 +52,11 @@ description: |
   | `COUNTERPARTY_POST_TX_FAILED` | Deprecated — coarse fallback retained for historical transactions when no granular payout reason is available |
   | `SWEEP_AMOUNT_OUT_OF_RANGE` | The amount was outside the range the corridor to the rule's destination can carry — below its minimum or above its maximum. The rule's `minimumAmount` and `maximumAmount` give the current band |
   | `SWEEP_QUOTE_FAILED` | Grid could not price the sweep to the rule's destination. A sweep that was priced and then failed on the way to settlement reports `QUOTE_EXECUTION_FAILED`, the same as any other payout |
+  | `INSUFFICIENT_FUNDS` | Card-funded payment: the card's account did not have enough funds for the charge |
+  | `CARD_DECLINED` | Card-funded payment: the card issuer declined the charge without a more specific reason |
+  | `AUTHENTICATION_FAILED` | Card-funded payment: the customer did not pass the card issuer's authentication check, or did not complete it in time |
+  | `CARD_NOT_SUPPORTED` | Card-funded payment: the card cannot fund a payment, for example because it is not a debit card |
+  | `TRY_AGAIN_LATER` | Card-funded payment: a temporary problem stopped the charge. Create a new quote to try again |
 
   The `SWEEP_*` reasons apply to a payment that settled into a rule-based
   account and could not be swept onward. A rule-based account never holds a

@@ -59,6 +59,13 @@ post:
     webhook is purely informational.
 
 
+    A card-funded payment into the customer's own account sends
+    `INCOMING_PAYMENT.PENDING_AUTHORIZATION` while the card issuer waits on the
+    customer's authentication check. Read the check from the quote's
+    `cardAuthentication`. A declined charge sends `INCOMING_PAYMENT.FAILED` with
+    the decline in `failureReason`.
+
+
     An ACH deposit can be returned after `COMPLETED`, days after it settled.
     The return takes the funds back, so the payment moves to `FAILED` and
     `INCOMING_PAYMENT.FAILED` is sent with `source.railDetails.status` set to
