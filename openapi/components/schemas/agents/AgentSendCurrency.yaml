@@ -2,7 +2,8 @@ type: string
 enum:
   - USDC
   - USDT
+  - OUSD
 description: >-
   Asset an agent can send to an address on another chain. `TRON` supports
-  `USDT` only, and `BASE`, `OPTIMISM`, `AVALANCHE` and `TEMPO` support `USDC`
-  only.
+  `USDT` only, `BASE`, `OPTIMISM` and `AVALANCHE` support `USDC` only, and
+  `TEMPO` supports `USDC` and `OUSD`. `OUSD` is available on `TEMPO` only.
