@@ -1,0 +1,20 @@
+title: Delegated Key Kind
+type: string
+enum:
+  - EMBEDDED_WALLET_KEY
+  - PROVIDER_WALLET_KEY
+  - ACCESS_KEY
+description: >-
+  What kind of key a delegated key is.
+
+
+  - `EMBEDDED_WALLET_KEY`: A key on an Embedded Wallet internal account,
+  created with `POST /auth/delegated-keys`.
+
+  - `PROVIDER_WALLET_KEY`: A key on a crypto external account whose
+  `providerWallet` is `DYNAMIC`. Grid creates it when the cardholder delegates
+  the wallet at the provider.
+
+  - `ACCESS_KEY`: A Tempo access key on a `TEMPO_WALLET` external account
+  whose `providerWallet` is `PLATFORM`, created with `POST /auth/access-keys`.
+example: EMBEDDED_WALLET_KEY

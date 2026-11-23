@@ -1,0 +1,15 @@
+type: object
+properties:
+  providerWallet:
+    description: >-
+      Set when your platform runs this Tempo wallet itself and will fund cards
+      from it with an access key. Accepted only on
+      `POST /customers/external-accounts`. Omit it for a plain destination
+      address. An account must carry it to fund a card.
+    oneOf:
+      - title: Platform Wallet
+        $ref: ./PlatformWalletInfo.yaml
+    discriminator:
+      propertyName: provider
+      mapping:
+        PLATFORM: ./PlatformWalletInfo.yaml

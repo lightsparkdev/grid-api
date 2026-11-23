@@ -1,0 +1,12 @@
+title: Access Key Authorization
+description: >-
+  How the wallet's root account authorized the access key. Required on the
+  retry, the call that carries `Request-Id`, and refused on the first call.
+oneOf:
+  - $ref: ./AccessKeySignatureAuthorization.yaml
+  - $ref: ./AccessKeyOnChainAuthorization.yaml
+discriminator:
+  propertyName: method
+  mapping:
+    SIGNATURE: ./AccessKeySignatureAuthorization.yaml
+    ON_CHAIN: ./AccessKeyOnChainAuthorization.yaml

@@ -1,0 +1,43 @@
+title: Access Key Challenge
+description: >-
+  `202` response from `POST /auth/access-keys`. Have the wallet's root account
+  sign `payloadToSign`, or authorize `keyId` on chain, then retry the same
+  request with `authorization` in the body and the `requestId` echoed in
+  `Request-Id`.
+type: object
+required:
+  - requestId
+  - expiresAt
+  - keyId
+  - requestedRestrictions
+  - keyAuthorization
+  - payloadToSign
+properties:
+  requestId:
+    type: string
+    description: >-
+      Grid-issued `Request:<uuid>` identifier for this pending request. Echo
+      it exactly in the `Request-Id` header on the retry.
+    example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+  expiresAt:
+    type: string
+    format: date-time
+    description: Timestamp after which this challenge is no longer valid.
+    example: '2026-11-19T15:35:00Z'
+  keyId:
+    type: string
+    description: >-
+      Address of the access key Grid generated for this card, in EIP-55
+      checksum form. Grid holds its private key and never returns it.
+    example: '0xfbE89dD5f773c84ea858EF1d4622d2D58E69e9c9'
+  requestedRestrictions:
+    $ref: ./AccessKeyRestrictions.yaml
+  keyAuthorization:
+    $ref: ./TempoKeyAuthorization.yaml
+  payloadToSign:
+    type: string
+    description: >-
+      Keccak-256 hash of `keyAuthorization.unsignedKeyAuthorization`, as
+      32-byte hex. The wallet's root account signs this hash directly, with
+      no message prefix.
+    example: '0x3843290a5c1f0e6d4b2a9c8e7f6d5c4b3a291807f6e5d4c3b2a1908f7e6d2eb3'
