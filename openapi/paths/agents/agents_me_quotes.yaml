@@ -120,7 +120,8 @@ post:
     '503':
       description: >-
         Service unavailable - Grid could not screen a `CHAIN_ADDRESS`
-        destination or price the conversion right now. Retry later.
+        destination or price the conversion right now, or sanction screening
+        could not reach its vendor. Retry later.
       content:
         application/json:
           schema:

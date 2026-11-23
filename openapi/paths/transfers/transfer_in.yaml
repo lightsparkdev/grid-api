@@ -85,3 +85,10 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
+
+    '503':
+      description: Service unavailable - Sanction screening could not reach its vendor, so the request was refused and nothing was created or sent (`SERVICE_UNAVAILABLE`). Retry later.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error503.yaml
