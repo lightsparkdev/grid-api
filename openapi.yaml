@@ -7927,6 +7927,8 @@ paths:
         This is the only way an administrator adds a credential. An administrator's session cannot sign `POST /auth/credentials`, which Grid refuses with `403 FORBIDDEN`, so every credential belonging to an administrator carries their `adminReference` and removing them revokes it. An administrator added with another administrator's signature has their own `adminReference` and is removed separately.
 
         It takes two signed steps. The first call returns `202` with a `payloadToSign` that creates the administrator's wallet user; the signed retry returns another `202` whose payload grants that user the authority to sign for the wallet; the second signed retry returns `201` with the new `AuthMethod`. The administrator then signs in with `POST /auth/credentials/{id}/challenge` and `POST /auth/credentials/{id}/verify`, as the owner signs in with a credential of the same type. An `EVM_WALLET` administrator's wallet signs the challenge's `payloadToSign` and sends it to verify as `signature`.
+
+        Every type takes an optional `nickname` (`PASSKEY` requires one). Without it, the credential gets its type's default, described on `AuthMethod`. Send the same `nickname` on every retry. Rename an administrator's credential later with `PATCH /auth/credentials/{id}`, as the owner's.
       operationId: createAdminCredential
       tags:
         - Embedded Wallet Auth
@@ -7967,7 +7969,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthSignedRequestChallenge'
         '400':
-          description: Bad request, including a customer that is not a business, an email already on the account, a passkey key algorithm other than ES256 (-7) or RS256 (-257), a `publicKey` that is not a point on secp256k1 (`INVALID_INPUT`, with a `details.errors[]` entry whose `field` is `publicKey`), or an EVM wallet already on the account (`WALLET_CREDENTIAL_ALREADY_EXISTS`)
+          description: Bad request, including a customer that is not a business, an email already on the account, a `nickname` that breaks its rules, a passkey key algorithm other than ES256 (-7) or RS256 (-257), a `publicKey` that is not a point on secp256k1 (`INVALID_INPUT`, with a `details.errors[]` entry whose `field` is `publicKey`), or an EVM wallet already on the account (`WALLET_CREDENTIAL_ALREADY_EXISTS`)
           content:
             application/json:
               schema:
@@ -8086,6 +8088,8 @@ paths:
         Once the account has a wallet, adding a credential requires a signature from an existing verified credential on the same account. An administrator's session cannot sign it: a credential added here carries no `adminReference`, so it would outlive the administrator's removal. Grid refuses an administrator's signature with `403 FORBIDDEN`; administrators add their own credentials with `POST /auth/admin-credentials`. Call this endpoint with the new credential's details to receive `202` with `payloadToSign` and `requestId`. Use the session API keypair of an existing verified credential (the session signing key the client holds for it) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For OTP credentials, the one-time password is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
 
         An `EVM_WALLET` credential first proves that the user controls the wallet. The first call returns `202` with a `payloadToSign` message and a `requestId`. Grid writes the message: plain text that opens with the platform's embedded-wallet `appName` ("<appName> wants to link this wallet to your account.") and names the address, the account, a random nonce, and when it was issued and expires. The client constructs nothing. Have the wallet sign that message as given, then retry the same request with the signature as the `Grid-Wallet-Ownership-Signature` header and the `requestId` as `Request-Id`. If the account has no wallet yet, that retry creates it, with this wallet as its only credential, and returns `201`. Otherwise it returns a second `202`, whose `payloadToSign` an existing verified credential's session stamps as above, and that retry returns `201`. The same wallet may be a credential on more than one internal account.
+
+        Every credential type takes an optional `nickname`, the label shown on `AuthMethod` responses (`PASSKEY` requires one). Without it, the credential gets its type's default, described on `AuthMethod`. Send the same `nickname` on every retry of the request. Rename a credential later with `PATCH /auth/credentials/{id}`.
       operationId: createAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -8167,6 +8171,13 @@ paths:
                   type: EVM_WALLET
                   accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                   address: '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23'
+              smsOtpWithNickname:
+                summary: Add an SMS OTP credential with a nickname
+                value:
+                  type: SMS_OTP
+                  accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  phoneNumber: '+14155559876'
+                  nickname: Work phone
       responses:
         '200':
           description: 'An additional-credential setup leg''s underlying wallet-provider activity is still in flight — a `WalletOperationProcessing` body with `status: "PROCESSING"`. The client re-sends the byte-identical stamped retry (same `Request-Id`) until the credential is added; the backend also reconciles the activity to terminal on its own.'
@@ -8175,7 +8186,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/WalletOperationProcessing'
         '201':
-          description: Authentication credential created successfully. The body is the created `AuthMethod`. For `EMAIL_OTP`, the nickname is the customer email tied to the internal account; for `SMS_OTP`, it is the customer phone number. OTP responses that trigger a secure OTP challenge carry `otpEncryptionTargetBundle` — the HPKE target bundle the client uses to encrypt the OTP attempt on the subsequent `POST /auth/credentials/{id}/verify`. First-time EMAIL_OTP wallet bootstrap responses may omit that bundle; if it is absent, call `POST /auth/credentials/{id}/challenge` for the new credential to issue a fresh OTP and receive `otpEncryptionTargetBundle` before verifying. For `PASSKEY`, the credential must be authenticated for the first time via `POST /auth/credentials/{id}/challenge` followed by `POST /auth/credentials/{id}/verify` to produce a session — there is no inline authentication challenge on the registration response.
+          description: Authentication credential created successfully. The body is the created `AuthMethod`. Its `nickname` is the one sent on the request, or the type's default described on `AuthMethod`. OTP responses that trigger a secure OTP challenge carry `otpEncryptionTargetBundle` — the HPKE target bundle the client uses to encrypt the OTP attempt on the subsequent `POST /auth/credentials/{id}/verify`. First-time EMAIL_OTP wallet bootstrap responses may omit that bundle; if it is absent, call `POST /auth/credentials/{id}/challenge` for the new credential to issue a fresh OTP and receive `otpEncryptionTargetBundle` before verifying. For `PASSKEY`, the credential must be authenticated for the first time via `POST /auth/credentials/{id}/challenge` followed by `POST /auth/credentials/{id}/verify` to produce a session — there is no inline authentication challenge on the registration response.
           content:
             application/json:
               schema:
@@ -8188,6 +8199,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
                     nickname: example@lightspark.com
+                    identifier: example@lightspark.com
                     otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
@@ -8198,6 +8210,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: SMS_OTP
                     nickname: '+14155550123'
+                    identifier: '+14155550123'
                     otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
@@ -8208,6 +8221,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: OAUTH
                     nickname: example@lightspark.com
+                    identifier: example@lightspark.com
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
                 passkey:
@@ -8226,6 +8240,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EVM_WALLET
                     nickname: '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23'
+                    identifier: '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23'
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
         '202':
@@ -8278,7 +8293,7 @@ paths:
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
-          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while the account holder already has one (administrators' credentials are not counted), `SMS_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an SMS OTP credential while one already exists, `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account, `WALLET_CREDENTIAL_ALREADY_EXISTS` when registering an EVM wallet already attached to the internal account, or `INVALID_INPUT` when an OAuth `oidcToken` is malformed or has an unsupported issuer, or when a passkey's key algorithm is not ES256 (-7) or RS256 (-257).
+          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while the account holder already has one (administrators' credentials are not counted), `SMS_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an SMS OTP credential while one already exists, `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account, `WALLET_CREDENTIAL_ALREADY_EXISTS` when registering an EVM wallet already attached to the internal account, or `INVALID_INPUT` when an OAuth `oidcToken` is malformed or has an unsupported issuer, when a `nickname` breaks its rules, or when a passkey's key algorithm is not ES256 (-7) or RS256 (-257).
           content:
             application/json:
               schema:
@@ -8359,12 +8374,14 @@ paths:
                         accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                         type: EMAIL_OTP
                         nickname: example@lightspark.com
+                        identifier: example@lightspark.com
                         createdAt: '2026-04-08T15:30:01Z'
                         updatedAt: '2026-04-08T15:30:01Z'
                       - id: AuthMethod:019542f5-b3e7-1d02-0000-000000000004
                         accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                         type: OAUTH
                         nickname: example@lightspark.com
+                        identifier: example@lightspark.com
                         createdAt: '2026-04-08T15:35:00Z'
                         updatedAt: '2026-04-08T15:35:00Z'
                       - id: AuthMethod:019542f5-b3e7-1d02-0000-000000000003
@@ -8476,6 +8493,79 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Rename an authentication credential
+      description: |
+        Set a credential's `nickname`, the label shown on `AuthMethod` responses and in credential listings. This works the same for the account owner's credentials and for an administrator's (one with `adminReference`).
+
+        This endpoint is authenticated by the platform credential alone and returns `200` directly. It does not use the 202 → signed-retry pattern. That pattern proves the account holder approved a change to who can sign for the wallet. A nickname changes no one's authority: it is a label Grid keeps for display.
+
+        Renaming changes only the label. The credential's `identifier` stays the same, and the credential signs in as before. One-time codes go to the same email or phone, and the same wallet signs. The name a device or password manager shows for a passkey is not changed.
+      operationId: updateAuthCredential
+      tags:
+        - Embedded Wallet Auth
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The id of the authentication credential to rename (the `id` field of an `AuthMethod`).
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentialUpdateRequest'
+            examples:
+              rename:
+                summary: Rename a credential
+                value:
+                  nickname: Work phone
+      responses:
+        '200':
+          description: The renamed credential.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMethod'
+              examples:
+                renamed:
+                  summary: SMS OTP credential renamed
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: SMS_OTP
+                    identifier: '+14155550123'
+                    nickname: Work phone
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-10T09:12:44Z'
+        '400':
+          description: Bad request. Returned with `INVALID_INPUT` when `nickname` is missing, empty after trimming, longer than 100 characters, or contains `<`, `>`, or a control character.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Authentication credential not found, including a credential that has been revoked.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -8674,6 +8764,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
                     nickname: example@lightspark.com
+                    identifier: example@lightspark.com
                     otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:35:00Z'
@@ -8917,6 +9008,7 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
                     nickname: example@lightspark.com
+                    identifier: example@lightspark.com
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:35:00Z'
                     expiresAt: '2026-04-08T15:50:00Z'
@@ -37784,6 +37876,12 @@ components:
           maxLength: 255
           description: The platform's opaque reference for the administrator the credential belongs to, such as a member id. Grid stores it as given and uses it to revoke all of the administrator's credentials together.
           example: member_8f2c1a
+    AuthCredentialNickname:
+      type: string
+      minLength: 1
+      maxLength: 100
+      description: 'A label for the credential, shown back as the `AuthMethod`''s `nickname` and in credential listings. Leading and trailing whitespace is ignored. Must be 1-100 characters after trimming, with no `<` or `>` and no control characters. Nicknames need not be unique. When a create request omits it, the credential gets its type''s default, described on `AuthMethod`. It is a label only: it does not change where one-time codes are sent or which wallet signs.'
+      example: Work phone
     EmailOtpAdminCredentialCreateRequest:
       title: Email OTP Admin Credential Create Request
       allOf:
@@ -37805,6 +37903,8 @@ components:
               maxLength: 255
               description: The administrator's email address, which receives their one-time codes. Must differ from every other email credential on the account.
               example: admin@example.com
+            nickname:
+              $ref: '#/components/schemas/AuthCredentialNickname'
     PasskeyAttestation:
       title: Passkey Attestation
       type: object
@@ -37886,8 +37986,10 @@ components:
             publicKey:
               type: string
               pattern: ^0x(0[23][0-9a-fA-F]{64}|04[0-9a-fA-F]{128})$
-              description: 'The secp256k1 public key of the administrator''s wallet, `0x`-prefixed hex in any letter case: compressed (33 bytes, starting `02` or `03`) or uncompressed (65 bytes, starting `04`). It must be the key of a wallet with a single private key, not a smart-contract account. Grid derives the wallet''s address from it and shows the address back as the credential''s `nickname`. The wallet signs nothing to be added.'
+              description: 'The secp256k1 public key of the administrator''s wallet, `0x`-prefixed hex in any letter case: compressed (33 bytes, starting `02` or `03`) or uncompressed (65 bytes, starting `04`). It must be the key of a wallet with a single private key, not a smart-contract account. Grid derives the wallet''s address from it and, without a `nickname`, shows the address back as the credential''s `nickname`. The wallet signs nothing to be added.'
               example: '0x024e3b81af9c2234cad09d679ce6035ed1392347ce64ce405f5dcd36228a25de6e'
+            nickname:
+              $ref: '#/components/schemas/AuthCredentialNickname'
     AdminCredentialCreateRequestOneOf:
       oneOf:
         - $ref: '#/components/schemas/EmailOtpAdminCredentialCreateRequest'
@@ -37923,9 +38025,14 @@ components:
           type: string
           description: Base64url-encoded WebAuthn credential identifier for this passkey. Present only for `PASSKEY` authentication credentials. Corresponds to `PublicKeyCredential.rawId`; pass this value as `allowCredentials[].id` when requesting a passkey assertion for this auth method.
           example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
+        identifier:
+          type: string
+          readOnly: true
+          description: What the credential signs in with, set by Grid when the credential is created. For EMAIL_OTP credentials it is the email address that receives one-time codes; for SMS_OTP credentials the E.164 phone number; for EVM_WALLET credentials the wallet's address; for OAUTH credentials the customer's email on the account when the credential was added, or their name when it had no email. Absent for PASSKEY credentials, which `credentialId` identifies. A rename never changes it. Show it to say which email, phone or wallet a credential uses, and show `nickname` as its label. For example, an EVM_WALLET credential can have `identifier` `0x2c7536E3605D9C16a7a3D7b1898e529396a65c23` and `nickname` `Jane's wallet`.
+          example: example@lightspark.com
         nickname:
           type: string
-          description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for SMS_OTP credentials this is the E.164 phone number; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the validated nickname provided at registration time; for EVM_WALLET credentials it is the wallet's address.
+          description: Human-readable label for this credential, separate from `identifier`. It is the `nickname` given when the credential was created, or the latest one set with `PATCH /auth/credentials/{id}`. Without one, it is the credential's `identifier`. A PASSKEY credential's is the nickname required at registration.
           example: example@lightspark.com
         adminReference:
           type: string
@@ -38002,6 +38109,8 @@ components:
           maxLength: 255
           description: A new email address to register as a replacement credential.
           example: jane.new@example.com
+        nickname:
+          $ref: '#/components/schemas/AuthCredentialNickname'
     EmailOtpCredentialCreateRequest:
       title: Email OTP Credential Create Request
       allOf:
@@ -38022,6 +38131,8 @@ components:
           pattern: ^\+[1-9]\d{1,14}$
           description: A new phone number, in strict E.164 format, to register as a replacement credential.
           example: '+14155559876'
+        nickname:
+          $ref: '#/components/schemas/AuthCredentialNickname'
     SmsOtpCredentialCreateRequest:
       title: SMS OTP Credential Create Request
       allOf:
@@ -38042,6 +38153,8 @@ components:
           type: string
           description: OIDC ID token issued by the identity provider (e.g. Google, Apple). The token's `iss`, `aud`, and `sub` claims define the OAuth identity registered to this credential. In production, the provider signature is verified against the issuer's JWKS. In sandbox, the token must still be JWT-shaped with supported `iss`, non-empty `aud` and `sub`, numeric `iat` and `exp`, and `iat` less than 60 seconds before the request timestamp, but the signature segment may be a dummy value.
           example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.-3_ETmSGOl4wGNLR1QSOMlHk5IvADpX3YdHFmTH9KmRu6sEhM20RsURjKrI4-_EKj7J_HtsdS1tCHm0iw2J0qtoczYFQqEW_U9qJD6QsuvTFx8Fj9rFa3ieYhZKi3kkBu6cADogUiudP50kf9345ATys2GrYm-ba5esgReW1WzGJG3SgCyIDnHFfxmeLjE2YE9EFxT73To3mPYAk0ywPL2MpFFV9F8I3PsnbDAxinaY75GeA8vJXATr8weEIXqHD2lxmXVE95qd2ZlcuyLUaEYyp9GXcOnx7SjhdJG88jl5BZQvxOVgBMo42iGjK674lSwsMiHpzLX98j6C786Rd9Q
+        nickname:
+          $ref: '#/components/schemas/AuthCredentialNickname'
     OauthCredentialCreateRequest:
       title: OAuth Credential Create Request
       allOf:
@@ -38066,8 +38179,10 @@ components:
         address:
           type: string
           pattern: ^0x[0-9a-fA-F]{40}$
-          description: The wallet's `0x`-prefixed 20-byte address, in any letter case. It must be the address of the wallet's own key, not a smart-contract account. Grid checks that the wallet's signature on the retry comes from this address, and shows it back as the credential's `nickname`.
+          description: The wallet's `0x`-prefixed 20-byte address, in any letter case. It must be the address of the wallet's own key, not a smart-contract account. Grid checks that the wallet's signature on the retry comes from this address. Without a `nickname`, Grid shows the address back as the credential's `nickname`.
           example: '0x2c7536E3605D9C16a7a3D7b1898e529396a65c23'
+        nickname:
+          $ref: '#/components/schemas/AuthCredentialNickname'
     EvmWalletCredentialCreateRequest:
       title: EVM Wallet Credential Create Request
       allOf:
@@ -38088,6 +38203,14 @@ components:
           OAUTH: '#/components/schemas/OauthCredentialCreateRequest'
           PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
           EVM_WALLET: '#/components/schemas/EvmWalletCredentialCreateRequest'
+    AuthCredentialUpdateRequest:
+      title: Auth Credential Update Request
+      type: object
+      required:
+        - nickname
+      properties:
+        nickname:
+          $ref: '#/components/schemas/AuthCredentialNickname'
     AuthCredentialVerifyRequest:
       type: object
       required:
