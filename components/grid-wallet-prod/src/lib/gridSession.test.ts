@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { gridFetch } from './gridClient';
+import { encryptOtpBundle } from './gridCrypto';
 import { pickCredentials, signIn, addPasskey, clearSession, getSession } from './gridSession';
 
 // Mocked at the system boundaries only: the Grid network (gridClient) and the
@@ -8,9 +9,8 @@ import { pickCredentials, signIn, addPasskey, clearSession, getSession } from '.
 vi.mock('./gridClient', () => ({ gridFetch: vi.fn() }));
 vi.mock('./gridCrypto', () => ({
   genTek: () => ({ privHex: 'tek-priv', pubHex: 'tek-pub' }),
-  compressedPubHex: () => 'tek-pub',
-  encryptOtpBundle: () => 'encrypted-otp-bundle',
-  decryptSessionKey: async () => 'passkey-session-priv',
+  compressedPubHex: () => 'tek-pub-compressed',
+  encryptOtpBundle: vi.fn(() => 'encrypted-otp-bundle'),
   base64urlToBytes: () => new Uint8Array([1, 2, 3]),
   bytesToBase64url: () => 'b64url',
   stamp: async () => 'stamp-signature',
@@ -72,7 +72,7 @@ function serveGrid(credentials: Cred[]) {
     }
     if (method === 'POST' && path.endsWith('/verify')) {
       if (opts.body?.type === 'PASSKEY') {
-        return reply(200, { encryptedSessionSigningKey: 'sealed', expiresAt: FUTURE });
+        return reply(200, { expiresAt: FUTURE });
       }
       // EMAIL_OTP verify is two legs: 202 payloadToSign, then 200 once stamped.
       return signed
@@ -178,6 +178,9 @@ describe('sign-in order', () => {
 
     expect(session.via).toBe('email_otp');
     expect(callsTo('POST', (p) => p === '/auth/credentials')).toBe(0);
+    // The OTP bundle seals the compressed public half of the key the client keeps.
+    expect(session.privHex).toBe('tek-priv');
+    expect(vi.mocked(encryptOtpBundle)).toHaveBeenCalledWith('target-bundle', 'tek-pub-compressed', '000000');
   });
 
   it('offers the email on file to the entry step before mailing a code', async () => {
@@ -267,6 +270,11 @@ describe('sign-in order', () => {
 
     expect(session.via).toBe('passkey');
     expect(promptOtp).not.toHaveBeenCalled();
+    // The session key is the one this client generated, and the challenge
+    // registered its compressed public half.
+    expect(session.privHex).toBe('tek-priv');
+    const challenge = mockedFetch.mock.calls.find((c) => String(c[1]).endsWith('/challenge'));
+    expect(challenge?.[2]).toMatchObject({ body: { clientPublicKey: 'tek-pub-compressed' } });
   });
 
   // Passkeys are device-bound: one registered on another device is listed on the
