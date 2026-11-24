@@ -22,8 +22,10 @@ properties:
     type: string
     maxLength: 255
     description: >-
-      Free-form description recorded on each sweep. Not delivered to the
-      recipient; use `remittanceInformation` for that.
+      Free-form note kept on the rule and returned when you read the rule.
+      It is not recorded on individual sweeps or delivered to the recipient;
+      use `remittanceInformation` for information that travels with each
+      sweep.
     example: Rent sweep
   remittanceInformation:
     type: string

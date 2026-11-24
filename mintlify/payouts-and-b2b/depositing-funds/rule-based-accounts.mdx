@@ -127,7 +127,7 @@ The response is the new internal account. Share its `fundingPaymentInstructions`
 | `destination.accountId` | Where funds are swept. It can be in a different currency, in which case each sweep is converted at the prevailing rate. |
 | `destination.paymentRail` | The rail used for an external destination. Omit it to pick a rail automatically for each sweep. Not accepted for internal destinations. |
 | `purposeOfPayment` | Applied to each sweep. Some destination countries require it. |
-| `description` | Recorded on each sweep for your own records. Not sent to the recipient. |
+| `description` | A note for your own records, kept on the rule and returned when you read it. Not recorded on individual sweeps or sent to the recipient. |
 | `remittanceInformation` | Sent with each sweep to the recipient, for example in the ACH addenda or wire OBI. Printable ASCII only. |
 | `platformFeeOverride` | Fee terms for every sweep this rule drives. Omit it to use your platform's configured fees. |
 

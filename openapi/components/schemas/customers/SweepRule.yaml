@@ -36,8 +36,8 @@ properties:
   description:
     type: string
     description: >-
-      Free-form description recorded on each sweep. Not delivered to the
-      recipient.
+      Free-form note kept on the rule. It is not recorded on individual
+      sweeps or delivered to the recipient.
     example: Rent sweep
   remittanceInformation:
     type: string
