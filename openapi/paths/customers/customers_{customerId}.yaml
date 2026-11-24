@@ -92,6 +92,17 @@ patch:
 
     Update `email` and `phoneNumber` in separate PATCH calls. A request that
     includes both fields is rejected.
+
+
+    Once a customer's KYC/KYB is approved and their USD account is held at a
+    banking partner that locks account-holder identity, their details can no
+    longer be changed through this endpoint. Any update to their details
+    returns `403` with `FORBIDDEN`, including a sign-in `email` or
+    `phoneNumber` change, which is refused before any challenge is issued.
+    Contact support to update them. A request that carries only
+    `customerType` and `agreementConsents` is still accepted. Customers that
+    are not yet approved, or whose partner does not lock identity, stay
+    editable.
   operationId: updateCustomerById
   tags:
     - Customers
