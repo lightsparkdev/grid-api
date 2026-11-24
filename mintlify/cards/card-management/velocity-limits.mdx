@@ -154,6 +154,50 @@ creation does not restore the deleted rule. No update endpoint is available.
 Deleting a rule does not change decisions already recorded for earlier
 authorization requests.
 
+## Debugging declined transactions
+
+When a velocity rule declines a card authorization, the resulting `CardTransaction`
+carries `velocityRuleViolation`: a snapshot of the rule and evaluated usage that
+caused the decline. Use it to understand exactly which cap was exceeded, even if
+the rule has since been changed or deleted.
+
+The snapshot includes:
+
+| Field | Description |
+|-------|-------------|
+| `ruleId` | The rule's id at the time of the decline |
+| `name` | The rule's name |
+| `owner` | Who configured the rule: `LIGHTSPARK` or `PLATFORM` |
+| `scope` | What the rule applies to: `GLOBAL`, `PLATFORM`, or `CARD` |
+| `targetId` | The platform or card the rule targets (absent for global rules) |
+| `metric` | `APPROVED` or `ATTEMPTS` |
+| `window` | `AUTHORIZATION`, `DAY`, `WEEK`, `MONTH`, `QUARTER`, `YEAR`, or `ROLLING` |
+| `maxCount` / `maxAmount` | The configured caps |
+| `observedCount` / `observedAmount` | The evaluated usage including the declined request |
+
+The snapshot appears in `CARD_TRANSACTION.DECLINED` webhook payloads and in
+responses from `GET /transactions`. It is absent when no velocity violation
+caused the decline.
+
+```json
+{
+  "type": "CARD",
+  "id": "Transaction:019542f5-b3e7-1d02-0000-000000000100",
+  "status": "DECLINED",
+  "cardDeclinedReason": "SPEND_LIMIT_EXCEEDED",
+  "velocityRuleViolation": {
+    "ruleId": "CardVelocityRule:019542f5-b3e7-1d02-0000-000000000004",
+    "name": "Daily card budget",
+    "owner": "PLATFORM",
+    "scope": "PLATFORM",
+    "metric": "APPROVED",
+    "window": "DAY",
+    "maxAmount": 50000,
+    "observedAmount": 52550
+  }
+}
+```
+
 ## Other card controls
 
 Card freezing, merchant-category restrictions, risk-score ceilings, and
