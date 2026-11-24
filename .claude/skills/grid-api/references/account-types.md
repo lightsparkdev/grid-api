@@ -11,7 +11,6 @@ The **Available Rails** column lists the payment rails Grid may use for the crea
 | Bangladesh | BDT_ACCOUNT | BDT | BANK_TRANSFER, MOBILE_MONEY | Bank name + Account number |
 | Botswana | BWP_ACCOUNT | BWP | MOBILE_MONEY | Phone number + Provider |
 | Brazil | BRL_ACCOUNT | BRL | PIX | PIX key |
-| Canada | CAD_ACCOUNT | CAD | BANK_TRANSFER | Bank code + Branch code + Account number |
 | Central Africa (CFA) | XAF_ACCOUNT | XAF | MOBILE_MONEY | Phone number + Provider + Region |
 | China | CNY_ACCOUNT | CNY | BANK_TRANSFER, MOBILE_MONEY | Bank name + Account number |
 | Colombia | COP_ACCOUNT | COP | BANK_TRANSFER, MOBILE_MONEY | Bank name + Account number + Account type |
@@ -478,36 +477,6 @@ Required fields:
 - For businesses: `legalName`
 
 **IMPORTANT**: Use `bankName` (NOT `bankCode`). Use the bank's display name.
-
-### Canada (CAD_ACCOUNT)
-
-```bash
-curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  -X POST -H "Content-Type: application/json" \
-  -d '{
-    "customerId": "<customerId>",
-    "currency": "CAD",
-    "accountInfo": {
-      "accountType": "CAD_ACCOUNT",
-      "bankCode": "001",
-      "branchCode": "00012",
-      "accountNumber": "1234567",
-      "beneficiary": {
-        "beneficiaryType": "INDIVIDUAL",
-        "fullName": "Full Name",
-        "birthDate": "1990-01-15",
-        "nationality": "CA"
-      }
-    }
-  }' \
-  "$GRID_BASE_URL/customers/external-accounts" | jq .
-```
-
-Required fields:
-
-- `bankCode`: 3-digit financial institution number (pattern: `^[0-9]{3}$`)
-- `branchCode`: 5-digit transit number (pattern: `^[0-9]{5}$`)
-- `accountNumber`: 7-12 digit account number (pattern: `^[0-9]{7,12}$`)
 
 ### Philippines (PHP_ACCOUNT)
 

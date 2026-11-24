@@ -25288,7 +25288,6 @@ components:
         - EUR_ACCOUNT
         - INR_ACCOUNT
         - NGN_ACCOUNT
-        - CAD_ACCOUNT
         - GBP_ACCOUNT
         - HKD_ACCOUNT
         - IDR_ACCOUNT
@@ -26354,7 +26353,6 @@ components:
         - BDT_ACCOUNT
         - BRL_ACCOUNT
         - BWP_ACCOUNT
-        - CAD_ACCOUNT
         - COP_ACCOUNT
         - DKK_ACCOUNT
         - EGP_ACCOUNT
@@ -26980,110 +26978,6 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/BwpBeneficiary'
                   BUSINESS: '#/components/schemas/BwpBusinessBeneficiary'
-    CadAccountInfoBase:
-      type: object
-      required:
-        - accountType
-        - bankCode
-        - branchCode
-        - accountNumber
-      properties:
-        accountType:
-          type: string
-          enum:
-            - CAD_ACCOUNT
-        bankCode:
-          type: string
-          description: Canadian financial institution number (3 digits)
-          example: '001'
-          minLength: 3
-          maxLength: 3
-          pattern: ^[0-9]{3}$
-        branchCode:
-          type: string
-          description: Transit number identifying the branch (5 digits)
-          example: '00012'
-          minLength: 5
-          maxLength: 5
-          pattern: ^[0-9]{5}$
-        accountNumber:
-          type: string
-          description: Bank account number (7-12 digits)
-          example: '1234567'
-          minLength: 7
-          maxLength: 12
-          pattern: ^[0-9]{7,12}$
-    CadAccountInfo:
-      allOf:
-        - $ref: '#/components/schemas/CadAccountInfoBase'
-        - type: object
-          required:
-            - paymentRails
-          properties:
-            paymentRails:
-              type: array
-              items:
-                type: string
-                enum:
-                  - BANK_TRANSFER
-    CadBeneficiary:
-      title: Individual Beneficiary
-      type: object
-      required:
-        - beneficiaryType
-        - fullName
-      properties:
-        beneficiaryType:
-          type: string
-          enum:
-            - INDIVIDUAL
-        fullName:
-          type: string
-          maxLength: 250
-          description: The full name of the beneficiary
-        birthDate:
-          type: string
-          description: The birth date of the beneficiary
-        nationality:
-          type: string
-          description: The nationality of the beneficiary
-        email:
-          type: string
-          maxLength: 320
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          maxLength: 50
-          description: The phone number of the beneficiary
-        registrationNumber:
-          type: string
-          maxLength: 100
-          description: The registration number of the beneficiary
-        countryOfResidence:
-          type: string
-          description: The country of residence of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
-    CadExternalAccountInfo:
-      title: CAD Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/CadAccountInfo'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/CadBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/CadBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     CopAccountInfoBase:
       type: object
       required:
@@ -32725,7 +32619,6 @@ components:
         - $ref: '#/components/schemas/BdtExternalAccountInfo'
         - $ref: '#/components/schemas/BrlExternalAccountInfo'
         - $ref: '#/components/schemas/BwpExternalAccountInfo'
-        - $ref: '#/components/schemas/CadExternalAccountInfo'
         - $ref: '#/components/schemas/CopExternalAccountInfo'
         - $ref: '#/components/schemas/DkkExternalAccountInfo'
         - $ref: '#/components/schemas/EgpExternalAccountInfo'
@@ -32788,7 +32681,6 @@ components:
           BDT_ACCOUNT: '#/components/schemas/BdtExternalAccountInfo'
           BRL_ACCOUNT: '#/components/schemas/BrlExternalAccountInfo'
           BWP_ACCOUNT: '#/components/schemas/BwpExternalAccountInfo'
-          CAD_ACCOUNT: '#/components/schemas/CadExternalAccountInfo'
           COP_ACCOUNT: '#/components/schemas/CopExternalAccountInfo'
           DKK_ACCOUNT: '#/components/schemas/DkkExternalAccountInfo'
           EGP_ACCOUNT: '#/components/schemas/EgpExternalAccountInfo'
@@ -32988,26 +32880,6 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/BwpBeneficiary'
                   BUSINESS: '#/components/schemas/BwpBusinessBeneficiary'
-    CadExternalAccountCreateInfo:
-      title: CAD Account
-      allOf:
-        - $ref: '#/components/schemas/BaseExternalAccountInfo'
-        - $ref: '#/components/schemas/CadAccountInfoBase'
-        - type: object
-          required:
-            - beneficiary
-          properties:
-            beneficiary:
-              oneOf:
-                - title: Individual Beneficiary
-                  $ref: '#/components/schemas/CadBeneficiary'
-                - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
-              discriminator:
-                propertyName: beneficiaryType
-                mapping:
-                  INDIVIDUAL: '#/components/schemas/CadBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     CnyExternalAccountCreateInfo:
       title: CNY Account
       description: A payout to a CNY bank account with a `BUSINESS` beneficiary needs supporting documents for its `purposeOfPayment`. Upload them with `POST /payment-documents` and pass their IDs in `documentIds` on `POST /quotes`. [Supporting documents](https://docs.lightspark.com/payouts-and-b2b/payment-flow/send-payment#supporting-documents) lists the documents each purpose needs.
@@ -33883,7 +33755,6 @@ components:
         - $ref: '#/components/schemas/BdtExternalAccountCreateInfo'
         - $ref: '#/components/schemas/BrlExternalAccountCreateInfo'
         - $ref: '#/components/schemas/BwpExternalAccountCreateInfo'
-        - $ref: '#/components/schemas/CadExternalAccountCreateInfo'
         - $ref: '#/components/schemas/CnyExternalAccountCreateInfo'
         - $ref: '#/components/schemas/CopExternalAccountCreateInfo'
         - $ref: '#/components/schemas/DkkExternalAccountCreateInfo'
@@ -33946,7 +33817,6 @@ components:
           BDT_ACCOUNT: '#/components/schemas/BdtExternalAccountCreateInfo'
           BRL_ACCOUNT: '#/components/schemas/BrlExternalAccountCreateInfo'
           BWP_ACCOUNT: '#/components/schemas/BwpExternalAccountCreateInfo'
-          CAD_ACCOUNT: '#/components/schemas/CadExternalAccountCreateInfo'
           CNY_ACCOUNT: '#/components/schemas/CnyExternalAccountCreateInfo'
           COP_ACCOUNT: '#/components/schemas/CopExternalAccountCreateInfo'
           DKK_ACCOUNT: '#/components/schemas/DkkExternalAccountCreateInfo'

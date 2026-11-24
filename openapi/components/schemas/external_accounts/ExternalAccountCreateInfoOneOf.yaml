@@ -3,7 +3,6 @@ oneOf:
 - $ref: ./BdtExternalAccountCreateInfo.yaml
 - $ref: ./BrlExternalAccountCreateInfo.yaml
 - $ref: ./BwpExternalAccountCreateInfo.yaml
-- $ref: ./CadExternalAccountCreateInfo.yaml
 - $ref: ./CnyExternalAccountCreateInfo.yaml
 - $ref: ./CopExternalAccountCreateInfo.yaml
 - $ref: ./DkkExternalAccountCreateInfo.yaml
@@ -66,7 +65,6 @@ discriminator:
     BDT_ACCOUNT: ./BdtExternalAccountCreateInfo.yaml
     BRL_ACCOUNT: ./BrlExternalAccountCreateInfo.yaml
     BWP_ACCOUNT: ./BwpExternalAccountCreateInfo.yaml
-    CAD_ACCOUNT: ./CadExternalAccountCreateInfo.yaml
     CNY_ACCOUNT: ./CnyExternalAccountCreateInfo.yaml
     COP_ACCOUNT: ./CopExternalAccountCreateInfo.yaml
     DKK_ACCOUNT: ./DkkExternalAccountCreateInfo.yaml
