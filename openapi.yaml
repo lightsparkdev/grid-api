@@ -15581,7 +15581,7 @@ paths:
     get:
       summary: List card velocity limits
       operationId: listCardVelocityRules
-      description: List the rules your platform manages. Without cardId, lists platform-wide rules; with cardId, lists only rules configured directly on that card. Lightspark-managed controls are enforced independently and are not exposed by this endpoint. Rules apply to cards whose authorization decisions are made by Grid; provider-decided cards are unaffected.
+      description: List the rules your platform manages. Without cardId, lists platform-wide rules; with cardId, lists only rules configured directly on that card. Lightspark-managed controls are enforced independently and are not exposed by this endpoint. On a card whose issuer makes authorization decisions, only rules configured directly on that card apply.
       tags:
         - Cards
       security:
@@ -15656,7 +15656,7 @@ paths:
 
         Manage per-authorization amount, UTC calendar amount/count, and rolling amount/count caps through this collection. Limits are not configured on card issuance/update requests or platform cardConfigs. APPROVED counts approved authorizations, including zero-amount approvals; ATTEMPTS counts real-time authorization requests, including declines. Reversals and expiries restore held-amount capacity but do not remove an approved authorization from the count. Clearing against a hold does not restore amount capacity. Resolve each cap at the most specific configured scope: card, then platform, then program. Amount and count inherit separately for each metric/window; rolling durations are distinct windows. Deleting the last cap at a scope restores the next configured scope.
 
-        Applies only where Grid makes authorization decisions. A cardId naming a provider-decided card is rejected. Platform-wide rules apply separately to each eligible card. AUTHORIZATION caps also protect asynchronous authorizations; ATTEMPTS counts real-time requests only. Settlement of previously authorized transactions continues even if a rule is tightened.
+        Platform-wide rules apply separately to each card whose authorization decisions Grid makes. On a card whose issuer makes them, a rule needs a cardId and is enforced by the issuer: only `APPROVED` rules with `maxAmount` and no `maxCount`, on an `AUTHORIZATION`, `DAY` or `MONTH` window, are accepted. AUTHORIZATION caps also protect asynchronous authorizations; ATTEMPTS counts real-time requests only. Settlement of previously authorized transactions continues even if a rule is tightened.
       tags:
         - Cards
       security:
@@ -26135,7 +26135,7 @@ components:
       properties:
         supportsVelocityLimits:
           type: boolean
-          description: Whether this card program supports platform-managed limits through `/cards/velocity-limits`. Supported where Grid makes authorization decisions; false where the issuer makes them. Amounts use the card's currency, regardless of its funding source.
+          description: Whether this card program supports platform-managed limits through `/cards/velocity-limits`. Where the card issuer makes authorization decisions, only `APPROVED` amount limits configured on the card itself, on an `AUTHORIZATION`, `DAY` or `MONTH` window, are supported. Amounts use the card's currency, regardless of its funding source.
           example: true
         supports3dSecurePassword:
           type: boolean

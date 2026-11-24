@@ -5,8 +5,8 @@ get:
     List the rules your platform manages. Without cardId, lists platform-wide
     rules; with cardId, lists only rules configured directly on that card.
     Lightspark-managed controls are enforced independently and are not exposed
-    by this endpoint. Rules apply to cards whose authorization decisions are
-    made by Grid; provider-decided cards are unaffected.
+    by this endpoint. On a card whose issuer makes authorization decisions,
+    only rules configured directly on that card apply.
   tags:
     - Cards
   security:
@@ -101,9 +101,11 @@ post:
     Deleting the last cap at a scope restores the next configured scope.
 
 
-    Applies only where Grid makes authorization decisions. A cardId naming a
-    provider-decided card is rejected. Platform-wide rules apply separately to
-    each eligible card. AUTHORIZATION caps also protect asynchronous
+    Platform-wide rules apply separately to each card whose authorization
+    decisions Grid makes. On a card whose issuer makes them, a rule needs a
+    cardId and is enforced by the issuer: only `APPROVED` rules with
+    `maxAmount` and no `maxCount`, on an `AUTHORIZATION`, `DAY` or `MONTH`
+    window, are accepted. AUTHORIZATION caps also protect asynchronous
     authorizations; ATTEMPTS counts real-time requests only. Settlement of
     previously authorized transactions continues even if a rule is tightened.
   tags:

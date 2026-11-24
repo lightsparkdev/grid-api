@@ -16,9 +16,10 @@ your platform's `GRID_CLIENT_ID` and `GRID_CLIENT_SECRET`. Writes require
 `UMA_MANAGE`; reads require `UMA_VIEW`.
 
 Check `cardCapabilities.supportsVelocityLimits` on the card or funding account.
-These limits apply where Grid makes authorization decisions. Cards where the
-issuer makes the decision do not support this API. Issuer-enforced caps remain
-independent constraints.
+On a card where the issuer makes authorization decisions, the issuer enforces
+the limit and platform defaults do not apply. Configure those cards one at a
+time with `cardId`, using `APPROVED` rules with `maxAmount` and no `maxCount`
+on an `AUTHORIZATION`, `DAY`, or `MONTH` window.
 
 ## Choose a scope
 
