@@ -8,8 +8,8 @@ icon: "/images/icons/receipt-check.svg"
 Recipients need to know who paid them and why. What they see on their bank statement depends
 on two things:
 
-- **The sender name.** This comes from the account the money leaves. On US rails and some
-  other corridors that's the account holder, and on others it's a fixed Lightspark entity. You can't set it per payment.
+- **The sender name.** On RTP, FedNow, wire, and some other corridors, that's the holder of the
+  account the money leaves. On ACH and some other corridors, it's Lightspark. You can't set it per payment.
 - **The payment reference.** You set this on each quote with `remittanceInformation`, and on
   ACH also with `statementDescriptor`. Grid puts it in the right field for the rail.
 
@@ -43,9 +43,12 @@ and last name for an individual. Don't rely on this. Set the reference yourself.
 
 ## Sending from US accounts
 
-On US rails, **the recipient sees the account holder name of the account the payout leaves**.
-Depending on how your platform is configured, that's either your platform's own account or an
-account held by your customer:
+On RTP, FedNow, and wire, **the recipient sees the account holder name of the account the payout
+leaves**. On ACH, the recipient currently sees Lightspark as the originator name, whichever account
+the payout leaves. Put your customer's name in `statementDescriptor` on ACH payouts.
+
+On RTP, FedNow, and wire, depending on how your platform is configured, the sender is either your
+platform's own account or an account held by your customer:
 
 - **Payouts from your customer's account** show your customer's name as the sender.
 - **Payouts from your platform's account** show your platform's name as the sender. Add your
@@ -59,12 +62,13 @@ customer ABC Corp:
 
 | Rail | Sender shown | Where your customer's name goes | What Ben may see |
 |---|---|---|---|
-| ACH | Account holder name (up to 16 characters) | `statementDescriptor` (10 characters) | `ORIG CO NAME:ACME PAY INC CO ENTRY DESCR:ABC CORP` |
+| ACH | Lightspark, as the originator name | `statementDescriptor` (10 characters) | Lightspark as the originator, plus `CO ENTRY DESCR:ABC CORP` |
 | RTP / FedNow | Account holder name | `remittanceInformation` (up to 80 characters) | `Acme Pay Inc`, plus `ABC Corp invoice 4471` in full |
 | Wire | Account holder name and address | `remittanceInformation`, sent as the OBI | `Acme Pay Inc`, plus `ABC Corp invoice 4471` |
 
-If the payout leaves an account held by ABC Corp instead, Ben sees `ABC CORP` as the sender, and
-you can use the descriptor and reference for your own invoice details.
+If the payout leaves an account held by ABC Corp instead, Ben sees ABC Corp as the sender on RTP,
+FedNow, and wire, and you can use the reference for your own invoice details. On ACH, Ben still
+sees Lightspark as the originator, so keep `ABC CORP` in `statementDescriptor`.
 
 Outbound wires aren't enabled for every platform. Contact Lightspark if you need them.
 
@@ -162,9 +166,10 @@ much of the sender name and reference to display.
 ## Common questions
 
 **Can I change the sender name to my brand or my customer's name?**
-Not per payment. On US rails, the sender is the account holder name of the account the payout
-leaves, which is your customer when you send from their account. On fixed-name
-corridors, it's the Lightspark entity that settles the payout.
+Not per payment. On RTP, FedNow, and wire, the sender is the account holder name of the account
+the payout leaves, which is your customer when you send from their account. On ACH, the
+originator name is currently Lightspark, so put your customer's name in `statementDescriptor`. On
+fixed-name corridors, it's the Lightspark entity that settles the payout.
 
 **What if I leave `remittanceInformation` empty?**
 On cross-border payouts, Grid may use the sending customer's name as the reference. On US rails, the reference is left empty and only the sender name and, on ACH, the
