@@ -95,7 +95,7 @@ get:
                       decimals: 2
                       name: Euro
                       symbol: "€"
-                    destinationPaymentRail: SEPA_INSTANT
+                    destinationPaymentRail: BANK_TRANSFER
                     receivingAmount: 9250
                     exchangeRate: 1.081081
                     fees:
