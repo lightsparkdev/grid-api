@@ -24,6 +24,7 @@ Rule-based accounts never hold a balance. Funds that land in one are always move
 - The account holder already has an internal account in the same currency. Funds go there when a sweep can't be completed.
 - The account holder is verified. For a platform-owned account, your platform's own customer record must be verified.
 - The sweep destination exists. It can be an external account or another internal account, but not another rule-based account.
+- If your platform has USDB sweeps enabled, the destination can also be the account holder's USDB embedded wallet. `USDC` and `USDT` deposits can sweep to it, and so can `USD` deposits that arrive by RTP or wire. `USD` deposits that arrive by ACH can't sweep to USDB.
 
 ## Create a rule-based account
 
