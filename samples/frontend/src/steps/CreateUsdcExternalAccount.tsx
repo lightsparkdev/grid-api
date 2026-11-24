@@ -25,6 +25,12 @@ const NETWORK_CONFIGS: Record<string, {
     address: "0xAbCDEF1234567890aBCdEf1234567890ABcDef12",
     description: "USDC on Arbitrum",
   },
+  AVALANCHE: {
+    label: "Avalanche C-Chain",
+    accountType: "AVALANCHE_WALLET",
+    address: "0xAbCDEF1234567890aBCdEf1234567890ABcDef12",
+    description: "USDC on Avalanche C-Chain",
+  },
   BASE: {
     label: "Base",
     accountType: "BASE_WALLET",
@@ -37,6 +43,12 @@ const NETWORK_CONFIGS: Record<string, {
     address: "0xAbCDEF1234567890aBCdEf1234567890ABcDef12",
     description: "USDC on Ethereum",
   },
+  OPTIMISM: {
+    label: "Optimism",
+    accountType: "OPTIMISM_WALLET",
+    address: "0xAbCDEF1234567890aBCdEf1234567890ABcDef12",
+    description: "USDC on Optimism",
+  },
   POLYGON: {
     label: "Polygon",
     accountType: "POLYGON_WALLET",
@@ -48,12 +60,6 @@ const NETWORK_CONFIGS: Record<string, {
     accountType: "SOLANA_WALLET",
     address: "7EYnhQoR9YM3N7UoaKRoA44Uy8JeaZV3qyouov87awMs",
     description: "USDC on Solana",
-  },
-  TRON: {
-    label: "Tron",
-    accountType: "TRON_WALLET",
-    address: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-    description: "USDC on Tron",
   },
 }
 
