@@ -19,9 +19,13 @@ import com.lightspark.grid.models.customers.externalaccounts.InrBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.MxnBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.PhpBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.ArbitrumWalletInfo
+import com.lightspark.grid.models.customers.externalaccounts.AvalancheWalletInfo
+import com.lightspark.grid.models.customers.externalaccounts.OptimismWalletInfo
 import com.lightspark.grid.models.customers.externalaccounts.PlasmaWalletInfo
 import com.lightspark.grid.models.customers.externalaccounts.PolygonWalletInfo
 import com.lightspark.grid.models.customers.externalaccounts.SolanaWalletInfo
+import com.lightspark.grid.models.customers.externalaccounts.SparkWalletInfo
+import com.lightspark.grid.models.customers.externalaccounts.TempoWalletInfo
 import com.lightspark.grid.models.customers.externalaccounts.TronWalletInfo
 import com.lightspark.grid.models.customers.externalaccounts.UsdBeneficiary
 import com.grid.sample.GridClientBuilder
@@ -226,6 +230,34 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .address(accountInfo.requireText("address"))
                 .build()
             ExternalAccountCreateParams.AccountInfo.ofArbitrumWallet(info)
+        }
+        "OPTIMISM_WALLET" -> {
+            val info = OptimismWalletInfo.builder()
+                .accountType(OptimismWalletInfo.AccountType.OPTIMISM_WALLET)
+                .address(accountInfo.requireText("address"))
+                .build()
+            ExternalAccountCreateParams.AccountInfo.ofOptimismWallet(info)
+        }
+        "AVALANCHE_WALLET" -> {
+            val info = AvalancheWalletInfo.builder()
+                .accountType(AvalancheWalletInfo.AccountType.AVALANCHE_WALLET)
+                .address(accountInfo.requireText("address"))
+                .build()
+            ExternalAccountCreateParams.AccountInfo.ofAvalancheWallet(info)
+        }
+        "TEMPO_WALLET" -> {
+            val info = TempoWalletInfo.builder()
+                .accountType(TempoWalletInfo.AccountType.TEMPO_WALLET)
+                .address(accountInfo.requireText("address"))
+                .build()
+            ExternalAccountCreateParams.AccountInfo.ofTempoWallet(info)
+        }
+        "SPARK_WALLET" -> {
+            val info = SparkWalletInfo.builder()
+                .accountType(SparkWalletInfo.AccountType.SPARK_WALLET)
+                .address(accountInfo.requireText("address"))
+                .build()
+            ExternalAccountCreateParams.AccountInfo.ofSparkWallet(info)
         }
         else -> throw IllegalArgumentException("Unsupported account type: $accountType")
     }
