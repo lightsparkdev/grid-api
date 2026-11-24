@@ -56,7 +56,7 @@ properties:
       | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
       | BANK_ACCOUNT_OWNER_MISMATCH | The bank does not list the customer as the bank account's owner |
       | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
-      | QUOTE_EXPIRED | The quote has expired; request a new quote |
+      | QUOTE_EXPIRED | The quote has expired, or the network fee it would now pay exceeds its `networkFee`; request a new quote |
       | QUOTE_RATE_UNAVAILABLE | No exchange rate is available for this corridor right now |
       | STABLECOIN_AMOUNT_NOT_REPRESENTABLE | The amount cannot be represented at the token's precision |
       | STABLECOIN_BURN_SOURCE_NOT_SUPPORTED | The burn source account cannot be used for this operation |

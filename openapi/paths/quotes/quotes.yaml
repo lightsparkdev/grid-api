@@ -206,7 +206,9 @@ post:
         header, `documentIds` sent to a destination that does not require
         documents, a document whose `documentType` fills no remaining
         requirement for the `purposeOfPayment`, and a `purposeOfPayment` the
-        destination does not accept.
+        destination does not accept. Returned with `INSUFFICIENT_FUNDS` when an
+        Embedded Wallet source pays the network fee and cannot cover
+        `totalSendingAmount` plus `networkFee`.
       content:
         application/json:
           schema:
