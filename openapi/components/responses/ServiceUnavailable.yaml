@@ -1,0 +1,18 @@
+description: >-
+  Service unavailable. Returned with `SERVICE_UNAVAILABLE` when the service
+  could not complete the request right now. The response may include a
+  `Retry-After` header. When present, wait at least that many seconds before
+  retrying the same request, with the same body and any
+  `Grid-Wallet-Signature` header.
+headers:
+  Retry-After:
+    description: >-
+      Number of seconds to wait before retrying the request. Not always
+      present.
+    required: false
+    schema:
+      type: integer
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/errors/Error503.yaml

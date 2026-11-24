@@ -110,3 +110,5 @@ delete:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
+    '503':
+      $ref: ../../components/responses/ServiceUnavailable.yaml
