@@ -279,7 +279,7 @@ curl -X DELETE "$GRID_BASE_URL/auth/delegated-keys/DelegatedKey:019542f5-b3e7-1d
 ```
 
 Grid returns `204`. Revoking the shared signer affects every card that used it. For a legacy per-card signer, the same request revokes only that card’s signer.
-Revoking a card-specific `PENDING` key discards it and voids its unsigned challenge.
+Revoking a card-specific `PENDING` key discards it and voids its unsigned challenge. Repeating the request for a card key that is already revoked also returns `204`.
 
 ## Testing in Sandbox
 
