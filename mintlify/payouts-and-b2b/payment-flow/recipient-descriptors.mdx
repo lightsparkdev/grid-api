@@ -111,7 +111,7 @@ fall into three groups:
 | BDT | Bangladesh | Account holder name | 16 characters |
 | BRL | Brazil | Account holder name | 18 characters |
 | CAD | Canada | Account holder name | 18 characters |
-| CNY | China | Account holder name | 16 characters |
+| CNY | China | Account holder name, not guaranteed (see note below) | 16 characters |
 | COP | Colombia | Account holder name | 16 characters |
 | DKK | Denmark | Account holder name | 18 characters |
 | EGP | Egypt | Account holder name | 16 characters |
@@ -139,6 +139,13 @@ fall into three groups:
 
 The payment reference on every row is `remittanceInformation`. Each recipient bank decides how
 much of the sender name and reference to display.
+
+<Note>
+  On CNY payouts to China, Grid sends the sender name with the payment, but the recipient's bank
+  doesn't support payments made on behalf of another party. The sender name may not appear on
+  the recipient's statement, depending on how the recipient's bank is set up. Put your
+  customer's name first in `remittanceInformation`, then your reference.
+</Note>
 
 <Tip>
   Before you go live, contact Lightspark to confirm the sender name on the corridors you plan to
