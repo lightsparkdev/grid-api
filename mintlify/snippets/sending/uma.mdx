@@ -11,6 +11,7 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/uma/\$recipient
 #### Response
 ```json Success (200 OK)
 {
+  "sendingCurrency": { "code": "USD", "name": "United States Dollar", "symbol": "$", "decimals": 2 },
   "receiverUmaAddress": "$recipient@example.com",
   "lookupId": "Lookup:019542f5-b3e7-1d02-0000-000000000009",
   "supportedCurrencies": [
@@ -18,13 +19,17 @@ curl -X GET "https://api.lightspark.com/grid/2025-10-13/receiver/uma/\$recipient
       "currency": { "code": "EUR", "name": "Euro", "symbol": "€", "decimals": 2 },
       "estimatedExchangeRate": 0.92,
       "min": 100,
-      "max": 10000000
+      "max": 10000000,
+      "minSendingAmount": 109,
+      "maxSendingAmount": 10869565
     },
     {
       "currency": { "code": "BRL", "name": "Brazilian Real", "symbol": "R$", "decimals": 2 },
       "estimatedExchangeRate": 5.15,
       "min": 100,
-      "max": 10000000
+      "max": 10000000,
+      "minSendingAmount": 19,
+      "maxSendingAmount": 1941747
     }
   ],
   "requiredPayerDataFields": [
