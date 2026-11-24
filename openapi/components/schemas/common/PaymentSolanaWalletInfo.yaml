@@ -5,4 +5,7 @@ allOf:
   - type: object
     properties:
       assetType:
-        $ref: ./StablecoinAssetType.yaml
+        type: string
+        description: Type of asset
+        enum:
+          - USDC
