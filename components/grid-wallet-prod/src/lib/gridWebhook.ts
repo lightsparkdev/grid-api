@@ -1,7 +1,7 @@
 import { createVerify } from 'node:crypto';
 
 export interface GridSignatureHeader {
-  /** Present as a string in Grid's own format ("1"); absent for a bare header. */
+  /** Grid sends the number 1, normalized here to "1"; null for a bare header. */
   version: string | null;
   signature: string; // base64 DER-encoded ECDSA
 }
@@ -10,14 +10,12 @@ export interface GridSignatureHeader {
  * `X-Grid-Signature` comes in two shapes, both documented at
  * docs.lightspark.com/api-reference/webhooks:
  *
- *   {"v": "1", "s": "<base64>"}   ← what Grid sends
+ *   {"v": 1, "s": "<base64>"}     ← what Grid sends
  *   <base64>                      ← bare, per the Python example
  *
- * `v` is a STRING, and the fields are `v`/`s` — not `version`/`signature`. An
- * earlier version of this parser required the long names and a numeric version,
- * which rejected every real delivery before verification ran (401 on all of
- * them). `{version, signature}` is still accepted so nothing that already
- * signs that way breaks.
+ * `v` is the JSON number 1, and the fields are `v`/`s`, not
+ * `version`/`signature`. `{version, signature}` and a quoted `"1"` are also
+ * accepted, so a sender that signs either way still verifies.
  */
 export function parseSignatureHeader(headerValue: string): GridSignatureHeader | null {
   const raw = headerValue.trim();
