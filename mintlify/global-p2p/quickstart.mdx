@@ -43,6 +43,7 @@ In this guide, the entities map as follows:
   <Tip>
   Use Basic Auth in cURL with `-u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"`.
   </Tip>
+
 ## Create a customer
   Register a customer who will send the payment. You can provide your own UMA handle or let the system generate one.
 
@@ -74,6 +75,7 @@ In this guide, the entities map as follows:
     "platformCustomerId": "cust_7b3c5a89d2f1e0"
   }
   ```
+
 ## Create an external receiving bank account (CLABE in MX)
   Add a beneficiary account in Mexico using their CLABE. We attach it to the same customer for this example.
 
@@ -134,6 +136,7 @@ In this guide, the entities map as follows:
     }
   }
   ```
+
 ## Create a quote (just‑in‑time funding)
   Quote a transfer of 100 USD from the customer to the MXN CLABE account. The quote returns the exchange rate, fees, and `paymentInstructions` to fund in real time.
 
@@ -196,6 +199,7 @@ In this guide, the entities map as follows:
     ]
   }
   ```
+
 ## Fund the quote (Sandbox simulation)
   In production, you would trigger a payment on one of the supported blockchains to the provided address. In Sandbox, you can mock funding using the simulate send endpoint.
 
@@ -232,6 +236,7 @@ In this guide, the entities map as follows:
     "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006"
   }
   ```
+
 ## Handle the outgoing payment webhook
   Implement a webhook endpoint to receive status updates as the payment moves from pending to completed (or failed). Verify the `X-Grid-Signature` header using the public key provided during onboarding.
 
