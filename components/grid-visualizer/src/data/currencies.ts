@@ -1,6 +1,7 @@
 export interface ExamplePerson {
   fullName: string;
   nationality: string;
+  phoneNumber?: string;
 }
 
 export interface FiatCurrency {
@@ -386,7 +387,7 @@ export const currencies: FiatCurrency[] = [
     accountLabel: 'Guatemalan Bank Account',
     instantRails: [],
     allRails: ['BANK_TRANSFER'],
-    examplePerson: { fullName: 'Ana Lucía Ramírez', nationality: 'GT' },
+    examplePerson: { fullName: 'Ana Lucía Ramírez', nationality: 'GT', phoneNumber: '+50212345678' },
   },
   {
     code: 'HTG',
@@ -406,7 +407,7 @@ export const currencies: FiatCurrency[] = [
     accountLabel: 'Jamaican Bank Account',
     instantRails: [],
     allRails: ['BANK_TRANSFER'],
-    examplePerson: { fullName: 'Andre Campbell', nationality: 'JM' },
+    examplePerson: { fullName: 'Andre Campbell', nationality: 'JM', phoneNumber: '+18761234567' },
   },
   {
     code: 'PKR',
