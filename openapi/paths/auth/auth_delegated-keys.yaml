@@ -108,6 +108,17 @@ post:
               internalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
               nickname: Card payments key
   responses:
+    '200':
+      description: >-
+        A signed retry's underlying wallet-provider activity is still in
+        flight — a `WalletOperationProcessing` body with
+        `status: "PROCESSING"`. The client re-sends the byte-identical stamped
+        retry (same `Request-Id`) until the key is created; the backend also
+        reconciles the activity to terminal on its own.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/common/WalletOperationProcessing.yaml
     '201':
       description: >-
         Delegated key activated or an existing wallet signer linked to this card.

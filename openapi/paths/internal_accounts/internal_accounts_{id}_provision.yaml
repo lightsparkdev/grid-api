@@ -1,0 +1,275 @@
+post:
+  summary: Provision Embedded Wallet internal accounts
+  description: >
+    Open the customer's Embedded Wallet internal accounts that are waiting
+    for the customer to authorize their wallet address.
+
+
+    When your platform adds a currency on a network the customer's wallet
+    does not cover yet, Grid opens that currency's account as `PENDING` with
+    `provisioningRequired: true`, and sends `INTERNAL_ACCOUNT.STATUS_UPDATED`
+    with the new account. The account cannot send or receive until the
+    customer signs once to add the network to their wallet. `{id}` can be any
+    of the customer's Embedded Wallet internal accounts. One call provisions
+    every account the customer has waiting, whichever id is in the path.
+
+
+    Provisioning is a two-step signed-retry flow (same pattern as adding a
+    credential and exporting a wallet):
+
+
+    1. Call `POST /internal-accounts/{id}/provision` with no signature
+    headers. When no account needs a signature, Grid opens any waiting
+    accounts and returns `200` with no challenge. Otherwise the response is
+    `202` with `payloadToSign`, `requestId`, `expiresAt`, and the `accountIds`
+    and `currencies` the signed retry opens.
+
+
+    2. Use the session API keypair of a verified authentication credential on
+    any of the customer's Embedded Wallet internal accounts to build an
+    API-key stamp over `payloadToSign`. Retry with that full stamp as the
+    `Grid-Wallet-Signature` header and the `requestId` echoed back as the
+    `Request-Id` header. The signed retry returns `200` with the customer's
+    Embedded Wallet accounts and the `provisionedCurrencies` it opened.
+
+
+    Grid checks the customer's delegated keys before it issues a challenge,
+    so the customer never signs one that cannot complete. An `ACTIVE`
+    delegated key, or a `PENDING` one whose authorization hasn't expired,
+    created before the network being added was supported blocks
+    provisioning: the call returns
+    `409 DELEGATED_KEYS_REISSUE_REQUIRED`. `details.delegatedKeys` lists
+    each key with its `status` and, for a `PENDING` key,
+    `authorizationExpiresAt`. `details.cardIds` and `details.agentIds` list
+    the cards and agents they serve. Revoke each listed key with
+    `DELETE /auth/delegated-keys/{id}`, which accepts `ACTIVE` and `PENDING`
+    keys alike. Create a new key with `POST /auth/delegated-keys` for each
+    card and agent that still needs one, then call this endpoint again. A
+    revoked `ACTIVE` card key moves its card to `PENDING_AUTH` until the new
+    key is `ACTIVE`. The accounts keep `provisioningRequired: true`
+    meanwhile. A revoked key Grid is still cleaning up also blocks
+    provisioning, but needs no action from the customer: the call returns
+    `409 OPERATION_IN_PROGRESS` with a `Retry-After` header.
+
+
+    Each call without signature headers issues a new challenge, and every
+    issued challenge stays valid until its `expiresAt`. The first signed
+    retry to arrive adds the waiting networks. A signed retry for another
+    challenge, sent after that, adds nothing and returns `200` with the
+    accounts its challenge covered, which are open by then. When a signed
+    retry gets `409 DELEGATED_KEYS_REISSUE_REQUIRED`, its challenge is not
+    used up: once the keys are revoked, re-send the same signed retry before
+    `expiresAt`, or start over with a call without signature headers.
+
+
+    The call is idempotent. While a provisioning for the customer is still in
+    flight, the accounts keep `provisioningRequired: true` and any call, signed
+    or not, answers `200` with `status: "PROCESSING"`; re-send the
+    byte-identical signed retry, or listen for the
+    `INTERNAL_ACCOUNT.STATUS_UPDATED` webhook, to learn when the accounts are `ACTIVE`. Re-sending a signed retry after
+    it completed returns the same `200`, even after the challenge's
+    `expiresAt`. An abandoned challenge changes
+    nothing.
+  operationId: provisionInternalAccount
+  tags:
+    - Internal Accounts
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: id
+      in: path
+      description: >-
+        The id of any of the customer's Embedded Wallet internal accounts.
+      required: true
+      schema:
+        type: string
+    - name: Grid-Wallet-Signature
+      in: header
+      required: false
+      description: >-
+        Full API-key stamp built over the prior `payloadToSign` with the
+        session API keypair of a verified authentication credential on any of
+        the customer's Embedded Wallet internal accounts. Required on the
+        signed retry; ignored on the initial call.
+      schema:
+        type: string
+      example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
+    - name: Request-Id
+      in: header
+      required: false
+      description: >-
+        The `requestId` returned in a prior `202` response, echoed back
+        exactly on the signed retry so the server can correlate it with the
+        issued challenge. Required on the signed retry; must be paired with
+        `Grid-Wallet-Signature`.
+      schema:
+        type: string
+      example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+  responses:
+    '200':
+      description: >-
+        Provisioning completed, or nothing needed a signature. Returns the
+        customer's Embedded Wallet accounts and the currencies this
+        provisioning opened (`InternalAccountProvisionResponse`). While the
+        wallet operation behind a signed retry is still in flight, returns a
+        `WalletOperationProcessing` body with `status: "PROCESSING"` instead.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/internal_accounts/InternalAccountProvisionResult.yaml
+          examples:
+            provisioned:
+              summary: Signed retry opened the OUSD account
+              value:
+                provisionedAccountIds:
+                  - InternalAccount:019542f5-b3e7-1d02-0000-000000000011
+                provisionedCurrencies:
+                  - OUSD
+                accounts:
+                  - id: InternalAccount:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: EMBEDDED_WALLET
+                    status: ACTIVE
+                    provisioningRequired: false
+                    balance:
+                      amount: 0
+                      currency:
+                        code: USDB
+                        name: USDB
+                        symbol: $
+                        decimals: 6
+                    totalBalance:
+                      amount: 0
+                      currency:
+                        code: USDB
+                        name: USDB
+                        symbol: $
+                        decimals: 6
+                    fundingPaymentInstructions:
+                      - accountOrWalletInfo:
+                          accountType: SPARK_WALLET
+                          assetType: USDB
+                          address: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+                    createdAt: '2026-11-01T12:30:00Z'
+                    updatedAt: '2026-11-01T12:30:00Z'
+                  - id: InternalAccount:019542f5-b3e7-1d02-0000-000000000011
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: EMBEDDED_WALLET
+                    status: ACTIVE
+                    provisioningRequired: false
+                    balance:
+                      amount: 0
+                      currency:
+                        code: OUSD
+                        name: OUSD
+                        symbol: $
+                        decimals: 6
+                    totalBalance:
+                      amount: 0
+                      currency:
+                        code: OUSD
+                        name: OUSD
+                        symbol: $
+                        decimals: 6
+                    fundingPaymentInstructions:
+                      - accountOrWalletInfo:
+                          accountType: TEMPO_WALLET
+                          assetType: OUSD
+                          address: '0xabCDEF1234567890ABcDEF1234567890aBCDeF12'
+                    createdAt: '2026-11-19T12:30:00Z'
+                    updatedAt: '2026-11-19T12:31:00Z'
+            processing:
+              summary: Wallet operation still in flight
+              value:
+                status: PROCESSING
+                message: This provisioning is still being processed. Retry the same request in a moment.
+    '202':
+      description: >-
+        Challenge issued. Build an API-key stamp over `payloadToSign` with the
+        session API keypair and echo `requestId` on the retry. `accountIds`
+        and `currencies` list the accounts the signed retry opens.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/internal_accounts/InternalAccountProvisionChallenge.yaml
+    '400':
+      description: >-
+        Bad request. Returned with `INVALID_INPUT` when the internal account is
+        not an `EMBEDDED_WALLET` account.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: >-
+        Unauthorized. Returned when the provided `Grid-Wallet-Signature` is
+        missing on a retry, malformed, or not made by a session of one of the
+        customer's verified credentials, or when the `Request-Id` does not
+        match a provisioning challenge issued for this customer, or matches
+        one that expired before any signed retry for it completed. A
+        byte-identical re-send of a signed retry that already completed is not
+        refused: it returns that retry's `200`, even after `expiresAt`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Internal account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `WALLET_NOT_PROVISIONED` when the customer has
+        no wallet yet: before the first credential under
+        `AT_FIRST_CREDENTIAL`, or while Grid is still creating the wallet. The
+        first wallet covers every currency the platform supports, so retry
+        only if an account still has `provisioningRequired: true` once the
+        wallet exists. Returned with `DELEGATED_KEYS_REISSUE_REQUIRED` when
+        the customer has an `ACTIVE` delegated key, or a `PENDING` one whose
+        authorization hasn't expired, created before this network was
+        supported. Grid returns it in place of the `202`, and on a signed
+        retry if such a key appeared after the challenge. `details.delegatedKeys`
+        lists each key's `id`, `status` and, for a `PENDING` key,
+        `authorizationExpiresAt`. `details.cardIds` and `details.agentIds`
+        list the cards and agents those keys serve. Revoke each listed key
+        (`DELETE /auth/delegated-keys/{id}`) and create new ones where still
+        needed, then retry. Returned with `OPERATION_IN_PROGRESS` while Grid
+        is still cleaning up a revoked key from before this network was
+        supported. Such keys are never listed in `details`, since there is
+        nothing to revoke. Retry after the `Retry-After` interval.
+      headers:
+        Retry-After:
+          description: >-
+            Number of seconds to wait before retrying. Sent with
+            `OPERATION_IN_PROGRESS`.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+          examples:
+            reissueRequired:
+              summary: Delegated keys must be created again first
+              value:
+                code: DELEGATED_KEYS_REISSUE_REQUIRED
+                reason: Revoke and re-create the listed delegated keys before adding a network to this wallet.
+                details:
+                  delegatedKeys:
+                    - id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
+                      status: ACTIVE
+                    - id: DelegatedKey:019542f5-b3e7-1d02-0000-000000000022
+                      status: PENDING
+                      authorizationExpiresAt: '2026-11-20T15:45:00Z'
+                  cardIds:
+                    - Card:019542f5-b3e7-1d02-0000-000000000010
+                    - Card:019542f5-b3e7-1d02-0000-000000000011
+                  agentIds: []
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

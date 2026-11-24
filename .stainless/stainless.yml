@@ -121,11 +121,13 @@ resources:
       agreement_document_list_response: '#/components/schemas/AgreementDocumentListResponse'
       agreement_consent: '#/components/schemas/AgreementConsent'
       agreement_consent_request: '#/components/schemas/AgreementConsentRequest'
-      # Internal-account management (list/update/export under this resource)
+      # Internal-account management (list/update/export/provision under this resource)
       internal_account_list_response: '#/components/schemas/InternalAccountListResponse'
       internal_account_update_request: '#/components/schemas/InternalAccountUpdateRequest'
       internal_account_export_request: '#/components/schemas/InternalAccountExportRequest'
       internal_account_export_response: '#/components/schemas/InternalAccountExportResponse'
+      internal_account_provision_challenge: '#/components/schemas/InternalAccountProvisionChallenge'
+      internal_account_provision_response: '#/components/schemas/InternalAccountProvisionResponse'
       # Periodic statements
       balance_change: '#/components/schemas/BalanceChange'
       balance_change_list_response: '#/components/schemas/BalanceChangeListResponse'
@@ -146,6 +148,7 @@ resources:
       delete: delete /customers/{customerId}
       list_internal_accounts: get /customers/internal-accounts
       export: post /internal-accounts/{id}/export
+      provision: post /internal-accounts/{id}/provision
       update_internal_account:
         endpoint: patch /internal-accounts/{id}
         body_param_name: InternalAccountUpdateRequest

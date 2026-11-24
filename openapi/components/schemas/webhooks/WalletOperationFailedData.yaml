@@ -34,6 +34,7 @@ properties:
       - session.revoke
       - wallet.export
       - customer.contact_update
+      - internal_account.provision
     example: wallet.export
   resourceType:
     $ref: ./WalletOperationResourceType.yaml
@@ -48,7 +49,8 @@ properties:
       referenced in the request; for `wallet.export` it's the
       `InternalAccount:<uuid>` whose wallet was exported; for
       `customer.contact_update` it's the `Customer:<uuid>` whose email or
-      phone number changed.
+      phone number changed; for `internal_account.provision` it's the
+      `InternalAccount:<uuid>` in the request path.
     example: InternalAccount:019542f5-b3e7-1d02-0000-00000000009a
   status:
     type: string
