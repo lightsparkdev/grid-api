@@ -26,7 +26,6 @@ and it stays correct as support changes.
 
 | Capability | US | EU |
 |------------|----|----|
-| `supportsVelocityLimits` | `true` | `true`, with the narrower shape below |
 | `supports3dSecurePassword` | `false` | `true` |
 | `supportsPanReveal` | `true` | `false` |
 | `supportsDigitalWalletTokenization` | `true` | `false` |
@@ -46,7 +45,7 @@ and it stays correct as support changes.
 | Network risk ceiling (`maxNetworkRiskScore`) | Supported | Rejected with `INVALID_INPUT` |
 | Freeze, unfreeze, and close | Supported | Supported |
 | Show the card number and CVV (`POST /cards/{id}/reveal`) | Supported | Not supported. Returns `409 CONFLICT` |
-| [PINs](/cards/card-management/pins) | Supported | Not supported. Returns `409 CONFLICT` |
+| [PINs](/cards/card-management/pins) | Supported | Not applicable. EU cards are virtual only, so they have no PIN |
 | [In-app wallet provisioning](/cards/card-management/digital-wallet-tokenization) | Apple Pay, Google Pay, Samsung Pay | Not supported. Returns `409 CONFLICT` |
 | Agent cards (`agentId`) | Supported | Not supported |
 | Transaction webhooks | Supported | Supported |
@@ -73,6 +72,6 @@ An unsupported action returns an error instead of being ignored:
 
 - Fields that EU cards can't honor on `POST /cards` or `PATCH /cards/{id}`,
   such as `allowedMccs` or `maxNetworkRiskScore`, return `400 INVALID_INPUT`.
-- Actions that EU cards don't support, such as reveal, PINs, wallet
-  provisioning, and simulation, return `409 CONFLICT`. Retrying won't
+- Actions that EU cards don't support, such as reveal, PIN management,
+  wallet provisioning, and simulation, return `409 CONFLICT`. Retrying won't
   help. Check `cardCapabilities` first and hide the action in your app.
