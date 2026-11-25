@@ -1,0 +1,78 @@
+---
+title: "US and EU Card Programs"
+sidebarTitle: "US and EU programs"
+description: "What Grid supports on US cards and on EU cards, and how to check a card at runtime"
+icon: "/images/icons/globe.svg"
+"og:image": "/images/og/pages/cards/card-programs.webp"
+---
+
+Grid issues Visa debit cards in two programs. Both use the same `/cards`
+API, but they decide authorizations differently, so some features work on
+only one of them.
+
+- **US cards** spend USD. Grid decides every authorization, so all of
+  Grid's spending controls apply, including your own real-time decisions.
+- **EU cards** spend from the cardholder's EUR, USDC, or BTC account. The
+  card issuer decides every authorization, and it checks only the account
+  balance, the card's status, and the card's own limits. Grid records each
+  transaction and sends you the same webhooks, but it does not take part
+  in the decision.
+
+## Check a card at runtime
+
+Don't branch on region. Read `cardCapabilities` on the card or on the
+funding account instead. It tells you what that card's program supports,
+and it stays correct as support changes.
+
+| Capability | US | EU |
+|------------|----|----|
+| `supportsVelocityLimits` | `true` | `true`, with the narrower shape below |
+| `supports3dSecurePassword` | `false` | `true` |
+| `supportsPanReveal` | `true` | `false` |
+| `supportsDigitalWalletTokenization` | `true` | `false` |
+
+## Feature comparison
+
+| Feature | US cards | EU cards |
+|---------|----------|----------|
+| Card form | Virtual | Virtual |
+| Cardholder | Individual and business customers | Individual customers only |
+| Funding source | A USD account or a USDB embedded wallet | The cardholder's own EUR, USDC, or BTC account |
+| 3-D Secure password (`threeDSecurePassword`) | Not accepted | Required at issuance; change it with `PATCH /cards/{id}` |
+| Who approves purchases | Grid | The card issuer, on balance and card limits only |
+| [Real-time authorization](/cards/transactions/real-time-authorization) | Supported | Not supported |
+| [Velocity limits](/cards/card-management/velocity-limits) | Per card or platform-wide; amount or count | Per card only; `APPROVED` amount limits on an `AUTHORIZATION`, `DAY`, or `MONTH` window |
+| Merchant category lists (`allowedMccs`, `blockedMccs`) | Supported | Rejected with `INVALID_INPUT` |
+| Network risk ceiling (`maxNetworkRiskScore`) | Supported | Rejected with `INVALID_INPUT` |
+| Freeze, unfreeze, and close | Supported | Supported |
+| Show the card number and CVV (`POST /cards/{id}/reveal`) | Supported | Not supported. Returns `409 CONFLICT` |
+| [PINs](/cards/card-management/pins) | Supported | Not supported. Returns `409 CONFLICT` |
+| [In-app wallet provisioning](/cards/card-management/digital-wallet-tokenization) | Apple Pay, Google Pay, Samsung Pay | Not supported. Returns `409 CONFLICT` |
+| Agent cards (`agentId`) | Supported | Not supported |
+| Transaction webhooks | Supported | Supported |
+| Disputes | Through Grid | Contact Lightspark support |
+| [Sandbox simulation](/cards/platform-tools/sandbox-testing) | Supported | Not supported. Returns `409 CONFLICT` |
+
+## Velocity limits on EU cards
+
+The card issuer enforces EU card limits itself, so it accepts a narrower
+set of rules:
+
+- Create each rule with a `cardId`. Platform-wide rules don't apply to EU
+  cards.
+- Use `metric: APPROVED` with `maxAmount`. Count limits (`maxCount`) are
+  rejected.
+- Use an `AUTHORIZATION`, `DAY`, or `MONTH` window.
+
+See [Velocity limits](/cards/card-management/velocity-limits) for the
+request shape.
+
+## When a feature isn't available
+
+An unsupported action returns an error instead of being ignored:
+
+- Fields that EU cards can't honor on `POST /cards` or `PATCH /cards/{id}`,
+  such as `allowedMccs` or `maxNetworkRiskScore`, return `400 INVALID_INPUT`.
+- Actions that EU cards don't support, such as reveal, PINs, wallet
+  provisioning, and simulation, return `409 CONFLICT`. Retrying won't
+  help. Check `cardCapabilities` first and hide the action in your app.

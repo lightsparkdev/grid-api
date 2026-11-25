@@ -352,6 +352,7 @@
               "cards/demo",
               "cards/index",
               "cards/terminology",
+              "cards/card-programs",
               "cards/onboarding/implementation-overview",
               "cards/quickstart"
             ]

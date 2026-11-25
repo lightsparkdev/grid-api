@@ -1,7 +1,9 @@
 The card network can't reach into Sandbox to send real authorizations,
 so Sandbox exposes three simulate helpers that drive the same internal
 `authorize` and `reconcile` paths the issuer would call in production.
-Production returns `404` on these paths.
+Production returns `404` on these paths. EU cards can't be simulated,
+because their issuer keeps the ledger; these paths return `409 CONFLICT`
+for them.
 
 ```text
 POST /sandbox/cards/{id}/simulate/authorization
