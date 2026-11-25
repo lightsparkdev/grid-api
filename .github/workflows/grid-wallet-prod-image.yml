@@ -123,6 +123,10 @@ jobs:
     # argocd calls each carry their own --timeout 300, so this only has to
     # backstop the scheduling and auth phases.
     timeout-minutes: 20
+    env:
+      # ArgoCD's load balancer allowlists the tooling NAT gateways, which this
+      # proxy leaves through. The runner itself may not.
+      FIXED_IP_PROXY: http://fixed-ip-proxy.fixed-ip-proxy.svc.cluster.local:3128
     steps:
       # Fail fast, with the version on record, if the image ever ships without it.
       - name: Check ArgoCD CLI
@@ -153,6 +157,7 @@ jobs:
           echo "::add-mask::$GH_TOKEN"
 
           DEX_TOKEN=$(curl -sSf "https://argocd.tooling.sparkinfra.net/api/dex/token" \
+            --proxy "$FIXED_IP_PROXY" \
             --user argo-cd-cli: \
             --data-urlencode "connector_id=github-actions" \
             --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
@@ -176,6 +181,7 @@ jobs:
         env:
           ARGOCD_SERVER: argocd.tooling.sparkinfra.net
           ARGOCD_AUTH_TOKEN: ${{ steps.argocd-auth.outputs.token }}
+          HTTPS_PROXY: ${{ env.FIXED_IP_PROXY }}
           TAG: ${{ needs.build.outputs.tag }}
         run: argocd app set grid-wallet-prod --parameter "image.tag=$TAG" --grpc-web
 
@@ -193,6 +199,7 @@ jobs:
         env:
           ARGOCD_SERVER: argocd.tooling.sparkinfra.net
           ARGOCD_AUTH_TOKEN: ${{ steps.argocd-auth.outputs.token }}
+          HTTPS_PROXY: ${{ env.FIXED_IP_PROXY }}
         run: |
           set -euo pipefail
           argocd app sync grid-wallet-prod --timeout 300 --grpc-web
@@ -207,6 +214,7 @@ jobs:
         env:
           ARGOCD_SERVER: argocd.tooling.sparkinfra.net
           ARGOCD_AUTH_TOKEN: ${{ steps.argocd-auth.outputs.token }}
+          HTTPS_PROXY: ${{ env.FIXED_IP_PROXY }}
           TAG: ${{ needs.build.outputs.tag }}
         run: |
           set -euo pipefail
