@@ -1,6 +1,6 @@
 import { StatementExample } from '/snippets/cards/statement-example.mdx';
 
-Every account held at Lead Bank gets a periodic statement each month, whether or not it had activity. Your platform agreement sets out what the statement contains and who delivers it. Use this page as a reference for a typical statement and how to build one from Grid data.
+Every account held at Lead Bank gets a periodic statement for each month in which a transfer happened, and at least one each quarter if no transfer happened. Your platform agreement sets out what the statement contains and who delivers it. Use this page as a reference for a typical statement and how to build one from Grid data.
 
 This guide covers when to send a statement, what it contains, how to map Grid data to each statement field, and how to build one once the month settles. Consumer accounts carry a few extra items, called out where they apply.
 
@@ -14,11 +14,14 @@ The sample is a consumer statement. It carries three items a commercial statemen
 
 ## When to send a statement
 
-A statement period is a calendar month in US Central time (`America/Chicago`). Issue a statement for every account each month, with or without activity.
+A statement period is a calendar month in US Central time (`America/Chicago`).
+
+- **Accounts with a transfer in the month.** Issue a statement for that month. Any balance change counts, even one that nets to zero within the month, such as money that comes in and goes back out.
+- **Accounts with no transfer all quarter.** Issue at least one statement in that quarter. A quarter is a calendar quarter in US Central time: January to March, April to June, July to September, or October to December. A statement for any one of the quarter's months covers it. For an account with no transfers, that statement has no lines, and its opening and closing balances match.
 
 Build the statement once the month's card settlement has closed. Until then, [List balance changes](/api-reference/periodic-statements/list-balance-changes-for-a-period) refuses the month with `409 NOT_YET_AVAILABLE`, because its figures could still change. Retry later.
 
-Send the statement to the account holder by email, in-app notification, or any channel that lets the account holder **retain** it. Then send Grid a receipt with [Send a receipt for a periodic statement](/api-reference/periodic-statements/send-a-receipt-for-a-periodic-statement), once a month for each account. Grid stores it as the delivery record for that account and month. Your platform agreement sets out who delivers the statement.
+Send the statement to the account holder by email, in-app notification, or any channel that lets the account holder **retain** it. Then send Grid a receipt with [Send a receipt for a periodic statement](/api-reference/periodic-statements/send-a-receipt-for-a-periodic-statement), for each statement you issue. Grid stores it as the delivery record for that account and month. Your platform agreement sets out who delivers the statement.
 
 <Info>
 Once you issue a statement, **freeze its contents**. A refund or return that posts after the month closes appears on a later statement as its own dated line. ACH returns often land in the following month.
@@ -219,7 +222,7 @@ async function buildStatement(customerId, accountId, year, month) {
 
   await sendStatementEmail(customer.platformCustomerId, statement); // your delivery channel
 
-  // The monthly receipt: Grid's record that this account's statement was issued
+  // The receipt: Grid's record that this account's statement for the month was issued
   await grid.post(`/internal-accounts/${accountId}/confirm-statement`, {
     statementMonth: `${year}-${String(month).padStart(2, '0')}`,
     statementDeliveredAt: statement.issueDate,

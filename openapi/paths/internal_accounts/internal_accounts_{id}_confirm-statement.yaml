@@ -10,15 +10,18 @@ parameters:
 post:
   summary: Send a receipt for a periodic statement
   description: >
-    Record your monthly receipt that you pulled and issued this account's
-    periodic statement for a period. Grid stores it as the delivery record for
-    that account and period.
+    Record your receipt that you pulled and issued this account's periodic
+    statement for a month. Grid stores it as the delivery record for that
+    account and month.
 
 
-    Send it once a month for each account, after you have issued the statement
-    built from `GET /internal-accounts/{id}/balance-changes`. Send it within
-    five days of the month's end for every customer account: Grid checks then
-    that every account's statement was issued.
+    Send it for each statement you issue, after you have issued the statement
+    built from `GET /internal-accounts/{id}/balance-changes`. A statement is
+    due for every month in which the account had a transfer, and at least one
+    each quarter for an account with no transfer all quarter. A receipt for
+    any month of a calendar quarter covers that quarter. Send each receipt
+    within five days of the period's end: Grid checks then that every
+    statement due was issued.
 
 
     `statementMonth` names the statement month as `YYYY-MM`, a calendar month
