@@ -99,6 +99,14 @@ curl -X POST "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010/rev
 renders the full credentials directly to the cardholder. The full PAN
 and CVV never cross your servers or Grid's.
 
+The cardholder can click the card number, expiry, or CVV to copy it.
+Because the iframe is cross-origin, copying works only if you grant
+clipboard access with `allow="clipboard-write"` on the iframe element:
+
+```html
+<iframe src="{panEmbedUrl}" allow="clipboard-write"></iframe>
+```
+
 <Note>
 For cards in programs where Grid makes authorization decisions,
 `POST /cards/{id}/reveal` is the **only** way to obtain a reveal URL;
