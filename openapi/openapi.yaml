@@ -56,7 +56,9 @@ tags:
 
       **2. The receipt — `POST /internal-accounts/{id}/confirm-statement`**
 
-      Once a month, after you have pulled and issued a period's statement, send a receipt with the `statementMonth` it covers. Grid stores it as the delivery record for that account and period. Sending it again is harmless: the first receipt's time is kept.
+      After you have pulled and issued a statement, send a receipt with the `statementMonth` it covers. Grid stores it as the delivery record for that account and month. Sending it again is harmless: the first receipt's time is kept.
+
+      A statement is due for each month in which the account had a transfer, and at least one each quarter for an account with no transfer all quarter. A receipt for any month of a calendar quarter in US Central time covers that quarter.
 
       **Timing**
 
