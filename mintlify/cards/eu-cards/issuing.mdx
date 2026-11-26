@@ -1,0 +1,59 @@
+---
+title: "Issuing EU Cards"
+sidebarTitle: "Issuing"
+description: "What an EU card needs at issuance, beyond the standard POST /cards request"
+icon: "/images/icons/credit-card1.svg"
+"og:image": "/images/og/pages/cards/eu-cards/issuing.webp"
+---
+
+You issue an EU card with the same `POST /cards` request as a US card.
+See [Issuing cards](/cards/card-management/issuing-cards) for the request
+shape and the card lifecycle. This page covers what's different.
+
+## Before you issue
+
+The cardholder must meet all of these:
+
+- They're an individual customer. EU cards can't be issued to businesses.
+- Their `kycStatus` is `APPROVED`. Create a verification link with
+  `POST /customers/{customerId}/kyc-link`.
+- Their email and phone number are verified. Use
+  `POST /customers/{customerId}/verify-email` and
+  `POST /customers/{customerId}/verify-phone`.
+- Your platform has EU card issuing enabled. Otherwise `POST /cards`
+  returns `401 UNAUTHORIZED`.
+
+## The request
+
+```bash
+curl -X POST "$GRID_BASE_URL/cards" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "form": "VIRTUAL",
+    "fundingSource": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+    "threeDSecurePassword": "AbCd1234EfGh5678"
+  }'
+```
+
+| Field | EU rule |
+|-------|---------|
+| `form` | `VIRTUAL` only. |
+| `fundingSource` | One of the cardholder's own open accounts: their default EUR account, or their USDC or BTC account. See [Funding EU cards](/cards/eu-cards/funding). |
+| `threeDSecurePassword` | Required. 8 to 36 characters: Latin letters, digits, and the issuer's allowed special characters. |
+| `allowedMccs`, `blockedMccs`, `maxNetworkRiskScore`, `agentId`, `cardholder` | Not accepted. Each returns `400 INVALID_INPUT`. |
+
+## The 3-D Secure password
+
+Online merchants can ask the cardholder for this password to confirm a
+purchase. Grid passes it to the card issuer and doesn't keep it, so it
+can't be read back. If the cardholder forgets it, set a new one with
+`PATCH /cards/{id}`:
+
+```bash
+curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "threeDSecurePassword": "NewPassword123" }'
+```

@@ -29,6 +29,9 @@ card's currency: for a USDB-funded card, `50000` means $500.00 in USD cents.
 Changing the funding source does not change the card's currency or
 spending-limit units.
 
+Issuing an EU card? It needs a few more fields and checks; see
+[Issuing EU cards](/cards/eu-cards/issuing).
+
 Configure platform defaults before issuing cards, then add card-specific
 limits with the returned card id through
 [Velocity limits](/cards/card-management/velocity-limits). The card creation
@@ -100,10 +103,9 @@ renders the full credentials directly to the cardholder. The full PAN
 and CVV never cross your servers or Grid's.
 
 <Note>
-For cards in programs where Grid makes authorization decisions,
-`POST /cards/{id}/reveal` is the **only** way to obtain a reveal URL;
-cards in programs where the card issuer makes authorization decisions use
-the card issuer's challenge-based hosted reveal flow instead. The `Card`
+`POST /cards/{id}/reveal` is the **only** way to obtain a reveal URL.
+It works on cards whose `cardCapabilities.supportsPanReveal` is true; EU
+cards don't support it yet (see [EU cards](/cards/eu-cards/overview)). The `Card`
 resource never carries one (not in responses, not in webhook
 payloads). The URL expires at `expiresAt` (within minutes), so request a
 fresh reveal each time the cardholder asks for their details,
@@ -178,7 +180,7 @@ sandbox card to check yours before you ship it.
 |--------|------|---------------|
 | 400 | `CARDHOLDER_KYC_NOT_APPROVED` | Cardholder is not `kycStatus: APPROVED`. Drive KYC to completion before retrying. |
 | 400 | `INVALID_INPUT` | The supplied internal account doesn't belong to the cardholder or isn't denominated in a card-eligible currency, or another field failed validation. |
-| 409 | `CONFLICT` | The card belongs to a program where the card issuer makes authorization decisions. Use the card issuer's challenge-based hosted reveal flow instead; retrying this endpoint will not help. |
+| 409 | `CONFLICT` | The card's program doesn't support reveal (`cardCapabilities.supportsPanReveal` is false). Retrying will not help. |
 
 ## Changing the funding source later
 
