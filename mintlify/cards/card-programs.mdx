@@ -12,11 +12,11 @@ only one of them.
 
 - **US cards** spend USD. Grid decides every authorization, so all of
   Grid's spending controls apply, including your own real-time decisions.
-- **EU cards** spend from the cardholder's EUR, USDC, or BTC account. The
-  card issuer decides every authorization, and it checks only the account
-  balance, the card's status, and the card's own limits. Grid records each
-  transaction and sends you the same webhooks, but it does not take part
-  in the decision.
+- **EU cards** have `currency: EUR` and spend from one of the
+  cardholder's own accounts: EUR, USDC, or BTC. The card issuer decides every
+  authorization, and it checks only the account balance, the card's
+  status, and the card's own limits. Grid records each transaction and
+  sends you the same webhooks, but it does not take part in the decision.
 
 ## Check a card at runtime
 
@@ -36,11 +36,11 @@ and it stays correct as support changes.
 |---------|----------|----------|
 | Card form | Virtual | Virtual |
 | Cardholder | Individual and business customers | Individual customers only |
-| Funding source | A USD account or a USDB embedded wallet | The cardholder's own EUR, USDC, or BTC account |
+| Funding source | A USD account or a USDB embedded wallet | One of the cardholder's own accounts: their default EUR account, or their USDC or BTC account. See [Funding an EU card](#funding-an-eu-card) |
 | 3-D Secure password (`threeDSecurePassword`) | Not accepted | Required at issuance; change it with `PATCH /cards/{id}` |
 | Who approves purchases | Grid | The card issuer, on balance and card limits only |
 | [Real-time authorization](/cards/transactions/real-time-authorization) | Supported | Not supported |
-| [Velocity limits](/cards/card-management/velocity-limits) | Per card or platform-wide; amount or count | Per card only; `APPROVED` amount limits on an `AUTHORIZATION`, `DAY`, or `MONTH` window |
+| [Velocity limits](/cards/card-management/velocity-limits) | Per card or platform-wide; amount or count | Per card only, with tighter rules. See [Velocity limits on EU cards](#velocity-limits-on-eu-cards) |
 | Merchant category lists (`allowedMccs`, `blockedMccs`) | Supported | Rejected with `INVALID_INPUT` |
 | Network risk ceiling (`maxNetworkRiskScore`) | Supported | Rejected with `INVALID_INPUT` |
 | Freeze, unfreeze, and close | Supported | Supported |
@@ -52,6 +52,26 @@ and it stays correct as support changes.
 | Disputes | Through Grid | Contact Lightspark support |
 | [Sandbox simulation](/cards/platform-tools/sandbox-testing) | Supported | Not supported. Returns `409 CONFLICT` |
 
+## Funding an EU card
+
+An EU card spends straight from the balance of the account it's linked
+to. There's no separate card balance to top up. To fund the card, add
+money to that account.
+
+Each of the cardholder's accounts lists its deposit details in
+`fundingPaymentInstructions`:
+
+- **EUR account:** an IBAN. The cardholder can send euros to it by SEPA
+  transfer. If Lightspark has enabled
+  [open banking](/payouts-and-b2b/depositing-funds/open-banking) for your
+  platform, you can also start a payment from their own bank with
+  `POST /internal-accounts/{id}/open-banking-payments`.
+- **USDC or BTC account:** a deposit address on each network the account
+  supports.
+
+When the card is linked to a USDC or BTC account, the card issuer
+converts each purchase from EUR at the time of the purchase.
+
 ## Velocity limits on EU cards
 
 The card issuer enforces EU card limits itself, so it accepts a narrower
@@ -62,6 +82,12 @@ set of rules:
 - Use `metric: APPROVED` with `maxAmount`. Count limits (`maxCount`) are
   rejected.
 - Use an `AUTHORIZATION`, `DAY`, or `MONTH` window.
+- Set `maxAmount` in cents, as a whole number of euros. `5000` (€50.00)
+  is accepted; `5050` is not.
+- Stay within the card's ceilings: €10,000 for a single authorization or a
+  day, and €15,000 for a month. A new card starts at these ceilings.
+- Change limits only while the card is `ACTIVE`. Otherwise you get
+  `409 CONFLICT`.
 
 See [Velocity limits](/cards/card-management/velocity-limits) for the
 request shape.
