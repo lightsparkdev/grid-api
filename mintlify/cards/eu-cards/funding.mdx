@@ -1,0 +1,50 @@
+---
+title: "Funding EU Cards"
+sidebarTitle: "Funding"
+description: "Add money to the account an EU card spends from"
+icon: "/images/icons/wallet1.svg"
+"og:image": "/images/og/pages/cards/eu-cards/funding.webp"
+---
+
+An EU card spends straight from the balance of the account it's linked
+to. There's no separate card balance to top up. To fund the card, add
+money to that account.
+
+## Which account a card spends from
+
+Each EU card is linked to exactly one of the cardholder's own accounts:
+
+- their default EUR account, or
+- their USDC account, or
+- their BTC account.
+
+The card always has `currency: EUR`. When it's linked to the USDC or BTC
+account, the card issuer converts each purchase from EUR at the time of
+the purchase.
+
+To link the card to a different account later, send its id as
+`fundingSource` in `PATCH /cards/{id}`. The same rules apply as at
+issuance.
+
+## Add money to the account
+
+Each of the cardholder's accounts lists its deposit details in
+`fundingPaymentInstructions`. See
+[Internal accounts](/payouts-and-b2b/depositing-funds/internal-accounts)
+for how to read them.
+
+- **EUR account:** an IBAN. The cardholder can send euros to it by SEPA
+  transfer.
+- **USDC or BTC account:** a deposit address on each network the account
+  supports.
+
+## Open banking
+
+If Lightspark has enabled open banking for your platform, you can also
+start a payment from the cardholder's own bank into their EUR account.
+Call `POST /internal-accounts/{id}/open-banking-payments` and send the
+cardholder to the returned `authorizationUrl`. They approve the payment in
+their banking app.
+
+See [Open banking](/payouts-and-b2b/depositing-funds/open-banking) for the
+full flow.

@@ -29,6 +29,9 @@ card's currency: for a USDB-funded card, `50000` means $500.00 in USD cents.
 Changing the funding source does not change the card's currency or
 spending-limit units.
 
+Issuing an EU card? It needs a few more fields and checks; see
+[Issuing EU cards](/cards/eu-cards/issuing).
+
 Configure platform defaults before issuing cards, then add card-specific
 limits with the returned card id through
 [Velocity limits](/cards/card-management/velocity-limits). The card creation
@@ -102,7 +105,7 @@ and CVV never cross your servers or Grid's.
 <Note>
 `POST /cards/{id}/reveal` is the **only** way to obtain a reveal URL.
 It works on cards whose `cardCapabilities.supportsPanReveal` is true; EU
-cards don't support it yet (see [US and EU card programs](/cards/card-programs)). The `Card`
+cards don't support it yet (see [EU cards](/cards/eu-cards/overview)). The `Card`
 resource never carries one (not in responses, not in webhook
 payloads). The URL expires at `expiresAt` (within minutes), so request a
 fresh reveal each time the cardholder asks for their details,

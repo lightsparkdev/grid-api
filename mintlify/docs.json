@@ -352,7 +352,6 @@
               "cards/demo",
               "cards/index",
               "cards/terminology",
-              "cards/card-programs",
               "cards/onboarding/implementation-overview",
               "cards/quickstart"
             ]
@@ -373,6 +372,14 @@
               "cards/card-management/freezing-and-closing",
               "cards/card-management/pins",
               "cards/card-management/digital-wallet-tokenization"
+            ]
+          },
+          {
+            "group": "EU cards",
+            "pages": [
+              "cards/eu-cards/overview",
+              "cards/eu-cards/issuing",
+              "cards/eu-cards/funding"
             ]
           },
           {

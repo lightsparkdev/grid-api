@@ -1,22 +1,26 @@
 ---
-title: "US and EU Card Programs"
-sidebarTitle: "US and EU programs"
-description: "What Grid supports on US cards and on EU cards, and how to check a card at runtime"
+title: "EU Cards"
+sidebarTitle: "Overview"
+description: "How EU cards differ from the rest of the cards docs, and how to check a card at runtime"
 icon: "/images/icons/globe.svg"
-"og:image": "/images/og/pages/cards/card-programs.webp"
+"og:image": "/images/og/pages/cards/eu-cards/overview.webp"
 ---
 
-Grid issues Visa debit cards in two programs. Both use the same `/cards`
-API, but they decide authorizations differently, so some features work on
-only one of them.
+The rest of the cards docs describe the US program, where Grid approves
+every purchase. EU cards use the same `/cards` API, but the card issuer
+approves their purchases instead, so several features work differently or
+not at all. This section covers only what's different.
 
 - **US cards** spend USD. Grid decides every authorization, so all of
   Grid's spending controls apply, including your own real-time decisions.
 - **EU cards** have `currency: EUR` and spend from one of the
-  cardholder's own accounts: EUR, USDC, or BTC. The card issuer decides every
-  authorization, and it checks only the account balance, the card's
+  cardholder's own accounts: EUR, USDC, or BTC. The card issuer decides
+  every authorization, and it checks only the account balance, the card's
   status, and the card's own limits. Grid records each transaction and
   sends you the same webhooks, but it does not take part in the decision.
+
+To set up an EU card, see [Issuing EU cards](/cards/eu-cards/issuing) and
+[Funding EU cards](/cards/eu-cards/funding).
 
 ## Check a card at runtime
 
@@ -36,7 +40,7 @@ and it stays correct as support changes.
 |---------|----------|----------|
 | Card form | Virtual | Virtual |
 | Cardholder | Individual and business customers | Individual customers only |
-| Funding source | A USD account or a USDB embedded wallet | One of the cardholder's own accounts: their default EUR account, or their USDC or BTC account. See [Funding an EU card](#funding-an-eu-card) |
+| Funding source | A USD account or a USDB embedded wallet | One of the cardholder's own accounts: their default EUR account, or their USDC or BTC account. See [Funding EU cards](/cards/eu-cards/funding) |
 | 3-D Secure password (`threeDSecurePassword`) | Not accepted | Required at issuance; change it with `PATCH /cards/{id}` |
 | Who approves purchases | Grid | The card issuer, on balance and card limits only |
 | [Real-time authorization](/cards/transactions/real-time-authorization) | Supported | Not supported |
@@ -47,30 +51,10 @@ and it stays correct as support changes.
 | Show the card number and CVV (`POST /cards/{id}/reveal`) | Supported | Not supported. Returns `409 CONFLICT` |
 | [PINs](/cards/card-management/pins) | Supported | Not supported. Returns `409 CONFLICT` |
 | [In-app wallet provisioning](/cards/card-management/digital-wallet-tokenization) | Apple Pay, Google Pay, Samsung Pay | Not supported. Returns `409 CONFLICT` |
-| Agent cards (`agentId`) | Supported | Not supported |
+| Agent cards (`agentId`) | Supported | Rejected with `INVALID_INPUT` |
 | Transaction webhooks | Supported | Supported |
 | Disputes | Through Grid | Contact Lightspark support |
 | [Sandbox simulation](/cards/platform-tools/sandbox-testing) | Supported | Not supported. Returns `409 CONFLICT` |
-
-## Funding an EU card
-
-An EU card spends straight from the balance of the account it's linked
-to. There's no separate card balance to top up. To fund the card, add
-money to that account.
-
-Each of the cardholder's accounts lists its deposit details in
-`fundingPaymentInstructions`:
-
-- **EUR account:** an IBAN. The cardholder can send euros to it by SEPA
-  transfer. If Lightspark has enabled
-  [open banking](/payouts-and-b2b/depositing-funds/open-banking) for your
-  platform, you can also start a payment from their own bank with
-  `POST /internal-accounts/{id}/open-banking-payments`.
-- **USDC or BTC account:** a deposit address on each network the account
-  supports.
-
-When the card is linked to a USDC or BTC account, the card issuer
-converts each purchase from EUR at the time of the purchase.
 
 ## Velocity limits on EU cards
 
